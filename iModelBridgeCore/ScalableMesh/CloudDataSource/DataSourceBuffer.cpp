@@ -109,6 +109,11 @@ DataSourceBuffer::DataSourceBuffer(BufferSize size, BufferData * extBuffer)
         }
 }
 
+DataSourceBuffer::~DataSourceBuffer()
+    {
+    std::unique_lock<std::mutex> lock(mutex);
+    }
+
 ActivitySemaphore &DataSourceBuffer::getActivitySemaphore(void)
 {
     return activitySemaphore;
@@ -296,6 +301,7 @@ DataSourceStatus DataSourceBuffer::getTransferStatus(void)
 
 DataSourceStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds, int numRetries)
 {
+    std::unique_lock<std::mutex> lock(mutex);
     TimeoutStatus   timeoutStatus = TimeoutStatus::Status_Error;
                                                             // Retry after timeout exceeded until activity ceased or numRetries reached
     int retry = 0;

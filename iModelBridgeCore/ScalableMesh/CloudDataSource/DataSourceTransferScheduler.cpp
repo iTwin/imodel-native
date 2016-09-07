@@ -6,7 +6,6 @@
 #include "DataSourceBuffer.h"
 #include "include\DataSourceTransferScheduler.h"
 #ifndef NDEBUG
-#define NOMINMAX
 #include <windows.h>
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
 
@@ -253,10 +252,14 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 if (locator.getMode() == DataSourceMode_Write_Segmented)
                     {
                                                             // Attempt to upload a single segment
-                    if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+                    std::wstring filename = locator.getSubPath() + L"-" + std::to_wstring(segmentIndex);
+                    if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
                         {
-                        assert(false);
-                        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                        if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+                            {
+                            assert(false);
+                            return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                            }
                         }
                     }
 
@@ -268,11 +271,11 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 
                 // TODO: if the transfer scheduler has full ownership of the buffer, then it should be deleted. 
                 //       For now, this is not the case and the buffer is deleted by the thread that asked the transfer.
-                //if(locator.getMode() == DataSourceMode_Write_Segmented)
-                //{
-                //                                            // Upload of this buffer is complete, delete it
-                //    delete buffer;
-                //}
+                if(locator.getMode() == DataSourceMode_Write_Segmented)
+                {
+                                                            // Upload of this buffer is complete, delete it
+                    delete buffer;
+                }
             }
         }
 

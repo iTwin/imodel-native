@@ -261,8 +261,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         ISDiffSetDataStorePtr nodeDiffsetStore;
-        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                        
-        assert(result == true && nodeDiffsetStore.IsValid());         
+        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                                
         if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
@@ -401,8 +400,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     //auto* node = this;
     RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
-        assert(false && "Make this compile on Vancouver!");
-#if 0
+#ifndef VANCOUVER_API
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
@@ -457,6 +455,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
         ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
         node->SavePointDataToCloud(pDataStore);
+#else
+        assert(false && "Make this compile on Vancouver!");
 #endif
 
         SetThreadAvailableAsync(threadId);
@@ -2716,6 +2716,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicesPtr(GetPtsIndicePtr());
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    pointsPtr->clear();
+    indicesPtr->clear();
 
     if (pointsPtr->size() > 0) 
         std::cout << " TOO MANY POINTS BEFORE ADD :"<< pointsPtr->size()  << std::endl;
@@ -3524,6 +3526,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         const int32_t* uvIndices = uvIndexes.IsValid() ? &(*uvIndexes)[0] : 0;
         const DPoint2d* uvBuffer= uvCoords.IsValid() ? &(*uvCoords)[0] : 0;        
     
+
         Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, uvBuffer, uvIndices);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
@@ -3534,22 +3537,32 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             ScalableMeshNode<POINT>::CreateItem(nodePtr)
 #endif
             );
-        BcDTMPtr dtm = nodeP->GetBcDTM().get();
+
         bool hasClip = false;
-        if (dtm.get() != nullptr)
+        if (!m_nodeHeader.m_arePoints3d)
             {
-            BcDTMPtr toClipBcDTM = dtm->Clone();
-            DTMPtr toClipDTM = toClipBcDTM.get(); 
-            if (IsLeaf()) //always clip leaves regardless of width/area criteria
+            BcDTMPtr dtm = nodeP->GetBcDTM().get();
+            if (dtm.get() != nullptr)
                 {
-                for (auto& mdata : metadata)
-                    mdata.second = 0;
+                BcDTMPtr toClipBcDTM = dtm->Clone();
+                DTMPtr toClipDTM = toClipBcDTM.get();
+                if (IsLeaf()) //always clip leaves regardless of width/area criteria
+                    {
+                    for (auto& mdata : metadata)
+                        mdata.second = 0;
+                    }
+                if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
                 }
-            if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
             }
-        // m_differenceSets.clear();
-        // m_nbClips = 0;
-    
+        else
+            {
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            flags->SetLoadTexture(true);
+            IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+            if (meshP.get() != nullptr)
+                hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, meshP->GetPolyfaceQuery());
+            }
+
         if (hasClip) 
             {
             bvector<bvector<PolyfaceHeaderPtr>> skirts;
@@ -4269,11 +4282,11 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
     {
-    this->SaveMasterHeaderToCloud(dataSourceAccount);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress);
 
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(dataSourceAccount, pi_pCompress);
+    this->SaveMasterHeaderToCloud(pDataStore);
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pDataStore);
 

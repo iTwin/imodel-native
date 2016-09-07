@@ -4,6 +4,7 @@
 
 #include "DataSourceServiceFile.h"
 #include "DataSourceServiceAzure.h"
+#include "DataSourceServiceWSG.h"
 
 
 DataSourceServiceManager::DataSourceServiceManager(DataSourceManager &manager)
@@ -30,6 +31,12 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
 
 
     if((service = new DataSourceServiceAzure(manager, DataSourceService::ServiceName(L"DataSourceServiceAzure"))) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+
+    if ((status = addService(service)).isFailed())
+        return status;
+
+    if ((service = new DataSourceServiceWSG(manager, DataSourceService::ServiceName(L"DataSourceServiceWSG"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
     if ((status = addService(service)).isFailed())

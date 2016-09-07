@@ -116,6 +116,16 @@ const DataSourceAccount::AccountKey DataSourceAccount::getAccountKey(void) const
     return accountKey;
     }
 
+void DataSourceAccount::setAccountSSLCertificatePath(const AccountSSLCertificatePath & path)
+    {
+    accountSSLCertificatePath = path;
+    }
+
+const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccountSSLCertificatePath(void) const
+    {
+    return accountSSLCertificatePath;
+    }
+
 DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
     {
     return getDataSourceManager().createDataSource(name, *this);
@@ -166,10 +176,7 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    auto uploadStatus = buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
-        // Upload of this buffer is complete, delete it
-    delete buffer;
-    return uploadStatus;
+    return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
@@ -182,11 +189,30 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, Dat
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(const DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
     (void)segmentName;
     (void)dest;
     (void)readSize;
+    (void)size;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
+DataSourceStatus DataSourceAccount::uploadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    (void)dataSource;
+    (void)source;
+    (void)size;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
+DataSourceStatus DataSourceAccount::uploadBlobSync(DataSourceURL & url, const std::wstring & filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    (void)url;
+    (void)filename;
+    (void)source;
     (void)size;
 
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);

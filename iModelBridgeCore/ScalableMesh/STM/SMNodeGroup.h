@@ -36,8 +36,6 @@ extern std::mutex s_consoleMutex;
 #include <Bentley\BeConsole.h>
 #endif
 
-extern bool s_is_virtual_grouping;
-extern bool s_stream_from_disk;
 extern bool s_stream_enable_caching;
 
 extern uint32_t s_max_number_nodes_in_group;
@@ -563,10 +561,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             DataSource::DataSize                 readSize;
             DataSourceBuffer::BufferSize         destSize = 5 * 1024 * 1024;
 
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%sn_%llu.bin", m_dataSourceName.c_str(), pi_pNodeID);
-
-            DataSourceURL dataSourceURL(buffer);
+            DataSourceURL dataSourceURL(m_dataSourceName.c_str());
+            dataSourceURL.append(L"n_" + std::to_wstring(pi_pNodeID) + L".bin");
 
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)

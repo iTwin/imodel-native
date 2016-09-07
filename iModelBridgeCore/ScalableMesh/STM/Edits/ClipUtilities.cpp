@@ -9,6 +9,7 @@
 #include <array>
 #include "..\ScalableMeshQuery.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 const wchar_t* s_path = L"E:\\output\\scmesh\\2016-06-04\\";
@@ -995,5 +996,394 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
 
 bool s_useOwnClip = false;
 
+struct FinishClippedMesh : public PolyfaceQuery::IClipToPlaneSetOutput
+    {
+    PolyfaceHeaderPtr m_currentPoly;
+    PolyfaceHeaderPtr m_outPoly;
+    virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override
+        {
+        m_outPoly = PolyfaceHeader::New();
+        m_outPoly->CopyFrom(polyfaceQuery);
+        return SUCCESS;
+        }
+    virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
+        {
+        m_currentPoly = PolyfaceHeader::New();
+        m_currentPoly->CopyFrom(polyfaceHeader);
+        return SUCCESS;
+        }
+
+    PolyfaceHeaderPtr GetResultMesh() { return m_currentPoly; }
+    PolyfaceHeaderPtr GetOutsideMesh() { return m_outPoly; }
+    FinishClippedMesh() {};
+    };
+
+PolyfaceHeaderPtr CreateFromFaceSubset(PolyfaceHeaderPtr& originalMesh, const bvector<int32_t>& facesToKeep)
+    {
+    bvector<DPoint3d> pts;
+    bvector<int32_t> indices;
+    bvector<DPoint2d> params;
+    bvector<int32_t> paramIndices;
+    bmap<int, int> oldToNewIndicesMap;
+    bmap<int, int> oldToNewParamIndicesMap;
+
+    PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*originalMesh);
+    bvector<int> &pointIndex = vis->ClientPointIndex();
+    bvector<int> &param = vis->ClientParamIndex();
+    size_t faceIdx = 0;
+    size_t current = 0;
+    for (vis->Reset(); vis->AdvanceToNextFace()&& current < facesToKeep.size();faceIdx++)
+        {
+        if (facesToKeep[current] != faceIdx) continue;
+            
+        for (size_t i = 0; i < 3; ++i)
+            {
+            if (oldToNewIndicesMap.count(pointIndex[i]) == 0)
+                {
+                pts.push_back(originalMesh->GetPointCP()[pointIndex[i]]);
+                oldToNewIndicesMap[pointIndex[i]] = (int)pts.size();
+                }
+            if (originalMesh->GetParamCount() > 0 && oldToNewParamIndicesMap.count(param[i]) == 0)
+                {
+                params.push_back(originalMesh->GetParamCP()[param[i]]);
+                oldToNewParamIndicesMap[param[i]] = (int)params.size();
+                }
+            indices.push_back(oldToNewIndicesMap[pointIndex[i]]);
+            if (originalMesh->GetParamCount() > 0)  paramIndices.push_back(oldToNewParamIndicesMap[param[i]]);
+            }
+        current++;          
+        }
+    PolyfaceQueryCarrier* query = new PolyfaceQueryCarrier(3, false, indices.size(), pts.size(), pts.empty() ? 0 : &pts[0], indices.empty() ? 0 : &indices[0], 0, 0, 0, params.size(),
+                                                           params.empty() ? 0 : &params[0], paramIndices.empty() ? 0 : &paramIndices[0]);
+    PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    vec->CopyFrom(*query);
+    delete query;
+    return vec;
+    }
+
+PolyfaceHeaderPtr CreateFromSubsetAndValues(PolyfaceHeaderPtr& originalMesh, const bvector<int32_t> valuesForFaces, int32_t targetVal)
+    {
+    bvector<DPoint3d> pts;
+    bvector<int32_t> indices;
+    bvector<DPoint2d> params;
+    bvector<int32_t> paramIndices;
+    bmap<int, int> oldToNewIndicesMap;
+    bmap<int, int> oldToNewParamIndicesMap;
+
+    PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*originalMesh);
+    bvector<int> &pointIndex = vis->ClientPointIndex();
+    bvector<int> &param = vis->ClientParamIndex();
+    size_t faceIdx = 0;
+    for (vis->Reset(); vis->AdvanceToNextFace(); faceIdx++)
+        {
+        if (valuesForFaces[faceIdx] != targetVal) continue;
+
+        for (size_t i = 0; i < 3; ++i)
+            {
+            if (oldToNewIndicesMap.count(pointIndex[i]) == 0)
+                {
+                pts.push_back(originalMesh->GetPointCP()[pointIndex[i]]);
+                oldToNewIndicesMap[pointIndex[i]] = (int)pts.size();
+                }
+            if (originalMesh->GetParamCount() > 0 && oldToNewParamIndicesMap.count(param[i]) == 0)
+                {
+                params.push_back(originalMesh->GetParamCP()[param[i]]);
+                oldToNewParamIndicesMap[param[i]] = (int)params.size();
+                }
+            indices.push_back(oldToNewIndicesMap[pointIndex[i]]);
+            if (originalMesh->GetParamCount() > 0) paramIndices.push_back(oldToNewParamIndicesMap[param[i]]);
+            }
+        }
+    PolyfaceQueryCarrier* query = new PolyfaceQueryCarrier(3, false, indices.size(), pts.size(), pts.empty() ? 0 : &pts[0], indices.empty() ? 0 : &indices[0], 0, 0, 0, params.size(),
+                                                           params.empty() ? 0 : &params[0], paramIndices.empty() ? 0 : &paramIndices[0]);
+    PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    vec->CopyFrom(*query);
+    delete query;
+
+    return vec;
+    }
+
+bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHeaderPtr& clippedMesh, bvector<ClipVectorPtr>& clipPolys)
+    {
+    clippedMesh->Triangulate();
+
+    bvector<bvector<int32_t>> idxOfFaces(clipPolys.size());
+    bvector<int32_t> nCrossingPolys(clippedMesh->GetPointIndexCount() / 4, 0);
+
+    PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
+    bvector<int> &pointIndex = vis->ClientPointIndex();
+    size_t idxFace = 0;
+    bvector<DPoint3d> centroids(clippedMesh->GetPointIndexCount() / 4);
+    for (vis->Reset(); vis->AdvanceToNextFace();)
+        {
+        DPoint3d tri[3] = { clippedMesh->GetPointCP()[pointIndex[0]], clippedMesh->GetPointCP()[pointIndex[1]], clippedMesh->GetPointCP()[pointIndex[2]] };
+        DVec3d normal;
+        double area;
+        PolygonOps::CentroidNormalAndArea(tri, 3, centroids[idxFace], normal, area);
+        idxFace++;
+        }
+
+    idxFace = 0;
+    for (vis->Reset(); vis->AdvanceToNextFace();)
+        {
+        for (auto& clip : clipPolys)
+            {
+            if (clip->PointInside(centroids[idxFace], 1e-8))
+                {
+                idxOfFaces[&clip - &clipPolys.front()].push_back((int)idxFace);
+                nCrossingPolys[idxFace]++;
+                }
+            }
+        idxFace++;
+        }
+
+    bool hasBeenClipped = false;
+    for (size_t i = 1; i < clipPolys.size() + 1; ++i)
+        {
+        PolyfaceHeaderPtr vec = CreateFromFaceSubset(clippedMesh, idxOfFaces[i - 1]);
+        polyfaces[i].push_back(vec);
+        if (vec->GetPointIndexCount() > 0) hasBeenClipped = true;
+        }
+    polyfaces[0].push_back(CreateFromSubsetAndValues(clippedMesh, nCrossingPolys, 0));
+    return hasBeenClipped;
+    }
+
+struct IntersectionLocation
+    {
+    DPoint3d pt;
+    int32_t edgeIdx;
+    int32_t onVertex;
+    int32_t newPtIdx;
+    int32_t newParamIdx;
+    };
+
+void CreatePlanes(bvector<DPlane3d>& planes, const bvector<DPoint3d>& lineSegments)
+    {
+    for (size_t i = 0; i < lineSegments.size() - 1; ++i)
+        {
+        DPlane3d plane = DPlane3d::From3Points(lineSegments[i], lineSegments[i + 1], DPoint3d::FromSumOf(lineSegments[i], DPoint3d::From(0, 0, -1)));
+        planes.push_back(plane);
+        }
+    }
+
+bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri)
+    {
+    double sign = 0;
+    bool planeCutsTriangle = false;
+    for (size_t j = 0; j < 3 && !planeCutsTriangle; j++)
+        {
+        double sideOfPoint = plane.Evaluate(tri[j]);
+        if (fabs(sideOfPoint) < 1e-8) sideOfPoint = 0;
+        if (sign == 0) sign = sideOfPoint;
+        else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
+            planeCutsTriangle = true;
+        }
+
+    if (planeCutsTriangle)
+        {
+        DPoint3d intersectPts[2];
+        int32_t cutEdges[2];
+        int32_t vIds[2] = { -1, -1 };
+        size_t nOfIntersects = 0;
+        //intersect segments to find cut
+        for (size_t j = 0; j < 3 && nOfIntersects < 2; j++)
+            {
+            DSegment3d edgeSegment = DSegment3d::From(tri[j], tri[(j + 1) % 3]);
+            double param = -DBL_MAX;
+            if (edgeSegment.Intersect(intersectPts[nOfIntersects], param, plane) && param > -1.0e-5 && param <= 1.0+1e-5)
+                {
+                cutEdges[nOfIntersects] = (int32_t)j;
+                if (param < 1e-5) vIds[nOfIntersects] = (int32_t)j;
+                if (param > 1 + 1e-5) vIds[nOfIntersects] = (int32_t)(j + 1) % 3;
+                ++nOfIntersects;
+                }
+            }
+        DSegment3d origSeg = DSegment3d::From(pt0, pt1);
+        double params[2];
+        origSeg.PointToFractionParameter(params[0], intersectPts[0]);
+        origSeg.PointToFractionParameter(params[1], intersectPts[1]);
+        if ((params[0] >= -1e-5 && params[0] <= 1 + 1e-5) || (params[1] >= -1e-5 && params[1] <= 1 + 1e-5)
+            || (params[0] < -1e-5 && params[1] > 1 + 1e-5) || (params[0] > 1 + 1e-5 && params[1] < -1e-5))
+            {
+            for (size_t i = 0; i < 2; ++i)
+                {
+                IntersectionLocation loc;
+                loc.pt = intersectPts[i];
+                loc.edgeIdx = cutEdges[i];
+                loc.onVertex = vIds[i];
+                foundIntersects.push_back(loc);
+                }
+            return true;
+            }
+        else return false;
+
+        }
+    else return false;
+    }
+
+
+
+void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<IntersectionLocation>& foundIntersects, bvector<int32_t>& splitFacet, bool useParam = false)
+    {
+    int hasVertex = -1;
+    if (foundIntersects[0].onVertex != -1)
+        {
+        hasVertex = 0;
+        }
+    else if(foundIntersects[1].onVertex!=-1)
+        {
+        hasVertex = 1;
+        }
+    if (hasVertex != -1)
+        {
+        bvector<int32_t> firstTri(3);
+        firstTri[0] = useParam ? foundIntersects[hasVertex].newParamIdx : foundIntersects[hasVertex].newPtIdx;
+        firstTri[1] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
+        firstTri[2] = splitFacet[(foundIntersects[hasVertex].onVertex + 1) % 3];
+        newFacets.push_back(firstTri);
+        bvector<int32_t> secondTri(3);
+        secondTri[0] = useParam ? foundIntersects[hasVertex].newParamIdx : foundIntersects[hasVertex].newPtIdx;
+        secondTri[1] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
+        secondTri[2] = splitFacet[(foundIntersects[hasVertex].onVertex + 2) % 3];
+        newFacets.push_back(secondTri);
+        }
+    else
+        {
+        int edgeId = 0;
+        if ((foundIntersects[0].edgeIdx == 1 && foundIntersects[1].edgeIdx == 0)
+            || (foundIntersects[1].edgeIdx == 1 && foundIntersects[0].edgeIdx == 0))
+            edgeId = 2;
+        else if ((foundIntersects[0].edgeIdx == 2 && foundIntersects[1].edgeIdx == 0)
+            || (foundIntersects[1].edgeIdx == 2 && foundIntersects[0].edgeIdx == 0))
+            edgeId = 1;
+
+        bvector<int32_t> firstTri(3);
+        firstTri[0] = useParam ? foundIntersects[0].newParamIdx : foundIntersects[0].newPtIdx;
+        firstTri[1] = useParam ? foundIntersects[1].newParamIdx : foundIntersects[1].newPtIdx;
+        firstTri[2] = splitFacet[(edgeId+2) % 3];
+        newFacets.push_back(firstTri);
+        bvector<int32_t> secondTri(3);
+        secondTri[0] = useParam ? foundIntersects[0].newParamIdx : foundIntersects[0].newPtIdx;
+        secondTri[1] = useParam ? foundIntersects[1].newParamIdx : foundIntersects[1].newPtIdx;
+        secondTri[2] = splitFacet[edgeId];
+        newFacets.push_back(secondTri);
+        bvector<int32_t> thirdTri(3);
+        if (foundIntersects[0].edgeIdx == ((edgeId + 1) % 3))
+            thirdTri[0] = useParam ? foundIntersects[0].newParamIdx : foundIntersects[0].newPtIdx;
+        else 
+            thirdTri[0] = useParam ? foundIntersects[1].newParamIdx : foundIntersects[1].newPtIdx;
+        thirdTri[1] = splitFacet[edgeId];
+        thirdTri[2] = splitFacet[(edgeId+1) % 3];
+        newFacets.push_back(thirdTri);
+        }
+    }
+
+void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>& foundIntersects,const DPoint3d* tri, const int* paramIndex, const int* pointIndex, bool isTexturedMesh)
+    {
+    for (auto& intersect : foundIntersects)
+        {
+        if (intersect.onVertex == -1)
+            {
+            intersect.newPtIdx = (int)inOutMesh->Point().AppendAndReturnIndex(intersect.pt);
+            if (isTexturedMesh)
+                {
+                DPoint3d barycentric;
+                bsiDPoint3d_barycentricFromDPoint3dTriangle(&barycentric, &intersect.pt, &tri[0], &tri[1], &tri[2]);
+                DPoint2d newUv;
+                bsiDPoint2d_fromBarycentricAndDPoint2dTriangle(&newUv, &barycentric, inOutMesh->GetParamCP() + paramIndex[0], inOutMesh->GetParamCP() + paramIndex[1], inOutMesh->GetParamCP() + paramIndex[2]);
+                intersect.newParamIdx = (int)inOutMesh->Param().AppendAndReturnIndex(newUv);
+                }
+            }
+        else
+            {
+            intersect.newPtIdx = pointIndex[intersect.onVertex];
+            if (isTexturedMesh) intersect.newParamIdx = paramIndex[intersect.onVertex];
+            }
+        }
+    }
+
+void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, bvector<DPoint3d>& clipSegments)
+    {
+    bvector<DPlane3d> planesFromSegments;
+    bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
+    CreatePlanes(planesFromSegments, clipSegments);
+    for (auto& plane : planesFromSegments)
+        {
+        size_t originalNIdx = inOutMesh->GetPointIndexCount() - 1;
+        PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*inOutMesh);
+        bvector<int> &pointIndex = vis->ClientPointIndex();
+        bvector<int> &param = vis->ClientParamIndex();
+
+        for (vis->Reset(); vis->AdvanceToNextFace() && vis->GetReadIndex() <= originalNIdx; )
+            {
+            DPoint3d tri[3] = { inOutMesh->GetPointCP()[pointIndex[0]], inOutMesh->GetPointCP()[pointIndex[1]], inOutMesh->GetPointCP()[pointIndex[2]] };
+            bvector<IntersectionLocation> results;
+            if (ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri))
+                {
+
+
+                assert(results.size() == 2);
+                InsertCutPoints(inOutMesh, results, tri, meshHasTexture? param.data() : nullptr, pointIndex.data(), meshHasTexture);
+
+                bvector<bvector<int32_t>> newFaces;
+                ComputeReplacementFacets(newFaces, results, pointIndex);
+                assert(!newFaces.empty());
+                if (!newFaces.empty())
+                    {
+                    inOutMesh->PointIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
+                    inOutMesh->PointIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
+                    inOutMesh->PointIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
+                    for (size_t i = 1; i < newFaces.size(); ++i)
+                        {
+                        inOutMesh->PointIndex().push_back(newFaces[i][0] + 1);
+                        inOutMesh->PointIndex().push_back(newFaces[i][1] + 1);
+                        inOutMesh->PointIndex().push_back(newFaces[i][2] + 1);
+                        }
+                    }
+
+                if (meshHasTexture)
+                    {
+                    bvector<bvector<int32_t>> newFaces;
+                    ComputeReplacementFacets(newFaces, results, param, true);
+                    assert(!newFaces.empty());
+                    if (!newFaces.empty())
+                        {
+                        inOutMesh->ParamIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
+                        inOutMesh->ParamIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
+                        inOutMesh->ParamIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
+                        for (size_t i = 1; i < newFaces.size(); ++i)
+                            {
+                            inOutMesh->ParamIndex().push_back(newFaces[i][0] + 1);
+                            inOutMesh->ParamIndex().push_back(newFaces[i][1] + 1);
+                            inOutMesh->ParamIndex().push_back(newFaces[i][2] + 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP)
+    {
+    polyfaces.resize(polygons.size() + 1);
+
+    bvector<ClipVectorPtr> clipPolys;
+    PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    clippedMesh->CopyFrom(*meshP);
+    for (auto& clip : polygons)
+        {
+        ClipVectorPtr cp;
+        bvector<DPoint3d> currentPoly = clip;
+        for (auto& pt : currentPoly)
+            pt.z = 0;
+        CurveVectorPtr curvePtr = CurveVector::CreateLinear(currentPoly, CurveVector::BOUNDARY_TYPE_Outer);
+        cp = ClipVector::CreateFromCurveVector(*curvePtr,1e-8,1e-8);
+
+        InsertMeshCuts(clippedMesh, currentPoly);
+        clipPolys.push_back(cp);
+        }
+     return Process3dRegions(polyfaces, clippedMesh, clipPolys);
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

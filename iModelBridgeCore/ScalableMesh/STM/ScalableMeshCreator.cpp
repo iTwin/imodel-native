@@ -79,6 +79,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
+DataSourceManager IScalableMeshCreator::Impl::s_dataSourceManager;
+
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -536,10 +538,10 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
 
-        // Pip ToDo: Create account?
-        DataSourceAccount *account = nullptr;                                    
+        // Pip ToDo: Create manager?
+            DataSourceManager *manager = &s_dataSourceManager;                                    
         
-        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

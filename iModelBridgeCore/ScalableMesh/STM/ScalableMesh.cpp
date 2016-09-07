@@ -53,6 +53,7 @@ extern bool   GET_HIGHEST_RES;
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
+extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
 
@@ -106,7 +107,7 @@ bool s_useSQLFormat = true;
 
 #define USE_CODE_FOR_ERROR_DETECTION
 
-
+ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
 
 namespace {
 
@@ -385,6 +386,19 @@ int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, cons
     }
 #endif
 
+void IScalableMesh::SetUserFilterCallback(MeshUserFilterCallback callback)
+    {
+   // return _SetUserFilterCallback(callback);
+#ifdef WIP_MESH_IMPORT
+    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>*)s_filterClass)->SetCallback(callback);
+#endif
+    }
+void IScalableMesh::ReFilter()
+    {
+    return _ReFilter();
+    }
+
 /*----------------------------------------------------------------------------+
 |IScalableMesh Method Definition Section - End
 +----------------------------------------------------------------------------*/
@@ -569,84 +583,6 @@ bool ScalableMeshBase::LoadGCSFrom()
     return true;
 }
 
-
-/*----------------------------------------------------------------------------+
-|ScalableMesh::ScalableMesh
-+----------------------------------------------------------------------------*/
-DataSourceStatus ScalableMeshBase::InitializeAzureTest(const WString& directory)
-{
-    DataSourceStatus                            status;
-    if (s_stream_from_disk)
-    {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-
-        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        this->SetDataSourceAccount(accountLocalFile);
-    }
-    else
-    {
-        // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
-    DataSourceAccount::AccountIdentifier    accountIdentifier(L"pcdsustest");
-    DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-    DataSourceService                       *   serviceAzure;
-    DataSourceAccount                       *   accountAzure;
-    DataSourceAccount                       *   accountCaching;
-    DataSourceService                       *   serviceFile;
-
-//  DataSourceAccount                       *   accountCaching;
-//  DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
-
-                                                            // Get the Azure service
-    serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-    if(serviceAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Create an account on Azure
-    accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-    if (accountAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Set ScalableMesh's DataSource
-        this->SetDataSourceAccount(accountAzure);
-
-        /*
-                                                            // Create an Azure specific DataSource
-    dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
-    if (dataSourceAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                            // Blobs will be split up into segments of this size
-    dataSourceAzure->setSegmentSize(1024 * 64);
-                                                            // Time I/O operation timeouts for threading
-    dataSourceAzure->setTimeout(DataSource::Timeout(100000));
-        */
-
-                                                            // Get the file service
-        if ((serviceFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Create an account on the file service for caching
-    if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Set prefix for caching account data sources
-    accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-
-//  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-                                                            // Set up local file based caching
-    accountAzure->setCaching(*accountCaching, DataSourceURL());
-                                                            // Set up default container
-    accountAzure->setPrefixPath(DataSourceURL((WString(L"scalablemeshtest/") + directory).c_str()));
-    }
-
-    return status;
-}
-
-
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
@@ -810,9 +746,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         if (hasPoints || !isSingleFile)
             {    
-            //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-            //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
-            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
+
+
+         //NEEDS_WORK_SM - Why correct filter is not saved?                                             
+         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
+            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(s_filterClass != nullptr ? (ISMMeshIndexFilter<POINT, Extent3dType>*)s_filterClass : new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
 
@@ -821,26 +759,41 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     bool isVirtualGroups = false; // Streaming without node grouping by default
                     isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
 
-                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    auto position = m_path.find_last_of(L".stm");
-                    //auto filenameWithoutExtension = m_path.substr(0, position - 3);
-                    // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"quebeccity2\\");
-                    //WString azureDatasetName(L"quebectest2/");
                     // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
-
-                    if (this->InitializeAzureTest(streamingSourcePath).isFailed())
+                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
+                    WString streamingSourcePath(L"scalablemesh");
+                    WString cloudIndicator(L"_cloud");
+                    //= (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : path.GetFileNameWithoutExtension());
+                    BeFileName path(m_path);
+                    WString datasetName = path.GetFileNameWithoutExtension();
+                    WString separator = s_stream_from_wsg ? L"~2F" : L"/";
+                    bool isCloud = path.Contains(cloudIndicator);
+                    if (isCloud)
                         {
-                        return BSIERROR; // Error loading layer gcs
+                        datasetName.resize(datasetName.length() - cloudIndicator.length());
+                        }
+                    if (isCloud && !s_stream_from_disk)
+                        {
+                        if (s_stream_from_wsg)
+                            {
+                            streamingSourcePath += separator + datasetName;
+                            }
+                        else 
+                            {
+                            streamingSourcePath = datasetName;
+                            }
+                        }
+                    else
+                        {
+                        streamingSourcePath = path.GetDirectoryName();
+                        streamingSourcePath += L"cloud\\";
+                        streamingSourcePath += datasetName;
                         }
 
-                        
 #ifndef VANCOUVER_API                                       
-                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
+                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
 #else
-                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);
 #endif
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
@@ -2072,44 +2025,30 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    s_stream_from_disk = true;
-    s_stream_from_grouped_store = false;
-
-    DataSourceAccount *   account;
+    WString path;
     if (uploadToAzure)
         {
-        // create an Azure account to upload this mesh to
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
-        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-        DataSourceService                       *   serviceAzure;
+        // Setup streaming stores to use server (Azure or WSG)
+        s_stream_from_disk = false;
 
-        // Get the Azure service
-        serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-        if (serviceAzure == nullptr)
-            return ERROR_SERVICE_DOES_NOT_EXIST;
-        // Create an account on Azure
-        account = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-        if (account == nullptr)
-            return ERROR_ACCOUNT_DISABLED;
+        path += outContainerName;
+        path += s_stream_from_wsg ? L"~2F" : L"/";
+        path += outDatasetName;
         }
     else
         {
-        DataSourceService  *   serviceLocalFile;
+        // Setup streaming stores to use local disk (relative to attached stm file location)
+        s_stream_from_disk = true;
 
-        if ((serviceLocalFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return ERROR_SERVICE_DOES_NOT_EXIST;
-
-        // Create an account on the file service streaming
-        if ((account = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return ERROR_ACCOUNT_DISABLED;
+        const auto smFileName = BeFileName(this->GetPath());
+        path += smFileName.GetDirectoryName();
+        path += L"cloud\\";
+        path += smFileName.GetFileNameWithoutExtension();
         }
+    
+    //s_stream_from_grouped_store = false;
 
-    assert(account != nullptr);
-
-    // Set up default container
-    account->setPrefixPath(DataSourceURL((outContainerName + L"/" + outDatasetName).c_str()));
-
-    return m_scmIndexPtr->SaveMeshToCloud(account, false);
+    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -2149,6 +2088,24 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     return SUCCESS;
     }
 #endif
+
+
+template <class POINT> void ScalableMesh<POINT>::_SetUserFilterCallback(MeshUserFilterCallback callback)
+    {/*
+#ifdef WIP_MESH_IMPORT
+    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
+#endif*/
+    }
+template <class POINT> void ScalableMesh<POINT>::_ReFilter()
+    {
+    size_t depth = m_scmIndexPtr->GetDepth();
+    for (int level = (int)depth-1; level >= 0; level--)
+        {
+        m_scmIndexPtr->Filter(level);
+        }
+    m_scmIndexPtr = 0;
+    }
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
