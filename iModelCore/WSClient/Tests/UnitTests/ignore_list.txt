@@ -23,6 +23,28 @@ ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
     # [ RUN      ] ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
     # <Crash, no output or stack printed>
 
+ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # [ RUN      ] ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
+    # <Crash, no output or stack printed>
+
 CachingDataSourceTests.SyncCachedData_AlreadyCachedInstanceReturnedFromQuery_QueryProviderIsNotCalledAgainWithSameInstance
     # DgnDb61-16Q2-Dev, WinX86, DEBUG
     # <Hung, no output printed>
+
+# Following fail due ECDb bug TFS#558189
+ECInstanceKeyFilterTests.AddLabelFilter_EmptyLabelPassed_FindsNoInstances
+ECInstanceKeyFilterTests.AddLabelFilter_MultipleClasses_FiltersByLabel
+ECInstanceKeyFilterTests.AddLabelFilterAndByClass_MultipleClasses_FiltersByLabelAndClass
+ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_SingleClas_FiltersByLabel
+ECInstanceKeyFilterTests.AddAnyPropertiesLikeFilter_MultipleClasses_FiltersByLabel
+ECInstanceKeyFilterTests.SetLimit_OnLabelFilter_ReturnsLimitedInstances
+
+# Needs fixing, new tests from Graphite0505. WIP Vincas
+DataSourceCacheTests.CacheResponse_NewResponseDoesNotContainHoldingRelationshipChild_RemovesChildInstance
+DataSourceCacheTests.CacheResponse_NewResponseNoLongerContainsParent_RemovesCachedInstancesExceptParent
+DataSourceCacheTests.CacheResponse_NewResponseIsEmpty_RemovesCachedInstances
+
+CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
+    # DgnDb61-16Q2-Dev, WinX64, DEBUG
+    # <Crash, no output or stack printed>

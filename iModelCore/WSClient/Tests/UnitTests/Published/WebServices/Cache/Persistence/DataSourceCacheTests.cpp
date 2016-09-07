@@ -1659,6 +1659,60 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
     EXPECT_FALSE(cachedFilePath.DoesPathExist());
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_NewResponseDoesNotContainHoldingRelationshipChild_RemovesChildInstance)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestHoldingRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NewResponseNoLongerContainsParent_RemovesCachedInstancesExceptParent)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestHoldingRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    instances.Clear();
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NewResponseIsEmpty_RemovesCachedInstances)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestHoldingRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    instances.Clear();
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanceToCache)
     {
     auto cache = GetTestCache();

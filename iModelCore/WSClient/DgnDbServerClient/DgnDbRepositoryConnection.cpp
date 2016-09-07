@@ -10,6 +10,7 @@
 #include <WebServices/Client/WSChangeset.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
+#include <DgnDbServer/Client/Logging.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -124,24 +125,33 @@ ICancellationTokenPtr    cancellationToken,
 AuthenticationHandlerPtr authenticationHandler
 )
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::Create";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (repository.GetId().empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
         }
     if (repository.GetServerURL().empty())
         {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!credentials.IsValid() && !authenticationHandler)
         {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
 
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
     #ifndef DEBUG
     if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
     #endif
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
+
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
     return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
     }
 
@@ -163,6 +173,7 @@ Json::Value CreateFileJson(FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::CreateNewServerFile";
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
     return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then
         ([=] (const WSCreateObjectResult& result)
@@ -178,6 +189,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
         if (DgnDbServerError::Id::FileAlreadyExists != error.GetId())
             {
             finalResult->SetError(error);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
             return;
             }
 
@@ -186,6 +198,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
         if (initialized)
             {
             finalResult->SetError(error);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
             return;
             }
 
@@ -199,13 +212,17 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
             if (!queryResult.IsSuccess())
                 {
                 finalResult->SetError(queryResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
             JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
             if (repositoryInstances.isArray())
                 finalResult->SetSuccess(FileInfo::FromJson(repositoryInstances[0], fileInfo));
             else
+                {
                 finalResult->SetError(error);
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+                }
             });
 
         })->Then<DgnDbServerFileResult>([=] ()
@@ -219,13 +236,18 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::UpdateServerFile";
     Json::Value properties = Json::objectValue;
     fileInfo.ToPropertiesJson(properties);
     return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
     ([=] (const WSUpdateObjectResult& result)
         {
         if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(result.GetError());
+            }
+
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -235,14 +257,22 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR 
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::OnPremiseFileUpload";
     if (objectId.remoteId.empty())
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepostioryName)); //NEEDSWORK
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryName)); //NEEDSWORK
+        }
 
     return m_wsRepositoryClient->SendUpdateFileRequest(objectId, filePath, callback, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (const WSUpdateFileResult& uploadFileResult)
         {
         if (!uploadFileResult.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadFileResult.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(uploadFileResult.GetError());
+            }
+
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -252,12 +282,17 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNa
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::AzureFileUpload";
     IAzureBlobStorageClientPtr azureClient = AzureBlobStorageClient::Create();
     return azureClient->SendUpdateFileRequest(url, filePath, callback, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
         {
         if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+            }
+
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -278,6 +313,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UploadServerFile(BeFileNameC
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::InitializeServerFile";
     Json::Value fileProperties;
     fileInfo.ToPropertiesJson(fileProperties);
     fileProperties[ServerSchema::Property::IsUploaded] = true;
@@ -286,7 +322,11 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
         ->Then<DgnDbServerStatusResult>([=] (const WSUpdateObjectResult& initializeFileResult)
         {
         if (!initializeFileResult.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializeFileResult.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(initializeFileResult.GetError());
+            }
+
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -296,11 +336,20 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::LockRepository";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     FileInfo fileInfo = FileInfo(fileId);
     return CreateNewServerFile(FileInfo(fileId), cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbServerFileResultCR result)
         {
         if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(result.GetError());
+            }
+
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -310,12 +359,16 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId
 //---------------------------------------------------------------------------------------
 DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::UploadNewMasterFile";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
     return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
         {
         if (!fileCreationResult.IsSuccess())
             {
             finalResult->SetError(fileCreationResult.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileCreationResult.GetError().GetMessage().c_str());
             return;
             }
 
@@ -326,6 +379,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
             if (!fileUpdateResult.IsSuccess())
                 {
                 finalResult->SetError(fileUpdateResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileUpdateResult.GetError().GetMessage().c_str());
                 return;
                 }
             }
@@ -336,16 +390,22 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
             if (!uploadResult.IsSuccess())
                 {
                 finalResult->SetError(uploadResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadResult.GetError().GetMessage().c_str());
                 return;
                 }
             InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
                 {
                 if (!initializationResult.IsSuccess())
+                    {
                     finalResult->SetError(initializationResult.GetError());
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializationResult.GetError().GetMessage().c_str());
+                    }
                 });
             });
         })->Then<DgnDbServerFileResult>([=] ()
             {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             return *finalResult;
             });
     }
@@ -355,6 +415,9 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DeleteLastMasterFile";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
     filter.Sprintf("%s+eq+false", ServerSchema::Property::Initialized);
@@ -365,6 +428,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancel
         if (!result.IsSuccess())
             {
             finalResult->SetError(result.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return;
             }
         
@@ -372,15 +436,23 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancel
         if (!instances.isArray())
             {
             finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
             return;
             }
         auto fileInfo = FileInfo::FromJson(instances[0], FileInfo());
         m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
             {
             if (!deleteResult.IsSuccess())
+                {
                 finalResult->SetError(deleteResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, deleteResult.GetError().GetMessage().c_str());
+                }
             else
+                {
                 finalResult->SetSuccess();
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                }
             });
         })->Then<DgnDbServerStatusResult>([=] ()
             {
@@ -397,6 +469,7 @@ BeFileName                     filePath,
 BeBriefcaseId                  briefcaseId
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile";
     BeSQLite::DbResult status;
 
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
@@ -411,7 +484,9 @@ BeBriefcaseId                  briefcaseId
         }
     else
         {
-        result = DgnDbServerStatusResult::Error(DgnDbServerError(db, status));
+        auto error = DgnDbServerError(db, status);
+        result = DgnDbServerStatusResult::Error(error);
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
         if (db.IsValid())
             db->CloseDb();
         }
@@ -432,6 +507,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DownloadBriefcaseFile";
     if (url.empty())
         {
         Utf8String instanceId;
@@ -443,7 +519,10 @@ ICancellationTokenPtr           cancellationToken
             if (fileResult.IsSuccess())
                 return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
             else
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
                 return DgnDbServerStatusResult::Error(fileResult.GetError());
+                }
             });
         }
     else
@@ -455,7 +534,10 @@ ICancellationTokenPtr           cancellationToken
             if (result.IsSuccess())
                 return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
             else
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+                }
             });
         }
     }
@@ -470,6 +552,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionFile";
     ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetRevision()->GetId());
     
     if (revision->GetURL().empty())
@@ -480,7 +563,10 @@ ICancellationTokenPtr           cancellationToken
             if (fileResult.IsSuccess())
                 return DgnDbServerStatusResult::Success();
             else
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
                 return DgnDbServerStatusResult::Error(fileResult.GetError());
+                }
             });
         }
     else
@@ -492,7 +578,10 @@ ICancellationTokenPtr           cancellationToken
             if (result.IsSuccess())
                 return DgnDbServerStatusResult::Success();
             else
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+                }
             });
         }
     }
@@ -940,6 +1029,7 @@ const BeBriefcaseId*  briefcaseId
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
         ([=] (const WSChangesetResult& result)
@@ -947,7 +1037,10 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::sh
         if (result.IsSuccess())
             return DgnDbServerStatusResult::Success();
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(result.GetError());
+            }
         });
     }
 
@@ -963,6 +1056,8 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
     ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::AcquireCodesLocks";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     
     SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified); 
@@ -1009,6 +1104,8 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DemoteCodesLocks";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     //How to set description here?
     std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
     SetLocksJsonRequestToChangeSet (locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
@@ -1029,10 +1126,101 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::RelinquishCodesLocks";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     auto changeset = LockDeleteAllJsonRequest (briefcaseId);
     CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
     return SendChangesetRequest(changeset, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+    return QueryBriefcaseInfoInternal(query, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+    {
+    Utf8String filter;
+    filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId);
+
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+    query.SetFilter(filter);
+
+    return QueryBriefcaseInfoInternal(query, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcasesInfo
+(
+bvector<BeSQLite::BeBriefcaseId>& briefcaseIds,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::deque<ObjectId> queryIds;
+    for (auto& id : briefcaseIds)
+        {
+        Utf8String idString;
+        idString.Sprintf("%lu", id.GetValue());
+        queryIds.push_back(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, idString));
+        }
+
+    bset<DgnDbBriefcasesInfoTaskPtr> tasks;
+    while (!queryIds.empty())
+        {
+        WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+        query.AddFilterIdsIn(queryIds);
+        auto task = QueryBriefcaseInfoInternal(query, cancellationToken);
+
+        tasks.insert(task);
+        }
+
+    auto finalValue = std::make_shared<bvector<std::shared_ptr<DgnDbBriefcaseInfo>>>();
+
+    return AsyncTask::WhenAll(tasks)
+        ->Then<DgnDbBriefcasesInfoResult>([=]
+        {
+        for (auto& task : tasks)
+            {
+            if (!task->GetResult().IsSuccess())
+                return DgnDbBriefcasesInfoResult::Error(task->GetResult().GetError());
+
+            auto briefcaseInfo = task->GetResult().GetValue();
+            finalValue->insert(finalValue->end(), briefcaseInfo.begin(), briefcaseInfo.end());
+            }
+
+        return DgnDbBriefcasesInfoResult::Success(*finalValue);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
+    {
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        ->Then<DgnDbBriefcasesInfoResult>([=] (const WSObjectsResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbBriefcasesInfoResult::Error(result.GetError());
+
+        bvector<std::shared_ptr<DgnDbBriefcaseInfo>> briefcases;
+        for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+            {
+            briefcases.push_back(DgnDbBriefcaseInfo::FromJson(value));
+            }
+
+        return DgnDbBriefcasesInfoResult::Success(briefcases);
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1045,6 +1233,8 @@ LockableIdSet const& locks,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksById";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return QueryCodesLocksInternal(&codes, &locks, nullptr, cancellationToken);
     }
 
@@ -1059,6 +1249,8 @@ BeBriefcaseId briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksById";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return QueryCodesLocksInternal(&codes, &locks, &briefcaseId, cancellationToken);
     }
 
@@ -1071,6 +1263,8 @@ const BeBriefcaseId  briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocks";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return QueryCodesLocksInternal(nullptr, nullptr, &briefcaseId, cancellationToken);
     }
 
@@ -1085,6 +1279,7 @@ const BeBriefcaseId*  briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksInternal";
     std::set<Utf8String> classes;
     classes.insert(ServerSchema::Class::Lock);
     classes.insert(ServerSchema::Class::Code);
@@ -1130,10 +1325,14 @@ ICancellationTokenPtr cancellationToken
                     }
                 //NEEDSWORK: log an error
                 }
+
             return DgnDbServerCodeLockSetResult::Success(codesLocks);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerCodeLockSetResult::Error(result.GetError());
+            }
         });
     }
 
@@ -1202,8 +1401,14 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
     ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryUnavailableCodesLocks";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid briefcase.");
         return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(DgnDbServerError::Id::InvalidBriefcase));
+        }
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
     return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
         {
@@ -1211,6 +1416,7 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
         if (!revisionResult.IsSuccess() && revisionResult.GetError().GetId() != DgnDbServerError::Id::InvalidRevision)
             {
             finalResult->SetError(revisionResult.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
             return;
             }
         else if (revisionResult.IsSuccess())
@@ -1225,6 +1431,7 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
             if (!result.IsSuccess())
                 {
                 finalResult->SetError(result.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return;
                 }
             DgnDbCodeLockSetResultInfo codesLocks;
@@ -1233,6 +1440,8 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
                 AddCodeLock(codesLocks, value);
                 }
             finalResult->SetSuccess(codesLocks);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             });
         })->Then<DgnDbServerCodeLockSetResult>([=] ()
             {
@@ -1271,6 +1480,9 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumInd
     ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodeMaximumIndex";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
@@ -1294,10 +1506,15 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumInd
                     }
                 //NEEDSWORK: log an error
                 }
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             return DgnDbServerCodeTemplateSetResult::Success(templates);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+            }
         });
     }
 
@@ -1306,6 +1523,9 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumInd
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodeNextAvailable";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created, startIndex, incrementBy);
@@ -1328,10 +1548,15 @@ DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvaila
                     }
                 //NEEDSWORK: log an error
                 }
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             return DgnDbServerCodeTemplateSetResult::Success(templates);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+            }
         });
     }
 
@@ -1376,6 +1601,8 @@ DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetAllRevisions";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     BeAssert (DgnDbServerHost::IsInitialized ());
     WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
     return RevisionsFromQuery (query, cancellationToken);
@@ -1390,6 +1617,7 @@ Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionIndex";
     if (revisionId.empty())
         {
         return CreateCompletedAsyncTask<DgnDbServerUInt64Result>(DgnDbServerUInt64Result::Success(0));
@@ -1404,10 +1632,14 @@ ICancellationTokenPtr cancellationToken
             JsonValueCR instances = revisionResult.GetValue().GetJsonValue()[ServerSchema::Instances];
             if (instances.isValidIndex(0))
                 index = instances[0][ServerSchema::Properties][ServerSchema::Property::Index].asInt64() + 1;
+
             return DgnDbServerUInt64Result::Success(index);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
             return DgnDbServerUInt64Result::Error(revisionResult.GetError());
+            }
         });
     }
 
@@ -1420,11 +1652,15 @@ Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionById";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     BeAssert(DgnDbServerHost::IsInitialized());
     if (revisionId.empty())
         {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid revision.");
         return CreateCompletedAsyncTask<DgnDbServerRevisionResult>(DgnDbServerRevisionResult::Error(DgnDbServerError::Id::InvalidRevision));
         }
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     ObjectId revisionObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
     return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbServerRevisionResult>
         ([=] (WSObjectsResult& revisionResult)
@@ -1432,10 +1668,15 @@ ICancellationTokenPtr cancellationToken
         if (revisionResult.IsSuccess())
             {
             auto revision = ParseRevision(revisionResult.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties]);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             return DgnDbServerRevisionResult::Success(revision);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
             return DgnDbServerRevisionResult::Error(revisionResult.GetError());
+            }
         });
     }
 
@@ -1775,6 +2016,7 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
     int numOfRetries
 )
 {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceResponse";
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
         ->Then<DgnDbServerEventReponseResult>([=, &numOfRetries](const EventServiceResult& result)
     {
@@ -1782,7 +2024,11 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
         {
             Http::Response response = result.GetValue();
             if (response.GetHttpStatus() != HttpStatus::OK)
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
+                }
+
             return DgnDbServerEventReponseResult::Success(response);
         }
         else
@@ -1790,6 +2036,7 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
             HttpStatus status = result.GetError().GetHttpStatus();
             if (status == HttpStatus::NoContent || status == HttpStatus::None)
             {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
                 return DgnDbServerEventReponseResult::Error(DgnDbServerError::Id::NoEventsFound);
             }
             else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
@@ -1800,6 +2047,7 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
             }
             else
             {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
             }
         }
@@ -1819,10 +2067,16 @@ bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetEvent";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (m_eventServiceClient == nullptr || m_eventSubscription == nullptr || m_eventSAS == nullptr)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Not subscribed to event service.");
         return CreateCompletedAsyncTask<DgnDbServerEventResult>
-        (DgnDbServerEventResult::Error(DgnDbServerError::Id::NotSubscribedToEventService));
+            (DgnDbServerEventResult::Error(DgnDbServerError::Id::NotSubscribedToEventService));
+        }
 
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     return GetEventServiceResponse()->Then<DgnDbServerEventResult>
         ([=] (DgnDbServerEventReponseResult& result)
         {
@@ -1831,9 +2085,15 @@ ICancellationTokenPtr cancellationToken
             Http::Response response = result.GetValue();
             DgnDbServerEventPtr ptr = DgnDbServerEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
             if (ptr == nullptr)
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
                 return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
+                }
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
             return DgnDbServerEventResult::Success(ptr);
             }
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return DgnDbServerEventResult::Error(result.GetError());
         });
     }
@@ -1848,6 +2108,8 @@ bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 ICancellationTokenPtr cancellationToken
 )
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::SubscribeToEvents";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     return (SetEventServiceClient(eventTypes, cancellationToken)) ?
         CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success()) :
         CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventServiceSubscribingError));
@@ -1859,6 +2121,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::UnsubscribeToEvents";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (m_eventServiceClient != nullptr)
         m_eventServiceClient->CancelRequest();
     m_eventServiceClient = nullptr;
@@ -1880,6 +2144,7 @@ const WebServices::WSQuery& query,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::RevisionsFromQuery";
     BeAssert(DgnDbServerHost::IsInitialized());
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRevisionsResult>
         ([=] (const WSObjectsResult& revisionsInfoResult)
@@ -1896,7 +2161,10 @@ ICancellationTokenPtr       cancellationToken
             return DgnDbServerRevisionsResult::Success(indexedRevisions);
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsInfoResult.GetError().GetMessage().c_str());
             return DgnDbServerRevisionsResult::Error(revisionsInfoResult.GetError());
+            }
         });
     }
 
@@ -1909,6 +2177,9 @@ Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionsAfterId";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
     return GetRevisionIndex(revisionId, cancellationToken)->Then([=] (const DgnDbServerUInt64Result& indexResult)
@@ -1922,13 +2193,23 @@ ICancellationTokenPtr cancellationToken
             RevisionsFromQuery(query, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
                 {
                 if (revisionsResult.IsSuccess())
+                    {
                     finalResult->SetSuccess(revisionsResult.GetValue());
+                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                    }
                 else
+                    {
                     finalResult->SetError(revisionsResult.GetError());
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
+                    }
                 });
             }
         else
+            {
             finalResult->SetError(indexResult.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, indexResult.GetError().GetMessage().c_str());
+            }
         })->Then<DgnDbServerRevisionsResult>([=] ()
         {
         return *finalResult;
@@ -1945,6 +2226,9 @@ Http::Request::ProgressCallbackCR        callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisions";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     bset<std::shared_ptr<AsyncTask>> tasks;
     for (auto& revision : revisions)
         tasks.insert(DownloadRevisionFile(revision, callback, cancellationToken));
@@ -1954,8 +2238,13 @@ ICancellationTokenPtr                  cancellationToken
             {
             auto result = dynamic_pointer_cast<DgnDbServerStatusTask>(task)->GetResult();
             if (!result.IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                 return DgnDbServerStatusResult::Error(result.GetError());
+                }
             }
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return DgnDbServerStatusResult::Success();
         });
     }
@@ -1970,6 +2259,9 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionsAfterId";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
     return GetRevisionsAfterId(revisionId, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
         {
@@ -1978,13 +2270,23 @@ ICancellationTokenPtr           cancellationToken
             DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
+                    {
+                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
                     finalResult->SetSuccess(revisionsResult.GetValue());
+                    }
                 else
+                    {
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
                     finalResult->SetError(downloadResult.GetError());
+                    }
                 });
             }
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
             finalResult->SetError(revisionsResult.GetError());
+            }
         })->Then<DgnDbServerRevisionsResult>([=] ()
             {
             return *finalResult;
@@ -2079,6 +2381,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::Push";
     // Stage 1. Create revision.
     std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, m_repositoryInfo.GetId(), briefcaseId));
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
@@ -2087,6 +2390,7 @@ ICancellationTokenPtr           cancellationToken
         {
         if (!initializePushResult.IsSuccess())
             {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializePushResult.GetError().GetMessage().c_str());
             finalResult->SetError(initializePushResult.GetError());
             return;
             }
@@ -2104,6 +2408,7 @@ ICancellationTokenPtr           cancellationToken
                 {
                 if (!uploadRevisionResult.IsSuccess())
                     {
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadRevisionResult.GetError().GetMessage().c_str());
                     finalResult->SetError(uploadRevisionResult.GetError());
                     return;
                     }
@@ -2115,7 +2420,10 @@ ICancellationTokenPtr           cancellationToken
                     if (result.IsSuccess())
                         finalResult->SetSuccess();
                     else
+                        {
+                        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                         finalResult->SetError(result.GetError());
+                        }
                     });
                 });
             }
@@ -2126,6 +2434,7 @@ ICancellationTokenPtr           cancellationToken
                 {
                 if (!result.IsSuccess())
                     {
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                     finalResult->SetError(DgnDbServerError(result.GetError()));
                     return;
                     }
@@ -2137,7 +2446,10 @@ ICancellationTokenPtr           cancellationToken
                     if (result.IsSuccess())
                         finalResult->SetSuccess();
                     else
+                        {
+                        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                         finalResult->SetError(result.GetError());
+                        }
                     });
                 });
             }
@@ -2162,10 +2474,15 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::VerifyConnection(ICancellati
     {
     return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<DgnDbServerStatusResult>([] (const AsyncResult<void, WSError>& result)
         {
+        const Utf8String methodName = "DgnDbRepositoryConnection::VerifyConnection";
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
         if (result.IsSuccess())
             return DgnDbServerStatusResult::Success();
         else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerStatusResult::Error(result.GetError());
+            }
         });
     }
 

@@ -48,7 +48,7 @@ struct MockChangeManager : public IChangeManager
         MOCK_METHOD2(ModifyFileName,
             BentleyStatus(ECInstanceKeyCR, Utf8StringCR));
         MOCK_METHOD2(DetectFileModification,
-            BentleyStatus(ECInstanceKeyCR, SyncStatus));
+            BentleyStatus(ECInstanceKeyCR, bool&));
         MOCK_METHOD2 (SetSyncStatus,
             BentleyStatus (ECInstanceKeyCR, SyncStatus));
         MOCK_METHOD2 (AddCreatedInstanceToResponse, 

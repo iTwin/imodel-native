@@ -22,6 +22,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h    \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Logging.h                         \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEventParser.h   \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
@@ -30,11 +31,14 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
                                 $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h
+                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h	            \
+				$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcaseInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
 #----------------------------------------------------------------------------------------
+
+$(o)Logging$(oext)                         : $(DgnDbServerClientMkiSourceDir)Logging.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
@@ -45,6 +49,8 @@ $(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSubscription.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbBriefcaseInfo$(oext)              : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
