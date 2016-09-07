@@ -328,3 +328,51 @@ TEST(StatementTests, VerifyJsonExtensionEnabled)
     EXPECT_EQ (1, stmt.GetValueInt(0));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(StatementTests, InVirtualSet)
+    {
+    initBeSQLiteLib();
+    Utf8String dbPath;
+    {
+    Db db;
+    createDB(L"invirtualset.db", db);
+    ASSERT_EQ(BE_SQLITE_OK, db.CreateTable("testVirtualSet", "Id INTEGER PRIMARY KEY, Name TEXT COLLATE NOCASE, Priority INTEGER"));
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db,"INSERT INTO testVirtualSet(Id,Name,Priority) VALUES(?,?,?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindUInt64(1, UINT64_C(1)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(2, "test1", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(3, 10));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+        
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindUInt64(1, UINT64_C(2)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(2, "test2", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt(3, 20));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    db.SaveChanges();
+    dbPath.assign(db.GetDbFileName());
+    }
+
+    Db db;
+    ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly)));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT count(*) FROM testVirtualSet WHERE InVirtualSet(?,Id)")) << db.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "InVirtualSet without binding is expected to fail.";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindNull(1)) << "InVirtualSet with binding NULL: " << db.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "InVirtualSet with binding NULL is expected to fail.";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    IdSet<BeInt64Id> emptyIdset;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindVirtualSet(1, emptyIdset)) << "InVirtualSet with binding an empty virtual set: " << db.GetLastError().c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "InVirtualSet with binding an empty virtual set: " << db.GetLastError().c_str();
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << "InVirtualSet with binding an empty virtual set";
+    }
