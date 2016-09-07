@@ -53,7 +53,7 @@ static double rowToLatitude(uint32_t row, double nTiles)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LatLongPoint)
 
 //=======================================================================================
-// A point (in meters) on the web mercator projection of the earth.
+// A point (in meters) on the web Mercator projection of the earth.
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct WebMercatorPoint : DPoint2d
@@ -61,7 +61,7 @@ struct WebMercatorPoint : DPoint2d
     WebMercatorPoint() {}
     explicit WebMercatorPoint(GeoPoint);
     static double EarthRadius() {return 6378137.0;}
-    static double LatitudeToAngle(double latitude) 
+    static double LatitudeToAngle(double latitude)
         {
         double sinLatitude = sin(latitude);
         return 0.5 * log((1.0 + sinLatitude) / (1.0 - sinLatitude));
@@ -74,7 +74,7 @@ struct WebMercatorPoint : DPoint2d
 struct LatLongPoint : GeoPoint
 {
     LatLongPoint() {}
-    explicit LatLongPoint(WebMercatorPoint mercator) 
+    explicit LatLongPoint(WebMercatorPoint mercator)
         {
         longitude = Angle::RadiansToDegrees(mercator.x  / WebMercatorPoint::EarthRadius());
         latitude  = Angle::RadiansToDegrees(angleToLatitude(mercator.y / WebMercatorPoint::EarthRadius()));
@@ -83,7 +83,7 @@ struct LatLongPoint : GeoPoint
 };
 
 /*---------------------------------------------------------------------------------**//**
-* convert a LatLong coordinate to web mercator meters
+* convert a LatLong coordinate to web Mercator meters
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
@@ -93,6 +93,7 @@ WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
     }
 
 //=======================================================================================
+// The ProgressiveTask for drawing WebMercator tiles as they arrive asynchronously.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct WebMercatorProgressive : ProgressiveTask
@@ -100,7 +101,7 @@ struct WebMercatorProgressive : ProgressiveTask
     MapRootR m_root;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
-    
+
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes) : m_root(root), m_missing(std::move(nodes)){}
 };
@@ -108,17 +109,19 @@ struct WebMercatorProgressive : ProgressiveTask
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* WebMercator tile names are of the form: "level/column/row"
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapTile::_GetTileName() const 
+Utf8String MapTile::_GetTileName() const
     {
     return Utf8PrintfString("%d/%d/%d", m_id.m_zoomLevel, m_id.m_column, m_id.m_row);
     }
 
 /*---------------------------------------------------------------------------------**//**
+* tile at maximum zoom level do not have children
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MapTile::_HasChildren() const 
+bool MapTile::_HasChildren() const
     {
     return m_id.m_zoomLevel < m_mapRoot.m_maxZoom;
     }
@@ -126,12 +129,12 @@ bool MapTile::_HasChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* MapTile::_GetChildren(bool load) const 
+Tile::ChildTiles const* MapTile::_GetChildren(bool create) const
     {
     if (!_HasChildren()) // is this is the highest resolution tile?
         return nullptr;
 
-    if (load && m_children.empty())
+    if (create && m_children.empty())
         {
         // this Tile has children, but we haven't created them yet. Do so now
         uint8_t level = m_id.m_zoomLevel+1;
@@ -171,6 +174,7 @@ bool MapTile::TryLowerRes(DrawArgsR args, int depth) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* We do not have any graphics for this tile, try its immediate children. Not recursive.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MapTile::TryHigherRes(DrawArgsR args) const
@@ -190,9 +194,9 @@ void MapTile::TryHigherRes(DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::_DrawGraphics(DrawArgsR args, int depth) const 
+void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
     {
-    if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
+    if (!m_reprojected)  // if we were unable to re-project this tile, don't draw it.
         return;
 
     if (!IsReady())
@@ -211,9 +215,12 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* This map tile just became available from some source (file, cache, http). Load its data and create
+* a Render::Graphic to draw it. Only when finished, set the "ready" flag.
+* @note this method can be called on many threads, simultaneously.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MapTile::_Read(StreamBuffer& data, RootR root) 
+BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
     {
     MapRootR mapRoot = (MapRootR) root;
 
@@ -225,24 +232,29 @@ BentleyStatus MapTile::_Read(StreamBuffer& data, RootR root)
     auto texture = root.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
     data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
-    graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0);
-    graphic->AddTile(*texture, m_corners);
+    graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
+    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    auto stat = graphic->Close();
+    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
 
     m_graphic = graphic;
-    SetIsReady();
+
+    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Attempt to reproject the corners of this tile through the non-linear GCS of the BIM file. For LatLong points far
+* away from the center of the BIM, this reprojection may fail. In that case, mark this tile as "not reprojected". Its
+* coordinates will be calculated through the approximate linear transform for purposes of volume testing, but we will
+* never display this tile.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     {
-    if (m_id.m_zoomLevel < 1)   // top zoom level never reproject properly
+    if (m_id.m_zoomLevel < 1)   // top zoom level never re-project properly
         return ERROR;
 
     IGraphicBuilder::TileCorners corners;
@@ -250,16 +262,19 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     for (int i=0; i<4; ++i)
         {
         if (SUCCESS != units.XyzFromLatLong(corners.m_pts[i], llPts[i]))
-            return ERROR; // only use reprojection if all 4 corners reproject properly
+            return ERROR; // only use re-projection if all 4 corners re-project properly
         }
 
+    // All points were successfully reprojected. Save reprojected corners and mark tile as displayble.
     m_reprojected = true;
     m_corners = corners;
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Construct a new MapTile by TileId. 
+* Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.
+* If the projection fails, the tile will not be displayable (but we still need an approximate range for
+* frustum testing).
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_mapRoot(root), m_id(id)
@@ -291,8 +306,6 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
 
     if (parent)
         parent->ExtendRange(m_range);
-
-    m_maxSize = root.GetMaxPixelSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,9 +322,10 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Combine the three parts of the full tile URL: rootUrl + tileName + urlSuffix.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapRoot::_ConstructTileName(TileCR tile) 
+Utf8String MapRoot::_ConstructTileName(TileCR tile)
     {
     return m_rootUrl + tile._GetTileName() + m_urlSuffix;
     }
@@ -319,7 +333,7 @@ Utf8String MapRoot::_ConstructTileName(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency, 
+MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
         uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, realityCacheName, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
@@ -330,12 +344,12 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
 
-    // We need a linear transform for the topmost tiles that are out of range for the BIM's reprojection system. To do that, create a GCS for 
-    // the web mercator projection system used by map servers, and then get the transform at the center of the BIM's project extents.
+    // We need a linear transform for the topmost tiles that are out of range for the BIM's reprojection system. To do that, create a GCS for
+    // the web Mercator projection system used by map servers, and then get the transform at the center of the BIM's project extents.
     WString warningMsg;
     StatusInt status, warning;
     DgnGCSPtr wgs84 = DgnGCS::CreateGCS(db);
-    status = wgs84->InitFromEPSGCode(&warning, &warningMsg, WEB_MERCATOR_EPSG); 
+    status = wgs84->InitFromEPSGCode(&warning, &warningMsg, WEB_MERCATOR_EPSG);
     if (SUCCESS != status)
         {
         BeAssert(false);
@@ -376,14 +390,17 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
 
     args.DrawGraphics(context);
 
+    // Do we still have missing tiles?
     if (!args.m_missing.empty())
         {
+        // yes, request them and schedule a progressive task to draw them as they arrive.
         args.RequestMissingTiles(*m_root);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
@@ -403,7 +420,7 @@ ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveCo
         }
 
     args.RequestMissingTiles(m_root);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
+    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
@@ -479,8 +496,8 @@ DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, Properties const& props) : T_Super::CreateParams(dgndb, 
-    DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel")), 
+WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, Properties const& props) : T_Super::CreateParams(dgndb,
+    DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel")),
     DgnModel::CreateModelCode(getStreetMapServerDescription(props.m_mapType))),
     m_properties(props)
     {
@@ -559,7 +576,7 @@ void WebMercatorModel::Load(SystemP renderSys) const
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_properties.m_groundBias));
-    
-    uint32_t maxSize = 362; // the maxium pixel size for a tile. Approximately sqrt(256^2 + 256^2). This lets tiles get approximately twice their natrual size
+
+    uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
     m_root = new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
     }

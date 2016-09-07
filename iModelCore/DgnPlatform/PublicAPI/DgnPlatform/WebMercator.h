@@ -43,32 +43,6 @@ struct TileId
 };
 
 //=======================================================================================
-//! A web mercator map tile. May or may not have its graphics downloaded.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct MapTile : TileTree::Tile
-{
-    TileId m_id;                                        //! tile id 
-    Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
-    MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
-    bool m_reprojected = false;                         //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
-    Render::GraphicPtr m_graphic;                       //! the texture for this tile.
-
-    StatusInt ReprojectCorners(GeoPoint*);
-    TileId GetTileId() const {return m_id;}
-    MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
-
-    BentleyStatus _Read(TileTree::StreamBuffer&, TileTree::RootR) override;
-    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawArgsR args) const;
-    bool _HasChildren() const override;
-    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
-    ChildTiles const* _GetChildren(bool load) const override;
-    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
-    Utf8String _GetTileName() const override;
-};
-
-//=======================================================================================
 //! The root of a multi-resolution web mercator map.
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
@@ -86,6 +60,33 @@ struct MapRoot : TileTree::Root
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
+};
+
+//=======================================================================================
+//! A web mercator map tile. May or may not have its graphics downloaded.
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct MapTile : TileTree::Tile
+{
+    TileId m_id;                                        //! tile id 
+    Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
+    MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
+    bool m_reprojected = false;                         //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
+    Render::GraphicPtr m_graphic;                       //! the texture for this tile.
+
+    StatusInt ReprojectCorners(GeoPoint*);
+    TileId GetTileId() const {return m_id;}
+    MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
+
+    BentleyStatus _LoadTile(TileTree::StreamBuffer&, TileTree::RootR) override;
+    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawArgsR args) const;
+    bool _HasChildren() const override;
+    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
+    ChildTiles const* _GetChildren(bool load) const override;
+    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    Utf8String _GetTileName() const override;
+    double _GetMaximumSize() const override {return m_mapRoot.GetMaxPixelSize();}
 };
 
 //=======================================================================================
