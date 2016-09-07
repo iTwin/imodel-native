@@ -11,7 +11,8 @@ using namespace ISMStore;
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(size_t pi_SplitTreshold,
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeInd, 
+        size_t pi_SplitTreshold,
         const EXTENT& pi_rExtent,        
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
@@ -78,9 +79,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         }
     
     m_isGrid = false;
-
-
-    m_nodeId = m_SMIndex->GetNextNodeId();    
+    m_nodeId = nodeInd;
 
     m_isDirty = false;
 
@@ -154,7 +153,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
 
-    m_nodeId = m_SMIndex->GetNextNodeId();
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
     m_isDirty = false;
@@ -232,7 +231,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
    
-    m_nodeId = m_SMIndex->GetNextNodeId();
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
 
@@ -7821,7 +7820,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::UnsplitEmp
 
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetNextNodeId(), GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
     pNewNode->m_isGenerating = m_isGenerating;
 
     if (isRootNode)

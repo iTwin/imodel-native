@@ -145,7 +145,8 @@ public:
     typedef std::map<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
    
-    SMPointIndexNode(size_t pi_SplitTreshold,
+    SMPointIndexNode(uint64_t nodeInd, 
+                      size_t pi_SplitTreshold,
                       const EXTENT& pi_rExtent,                                            
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,

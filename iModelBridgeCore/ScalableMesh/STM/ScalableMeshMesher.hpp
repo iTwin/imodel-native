@@ -54,12 +54,14 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
+
+#if SM_TRACE_MESH_STATS
     LOG_SET_PATH("E:\\output\\scmesh\\2016-05-27\\")
     LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-27\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
-    //NEEDS_WORK_SM
-
+#endif
+    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
     if (pointsPtr->size() > 4)
@@ -129,6 +131,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)defs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
             status = bcdtmObject_triangulateDtmObject(dtmObjP);
+
+#if SM_TRACE_FEATURE_DEFINITIONS
             bool dbg = false;
             if(dbg)
                 {
@@ -141,6 +145,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 fwrite(&points[0], sizeof(DPoint3d), _nVertices, _meshFile); 
                 fclose(_meshFile);
                 }
+#endif
+
 #if 0
             WString dtmFileName(LOG_PATH_STR_W + L"meshtile_");
             LOGSTRING_NODE_INFO_W(node, dtmFileName)
@@ -1300,12 +1306,13 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP);
 
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
-    {
-    //return true;
+    {    
+#if SM_TRACE_MESH_STATS
     LOG_SET_PATH("E:\\output\\scmesh\\2016-07-15\\")
     LOG_SET_PATH_W("E:\\output\\scmesh\\2016-07-15\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
+#endif
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
     //bool hasPtsToTrack = false;

@@ -1009,7 +1009,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));    
     SmCachedDisplayTexture* nodeTex = nullptr;
     meshNodePtr->GetCachedTexture(nodeTex);
-    if (!meshNodePtr->IsLoaded() || (loadTexture != (nodeTex != nullptr)) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
+    if (!meshNodePtr->IsLoaded() || (loadTexture != (nodeTex != nullptr) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {
         FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities);
         }
@@ -1096,7 +1096,7 @@ class NewQueryStartingNodeProcessor
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
                 SmCachedDisplayTexture* nodeTex = nullptr;
                 meshNodePtr->GetCachedTexture(nodeTex);
-                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture != (nodeTex != nullptr)) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture != (nodeTex != nullptr) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
@@ -1113,7 +1113,8 @@ class NewQueryStartingNodeProcessor
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd]));
                 SmCachedDisplayTexture* nodeTex = nullptr;
                 meshNodePtr->GetCachedTexture(nodeTex);
-                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture != (nodeTex != nullptr)) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                
+                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture != (nodeTex != nullptr) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
                                         
