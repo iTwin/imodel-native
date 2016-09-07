@@ -391,7 +391,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
 
         if (nullptr != publishGeometry &&
             nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
-            tileTexture = new TileTextureImage (publishTexture->m_source, false);
+            tileTexture = new TileTextureImage (publishTexture->m_source);
 
         TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
         TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
