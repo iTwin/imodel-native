@@ -270,23 +270,53 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
 //----------------------------------------------------------------------------------------
 DMatrix4d RasterFile::GetGeoTransform() const
     {
-    // Retrieve the logical CS associated to the world of the raster
-    HFCPtr<HGF2DCoordSys> pLogical = GetWorldCluster().GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
-
     if (GetPageDescriptor()->HasTransfoModel())
         {
-        // Create CS from pTransfoModel (transformation from pixels to the world of the raster) to logical
-        HFCPtr<HGF2DTransfoModel> pTransfoModel(GetPageDescriptor()->GetTransfoModel());
-        HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
+        Point2d sizePixels;
+        GetSize(&sizePixels);
 
-        // Normalize to HGF2DWorld_HMRWORLD(lower left origin), which is the expected CS for QuadTree
-        HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldCluster().GetCoordSysReference(HGF2DWorld_HMRWORLD);
-        HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
-        HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
-        HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
+        // Compute transformation to a LOWER_LEFT_HORIZONTAL origin (aka "source")
+        Transform sourceToPhysical;
+        switch (GetPageDescriptor()->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
+            {
+            case HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL: // SLO 6
+                sourceToPhysical.InitIdentity();
+                break;
+
+            case HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL: // SLO 4
+                sourceToPhysical = Transform::FromScaleFactors(1, -1, 1);
+                sourceToPhysical.SetTranslation(DPoint2d::From(0, sizePixels.y));
+                break;
+
+                // Adapt everything else like a SLO4? binaries have their SLO transform to SLO 4(and/or SLO 6?) added to the page transfo model.
+            default:
+                sourceToPhysical = Transform::FromScaleFactors(1, -1, 1);
+                sourceToPhysical.SetTranslation(DPoint2d::From(0, sizePixels.y));
+                break;
+            }
+
+        // Create transfo model with sourceToPhysical Transform
+        HFCPtr<HGF2DAffine> pSourceToPhysicalAffine = new HGF2DAffine();
+        pSourceToPhysicalAffine->SetByMatrixParameters(sourceToPhysical.form3d[0][3], sourceToPhysical.form3d[0][0], sourceToPhysical.form3d[0][1], 
+                                                        sourceToPhysical.form3d[1][3], sourceToPhysical.form3d[1][0], sourceToPhysical.form3d[1][1]);
+        HFCPtr<HGF2DTransfoModel> pSourceToPhysicalTransfo(pSourceToPhysicalAffine);
+
+        // Raster world CS represents the raster in his "own world", i.e. the coordinates expressed in the raster's GCS
+        HFCPtr<HGF2DCoordSys> pRasterWorldCS = GetWorldCluster().GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+
+        // Raster physical coord sys. Coordinates 
+        HFCPtr<HGF2DTransfoModel> pRasterPhysicalToLogical(GetPageDescriptor()->GetTransfoModel());
+        HFCPtr<HGF2DCoordSys> pRasterPhysicalCS = new HGF2DCoordSys(*pRasterPhysicalToLogical, pRasterWorldCS);
+
+        // Define raster source CS (lower left origin)
+        HFCPtr<HGF2DCoordSys> pRasterSourceCS = new HGF2DCoordSys(*pSourceToPhysicalTransfo, pRasterPhysicalCS);            
+
+        // Get transfo from RasterSource to HmrWorld (lower left origin). (i.e. pRasterSourceCS -> pRasterPhysicalCS -> pRasterWorldCS -> pHmrWorldCS
+        HFCPtr<HGF2DCoordSys> pHmrWorldCS = GetWorldCluster().GetCoordSysReference(HGF2DWorld_HMRWORLD);
+        HFCPtr<HGF2DTransfoModel> pSourceToHmr(pRasterSourceCS->GetTransfoModelTo(pHmrWorldCS));
 
         // Initialize geoTransform with the significant rows/columns of matrix.         
-        HFCMatrix<3, 3> matrix = pLogicalToCartesian->GetMatrix();
+        HFCMatrix<3, 3> matrix = pSourceToHmr->GetMatrix();
         DMatrix4d geoTransform;
         geoTransform.InitFromRowValues( matrix[0][0], matrix[0][1], 0.0, matrix[0][2],
                                         matrix[1][0], matrix[1][1], 0.0, matrix[1][2],
