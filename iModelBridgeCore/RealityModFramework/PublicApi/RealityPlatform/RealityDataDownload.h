@@ -110,6 +110,7 @@ private:
 
     bool SetupCurlandFile(size_t pi_index);
     bool SetupNextEntry();
+    bool SetupMirror(size_t index, int errorCode);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;
