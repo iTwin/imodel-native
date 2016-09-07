@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
+#define MODEL_PROP_ModeledElementId "ModeledElementId"
 #define MODEL_PROP_CodeAuthorityId "CodeAuthorityId"
 #define MODEL_PROP_CodeNamespace "CodeNamespace"
 #define MODEL_PROP_CodeValue "CodeValue"
@@ -421,6 +422,105 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
+    {
+    // only Document elements go into a DocumentListModel
+    return element.IsDocumentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentListModelPtr DocumentListModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::DocumentList::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<DocumentListModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentListModelPtr DocumentListModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    DocumentListModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
+    {
+    DgnDbR db = drawing.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid() || !drawing.GetElementId().IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, drawing.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<DrawingModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
+    {
+    DgnDbR db = sheet.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid() || !sheet.GetElementId().IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, sheet.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<SheetModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
     {
     return element.IsGroupInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
@@ -515,6 +615,11 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
         statement.BindText(statement.GetParameterIndex(MODEL_PROP_UserLabel), m_userLabel.c_str(), IECSqlBinder::MakeCopy::No);
     else
         statement.BindNull(statement.GetParameterIndex(MODEL_PROP_UserLabel));
+
+    if (m_modeledElementId.IsValid())
+        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_ModeledElementId));
 
     if (m_federationGuid.IsValid())
         statement.BindBinary(statement.GetParameterIndex(MODEL_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
@@ -1383,6 +1488,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {    
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(MODEL_PROP_ModeledElementId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
@@ -1495,9 +1601,7 @@ void SheetModel::_InitFrom(DgnModelCR other)
 void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_classId = importer.RemapClassId(m_classId);
-#if 0 // WIP: need something like...
-    m_modeledElementId = importer.RemapXxx(m_modeledElementId); 
-#endif
+    m_modeledElementId.Invalidate(); // WIP: Need to remap!
     }
 
 //---------------------------------------------------------------------------------------

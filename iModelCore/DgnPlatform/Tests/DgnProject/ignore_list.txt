@@ -12,6 +12,8 @@ GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
 #----------------------------------------------------------------------------------------
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
+DgnElementTests.ResetStatistics                         # Improper assumptions about element counts
+
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh

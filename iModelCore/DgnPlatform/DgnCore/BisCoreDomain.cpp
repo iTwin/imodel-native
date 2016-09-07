@@ -36,6 +36,7 @@ HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
+HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(Repository)
@@ -112,6 +113,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
+    RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());

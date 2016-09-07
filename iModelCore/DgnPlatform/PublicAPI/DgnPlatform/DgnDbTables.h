@@ -29,6 +29,7 @@
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
 #define BIS_CLASS_Document                  "Document"
+#define BIS_CLASS_DocumentListModel         "DocumentListModel"
 #define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
 #define BIS_CLASS_Drawing                   "Drawing"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"

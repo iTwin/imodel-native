@@ -362,6 +362,12 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="DocumentListModel" displayLabel="Document List">
+        <BaseClass>InformationModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="LinkModel" displayLabel="Link Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

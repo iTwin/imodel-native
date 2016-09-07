@@ -16,7 +16,6 @@
 #include <DgnPlatform/DgnProperties.h>
 
 DGNPLATFORM_TYPEDEFS(GeometricModel)
-DGNPLATFORM_TYPEDEFS(InformationModel)
 DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(RepositoryModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
@@ -25,7 +24,6 @@ DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(GroupInformationModel)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(CheckStop)
-DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
@@ -36,7 +34,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GroupInformationModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct Spatial; struct Physical;};
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Physical; struct Spatial;};
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -995,6 +993,25 @@ public:
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    08/16
 //=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DocumentListModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DocumentListModel, InformationModel);
+    friend struct dgn_ModelHandler::DocumentList;
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+};
+
+//=======================================================================================
+//! A model which contains information about this repository.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, DefinitionModel);
@@ -1405,9 +1422,14 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, GraphicalModel2d);
+    friend struct dgn_ModelHandler::Drawing;
+
+public: /* WIP: Should be protected! */
+    explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
+    //! Create a DrawingModel that breaks down the specified Drawing element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing, DgnCodeCR code);
 };
 
 //=======================================================================================
@@ -1496,6 +1518,9 @@ public:
     //! Construct a SheetModel
     //! @param[in] params The CreateParams for the new SheetModel
     DGNPLATFORM_EXPORT static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
+
+    //! Create a SheetModel that breaks down the specified Sheet element
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code);
 
     //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}
@@ -1586,6 +1611,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Definition : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for DocumentListModel
+    struct EXPORT_VTABLE_ATTRIBUTE DocumentList : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DocumentListModel, DocumentListModel, DocumentList, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
