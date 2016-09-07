@@ -89,7 +89,7 @@
     and explanations of ECSQL see @ref ECSQLOverview "ECSQL Overview".
 
     All examples refer to a sample ECSchema which can be found here:
-    <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>
+    <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>
 
     @section ECSQLSamplesBasics Basics
 
@@ -167,7 +167,7 @@
     @note The examples show how to use the ECSQL keywords @c @b FORWARD and @c @b BACKWARD for cases where it is ambiguous
     whether the FROM or JOIN class is the source or target end of an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass". 
     In that example the manager is the source and the report the target constraint of the relationship @c ManagerReports
-    (see <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>).
+    (see <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>).
 
 
     @subsection ECSQLSamplesJoinsStandardSyntax Standard syntax
@@ -213,7 +213,7 @@
     @image html ecsqlsampleschema_classhierarchy.png
 
     To emphasize the point of the examples, the diagram above visualizes the class hierarchy of the classes from the
-    <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> used in the examples.
+    <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> used in the examples.
 
     ECSQL|Description
     -----|-----------
@@ -234,7 +234,7 @@
     <c>SELECT AssetID FROM stco.Hardware <b>EXCEPT</b> SELECT AssetID FROM stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers and all its subclasses
     <c>SELECT AssetID FROM stco.Hardware <b>EXCEPT</b> SELECT AssetID FROM ONLY stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers (and not its subclasses)
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> on which the above examples are based.
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> on which the above examples are based.
 
     @section ECSQLSamplesBuiltinFunctions ECSQL Built-in Functions
 
@@ -257,7 +257,7 @@
 
         SELECT substr(LastName,1,5) FROM stco.Employee
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statements.
 
     For an example of writing a custom SQLite SQL function and how to use it in ECSQL see: 

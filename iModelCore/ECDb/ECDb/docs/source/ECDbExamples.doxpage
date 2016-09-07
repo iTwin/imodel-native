@@ -16,7 +16,7 @@
     error handling is only shown if it was crucial for the understanding of the specific example.
 
     All code samples use the same sample ECSchema which can be found here:
-    <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>
+    <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>
 
     @tableofcontents
 
@@ -73,7 +73,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelect.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleExecuteECSqlSelectStruct Select struct properties in an ECSQL Select statement
@@ -88,7 +88,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectStructPropMembers.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleExecuteECSqlSelectArray Select array properties in an ECSQL Select statement
@@ -104,7 +104,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectStructArrayProps.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementAndDateTimeProperties ECSqlStatement and date time properties
@@ -129,7 +129,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementAndDateTime.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleExecuteECSqlSelectWithJoin Execute an ECSQL Select statement with join
@@ -142,7 +142,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectWithJoin.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementBindingPrimitives Bind primitive values to an ECSQL statement
@@ -156,7 +156,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingPrimitives.sampleCode
     $SAMPLECODE_END
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementBindingWithNamedParameters ECSQL statement binding with named parameters
@@ -168,7 +168,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingWithNamedParameters.sampleCode
     $SAMPLECODE_END
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementBindingStructs Bind struct values to an ECSQL statement
@@ -180,7 +180,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingStructs.sampleCode
     $SAMPLECODE_END
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementBindingArrays Bind arrays to an ECSQL statement
@@ -199,7 +199,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingStructArrays.sampleCode
     $SAMPLECODE_END
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementVirtualSets VirtualSets in an ECSQL statement
@@ -215,7 +215,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingVirtualSets.sampleCode
     $SAMPLECODE_END
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementGetColumnInfo Retrieving metadata of columns of result set of ECSQL SELECT statement
@@ -223,7 +223,7 @@
     The following example shows how to retrieve the BentleyApi::BeSQLite::EC::ECSqlColumnInfo for columns in the result set. 
     It also shows how the ECSqlColumnInfo can be retrieved for members of struct columns and elements of array columns.
 
-    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     Further assume that the @c Certification array has 2 elements in the sample ECSQL statement
@@ -268,7 +268,7 @@
     If the relationships are setup with holding strength, the child instances are deleted
     only if the children don't have any parents left.
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleInsertRelationship Insert a relationship
@@ -281,7 +281,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsertRelation.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSQLAndCustomSQLiteFunctions Write a custom SQLite function and use it in ECSQL
@@ -293,7 +293,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlAndCustomSQLiteFunctions.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECInstanceAdapter Using the ECInstance ECSQL SELECT Adapter
@@ -306,7 +306,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECInstanceECSqlSelectAdapter.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleJsonAdapter Using the JSON ECSQL SELECT Adapter
@@ -319,7 +319,7 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_JsonECSqlSelectAdapter.sampleCode
     $SAMPLECODE_END
 
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleNonSelectAdapters Using the non-SELECT Adapters for ECInstances and JSON
@@ -368,7 +368,7 @@
     @li Use a tool like the <em>%Bentley ECClassEditor</em> to author an ECSchema. Its output is an ECSchema XML file.
     @li Create the ECSchema XML file manually
 
-    An basic example of an ECSchema can be found here: <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>.
+    An basic example of an ECSchema can be found here: <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">StartupCompany.01.00.00.ecschema.xml</a>.
 
     ### 2) Create an %ECDb file
     At first, the assets like standard ECSchemas that come with the %DgnClientFx SDK need to be deployed to
