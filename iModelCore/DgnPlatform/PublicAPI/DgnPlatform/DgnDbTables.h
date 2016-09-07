@@ -305,9 +305,11 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnElementId m_modeledElementId;
+        BeSQLite::BeGuid m_federationGuid;
         DgnCode m_code;
         Utf8String m_userLabel;
         bool m_inGuiList = true;
+        bool m_isTemplate = false;
 
     public:
         Model() {}
@@ -320,6 +322,8 @@ public:
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
+        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
+        void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
         DgnCode const& GetCode() const {return m_code;}
         Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
@@ -327,6 +331,8 @@ public:
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
+        BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+        bool GetIsTemplate() const {return m_isTemplate;}
     }; // Model
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -352,6 +358,8 @@ public:
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
             DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
+            DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const;
+            DGNPLATFORM_EXPORT bool GetIsTemplate() const;
 
             Entry const& operator*() const {return *this;}
         };

@@ -197,6 +197,14 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_bis_Model_FederationGuid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>FederationGuid</string>
+                        </Properties>
+                        <Where>IndexedColumnsAreNotNull</Where>
+                    </DbIndex>
+                    <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
@@ -212,7 +220,16 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward"/>
+        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
+        </ECNavigationProperty>
+        <ECProperty propertyName="FederationGuid" typeName="binary">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
@@ -277,6 +294,8 @@
                 </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="IsTemplate" typeName="boolean">
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract">
         <BaseClass>Model</BaseClass>
@@ -302,8 +321,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialModel</BaseClass>
-        <ECProperty propertyName="IsTemplate" typeName="boolean">
-        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model">
         <BaseClass>GraphicalModel2d</BaseClass>

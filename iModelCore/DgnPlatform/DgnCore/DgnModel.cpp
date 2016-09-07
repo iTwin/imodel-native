@@ -15,6 +15,8 @@
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_DependencyIndex "DependencyIndex"
+#define MODEL_PROP_FederationGuid "FederationGuid"
+#define MODEL_PROP_IsTemplate "IsTemplate"
 #define SHEET_MODEL_PROP_SheetSize "SheetSize"
 
 /*---------------------------------------------------------------------------------**//**
@@ -35,7 +37,7 @@ DgnModelId DgnModels::QueryModelId(DgnCode code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeValue,UserLabel,ECClassId,Visibility,CodeNamespace,CodeAuthorityId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue,UserLabel,ECClassId,Visibility,CodeNamespace,CodeAuthorityId,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -48,6 +50,9 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_classId = stmt.GetValueId<DgnClassId>(2);
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
+        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(6);
+        out->m_federationGuid = stmt.GetValueGuid(7);
+        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(8));
         }
 
     return SUCCESS;
@@ -161,7 +166,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -190,6 +195,8 @@ DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return
 Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(7);}
+BeGuid          DgnModels::Iterator::Entry::GetFederationGuid() const {Verify(); return m_sql->GetValueGuid(8);}
+bool            DgnModels::Iterator::Entry::GetIsTemplate() const { Verify(); return (0 != m_sql->GetValueInt(9)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -229,7 +236,7 @@ void DgnModel::ReleaseAllElements()
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_userLabel(params.m_userLabel),
-    m_dependencyIndex(-1), m_persistent(false), m_filled(false)
+    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
 
@@ -509,7 +516,13 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     else
         statement.BindNull(statement.GetParameterIndex(MODEL_PROP_UserLabel));
 
+    if (m_federationGuid.IsValid())
+        statement.BindBinary(statement.GetParameterIndex(MODEL_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_FederationGuid));
+
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
+    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
     statement.BindInt(statement.GetParameterIndex(MODEL_PROP_DependencyIndex), m_dependencyIndex);
 
@@ -1377,6 +1390,8 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_DependencyIndex, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_FederationGuid, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
 
 /*---------------------------------------------------------------------------------**//**

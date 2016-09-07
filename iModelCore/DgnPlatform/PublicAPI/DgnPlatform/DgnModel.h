@@ -138,12 +138,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
     //=======================================================================================
     struct CreateParams
     {
-        DgnDbR          m_dgndb;
-        DgnClassId      m_classId;
-        DgnElementId    m_modeledElementId;
-        DgnCode         m_code;
-        Utf8String      m_userLabel;
-        bool            m_inGuiList;
+        DgnDbR              m_dgndb;
+        DgnClassId          m_classId;
+        DgnElementId        m_modeledElementId;
+        BeSQLite::BeGuid    m_federationGuid;
+        DgnCode             m_code;
+        Utf8String          m_userLabel;
+        bool                m_inGuiList;
+        bool                m_isTemplate = false;
 
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
@@ -159,9 +161,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) { m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
+        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnModel created with this CreateParams
         void SetCode(DgnCode code) { m_code = code; } //!< Set the DgnCode for models created with this CreateParams
         void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
+        void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -196,14 +200,16 @@ private:
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
 protected:
-    DgnDbR          m_dgndb;
-    DgnModelId      m_modelId;
-    DgnClassId      m_classId;
-    DgnElementId    m_modeledElementId;
-    DgnCode         m_code;
-    Utf8String      m_userLabel;
-    bool            m_inGuiList;
-    int             m_dependencyIndex;
+    DgnDbR              m_dgndb;
+    DgnModelId          m_modelId;
+    DgnClassId          m_classId;
+    DgnElementId        m_modeledElementId;
+    BeSQLite::BeGuid    m_federationGuid;
+    DgnCode             m_code;
+    Utf8String          m_userLabel;
+    bool                m_inGuiList;
+    bool                m_isTemplate;
+    int                 m_dependencyIndex;
 
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -474,6 +480,12 @@ public:
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}
 
+    //! Get the FederationGuid of this DgnModel.
+    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    //! Set the FederationGuid for this DgnModel.
+    //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
+    void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
+
     //! Get the label of this DgnModel.
     //! @note may be nullptr
     Utf8CP GetUserLabel() const { return m_userLabel.c_str(); }
@@ -486,6 +498,9 @@ public:
 
     //! Set the visibility in model lists shown to the user
     void SetInGuiList(bool val) { m_inGuiList = val; }
+
+    //! Test whether this DgnModel is a template used to create instances
+    bool IsTemplate() const {return m_isTemplate;}
 
     //! @name Dynamic casting to DgnModel subclasses
     //@{

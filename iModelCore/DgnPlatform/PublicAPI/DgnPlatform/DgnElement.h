@@ -1325,10 +1325,10 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Get the FederationGuid of this DgnElement.
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
     //! Set the FederationGuid for this DgnElement.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
-    DGNPLATFORM_EXPORT void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
+    void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
 
     //! Get the DgnElementId of the parent of this element.
     //! @see SetParentId
