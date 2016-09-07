@@ -766,6 +766,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     //= (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : path.GetFileNameWithoutExtension());
                     BeFileName path(m_path);
                     WString datasetName = path.GetFileNameWithoutExtension();
+                    WString separator = s_stream_from_wsg ? L"~2F" : L"/";
                     bool isCloud = path.Contains(cloudIndicator);
                     if (isCloud)
                         {
@@ -773,7 +774,14 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         }
                     if (isCloud && !s_stream_from_disk)
                         {
-                        streamingSourcePath += L"~2F" + datasetName;
+                        if (s_stream_from_wsg)
+                            {
+                            streamingSourcePath += separator + datasetName;
+                            }
+                        else 
+                            {
+                            streamingSourcePath = datasetName;
+                            }
                         }
                     else
                         {
