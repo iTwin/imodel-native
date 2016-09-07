@@ -191,7 +191,7 @@
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/ECDb/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECDbUwpTest"/>
         </Bindings>
     </Part>
 
