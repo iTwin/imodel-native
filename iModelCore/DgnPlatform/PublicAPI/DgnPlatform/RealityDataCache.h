@@ -48,7 +48,7 @@ protected:
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
 
-    //! Called to prepare the database for loading and storing reality data 
+    //! Create the table to hold entries in this Cache
     virtual BentleyStatus _Prepare() const = 0;
 
     //! Called to free space in the database, if necessary
