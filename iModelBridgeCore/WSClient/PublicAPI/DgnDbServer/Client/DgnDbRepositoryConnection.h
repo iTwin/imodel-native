@@ -186,7 +186,7 @@ private:
     //! Performs a file upload to azure blob storage.
     DgnDbServerStatusTaskPtr AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url , Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Uploads a BIM file to the server.
+    //! Uploads a DGNDB file to the server.
     DgnDbServerStatusTaskPtr UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Finalizes the file upload.
@@ -291,7 +291,7 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Replace a master file on the server.
-    //! @param[in] filePath The path to the BIM file to upload.
+    //! @param[in] filePath The path to the DGNDB file to upload.
     //! @param[in] fileInfo Details of the file.
     //! @param[in] callback
     //! @param[in] cancellationToken
