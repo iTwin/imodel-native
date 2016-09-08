@@ -14521,19 +14521,7 @@ CSDatum*            Datum::GetCSDatum() const
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Alain.Robert                   2016/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP            Datum::GetGroup(WStringR groupName) const
-    {
 
-    groupName.clear();
-
-    if (NULL != m_datumDef)
-        groupName.AssignA (m_datumDef->group);
-
-    return groupName.c_str();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/08
