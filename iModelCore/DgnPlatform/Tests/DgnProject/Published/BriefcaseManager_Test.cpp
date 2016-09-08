@@ -1515,7 +1515,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
         for (auto const& entry : m_dbA->Models().MakeIterator())
             {
             auto model = m_dbA->Models().GetModel(entry.GetModelId());
-            if (model.IsValid() && !model->IsDictionaryModel())
+            if (model.IsValid() && model->IsGeometricModel())
                 {
                 if (!model3d.IsValid() && LookupElementIds(m_elemIds, *model))
                     {

@@ -178,12 +178,9 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBr
         return nullptr;
         }
 
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetProjectName("DgnDbTestUtils");
-    createProjectParams.SetOverwriteExisting(false);
-
+    CreateDgnDbParams createDgnDbParams("DgnDbTestUtils");
     DbResult createStatus;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createProjectParams);
+    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createDgnDbParams);
     if (!db.IsValid())
         EXPECT_FALSE(true) << WPrintfString(L"%ls - create failed", fileName.c_str()).c_str();
 

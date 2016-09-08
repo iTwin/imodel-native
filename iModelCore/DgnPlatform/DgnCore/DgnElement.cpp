@@ -302,7 +302,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId classId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Subject);
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
 
     if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
         {
@@ -333,6 +333,43 @@ SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8
     return parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingPtr Drawing::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new Drawing(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetPtr Sheet::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Sheet::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new Sheet(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    }
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct OnInsertedCaller
     {
     DgnElementCR m_newEl;

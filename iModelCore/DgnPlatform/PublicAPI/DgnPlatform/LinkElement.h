@@ -82,9 +82,9 @@ public:
 //=======================================================================================
 //! LinkElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationContentElement
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationReferenceElement
 {
-    DEFINE_T_SUPER(InformationContentElement)
+    DEFINE_T_SUPER(InformationReferenceElement)
 
 protected:
     //! Constructor

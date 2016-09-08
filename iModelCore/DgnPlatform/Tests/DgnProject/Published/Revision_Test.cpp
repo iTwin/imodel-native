@@ -312,7 +312,7 @@ TEST_F(RevisionTestFixture, ConflictError)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, MoreWorkflow)
+TEST_F(RevisionTestFixture, DISABLED_MoreWorkflow)
     {
     // Setup baseline
     CreateDgnDb();

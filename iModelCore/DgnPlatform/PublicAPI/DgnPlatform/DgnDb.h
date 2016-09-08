@@ -46,23 +46,38 @@ enum DgnDbSchemaValues : int32_t
 struct CreateDgnDbParams : BeSQLite::Db::CreateParams
 {
 public:
-    bool            m_overwriteExisting;
-    Utf8String      m_name;
-    Utf8String      m_description;
-    Utf8String      m_client;
-    BeFileName      m_seedDb;
+    bool m_overwriteExisting;
+    Utf8String m_rootSubjectLabel;
+    Utf8String m_rootSubjectDescription;
+    Utf8String m_client;
+    BeFileName m_seedDb;
     BeSQLite::BeGuid m_guid;
 
+    //! Default constructor for CreateDgnDbParams
     //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
-    CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
+    CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid) {}
 
-    //! Set the value to be stored as the ProjectName property in the new DgnDb created using this CreateDgnDbParams/
-    //! @note This value is stored as a property in the project. It does *not* refer to a file name.
-    void SetProjectName(Utf8CP name) {m_name.AssignOrClear(name);}
+    //! Constructor for CreateDgnDbParams
+    //! @param[in] label The (required) value to be stored as the UserLabel property of the root Subject
+    //! @param[in] description The (optional) value to be stored as the Description property of the root Subject
+    //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
+    //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
+    CreateDgnDbParams(Utf8CP label, Utf8CP description=nullptr, BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid)
+        {
+        SetRootSubjectLabel(label);
+        SetRootSubjectDescription(description);
+        }
 
-    //! Set the value to be stored as the ProjectDescription property in the new DgnDb created using this CreateDgnDbParams.
-    void SetProjectDescription(Utf8CP description) {m_description.AssignOrClear(description);}
+    //! Set the value to be stored as the UserLabel property of the root Subject for the new DgnDb created using this CreateDgnDbParams.
+    //! @note The (required) UserLabel of the root Subject should indicate what the DgnDb contains.
+    //! @see DgnElements::GetRootSubject
+    void SetRootSubjectLabel(Utf8CP label) {m_rootSubjectLabel.AssignOrClear(label);}
+
+    //! Set the value to be stored as the Description property of the root Subject for the new DgnDb created using this CreateDgnDbParams.
+    //! @note The (optional) Description property of the root Subject can be a longer description of what the DgnDb contains.
+    //! @see DgnElements::GetRootSubject
+    void SetRootSubjectDescription(Utf8CP description) {m_rootSubjectDescription.AssignOrClear(description);}
 
     //! Set the value to be stored as the Client property in the new DgnDb created using this CreateDgnDbParams.
     void SetClient(Utf8CP client) {m_client = client;}

@@ -197,6 +197,14 @@
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_bis_Model_FederationGuid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>FederationGuid</string>
+                        </Properties>
+                        <Where>IndexedColumnsAreNotNull</Where>
+                    </DbIndex>
+                    <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
@@ -212,7 +220,16 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward"/>
+        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
+        </ECNavigationProperty>
+        <ECProperty propertyName="FederationGuid" typeName="binary">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
@@ -277,6 +294,8 @@
                 </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="IsTemplate" typeName="boolean">
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract">
         <BaseClass>Model</BaseClass>
@@ -302,8 +321,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialModel</BaseClass>
-        <ECProperty propertyName="IsTemplate" typeName="boolean">
-        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model">
         <BaseClass>GraphicalModel2d</BaseClass>
@@ -341,6 +358,12 @@
     </ECEntityClass>
     <ECEntityClass typeName="RepositoryModel" modifier="Sealed" displayLabel="Repository Model">
         <BaseClass>DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="DocumentListModel" displayLabel="Document List">
+        <BaseClass>InformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -404,7 +427,7 @@
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="DictionaryModelIsForSubject" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="DictionaryModelIsForRootSubject" strength="embedding" strengthDirection="Backward">
         <BaseClass>ModelModelsElement</BaseClass>
         <Source cardinality="(0,1)" polymorphic="false">
             <Class class="DictionaryModel"/>
@@ -413,13 +436,31 @@
             <Class class="Subject" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GroupInformationModelIsForSubject" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward">
         <BaseClass>ModelModelsElement</BaseClass>
-        <Source cardinality="(0,1)" polymorphic="false">
-            <Class class="GroupInformationModel"/>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="PhysicalModel"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="false">
-            <Class class="Subject" />
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="PhysicalElement" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DrawingModelBreaksDownDrawing" strength="embedding" strengthDirection="Backward">
+        <BaseClass>ModelModelsElement</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="DrawingModel"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="Drawing" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SheetModelBreaksDownSheet" strength="embedding" strengthDirection="Backward">
+        <BaseClass>ModelModelsElement</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="SheetModel"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="Sheet" />
         </Target>
     </ECRelationshipClass>
 
@@ -601,8 +642,19 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="Subject" modifier="Sealed">
-        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>InformationReferenceElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -610,13 +662,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
-        <BaseClass>InformationContentElement</BaseClass>
-        <ECCustomAttributes>
-            <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
-        </ECCustomAttributes>
+        <BaseClass>InformationReferenceElement</BaseClass>
     </ECEntityClass>
     
     <ECEntityClass typeName="UrlLink">
@@ -688,13 +734,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
-        <BaseClass>InformationContentElement</BaseClass>
-        <ECCustomAttributes>
-            <ShareColumns xmlns="ECDbMap.02.00">
-                <SharedColumnCount>8</SharedColumnCount>
-                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-            </ShareColumns>
-        </ECCustomAttributes>
+        <BaseClass>InformationReferenceElement</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="Document" modifier="Abstract">

@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
+#define MODEL_PROP_ModeledElementId "ModeledElementId"
 #define MODEL_PROP_CodeAuthorityId "CodeAuthorityId"
 #define MODEL_PROP_CodeNamespace "CodeNamespace"
 #define MODEL_PROP_CodeValue "CodeValue"
@@ -15,6 +16,8 @@
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_DependencyIndex "DependencyIndex"
+#define MODEL_PROP_FederationGuid "FederationGuid"
+#define MODEL_PROP_IsTemplate "IsTemplate"
 #define SHEET_MODEL_PROP_SheetSize "SheetSize"
 
 /*---------------------------------------------------------------------------------**//**
@@ -35,7 +38,7 @@ DgnModelId DgnModels::QueryModelId(DgnCode code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeValue,UserLabel,ECClassId,Visibility,CodeNamespace,CodeAuthorityId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue,UserLabel,ECClassId,Visibility,CodeNamespace,CodeAuthorityId,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -48,6 +51,9 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_classId = stmt.GetValueId<DgnClassId>(2);
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
+        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(6);
+        out->m_federationGuid = stmt.GetValueGuid(7);
+        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(8));
         }
 
     return SUCCESS;
@@ -161,7 +167,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -190,6 +196,8 @@ DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return
 Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(7);}
+BeGuid          DgnModels::Iterator::Entry::GetFederationGuid() const {Verify(); return m_sql->GetValueGuid(8);}
+bool            DgnModels::Iterator::Entry::GetIsTemplate() const { Verify(); return (0 != m_sql->GetValueInt(9)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -229,7 +237,7 @@ void DgnModel::ReleaseAllElements()
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_userLabel(params.m_userLabel),
-    m_dependencyIndex(-1), m_persistent(false), m_filled(false)
+    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
 
@@ -414,9 +422,108 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
+    {
+    // only Document elements go into a DocumentListModel
+    return element.IsDocumentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentListModelPtr DocumentListModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::DocumentList::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<DocumentListModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentListModelPtr DocumentListModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    DocumentListModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
+    {
+    DgnDbR db = drawing.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid() || !drawing.GetElementId().IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, drawing.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<DrawingModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
+    {
+    DgnDbR db = sheet.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+
+    if (!classId.IsValid() || !sheet.GetElementId().IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, sheet.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<SheetModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
     {
-    return element.IsGroupInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,7 +616,18 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     else
         statement.BindNull(statement.GetParameterIndex(MODEL_PROP_UserLabel));
 
+    if (m_modeledElementId.IsValid())
+        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_ModeledElementId));
+
+    if (m_federationGuid.IsValid())
+        statement.BindBinary(statement.GetParameterIndex(MODEL_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_FederationGuid));
+
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
+    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
     statement.BindInt(statement.GetParameterIndex(MODEL_PROP_DependencyIndex), m_dependencyIndex);
 
@@ -895,7 +1013,6 @@ struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 void DgnModel::_OnDeleted()
     {
     CallAppData(DeletedCaller());
-    GetDgnDb().Models().DropLoadedModel(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1021,13 +1138,35 @@ DgnDbStatus DgnModel::Delete()
     if (!m_persistent)
         return DgnDbStatus::WrongModel;
 
+    if (m_modeledElementId.IsValid())
+        {
+        // give the element being modeled a chance to reject the delete
+        DgnDbStatus status;
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelDelete(*this))))
+            return status;
+        }
+
     DgnDbStatus stat = _OnDelete();
     if (DgnDbStatus::Success != stat)
         return stat;
 
     Statement stmt(m_dgndb, "DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    if (BE_SQLITE_DONE != stmt.Step())
+        return DgnDbStatus::WriteError;
+
+    _OnDeleted();
+
+    if (m_modeledElementId.IsValid())
+        {
+        // notify the element being modeled that the DgnModel has been deleted
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid())
+            modeledElement->_OnModelDeleted(*this);
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1043,6 +1182,14 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::DuplicateCode;
 
     m_modelId = DgnModelId(m_dgndb, BIS_TABLE(BIS_CLASS_Model), "Id");
+
+    if (m_modeledElementId.IsValid())
+        {
+        // give the element being modeled a chance to reject the insert
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelInsert(*this))))
+            return status;
+        }
 
     CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
     if (stmt.IsNull())
@@ -1072,6 +1219,15 @@ DgnDbStatus DgnModel::Insert()
     BeAssert(status == DgnDbStatus::Success);
 
     _OnInserted();
+
+    if (m_modeledElementId.IsValid())
+        {
+        // notify the element being modeled about the new DgnModel
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid())
+            modeledElement->_OnModelInserted(*this);
+        }
+
     return DgnDbStatus::Success;
     }
 
@@ -1083,6 +1239,9 @@ void DgnModel::_InitFrom(DgnModelCR other)
     m_userLabel = other.m_userLabel;
     m_inGuiList = other.m_inGuiList;
     m_dependencyIndex = other.m_dependencyIndex;
+    m_isTemplate = other.m_isTemplate;
+
+    m_federationGuid.Invalidate();
 
     Json::Value otherProperties;
     other._WriteJsonProperties(otherProperties);
@@ -1332,6 +1491,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {    
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(MODEL_PROP_ModeledElementId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
@@ -1339,6 +1499,8 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_DependencyIndex, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_FederationGuid, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1442,9 +1604,7 @@ void SheetModel::_InitFrom(DgnModelCR other)
 void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_classId = importer.RemapClassId(m_classId);
-#if 0 // WIP: need something like...
-    m_modeledElementId = importer.RemapXxx(m_modeledElementId); 
-#endif
+    m_modeledElementId.Invalidate(); // WIP: Need to remap!
     }
 
 //---------------------------------------------------------------------------------------

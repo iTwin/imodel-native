@@ -1046,6 +1046,27 @@ protected:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
+    //! Called when this element is being <i>modeled</i> by a new DgnModel.
+    //! Subclasses may override this method to control which DgnModel types are valid to model this element.
+    //! @param[in] model the new DgnModel
+    //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnModelInsert, forwarding its status.
+    virtual DgnDbStatus _OnModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+
+    //! Called after this element has been <i>modeled</i> by a new DgnModel.
+    //! @note If you override this method, you @em must call T_Super::_OnModelInserted.
+    virtual void _OnModelInserted(DgnModelCR model) const {}
+
+    //! Called when a delete of a DgnModel modeling this element is in progress. Subclasses may override this method to block the deletion.
+    //! @param[in] model the DgnModel being deleted
+    //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnModelDelete, forwarding its status.
+    virtual DgnDbStatus _OnModelDelete(DgnModelCR model) const {return DgnDbStatus::Success;}
+
+    //! Called after a delete of a DgnModel modeling this element has completed.
+    //! @note If you override this method, you @em must call T_Super::_OnModelDeleted.
+    virtual void _OnModelDeleted(DgnModelCR model) const {}
+
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
     //! @note Subclasses of DgnElement that add any member variables should override this method using this template:
@@ -1117,7 +1138,7 @@ protected:
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
     virtual InformationContentElementCP _ToInformationContentElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
-    virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
+    virtual DocumentCP _ToDocumentElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value);
@@ -1165,10 +1186,10 @@ public:
     DgnGeometryPartCP ToGeometryPart() const {return _ToGeometryPart();}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     InformationContentElementCP ToInformationContentElement() const {return _ToInformationContentElement();} //!< more efficient substitute for dynamic_cast<InformationContentElementCP>(el)
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
+    DocumentCP ToDocumentElement() const {return _ToDocumentElement();}                 //!< more efficient substitute for dynamic_cast<DocumentCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    GroupInformationElementCP ToGroupInformationElement() const {return _ToGroupInformationElement();} //!< more efficient substitute for dynamic_cast<GroupInformationElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1177,7 +1198,7 @@ public:
     DgnGeometryPartP ToGeometryPartP() {return const_cast<DgnGeometryPartP>(_ToGeometryPart());} //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     InformationContentElementP ToInformationContentElementP() {return const_cast<InformationContentElementP>(_ToInformationContentElement());} //!< more efficient substitute for dynamic_cast<InformationContentElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
-    GroupInformationElementP ToGroupInformationElementP() {return const_cast<GroupInformationElementP>(_ToGroupInformationElement());} //!< more efficient substitute for dynamic_cast<GroupInformationElementP>(el)
+    DocumentP ToDocumentElementP() {return const_cast<DocumentP>(_ToDocumentElement());}  //!< more efficient substitute for dynamic_cast<DocumentP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -1187,7 +1208,7 @@ public:
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
-    bool IsGroupInformationElement() const {return nullptr != ToGroupInformationElement();} //!< Determine whether this element is a GroupInformationElement or not
+    bool IsDocumentElement() const {return nullptr != ToDocumentElement();}         //!< Determine whether this element is a Document element or not
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
     bool IsDrawingGraphic() const {return nullptr != ToDrawingGraphic();}           //!< Determine whether this element is an DrawingGraphic
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -1304,10 +1325,10 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Get the FederationGuid of this DgnElement.
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
     //! Set the FederationGuid for this DgnElement.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
-    DGNPLATFORM_EXPORT void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
+    void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
 
     //! Get the DgnElementId of the parent of this element.
     //! @see SetParentId
@@ -2080,6 +2101,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
     friend struct dgn_ElementHandler::Document;
 
 protected:
+    virtual DocumentCP _ToDocumentElement() const override final {return this;}
     explicit Document(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2095,7 +2117,8 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
-    // WIP: need to add static Create method!
+    //! Creates a new Drawing in the specified InformationModel
+    DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
 };
 
 //=======================================================================================
@@ -2110,12 +2133,13 @@ protected:
     explicit Sheet(CreateParams const& params) : T_Super(params) {}
 
 public:
-    // WIP: need to add static Create method!
+    //! Creates a new Sheet in the specified InformationModel
+    DGNPLATFORM_EXPORT static SheetPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
 };
 
 //=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
-//! For example, a paper document or an electronic file is an information carrier.
+//! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
 //! @see InformationContentElement
 //! @ingroup GROUP_DgnElement
@@ -2161,12 +2185,26 @@ protected:
 };
 
 //=======================================================================================
+//! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
+//! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
+//! The content is tracked separately from the carrier.
+//! @see InformationContentElement
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationReferenceElement : InformationContentElement
+{
+    DEFINE_T_SUPER(InformationContentElement);
+protected:
+    explicit InformationReferenceElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A Subject resides in (and only in) a RepositoryModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationReferenceElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, InformationReferenceElement);
     friend struct dgn_ElementHandler::Subject;
 
 protected:
@@ -2182,6 +2220,9 @@ public:
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+
+    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
 };
 
 //=======================================================================================
@@ -2189,11 +2230,10 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    04/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationContentElement
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceElement
 {
-    DEFINE_T_SUPER(InformationContentElement);
+    DEFINE_T_SUPER(InformationReferenceElement);
 protected:
-    virtual GroupInformationElementCP _ToGroupInformationElement() const override final {return this;}
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 

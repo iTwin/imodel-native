@@ -172,9 +172,9 @@ namespace dgn_ElementHandler
     };
 
     //! The ElementHandler for Subject
-    struct EXPORT_VTABLE_ATTRIBUTE Subject : Definition
+    struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, Definition, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, InformationContent, DGNPLATFORM_EXPORT)
     };
 };
 
