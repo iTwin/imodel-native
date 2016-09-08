@@ -145,7 +145,7 @@ public:
     //! @return a pointer value
     BENTLEYDLL_EXPORT void*  InvokeP (char const* function, void* args = NULL);
 
-    //! Where a unit test can find DGNDB and other data files
+    //! Where a unit test can find BIM and other data files
     BENTLEYDLL_EXPORT void GetDocumentsRoot (BeFileName& path);
     //! Where a unit test can find static resources such as fonts, schemas, and MUIs
     BENTLEYDLL_EXPORT void GetDgnPlatformAssetsDirectory (BeFileName& path);
