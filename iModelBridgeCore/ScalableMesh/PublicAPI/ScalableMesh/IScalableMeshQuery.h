@@ -570,14 +570,14 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     {
     protected:
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) = 0;
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t idTexture) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) = 0;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetContentExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetArePoints3d(bool arePoints3d) = 0;
         virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling) = 0;
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
-        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture);
+        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID = -1);
         BENTLEY_SM_EXPORT StatusInt AddTextures(bvector<Byte>& data, bool sibling = false);
         BENTLEY_SM_EXPORT StatusInt SetNodeExtent(DRange3d& extent);
         BENTLEY_SM_EXPORT StatusInt SetContentExtent(DRange3d& extent);

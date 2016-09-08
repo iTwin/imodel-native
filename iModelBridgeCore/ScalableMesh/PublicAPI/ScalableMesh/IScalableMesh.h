@@ -58,6 +58,7 @@ enum DTMAnalysisType
     Qty
     };
 
+
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems

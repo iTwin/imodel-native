@@ -699,6 +699,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
         void                RefreshMergedClips();
 
+        size_t GetNextTextureId();
+
 
         void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 #ifdef ACTIVATE_TEXTURE_DUMP
@@ -721,6 +723,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
+
+        size_t m_texId = 0;
 
 
         std::vector<std::future<bool>> m_textureWorkerTasks;

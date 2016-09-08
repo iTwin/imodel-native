@@ -297,7 +297,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         size_t      m_nbUvIndexes;
         size_t      m_nbTextures;
         HPMBlockID  m_graphID;
-        std::vector<HPMBlockID>  m_textureID;
+        HPMBlockID  m_textureID;
         HPMBlockID  m_uvID;
 
         //NEEDS_WORK_SM - should not be a vector.

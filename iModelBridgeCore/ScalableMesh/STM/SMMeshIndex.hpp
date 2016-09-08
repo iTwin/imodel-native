@@ -66,8 +66,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
+
+    m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 
@@ -106,8 +106,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
+
+    m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -145,8 +145,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
+
+    m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -191,8 +191,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0]= ISMStore::GetNullNodeID();
+
+    m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -826,7 +826,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushTe
     m_texturePoolItemId = GetMemoryPool()->AddItem(poolItem);
     assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);  
     m_nodeHeader.m_isTextured = true;
-    m_nodeHeader.m_textureID.push_back(GetBlockID());
+    m_nodeHeader.m_textureID = GetBlockID();
     m_nodeHeader.m_nbTextures = 1;
     }
 
@@ -3068,6 +3068,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 
     if (!IsTextured())
         return poolMemBlobItemPtr;
+
+    int64_t texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
               
     //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
     if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
@@ -3078,9 +3080,9 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 
         RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
  #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
+            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
  #else
- SMStoredMemoryPoolBlobItem<Byte>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
+            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
  #endif
         );
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
@@ -3116,14 +3118,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
     
 
-    DPoint3d pts[1] = { DPoint3d::From(432034, 4504173, 0)};
 
-    for (size_t i = 0; i < 1; ++i)
-        if (this->m_nodeHeader.m_nodeExtent.IsContained(pts[i], 2))
-            {
-            volatile int a = 1;
-            a = a;
-            }
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
     double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
@@ -4248,6 +4243,17 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::RefreshMe
     {
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->RefreshMergedClipsRecursive();
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Elenie.Godzaridis   9/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class POINT, class EXTENT>  size_t  SMMeshIndex<POINT, EXTENT>::GetNextTextureId()
+    {
+    return ++m_texId;
+    }
+
 
 /**----------------------------------------------------------------------------
 Mesh
