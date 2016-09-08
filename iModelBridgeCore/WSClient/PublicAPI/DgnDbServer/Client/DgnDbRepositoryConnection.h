@@ -63,6 +63,8 @@ struct DgnDbCodeLockSetResultInfo
         DgnDbCodeLockSetResultInfo() {};
         void AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
         void AddLock(const DgnLock dgnLock, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+        void Insert(const DgnDbCodeLockSetResultInfo& codeLockResultInfo);
+        void Insert(const DgnCodeSet& codes, const DgnCodeInfoSet& codeStates, const DgnLockSet& locks, const DgnLockInfoSet& lockStates);
 
         //__PUBLISH_SECTION_START__
     public:
@@ -230,6 +232,9 @@ private:
 
     //! Returns all available codes and locks for given briefcase id.
     DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(DgnCodeSet const* codes, LockableIdSet const* locks, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken) const;
+
+    //! Returns all available codes and locks by executing given query.
+    DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(WSQuery query, ICancellationTokenPtr cancellationToken) const;
 
     //! Sends a request from changeset.
     DgnDbServerStatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
