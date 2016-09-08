@@ -188,7 +188,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
             }
         }
 
-    if (isPolymorphic && !classMap->IsParentOfJoinedTable())
+    if (isPolymorphic && !classMap->IsParentOfJoinedTable() && (classMap->IsRelationshipClassMap() || classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable) )
         {
         ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
         for (ECClassCP derivedClass : derivedClasses)
@@ -343,11 +343,11 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
     Utf8String where;
     if (classIdColumn != nullptr)
         {
-        auto tableP = &firstChildClassMap->GetPrimaryTable();
+        auto tableP = &firstChildClassMap->GetJoinedTable();
         OptionsExp const* options = prepareContext.GetCurrentScope().GetOptions();
         if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
             {
-            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *classIdColumn, isPolymorphic, tableP != &table, table.GetName().c_str()))
+            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *classIdColumn, isPolymorphic, true, tableP->GetName().c_str()))
                 return ERROR;
             }
         }
@@ -561,14 +561,15 @@ BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql
         switch (cm->GetType())
             {
                 case ClassMap::Type::RelationshipEndTable:
-                    if (!unionQuery.IsEmpty())
-                        unionQuery.Append(" UNION ");
+                {
+                if (!unionQuery.IsEmpty())
+                    unionQuery.Append(" UNION ");
 
-                    if (SUCCESS != CreateViewForRelationshipClassEndTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassEndTableMap const*>(cm), relationMap))
-                        return ERROR;
+                if (SUCCESS != CreateViewForRelationshipClassEndTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassEndTableMap const*>(cm), relationMap))
+                    return ERROR;
 
-                    break;
-
+                break;
+                }
                 case ClassMap::Type::RelationshipLinkTable:
                 {
                 if (!unionQuery.IsEmpty())
