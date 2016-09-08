@@ -12,7 +12,7 @@
 
 #define APPLICATION_NAME    L"imodel"
 #define PACKAGE_EXTENSION   L"imodel"
-#define PROJECT_EXTENSION   L"ibim"
+#define PROJECT_EXTENSION   L"idgndb"
 
 #define LOG                     (*LoggingManager::GetLogger (APPLICATION_NAME))
 #define EXTRACTOR_E(FMT,...)    fprintf (stderr, "Error: " FMT "\n", __VA_ARGS__); //LOG.errorv (FMT, __VA_ARGS__);
@@ -163,8 +163,8 @@ static void printUsage (WCharCP programName)
     WString exeName = BeFileName::GetFileNameAndExtension (programName);
     EXTRACTOR_I ("\
 Usage: %s [OPTIONS]... INPUT\n\
-Extracts INPUT i-model to .ibim. Optional arguments:\n\
-    -o, --output OUTPUT     If the specified OUTPUT path is a file name, extract .ibim to this path. If the specified path is a directory name, extract the .ibim to that directory with base name of the INPUT file.\n\
+Extracts INPUT i-model to .idgndb. Optional arguments:\n\
+    -o, --output OUTPUT     If the specified OUTPUT path is a file name, extract .idgndb to this path. If the specified path is a directory name, extract the .idgndb to that directory with base name of the INPUT file.\n\
     -w, --overWrite         Overwrite output file if it already exists.\n\
     -v, --verbose           Verbose output.\n\
     -h, --help              Display this help and exit.\
