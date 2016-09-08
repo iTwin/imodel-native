@@ -130,19 +130,3 @@ RealityDataThreadPool.SpawnsThreads
     # Actual: false
     # Expected: true
     # [  FAILED  ] RealityDataThreadPool.SpawnsThreads (5172 ms)
-
-CsvFileTests.GetColumns
-    # DgnDb0601Dev, WinX64, DEBUG
-    # [ RUN      ] CsvFileTests.GetColumns
-    # F:\DgnDb0601Dev\src-staging\DgnPlatform\Tests\DgnProject\NonPublished\CsvFile_Test.cpp(105): error: Value of: csvfile != nullptr
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] CsvFileTests.GetColumns (1 ms)
-
-CsvFileTests.GetRowAndMaxColumnCount
-    # DgnDb0601Dev, WinX64, DEBUG
-    # [ RUN      ] CsvFileTests.GetRowAndMaxColumnCount
-    # F:\DgnDb0601Dev\src-staging\DgnPlatform\Tests\DgnProject\NonPublished\CsvFile_Test.cpp(122): error: Value of: csvfile != nullptr
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] CsvFileTests.GetRowAndMaxColumnCount (0 ms)
