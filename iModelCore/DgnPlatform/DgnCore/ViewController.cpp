@@ -94,16 +94,16 @@ void ViewFlags::From3dJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::ToBaseJson(JsonValueR val) const
     {
-    if (m_constructions) val[ViewJson::Construction()] = true;
-    if (!m_text) val[ViewJson::NoText()] = true;
-    if (!m_dimensions) val[ViewJson::NoDimension()] = true;
-    if (!m_patterns) val[ViewJson::NoPattern()] = true;
-    if (!m_weights) val[ViewJson::NoWeight()] = true;
-    if (!m_styles) val[ViewJson::NoStyle()] = true;
-    if (!m_transparency) val[ViewJson::NoTransparency()] = true;
-    if (m_fill) val[ViewJson::Fill()] = true;
-    if (m_grid) val[ViewJson::Grid()] = true;
-    if (m_acsTriad) val[ViewJson::Acs()] = true;
+    val[ViewJson::Construction()] = m_constructions;
+    val[ViewJson::NoText()] = !m_text;
+    val[ViewJson::NoDimension()] = !m_dimensions;
+    val[ViewJson::NoPattern()] = !m_patterns;
+    val[ViewJson::NoWeight()] = !m_weights;
+    val[ViewJson::NoStyle()] = !m_styles;
+    val[ViewJson::NoTransparency()] = !m_transparency;
+    val[ViewJson::Fill()] = m_fill;
+    val[ViewJson::Grid()] = m_grid;
+    val[ViewJson::Acs()] = m_acsTriad;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,14 +111,14 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::To3dJson(JsonValueR val) const
     {
-    if (!m_textures) val[ViewJson::NoTexture()] = true;
-    if (!m_materials) val[ViewJson::NoMaterial()] = true;
-    if (!m_sceneLights) val[ViewJson::NoSceneLight()] = true;
-    if (m_visibleEdges) val[ViewJson::VisibleEdges()] = true;
-    if (m_hiddenEdges) val[ViewJson::HiddenEdges()] = true;
-    if (m_shadows) val[ViewJson::Shadows()] = true;
-    if (m_noClipVolume) val[ViewJson::NoClipVolume()] = true;
-    if (m_ignoreLighting) val[ViewJson::IgnoreLighting()] = true;
+    val[ViewJson::NoTexture()] = !m_textures;
+    val[ViewJson::NoMaterial()] = !m_materials;
+    val[ViewJson::NoSceneLight()] = !m_sceneLights;
+    val[ViewJson::VisibleEdges()] = m_visibleEdges;
+    val[ViewJson::HiddenEdges()] = m_hiddenEdges;
+    val[ViewJson::Shadows()] = m_shadows;
+    val[ViewJson::NoClipVolume()] = m_noClipVolume;
+    val[ViewJson::IgnoreLighting()] = m_ignoreLighting;
 
     val[ViewJson::RenderMode()] =(uint8_t) m_renderMode;
     }
