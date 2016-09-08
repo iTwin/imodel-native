@@ -160,12 +160,12 @@ TEST(BeSQLiteDb, ChangeBriefcaseIdInReadonlyMode)
 
     Db db;
     DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ(BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str() << L"' failed.";
+    ASSERT_EQ(BE_SQLITE_OK, stat) << L"Reopening test Bim '" << dbPath.c_str() << L"' failed.";
 
     BeTest::SetFailOnAssert(false);
     stat = db.ChangeBriefcaseId(BeBriefcaseId(12345));
     BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling ChangeBriefcaseId on readonly DgnDb file is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling ChangeBriefcaseId on readonly Bim file is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -198,14 +198,14 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
     db.CloseDb();
     }
 
-    //reopen DgnDb again, change briefcase id and close again (to avoid that caches linger around)
+    //reopen Bim again, change briefcase id and close again (to avoid that caches linger around)
     BeBriefcaseId expectedBriefcaseId;
     expectedBriefcaseId.Invalidate();
 
     {
     Db db;
     DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test DgnDb '" << dbPath.c_str() << "' failed.";
+    ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test Bim '" << dbPath.c_str() << "' failed.";
 
     //now change briefcase id. This should truncate be_local and reinsert the new briefcase id
     const BeBriefcaseId currentBriefcaseId = db.GetBriefcaseId();
@@ -217,7 +217,7 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
     //now reopen from scratch
     Db db;
     DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test DgnDb '" << dbPath.c_str() << "' failed.";
+    ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test Bim '" << dbPath.c_str() << "' failed.";
 
     //query be_local to check that there is only one row (the repo id)
     Statement statement;

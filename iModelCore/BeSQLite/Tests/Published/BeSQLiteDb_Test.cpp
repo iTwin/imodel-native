@@ -633,7 +633,7 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
 
 
 /*---------------------------------------------------------------------------------**//**
-* Simulate a LineStyle dgndb case
+* Simulate a LineStyle bim case
 * @bsimethod                                    Majd.Uddin                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTests, linestyleDB)
@@ -666,7 +666,7 @@ TEST(BeSQLiteDbOpenTest, Expired)
     BeTest::GetHost().GetDocumentsRoot(docDir);
 
     BeFileName expiredFileNameW (docDir);
-    expiredFileNameW.AppendToPath(L"DgnDb");
+    expiredFileNameW.AppendToPath(L"Bim");
     expiredFileNameW.AppendToPath(L"expired.ibim");
     ASSERT_TRUE( BeFileName::DoesPathExist(expiredFileNameW) );
 

@@ -2195,7 +2195,7 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
 
     const bool succeeded = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
 
-    // Caller may attempt to reopen DgnDb using same params...do not leave this flag modified
+    // Caller may attempt to reopen Bim using same params...do not leave this flag modified
     // (See e.g. sample navigator, which will re-open for read-only if we upgrade the schema)
     m_forSchemaUpgrade = false;
 
@@ -5248,9 +5248,9 @@ static ZipErrors translate7ZipError(SRes code, bool readingFromFile)
     }
 
 //=======================================================================================
-//  A compressed DgnDb file starts with LzmaDgnDbHeader.  This is not the same as an
+//  A compressed Bim file starts with LzmaDgnDbHeader.  This is not the same as an
 //  EmbeddedLzmaHeader.  A EmbeddedLzmaHeader is used for any type of embedded file.
-//  If a compressed DgnDb file is stored as an embedded file, it also gets a
+//  If a compressed Bim file is stored as an embedded file, it also gets a
 //  EmbeddedLzmaHeader as part of the embedded stream.
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================

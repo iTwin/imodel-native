@@ -2028,7 +2028,7 @@ public:
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database.
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
-        //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. DgnDb) rely on a single non-shared connection
+        //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
         BE_SQLITE_EXPORT explicit OpenParams(OpenMode openMode, DefaultTxn startDefaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr);
 
@@ -2075,7 +2075,7 @@ public:
         //! @param[in] failIfDbExists If true, return an error if a the specified file already exists, otherwise delete existing file.
         //! @param[in] defaultTxn Whether to start the default transaction against the newly created Db. @see SetStartDefaultTxn
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
-        //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. DgnDb) rely on a single non-shared connection
+        //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
         //! @param[in] createStandalone If true, creates a standalone database; otherwise, creates a master database
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
@@ -2240,8 +2240,8 @@ public:
     //! can open it or not. If it cannot be opened, a respective error code is returned from this method.
     //!
     //! The version check is performed for @b every %Bentley SQLite profile the file contains. Only if all profiles
-    //! in the file succeed the test, the file is eventually opened. Example profiles are the @b %DgnDb or the @b %ECDb profile
-    //! (see also @ref ECDbFile "ECDb versus DgnDb profile").
+    //! in the file succeed the test, the file is eventually opened. Example profiles are the @b %Bim or the @b %ECDb profile
+    //! (see also @ref ECDbFile "ECDb versus Bim profile").
     //!
     //! #### Auto-upgrade of older files
     //! Each profile defines a version threshold, the so-called <b>minimum auto-upgradeable profile version</b>, up to which the
