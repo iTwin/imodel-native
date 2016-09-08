@@ -31,6 +31,22 @@ ScalableMeshAdmin& ScalableMeshLib::Host::_SupplyScalableMeshAdmin()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WsgTokenAdmin& ScalableMeshLib::Host::_SupplyWsgTokenAdmin()
+    {
+    return *new WsgTokenAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
+    {
+    return *new SSLCertificateAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RegisterPODImportPlugin();
@@ -40,13 +56,15 @@ void ScalableMeshLib::Host::Initialize()
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
+    m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
+    m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();
-        BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
-        GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
+    BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+    GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -22,6 +22,10 @@ const wchar_t    DATA_SOURCE_VIRTUAL_URL_SEPARATOR_STR[2]        = L".";
 class DataSourceURL : public std::wstring
 {
 
+private:
+
+    std::wstring m_separator = DATA_SOURCE_URL_SEPARATOR_STR;
+
 protected:
 
     DataSourceStatus        normalizeDirUp            (DataSourceURL &str);
@@ -31,6 +35,8 @@ public:
 CLOUD_EXPORT                       DataSourceURL            (void);
 CLOUD_EXPORT                       DataSourceURL            (wchar_t *str);
 CLOUD_EXPORT                       DataSourceURL            (const std::wstring &str);
+
+CLOUD_EXPORT   void                operator=                (const DataSourceURL &url);
 
                bool                isWindowsFilePath        (void) const;
                DataSourceStatus    getFilePath              (std::wstring &filePath) const;
@@ -46,6 +52,12 @@ CLOUD_EXPORT                       DataSourceURL            (const std::wstring 
                unsigned int        findAndReplace           (const std::wstring & findStr, const std::wstring & replaceStr);
                
                DataSourceStatus    collapseDirectories      (DataSourceURL &result) const;
+
+               bool                endsWithSeparator();
+
+CLOUD_EXPORT   void                setSeparator             (const std::wstring& separator);
+
+CLOUD_EXPORT   std::wstring        getSeparator             () const;
 
 CLOUD_EXPORT   DataSourceStatus    append                   (const DataSourceURL &directory);
 

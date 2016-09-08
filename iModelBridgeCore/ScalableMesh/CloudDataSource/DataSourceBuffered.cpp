@@ -163,9 +163,7 @@ DataSourceStatus DataSourceBuffered::flush(void)
         {
         auto buffer = this->getBuffer();
 
-        DataSourceURL    url;
-        this->getURL(url);
-        account->uploadBlobSync(url, buffer->getSegment(0), buffer->getSize());
+        account->uploadBlobSync(*this, buffer->getSegment(0), buffer->getSize());
                           // Upload of this buffer is complete, delete it
         delete buffer;
         setBuffer(nullptr);

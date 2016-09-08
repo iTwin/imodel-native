@@ -164,7 +164,7 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSource &dataSource
     return downloadBlobSync(url, dest, readSize, destSize);
 }
 
-DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
     DataSourceStatus    status;
     DataSourceURL        containerName;

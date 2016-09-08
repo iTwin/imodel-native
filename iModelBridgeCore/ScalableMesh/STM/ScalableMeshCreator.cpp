@@ -79,6 +79,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
+DataSourceManager IScalableMeshCreator::Impl::s_dataSourceManager;
+
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -375,8 +377,7 @@ template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
     {
     WString filterTypeStr;
-
-    //NEEDS_WORK_SM : Document all environments variable like this one somewhere (e.g. : pw:\\Alpo.bentley.com:alpo-bentleygeospatial\Documents\Raster Products\General\environment variables.doc)
+    
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
         {
         ScalableMeshFilterType filterTypeOverwrite = (ScalableMeshFilterType)_wtoi(filterTypeStr.c_str());
@@ -450,9 +451,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
     }
 
 ScalableMeshFilterType scm_getFilterType ()
-    {
-    //NEEDS_WORK_SM - No progressive for mesh
-    //return SCM_FILTER_PROGRESSIVE_DUMB;    
+    {    
     //return SCM_FILTER_CGAL_SIMPLIFIER;
     return SCM_FILTER_DUMB_MESH;
     }
@@ -529,10 +528,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
-        
-
-    // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
-
+            
     if (!isSingleFile)
         {
         auto position = m_scmFileName.find_last_of(L".stm");
@@ -542,10 +538,10 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
 
-        // Pip ToDo: Create account?
-            DataSourceAccount *account = nullptr;                                    
+        // Pip ToDo: Create manager?
+            DataSourceManager *manager = &s_dataSourceManager;                                    
         
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

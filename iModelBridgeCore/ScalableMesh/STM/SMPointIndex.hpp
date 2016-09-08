@@ -11,7 +11,8 @@ using namespace ISMStore;
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(size_t pi_SplitTreshold,
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeInd, 
+        size_t pi_SplitTreshold,
         const EXTENT& pi_rExtent,        
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
@@ -78,9 +79,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         }
     
     m_isGrid = false;
-
-
-    m_nodeId = m_SMIndex->GetNextNodeId();    
+    m_nodeId = nodeInd;
 
     m_isDirty = false;
 
@@ -154,7 +153,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
 
-    m_nodeId = m_SMIndex->GetNextNodeId();
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
     m_isDirty = false;
@@ -232,7 +231,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
    
-    m_nodeId = m_SMIndex->GetNextNodeId();
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
 
@@ -7542,8 +7541,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    auto position = pi_pOutputDirPath.find(L"_stream\\");
-    auto masterHeaderPath = pi_pOutputDirPath.substr(0, position + 8);
+    BeFileName masterHeaderPath(pi_pOutputDirPath);
+    masterHeaderPath.PopDir();
+    masterHeaderPath.PopDir();
 
     groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
 
@@ -7554,21 +7554,22 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    this->SaveMasterHeaderToCloud(dataSourceAccount);
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
-    new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pCompress)
+    new SMStreamingStore<Extent3dType>(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #else
-   SMStreamingStore<Extent3dType>::Create(dataSourceAccount, pi_pOutputDirPath, pi_pCompress)
+   SMStreamingStore<Extent3dType>::Create(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #endif
     );                    
+
+    this->SaveMasterHeaderToCloud(dataStore);
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
 
@@ -7579,37 +7580,12 @@ This method saves the master header for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
     {
     SMIndexMasterHeader<EXTENT> masterHeader;
     this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
 
-    Json::Value masterHeaderJson;
-    masterHeaderJson["balanced"] = masterHeader.m_balanced;
-    masterHeaderJson["depth"] = (uint32_t)masterHeader.m_depth;
-    masterHeaderJson["rootNodeBlockID"] = masterHeader.m_rootNodeBlockID.m_integerID;
-    masterHeaderJson["splitThreshold"] = masterHeader.m_SplitTreshold;
-    masterHeaderJson["isTerrain"] = masterHeader.m_isTerrain;
-    masterHeaderJson["singleFile"] = false; // cloud format is always multifile
-
-    auto jsonBuffer = Json::StyledWriter().write(masterHeaderJson);
-
-    DataSourceStatus writeStatus;
-    DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
-
-    DataSource *dataSource = dataSourceAccount->getOrCreateDataSource(L"MasterHeader");
-    assert(dataSource != nullptr);
-
-    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write);
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->close();
-    assert(writeStatus.isOK());
-
-    //dataSourceAccount->uploadBlobSync(dataSourceURL, reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
+    pi_pDataStore->StoreMasterHeader(&masterHeader, sizeof(masterHeader));
 
     return SUCCESS;
     }
@@ -7822,7 +7798,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::UnsplitEmp
 
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetNextNodeId(), GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
     pNewNode->m_isGenerating = m_isGenerating;
 
     if (isRootNode)

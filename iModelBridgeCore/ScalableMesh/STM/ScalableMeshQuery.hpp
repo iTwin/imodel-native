@@ -1674,6 +1674,11 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
     {
     }
+
+template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::AddClipVector(ClipVectorPtr& clipVector)
+    {
+    m_clipVectors.push_back(clipVector);    
+    }
      
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() const
     {

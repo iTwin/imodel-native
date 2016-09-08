@@ -11,29 +11,29 @@
 
 #include "SMStreamingDataStore.h"
 #include "../Threading\LightThreadPool.h"
-#include <curl/curl.h>
 #include <condition_variable>
 #include <CloudDataSource/DataSourceAccount.h>
 #include <CloudDataSource\DataSourceBuffered.h>
 
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
+#include "ScalableMesh/ScalableMeshLib.h"
 
 USING_NAMESPACE_IMAGEPP
 
 
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
-    :m_pathToHeaders(headers_path),
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
+    :m_pathToHeaders(headers_path.c_str()),
      m_use_node_header_grouping(areNodeHeadersGrouped),
      m_use_virtual_grouping(isVirtualGrouping)
     {
-    SetDataSourceAccount(dataSourceAccount);            
-       
+    InitializeDataSourceAccount(dataSourceManager, path);
+
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
-        m_pathToHeaders = L"headers/";
+        m_pathToHeaders = L"headers";
 
         if (m_use_node_header_grouping && m_use_virtual_grouping)
             {
@@ -42,18 +42,21 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
             }
         }
 
+    m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
+
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW(m_dataSourceAccount->getPrefixPath().c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
-        
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_pathToHeaders).c_str(), NULL))
+        path.append(DataSourceURL(m_pathToHeaders.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
@@ -62,6 +65,95 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
 
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
+    }
+
+template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory)
+    {
+    DataSourceStatus                            status;
+    if (s_stream_from_disk)
+        {
+        DataSourceAccount                       *   accountLocalFile;
+        DataSourceService                       *   serviceLocalFile;
+
+        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the file service streaming
+        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountLocalFile);
+        }
+    else if (s_stream_from_wsg)
+        {
+        Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
+        assert(!tokenUtf8.empty());
+
+        Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
+        assert(!sslCertificatePath.empty());
+
+        DataSourceService                       *   serviceWSG;
+        DataSourceAccount                       *   accountWSG;
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server
+        DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token?
+
+        serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
+        if (serviceWSG == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
+        if (accountWSG == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+
+        this->SetDataSourceAccount(accountWSG);
+        }
+    else
+        {
+        // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
+        // NEEDS_WORK_SM_STREAMING: How to specify identifier and key?
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
+        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+        DataSourceService                       *   serviceAzure;
+        DataSourceAccount                       *   accountAzure;
+        DataSourceAccount                       *   accountCaching;
+        DataSourceService                       *   serviceFile;
+        //  DataSourceAccount                       *   accountCaching;
+
+        // Setup Azure account
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (accountAzure == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        this->SetDataSourceAccount(accountAzure);
+
+        // Setup Caching service
+        if ((serviceFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+
+        //  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+        // Set up local file based caching
+        accountAzure->setCaching(*accountCaching, DataSourceURL());
+
+        // Set up default container
+        accountAzure->setPrefixPath(DataSourceURL((WString(L"scalablemeshtest/") + directory).c_str()));
+        }
+
+    return DataSourceStatus();
     }
 
 template <class EXTENT> uint64_t SMStreamingStore<EXTENT>::GetNextID() const
@@ -130,6 +222,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             wchar_t buffer[10000];
 
             swprintf(buffer, L"MasterHeaderWith%sGroups.bin", (m_use_virtual_grouping ? L"Virtual" : L""));
+            //swprintf(buffer, L"Production_Graz_3MX.3mx");
 
             DataSourceURL    dataSourceURL(buffer);
                                 
@@ -202,7 +295,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                                                                      group_numNodes, 
                                                                      group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders : m_pathToHeaders + L"g\\g_");
+                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 
@@ -227,13 +320,22 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
+                {
+                assert(false); // problem initializing a datasource
                 return 0;
+                }
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                assert(false); // problem opening a datasource
                 return 0;
+                }
 
             if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                {
+                assert(false); // problem reading a datasource
                 return 0;
+                }
 
             dataSource->close();
 
@@ -532,10 +634,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     SerializeHeaderToBinary(header, headerData, headerSize);
     //SerializeHeaderToJSON(header, blockID, block);
 
-    wchar_t buffer[10000];
-    swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
-
-    DataSourceURL    dataSourceURL(buffer);
+    DataSourceURL dataSourceURL = m_pathToHeaders;
+    dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin"));
 
     bool created = false;
     DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
@@ -786,11 +886,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
     DataSource::DataSize                           readSize;
-    wchar_t                                        buffer[10000];
 
-    swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
-
-    DataSourceURL    dataSourceURL(buffer);
+    DataSourceURL    dataSourceURL(m_pathToHeaders);
+    dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -918,28 +1016,31 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     switch (type)
         {
         case SMStoreDataType::Points: 
-            m_pathToNodeData = L"points/";
+            m_pathToNodeData = L"points";
             break;
         case SMStoreDataType::TriPtIndices:
-            m_pathToNodeData = L"indices/";
+            m_pathToNodeData = L"indices";
             break;
         case SMStoreDataType::UvCoords:
-            m_pathToNodeData = L"uvs/";
+            m_pathToNodeData = L"uvs";
             break;
         case SMStoreDataType::TriUvIndices:
-            m_pathToNodeData = L"uvindices/";
+            m_pathToNodeData = L"uvindices";
             break;
         default:
             assert(!"Unkown data type for streaming");
         }
 
+    m_pathToNodeData.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_pathToNodeData).c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        path.append(DataSourceURL(m_pathToNodeData.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
@@ -963,26 +1064,26 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
     if (NULL != DataTypeArray && countData > 0)
         {
         DataSourceStatus writeStatus;
-        wchar_t buffer[10000];
-        swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
-        DataSourceURL    dataSourceURL(buffer);
 
-        bool created = false;
-        DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
+        DataSourceURL url = m_pathToNodeData;
+        url.append(L"p_" + std::to_wstring(blockID.m_integerID) + L".bin");
+
+        //bool created = false;
+        //DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
         //{
         //std::lock_guard<mutex> clk(s_consoleMutex);
         //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
         //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
         //}
-        //DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
 
-        dataSource->setSegmentSize(1024 * 32);
+        //dataSource->setSegmentSize(1024 * 32);
+        //
+        //// Time I/O operation timeouts for threading
+        //dataSource->setTimeout(DataSource::Timeout(10000));
 
-        // Time I/O operation timeouts for threading
-        dataSource->setTimeout(DataSource::Timeout(10000));
-
-        writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
+        writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
         assert(writeStatus.isOK()); // problem opening a DataSource
 
         HCDPacket uncompressedPacket, compressedPacket;
@@ -1160,15 +1261,13 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 LockAndWait();
             }
         else
-            {
-                wchar_t buffer[10000];
-                swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
-            
+            {           
                 std::unique_ptr<DataSource::Buffer[]>        dest;
                 DataSource                                *  dataSource;
                 DataSource::DataSize                         readSize;
 
-                DataSourceURL    dataSourceURL(buffer);
+                DataSourceURL    dataSourceURL(m_pDataSource);
+                dataSourceURL.append(L"p_" + std::to_wstring(m_pID) + L".bin");
 
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -1226,7 +1325,7 @@ uint64_t StreamingDataBlock::GetID()
     return m_pID; 
     }
 
-void StreamingDataBlock::SetDataSource(const WString& pi_DataSource)
+void StreamingDataBlock::SetDataSource(const DataSourceURL& pi_DataSource)
     {
     m_pDataSource = pi_DataSource;
     }
@@ -1246,84 +1345,6 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
 
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-//    {
-//    size_t realsize = size * nmemb;
-//    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-//
-//    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-//
-//    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-//    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
-//
-//    return realsize;
-//    }
-//
-//// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
-//    {
-//    CURL *curl_handle;
-//    bool retCode = true;
-//    struct MemoryStruct chunk;
-//    const int maxCountData = 100000;
-//    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
-//    Utf8String name;
-//    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
-//    blockUrl += name;
-//
-//    chunk.memory = this;
-//    chunk.memory->reserve(maxCountData);
-//    chunk.size = 0;
-//    curl_global_init(CURL_GLOBAL_ALL);
-//    curl_handle = curl_easy_init();
-//
-//    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
-//    //std::lock_guard<std::mutex> lock(fileMutex);
-//    //BeFile file;
-//    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
-//    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
-//    //    {
-//    //    file.SetPointer(0, BeFileSeekOrigin::End);
-//    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
-//    //    Utf8String utf8_node_location;
-//    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-//    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
-//    //    }
-//    //else
-//    //    {
-//    //    assert(!"Problem creating nodes file");
-//    //    }
-//    //
-//    //file.Close();
-//
-//    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-//    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-//
-//    /* get it! */
-//    CURLcode res = curl_easy_perform(curl_handle);
-//    /* check for errors */
-//    if (CURLE_OK != res)
-//        {
-//        retCode = false;
-//        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//        assert(false);
-//        }
-//
-//    curl_easy_cleanup(curl_handle);
-//    curl_global_cleanup();
-//
-//    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
-//
-//    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
-//    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
-//
-//    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
-//    }
-
-
 template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
@@ -1340,7 +1361,8 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
         else
             {
             auto blockSize = m_nodeHeader->GetBlockSize(5);
-            texture.SetDataSource(this->GetDataSourceAccount(), m_path);
+            texture.SetDataSourceAccount(this->GetDataSourceAccount());
+            texture.SetDataSourceURL(m_path);
             texture.SetID(blockID.m_integerID);
             texture.Load(blockSize);
             }
@@ -1351,17 +1373,21 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
 
 
 template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    : m_path(L"textures/"),
+    : m_path(L"textures"),
       m_nodeHeader(nodeHeader)
     {
     this->SetDataSourceAccount(dataSourceAccount);
+
+    m_path.setSeparator(dataSourceAccount->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_path).c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        path.append(DataSourceURL(m_path.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
@@ -1385,7 +1411,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
 
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
     Texture texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
-    texture.SetDataSource(m_dataSourceAccount, m_path);
+    texture.SetDataSourceAccount(m_dataSourceAccount);
+    texture.SetDataSourceURL(m_path);
     texture.SavePixelDataToDisk(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
 
     return blockID;
@@ -1396,9 +1423,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     assert(blockID.IsValid());
 
     DataSourceStatus writeStatus;
-    wchar_t buffer[10000];
-    swprintf(buffer, L"%st_%llu.bin", m_path.c_str(), blockID.m_integerID);
-    DataSourceURL    dataSourceURL(buffer);
+    DataSourceURL    url(m_path);
+    url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
     bool created = false;
     DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
@@ -1409,7 +1435,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
     //}
 
-    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
+    writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
     assert(writeStatus.isOK());
 
     writeStatus = dataSource->write(DataTypeArray, (uint32_t)countData);

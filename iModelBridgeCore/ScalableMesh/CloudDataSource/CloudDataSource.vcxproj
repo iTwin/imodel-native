@@ -25,6 +25,7 @@
     <ClCompile Include="DataSourceAccountAzure.cpp" />
     <ClCompile Include="DataSourceAccountCached.cpp" />
     <ClCompile Include="DataSourceAccountFile.cpp" />
+    <ClCompile Include="DataSourceAccountWSG.cpp" />
     <ClCompile Include="DataSourceAzure.cpp" />
     <ClCompile Include="DataSourceBuffer.cpp" />
     <ClCompile Include="DataSourceBuffered.cpp" />
@@ -39,8 +40,10 @@
     <ClCompile Include="DataSourceServiceAzure.cpp" />
     <ClCompile Include="DataSourceServiceFile.cpp" />
     <ClCompile Include="DataSourceServiceManager.cpp" />
+    <ClCompile Include="DataSourceServiceWSG.cpp" />
     <ClCompile Include="DataSourceTransferScheduler.cpp" />
     <ClCompile Include="DataSourceURL.cpp" />
+    <ClCompile Include="DataSourceWSG.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -50,6 +53,7 @@
     <ClInclude Include="include\DataSourceAccountAzure.h" />
     <ClInclude Include="include\DataSourceAccountCached.h" />
     <ClInclude Include="include\DataSourceAccountFile.h" />
+    <ClInclude Include="include\DataSourceAccountWSG.h" />
     <ClInclude Include="include\DataSourceAzure.h" />
     <ClInclude Include="include\DataSourceBuffer.h" />
     <ClInclude Include="include\DataSourceBuffered.h" />
@@ -66,10 +70,12 @@
     <ClInclude Include="include\DataSourceServiceAzure.h" />
     <ClInclude Include="include\DataSourceServiceFile.h" />
     <ClInclude Include="include\DataSourceServiceManager.h" />
+    <ClInclude Include="include\DataSourceServiceWSG.h" />
     <ClInclude Include="include\DataSourceStatus.h" />
     <ClInclude Include="include\DataSourceStoreConfig.h" />
     <ClInclude Include="include\DataSourceTransferScheduler.h" />
     <ClInclude Include="include\DataSourceURL.h" />
+    <ClInclude Include="include\DataSourceWSG.h" />
     <ClInclude Include="include\Manager.h" />
     <ClInclude Include="include\PerformanceTimer.h" />
     <ClInclude Include="include\Status.h" />

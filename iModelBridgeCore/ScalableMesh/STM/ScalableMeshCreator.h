@@ -128,6 +128,7 @@ struct IScalableMeshCreator::Impl
 
         //CREATOR2
 
+        static DataSourceManager            s_dataSourceManager;
 
 
         StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,

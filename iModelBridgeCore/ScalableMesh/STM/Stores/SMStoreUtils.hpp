@@ -79,6 +79,7 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::op
     m_clipSetsID.resize(nodeHeader.m_clipSetsID.size());
     for (auto& id : m_clipSetsID) if (nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()]);
     if (nodeHeader.m_textureID != SQLiteNodeHeader::NO_NODEID) m_textureID = HPMBlockID(nodeHeader.m_textureID);
+    else m_textureID = HPMBlockID();
     m_ptsIndiceID.resize(nodeHeader.m_ptsIndiceID.size());
     for (auto& id : m_ptsIndiceID) if (nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()]);
     m_uvsIndicesID.resize(nodeHeader.m_uvsIndicesID.size());

@@ -556,13 +556,17 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const = 0;
 
-        virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const = 0;       
+        virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const = 0;      
+
+        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;        
 
     public : 
 
         BENTLEY_SM_EXPORT StatusInt GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const;
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const;        
+
+        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;                
     };
 
 

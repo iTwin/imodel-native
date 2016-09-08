@@ -17,6 +17,7 @@
 
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
+extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
@@ -36,7 +37,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
         DataSourceAccount* m_dataSourceAccount;
         WString m_rootDirectory;        
-        WString m_pathToHeaders;
+        DataSourceURL m_pathToHeaders;
         bool m_use_node_header_grouping;
         bool m_use_virtual_grouping;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
@@ -52,10 +53,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
             
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
+
+    private :
+
+        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory);
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
 
@@ -102,9 +107,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
         {
-        return new SMStreamingStore(dataSourceAccount, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
+        return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
         }
         //Inherited from ISMDataStore - End
                              
@@ -134,29 +139,16 @@ public:
         
     uint64_t GetID();
 
-    void SetDataSource(const WString& pi_DataSource);            
+    void SetDataSource(const DataSourceURL& pi_DataSource);
         
     void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
         
-private:
-    // NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    struct MemoryStruct {
-//        bvector<Byte>* memory;
-//        size_t         size;
-//        };
-//
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
-//
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    void LoadFromFileSystem(const WString& m_pFilename);
-
 private:
 
     bool m_pIsLoading = false;
     bool m_pIsLoaded = false;
     uint64_t m_pID = -1;
-    WString m_pDataSource;    
+    DataSourceURL m_pDataSource;    
     condition_variable m_pPointBlockCV;
     mutex m_pPointBlockMutex;
     };
@@ -168,7 +160,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
         HFCPtr<SMNodeGroup>           m_nodeGroup;
         DataSourceAccount*            m_dataSourceAccount;
-        WString                       m_pathToNodeData;
+        DataSourceURL                 m_pathToNodeData;
         SMStoreDataType               m_dataType;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
@@ -211,10 +203,13 @@ struct Texture : public bvector<uint8_t>
         Texture(const int& width, const int& height, const int& numChannels)
             : m_Width{width}, m_Height{height}, m_NbChannels(numChannels)
             {}
-        void SetDataSource(DataSourceAccount * dataSourceAccount, const WString& pi_DataSource)
+        void SetDataSourceAccount(DataSourceAccount * dataSourceAccount)
             {
             m_dataSourceAccount = dataSourceAccount;
-            m_DataSource = pi_DataSource;
+            }
+        void SetDataSourceURL(const DataSourceURL& url)
+            {
+            m_url = url;
             }
         void SavePixelDataToDisk(uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID)
             {
@@ -237,9 +232,8 @@ struct Texture : public bvector<uint8_t>
             memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
 
             DataSourceStatus writeStatus;
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), blockID.m_integerID);
-            DataSourceURL    dataSourceURL(buffer);
+            DataSourceURL    url(m_url);
+            url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
             bool created = false;
             DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
@@ -250,7 +244,7 @@ struct Texture : public bvector<uint8_t>
             //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
             //}
 
-            writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
+            writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
             assert(writeStatus.isOK()); // problem opening a DataSource
 
             writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
@@ -264,22 +258,6 @@ struct Texture : public bvector<uint8_t>
             //}
             }
 
-        DataSource *InitializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
-            {
-            if (dataSourceAccount == nullptr)
-                return nullptr;
-                                                    // Get the thread's DataSource or create a new one
-            DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
-            if (dataSource == nullptr)
-                return nullptr;
-                                                    // Make sure caching is enabled for this DataSource
-            dataSource->setCachingEnabled(s_stream_enable_caching);
-
-            dest.reset(new unsigned char[destSize]);
-                                                    // Return the DataSource
-            return dataSource;
-            }
-
         void Load(uint64_t blockSize = uint64_t(-1))
             {
             std::unique_ptr<DataSource::Buffer[]>       dest;
@@ -287,14 +265,13 @@ struct Texture : public bvector<uint8_t>
             DataSource::DataSize                        readSize;
 
             assert(m_ID != -1);
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
 
-            DataSourceURL   dataSourceURL(buffer);
+            DataSourceURL   dataSourceURL(m_url);
+            dataSourceURL.append(L"t_" + std::to_wstring(m_ID) + L".bin");
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
-            dataSource = this->InitializeDataSource(m_dataSourceAccount, dest, destSize);
+            dataSource = this->GetDataSource(dest, destSize);
             if (dataSource == nullptr)
                 return;
 
@@ -363,6 +340,21 @@ struct Texture : public bvector<uint8_t>
 
     private:
 
+        DataSource *GetDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+            {
+            assert(m_dataSourceAccount); // A data source account must be set first!
+
+            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+            if (dataSource == nullptr) return nullptr;
+
+            // Make sure caching is enabled for this DataSource
+            dataSource->setCachingEnabled(s_stream_enable_caching);
+
+            dest.reset(new unsigned char[destSize]);
+
+            return dataSource;
+            }
+
         void DecompressTexture(uint8_t* pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize)
             {
             assert(m_Width > 0 && m_Height > 0 && m_NbChannels > 0);
@@ -401,9 +393,6 @@ struct Texture : public bvector<uint8_t>
             return true;
             }
 
-        void                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)      { m_dataSourceAccount = dataSourceAccount; }
-        DataSourceAccount * GetDataSourceAccount    (void) const                                { return m_dataSourceAccount; }
-
     private:
         uint64_t m_ID = -1;
         bool m_IsLoaded = false;
@@ -412,7 +401,7 @@ struct Texture : public bvector<uint8_t>
         int m_Height = 256;
         int m_NbChannels = 3; // 3 channels by default
         int m_Format = 0;     // could be useful in the future
-        WString m_DataSource;
+        DataSourceURL m_url;
         condition_variable m_TextureCV;
         mutex m_TextureMutex;
 
@@ -423,7 +412,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
     {
     private:
 
-        WString m_path;
+        DataSourceURL m_path;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable map<uint32_t, Texture> m_textureCache;
         mutable std::mutex m_textureCacheLock;
