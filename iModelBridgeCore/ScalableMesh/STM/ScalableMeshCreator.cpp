@@ -548,7 +548,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
             {
             BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
             //stmFilename
-            size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
+            size_t size = stmFilename.ReplaceAll(L".stm", L".bim");
             assert(size==1);
             return true;
             }

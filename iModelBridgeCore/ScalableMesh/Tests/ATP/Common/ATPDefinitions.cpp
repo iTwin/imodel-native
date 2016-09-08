@@ -436,7 +436,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     if (saveType == SCM_SAVE_DGNDB_BLOB)
                         {
                         WString dgndbFileName(stmFileName);
-                        dgndbFileName.ReplaceAll(L".stm", L".dgndb");
+                        dgndbFileName.ReplaceAll(L".stm", L".bim");
 
                         FILE* f = _wfopen(dgndbFileName.c_str(), L"r");
                         assert(f != 0);
