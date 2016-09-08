@@ -222,7 +222,8 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 static bool s_waitCheckStop = false;
 static Byte s_transparency = 100;
-static bool s_applyClip = false;
+static bool s_applyClip = true;
+static bool s_dontShowMesh = false;
 
 
 void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNodes,
@@ -383,7 +384,7 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
         }
 
 
-     if (meshNodes.size() > 0)
+     if (meshNodes.size() > 0 && !s_dontShowMesh)
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < meshNodes.size(); nodeInd++)
@@ -751,6 +752,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                                                   m_currentDrawingInfoPtr->m_meshNodes, 
                                                   true, //No wireframe mode, so always load the texture.
                                                   clips); 
+
 
     assert(status == SUCCESS);
 
