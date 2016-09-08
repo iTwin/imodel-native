@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/FtpTraversalEngine.cpp $
+|     $Source: RealityPlatform/HttpTraversalEngine.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,8 +8,9 @@
 
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
+#include <regex>
 
-#include <RealityPlatform/FtpTraversalEngine.h>
+#include <RealityPlatform/HttpTraversalEngine.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
@@ -47,25 +48,25 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
     }
 
 
-// Static FtpClient members initialization.
-IFtpTraversalObserver* FtpClient::m_pObserver = NULL;
-FtpClient::RepositoryMapping FtpClient::m_dataRepositories = FtpClient::RepositoryMapping();
-int FtpClient::m_retryCount = 0;
+// Static HttpClient members initialization.
+IHttpTraversalObserver* HttpClient::m_pObserver = NULL;
+HttpClient::RepositoryMapping HttpClient::m_dataRepositories = HttpClient::RepositoryMapping();
+int HttpClient::m_retryCount = 0;
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
+HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
     {
-    return new FtpClient(serverUrl, serverName);
+    return new HttpClient(serverUrl, serverName);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
+HttpStatus HttpClient::DownloadContent(Utf8CP outputDirPath) const
     {
-    FtpStatus status = FtpStatus::UnknownError;
+    HttpStatus status = HttpStatus::UnknownError;
 
     // Set working directory.
     Utf8String workingDir = outputDirPath;
@@ -76,7 +77,7 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
         BeFileName::BeGetTempPath(tempDirPath);
         if (!tempDirPath.IsEmpty())
             {
-            tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\ftpdata\\");
+            tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\httpdata\\");
             BeFileName::CreateNewDirectory(tempDirPath.GetName());
             workingDir = tempDirPath.GetNameUtf8().c_str();
             }
@@ -85,11 +86,11 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
     // Perform file listing request.
     bvector<Utf8String> fileList;
     status = GetFileList(fileList);
-    if (FtpStatus::Success != status)
+    if (HttpStatus::Success != status)
         return status;
 
     if (fileList.empty())
-        return FtpStatus::Success; // There is no file to download. This is not an error because all files may already be in the cache and there is no need to redownload them.
+        return HttpStatus::Success; // There is no file to download. This is not an error because all files may already be in the cache and there is no need to redownload them.
 
     // Construct data mapping (FileFullPathAndName, FileNameOnly) for files to download.
     RealityDataDownload::UrlLink_UrlFile urlList;
@@ -117,13 +118,16 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
         }
 
     // Download files.
-    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
+    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);    
     if (pDownload == NULL)
-        return FtpStatus::DownloadError;
+        return HttpStatus::DownloadError;
+
+    if (!m_certificatePath.IsEmpty())
+        pDownload->SetCertificatePath(m_certificatePath.GetName());
 
     pDownload->SetStatusCallBack(ConstructRepositoryMapping);
     if (!pDownload->Perform())
-        return FtpStatus::DownloadError;
+        return HttpStatus::DownloadError;
 
     return status;
     }
@@ -131,7 +135,7 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetFileList(bvector<Utf8String>& fileList) const
+HttpStatus HttpClient::GetFileList(bvector<Utf8String>& fileList) const
     {
     return GetFileList(m_pServer->GetUrl().c_str(), fileList);
     }
@@ -139,17 +143,17 @@ FtpStatus FtpClient::GetFileList(bvector<Utf8String>& fileList) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetData() const
+HttpStatus HttpClient::GetData() const
     {
-    FtpStatus status = FtpStatus::UnknownError;
+    HttpStatus status = HttpStatus::UnknownError;
 
     // Download files from root. Store them in our temp directory.
     status = DownloadContent();
-    if (FtpStatus::Success != status)
+    if (HttpStatus::Success != status)
         return status;
 
     // Data extraction.
-    FtpDataPtr pExtractedData = FtpData::Create();
+    HttpDataPtr pExtractedData = HttpData::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
         {
         //&&JFC TODO: Can do better ?
@@ -160,7 +164,7 @@ FtpStatus FtpClient::GetData() const
         BeFileName::CreateNewDirectory(outputPathW.c_str());
     
         // Extract data.
-        pExtractedData = FtpDataHandler::ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
+        pExtractedData = HttpDataHandler::ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
         if (pExtractedData == NULL)
             {
             // Could not extract data, ignore and continue.
@@ -168,7 +172,7 @@ FtpStatus FtpClient::GetData() const
             continue;
             }
     
-        // Override source url so that it points to the ftp repository and not the local one.
+        // Override source url so that it points to the http repository and not the local one.
         pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
     
         // Set server.
@@ -191,7 +195,7 @@ FtpStatus FtpClient::GetData() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpClient::GetServerUrl() const
+Utf8StringCR HttpClient::GetServerUrl() const
     {
     return m_pServer->GetUrl();
     }
@@ -199,7 +203,7 @@ Utf8StringCR FtpClient::GetServerUrl() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    7/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpClient::GetServerName() const
+Utf8StringCR HttpClient::GetServerName() const
     {
     return m_pServer->GetName();
     }
@@ -207,7 +211,7 @@ Utf8StringCR FtpClient::GetServerName() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-const FtpClient::RepositoryMapping& FtpClient::GetRepositoryMapping() const
+const HttpClient::RepositoryMapping& HttpClient::GetRepositoryMapping() const
     {
     return m_dataRepositories;
     }
@@ -215,7 +219,7 @@ const FtpClient::RepositoryMapping& FtpClient::GetRepositoryMapping() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-void FtpClient::SetObserver(IFtpTraversalObserver* pObserver)
+void HttpClient::SetObserver(IHttpTraversalObserver* pObserver)
     {
     m_pObserver = pObserver;
     }
@@ -223,17 +227,33 @@ void FtpClient::SetObserver(IFtpTraversalObserver* pObserver)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName)
+HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName)
     {
-    m_pServer = FtpServer::Create(serverUrl, serverName);
+    m_certificatePath = BeFileName();
+    m_pServer = HttpServer::Create(serverUrl, serverName);
     m_pObserver = NULL;    
-    m_dataRepositories = RepositoryMapping();    
+    m_dataRepositories = RepositoryMapping();       
+
+    // Set certificate path.
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+
+    BeFileName caBundlePath(exeDir);
+    caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+
+    // Make sure directory exist.
+    if (caBundlePath.DoesPathExist())
+        m_certificatePath = caBundlePath;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClient::~FtpClient()
+HttpClient::~HttpClient()
     {
     if (0 != m_pObserver)
         {
@@ -245,38 +265,57 @@ FtpClient::~FtpClient()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
+HttpStatus HttpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
-    // Create request to get a list of all the files from the given path.
-    FtpRequestPtr pRequest = FtpRequest::Create(url);
+    // Create request to get page content.
+    HttpRequestPtr pRequest = HttpRequest::Create(url);
     pRequest->SetDirListOnly(true);
 
-    // Perform file listing request.
-    FtpResponsePtr pResponse = pRequest->Perform();
+    if (!m_certificatePath.IsEmpty())
+        pRequest->SetCertificatePath(m_certificatePath.GetNameUtf8().c_str());
+
+    // Perform request.
+    HttpResponsePtr pResponse = pRequest->Perform();
     if (!pResponse->IsSuccess())
         return pResponse->GetStatus();
 
-    // Parse response.
-    bvector<Utf8String> contentList;
-    BeStringUtilities::Split(pResponse->GetContent().c_str(), "\n", contentList);
+    // Find all regex matches to retrieve links from page content.  
+    bvector<Utf8String> linkList;
+    regex linkRegex("<\\s*a\\s+"                        // The opening of the <a> tag.
+                    "[^<]*href\\s*=\\s*"                // The href element.
+                    "\"([^<\"]+)\""                     // The actual link to parse.
+                    "[^<]*>", regex_constants::icase);  // The closing '>' of the <a> tag.    
+    cregex_iterator matchBegin(pResponse->GetContent().begin(), pResponse->GetContent().end(), linkRegex);
+    cregex_iterator matchEnd;
+    for (auto i = matchBegin; i != matchEnd; ++i)
+        {
+        cmatch match = *i;
 
+        // Verify if this is a parent directory.
+        Utf8String fullUrl(url);
+        Utf8String linkStr = match[1].str().c_str();
+        if (fullUrl.Contains(linkStr))
+            continue;
+
+        linkList.push_back(linkStr);
+        }
+    
     // Construct file list.
     Utf8String subPath;
     Utf8String fileFullPath;
-    for (Utf8StringCR content : contentList)
+    for (Utf8StringCR link : linkList)
         {
-        if (IsDirectory(content.c_str()))
+        if (IsDirectory(link.c_str()))
             {
             subPath = url;
-            subPath.append(content);
-            subPath.append("/");
+            subPath.append(link);
 
             GetFileList(subPath.c_str(), fileList);
-            }
+            }            
         else
-            {
+            {  
             fileFullPath = url;
-            fileFullPath.append(content);
+            fileFullPath.append(link);
 
             // Process listed data.
             if (m_pObserver != NULL)
@@ -286,13 +325,13 @@ FtpStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) cons
             }
         }
 
-    return FtpStatus::Success;
+    return HttpStatus::Success;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg)
+void HttpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
     if (ErrorCode == 0)
@@ -325,7 +364,7 @@ void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCo
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-bool FtpClient::IsDirectory(Utf8CP content) const
+bool HttpClient::IsDirectory(Utf8CP content) const
     {
     //&&JFC TODO: More robust check.
     Utf8String contentStr(content);
@@ -336,15 +375,15 @@ bool FtpClient::IsDirectory(Utf8CP content) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpRequestPtr FtpRequest::Create(Utf8CP url)
+HttpRequestPtr HttpRequest::Create(Utf8CP url)
     {
-    return new FtpRequest(url);
+    return new HttpRequest(url);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpResponsePtr FtpRequest::Perform()
+HttpResponsePtr HttpRequest::Perform()
     {
     Utf8String response;
     CurlHolder curl;
@@ -354,7 +393,14 @@ FtpResponsePtr FtpRequest::Perform()
     curl_easy_setopt(curl.Get(), CURLOPT_URL, m_url);
 
     // Set options.
-    curl_easy_setopt(curl.Get(), CURLOPT_CUSTOMREQUEST, m_method); // Custom string for request method.
+    //curl_easy_setopt(curl.Get(), CURLOPT_CUSTOMREQUEST, m_method); // Custom string for request method.
+    curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYPEER, 1); // Verify the SSL certificate.
+    curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYHOST, 1);  
+
+    if (!m_caPath.empty())
+        curl_easy_setopt(curl.Get(), CURLOPT_CAINFO, m_caPath);
+
+    //curl_easy_setopt(curl.Get(), CURLOPT_HTTPGET, 1); // Do a HTTP GET request.
     curl_easy_setopt(curl.Get(), CURLOPT_DIRLISTONLY, m_dirListOnly); // Ask for names only in a directory listing.
     curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, m_verbose); // Switch on full protocol/debug output while testing.
 
@@ -368,41 +414,41 @@ FtpResponsePtr FtpRequest::Perform()
     res = curl_easy_perform(curl.Get());
 
     // Check for errors.
-    FtpStatus status = FtpStatus::Success;
+    HttpStatus status = HttpStatus::Success;
     if (CURLE_OK != res || response.empty())
-        status = FtpStatus::CurlError;
+        status = HttpStatus::CurlError;
 
-    return FtpResponse::Create(m_url.c_str(), response.c_str(), status);
+    return HttpResponse::Create(m_url.c_str(), response.c_str(), status);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpRequest::FtpRequest(Utf8CP url)
-    : m_url(url), m_method("NLST"), m_dirListOnly(false), m_verbose(false)
+HttpRequest::HttpRequest(Utf8CP url)
+    : m_url(url), m_method("NLST"), m_caPath(), m_dirListOnly(false), m_verbose(false)
     {}
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpResponsePtr FtpResponse::Create()
+HttpResponsePtr HttpResponse::Create()
     {
-    return new FtpResponse("", "", FtpStatus::UnknownError);
+    return new HttpResponse("", "", HttpStatus::UnknownError);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpResponsePtr FtpResponse::Create(Utf8CP effectiveUrl, Utf8CP m_content, FtpStatus traversalStatus)
+HttpResponsePtr HttpResponse::Create(Utf8CP effectiveUrl, Utf8CP m_content, HttpStatus traversalStatus)
     {
-    return new FtpResponse(effectiveUrl, m_content, traversalStatus);
+    return new HttpResponse(effectiveUrl, m_content, traversalStatus);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpResponse::GetUrl() const
+Utf8StringCR HttpResponse::GetUrl() const
     {
     return m_effectiveUrl;
     }
@@ -410,7 +456,7 @@ Utf8StringCR FtpResponse::GetUrl() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpResponse::GetContent() const
+Utf8StringCR HttpResponse::GetContent() const
     {
     return m_content;
     }
@@ -418,7 +464,7 @@ Utf8StringCR FtpResponse::GetContent() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpResponse::GetStatus() const
+HttpStatus HttpResponse::GetStatus() const
     {
     return m_status;
     }
@@ -426,17 +472,17 @@ FtpStatus FtpResponse::GetStatus() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-bool FtpResponse::IsSuccess() const
+bool HttpResponse::IsSuccess() const
     {
     return (!m_effectiveUrl.empty() && 
             !m_content.empty() && 
-            (FtpStatus::Success == m_status));
+            (HttpStatus::Success == m_status));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpResponse::FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status)
+HttpResponse::HttpResponse(Utf8CP effectiveUrl, Utf8CP content, HttpStatus status)
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
     {}
 
@@ -444,111 +490,111 @@ FtpResponse::FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpDataPtr FtpData::Create()
+HttpDataPtr HttpData::Create()
     {
-    return new FtpData();
+    return new HttpData();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpData::GetName() const { return m_name; }
-void FtpData::SetName(Utf8CP name) { m_name = name; }
+Utf8StringCR HttpData::GetName() const { return m_name; }
+void HttpData::SetName(Utf8CP name) { m_name = name; }
 
-Utf8StringCR FtpData::GetUrl() const { return m_url; }
-void FtpData::SetUrl(Utf8CP url) { m_url = url; }
+Utf8StringCR HttpData::GetUrl() const { return m_url; }
+void HttpData::SetUrl(Utf8CP url) { m_url = url; }
 
-Utf8StringCR FtpData::GetCompoundType() const { return m_compoundType; }
-void FtpData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
+Utf8StringCR HttpData::GetCompoundType() const { return m_compoundType; }
+void HttpData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
 
-uint64_t FtpData::GetSize() const { return m_size; }
-void FtpData::SetSize(uint64_t size) { m_size = size; }
+uint64_t HttpData::GetSize() const { return m_size; }
+void HttpData::SetSize(uint64_t size) { m_size = size; }
 
-Utf8StringCR FtpData::GetResolution() const { return m_resolution; }
-void FtpData::SetResolution(Utf8CP res) { m_resolution = res; }
+Utf8StringCR HttpData::GetResolution() const { return m_resolution; }
+void HttpData::SetResolution(Utf8CP res) { m_resolution = res; }
 
-Utf8StringCR FtpData::GetProvider() const { return m_provider; }
-void FtpData::SetProvider(Utf8CP provider) { m_provider = provider; }
+Utf8StringCR HttpData::GetProvider() const { return m_provider; }
+void HttpData::SetProvider(Utf8CP provider) { m_provider = provider; }
 
-Utf8StringCR FtpData::GetDataType() const { return m_dataType; }
-void FtpData::SetDataType(Utf8CP type) { m_dataType = type; }
+Utf8StringCR HttpData::GetDataType() const { return m_dataType; }
+void HttpData::SetDataType(Utf8CP type) { m_dataType = type; }
 
-Utf8StringCR FtpData::GetLocationInCompound() const { return m_locationInCompound; }
-void FtpData::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
+Utf8StringCR HttpData::GetLocationInCompound() const { return m_locationInCompound; }
+void HttpData::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
 
-DateTimeCR FtpData::GetDate() const { return m_date; }
-void FtpData::SetDate(DateTimeCR date) { m_date = date; }
+DateTimeCR HttpData::GetDate() const { return m_date; }
+void HttpData::SetDate(DateTimeCR date) { m_date = date; }
 
-DRange2dCR FtpData::GetFootprint() const { return m_footprint; }
-void FtpData::SetFootprint(DRange2dCR footprint) { m_footprint = footprint; }
+DRange2dCR HttpData::GetFootprint() const { return m_footprint; }
+void HttpData::SetFootprint(DRange2dCR footprint) { m_footprint = footprint; }
 
-FtpThumbnailCR FtpData::GetThumbnail() const { return *m_pThumbnail; }
-void FtpData::SetThumbnail(FtpThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
+HttpThumbnailCR HttpData::GetThumbnail() const { return *m_pThumbnail; }
+void HttpData::SetThumbnail(HttpThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
 
-FtpMetadataCR FtpData::GetMetadata() const { return *m_pMetadata; }
-void FtpData::SetMetadata(FtpMetadataR metadata) { m_pMetadata = &metadata; }
+HttpMetadataCR HttpData::GetMetadata() const { return *m_pMetadata; }
+void HttpData::SetMetadata(HttpMetadataR metadata) { m_pMetadata = &metadata; }
 
-FtpServerCR FtpData::GetServer() const { return *m_pServer; }
-void FtpData::SetServer(FtpServerR server) { m_pServer = &server; }
+HttpServerCR HttpData::GetServer() const { return *m_pServer; }
+void HttpData::SetServer(HttpServerR server) { m_pServer = &server; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpData::FtpData()
+HttpData::HttpData()
     {
     m_size = 0;
     m_date = DateTime();
     m_footprint = DRange2d();
-    m_pThumbnail = FtpThumbnail::Create();
-    m_pMetadata = FtpMetadata::Create();
-    m_pServer = FtpServer::Create();
+    m_pThumbnail = HttpThumbnail::Create();
+    m_pMetadata = HttpMetadata::Create();
+    m_pServer = HttpServer::Create();
     }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnailPtr FtpThumbnail::Create()
+HttpThumbnailPtr HttpThumbnail::Create()
     {
-    return new FtpThumbnail();
+    return new HttpThumbnail();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnailPtr FtpThumbnail::Create(RealityDataCR rasterData)
+HttpThumbnailPtr HttpThumbnail::Create(RealityDataCR rasterData)
     {
-    return new FtpThumbnail(rasterData);
+    return new HttpThumbnail(rasterData);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpThumbnail::GetProvenance() const { return m_provenance; }
-void FtpThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
+Utf8StringCR HttpThumbnail::GetProvenance() const { return m_provenance; }
+void HttpThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
 
-Utf8StringCR FtpThumbnail::GetFormat() const { return m_format; }
-void FtpThumbnail::SetFormat(Utf8CP format) { m_format = format; }
+Utf8StringCR HttpThumbnail::GetFormat() const { return m_format; }
+void HttpThumbnail::SetFormat(Utf8CP format) { m_format = format; }
 
-uint32_t FtpThumbnail::GetWidth() const { return m_width; }
-void FtpThumbnail::SetWidth(uint32_t width) { m_width = width; }
+uint32_t HttpThumbnail::GetWidth() const { return m_width; }
+void HttpThumbnail::SetWidth(uint32_t width) { m_width = width; }
 
-uint32_t FtpThumbnail::GetHeight() const { return m_height; }
-void FtpThumbnail::SetHeight(uint32_t height) { m_height = height; }
+uint32_t HttpThumbnail::GetHeight() const { return m_height; }
+void HttpThumbnail::SetHeight(uint32_t height) { m_height = height; }
 
-DateTimeCR FtpThumbnail::GetStamp() const { return m_stamp; }
-void FtpThumbnail::SetStamp(DateTimeCR date) { m_stamp = date; }
+DateTimeCR HttpThumbnail::GetStamp() const { return m_stamp; }
+void HttpThumbnail::SetStamp(DateTimeCR date) { m_stamp = date; }
 
-const bvector<Byte>& FtpThumbnail::GetData() const { return m_data; }
-void FtpThumbnail::SetData(const bvector<Byte>& data) { m_data = data; }
+const bvector<Byte>& HttpThumbnail::GetData() const { return m_data; }
+void HttpThumbnail::SetData(const bvector<Byte>& data) { m_data = data; }
 
-Utf8StringCR FtpThumbnail::GetGenerationDetails() const { return m_generationDetails; }
-void FtpThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
+Utf8StringCR HttpThumbnail::GetGenerationDetails() const { return m_generationDetails; }
+void HttpThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnail::FtpThumbnail()
+HttpThumbnail::HttpThumbnail()
     {
     m_width = THUMBNAIL_WIDTH;
     m_height = THUMBNAIL_HEIGHT;
@@ -559,7 +605,7 @@ FtpThumbnail::FtpThumbnail()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnail::FtpThumbnail(RealityDataCR rasterData)
+HttpThumbnail::HttpThumbnail(RealityDataCR rasterData)
     {
     m_provenance = "Created by RealityDataHandler tool.";
     m_format = "png";
@@ -575,50 +621,50 @@ FtpThumbnail::FtpThumbnail(RealityDataCR rasterData)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpMetadataPtr FtpMetadata::Create()
+HttpMetadataPtr HttpMetadata::Create()
     {
-    return new FtpMetadata();
+    return new HttpMetadata();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpMetadataPtr FtpMetadata::CreateFromFile(Utf8CP filePath)
+HttpMetadataPtr HttpMetadata::CreateFromFile(Utf8CP filePath)
     {
-    return new FtpMetadata(filePath);
+    return new HttpMetadata(filePath);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpMetadata::GetProvenance() const { return m_provenance; }
-void FtpMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
+Utf8StringCR HttpMetadata::GetProvenance() const { return m_provenance; }
+void HttpMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
 
-Utf8StringCR FtpMetadata::GetDescription() const { return m_description; }
-void FtpMetadata::SetDescription(Utf8CP description) { m_description = description; }
+Utf8StringCR HttpMetadata::GetDescription() const { return m_description; }
+void HttpMetadata::SetDescription(Utf8CP description) { m_description = description; }
 
-Utf8StringCR FtpMetadata::GetContactInfo() const { return m_contactInfo; }
-void FtpMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
+Utf8StringCR HttpMetadata::GetContactInfo() const { return m_contactInfo; }
+void HttpMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
 
-Utf8StringCR FtpMetadata::GetLegal() const { return m_legal; }
-void FtpMetadata::SetLegal(Utf8CP legal) { m_legal = legal; }
+Utf8StringCR HttpMetadata::GetLegal() const { return m_legal; }
+void HttpMetadata::SetLegal(Utf8CP legal) { m_legal = legal; }
 
-Utf8StringCR FtpMetadata::GetFormat() const { return m_format; }
-void FtpMetadata::SetFormat(Utf8CP format) { m_format = format; }
+Utf8StringCR HttpMetadata::GetFormat() const { return m_format; }
+void HttpMetadata::SetFormat(Utf8CP format) { m_format = format; }
 
-Utf8StringCR FtpMetadata::GetData() const { return m_data; }
-void FtpMetadata::SetData(Utf8CP data) { m_data = data; }
+Utf8StringCR HttpMetadata::GetData() const { return m_data; }
+void HttpMetadata::SetData(Utf8CP data) { m_data = data; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpMetadata::FtpMetadata()
+HttpMetadata::HttpMetadata()
     {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpMetadata::FtpMetadata(Utf8CP filePath)
+HttpMetadata::HttpMetadata(Utf8CP filePath)
     {
     BeFileName metadataFile(filePath);
     Utf8String provenance(metadataFile.GetFileNameAndExtension());
@@ -643,65 +689,65 @@ FtpMetadata::FtpMetadata(Utf8CP filePath)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServerPtr FtpServer::Create()
+HttpServerPtr HttpServer::Create()
     {
-    return new FtpServer();
+    return new HttpServer();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServerPtr FtpServer::Create(Utf8CP url, Utf8CP name)
+HttpServerPtr HttpServer::Create(Utf8CP url, Utf8CP name)
     {
-    return new FtpServer(url, name);
+    return new HttpServer(url, name);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpServer::GetProtocol() const { return m_protocol; }
-void FtpServer::SetProtocol(Utf8CP protocol) { m_protocol = protocol; }
+Utf8StringCR HttpServer::GetProtocol() const { return m_protocol; }
+void HttpServer::SetProtocol(Utf8CP protocol) { m_protocol = protocol; }
 
-Utf8StringCR FtpServer::GetName() const { return m_name; }
-void FtpServer::SetName(Utf8CP name) { m_name = name; }
+Utf8StringCR HttpServer::GetName() const { return m_name; }
+void HttpServer::SetName(Utf8CP name) { m_name = name; }
 
-Utf8StringCR FtpServer::GetUrl() const { return m_url; }
-void FtpServer::SetUrl(Utf8CP url) { m_url = url; }
+Utf8StringCR HttpServer::GetUrl() const { return m_url; }
+void HttpServer::SetUrl(Utf8CP url) { m_url = url; }
 
-Utf8StringCR FtpServer::GetContactInfo() const { return m_contactInfo; }
-void FtpServer::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
+Utf8StringCR HttpServer::GetContactInfo() const { return m_contactInfo; }
+void HttpServer::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
 
-Utf8StringCR FtpServer::GetLegal() const { return m_legal; }
-void FtpServer::SetLegal(Utf8CP legal) { m_legal = legal; }
+Utf8StringCR HttpServer::GetLegal() const { return m_legal; }
+void HttpServer::SetLegal(Utf8CP legal) { m_legal = legal; }
 
-bool FtpServer::IsOnline() const { return m_online; }
-void FtpServer::SetOnline(bool online) { m_online = online; }
+bool HttpServer::IsOnline() const { return m_online; }
+void HttpServer::SetOnline(bool online) { m_online = online; }
 
-DateTimeCR FtpServer::GetLastCheck() const { return m_lastCheck; }
-void FtpServer::SetLastCheck(DateTimeCR data) { m_lastCheck = data; }
+DateTimeCR HttpServer::GetLastCheck() const { return m_lastCheck; }
+void HttpServer::SetLastCheck(DateTimeCR data) { m_lastCheck = data; }
 
-DateTimeCR FtpServer::GetLastTimeOnline() const { return m_lastTimeOnline; }
-void FtpServer::SetLastTimeOnline(DateTimeCR data) { m_lastTimeOnline = data; }
+DateTimeCR HttpServer::GetLastTimeOnline() const { return m_lastTimeOnline; }
+void HttpServer::SetLastTimeOnline(DateTimeCR data) { m_lastTimeOnline = data; }
 
-double FtpServer::GetLatency() const { return m_latency; }
-void FtpServer::SetLatency(double latency) { m_latency = latency; }
+double HttpServer::GetLatency() const { return m_latency; }
+void HttpServer::SetLatency(double latency) { m_latency = latency; }
 
-Utf8StringCR FtpServer::GetState() const { return m_state; }
-void FtpServer::SetState(Utf8CP state) { m_state = state; }
+Utf8StringCR HttpServer::GetState() const { return m_state; }
+void HttpServer::SetState(Utf8CP state) { m_state = state; }
 
-Utf8StringCR FtpServer::GetType() const { return m_type; }
-void FtpServer::SetType(Utf8CP type) { m_type = type; }
+Utf8StringCR HttpServer::GetType() const { return m_type; }
+void HttpServer::SetType(Utf8CP type) { m_type = type; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServer::FtpServer()
+HttpServer::HttpServer()
     {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServer::FtpServer(Utf8CP url, Utf8CP name)
+HttpServer::HttpServer(Utf8CP url, Utf8CP name)
     : m_url(url), m_name(name)
     {
     // Default values.
@@ -733,10 +779,10 @@ FtpServer::FtpServer(Utf8CP url, Utf8CP name)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
+HttpDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
     BeFileName inputName(inputDirPath);
-    bvector<BeFileName> tifFileList;
+    bvector<BeFileName> fileList;
 
     // Look up for data type.    
     if (inputName.GetExtension() == L"zip")
@@ -746,16 +792,31 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
         WString outputDirPathW(outputDirPath, BentleyCharEncoding::Utf8);
         RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
 
-        // Search in zip folder for the tif file to process.        
+        // Search in zip folder for the tif or hgt file to process.        
         BeFileName rootDir(outputDirPath);
-        BeDirectoryIterator::WalkDirsAndMatch(tifFileList, rootDir, L"*.tif", true);
-        if (tifFileList.empty())
+        BeDirectoryIterator::WalkDirsAndMatch(fileList, rootDir, L"*.tif", true);
+        BeDirectoryIterator::WalkDirsAndMatch(fileList, rootDir, L"*.hgt", true);
+
+        // Consider files that are equal or less than 1kb garbage.
+        for (size_t i = 0; i < fileList.size(); ++i)
+            {
+            uint64_t size;
+            fileList[i].GetFileSize(size);
+            size /= 1024; // bytes to kylobites.
+            if (size <= 1)
+                {
+                fileList.erase(fileList.begin() + i);
+                i -= 1;
+                }                
+            }        
+
+        if (fileList.empty())
             return NULL;
         }
     else if (inputName.GetExtension() == L"tif")
         {
-        tifFileList.push_back(inputName);
-        if (tifFileList.empty())
+        fileList.push_back(inputName);
+        if (fileList.empty())
             return NULL;
         }
     else
@@ -763,20 +824,21 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
         return NULL;
 
     // Create empty data.
-    FtpDataPtr pExtractedData = FtpData::Create();    
+    HttpDataPtr pExtractedData = HttpData::Create();    
 
     // Data extraction.
-    RealityDataPtr pData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
+    RealityDataPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
 
     // Name.
-    Utf8String name = tifFileList[0].GetNameUtf8();
-    name.erase(0, tifFileList[0].GetNameUtf8().find_last_of("\\") + 1);
+    Utf8String name = fileList[0].GetNameUtf8();
+    name.erase(0, fileList[0].GetNameUtf8().find_last_of("\\") + 1);
     pExtractedData->SetName(name.erase(name.find_last_of('.')).c_str());
 
     // Url.
-    pExtractedData->SetUrl(tifFileList[0].GetNameUtf8().c_str());
+    pExtractedData->SetUrl(fileList[0].GetNameUtf8().c_str());
 
     // Compound type.
+
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
     pExtractedData->SetCompoundType(compoundType.c_str());
@@ -788,18 +850,18 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     pExtractedData->SetSize(size);
 
     // Type.
-    Utf8String fileType(tifFileList[0].GetExtension().c_str());
+    Utf8String fileType(fileList[0].GetExtension().c_str());
     pExtractedData->SetDataType(fileType.c_str());
 
     // Location. 
     //&&JFC TODO: Construct path from compound.
-    WString locationW = tifFileList[0].GetFileNameAndExtension();
+    WString locationW = fileList[0].GetFileNameAndExtension();
     Utf8String location(locationW);
     pExtractedData->SetLocationInCompound(location.c_str());
 
     // Date.
     time_t lastModifiedTime;
-    tifFileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
+    fileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
     DateTime date = DateTime();
     if (NULL != lastModifiedTime)
         DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
@@ -807,55 +869,54 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     pExtractedData->SetDate(date);
 
     // Metadata.    
-    BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    FtpMetadataPtr pMetadata = FtpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
-    if (pMetadata != NULL)
-        pExtractedData->SetMetadata(*pMetadata);
+    //BeFileName metadataFilename = HttpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
+    //HttpMetadataPtr pMetadata = HttpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
+    //if (pMetadata != NULL)
+    //    pExtractedData->SetMetadata(*pMetadata);
 
     // Resolution.
     RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
     if (pRasterData != NULL)
         {
         Utf8String resolution = pRasterData->ComputeResolutionInMeters();
-        if (resolution.empty())
-            {
-            // File has no geocoding, try to parse metadata and create sister file.
-            Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
-            if (!geocoding.empty())
-                {
-                // Make sure geocoding is well formatted.
-                geocoding.ReplaceAll("::", ":");
-                RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-                resolution = pRasterData->ComputeResolutionInMeters();
-                }
-            }
+        //if (resolution.empty())
+        //    {
+        //    // File has no geocoding, try to parse metadata and create sister file.
+        //    Utf8String geocoding = HttpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
+        //    if (!geocoding.empty())
+        //        {
+        //        // Make sure geocoding is well formatted.
+        //        geocoding.ReplaceAll("::", ":");
+        //        RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+        //        resolution = pRasterData->ComputeResolutionInMeters();
+        //        }
+        //    }
         pExtractedData->SetResolution(resolution.c_str());
         }
-
+  
     // Footprint.
     DRange2d shape = DRange2d::NullRange();
     if (SUCCESS != pData->GetFootprint(&shape))
         {
-        // File has no geocoding, try to parse metadata and create sister file.
-        Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
-        if (!geocoding.empty())
-            {
-            // Make sure geocoding is well formatted.
-            geocoding.ReplaceAll("::", ":");
-            RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-            pData->GetFootprint(&shape);
-            }
-    
+        //// File has no geocoding, try to parse metadata and create sister file.
+        //Utf8String geocoding = HttpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
+        //if (!geocoding.empty())
+        //    {
+        //    // Make sure geocoding is well formatted.
+        //    geocoding.ReplaceAll("::", ":");
+        //    RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+        //    pData->GetFootprint(&shape);
+        //    }
         }
     pExtractedData->SetFootprint(shape);
 
     // Thumbnail.
-    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pData);
-    if (pThumbnail != NULL)
-        pExtractedData->SetThumbnail(*pThumbnail);
+    //HttpThumbnailPtr pThumbnail = HttpThumbnail::Create(*pData);
+    //if (pThumbnail != NULL)
+    //    pExtractedData->SetThumbnail(*pThumbnail);
 
     // Server.
-    FtpServerPtr pServer = FtpServer::Create();
+    HttpServerPtr pServer = HttpServer::Create();
     if (pServer != NULL)
         pExtractedData->SetServer(*pServer);
 
@@ -865,7 +926,7 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath)
+HttpStatus HttpDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath)
     {
     // Get a list of zip files to process.
     bvector<BeFileName> fileFoundList;
@@ -889,13 +950,13 @@ FtpStatus FtpDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath)
         RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
         }
 
-    return FtpStatus::Success;
+    return HttpStatus::Success;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-BeFileName FtpDataHandler::BuildMetadataFilename(Utf8CP dirPath)
+BeFileName HttpDataHandler::BuildMetadataFilename(Utf8CP dirPath)
     {
     bvector<BeFileName> fileFoundList;
     BeFileName rootDir(dirPath);
@@ -931,7 +992,7 @@ BeFileName FtpDataHandler::BuildMetadataFilename(Utf8CP dirPath)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-Utf8String FtpDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR filename)
+Utf8String HttpDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR filename)
     {
     Utf8String geocoding;
 

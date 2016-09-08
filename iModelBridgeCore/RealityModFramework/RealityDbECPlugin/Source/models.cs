@@ -217,6 +217,75 @@ namespace IndexECPlugin.Source
     /// <summary>
     /// 
     /// </summary>
+    public class GenericInfo
+        {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string URI
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Type
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Copyright
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ID
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string FileInCompound
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Classification
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public UInt64 FileSize
+            {
+            get;
+            set;
+            }
+        }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public class UsgsAPICategory
         {
         /// <summary>

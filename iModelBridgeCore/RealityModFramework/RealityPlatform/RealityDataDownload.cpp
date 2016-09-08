@@ -119,6 +119,17 @@ RealityDataDownloadPtr RealityDataDownload::Create(const UrlLink_UrlFile& pi_Lin
         return NULL;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Spencer.Mason      9/2015
+//----------------------------------------------------------------------------------------
+RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    if (pi_Link_File_wMirrors.size() > 0)
+        return new RealityDataDownload(pi_Link_File_wMirrors);
+    else
+        return NULL;
+    }
+
 RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -133,7 +144,8 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i=0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].url = pi_Link_FileName[i].first;
+        m_pEntries[i].urls = bvector<AString>();
+        m_pEntries[i].urls.push_back(pi_Link_FileName[i].first);
         m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
@@ -142,6 +154,38 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].filesize = 0;
         m_pEntries[i].fromCache = true;                                 // from cache if possible by default
         m_pEntries[i].progressStep = 0.01;
+        }
+    }
+
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
+    m_certPath = WString();
+
+    m_curEntry = 0;
+    m_nbEntry = pi_Link_File_wMirrors.size();
+    size_t mirrorCount;
+    m_pEntries = new FileTransfer[m_nbEntry];
+    for (size_t i = 0; i<m_nbEntry; ++i)
+        {
+        mirrorCount = pi_Link_File_wMirrors[i].first.size();
+
+        for(size_t j = 0; j < mirrorCount; ++j)
+            {
+            m_pEntries[i].urls = pi_Link_File_wMirrors[i].first;
+            m_pEntries[i].filename = pi_Link_File_wMirrors[i].second;
+            m_pEntries[i].iAppend = 0;
+            m_pEntries[i].nbRetry = 0;
+
+            m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+            m_pEntries[i].filesize = 0;
+            m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+            m_pEntries[i].progressStep = 0.01;
+            }
         }
     }
 
@@ -233,7 +277,7 @@ bool RealityDataDownload::Perform()
                 // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
                     {
-                        if (pFileTrans->nbRetry < s_MaxRetryTentative)
+                    if (pFileTrans->nbRetry < s_MaxRetryTentative)
                         { 
                         ++pFileTrans->nbRetry;
                         pFileTrans->iAppend = 0;
@@ -246,10 +290,24 @@ bool RealityDataDownload::Perform()
                         still_running++;
                         }
                     else
-                        {   // Maximun retry done, return error.
-                        if (m_pStatusFunc)
-                            m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        {   
+                        if(SetupMirror(pFileTrans->index, 56))
+                            {
+                            pFileTrans->nbRetry = 0;
+                            still_running++;
+                            }
+                        else
+                            {
+                                // Maximun retry done, return error.
+                            if (m_pStatusFunc)
+                                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            }
                         }
+                    }
+                else if ((msg->data.result != CURLE_OK) && SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
+                    {
+                    pFileTrans->nbRetry = 0;
+                    still_running++;
                     }
                 else
                     {
@@ -290,7 +348,7 @@ bool RealityDataDownload::Perform()
 // false --> Curl error or file already there, skip download.
 //
 bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
-{
+    {
     // If file already there, consider the download completed.
     if (m_pEntries[pi_index].fromCache && BeFileName::DoesPathExist(m_pEntries[pi_index].filename.c_str()))
         return true;
@@ -303,7 +361,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
     pCurl = curl_easy_init();
     if (pCurl)
         {
-        curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
+        curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].urls.front());
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -343,8 +401,28 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         }
-
+        
     return (pCurl != NULL);
+    }
+
+bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
+{
+    if(m_pEntries[index].urls.size() <= 1)
+        return false;
+
+    if(m_pStatusFunc)
+        {
+        char errorMsg[512];
+        sprintf(errorMsg, "could not download %s, error code %d. Attempting to contact mirror %s",
+            m_pEntries[index].urls[0].c_str(),
+            errorCode,
+            m_pEntries[index].urls[1].c_str());
+        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_RETRY_TENTATIVE, errorMsg);
+        }
+
+    m_pEntries[index].urls.erase(m_pEntries[index].urls.begin());
+    SetupCurlandFile(index);
+    return true;
 }
 
 bool RealityDataDownload::SetupNextEntry()

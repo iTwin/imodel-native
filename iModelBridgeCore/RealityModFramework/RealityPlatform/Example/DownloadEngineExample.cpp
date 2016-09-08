@@ -132,7 +132,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     //for (int iArg = 0; iArg < pi_Argc; iArg++)
     //    printf("argv[%d] = %ls\n", iArg, pi_ppArgv[iArg]);
 
-    RealityDataDownload::UrlLink_UrlFile urlList;
+    RealityDataDownload::Link_File_wMirrors urlList;
 
     if (pi_Argc != 3 && pi_Argc != 1)
         { 
@@ -169,7 +169,9 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
             WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFilesize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
-            urlList.push_back(std::make_pair(pSource->GetUri(), filename));
+            bvector<AString> bv = bvector<AString>();
+            bv.push_back(pSource->GetUri());
+            urlList.push_back(std::make_pair(bv, filename));
             }
         }
     else 
@@ -201,7 +203,9 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             WString filename(sOutputFolder);
             RealityDataDownload::ExtractFileName(filename, urlUSGSLink[i]);
 
-            urlList.push_back(std::make_pair(urlUSGSLink[i], filename));
+            bvector<AString> bv = bvector<AString>();
+            bv.push_back(urlUSGSLink[i]);
+            urlList.push_back(std::make_pair(bv, filename));
             }
 
         for (size_t i = 0; i < urlOSMLink.size(); ++i)
@@ -209,10 +213,12 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             wchar_t filename[1024];
             swprintf (filename, 1024, L"%lsOsmFile_%2llu.osm", sOutputFolder.c_str(), i);
 
-            urlList.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
+            bvector<AString> bv = bvector<AString>();
+            bv.push_back("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019"); //url with typo, to force use of mirror
+            bv.push_back(urlOSMLink[i]);
+            urlList.push_back(std::make_pair(bv, WString (filename)));
             }
         }
-
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload != NULL)

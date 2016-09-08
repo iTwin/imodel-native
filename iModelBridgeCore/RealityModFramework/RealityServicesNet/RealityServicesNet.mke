@@ -30,7 +30,8 @@ assemblyName = RealityServicesNet
 assemDirToSearch = $(o)
 %include cincapnd.mki
 
-objList = $(o)FtpTraversalEngineCli$(oext)
+objList = $(o)FtpTraversalEngineCli$(oext) \
+          $(o)HttpTraversalEngineCli$(oext)
 
 
 #---------------------------------------------
@@ -39,6 +40,8 @@ objList = $(o)FtpTraversalEngineCli$(oext)
 %include CompileForCLRStart.mki
 
 $(o)FtpTraversalEngineCli$(oext):       $(baseDir)FtpTraversalEngineCli.cpp  $(baseDir)FtpTraversalEngineCli.h
+
+$(o)HttpTraversalEngineCli$(oext):      $(baseDir)HttpTraversalEngineNet\HttpTraversalEngineCli.cpp  $(baseDir)HttpTraversalEngineNet\HttpTraversalEngineCli.h
 
 %include CompileForCLRStop.mki
 

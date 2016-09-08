@@ -49,7 +49,7 @@ public:
 
     struct FileTransfer 
         {
-        AString  url;
+        bvector<AString>  urls;
         WString  filename;
         size_t   index;
         bool     fromCache;         // as input: skip the download if the file already exist
@@ -67,11 +67,13 @@ public:
         };
 
     typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
+    typedef bvector<std::pair<bvector<AString>, WString>> Link_File_wMirrors;        
 
     //! Create an instance of RealityDataDownload
     //! @param[in]  pi_Link_FileName A list of (Url link, url file)
     //! @return NULL if error   
     REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const UrlLink_UrlFile& pi_Link_FileName);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const Link_File_wMirrors& pi_Link_File_wMirrors);
 
     // pio_rFileName could already contain the first part of the path, like "C:\\Data\\"
     //               the filename extract from the url, will be concatenated. 
@@ -103,10 +105,12 @@ public:
 private:
     RealityDataDownload() { m_pCurlHandle=NULL;};
     RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
+    RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors);
     ~RealityDataDownload();
 
     bool SetupCurlandFile(size_t pi_index);
     bool SetupNextEntry();
+    bool SetupMirror(size_t index, int errorCode);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;

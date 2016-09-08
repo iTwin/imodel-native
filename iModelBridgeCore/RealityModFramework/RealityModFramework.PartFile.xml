@@ -14,10 +14,25 @@
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+            <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="FtpTraverser" BentleyBuildMakeFile="RealityPlatform\FtpTraverser\FtpTraverser.mke">
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Assemblies>Delivery/FtpTraverser.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityPlatform\AwsTraverser\AwsTraverser.mke">
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Assemblies>Delivery/AwsTraverser.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -35,14 +50,14 @@
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPackage$(stlibext)</Libs>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
     <Part Name="RealityServicesNet" BentleyBuildMakeFile="RealityServicesNet\RealityServicesNet.mke">
         <SubPart PartName="RealityPlatform" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityServicesNet$(shlibext)</Assemblies>
+            <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -53,14 +68,14 @@
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
             <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)CrawlerLib$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)CrawlerLib$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <Part Name="CrawlerLibExample" BMakeFile="CrawlerLib/Example/CrawlerLibExample.mke">
         <SubPart PartName="CrawlerLib" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Assemblies>
+            <Assemblies>Delivery/CrawlerLibExample.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -70,7 +85,7 @@
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
+            <Assemblies>Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -78,7 +93,7 @@
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DataHandlerTool.exe</Assemblies>
+            <Assemblies>Delivery/DataHandlerTool.exe</Assemblies>
         </Bindings>
     </Part>
     
@@ -86,11 +101,12 @@
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
-        <SubPart PartName="S3MXECPlugin"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
         <SubPart PartName="RealityServicesNet"/>
+        <SubPart PartName="FtpTraverser"/>
+        <SubPart PartName="AwsTraverser"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
@@ -100,7 +116,7 @@
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
+            <Assemblies>Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>
     </Part>
     
@@ -110,17 +126,17 @@
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
+            <Assemblies>Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
         </Bindings>
     </Part>
     
     <Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
-        <RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.OData</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
-        <RequiredRepository>System.Spatial</RequiredRepository>
-        <RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
     </Part>
     
     <Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
@@ -128,7 +144,7 @@
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <SubPart PartName="S3MXRequiredNuget" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
+            <Assemblies>Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
         </Bindings>
     </Part>
     
@@ -147,7 +163,7 @@
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
+            <Assemblies>Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -166,14 +182,14 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
+            <Assemblies>Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
     <Part Name="BentleyCrawlerLibNet" BentleyBuildMakeFile="BentleyCrawlerLibNet\BentleyCrawlerLibNet.mke">
         <SubPart PartName="CrawlerLib"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyCrawlerLibNet$(shlibext)</Assemblies>
+            <Assemblies>Delivery/BentleyCrawlerLibNet$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -183,63 +199,32 @@
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     
     <ProductDirectoryList ListName="RealityModFrameworkDirList" >
-        <ProductDirectory Name="PublicAPI"                  Deliver="false" />
-        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
-        <ProductDirectory Name="Libs"                       Deliver="false" />
-        <ProductDirectory Name="OracleNativeAssemblies"     Deliver="false"/>
-        <ProductDirectory Name="GdalData"                   Deliver="false"/>
-        <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
-        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="managedtests"               Deliver="false"/>
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
         <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
-        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
-
-        <ProductDirectory Name="RealityAssemblies"              Path=""/>
-        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
-        <ProductDirectory Name="ImagePPAssemblies"              Path=""/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
-        <ProductDirectory Name="AdobeAssemblies"                Path="" Deliver="false"/>
-        <ProductDirectory Name="AdobeResource"                  Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="PPNativeAssemblies"             Path="" />
-        <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="" />
-        <ProductDirectory Name="GeomNativeAssemblies"           Path="" />
-        <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
-        <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
-        <ProductDirectory Name="MrSidAssemblies"                Path="" />
-        <ProductDirectory Name="TbbAssemblies"                  Path="" />
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
+        <ProductDirectory Name="PPNativeAssemblies"             Path=""/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path=""/>
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path=""/>
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
-        <ProductDirectory Name="BeCurlAssemblies"               Path="" />
-
-        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies"            Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
-
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="RealityAssemblies"/>
+        <ProductDirectory Name="managedtests"                   Path=""/>
+
+        <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
-		
-		<ProductDirectory Name="Assemblies"                     Path=""/>
-		<ProductDirectory Name="Assets"                         Path=""/>
-		<ProductDirectory Name="Assets"                         LibType="static" Path="" />
-		
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework">
@@ -258,46 +243,28 @@
     <!-- Nunit tests -->
     <!-- ********************************************************************************************** -->
     <ProductDirectoryList ListName="RealityDbECPluginTestsDirList" >
-        <ProductDirectory Name="PublicAPI"                  Deliver="false" />
-        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
-        <ProductDirectory Name="Libs"                       Deliver="false" />
-        <ProductDirectory Name="OracleNativeAssemblies"     Deliver="false"/>
-        <ProductDirectory Name="GdalData"                   Deliver="false"/>
-        <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
-        <!--notices/ review if notices need to be delivered-->
+        <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
-        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
-
-        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="RealityAssemblies"              Path=""/>
-        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies"            Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
-        <ProductDirectory Name="GeomNativeAssemblies"           Path="" />
-        <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
-        <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
-        <ProductDirectory Name="MrSidAssemblies"                Path="" />
-        <ProductDirectory Name="TbbAssemblies"                  Path="" />      
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
-        <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
+        <!--needed for the moment from LkgsVancouver -->
+        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="managedtests"               Deliver="false"/>
+        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
+        <ProductDirectory Name="PPNativeAssemblies"             Path="" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="ImagePPAssemblies"              Path=""/>
-        <ProductDirectory Name="BeCurlAssemblies"               Path="" />
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
-        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
-        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
 
         <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
         <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>
@@ -329,29 +296,30 @@
     </Product>
 
     <ProductDirectoryList ListName="RealityDbECPluginUnitTested">
-    
-        <ProductDirectory Name="PublicAPI"                      Deliver="false" />
-        <ProductDirectory Name="VendorAPI"                      Deliver="false" />
-        <ProductDirectory Name="Libs"                           Deliver="false" />
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
-        <ProductDirectory Name="VendorNotices"                  Deliver="false"    LibType="dynamic"   Path="notices"/>
+        <!--notices/ review if notices need to be delivered--> 
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
         
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
-        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path=""/>
-        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
-        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
-        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
+        <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
+        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
-        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
-        <ProductDirectory Name="RealityAssemblies"              Path=""/>
         
     </ProductDirectoryList>
 
-    <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
+    <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServicesTests">
         <SubProduct ProductName="RealityContextServicesTests" />
         <SubPart PartName="RunRealityDbECPluginTests" />
         <Directories DirectoryListName="RealityDbECPluginUnitTested" />
@@ -403,24 +371,18 @@
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
     <!-- Lay out the test product according to the standard BeGTest layout. -->
     <ProductDirectoryList ListName="RealityModFrameworkTestsDir" >
-        <ProductDirectory Name="RealityAssemblies"              Path="Assemblies"/>
-        <ProductDirectory Name="ImagePPAssemblies"              Path="Assemblies"/>
-        <ProductDirectory Name="PPNativeAssemblies"             Path="Assemblies" />
-        <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="Assemblies" />
-        <ProductDirectory Name="MrSidAssemblies"                Path="Assemblies" />
-        <ProductDirectory Name="TbbAssemblies"                  Path="Assemblies" />        
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="Assemblies" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="Assemblies" />
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="Assemblies" />
-        <ProductDirectory Name="ECServicesManagedAssemblies"    Path="Assemblies"/>
-        <ProductDirectory Name="PointoolsAssemblies"            Path="Assemblies"/>
-        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
-        <ProductDirectory Name="AdobeAssemblies"                Path="Assemblies" Deliver="false"/>
-        <ProductDirectory Name="AdobeResource"                  Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="OracleNativeAssemblies"         Deliver="false"/>
-        <ProductDirectory Name="GdalData"                       Deliver="false"/>
-        <ProductDirectory Name="csmapmergemodules"              Deliver="false" />
+        <!--needed for the moment from LkgsVancouver -->
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
+        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
+        <ProductDirectory Name="managedtests"                   Path=""/>
+
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework-Tests">
@@ -441,9 +403,14 @@
         </Bindings>
     </Part>
 
+    <ProductDirectoryList ListName="RealityModFramework-GtestDir" >
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+    </ProductDirectoryList>
+
     <Product Name="RealityModFramework-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="RealityModFramework-GtestDir"/>
     </Product>
 
     <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModFramework-Gtest/RealityModFrameworkTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
