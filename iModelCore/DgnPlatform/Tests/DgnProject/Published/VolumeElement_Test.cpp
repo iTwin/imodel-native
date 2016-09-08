@@ -47,7 +47,7 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
 //---------------------------------------------------------------------------------------
 GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
-    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
+    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_testModel->ToPhysicalModelP()), m_testCategoryId);
 
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);

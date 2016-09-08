@@ -858,7 +858,7 @@ struct DGN_rtree : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
-        auto matcher = (DgnQueryView::SpatialQuery*) info.m_args[0].GetValueInt64();
+        auto matcher = (QueryViewController::SpatialQuery*) info.m_args[0].GetValueInt64();
         return matcher->_TestRTree(info);
         }
     DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}
@@ -869,7 +869,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
+void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
     {
 
     static DbFunction* s_funcs[] = 
@@ -909,8 +909,6 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
 
     for (RTreeMatchFunction* func : s_matchFuncs)
         db.AddRTreeMatchFunction(*func);
-
-    AddMissingCustomAttributes(db);
     }
 
 #ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnDbSqlFunctions @{  at the top of the file

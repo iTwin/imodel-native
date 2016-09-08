@@ -113,7 +113,7 @@ void DgnChangeSummary::FindRelatedInstanceIds(DgnElementIdSet& relatedElements, 
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSummary::QueryDbOpcode queryOpcode)
     {
-    ECClassId elClassId = m_dgndb.Schemas().GetECClassId("dgn", "Element");
+    ECClassId elClassId = m_dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
 
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
     QueryByClass(changes, elClassId, true, queryOpcode);

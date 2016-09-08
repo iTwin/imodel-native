@@ -95,7 +95,8 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOption
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = CreateDgnDb(info.fileName, true, true);
-    SpatialModelPtr model = InsertSpatialModel(*db, info.modelCode);
+    PhysicalModelPtr model = InsertPhysicalModel(*db, info.modelCode);
+    EXPECT_TRUE(model.IsValid());
     InsertCategory(*db, info.categoryName.c_str());
     
     if (info.options.cameraView)
@@ -177,11 +178,9 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBr
         return nullptr;
         }
 
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(false);
-
+    CreateDgnDbParams createDgnDbParams("DgnDbTestUtils");
     DbResult createStatus;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createProjectParams);
+    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createDgnDbParams);
     if (!db.IsValid())
         EXPECT_FALSE(true) << WPrintfString(L"%ls - create failed", fileName.c_str()).c_str();
 
@@ -302,15 +301,16 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialModelPtr DgnDbTestUtils::InsertSpatialModel(DgnDbR db, DgnCode modelCode)
+PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);
 
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, modelCode));
-    DgnDbStatus status = catalogModel->Insert();
-    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%s - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
-    return catalogModel;
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, modelCode);
+    EXPECT_TRUE(model.IsValid());
+    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,8 +320,11 @@ SheetModelPtr DgnDbTestUtils::InsertSheetModel(DgnDbR db, DgnCode modelCode)
     {
     MUST_HAVE_HOST(nullptr);
 
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
-    SheetModelPtr catalogModel = new SheetModel(SheetModel::CreateParams(db, mclassId, modelCode, DPoint2d::From(2.0, 2.0)));
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
+    SheetModelPtr catalogModel = new SheetModel(SheetModel::CreateParams(db, mclassId, modelSubject->GetElementId(), modelCode, DPoint2d::From(2.0, 2.0)));
     DgnDbStatus status = catalogModel->Insert();
     EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
     return catalogModel;
@@ -346,9 +349,7 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(db.Units().GetProjectExtents());
-    ASSERT_EQ(BE_SQLITE_OK, viewController->Save());
-
-    db.SaveSettings();
+    ASSERT_EQ(DgnDbStatus::Success, viewController->Save());
     }
 
 //---------------------------------------------------------------------------------------
@@ -380,61 +381,56 @@ DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP author
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      06/15
+// @bsimethod                                                    Sam.Wilson      06/16
 //---------------------------------------------------------------------------------------
-DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
+ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
     {
-    MUST_HAVE_HOST(DgnViewId());
-    
-    DgnDbR db = model.GetDgnDb();
-
-    Utf8String name;
-    if (nullptr == nameIn)
-        name = model.GetCode().GetValue();
-    else
-        name = nameIn;
-
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(db, name, ViewDefinition::Data(model.GetModelId())));
-    ViewDefinitionCPtr newViewDef = view.Insert();
-    if (!newViewDef.IsValid())
+    ModelSelector modSel(db, name);
+    modSel.SetModelId(model);
+    auto modSelPersist = db.Elements().Insert(modSel);
+    if (!modSelPersist.IsValid())
         {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController insert into %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
+        EXPECT_TRUE(false) << " Failed to insert model selector with name =" << name;
+        return nullptr;
         }
 
-    DgnViewId viewId = view.GetViewId();
-    
-    CameraViewController* viewController = new CameraViewController(db, viewId);
-    if (nullptr == viewController)
+    auto models = modSelPersist->GetModelIds();
+    EXPECT_EQ(1, models.size());
+    EXPECT_EQ(model, *models.begin());
+
+    return modSelPersist;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/16
+//---------------------------------------------------------------------------------------
+CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categoriesIn)
+    {
+    CategorySelector catSel(db, name);
+
+    DgnCategoryIdSet const* categories = categoriesIn;
+    DgnCategoryIdSet _categories;
+    if (nullptr == categories)
         {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController ctor failed in %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
+        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+            _categories.insert(categoryId);
+        categories = &_categories;
         }
 
-    viewController->SetBaseModelId(model.GetModelId());
+    if (!categories->empty())
+        catSel.SetCategoryIds(*categories);
 
-    for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        viewController->ChangeCategoryDisplay(categoryId, true);
+    CategorySelectorCPtr catSelPersist = db.Elements().Insert(catSel);
+    if (!catSelPersist.IsValid())
+        {
+        EXPECT_TRUE(false) << " Insertion of CategorySelector with name " << name << " failed";
+        return nullptr;
+        }
 
-    viewController->SetCameraOn(false);
+    EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSel.GetElementId()).get());
+    
+    auto categoriesStored = catSelPersist->GetCategoryIds();
+    EXPECT_EQ(categoriesStored, *categories);
 
-    viewController->SetOrigin(DPoint3d::From(-5,-5,-5));
-    viewController->SetDelta(DVec3d::From(10,10,10));
-
-    auto& viewFlags = viewController->GetViewFlagsR();
-    viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
-    viewFlags.m_constructions = true;
-    viewFlags.m_dimensions = true;
-    viewFlags.m_weights = true;
-    viewFlags.m_transparency = true;
-    viewFlags.m_fill = true;
-    viewFlags.m_materials = true;
-    viewFlags.m_patterns = true;
-    viewFlags.m_shadows = true;
-    viewFlags.m_grid = true;
-    viewFlags.m_acsTriad = true;
-
-    viewController->Save();
-
-    return viewId;
+    return catSelPersist;
     }

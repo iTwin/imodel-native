@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/UpdateLogging.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -55,8 +55,6 @@
 
 //  This file does nothing unless WANT_QUERYVIEW_UPDATE_LOGGING is defined
 #if defined (WANT_QUERYVIEW_UPDATE_LOGGING)
-#include <DgnPlatform/QueryView.h>
-
 
 USING_NAMESPACE_BENTLEY_DGN
 

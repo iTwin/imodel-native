@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
  <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
- <p>A DgnQueryView is used to query and display elements from SpatialModels. 
+ <p>A SpatialViewController of some kind is used to query and display elements from SpatialModels. 
 
   <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.
@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<Utf8String> ViewUndoStack;
+    typedef std::deque<DgnEditElementCollector> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -120,7 +120,7 @@ protected:
     bool            m_undoActive = false;
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
-    int             m_maxUndoSteps = 20;
+    size_t          m_maxUndoSteps = 20;
     uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded
     DVec3d          m_viewDelta;                // view delta, potentially expanded
@@ -138,7 +138,7 @@ protected:
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
-    Utf8String      m_currentBaseline;
+    DgnEditElementCollector m_currentBaseline;
     ViewUndoStack   m_forwardStack;
     ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;
@@ -220,12 +220,12 @@ public:
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
+    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
     DGNVIEW_EXPORT void ChangeRenderPlan();
-    void ApplyViewState(Utf8StringCR val, int animationTime);
+    void ApplyViewState(DgnEditElementCollector const& val, int animationTime);
     DGNVIEW_EXPORT void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
@@ -480,10 +480,12 @@ public:
     SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! If this view is a query view, get the query view controller.
     DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
     //! If this view is a query view, get a writeable pointer to the query view controller.
     DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
+    */
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.

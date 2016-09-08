@@ -24,7 +24,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
             "  <ECClass typeName='Element1' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>dgn:PhysicalElement</BaseClass>"
             "    <ECProperty propertyName='Prop1_1' typeName='string' />"
@@ -33,7 +33,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element2' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element1</BaseClass>"
             "    <ECProperty propertyName='Prop2_1' typeName='string' />"
@@ -42,7 +42,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element3' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element2</BaseClass>"
             "    <ECProperty propertyName='Prop3_1' typeName='string' />"
@@ -51,7 +51,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element4' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element3</BaseClass>"
             "    <ECProperty propertyName='Prop4_1' typeName='string' />"
@@ -60,7 +60,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element4b' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element3</BaseClass>"
             "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
@@ -70,14 +70,13 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='SimpleElement'>"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>dgn:Element</BaseClass>"
             "  </ECClass>"
             "</ECSchema>";
 
         BentleyStatus ImportTestSchema() const;
-        SpatialModelPtr CreateSpatialModel() const;
     };
 
 //static
@@ -108,17 +107,6 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel() const
-    {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr targetModel = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
-    EXPECT_EQ(DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
-    return targetModel;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -127,7 +115,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
@@ -140,7 +128,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace],CategoryId,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,[CodeAuthorityId],[CodeValue],[CodeNamespace],CategoryId,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
@@ -192,7 +180,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
@@ -205,7 +193,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace], CategoryId) VALUES (?,?,?,?,'',?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,[CodeAuthorityId],[CodeValue],[CodeNamespace], CategoryId) VALUES (?,?,?,?,'',?)");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -264,7 +252,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
@@ -276,7 +264,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace], CategoryId,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ECInstanceId,ModelId,[CodeAuthorityId],[CodeValue],[CodeNamespace], CategoryId,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"

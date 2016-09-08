@@ -260,3 +260,21 @@ void GeomJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     {
     jsContext.RegisterProjection<GeomJsApiProjection>(geomJsApi_GetBootstrappingSource(), "file:///GeomJsApi.js");
     }
+
+struct DPoint3dMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) { np = ctx.ObtainProjectedClassInstancePointer(new JsDPoint3d(*(DPoint3dP)ptr), true); }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/16
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* GeomJsApi::_GetMarshallerForType(Utf8StringCR typeScriptTypeName)
+    {
+    static DPoint3dMarshaller s_DPoint3dMarshaller;
+
+    if (typeScriptTypeName.EqualsIAscii("DPoint3d"))
+        return &s_DPoint3dMarshaller;
+
+    return nullptr;
+    }

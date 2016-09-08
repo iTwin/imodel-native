@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/ScriptDomain.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -41,7 +42,7 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     if (model.Is3d())
         gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
@@ -223,17 +224,6 @@ struct DgnScriptTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptN
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
-    {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
-    catalogModel->SetInGuiList(false);
-    return catalogModel->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, RunScripts)
@@ -253,11 +243,16 @@ TEST_F(DgnScriptTest, RunScripts)
 
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
-    SpatialModelPtr newmodel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(newmodel, *project, DgnModel::CreateModelCode("DgnScriptTest.RunScripts")));
+
+    SubjectCPtr rootSubject = project->Elements().GetRootSubject();
+    SubjectCPtr newModelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(newModelSubject.IsValid());
+    PhysicalModelPtr newModel = PhysicalModel::CreateAndInsert(*newModelSubject, DgnModel::CreateModelCode(TEST_NAME));
+    ASSERT_TRUE(newModel.IsValid());
+
     Json::Value parms = Json::objectValue;
     parms["modelName"] = model->GetCode().GetValueCP();
-    parms["newModelName"] = newmodel->GetCode().GetValueCP();
+    parms["newModelName"] = newModel->GetCode().GetValueCP();
     parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
     project->SaveChanges(); // digest other schema imports ??!!
     int retstatus = 0;
@@ -356,5 +351,97 @@ TEST_F(DgnScriptTest, CRUD)
     // EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime)); // *** NEEDS WORK - fails in DgnDb06, VC12, Optimized, WinX86. 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnScriptTest, ScriptElementCRUD)
+    {
+    SetupSeedProject();
+    DgnDbStatus dstatus = ScriptDomain::ImportSchema(*m_db);
+    ASSERT_EQ(DgnDbStatus::Success, dstatus);
+    m_db->SaveChanges();
+
+    DgnDbStatus status;
+
+    //  Create a ScriptLibraryModel to hold the scripts
+    auto scriptLib = ScriptLibraryModel::Create(*m_db, DgnModel::CreateModelCode("scripts"));
+    ASSERT_TRUE(scriptLib.IsValid());
+    status = scriptLib->Insert();
+    ASSERT_EQ(DgnDbStatus::Success, status);
+
+    if (true)
+        {
+        //  Create a valid script definition
+        ScriptDefinitionElementPtr scriptEl = ScriptDefinitionElement::Create(&status, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function foo(element) {return true;}", "foo", "a script");
+        ASSERT_TRUE(scriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        ASSERT_STREQ("a script", scriptEl->GetDescription().c_str());
+        ASSERT_STREQ("function foo(element) {return true;}", scriptEl->GetText().c_str());
+        ASSERT_STREQ("foo", scriptEl->GetEntryPoint().c_str());
+        ASSERT_STREQ("ES5", scriptEl->GetEcmaScriptVersionRequired().c_str());
+        ASSERT_STREQ("", scriptEl->GetSourceUrl().c_str());
+        Utf8String rt, args;
+        scriptEl->GetSignature(rt, args);
+        ASSERT_STREQ("boolean", rt.c_str());
+        ASSERT_STREQ("DgnElement", args.c_str());
+
+        //  Create a invalid script definition (incorrect entry point)
+        ScriptDefinitionElementPtr scriptElBad = ScriptDefinitionElement::Create(&status, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function foo(element) {return true;}", "missing_entry_point", "a script");
+        ASSERT_FALSE(scriptElBad.IsValid());
+        ASSERT_NE(DgnDbStatus::Success, status);
+
+        //  Persist the valid script definition
+        auto persistentScriptEl = m_db->Elements().Insert(*scriptEl, &status);
+        ASSERT_TRUE(persistentScriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        
+        //  Execute the valid script definition
+        Utf8String retVal;
+        status = persistentScriptEl->Execute(retVal, { persistentScriptEl.get() });
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        ASSERT_STREQ("true", retVal.c_str());
+        }
+
+    if (true)
+        {
+        // Try executing various kinds of scripts and checking their return values
+        ScriptDefinitionElementCPtr scriptEl1;
+        
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function ifElementIsNotNull(element) {return element != null;}"));
+        Utf8String retVal;
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {scriptEl1.get()}));
+        ASSERT_STREQ("true", retVal.c_str());
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {nullptr}));
+        ASSERT_STREQ("false", retVal.c_str());
+
+#ifdef WIP_EXCEPTIONS
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function throwsException(element) {return element.Id != null;}", "throwsException", ""));
+        ASSERT_STREQ("false", scriptEl1->Execute(&status, nullptr).c_str());
+        ASSERT_NE(DgnDbStatus::Success, status);
+#endif
+
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_PopulateElementList,
+"function fillEleList(dgnObjectIdSet,db,viewport) {\
+    var be = Bentley.Dgn;\
+    var categories = be.DgnCategory.QueryCategories(db);\
+    for (var catiter = categories.Begin(); categories.IsValid(catiter); categories.ToNext(catiter))\
+        {\
+        dgnObjectIdSet.Insert(categories.GetId(catiter));\
+        }\
+    }"
+        ));
+        DgnElementIdSet ids;
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
+        //ASSERT_STREQ("", retVal.c_str());
+        ASSERT_NE(0, ids.size());
+        auto categories = DgnCategory::QueryCategories(*m_db);
+        ASSERT_EQ(categories.size(), ids.size());
+        ASSERT_TRUE(categories.begin()->GetValue() == ids.begin()->GetValue());
+        }
+    }
 
 #endif

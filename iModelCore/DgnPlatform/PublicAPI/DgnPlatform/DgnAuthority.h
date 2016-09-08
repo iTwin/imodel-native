@@ -162,6 +162,7 @@ public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId);
 };
 
 //=======================================================================================
@@ -264,7 +265,7 @@ namespace dgn_AuthorityHandler
 {
     struct EXPORT_VTABLE_ATTRIBUTE Authority : DgnDomain::Handler
     {
-        DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Authority, Authority, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS (BIS_CLASS_Authority, Authority, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
         virtual AuthorityHandlerP _ToAuthorityHandler() override { return this; }
@@ -278,47 +279,47 @@ namespace dgn_AuthorityHandler
 
     struct EXPORT_VTABLE_ATTRIBUTE Local : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_LocalAuthority, LocalAuthority, Local, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_LocalAuthority, LocalAuthority, Local, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Namespace : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_NamespaceAuthority, NamespaceAuthority, Namespace, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_NamespaceAuthority, NamespaceAuthority, Namespace, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Material : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_MaterialAuthority, MaterialAuthority, Material, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_MaterialAuthority, MaterialAuthority, Material, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Component : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentAuthority, ComponentAuthority, Component, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ComponentAuthority, ComponentAuthority, Component, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Model : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ModelAuthority, ModelAuthority, Model, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelAuthority, ModelAuthority, Model, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE TrueColor : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_TrueColorAuthority, TrueColorAuthority, TrueColor, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_TrueColorAuthority, TrueColorAuthority, TrueColor, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Resource : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ResourceAuthority, ResourceAuthority, Resource, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ResourceAuthority, ResourceAuthority, Resource, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Category : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

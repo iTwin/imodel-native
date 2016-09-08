@@ -265,12 +265,10 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testModelUndoRedo(DgnDbR db)
     {
-    Utf8String name = db.Models().GetUniqueModelName("TestSpatial");
+    Utf8String name = db.Models().GetUniqueModelName("TestPhysical");
 
-    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), DgnModel::CreateModelCode(name)));
-    auto modelStatus = model->Insert();
-    ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*db.Elements().GetRootSubject(), DgnModel::CreateModelCode(name));
+    ASSERT_TRUE(model.IsValid());
 
     auto category = DgnCategory::QueryFirstCategoryId(db);
 
@@ -302,7 +300,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -320,7 +318,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -335,7 +333,7 @@ static void testModelUndoRedo(DgnDbR db)
 
     stat = txns.ReverseSingleTxn(); // undo delete
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(model->IsPersistent());
 
     auto& displayInfo = model->ToGeometricModelP()->GetDisplayInfoR();
@@ -893,7 +891,7 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     DgnModelId seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    model1->SetLabel("Test Model 1");
+    model1->SetUserLabel("Test Model 1");
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
@@ -904,7 +902,7 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
 
     //Inserts 2 models..
     DgnModelPtr model2 = seedModel->Clone(DgnModel::CreateModelCode("Model2"));
-    model2->SetLabel("Test Model 2");
+    model2->SetUserLabel("Test Model 2");
     model2->Insert();
     m_db->SaveChanges("changeSet2");
 
@@ -916,7 +914,7 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     m_db->SaveChanges("changeSet3");
 
     DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("Model3"));
-    model3->SetLabel("Test Model 3");
+    model3->SetUserLabel("Test Model 3");
     model3->Insert();
     auto t3 = txns.GetCurrentTxnId();
     m_db->SaveChanges("changeSet4");

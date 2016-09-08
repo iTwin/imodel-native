@@ -71,17 +71,17 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Elem1Handler : dgn_ElementHandler::Geometric3d
+struct Elem1Handler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM1_CLASS, Elem1, Elem1Handler, dgn_ElementHandler::Geometric3d, );
+    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM1_CLASS, Elem1, Elem1Handler, dgn_ElementHandler::Physical, );
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Elem2Handler : dgn_ElementHandler::Geometric3d
+struct Elem2Handler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM2_CLASS, Elem2, Elem2Handler, dgn_ElementHandler::Geometric3d, );
+    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM2_CLASS, Elem2, Elem2Handler, dgn_ElementHandler::Physical, );
 };
 
 /*---------------------------------------------------------------------------------**//**

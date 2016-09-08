@@ -209,11 +209,11 @@ int32_t JsDgnElement::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsECValueP JsDgnElement::GetProperty(Utf8StringCR name) 
+JsECValueP JsDgnElement::GetPropertyValue(Utf8StringCR name) 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     ECN::ECValue v;
-    if (m_el->_GetProperty(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
+    if (m_el->GetPropertyValue(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
         return nullptr;
     return new JsECValue(v);
     }
@@ -221,10 +221,10 @@ JsECValueP JsDgnElement::GetProperty(Utf8StringCR name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-int32_t JsDgnElement::SetProperty(Utf8StringCR name, JsECValueP v)
+int32_t JsDgnElement::SetPropertyValue(Utf8StringCR name, JsECValueP v)
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
-    return (int32_t) m_el->_SetProperty(name.c_str(), v->m_value);
+    return (int32_t) m_el->SetPropertyValue(name.c_str(), v->m_value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -979,6 +979,68 @@ void DgnJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     // source, and so it must be evaluated later. See DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext. 
     // *** NEEDS WORK: See if we can untangle this by building DgnScriptContext and DgnJsApi in different makefiles and thereby generating two different bootstrapping .cpp files.
     jsContext.RegisterProjection<DgnJsApiProjection>();
+    }
+
+struct DgnDbMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) { np = ctx.ObtainProjectedClassInstancePointer(new JsDgnDb(*(DgnDbP)ptr), true);}
+    };
+
+struct ViewportMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) { np = ctx.ObtainProjectedClassInstancePointer(new JsViewport(*(DgnViewportP)ptr), true); }
+    };
+
+struct ElementMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) { np = ctx.ObtainProjectedClassInstancePointer(new JsDgnElement(*(DgnElementP)ptr), true); }
+    };
+
+struct ModelMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr) { np = ctx.ObtainProjectedClassInstancePointer(new JsDgnModel(*(DgnModelP)ptr), true); }
+    };
+
+struct ObjectIdSetMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller
+    {
+    void _MarshallNativePointerToJs(BeJsNativePointerR np, BeJsContextR ctx, void* ptr)
+        {
+        np = ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectIdSet(*(DgnElementIdSet*)ptr), true);
+        }
+
+    void _MarshallNativePointerFromJs(void* outptr, BeJsNativePointerCR inptr) override
+        {
+        auto outset = (DgnElementIdSet*)outptr;
+        auto inset = (JsDgnObjectIdSet*)(inptr.GetValue());
+        for (auto const& id : inset->m_collection)
+            {
+            outset->insert(DgnElementId(id));
+            }
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* DgnJsApi::_GetMarshallerForType(Utf8StringCR typeScriptTypeName)
+    {
+    static DgnDbMarshaller s_dgndbMarshaller;
+    static ObjectIdSetMarshaller s_objectIdSetMarshaller;
+    static ViewportMarshaller s_viewportMarshaller;
+    static ElementMarshaller s_elementMarshaller;
+    static ModelMarshaller s_modelMarshaller;
+
+    if (typeScriptTypeName.EqualsIAscii("DgnDb"))
+        return &s_dgndbMarshaller;
+    if (typeScriptTypeName.EqualsIAscii("Viewport"))
+        return &s_viewportMarshaller;
+    if (typeScriptTypeName.EqualsIAscii("DgnElement"))
+        return &s_elementMarshaller;
+    if (typeScriptTypeName.EqualsIAscii("DgnModel"))
+        return &s_modelMarshaller;
+    if (typeScriptTypeName.EqualsIAscii("DgnObjectIdSet"))
+        return &s_objectIdSetMarshaller;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

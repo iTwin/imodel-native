@@ -108,11 +108,21 @@ public:
                 return (NativeLogging::SEVERITY)(-(int32_t)severity); 
                 }
 
+            struct INativePointerMarshaller
+                {
+                virtual void _MarshallNativePointerToJs(BeJsNativePointerR, BeJsContextR, void*native) = 0;
+                virtual void _MarshallNativePointerFromJs(void*native, BeJsNativePointerCR) { ; } // rarely needed
+                };
+
             //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
             struct ScriptLibraryImporter : IHostObject
                 {
                 //! Import the specified script
                 virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
+
+                //! Return the marshaller to use for the specified type. Return nullptr if the type is unrecognized.
+                //! @param typeScriptTypeName The name of the type in the TypeScript API
+                virtual INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) = 0;
                 };
 
             //! Interface for handling errors reported by scripts or that prevent scripts from running
@@ -176,6 +186,8 @@ public:
             DGNPLATFORM_EXPORT BentleyStatus ImportScriptLibrary(Utf8CP libName); 
 
             DGNPLATFORM_EXPORT void/*Json::Value*/ EvaluateScript(Utf8CP script);
+
+            INativePointerMarshaller* GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName);
 
             //! Clean up
             DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;

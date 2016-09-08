@@ -1242,8 +1242,8 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     DgnDbR db = m_view.GetDgnDb();
     context.SetDgnDb(db);
 
-    static const Utf8CP s_ecsql3d = "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometricElement3d) " WHERE InVirtualSet(?, ModelId, CategoryId)",
-                        s_ecsql2d = "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometricElement2d) " WHERE InVirtualSet(?, ModelId, CategoryId)";
+    static const Utf8CP s_ecsql3d = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE InVirtualSet(?, ModelId, CategoryId)",
+                        s_ecsql2d = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE InVirtualSet(?, ModelId, CategoryId)";
 
     bool is2d = nullptr != dynamic_cast<ViewController2d const*>(&m_view);
     auto stmt = db.GetPreparedECSqlStatement(is2d ? s_ecsql2d : s_ecsql3d);

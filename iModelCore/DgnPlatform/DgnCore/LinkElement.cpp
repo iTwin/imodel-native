@@ -10,11 +10,11 @@
 #include <DgnPlatform/LinkElement.h>
 
 #define URLLINK_Url "Url"
-#define URLLINK_Label "Label"
+#define URLLINK_UserLabel "UserLabel"
 #define URLLINK_Description "Descr"
 
 #define EMBEDDEDFILELINK_Name "Name"
-#define EMBEDDEDFILELINK_Label "Label"
+#define EMBEDDEDFILELINK_UserLabel "UserLabel"
 #define EMBEDDEDFILELINK_Description "Descr"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -27,6 +27,7 @@ namespace dgn_ModelHandler
 namespace dgn_ElementHandler
 {
     HANDLER_DEFINE_MEMBERS(UrlLinkHandler)
+    HANDLER_DEFINE_MEMBERS(RepositoryLinkHandler)
     HANDLER_DEFINE_MEMBERS(EmbeddedFileLinkHandler)
 };
 
@@ -87,7 +88,7 @@ BentleyStatus LinkElement::AddToSource(DgnDbR dgndb, DgnElementId linkId, DgnEle
         return ERROR;
         }
 
-    Utf8CP ecSql = "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
+    Utf8CP ecSql = "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementHasLinks) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
     CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(stmt.IsValid());
 
@@ -130,7 +131,7 @@ bool LinkElement::IsFromSource(DgnDbR dgndb, DgnElementId linkId, DgnElementId s
         return false;
         }
 
-    Utf8CP ecSql = "SELECT * FROM ONLY " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
+    Utf8CP ecSql = "SELECT * FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
     CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(stmt.IsValid());
 
@@ -166,7 +167,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, D
         return ERROR;
         }
 
-    Utf8CP ecSql = "DELETE FROM ONLY " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
+    Utf8CP ecSql = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
     CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(stmt.IsValid());
 
@@ -188,7 +189,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, D
 //---------------------------------------------------------------------------------------
 DgnElementIdSet LinkElement::QuerySources()
     {
-    Utf8CP ecSql = "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " rel WHERE rel.TargetECInstanceId=?";
+    Utf8CP ecSql = "SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) " rel WHERE rel.TargetECInstanceId=?";
 
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(GetDgnDb(), ecSql);
@@ -302,7 +303,7 @@ void UrlLink::_CopyFrom(DgnElementCR other)
 // static
 DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullptr*/, Utf8CP description /*= nullptr*/, int limitCount /*= -1*/)
     {
-    Utf8String ecSql = "SELECT ECInstanceId FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_UrlLink);
+    Utf8String ecSql = "SELECT ECInstanceId FROM ONLY " BIS_SCHEMA(BIS_CLASS_UrlLink);
 
     Utf8String whereClause;
 
@@ -310,7 +311,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
         whereClause.append(URLLINK_Url "=?");
         
     if (label)
-        whereClause.empty() ? whereClause.append(URLLINK_Label "=?") : whereClause.append(" AND " URLLINK_Label "=?");
+        whereClause.empty() ? whereClause.append(URLLINK_UserLabel "=?") : whereClause.append(" AND " URLLINK_UserLabel "=?");
 
     if (description) 
         whereClause.empty() ? whereClause.append(URLLINK_Description "=?") : whereClause.append(" AND " URLLINK_Description " =?");
@@ -441,7 +442,7 @@ void EmbeddedFileLink::_CopyFrom(DgnElementCR other)
 // static
 DgnElementIdSet EmbeddedFileLink::Query(DgnDbCR dgndb, Utf8CP name /* = nullptr */, Utf8CP label /*= nullptr*/, Utf8CP description /* = nullptr */, int limitCount /*= -1*/)
     {
-    Utf8String ecSql = "SELECT ECInstanceId FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_EmbeddedFileLink);
+    Utf8String ecSql = "SELECT ECInstanceId FROM ONLY " BIS_SCHEMA(BIS_CLASS_EmbeddedFileLink);
 
     Utf8String whereClause;
 
@@ -449,7 +450,7 @@ DgnElementIdSet EmbeddedFileLink::Query(DgnDbCR dgndb, Utf8CP name /* = nullptr 
         whereClause.append(EMBEDDEDFILELINK_Name "=?");
 
     if (label)
-        whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_Label "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_Label "=?");
+        whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_UserLabel "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_UserLabel "=?");
 
     if (description)
         whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_Description "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_Description " =?");

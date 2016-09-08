@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
@@ -36,6 +37,8 @@
 #define DPTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"  
 #define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
+
+#define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
@@ -85,8 +88,8 @@ protected:
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetProperty(Utf8CP, ECN::ECValueCR) override;
-    virtual Dgn::DgnDbStatus _GetProperty(ECN::ECValueR, Utf8CP) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR) override;
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP) const override;
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
@@ -133,9 +136,9 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElementHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Geometric3d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================
@@ -192,9 +195,41 @@ typedef TestGroup const& TestGroupCR;
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    11/15
 //=======================================================================================
-struct TestGroupHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Geometric3d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestPhysicalType : Dgn::PhysicalType
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalType, Dgn::PhysicalType)
+    friend struct TestPhysicalTypeHandler;
+
+protected:
+    explicit TestPhysicalType(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestPhysicalType> Create(Dgn::DgnDbR);
+
+    Utf8String GetStringProperty() const {return GetPropertyValueString("StringProperty");}
+    void SetStringProperty(Utf8CP s) {SetPropertyValue("StringProperty", s);}
+
+    int32_t GetIntProperty() const {return GetPropertyValueInt32("IntProperty");}
+    void SetIntProperty(int32_t i) {SetPropertyValue("IntProperty", i);}
+};
+
+typedef RefCountedPtr<TestPhysicalType> TestPhysicalTypePtr;
+typedef RefCountedCPtr<TestPhysicalType> TestPhysicalTypeCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalType, TestPhysicalType, TestPhysicalTypeHandler, Dgn::dgn_ElementHandler::PhysicalType, )
 };
 
 //=======================================================================================
