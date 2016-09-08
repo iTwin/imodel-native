@@ -16,6 +16,38 @@ using namespace ::testing;
 
 GCSSpecificTransformTester::GCSSpecificTransformTester() 
     {
+        BeTest::Host& host = BeTest::GetHost();
+
+        BeFileName path;
+        host.GetDgnPlatformAssetsDirectory(path);
+
+        path.AppendToPath (L"DgnGeoCoord");
+
+        GeoCoordinates::BaseGCS::Initialize(path.c_str());
+    }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, LatLongToFromXYZ)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+
+    GeoPoint point1;
+    point1.longitude = -71;
+    point1.latitude = 48;
+    point1.elevation = 0.0;
+
+    DPoint3d xyz = {0.0, 0.0, 0.0};
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCS->XYZFromLatLong(xyz, point1));
+
+    
+    EXPECT_TRUE(REPROJECT_Success == currentGCS->LatLongFromXYZ(point1, xyz));
+
     }
 
 //==================================================================================

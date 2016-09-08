@@ -2431,6 +2431,7 @@ BASEGEOCOORD_EXPORTED static int              CS_xyzToLlh (GeoPointP llh , DPoin
 };
 
 
+
 typedef int (*DatumConvert3dFunc) (CSDatumConvert*, GeoPointCP in, GeoPointP out);
 
 class   Datum;
@@ -3484,7 +3485,9 @@ BASEGEOCOORD_EXPORTED static DatumEnumeratorP CreateEnumerator();
 * @bsimethod                                                    Alain.Robert   2016/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED WCharCP           GetGroup (WStringR group) const;
+
 /*__PUBLISH_SECTION_START__*/
+
 
 };
 
