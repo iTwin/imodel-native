@@ -227,7 +227,7 @@ TEST_F(ImportTest, ImportGroups)
     //  Import into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb( L"3dMetricGeneralcc.bim");
+        DgnDbPtr db2 = openCopyOfDb( L"3dMetricGeneralcc.dgndb");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -452,7 +452,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     if (true)
     {
         //  Create a second Db
-        DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
+        DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.dgndb");
         ASSERT_TRUE(destDb.IsValid());
 
         for (int i=0; i<32; ++i)
@@ -553,7 +553,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     //  Import model1 into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb(L"3dMetricGeneralcc.bim");
+        DgnDbPtr db2 = openCopyOfDb(L"3dMetricGeneralcc.dgndb");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -580,7 +580,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithDependencies)
 {
-    SetupSeedProject(L"ImportElementsWithDependencies.bim", Db::OpenMode::ReadWrite, true);
+    SetupSeedProject(L"ImportElementsWithDependencies.dgndb", Db::OpenMode::ReadWrite, true);
     TestElementDrivesElementHandler::GetHandler().Clear();
 
     // ******************************
@@ -624,7 +624,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     //  Import into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb(L"ImportElementsWithDependencies_Destination.bim");
+        DgnDbPtr db2 = openCopyOfDb(L"ImportElementsWithDependencies_Destination.dgndb");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -649,7 +649,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     {
     //.............................................................................................
     DgnDbPtr db1;
-    db1 = initDb(L"ElementGeomIOCausesFontRemap-1.bim");
+    db1 = initDb(L"ElementGeomIOCausesFontRemap-1.dgndb");
     ASSERT_TRUE(db1.IsValid());
 
     DgnFontPtr db1_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Arial");
@@ -684,7 +684,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     //.............................................................................................
     DgnDbPtr db2;
-    db2 = initDb(L"ElementGeomIOCausesFontRemap-2.bim");
+    db2 = initDb(L"ElementGeomIOCausesFontRemap-2.dgndb");
     ASSERT_TRUE(db2.IsValid());
 
     ASSERT_TRUE(nullptr == db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
@@ -704,7 +704,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     //.............................................................................................
     DgnDbPtr db3;
-    db3 = initDb(L"ElementGeomIOCausesFontRemap-3.bim");
+    db3 = initDb(L"ElementGeomIOCausesFontRemap-3.dgndb");
     ASSERT_TRUE(db3.IsValid());
 
     ASSERT_TRUE(nullptr == db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));

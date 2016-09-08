@@ -173,15 +173,15 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
     DgnDbPtr project, project2;
     
     //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"));
+    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"));
 
     //Create and Verify that project was created
-    project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
+    project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"), params);
     ASSERT_TRUE (project != NULL);
     ASSERT_EQ (BE_SQLITE_OK, status) << "Status returned is:" << status;
 
     //Create another project with same name. It should fail
-    project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
+    project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"), params);
     EXPECT_FALSE (project2.IsValid()) << "Project with Duplicate name should not be created";
     EXPECT_EQ (BE_SQLITE_ERROR_FileExists, status2) << "Status returned for duplicate name is: " << status2;
     }
@@ -193,7 +193,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
 TEST_F(DgnDbTest, MultipleReadWrite)
     {
     BeFileName testFile;
-    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(testFile, L"MultipleReadWrite.bim"));
+    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(testFile, L"MultipleReadWrite.dgndb"));
 
     DbResult status1;
     DgnDbPtr dgnProj1;
@@ -232,7 +232,7 @@ TEST_F(DgnDbTest, CreateDgnDb)
     DgnDbPtr      dgnProj;
     BeFileName dgndbFileName;
     BeTest::GetHost().GetOutputRoot(dgndbFileName);
-    dgndbFileName.AppendToPath(L"MyFile.ibim");
+    dgndbFileName.AppendToPath(L"MyFile.idgndb");
 
      if (BeFileName::DoesPathExist(dgndbFileName))
         BeFileName::BeDeleteFile(dgndbFileName);
@@ -274,7 +274,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 
     BeFileName dgndbFileNotExist;
     BeTest::GetHost().GetOutputRoot(dgndbFileNotExist);
-    dgndbFileNotExist.AppendToPath(L"MyFileNotExist.ibim");
+    dgndbFileNotExist.AppendToPath(L"MyFileNotExist.idgndb");
 
     dgnProj = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_ERROR_FileNotFound, status) << status;
@@ -287,7 +287,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 TEST_F(DgnDbTest, OpenAlreadyOpen)
     {
     BeFileName dgndbFileName;
-    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dgndbFileName, L"OpenAlreadyOpen.bim"));
+    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dgndbFileName, L"OpenAlreadyOpen.dgndb"));
 
     DbResult status;
     DgnDbPtr dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
@@ -306,7 +306,7 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, GetCoordinateSystemProperties)
     {
-    SetupWithPrePublishedFile(L"GeoCoordinateSystem.i.ibim", L"GetCoordinateSystemProperties.ibim", BeSQLite::Db::OpenMode::Readonly);
+    SetupWithPrePublishedFile(L"GeoCoordinateSystem.i.idgndb", L"GetCoordinateSystemProperties.idgndb", BeSQLite::Db::OpenMode::Readonly);
     DgnGCS* dgnGCS = m_db->Units().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
     double azimuthExpected = 178.29138626108181;
@@ -535,7 +535,7 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     ASSERT_TRUE ((int) DgnDbStatus::Success == status); 
     //Extract file from package
     DbResult dbResult;
-    BeFileName extractedFile = DgnDbTestDgnManager::GetOutputFilePath(L"extractedUsingDefaults.ibim");
+    BeFileName extractedFile = DgnDbTestDgnManager::GetOutputFilePath(L"extractedUsingDefaults.idgndb");
     auto fileStatus = DgnIModel::ExtractUsingDefaults(dbResult, extractedFile, packageFile, true);
     EXPECT_EQ(DgnDbStatus::Success, fileStatus);
     EXPECT_TRUE(BE_SQLITE_OK == dbResult);
@@ -604,7 +604,7 @@ TEST(DgnProject, DuplicateElementId)
     
     // // We're going to write to the file; make a copy.
     // BeFileName dbPath;
-    // ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"DgnProject.DuplicateElementId.bim", __FILE__));
+    // ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"DgnProject.DuplicateElementId.dgndb", __FILE__));
     
     // DgnModelId modelId;
     // ElementId firstAddId;
@@ -672,12 +672,12 @@ TEST(DgnProject, DuplicateElementId)
 TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     {
     std::vector<Utf8String> dgndbFiles;
-    dgndbFiles.push_back("79_Main.i.ibim");
-    dgndbFiles.push_back("04_Plant.i.ibim");
-    dgndbFiles.push_back("BGRSubset.i.ibim");
-    dgndbFiles.push_back("fonts.dgn.i.ibim");
-    dgndbFiles.push_back("2dMetricGeneral.ibim");
-    dgndbFiles.push_back("3dMetricGeneral.ibim");
+    dgndbFiles.push_back("79_Main.i.idgndb");
+    dgndbFiles.push_back("04_Plant.i.idgndb");
+    dgndbFiles.push_back("BGRSubset.i.idgndb");
+    dgndbFiles.push_back("fonts.dgn.i.idgndb");
+    dgndbFiles.push_back("2dMetricGeneral.idgndb");
+    dgndbFiles.push_back("3dMetricGeneral.idgndb");
 
     BeFileName dgndbFilesPath;
     BeTest::GetHost().GetDocumentsRoot(dgndbFilesPath);

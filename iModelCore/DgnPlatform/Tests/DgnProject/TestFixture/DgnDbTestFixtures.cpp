@@ -43,19 +43,19 @@ DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newN
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that creates a copy of 3dMetricGeneral.ibim at Output
+* Set up method that creates a copy of 3dMetricGeneral.idgndb at Output
 * Project file name is the name of the test, mode is ReadWrite and it is Briefcase
 * @bsimethod                                     Majd.Uddin                   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBriefcase)
     {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
-    fileName.append(L".bim");
+    fileName.append(L".dgndb");
     SetupSeedProject(fileName.c_str(), mode, needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .bim project file after copying it to out
+* Set up method that opens an existing .dgndb project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -161,7 +161,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .bim project file after copying it to out
+* Set up method that opens an existing .dgndb project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/

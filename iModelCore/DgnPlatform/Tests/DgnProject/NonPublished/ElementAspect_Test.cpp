@@ -443,7 +443,7 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         {        
         // Open Destination DB
         BeFileName destinationFile;
-        ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(destinationFile, L"DestinationDb.bim"));
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(destinationFile, L"DestinationDb.dgndb"));
         DgnDbPtr db2;
         DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());

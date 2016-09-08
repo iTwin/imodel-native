@@ -29,7 +29,7 @@ protected:
     GenericPhysicalObjectCPtr InsertBlock(DPoint3dCR origin, double dimension);
 
 public:
-    VolumeElementTestFixture() : T_Super(L"VolumeElementTest.bim") {}
+    VolumeElementTestFixture() : T_Super(L"VolumeElementTest.dgndb") {}
 };
 
 //---------------------------------------------------------------------------------------

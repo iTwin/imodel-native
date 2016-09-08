@@ -27,7 +27,7 @@ protected:
 void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8String, int>& benchMark, bvector<Utf8String>& schemasToCheck)
     {
     BeFileName testProjFile(TEST_FIXTURE_NAME, true);
-    testProjFile.AppendToPath(L"InstanceCountVerification.ibim");
+    testProjFile.AppendToPath(L"InstanceCountVerification.idgndb");
 
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::Readonly;
 
@@ -105,7 +105,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     {
-    SetupWithPrePublishedFile(L"04_Plant.i.ibim", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"04_Plant.i.idgndb", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT TAG FROM appdw.Equipment WHERE EQUIP_NO='50P-104B'"));
@@ -244,7 +244,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     {
-    SetupWithPrePublishedFile(L"79_Main.i.ibim", L"SelectQueriesOnDbGeneratedDuringBuild_79Main.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"79_Main.i.idgndb", L"SelectQueriesOnDbGeneratedDuringBuild_79Main.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     ECSqlStatement stmt;
 
@@ -359,7 +359,7 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
     schemasToCheck.push_back("AutoPlantPDWPersistenceStrategySchema");
     schemasToCheck.push_back("AutoPlantPDW_CustomAttributes");
     schemasToCheck.push_back("ProStructures");
-    VerifyInstanceCounts(L"04_Plant.i.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"04_Plant.i.idgndb", benchMark, schemasToCheck);
     }
 
 // CGM - Unfortunately, this test takes over 11 seconds to run
@@ -388,7 +388,7 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
 //    bvector<Utf8String> schemasToCheck;
 //    schemasToCheck.push_back("BuildingDataGroup");
 //    schemasToCheck.push_back("ams");
-//    VerifyInstanceCounts(L"79_Main.i.ibim", benchMark, schemasToCheck);
+//    VerifyInstanceCounts(L"79_Main.i.idgndb", benchMark, schemasToCheck);
 //    }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountForBGRSubset)
@@ -405,7 +405,7 @@ TEST_F(ECInstanceSelectTests, VerifyInstanceCountForBGRSubset)
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("CSimProductData");
     schemasToCheck.push_back("ReviewVisualization");
-    VerifyInstanceCounts(L"BGRSubset.i.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"BGRSubset.i.idgndb", benchMark, schemasToCheck);
     }
 
 TEST_F(ECInstanceSelectTests, VerifyinstanceCountsForfacilities_secondary)
@@ -426,7 +426,7 @@ TEST_F(ECInstanceSelectTests, VerifyinstanceCountsForfacilities_secondary)
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("Bentley_Facilities_ExpImp_Schema_becert__x003a__Marlow");
     schemasToCheck.push_back("DgnCustomItemTypes_Custom__x0020__Item__x0020__Types");
-    VerifyInstanceCounts(L"facilities_secondaryinstances.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"facilities_secondaryinstances.idgndb", benchMark, schemasToCheck);
     }
 
 // CGM - Unfortunately, this test takes over 8 seconds to run
@@ -454,7 +454,7 @@ TEST_F(ECInstanceSelectTests, VerifyinstanceCountsForfacilities_secondary)
 //    bvector<Utf8String> schemasToCheck;
 //    schemasToCheck.push_back("BuildingDataGroup");
 //    schemasToCheck.push_back("ams");
-//    VerifyInstanceCounts(L"Main.ibim", benchMark, schemasToCheck);
+//    VerifyInstanceCounts(L"Main.idgndb", benchMark, schemasToCheck);
 //    }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobileDgn_test)
@@ -464,7 +464,7 @@ TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobileDgn_test)
     benchMark["Class"] = 2;
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("Test");
-    VerifyInstanceCounts(L"MobileDgn_test1.i.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"MobileDgn_test1.i.idgndb", benchMark, schemasToCheck);
     }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobile_file)
@@ -478,7 +478,7 @@ TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobile_file)
     benchMark["PipingComponent"] = 5;
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("AutoPlantPDWPersistenceStrategySchema");
-    VerifyInstanceCounts(L"Mobile_file.i.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"Mobile_file.i.idgndb", benchMark, schemasToCheck);
     }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForrxmrlw1f)
@@ -498,7 +498,7 @@ TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForrxmrlw1f)
 
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("Bentley_Facilities_ExpImp_Schema_becert__x003a__Marlow");
-    VerifyInstanceCounts(L"rxmrlw1f.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"rxmrlw1f.idgndb", benchMark, schemasToCheck);
     }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForsecondary)
@@ -511,6 +511,6 @@ TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForsecondary)
 
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("secinstances");
-    VerifyInstanceCounts(L"secondaryinstances.ibim", benchMark, schemasToCheck);
+    VerifyInstanceCounts(L"secondaryinstances.idgndb", benchMark, schemasToCheck);
     }
 

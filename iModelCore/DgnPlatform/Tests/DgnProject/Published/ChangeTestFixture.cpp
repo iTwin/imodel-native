@@ -25,7 +25,7 @@ ChangeTestFixture::ChangeTestFixture(WCharCP testFileName, bool wantTestDomain) 
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
     {
-    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.bim");
+    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.dgndb");
     if (seedPathname.DoesPathExist())
         return;
 
@@ -61,9 +61,9 @@ void ChangeTestFixture::_CreateDgnDb()
     //DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
     //m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
     BeFileName newName(TEST_NAME, true);
-    newName.AppendString(L".ibim");
+    newName.AppendString(L".dgndb");
 
-    //SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
+    //SetupWithPrePublishedFile(L"3dMetricGeneral.idgndb", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
     SetupSeedProject();
     m_testDb = m_db;
     m_testFileName = BeFileName(m_db->GetDbFileName(),true);

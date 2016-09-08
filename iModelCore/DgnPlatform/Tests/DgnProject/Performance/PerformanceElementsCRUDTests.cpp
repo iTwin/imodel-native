@@ -34,7 +34,7 @@ PerformanceElementTestDomain::PerformanceElementTestDomain() : DgnDomain(ELEMENT
 void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount)
     {
     WString seedFileName;
-    seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
+    seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.idgndb", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
@@ -1654,7 +1654,7 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     {
     WString wClassName;
     wClassName.AssignUtf8(className);
-    WPrintfString dbName(L"ElementApiInsert%ls_%d.ibim", wClassName.c_str(), opCount);
+    WPrintfString dbName(L"ElementApiInsert%ls_%d.idgndb", wClassName.c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
@@ -1679,7 +1679,7 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
     {
     WString wClassName;
     wClassName.AssignUtf8(className);
-    WPrintfString dbName(L"ElementApiSelect%ls_%d.ibim", wClassName.c_str(), opCount);
+    WPrintfString dbName(L"ElementApiSelect%ls_%d.idgndb", wClassName.c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
@@ -1700,7 +1700,7 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ElementApiUpdate%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"ElementApiUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
@@ -1735,7 +1735,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ElementApiDelete%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"ElementApiDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
@@ -1758,7 +1758,7 @@ void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int ini
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ECSqlInsert%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"ECSqlInsert%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
@@ -1790,7 +1790,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int i
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ECSqlSelect%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), initialInstanceCount);
+    WPrintfString dbName(L"ECSqlSelect%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), initialInstanceCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     Utf8String selectECSql;
@@ -1824,7 +1824,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool 
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ECSqlUpdate%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"ECSqlUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     ECSqlStatement stmt;
@@ -1866,7 +1866,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"ECSqlDelete%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"ECSqlDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     ECSqlStatement stmt;
@@ -1901,7 +1901,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::SqlInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"SqlInsert%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"SqlInsert%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
@@ -1934,7 +1934,7 @@ void PerformanceElementsCRUDTestFixture::SqlInsertTime(Utf8CP className, int ini
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool asTranslatedByECSql, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"SqlSelect%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"SqlSelect%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
@@ -1965,7 +1965,7 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"SqlUpdate%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"SqlUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
@@ -1996,7 +1996,7 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool om
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
-    WPrintfString dbName(L"SqlDelete%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
+    WPrintfString dbName(L"SqlDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
@@ -2272,7 +2272,7 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
 {
     void TestInsert(bool asBriefcase, Utf8CP className, int numElems)
         {
-        auto dbName = asBriefcase ? L"LocksBriefcase.ibim" : L"LocksRepository.ibim";
+        auto dbName = asBriefcase ? L"LocksBriefcase.idgndb" : L"LocksRepository.idgndb";
         SetUpTestDgnDb(dbName, className, 0);
         if (asBriefcase)
             TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
