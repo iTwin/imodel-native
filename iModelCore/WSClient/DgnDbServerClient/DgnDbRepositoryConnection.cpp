@@ -46,6 +46,31 @@ void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgn
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   julius.cepukenas              08/2016
+//---------------------------------------------------------------------------------------
+void DgnDbCodeLockSetResultInfo::Insert
+(
+const DgnCodeSet& codes,
+const DgnCodeInfoSet& codeStates,
+const DgnLockSet& locks,
+const DgnLockInfoSet& lockStates
+)
+    {
+    m_codes.insert(codes.begin(), codes.end());
+    m_codeStates.insert(codeStates.begin(), codeStates.end());
+    m_locks.insert(locks.begin(), locks.end());
+    m_lockStates.insert(lockStates.begin(), lockStates.end());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   julius.cepukenas              08/2016
+//---------------------------------------------------------------------------------------
+void DgnDbCodeLockSetResultInfo::Insert(const DgnDbCodeLockSetResultInfo& resultInfo)
+    {
+    Insert(resultInfo.GetCodes(), resultInfo.GetCodeStates(), resultInfo.GetLocks(), resultInfo.GetLockStates());
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              08/2016
 //---------------------------------------------------------------------------------------
 bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
@@ -934,94 +959,39 @@ void CodeDiscardReservedJsonRequest(std::shared_ptr<WSChangeset> changeSet, cons
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-Utf8String FormatLocksFilter
+ObjectId GetLockId
 (
-LockableIdSet const*  ids,
+LockableId lock,
 const BeBriefcaseId*  briefcaseId
 )
     {
-    Utf8String filter;
+    Utf8String idString;
+    if (nullptr == briefcaseId)
+        idString.Sprintf("%d-%llu", (int) lock.GetType(), lock.GetId().GetValue());
+    else
+        idString.Sprintf("%d-%llu-%u", (int) lock.GetType(), lock.GetId().GetValue(), briefcaseId->GetValue());
 
-    //Format the filter
-    if (nullptr == ids && nullptr != briefcaseId)
-        {
-        filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
-        }
-    else if (nullptr != ids)
-        {
-        bool first = true;
-        Utf8String idsString;
-        for (auto id : *ids)
-            {
-            Utf8String idString;
-            if (nullptr == briefcaseId)
-                idString.Sprintf("'%d-%llu'", (int)id.GetType(), id.GetId().GetValue());
-            else
-                idString.Sprintf("'%d-%llu-%u'", (int)id.GetType(), id.GetId().GetValue(), briefcaseId->GetValue());
-
-            if (!first)
-                idsString.append(",");
-            idsString.append(idString);
-
-            first = false;
-            }
-
-        if (idsString.empty())
-            {
-            return filter;
-            }
-
-        filter.Sprintf("$id+in+[%s]", idsString.c_str());
-        }
-
-    return filter;
+    return ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, idString);
     }
+
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-Utf8String FormatCodesFilter
+ObjectId GetCodeId
 (
-DgnCodeSet const*  ids,
+DgnCode code,
 const BeBriefcaseId*  briefcaseId
 )
     {
-    Utf8String filter;
+    Utf8String idString;
+    if (nullptr != briefcaseId)
+        idString.Sprintf("%s", FormatCodeId(code.GetAuthority().GetValue(), code.GetNamespace(), code.GetValue(), *briefcaseId).c_str());
+    else
+        idString.Sprintf("%s", FormatCodeId(code.GetAuthority().GetValue(), code.GetNamespace(), code.GetValue()).c_str());
 
-    if (nullptr == ids && nullptr != briefcaseId)
-        {
-        filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
-        }
-    else if (nullptr != ids)
-        {
-        bool first = true;
-        Utf8String idsString;
-        for (auto id : *ids)
-            {
-            Utf8String idString;
-            //NEEDSWORK - encode namespace and value
-            if (nullptr != briefcaseId)
-                idString.Sprintf("'%s'", FormatCodeId(id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue(), *briefcaseId).c_str());
-            else
-                idString.Sprintf("'%s'", FormatCodeId(id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue()).c_str());
-
-            if (!first)
-                idsString.append(",");
-            idsString.append(idString);
-
-            first = false;
-            }
-
-        if (idsString.empty())
-            {
-            return filter;
-            }
-
-        filter.Sprintf("$id+in+[%s]", idsString.c_str());
-        }
-
-    return filter;
+    return ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Code, idString);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1139,6 +1109,9 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryAllBriefcasesInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
     return QueryBriefcaseInfoInternal(query, cancellationToken);
     }
@@ -1148,6 +1121,9 @@ DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICa
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     Utf8String filter;
     filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId);
 
@@ -1166,6 +1142,9 @@ bvector<BeSQLite::BeBriefcaseId>& briefcaseIds,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcasesInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     std::deque<ObjectId> queryIds;
     for (auto& id : briefcaseIds)
         {
@@ -1207,11 +1186,15 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfoInternal";
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
         ->Then<DgnDbBriefcasesInfoResult>([=] (const WSObjectsResult& result)
         {
         if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbBriefcasesInfoResult::Error(result.GetError());
+            }
 
         bvector<std::shared_ptr<DgnDbBriefcaseInfo>> briefcases;
         for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
@@ -1280,29 +1263,82 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksInternal";
+
     std::set<Utf8String> classes;
     classes.insert(ServerSchema::Class::Lock);
     classes.insert(ServerSchema::Class::Code);
 
-    WSQuery query(ServerSchema::Schema::Repository, classes);
-    Utf8String filter;
+    bset<DgnDbServerCodeLockSetTaskPtr> tasks;
 
-    Utf8String locksFilter = nullptr == locks && nullptr == briefcaseId ? "" : FormatLocksFilter(locks, briefcaseId);
-    Utf8String codesFilter = nullptr == codes && nullptr == briefcaseId ? "" : FormatCodesFilter(codes, briefcaseId);
+    std::deque<ObjectId> queryIds;
 
-    if (!locksFilter.empty() && !codesFilter.empty())
+    if (nullptr != codes)
         {
-        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
+        for (auto& code : *codes)
+            queryIds.push_back(GetCodeId(code, briefcaseId));
         }
-    else
-        {
-        filter = locksFilter.empty() ? codesFilter : locksFilter;
-        }
-    query.SetFilter(filter);
 
+    if (nullptr != locks)
+        {
+        for (auto& lock : *locks)
+            queryIds.push_back(GetLockId(lock, briefcaseId));
+        }
+
+    if (nullptr != briefcaseId && queryIds.empty())
+        {
+        Utf8String filter;
+        filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+
+        WSQuery query(ServerSchema::Schema::Repository, classes);
+        query.SetFilter(filter);
+        auto task = QueryCodesLocksInternal(query, cancellationToken);
+
+        tasks.insert(task);
+        }
+
+    while (!queryIds.empty())
+        {
+        WSQuery query(ServerSchema::Schema::Repository, classes);
+
+        query.AddFilterIdsIn(queryIds);
+        auto task = QueryCodesLocksInternal(query, cancellationToken);
+
+        tasks.insert(task);
+        }
+
+    auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
+
+    return AsyncTask::WhenAll(tasks)
+        ->Then<DgnDbServerCodeLockSetResult>([=]
+        {
+        for (auto& task : tasks)
+            {
+            if (!task->GetResult().IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, task->GetResult().GetError().GetMessage().c_str());
+                return DgnDbServerCodeLockSetResult::Error(task->GetResult().GetError());
+                }
+
+            auto CodeLockSet = task->GetResult().GetValue();
+            finalValue->Insert(CodeLockSet);
+            }
+
+        return DgnDbServerCodeLockSetResult::Success(*finalValue);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksInternal
+(
+WSQuery query,
+ICancellationTokenPtr cancellationToken
+) const
+    {
     //Execute query
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerCodeLockSetResult>
-        ([=](const WSObjectsResult& result)
+        ([=] (const WSObjectsResult& result)
         {
         if (result.IsSuccess())
             {
@@ -1330,7 +1366,6 @@ ICancellationTokenPtr cancellationToken
             }
         else
             {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerCodeLockSetResult::Error(result.GetError());
             }
         });
