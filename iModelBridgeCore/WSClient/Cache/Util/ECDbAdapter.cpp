@@ -1344,6 +1344,9 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
     auto status = statement->Step();
     if (BE_SQLITE_ROW != status)
         {
+        if(BE_SQLITE_DONE == status)
+            return SUCCESS;
+
         return ERROR;
         }
 
