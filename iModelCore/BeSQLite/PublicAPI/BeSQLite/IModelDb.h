@@ -29,7 +29,7 @@ enum IModelSchemaValues
 
 //=======================================================================================
 //! Standard properties that an i-model publisher program should add to the .imodel
-//! and .idgndb files that it creates.
+//! and .ibim files that it creates.
 // @bsiclass                                                    Shaun.Sewall    05/13
 //=======================================================================================
 struct ImodelProperty
