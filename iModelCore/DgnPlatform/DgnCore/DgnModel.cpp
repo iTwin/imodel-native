@@ -1239,6 +1239,9 @@ void DgnModel::_InitFrom(DgnModelCR other)
     m_userLabel = other.m_userLabel;
     m_inGuiList = other.m_inGuiList;
     m_dependencyIndex = other.m_dependencyIndex;
+    m_isTemplate = other.m_isTemplate;
+
+    m_federationGuid.Invalidate();
 
     Json::Value otherProperties;
     other._WriteJsonProperties(otherProperties);
