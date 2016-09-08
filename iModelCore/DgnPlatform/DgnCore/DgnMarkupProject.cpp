@@ -1325,20 +1325,20 @@ Render::GraphicBuilderPtr RedlineModel::GetImageGraphic(ViewContextR context)
     //                                          m_size.y
     //  m_origin[0]                         [1]   v
     //             <-------m_size.x-------->
-    DPoint3d uvPts[4];
-    ::memset(uvPts, 0, sizeof(uvPts));
-    uvPts[0].x = uvPts[2].x = m_imageDef.m_origin.x;
-    uvPts[0].y = uvPts[1].y = m_imageDef.m_origin.y;
-    uvPts[1].x = uvPts[3].x = m_imageDef.m_origin.x + m_imageDef.m_size.x;
-    uvPts[2].y = uvPts[3].y = m_imageDef.m_origin.y + m_imageDef.m_size.y;
+    IGraphicBuilder::TileCorners uvPts;
+    ::memset(&uvPts, 0, sizeof(uvPts));
+    uvPts.m_pts[0].x = uvPts.m_pts[2].x = m_imageDef.m_origin.x;
+    uvPts.m_pts[0].y = uvPts.m_pts[1].y = m_imageDef.m_origin.y;
+    uvPts.m_pts[1].x = uvPts.m_pts[3].x = m_imageDef.m_origin.x + m_imageDef.m_size.x;
+    uvPts.m_pts[2].y = uvPts.m_pts[3].y = m_imageDef.m_origin.y + m_imageDef.m_size.y;
 
-    for (int i = 0; i<_countof(uvPts); ++i)
-        uvPts[i].z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+    for (int i = 0; i<_countof(uvPts.m_pts); ++i)
+        uvPts.m_pts[i].z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
 
     if (m_imageDef.GetIsTopDown())
         {
-        std::swap(uvPts[0], uvPts[2]);
-        std::swap(uvPts[1], uvPts[3]);
+        std::swap(uvPts.m_pts[0], uvPts.m_pts[2]);
+        std::swap(uvPts.m_pts[1], uvPts.m_pts[3]);
         }
 
     auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();

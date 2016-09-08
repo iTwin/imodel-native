@@ -398,7 +398,8 @@ struct AxisAlignedBox3d : BoundingBox3d
     AxisAlignedBox3d() {}
     explicit AxisAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
     explicit AxisAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
-    AxisAlignedBox3d(DPoint3dCR low, DPoint3dCR high) {DRange3d::InitFrom(low, high);}
+    AxisAlignedBox3d(DPoint3dCR lowPt, DPoint3dCR highPt) {DRange3d::InitFrom(lowPt, highPt);}
+    DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(low, .5, high);}
 };
 
 //=======================================================================================

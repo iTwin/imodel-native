@@ -1216,7 +1216,7 @@ bool QueryViewController::RangeQuery::ComputeOcclusionScore(double& score, Frust
 
     if (score < 0.0)
         {
-        BeAssert(false);
+//        BeAssert(false);
         score = 0.0;
         }
 

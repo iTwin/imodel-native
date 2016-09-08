@@ -195,6 +195,7 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
+    m_validIdsPresent |= (elemId.IsValid());
     return index;
     }
 
@@ -586,16 +587,8 @@ BeFileNameStatus TileNode::GenerateSubdirectories (size_t maxTilesPerDirectory, 
 WString TileNode::GetRelativePath (WCharCP rootName, WCharCP extension) const
     {
     WString     relativePath;
-    if (0 == m_depth)
-        {
-        // Acute3d convenstion -- root tile gets root name.
-        BeFileName::BuildName (relativePath, nullptr, nullptr, rootName, extension);
-        }
-    else
-        {
-        WString     fileName = L"Tile" + GetNameSuffix();
-        BeFileName::BuildName (relativePath, nullptr, m_subdirectory.empty() ? nullptr : m_subdirectory.c_str(), fileName.c_str(), extension);
-        }
+
+    BeFileName::BuildName (relativePath, nullptr, m_subdirectory.empty() ? nullptr : m_subdirectory.c_str(), (rootName + GetNameSuffix()).c_str(), extension);
 
     return relativePath;
     }
@@ -1189,7 +1182,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
-#define MESHTILE_FACET_BODIES
 #if !defined(MESHTILE_FACET_BODIES)
     ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
     DRange3d range = clone->GetEntityRange();
@@ -1200,15 +1192,14 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     solidTo3mx.Multiply(range, range);
     m_range.Extend(range);
 
-    TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
+    TileDisplayParamsPtr displayParams = new TileDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+
     auto rangeTreeNode = new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb());
     m_rangeTree->Add(rangeTreeNode, range);
 
     return true;
 #else
-    // ###TODO: There's a threading issue in OpenCascade - TileGeometry::GetPolyface() is going to produce access violations in EnsureNormalConsistency() when called from another thread.
-    // If we call it here on the main thread when creating the range tree, no such problems.
     return false;
 #endif
     }

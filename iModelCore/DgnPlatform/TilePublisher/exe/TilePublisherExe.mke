@@ -8,8 +8,10 @@
 
 %include mdl.mki
 
+#----------------------------------------------------------------------------------------
+#   Set up dirs
+#----------------------------------------------------------------------------------------
 SrcDir              = $(_MakeFilePath)
-LibDir              = $(SrcDir)../lib/
 SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/TilePublisher/
 appName             = TilePublisher
@@ -17,10 +19,23 @@ appName             = TilePublisher
 always:
     ~mkdir $(o)
 
+#----------------------------------------------------------------------------------------
+#   Include TilePublisher.h
+#----------------------------------------------------------------------------------------
+libInclude = $(OutputRootDir)build/TilePublisher/
+cIncs += -I$(libInclude)
+
+$(libInclude)DgnPlatform/TilePublisher/TilePublisher.h : $(BuildContext)Delivery/TilePublisher/TilePublisher.h
+    $(msg)
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+#   Compile and link
+#----------------------------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)main$(oext) : $(SrcDir)main.cpp $(LibDir)TilePublisher.h $(SrcDir)Constants.h ${MultiCompileDepends}
+$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)Constants.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

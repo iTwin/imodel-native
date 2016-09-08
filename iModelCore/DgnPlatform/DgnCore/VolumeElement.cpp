@@ -432,7 +432,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
 
     DRange3d volumeRange;
     this->GetRange (volumeRange);
-    DRange3d viewRange = viewport.GetFrustum (DgnCoordSystem::World, false).ToRange();
+    DRange3d viewRange = viewport.GetFrustum(DgnCoordSystem::World, false).ToRange();
     DRange3d queryRange; //  Query range is the intersection of the range of the volume, and range of the current view
     queryRange.IntersectionOf (volumeRange, viewRange);
     stmt.BindDouble (1, queryRange.low.x);

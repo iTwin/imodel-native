@@ -45,10 +45,10 @@ void Cache::Worker::Work()
             m_cache.m_cv.RelativeWait(lock, 1000);
             }
 
-        SaveChanges();
-
         if (m_cache.IsStopped())
             return;
+
+        SaveChanges();
         }
     }
 
