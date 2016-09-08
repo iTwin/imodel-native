@@ -1109,6 +1109,9 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryAllBriefcasesInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
     return QueryBriefcaseInfoInternal(query, cancellationToken);
     }
@@ -1118,6 +1121,9 @@ DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICa
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     Utf8String filter;
     filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId);
 
@@ -1136,6 +1142,9 @@ bvector<BeSQLite::BeBriefcaseId>& briefcaseIds,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcasesInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
     std::deque<ObjectId> queryIds;
     for (auto& id : briefcaseIds)
         {
@@ -1177,11 +1186,15 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
+    const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfoInternal";
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
         ->Then<DgnDbBriefcasesInfoResult>([=] (const WSObjectsResult& result)
         {
         if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbBriefcasesInfoResult::Error(result.GetError());
+            }
 
         bvector<std::shared_ptr<DgnDbBriefcaseInfo>> briefcases;
         for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
