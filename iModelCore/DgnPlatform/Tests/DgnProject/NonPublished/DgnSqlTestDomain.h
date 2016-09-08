@@ -79,17 +79,17 @@ typedef RefCountedCPtr<ObstacleElement>  ObstacleElementCPtr;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct RobotElementHandler : dgn_ElementHandler::Geometric3d
+struct RobotElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, dgn_ElementHandler::Geometric3d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ObstacleElementHandler : dgn_ElementHandler::Geometric3d
+struct ObstacleElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, dgn_ElementHandler::Geometric3d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================
@@ -102,7 +102,7 @@ struct DgnSqlTestDomain : DgnDomain
 public:
     DgnSqlTestDomain();
 
-    static void ImportSchema(DgnDbR, BeFileNameCR schemasDir);
+    static void ImportSchemaFromPath(DgnDbR, BeFileNameCR schemasDir);
     };
 
 }; // namespace DgnSqlTestNamespace

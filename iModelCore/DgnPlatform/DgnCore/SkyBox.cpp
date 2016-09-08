@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
+AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
     {
     AxisAlignedBox3d extents;
     if (!IsGroundPlaneEnabled())
@@ -32,7 +32,7 @@ AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
             return extents; // view does not show ground plane
         }
 
-    extents = m_dgndb.Units().GetProjectExtents();
+    extents = GetDgnDb().Units().GetProjectExtents();
     extents.low.z = extents.high.z = elevation;
 
     DPoint3d center = DPoint3d::FromInterpolate(extents.low, 0.5, extents.high);
@@ -47,15 +47,15 @@ AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CameraViewController::GetGroundElevation() const
+double SpatialViewController::GetGroundElevation() const
     {
-    return m_environment.m_groundPlane.m_elevation + m_dgndb.Units().GetGlobalOrigin().z; // adjust for global origin
+    return m_environment.m_groundPlane.m_elevation + GetDgnDb().Units().GetGlobalOrigin().z; // adjust for global origin
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::DrawGroundPlane(DecorateContextR context)
+void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     {
     AxisAlignedBox3d extents = GetGroundExtents(*context.GetViewport());
     if (!extents.IsValid())
@@ -67,7 +67,7 @@ void CameraViewController::DrawGroundPlane(DecorateContextR context)
     pts[2] = pts[3] = extents.high;
     pts[3].y = extents.low.y;
 
-    bool above = IsCameraAbove(extents.low.z);
+    bool above = IsEyePointAbove(extents.low.z);
     double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
     ColorDef color = above ? m_environment.m_groundPlane.m_aboveColor : m_environment.m_groundPlane.m_belowColor;
     ColorDef colors[] = {color, color, color};
@@ -95,7 +95,7 @@ void CameraViewController::DrawGroundPlane(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr CameraViewController::LoadTexture(Utf8CP fileName, Render::SystemCR system)
+Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::SystemCR system)
     {
 #if defined (NEEDS_WORK_GROUND_PLANE)
     bool isHttp = (0 == strncmp("http:", fileName, 5) || 0 == strncmp("https:", fileName, 6));
@@ -123,7 +123,7 @@ static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::LoadSkyBox(Render::SystemCR system)
+void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     {
     Render::TexturePtr texture;
 
@@ -196,13 +196,9 @@ static DPoint2d getUVForDirection(DPoint3dCR direction, double rotation, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DPoint3d computeCamera(DgnViewportCR vp)
+DPoint3d SpatialViewController::_ComputeEyePoint(Frustum const& frustum) const
     {
-    Frustum frustum = vp.GetFrustum();
     DVec3d delta = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftBottomRear), frustum.GetCorner(NPC_LeftBottomFront));
-
-    if (vp.IsCameraOn())
-        return vp.GetCamera().GetEyePoint();
 
     double pseudoCameraHalfAngle = 22.5;         // Somewhat arbitrily chosen to match Luxology.
     double diagonal = frustum.GetCorner(NPC_LeftBottomRear).Distance(frustum.GetCorner(NPC_RightTopRear));
@@ -223,7 +219,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
     bvector<DPoint3d> meshPoints;
     bvector<DPoint2d> meshParams; 
     bvector<int> indices;
-    DPoint3d cameraPos = computeCamera(viewport);
+    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->ComputeEyePoint(viewport.GetFrustum());
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
@@ -288,7 +284,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::DrawSkyBox(TerrainContextR context)
+void SpatialViewController::DrawSkyBox(TerrainContextR context)
     {
     if (!IsSkyBoxEnabled())
         return;
@@ -331,7 +327,6 @@ void CameraViewController::DrawSkyBox(TerrainContextR context)
 namespace EnvironmentJson
 {
     static Utf8CP Display()     {return "display";}
-    static Utf8CP Environment() {return "environment";}
     static Utf8CP Ground()      {return "ground";}
     static Utf8CP Sky()         {return "sky";}
 
@@ -360,9 +355,11 @@ using namespace EnvironmentJson;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::LoadEnvironment()
+void SpatialViewController::LoadEnvironment()
     {
-    JsonValueCR env = m_settings[Environment()];
+    Json::Value env(Json::objectValue);
+    Json::Reader::Parse(GetDisplayStyle().GetEnvironment(), env);
+
     m_environment.m_enabled = env[Display()].asBool();
     
     JsonValueCR ground = env[Ground()];
@@ -388,7 +385,7 @@ void CameraViewController::LoadEnvironment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::SaveEnvironment()
+void SpatialViewController::SaveEnvironment()
     {
     Json::Value env;
     env[Display()] = m_environment.m_enabled;
@@ -412,5 +409,7 @@ void CameraViewController::SaveEnvironment()
     sky[SkyBoxJson::SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
     env[Sky()] = sky;
     
+#ifdef WIP_VIEW_DEFINITION
     m_settings[Environment()] = env;
+#endif
     }

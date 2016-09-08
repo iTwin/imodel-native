@@ -260,7 +260,7 @@ AnnotationFrameStylePtr AnnotationFrameStyle::CreateEffectiveStyle(AnnotationFra
 //---------------------------------------------------------------------------------------
 size_t AnnotationFrameStyle::QueryCount(DgnDbR db)
     {
-    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationFrameStyle));
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_AnnotationFrameStyle));
     if (!select.IsValid())
         return 0;
 
@@ -276,7 +276,7 @@ size_t AnnotationFrameStyle::QueryCount(DgnDbR db)
 AnnotationFrameStyle::Iterator AnnotationFrameStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationFrameStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationFrameStyle), 0);
 
     return iter;
     }

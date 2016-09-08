@@ -53,17 +53,6 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
-    {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
-    catalogModel->SetInGuiList(false);
-    return catalogModel->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
@@ -165,7 +154,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_componentDb, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     TsComponentParameterSet params;
     params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
@@ -212,7 +201,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
+static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(physicalTestModel, testCategoryId);
 
@@ -258,13 +247,19 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
 
     OpenClientDb(Db::OpenMode::ReadWrite);
 
+    SubjectCPtr rootSubject = m_clientDb->Elements().GetRootSubject();
+
     //  Create the catalog model in the client.
-    SpatialModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
+    SubjectCPtr catalogSubject = Subject::CreateAndInsert(*rootSubject, "Catalog");
+    ASSERT_TRUE(catalogSubject.IsValid());
+    PhysicalModelPtr catalogModel = PhysicalModel::CreateAndInsert(*catalogSubject, DgnModel::CreateModelCode("Catalog"));
+    ASSERT_TRUE(catalogModel.IsValid());
 
     //  Create the target model in the client.
-    SpatialModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SubjectCPtr instancesSubject = Subject::CreateAndInsert(*rootSubject, "Instances");
+    ASSERT_TRUE(instancesSubject.IsValid());
+    PhysicalModelPtr targetModel = PhysicalModel::CreateAndInsert(*instancesSubject, DgnModel::CreateModelCode("Instances"));
+    ASSERT_TRUE(targetModel.IsValid());
 
     StopWatch timer("place components");
     timer.Start();
@@ -313,8 +308,8 @@ void ComponentModelPerfTest::PlaceElements(int ninstances, int boxCount, DPoint3
 
     OpenClientDb(Db::OpenMode::ReadWrite);
     
-    SpatialModelPtr targetModel;
-    createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
+    PhysicalModelPtr targetModel = PhysicalModel::Create(*m_clientDb->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
+    ASSERT_TRUE(targetModel.IsValid());
     DgnCategoryId someCat = DgnCategory::QueryFirstCategoryId(*m_clientDb);
 
     bvector<DPoint3d> originsOfBoxes;

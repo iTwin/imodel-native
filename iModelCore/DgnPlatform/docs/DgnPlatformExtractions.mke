@@ -39,6 +39,9 @@ $(PublishExtractInput)RefCounted.sample.cpp : $(_MakeFilePath)samplecode/RefCoun
 $(PublishExtractInput)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
+$(PublishExtractInput)ViewController.sample.cpp : $(_MakeFilePath)samplecode/ViewController.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
 #----------------------------------------------------------------------------------------
 #   Extract the code samples into PublishExtractOutput
 #----------------------------------------------------------------------------------------

@@ -488,7 +488,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             m_isCameraOn = false;
             if (cameraView)
                 {
-                m_isCameraOn = cameraView->IsCameraOn();
+                m_isCameraOn = true;
                 m_camera = cameraView->GetControllerCamera();
 
                 if (m_isCameraOn)
@@ -607,7 +607,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     delta.DifferenceOf(range.high, range.low);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         DPoint3d npcPts[2];
         WorldToNpc(npcPts, worldPts, 2);
@@ -732,7 +732,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         // get current box in view coordinates
         Frustum frust = GetFrustum(DgnCoordSystem::View, false);
@@ -804,7 +804,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         DPoint3d centerNpc;          // center of view in npc coords
         centerNpc.Init(.5, .5, .5);
@@ -1145,19 +1145,41 @@ void DgnViewport::SaveViewUndo()
     if (!m_undoActive)
         return;
 
-    m_viewController->SaveToSettings();
-    Utf8String curr = Json::FastWriter::ToString(m_viewController->GetSettings());
+    DgnEditElementCollector const& curr = m_viewController->GetDefinitionR();
 
-    if (m_currentBaseline.empty())
+    if (0 == m_currentBaseline.size())
         {
         m_currentBaseline = curr;
         return;
         }
 
-    if (curr.Equals(m_currentBaseline))
-        return; // nothing changed
+#ifdef DEBUG_VIEW_UNDO
+    bset<Utf8String> ignore;
+    ignore.insert("LastMod");
+    ignore.insert("CodeValue");
+    ignore.insert("CodeNameSpace");
+    ignore.insert("CodeAuthorityId");
+    ignore.insert("ModelId");
+    ignore.insert("ParentId");
+    ignore.insert("UserLabel");
+    ignore.insert("Descr");
+    ignore.insert("Source");
+    Utf8String currStr, newStr;
+    m_currentBaseline.DumpTwo(currStr, curr, ignore);
+    puts("DgnViewport::SaveViewUndo\n");
+    puts(currStr.c_str());
+    puts("------------------\n");
+#endif
 
-    if ((int)m_backStack.size() >= m_maxUndoSteps)
+    if (curr.Equals(m_currentBaseline))
+        {
+#ifdef DEBUG_VIEW_UNDO
+        puts("---- No change ----");
+#endif
+        return; // nothing changed
+        }
+
+    if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();
 
     m_backStack.push_back(m_currentBaseline);
@@ -1181,7 +1203,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ClearUndo()
     {
-    m_currentBaseline.clear();
+    m_currentBaseline = DgnEditElementCollector();
     m_forwardStack.clear();
     m_backStack.clear();
     }

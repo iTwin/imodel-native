@@ -24,7 +24,11 @@ protected:
 //---------------------------------------------------------------------------------------
 LinkModelPtr LinkElementTest::InsertLinkModel(DgnDbR dgndb, Utf8CP modelName)
     {
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, DgnModel::CreateModelCode(modelName)));
+    SubjectCPtr rootSubject = dgndb.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelName); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, modelSubject->GetElementId(), DgnModel::CreateModelCode(modelName)));
+    EXPECT_TRUE(model.IsValid());
     return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
@@ -46,7 +50,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
     if(!categoryId.IsValid())
         return nullptr;
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
     if(!elementClassId.IsValid())
         return nullptr;
     AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
@@ -74,11 +78,11 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
     static const Utf8CP LINK2_URL = "http://www.facebook.com";
     static const Utf8CP LINK1_DESCRIPTION = "This is Url Link Element";
     UrlLinkPtr link1 = UrlLink::Create(UrlLink::CreateParams(*linkModel));
-    link1->SetLabel(LINK1_DISPLAY_LABEL);
+    link1->SetUserLabel(LINK1_DISPLAY_LABEL);
     link1->SetUrl(LINK1_URL);
     link1->SetDescription(LINK1_DESCRIPTION);
     UrlLinkPtr link2 = UrlLink::Create(UrlLink::CreateParams(*linkModel));
-    link2->SetLabel(LINK2_DISPLAY_LABEL);
+    link2->SetUserLabel(LINK2_DISPLAY_LABEL);
     link2->SetUrl(LINK2_URL);
 
     UrlLinkCPtr link1A = link1->Insert();
@@ -98,7 +102,7 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
     UrlLinkCPtr link1B = UrlLink::Get(db, link1A->GetElementId());
     ASSERT_TRUE(link1B.IsValid());
     EXPECT_TRUE(link1B->GetElementId() == link1A->GetElementId());
-    EXPECT_TRUE(0 == strcmp(link1B->GetLabel(), LINK1_DISPLAY_LABEL));
+    EXPECT_TRUE(0 == strcmp(link1B->GetUserLabel(), LINK1_DISPLAY_LABEL));
 
     EXPECT_TRUE(0 == strcmp(link1B->GetUrl(), LINK1_URL));
     EXPECT_TRUE(0 == strcmp(link1B->GetDescription(), LINK1_DESCRIPTION));
@@ -106,7 +110,7 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
     UrlLinkCPtr link2B = UrlLink::Get(db, link2A->GetElementId());
     ASSERT_TRUE(link2B.IsValid());
     EXPECT_TRUE(link2B->GetElementId() == link2A->GetElementId());
-    EXPECT_TRUE(0 == strcmp(link2B->GetLabel(), LINK2_DISPLAY_LABEL));
+    EXPECT_TRUE(0 == strcmp(link2B->GetUserLabel(), LINK2_DISPLAY_LABEL));
     EXPECT_TRUE(0 == strcmp(link2B->GetUrl(), LINK2_URL));
 }
 
@@ -138,7 +142,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     for (size_t iLink = 0; iLink < NUM_LINKS; ++iLink)
         {
         UrlLinkPtr link = UrlLink::Create(UrlLink::CreateParams(*linkModel));
-        link->SetLabel(Utf8PrintfString("Label %" PRIu64, (uint64_t)iLink).c_str());
+        link->SetUserLabel(Utf8PrintfString("UserLabel %" PRIu64, (uint64_t)iLink).c_str());
         link->SetUrl("URL");
 
         UrlLinkCPtr linkC = link->Insert();
@@ -171,7 +175,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     ASSERT_EQ(NUM_LINKS, sourceLinkCount);
 
     //.............................................................................................
-    int whereLinkCount = (int) UrlLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size();
+    int whereLinkCount = (int) UrlLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".UserLabel LIKE '%2'").size();
     ASSERT_EQ(1, whereLinkCount);
 
     //.............................................................................................
@@ -218,10 +222,10 @@ TEST_F(LinkElementTest, OtherIterators)
     LinkModelPtr linkModel = InsertLinkModel(db, "TestLinkModel");
     ASSERT_TRUE(linkModel.IsValid());
 
-    EmbeddedFileLinkPtr link1 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName1")); link1->SetLabel("link1"); link1->Insert();
-    EmbeddedFileLinkPtr link2 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName2")); link2->SetLabel("link2"); link2->Insert();
-    EmbeddedFileLinkPtr link3 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName3")); link3->SetLabel("link3"); link3->Insert();
-    EmbeddedFileLinkPtr link4 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName4")); link4->SetLabel("link4"); link4->Insert();
+    EmbeddedFileLinkPtr link1 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName1")); link1->SetUserLabel("link1"); link1->Insert();
+    EmbeddedFileLinkPtr link2 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName2")); link2->SetUserLabel("link2"); link2->Insert();
+    EmbeddedFileLinkPtr link3 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName3")); link3->SetUserLabel("link3"); link3->Insert();
+    EmbeddedFileLinkPtr link4 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName4")); link4->SetUserLabel("link4"); link4->Insert();
 
     DgnElementId elementId1 = result1->GetElementId();
     DgnElementId elementId2 = result2->GetElementId();
@@ -241,10 +245,10 @@ TEST_F(LinkElementTest, OtherIterators)
     ASSERT_EQ(1, (int) link3->QuerySources().size());
     ASSERT_EQ(1, (int) link4->QuerySources().size());
 
-    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%1'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%3'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%4'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".UserLabel LIKE '%1'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".UserLabel LIKE '%2'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".UserLabel LIKE '%3'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".UserLabel LIKE '%4'").size());
     ASSERT_EQ(4, (int)EmbeddedFileLink::Query(db).size());
     }
 
@@ -266,7 +270,7 @@ TEST_F(LinkElementTest, Update)
     static const Utf8CP LINK1_URL = "http://www.google.com";
     
     UrlLinkPtr link1 = UrlLink::Create(UrlLink::CreateParams(*linkModel));
-    link1->SetLabel(LINK1_DISPLAY_LABEL);
+    link1->SetUserLabel(LINK1_DISPLAY_LABEL);
     link1->SetUrl(LINK1_URL);
 
     UrlLinkCPtr link1b = link1->Insert();
@@ -278,20 +282,20 @@ TEST_F(LinkElementTest, Update)
     ASSERT_TRUE(link1b.IsValid());
     EXPECT_TRUE(link1b->GetElementId() == link1->GetElementId());
 
-    EXPECT_STREQ(link1b->GetLabel(), LINK1_DISPLAY_LABEL);
+    EXPECT_STREQ(link1b->GetUserLabel(), LINK1_DISPLAY_LABEL);
     EXPECT_STREQ(link1b->GetUrl(), LINK1_URL);
 
     // Update
-    link1->SetLabel("Url Link 2");
+    link1->SetUserLabel("Url Link 2");
     link1->SetUrl("http://www.outlook.com");
     link1->Update();
 
     link1b = UrlLink::Get(db, link1->GetElementId());
-    EXPECT_STREQ("Url Link 2", link1b->GetLabel());
+    EXPECT_STREQ("Url Link 2", link1b->GetUserLabel());
     EXPECT_STREQ("http://www.outlook.com", link1b->GetUrl());
 
     EmbeddedFileLinkPtr link1E = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName1")); 
-    link1E->SetLabel("link1"); 
+    link1E->SetUserLabel("link1"); 
     link1E->Insert();
     ASSERT_EQ(1, (int)EmbeddedFileLink::Query(db).size());
     EXPECT_STREQ(link1E->GetName(), "EmbeddedDocumentName1");

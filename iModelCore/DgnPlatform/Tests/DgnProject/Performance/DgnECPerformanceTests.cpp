@@ -29,7 +29,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!model.Is3d ())
         return ERROR; // What kind of model is this?!?
 
-    DgnClassId elementClassId = DgnClassId (model.GetDgnDb ().Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)); // Should be passed in from primary ECInstance...
+    DgnClassId elementClassId = DgnClassId (model.GetDgnDb ().Schemas ().GetECClassId (BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement)); // Should be passed in from primary ECInstance...
     ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler (model.GetDgnDb (), elementClassId);
 
     if (nullptr == elementHandler)
@@ -174,7 +174,7 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbR project, Utf
 
     ECSqlStatement statement;
     Utf8String query;
-    query.Sprintf ("SELECT * FROM %s.%s", schema.GetNamespacePrefix ().c_str (), TEST_CLASS_NAME);
+    query.Sprintf ("SELECT * FROM %s.%s", schema.GetAlias ().c_str (), TEST_CLASS_NAME);
     statement.Prepare (project, query.c_str ());
 
     int count = 0;

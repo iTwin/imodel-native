@@ -25,7 +25,8 @@ Utf8CP s_tilesetHtml =
 "url: '%ls/%ls.json',\n"
 "maximumScreenSpaceError: 2,\n"
 "maximumNumberOfLoadedTiles: 1000,\n"
-"debugShowBoundingVolume:false\n"
+"debugShowBoundingVolume:false,\n"
+"refineToVisible:true\n"
 "}));\n";
 
 // printf(s_viewerHtml, tilesetHtml,

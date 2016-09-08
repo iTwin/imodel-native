@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/LinkElement.h>
-#include <DgnPlatform/QueryView.h>
+#include "DgnView.h"
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines
 * A markup is a set of annotations that apply to a DgnDb or to views of that project. Markups include redlines, markups, and punch lists.
@@ -50,6 +50,8 @@
 #define MARKUP_CLASSNAME_RedlineModel               "RedlineModel"
 #define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
 
+#define MARKUP_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
+
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
@@ -63,6 +65,8 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct RedlineModelHandler;
 struct SpatialRedlineModelHandler;
+
+namespace dgn_ElementHandler {struct RedlineViewDef;}
 
 enum DgnMarkupProjectSchemaValues
     {
@@ -95,9 +99,9 @@ struct MarkupDomain : Dgn::DgnDomain
 struct DgnProjectAssociationData
     {
 private:
-    Utf8String  m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
-    BeSQLite::BeGuid m_guid;             //! The GUID of the DgnDb.
-    uint64_t    m_lastModifiedTime; //! The last-modification time of the DgnDb
+    Utf8String m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
+    BeSQLite::BeGuid m_guid; //! The GUID of the DgnDb.
+    uint64_t m_lastModifiedTime; //! The last-modification time of the DgnDb
 
 public:
     DGNPLATFORM_EXPORT DgnProjectAssociationData();             //!< Construct an empty object. See DgnMarkupProject::GetAssociation
@@ -262,6 +266,34 @@ public:
     };
 
 //=======================================================================================
+//! Defines a view of a RedlineModel
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, SheetViewDefinition);
+    friend struct dgn_ElementHandler::RedlineViewDef;
+
+    protected:
+        //! Construct a RedlineViewDefinition from the supplied params prior to loading it
+        explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        //! Construct a new RedlineViewDefinition prior to inserting it
+        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) { ; }
+
+        //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
+        static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
+    };
+
+namespace dgn_ElementHandler {
+struct RedlineViewDef : SheetViewDef
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, SheetViewDef, DGNPLATFORM_EXPORT);
+    };
+};
+
+//=======================================================================================
 //! Displays a RedlineModel
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
@@ -284,8 +316,8 @@ protected:
     virtual void _SetRotation(RotMatrixCR viewRot) override;
 
 public:
-    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, DgnDbR project, DgnViewId id);
-    DGNPLATFORM_EXPORT RedlineViewController(RedlineModel&, DgnViewId id = DgnViewId());
+    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinition& rdlViewDef);
+    DGNPLATFORM_EXPORT RedlineViewController(RedlineModel&, RedlineViewDefinition& rdlViewDef);
     DGNPLATFORM_EXPORT ~RedlineViewController();
     
     //! Create a new redline view in the database
@@ -309,7 +341,7 @@ public:
 //=======================================================================================
 //! Displays a SpatialRedlineModel in conjunction with the display of another view controller.
 //!@remarks
-//! SpatialRedlineViewController is a normal physical view in most respects, and its SpatialRedlineModel is its target model.
+//! SpatialRedlineViewController is a normal Orthographic 3D view in most respects, and its SpatialRedlineModel is its target model.
 //! 
 //! SpatialRedlineViewController is unusual in that it also tries work in sync with another view controller.
 //! This other controller is called the "subject view controller." It must be be supplied in the SpatialRedlineViewController constructor.
@@ -327,9 +359,9 @@ public:
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct SpatialRedlineViewController : SpatialViewController
+struct SpatialRedlineViewController : OrthographicViewController
 {
-    DEFINE_T_SUPER (SpatialViewController);
+    DEFINE_T_SUPER (OrthographicViewController);
 
 #if !defined (DOCUMENTATION_GENERATOR)
     friend struct DgnMarkupProject;
@@ -342,42 +374,42 @@ protected:
 
     bool                    m_targetModelIsInSubjectView;
 
-    virtual void _SaveToSettings() const override;
-    virtual void _RestoreFromSettings() override;
-    virtual void _DrawView(ViewContextR) override;
-    virtual DPoint3d _GetOrigin() const override;
-    virtual DVec3d _GetDelta() const override;
-    virtual RotMatrix _GetRotation() const override;
-    virtual void _SetOrigin(DPoint3dCR org) override;
-    virtual void _SetDelta(DVec3dCR delta) override;
-    virtual void _SetRotation(RotMatrixCR rot) override;
-    virtual GeometricModelP _GetTargetModel() const override;
-    virtual void _AdjustAspectRatio(double , bool expandView) override;
-    virtual DPoint3d _GetTargetPoint() const override;
-    virtual bool _Allow3dManipulations() const override;
+    void _StoreToDefinition() const override;
+    void _LoadFromDefinition() override;
+    void _DrawView(ViewContextR) override;
+    DPoint3d _GetOrigin() const override;
+    DVec3d _GetDelta() const override;
+    RotMatrix _GetRotation() const override;
+    void _SetOrigin(DPoint3dCR org) override;
+    void _SetDelta(DVec3dCR delta) override;
+    void _SetRotation(RotMatrixCR rot) override;
+    GeometricModelP _GetTargetModel() const override;
+    void _AdjustAspectRatio(double , bool expandView) override;
+    DPoint3d _GetTargetPoint() const override;
+    bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
-    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    virtual ColorDef _GetBackgroundColor() const override;
-    virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
-    virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
-    virtual void _OnViewOpened(DgnViewportR vp) override;
+    AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+    ColorDef _GetBackgroundColor() const override;
+    bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
+    bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
+    void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnCategoryChange(bool singleEnabled) override;
-    virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
+    void _OnCategoryChange(bool singleEnabled) override;
+    void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
-    virtual void _OnAttachedToViewport(DgnViewportR) override;
-    virtual FitComplete _ComputeFitRange(FitContextR) override;
+    void _OnAttachedToViewport(DgnViewportR) override;
+    FitComplete _ComputeFitRange(FitContextR) override;
 
 #ifdef WIP_SpatialRedlineViewController
     // QueryView
-    virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
-    virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
-    virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
-    virtual int32_t _GetMaxElementFactor() override;
-    virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
-    virtual uint64_t _GetMaxElementMemory () override;
+    bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
+    bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
+    Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
+    int32_t _GetMaxElementFactor() override;
+    double _GetMinimumSizePixels (DrawPurpose updateType) override;
+    uint64_t _GetMaxElementMemory () override;
     // END QueryView
 #endif
     // END QueryView
@@ -389,9 +421,9 @@ public:
     //! Create a SpatialRedlineViewController
     //! @param model    The SpatialRedlineModel to view
     //! @param subjectView The view of the underlying physical coordinate space to overlay
-    //! @param physicalRedlineViewId The view id
+    //! @param physicalRedlineViewDef The redline view definition
     //! @param otherRdlsToView Optional. Other SpatialRedlineModels to show in the view.
-    DGNPLATFORM_EXPORT SpatialRedlineViewController (SpatialRedlineModel& model, SpatialViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<SpatialRedlineModelP> const& otherRdlsToView);
+    DGNPLATFORM_EXPORT SpatialRedlineViewController (SpatialRedlineModel& model, SpatialViewController& subjectView, OrthographicViewDefinition& physicalRedlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView);
 
     DGNPLATFORM_EXPORT ~SpatialRedlineViewController();
 
@@ -399,7 +431,7 @@ public:
     //! @return The newly created view controller
     //! @param[in] model the physical redline model to display
     //! @param[in] subjectView the subject view to display underneath the physical redline model
-    DGNPLATFORM_EXPORT static SpatialRedlineViewControllerPtr InsertView(SpatialRedlineModel& model, SpatialViewController& subjectView);
+    DGNPLATFORM_EXPORT static SpatialRedlineViewControllerPtr InsertView(SpatialRedlineModel& model, OrthographicViewController& subjectView);
 };
 
 //=======================================================================================
@@ -446,9 +478,9 @@ private:
 public:
     //! ctor
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
-    //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
+    //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
     DgnDbR GetSubjectDgnProject() const {return m_dgnDb;}
@@ -715,15 +747,15 @@ public:
 namespace dgn_ElementHandler
 {
 //! The handler for MarkupExternalLink elements
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : InformationContent
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
 };
 
 //! The handler for MarkupExternalLinkGroup elements
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : InformationContent
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, InformationContent, DGNPLATFORM_EXPORT)
 };
 }
 

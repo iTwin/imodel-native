@@ -38,14 +38,14 @@ DGNPLATFORM_TYPEDEFS (TextBlockHolder);
 
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationTable);
 
-#define DGN_CLASSNAME_AnnotationTable           "AnnotationTable"
-#define DGN_CLASSNAME_AnnotationTableHeader     "AnnotationTableHeader"
-#define DGN_CLASSNAME_AnnotationTableRow        "AnnotationTableRow"
-#define DGN_CLASSNAME_AnnotationTableColumn     "AnnotationTableColumn"
-#define DGN_CLASSNAME_AnnotationTableCell       "AnnotationTableCell"
-#define DGN_CLASSNAME_AnnotationTableMerge      "AnnotationTableMerge"
-#define DGN_CLASSNAME_AnnotationTableSymbology  "AnnotationTableSymbology"
-#define DGN_CLASSNAME_AnnotationTableEdgeRun    "AnnotationTableEdgeRun"
+#define BIS_CLASS_AnnotationTable           "AnnotationTable"
+#define BIS_CLASS_AnnotationTableHeader     "AnnotationTableHeader"
+#define BIS_CLASS_AnnotationTableRow        "AnnotationTableRow"
+#define BIS_CLASS_AnnotationTableColumn     "AnnotationTableColumn"
+#define BIS_CLASS_AnnotationTableCell       "AnnotationTableCell"
+#define BIS_CLASS_AnnotationTableMerge      "AnnotationTableMerge"
+#define BIS_CLASS_AnnotationTableSymbology  "AnnotationTableSymbology"
+#define BIS_CLASS_AnnotationTableEdgeRun    "AnnotationTableEdgeRun"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -1518,7 +1518,7 @@ friend struct V8TextTableToDgnDbConverter;
 //__PUBLISH_SECTION_START__
 
 private:
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTable, AnnotationElement2d) 
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AnnotationTable, AnnotationElement2d) 
 
     TableHeaderAspect                       m_tableHeader;
     SymbologyDictionary                     m_symbologyDictionary;
@@ -1633,7 +1633,7 @@ public:
                     explicit                        AnnotationTable(CreateParams const& params);
 DGNPLATFORM_EXPORT  static AnnotationTablePtr       Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTable)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTable)); }
 
                     static AnnotationTableCPtr      Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
                     static AnnotationTablePtr       GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
@@ -1782,7 +1782,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct AnnotationTableHandler : Annotation2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTable, AnnotationTable, AnnotationTableHandler, Annotation2d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationTable, AnnotationTable, AnnotationTableHandler, Annotation2d, DGNPLATFORM_EXPORT);
     };
 };
 

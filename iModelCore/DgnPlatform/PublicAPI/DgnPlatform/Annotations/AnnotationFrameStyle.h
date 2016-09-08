@@ -104,7 +104,7 @@ typedef DgnElementId AnnotationFrameStyleId;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AnnotationFrameStyle, DefinitionElement);
 
 private:
     friend struct AnnotationFrameStylePersistence;
@@ -112,7 +112,7 @@ private:
     Utf8String m_description;
     AnnotationFrameStylePropertyBag m_data;
 
-    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_AnnotationFrameStyle); }
+    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationFrameStyle); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -125,7 +125,7 @@ protected:
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationFrameStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
     explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
@@ -209,9 +209,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for annotation frame styles
     //=======================================================================================
-    struct AnnotationFrameStyleHandler : Element
+    struct AnnotationFrameStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

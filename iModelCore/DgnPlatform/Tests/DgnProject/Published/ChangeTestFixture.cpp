@@ -29,11 +29,12 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
     if (seedPathname.DoesPathExist())
         return;
 
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(true);
+    CreateDgnDbParams createDgnDbParams;
+    createDgnDbParams.SetRootSubjectLabel("ChangeTestFixture");
+    createDgnDbParams.SetOverwriteExisting(true);
 
     DbResult createStatus;
-    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createProjectParams);
+    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createDgnDbParams);
     ASSERT_TRUE(seedDgnDb.IsValid()) << "Could not create seed project";
 
     seedDgnDb->CloseDb();
@@ -74,11 +75,14 @@ void ChangeTestFixture::_CreateDgnDb()
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
-    m_testModelId = InsertSpatialModel("TestModel");
-    ASSERT_TRUE(m_testModelId.IsValid()); 
-    //m_testModelId = m_defaultModelId;
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, "TestSubject"); // create a placeholder Subject for the DgnModel to describe
+    ASSERT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("TestModel"));
+    ASSERT_TRUE(model.IsValid());
+    m_testModelId = model->GetModelId();
 
-    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
     m_testCategoryId =  InsertCategory("TestCategory");
@@ -108,7 +112,7 @@ void ChangeTestFixture::OpenDgnDb()
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
-    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
     if (!m_testAuthorityId.IsValid())
@@ -136,21 +140,6 @@ void ChangeTestFixture::CloseDgnDb()
     m_testDb = nullptr;
     m_testModel = nullptr;
     m_testAuthority = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-DgnModelId ChangeTestFixture::InsertSpatialModel(Utf8CP modelName)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
-    DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    DgnModelPtr testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode(modelName)));
-
-    DgnDbStatus status = testModel->Insert();
-    BeAssert(status == DgnDbStatus::Success);
-
-    return testModel->GetModelId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -185,7 +174,7 @@ DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z)
+DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z)
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
@@ -209,26 +198,25 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCa
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(defaultModelId, DgnViewSource::Generated)));
+    CameraViewDefinition viewRow(*m_testDb, "Default");
+    viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
+    CameraViewControllerPtr viewController = viewRow.LoadViewController();
+    viewController->SetStandardViewRotation(StandardView::Iso);
+    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        viewController.ChangeCategoryDisplay(catId, true);
+        viewController->ChangeCategoryDisplay(catId, true);
 
     DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
     for (auto& entry : modIter)
         {
         DgnModelId modelId = entry.GetModelId();
-        viewController.ChangeModelDisplay(modelId, true);
+        viewController->ChangeModelDisplay(modelId, true);
         }
 
-    auto result = viewController.Save();
-    ASSERT_TRUE(BE_SQLITE_OK == result);
-    UNUSED_VARIABLE(result);
+    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
 
     DgnViewId viewId = viewRow.GetViewId();
     m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
@@ -249,8 +237,5 @@ void ChangeTestFixture::UpdateDgnDbExtents()
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(physicalExtents);
-    DbResult result = viewController->Save();
-    ASSERT_TRUE(result == BE_SQLITE_OK);
-
-    m_testDb->SaveSettings();
+    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
     }
