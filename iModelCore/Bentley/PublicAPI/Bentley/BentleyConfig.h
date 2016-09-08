@@ -28,9 +28,13 @@
         #define BENTLEYCONFIG_OS_APPLE_IOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGLES
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
-        #define BENTLEYCONFIG_OPENCASCADE
+        
+        // Do not use OpenCASCADE on DgnDb61-16Q4.
+        // If still see this commented out on Bim0200, please uncomment.
+        // #define BENTLEYCONFIG_OPENCASCADE
+        
         #define BENTLEYCONFIG_FOLLY
-    #else
+    #else // MacOS
         #define BENTLEYCONFIG_OS_APPLE_MACOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
@@ -45,7 +49,11 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_ANDROID
-    #define BENTLEYCONFIG_OPENCASCADE
+    
+    // Do not use OpenCASCADE on DgnDb61-16Q4.
+    // If still see this commented out on Bim0200, please uncomment.
+    // #define BENTLEYCONFIG_OPENCASCADE
+
     #define BENTLEYCONFIG_FOLLY
 
 #elif defined (_WIN32)
@@ -70,7 +78,11 @@
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
         // #define BENTLEYCONFIG_PARASOLIDS
-        #define BENTLEYCONFIG_OPENCASCADE
+        
+        // Do not use OpenCASCADE on DgnDb61-16Q4.
+        // If still see this commented out on Bim0200, please uncomment.
+        // #define BENTLEYCONFIG_OPENCASCADE
+        
         #define BENTLEYCONFIG_DISPLAY_WIN32
     #endif
 
