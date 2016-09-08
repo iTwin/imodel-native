@@ -99,6 +99,7 @@ struct Node : Dgn::TileTree::Tile
     typedef std::forward_list<GeometryPtr> GeometryList;
 
 private:
+    double m_maxSize;
     GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
@@ -107,7 +108,7 @@ private:
     Utf8String GetChildFile() const;
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
-    BentleyStatus _Read(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
+    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 
@@ -116,11 +117,9 @@ public:
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
+    double _GetMaximumSize() const override {return m_maxSize;}
     void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
-    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override 
-        {
-        if (IsReady()) T_Super::_UnloadChildren(olderThan);
-        }
+    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
 };
