@@ -565,9 +565,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     #define RPACKAGE_MODDATA_A_ID                   ""
     #define RPACKAGE_MODDATA_A_NAME                 ""
-    #define RPACKAGE_MODDATA_A_SRC_1_URI_PART1      "./ModelData/ModelFile1.dgndb"
+    #define RPACKAGE_MODDATA_A_SRC_1_URI_PART1      "./ModelData/ModelFile1.bim"
     #define RPACKAGE_MODDATA_A_SRC_1_URI_PART2      ""
-    #define RPACKAGE_MODDATA_A_SRC_1_URI_TYPE       "dgndb"
+    #define RPACKAGE_MODDATA_A_SRC_1_URI_TYPE       "bim"
     #define RPACKAGE_MODDATA_A_SRC_1_ID             ""
     #define RPACKAGE_MODDATA_A_SRC_1_COPYRIGHT      "CartoLand Survey inc."
     #define RPACKAGE_MODDATA_A_SRC_1_PROVIDER       ""
@@ -579,9 +579,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
 
 
-    #define RPACKAGE_MODDATA_A_SRC_2_URI_PART1      "pw://pw-utr5.bentley.com/geospatial/projectA/ModelFile1.dgndb"
+    #define RPACKAGE_MODDATA_A_SRC_2_URI_PART1      "pw://pw-utr5.bentley.com/geospatial/projectA/ModelFile1.bim"
     #define RPACKAGE_MODDATA_A_SRC_2_URI_PART2      ""
-    #define RPACKAGE_MODDATA_A_SRC_2_URI_TYPE       "dgndb"
+    #define RPACKAGE_MODDATA_A_SRC_2_URI_TYPE       "bim"
     #define RPACKAGE_MODDATA_A_SRC_2_ID             ""
     #define RPACKAGE_MODDATA_A_SRC_2_COPYRIGHT      "Copyright CartoLand Survey inc. All rights reserved"
     #define RPACKAGE_MODDATA_A_SRC_2_PROVIDER       ""
