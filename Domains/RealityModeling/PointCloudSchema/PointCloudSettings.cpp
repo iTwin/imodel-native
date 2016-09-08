@@ -44,7 +44,7 @@ PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController c
     PointCloudViewSettings* settings = (PointCloudViewSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
-        settings = new PointCloudViewSettings(spatial.GetSettings());
+        settings = new PointCloudViewSettings;
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -109,15 +109,16 @@ bool PointCloudViewSettings::AreSetToDefault() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::_RestoreFromSettings(JsonValueCR settings)
+void PointCloudViewSettings::_LoadFromUserProperties(ViewDefinitionCR view)
     {
-    if (!settings.isMember(VIEW_SETTING_PointCloud))
+    if (!view.ContainsUserProperty(VIEW_SETTING_PointCloud))
         {
         InitDefaults();
         return;
         }
 
-    JsonValueCR val = settings[VIEW_SETTING_PointCloud];
+    Json::Value val(Json::objectValue);
+    Json::Reader::Parse(view.GetUserProperty(VIEW_SETTING_PointCloud).GetValueText(), val);
 
     m_flags                 = val[SETTINGPOINTCLOUD_flags].asUInt();
     m_contrast              = val[SETTINGPOINTCLOUD_contrast].asDouble();
@@ -141,16 +142,16 @@ void PointCloudViewSettings::_RestoreFromSettings(JsonValueCR settings)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::_SaveToSettings(JsonValueR settings) const
+void PointCloudViewSettings::_SaveToUserProperties(ViewDefinitionR view) const
     {
     // Only save point cloud view settings if they're not set to default values
     if (AreSetToDefault())
         {
-        settings.removeMember(VIEW_SETTING_PointCloud);
+        view.RemoveUserProperty(VIEW_SETTING_PointCloud);
         return;
         }
 
-    JsonValueR val = settings[VIEW_SETTING_PointCloud];
+    Json::Value val(Json::objectValue);
 
     val[SETTINGPOINTCLOUD_flags]                = m_flags;
     val[SETTINGPOINTCLOUD_contrast]             = m_contrast;
@@ -169,6 +170,8 @@ void PointCloudViewSettings::_SaveToSettings(JsonValueR settings) const
     val[SETTINGPOINTCLOUD_needClassifBuffer]    = m_needClassifBuffer;
     val[SETTINGPOINTCLOUD_displayStyleName]     = m_displayStyleName.c_str();
     val[SETTINGPOINTCLOUD_displayStyleIndex]    = m_displayStyleIndex;
+
+    view.GetUserProperty(VIEW_SETTING_PointCloud).SetValueText(Json::FastWriter::ToString(val).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -180,7 +183,7 @@ PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(Spa
     PointCloudClassificationSettings* settings = (PointCloudClassificationSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
-        settings = new PointCloudClassificationSettings(spatial.GetSettings());
+        settings = new PointCloudClassificationSettings;
         spatial.AddAppData(s_key, settings);
         }
     return *settings;
@@ -267,15 +270,16 @@ bool PointCloudClassificationSettings::operator==(PointCloudClassificationSettin
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         7/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudClassificationSettings::_RestoreFromSettings(JsonValueCR settings)
+void PointCloudClassificationSettings::_LoadFromUserProperties(ViewDefinitionCR view)
     {
-    if (!settings.isMember(VIEW_SETTING_PointCloudClassif))
+    if (!view.ContainsUserProperty(VIEW_SETTING_PointCloudClassif))
         {
         InitDefaults();
         return;
         }
 
-    JsonValueCR inValue =  settings[VIEW_SETTING_PointCloudClassif];
+    Json::Value inValue(Json::objectValue);
+    Json::Reader::Parse(view.GetUserProperty(VIEW_SETTING_PointCloudClassif).GetValueText(), inValue);
 
     for (int i = 0; i < CLASSIFICATION_COUNT; ++i)
         m_classificationColor[i] = ColorDef(inValue[SETTINGCLASSIF_classifColor][i].asUInt());
@@ -294,15 +298,15 @@ void PointCloudClassificationSettings::_RestoreFromSettings(JsonValueCR settings
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         7/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudClassificationSettings::_SaveToSettings(JsonValueR settings) const
+void PointCloudClassificationSettings::_SaveToUserProperties(ViewDefinitionR view) const
     {
     if (AreSetToDefault())
         {
-        settings.removeMember(VIEW_SETTING_PointCloudClassif);
+        view.RemoveUserProperty(VIEW_SETTING_PointCloudClassif);
         return;
         }
 
-    JsonValueR outValue = settings[VIEW_SETTING_PointCloudClassif];
+    Json::Value outValue(Json::objectValue);
 
     for (int i = 0; i < CLASSIFICATION_COUNT; ++i)
         outValue[SETTINGCLASSIF_classifColor][i] = m_classificationColor[i].GetValue();
@@ -317,4 +321,6 @@ void PointCloudClassificationSettings::_SaveToSettings(JsonValueR settings) cons
 
     outValue[SETTINGCLASSIF_unclassColor] = m_unclassColor.GetValue();
     outValue[SETTINGCLASSIF_unclassVisible] = m_unclassVisible;
+
+    view.GetUserProperty(VIEW_SETTING_PointCloudClassif).SetValueText(Json::FastWriter::ToString(outValue).c_str());
     }
