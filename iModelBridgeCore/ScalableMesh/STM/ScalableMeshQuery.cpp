@@ -2519,6 +2519,11 @@ StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTextur
     {
     return _GetCachedTexture(cachedTexture);
     }
+
+StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const
+    {
+    return _GetDisplayClipVectors(clipVectors);
+    }
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */

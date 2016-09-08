@@ -1323,6 +1323,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override {return ERROR;}            
 
+            virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const override {return ERROR;}
+
             static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture) 
                 {
                 return new ScalableMeshCachedMeshNode(nodePtr, loadTexture);
@@ -1336,7 +1338,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     private: 
 
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> m_cachedDisplayData;                        
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> m_cachedDisplayData;
+            bvector<ClipVectorPtr>                                          m_clipVectors;
+
 
     protected:         
                                     
@@ -1361,12 +1365,20 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
                 return ERROR;                                    
                 }            
+
+            virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const override 
+                {
+                clipVectors.insert(clipVectors.end(), m_clipVectors.begin(), m_clipVectors.end());                
+                return SUCCESS;                
+                }
           
     public:             
             
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
 
             virtual ~ScalableMeshCachedDisplayNode();
+
+            void AddClipVector(ClipVectorPtr& clipVector);
                 
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
@@ -1375,7 +1387,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
-
+          
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {

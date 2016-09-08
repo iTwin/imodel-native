@@ -444,6 +444,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             }
         else
             {
+#if SM_TRACE_MESH_STATS
             std::cout << " TILE " << node->GetBlockID().m_integerID << " TRIANGULATION FAILED" << std::endl;
             Utf8String namePts = LOG_PATH_STR + "mesh_tile_";
             LOGSTRING_NODE_INFO(node, namePts)
@@ -453,6 +454,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
             fwrite(&points[0], sizeof(DPoint3d), _nVertices, _meshFile);
             fclose(_meshFile);
+#endif
             }
         }
 
