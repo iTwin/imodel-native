@@ -30,7 +30,7 @@ struct DgnViewElemTest : public DgnDbTestFixture
     void SetupTestProject()
         {
         SetupSeedProject();
-        //WString testName(TEST_NAME, true);
+        WString testName(TEST_NAME, true);
         testName.AppendUtf8(".ibim");
         DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         }
