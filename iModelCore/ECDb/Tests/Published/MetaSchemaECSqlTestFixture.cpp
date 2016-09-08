@@ -1020,6 +1020,8 @@ void MetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecClass
         }
     }
 
+#ifdef WIP_NONPORT
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                              Arturas.Januska     08/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1126,5 +1128,7 @@ bool MetaSchemaECSqlTestFixture::ContainsClassName (Utf8String searchedClassName
 
     return false;
     }
+
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE
