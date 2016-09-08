@@ -222,9 +222,10 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 static bool s_waitCheckStop = false;
 static Byte s_transparency = 100;
+static bool s_applyClip = false;
 
 
-void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                               ViewContextR                                context, 
                               const DMatrix4d&                            storageToUors)
@@ -334,10 +335,28 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                     //NEEDS_WORK_SM : Not support yet.
                     //ActivateMaterial(overviewMeshNodes[nodeInd], context);
                     }
-                
-                SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
-                context.DrawCached(smCached);
-                smCached.UnlinkQvElem();
+
+                bvector<ClipVectorPtr> clipVectors;
+
+                overviewMeshNodes[nodeInd]->GetDisplayClipVectors(clipVectors);        
+
+                if (clipVectors.size() == 0 || !s_applyClip)
+                    {                    
+                    SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                    context.DrawCached(smCached);
+                    smCached.UnlinkQvElem();
+                    }
+                else
+                    {
+                    for (auto& clip : clipVectors)
+                        {
+                        context.PushClip(*clip);                        
+                        SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                        context.DrawCached(smCached);
+                        smCached.UnlinkQvElem();
+                        context.PopTransformClip();                        
+                        }
+                    }
                 
                 //context.DrawQvElem (qvElem, &storageToUorsTransform, 0, false, false, true);                                       
                 }
