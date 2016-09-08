@@ -160,10 +160,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 
 //=======================================================================================
 // A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
-// to position the scene relative to the DGNDB.
+// to position the scene relative to the BIM.
 // Note that the scenefile may also have a "Spatial Reference System" stored in it,
-// so the location can be calculated by geo-referncing it to the one in the DGNDB. But, since not all 3mx files are geo-referenced,
-// and sometimes users may want to "tweak" the location relative to their DGNDB, we store it in the model and use that.
+// so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
+// and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
@@ -192,7 +192,7 @@ public:
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
-    //! Set the location transform (from scene coordinates to DGNDB coordinates)
+    //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
 };
 

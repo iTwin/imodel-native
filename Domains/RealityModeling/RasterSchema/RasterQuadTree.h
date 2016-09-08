@@ -179,7 +179,7 @@ private:
 //
 //      - Physical: A pixel coordinate system that is aligned with the blocks in the raster file. Usually upper-left origin(slo 4)
 //      - Source: A pixel coordinate system with a lower-left origin.
-//      - World: The DGNDB file coordinate system that hold the raster model. Origin is Lower-left.
+//      - World: The BIM file coordinate system that hold the raster model. Origin is Lower-left.
 
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
