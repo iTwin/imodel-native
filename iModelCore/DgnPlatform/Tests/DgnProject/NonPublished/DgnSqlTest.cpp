@@ -65,7 +65,7 @@ void SqlFunctionsTest::SetUpTestCase()
     DgnDbTestUtils::SeedDbInfo seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
     // Customize for my tests
-    auto db = DgnDbTestUtils::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
+    auto db = DgnDbTestUtils::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.dgndb");
     ASSERT_TRUE(db.IsValid());
 
     DgnSqlTestDomain::ImportSchemaFromPath(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -86,9 +86,9 @@ void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode 
     {
     m_openMode = mode;
     if (BeSQLite::Db::OpenMode::Readonly == mode)
-        m_db = DgnDbTestUtils::OpenSeedDb(L"SqlFunctionsTest/seed.bim");
+        m_db = DgnDbTestUtils::OpenSeedDb(L"SqlFunctionsTest/seed.dgndb");
     else
-        m_db = DgnDbTestUtils::OpenSeedDbCopy(L"SqlFunctionsTest/seed.bim", newFileName);
+        m_db = DgnDbTestUtils::OpenSeedDbCopy(L"SqlFunctionsTest/seed.dgndb", newFileName);
     ASSERT_TRUE (m_db.IsValid());
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
@@ -115,7 +115,7 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_areaxy)
     {
-    SetupProject(L"placement_areaxy.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"placement_areaxy.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -202,7 +202,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_angles)
     {
-    SetupProject(L"placement_angles.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"placement_angles.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -295,7 +295,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     {
-    SetupProject(L"DGN_point_min_distance_to_bbox.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"DGN_point_min_distance_to_bbox.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 2.0;
     double o2x = 5.0;
@@ -425,7 +425,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQueryECSql)
     {
-    SetupProject(L"spatialQueryECSql.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"spatialQueryECSql.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -639,7 +639,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQuery)
     {
-    SetupProject(L"spatialQuery.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"spatialQuery.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -845,7 +845,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, bbox_union)
     {
-    DgnDbTestDgnManager tdm(L"04_Plant.i.ibim", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbTestDgnManager tdm(L"04_Plant.i.idgndb", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP dgndb = tdm.GetDgnProjectP();
 
     Statement stmt;

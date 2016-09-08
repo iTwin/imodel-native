@@ -46,7 +46,7 @@ struct ScriptTest : ::testing::Test
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
 
     void SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
-    WString GetTestFileName(WCharCP testname) {return WPrintfString(L"%ls.bim",testname);}
+    WString GetTestFileName(WCharCP testname) {return WPrintfString(L"%ls.dgndb",testname);}
 
     void PopulateProperties(GeometricElement3d& el);
 };
@@ -93,7 +93,7 @@ ScriptTest::~ScriptTest()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
+* set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase)

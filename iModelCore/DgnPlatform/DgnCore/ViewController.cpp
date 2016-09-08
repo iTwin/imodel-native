@@ -79,16 +79,16 @@ void ViewFlags::From3dJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::ToBaseJson(JsonValueR val) const
     {
-    if (m_constructions) val[ViewFlagsJson::Construction()] = true;
-    if (!m_text) val[ViewFlagsJson::NoText()] = true;
-    if (!m_dimensions) val[ViewFlagsJson::NoDimension()] = true;
-    if (!m_patterns) val[ViewFlagsJson::NoPattern()] = true;
-    if (!m_weights) val[ViewFlagsJson::NoWeight()] = true;
-    if (!m_styles) val[ViewFlagsJson::NoStyle()] = true;
-    if (!m_transparency) val[ViewFlagsJson::NoTransparency()] = true;
-    if (m_fill) val[ViewFlagsJson::Fill()] = true;
-    if (m_grid) val[ViewFlagsJson::Grid()] = true;
-    if (m_acsTriad) val[ViewFlagsJson::Acs()] = true;
+    if (m_constructions) val[ViewFlagsJson::Construction()] = m_constructions;
+    if (!m_text) val[ViewFlagsJson::NoText()] = !m_text;
+    if (!m_dimensions) val[ViewFlagsJson::NoDimension()] = !m_dimensions;
+    if (!m_patterns) val[ViewFlagsJson::NoPattern()] = !m_patterns;
+    if (!m_weights) val[ViewFlagsJson::NoWeight()] = !m_weights;
+    if (!m_styles) val[ViewFlagsJson::NoStyle()] = !m_styles;
+    if (!m_transparency) val[ViewFlagsJson::NoTransparency()] = !m_transparency;
+    if (m_fill) val[ViewFlagsJson::Fill()] = m_fill;
+    if (m_grid) val[ViewFlagsJson::Grid()] = m_grid;
+    if (m_acsTriad) val[ViewFlagsJson::Acs()] = m_acsTriad;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,14 +96,14 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::To3dJson(JsonValueR val) const
     {
-    if (!m_textures) val[ViewFlagsJson::NoTexture()] = true;
-    if (!m_materials) val[ViewFlagsJson::NoMaterial()] = true;
-    if (!m_sceneLights) val[ViewFlagsJson::NoSceneLight()] = true;
-    if (m_visibleEdges) val[ViewFlagsJson::VisibleEdges()] = true;
-    if (m_hiddenEdges) val[ViewFlagsJson::HiddenEdges()] = true;
-    if (m_shadows) val[ViewFlagsJson::Shadows()] = true;
-    if (m_noClipVolume) val[ViewFlagsJson::NoClipVolume()] = true;
-    if (m_ignoreLighting) val[ViewFlagsJson::IgnoreLighting()] = true;
+    if (!m_textures) val[ViewFlagsJson::NoTexture()] = !m_textures;
+    if (!m_materials) val[ViewFlagsJson::NoMaterial()] = !m_materials;
+    if (!m_sceneLights) val[ViewFlagsJson::NoSceneLight()] = !m_sceneLights;
+    if (m_visibleEdges) val[ViewFlagsJson::VisibleEdges()] = m_visibleEdges;
+    if (m_hiddenEdges) val[ViewFlagsJson::HiddenEdges()] = m_hiddenEdges;
+    if (m_shadows) val[ViewFlagsJson::Shadows()] = m_shadows;
+    if (m_noClipVolume) val[ViewFlagsJson::NoClipVolume()] = m_noClipVolume;
+    if (m_ignoreLighting) val[ViewFlagsJson::IgnoreLighting()] = m_ignoreLighting;
 
     val[ViewFlagsJson::RenderMode()] =(uint8_t) m_renderMode;
     }

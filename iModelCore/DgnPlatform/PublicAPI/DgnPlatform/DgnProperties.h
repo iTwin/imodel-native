@@ -116,7 +116,7 @@ struct DgnEmbeddedProjectProperty
     static ProjectProperty CreationDate()    {return ProjectProperty("CreationDate");}
     
     // Added by Keith Bertram. 3/27/2015. It was decided that it was advantageous to have the LatestChangeSetId property 
-    // available within the imodel so the application does not have to extract the ibim just to determine if change sets
+    // available within the imodel so the application does not have to extract the idgndb just to determine if change sets
     // are available for the imodel.
     static ProjectProperty LatestChangeSetId()    {return ProjectProperty("LatestChangeSetId");}
 };

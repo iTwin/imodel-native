@@ -342,7 +342,7 @@ void AnnotationTableTest::SetUpTestCase()
     DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
 
     AnnotationTableTest::s_seedFileInfo = rootSeedInfo;
-    AnnotationTableTest::s_seedFileInfo.fileName.SetName(L"AnnotationTableTest/AnnotationTableTest.bim");
+    AnnotationTableTest::s_seedFileInfo.fileName.SetName(L"AnnotationTableTest/AnnotationTableTest.dgndb");
 
     // Make a copy of the root seed which will be customized as a seed for tests in this group
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, AnnotationTableTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed

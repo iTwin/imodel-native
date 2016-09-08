@@ -1392,7 +1392,7 @@ public:
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name) const {return _GetPropertyValue(value, name);}
 
     //! Set the value of a property. 
-    //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
+    //! @note This function does not write to the dgndb. The caller must call Update in order to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
@@ -2423,7 +2423,7 @@ public:
     //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
     //! @param properties The instance that contains all of the element's business properties
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
-    //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
+    //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the dgndb.
     DGNPLATFORM_EXPORT DgnElementPtr CreateElement(DgnDbStatus* stat, ECN::IECInstanceCR properties);
 
     //! Get a DgnElement from this DgnDb by its DgnElementId.

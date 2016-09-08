@@ -38,7 +38,7 @@ protected:
     int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 
 public:
-    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.bim") {}
+    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.dgndb") {}
 };
 
 //---------------------------------------------------------------------------------------

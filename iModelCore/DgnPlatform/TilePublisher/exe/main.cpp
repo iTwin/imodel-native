@@ -47,10 +47,10 @@ struct CommandParam
 //=======================================================================================
 static CommandParam s_paramTable[] =
     {
-        { L"i", L"input", L"Name of the .bim file to publish", true },
+        { L"i", L"input", L"Name of the .dgndb file to publish", true },
         { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
-        { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
-        { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
+        { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .dgndb file's directory", false },
+        { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .dgndb file", false },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -111,7 +111,7 @@ struct CommandArg
 struct PublisherParams
 {
 private:
-    BeFileName      m_inputFileName;    //!< Path to the .bim
+    BeFileName      m_inputFileName;    //!< Path to the .dgndb
     Utf8String      m_viewName;         //!< Name of the view definition from which to publish
     BeFileName      m_outputDir;        //!< Directory in which to place the output
     WString         m_tilesetName;      //!< Root name of the output tileset files

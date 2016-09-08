@@ -180,7 +180,7 @@ TransactionManagerTests::~TransactionManagerTests()
 }
 
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
+* set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
@@ -213,7 +213,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
 void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialInstanceCount)
 {
     WString seedFileName;
-    seedFileName.Sprintf(L"ElementDependency_%d.ibim", initialInstanceCount);
+    seedFileName.Sprintf(L"ElementDependency_%d.idgndb", initialInstanceCount);
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
@@ -221,7 +221,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
 
     if (!seedFilePath.DoesPathExist())
     {
-        SetupProject(L"3dMetricGeneral.ibim", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
+        SetupProject(L"3dMetricGeneral.idgndb", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
 
         for (auto i = 0; i<initialInstanceCount; ++i)
             InsertElement(Utf8PrintfString("X%d", i).c_str());
@@ -280,7 +280,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
 {
-    return WPrintfString(L"ElementDependencyGraph_%ls.ibim", testname);
+    return WPrintfString(L"ElementDependencyGraph_%ls.idgndb", testname);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,7 +307,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
 {
-    SetupProject(L"3dMetricGeneral.ibim", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -731,7 +731,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, TPS_Small)
 {
-    SetUpTestDgnDb(L"TPS_Small.i.bim", 10000);
+    SetUpTestDgnDb(L"TPS_Small.i.dgndb", 10000);
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
@@ -744,7 +744,7 @@ TEST_F(Performance_ElementDependencyGraph, TPS_Small)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, TPS_Medium)
 {
-    SetUpTestDgnDb(L"TPS_Small.i.bim", 100000);
+    SetUpTestDgnDb(L"TPS_Small.i.dgndb", 100000);
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
@@ -757,7 +757,7 @@ TEST_F(Performance_ElementDependencyGraph, TPS_Medium)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Performance_ElementDependencyGraph, TPS_Large)
 {
-    SetUpTestDgnDb(L"TPS_Small.i.bim", 1000000);
+    SetUpTestDgnDb(L"TPS_Small.i.dgndb", 1000000);
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");

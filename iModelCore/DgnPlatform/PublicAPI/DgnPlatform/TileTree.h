@@ -29,7 +29,7 @@ It manages:
  - incremental asynchronous refinement
 
 The tree is represented in memory by two classes: TileTree::Root and TileTree::Tile. The tree is in a local
-coordinate system, and is positioned in BIM world space by a linear transform.
+coordinate system, and is positioned in DGNDB world space by a linear transform.
 
 The HLOD tree can subdivide space using any approach, but must obey the following rules:
  a) there is one TileTree::Root, and it points to the root TileTree::Tile
@@ -40,7 +40,7 @@ The HLOD tree can subdivide space using any approach, but must obey the followin
  e) Tiles may overlap, but generally it works best if they don't.
 
 Display algorithm:
- Starting at the root Tile, intersect the Tile's range (in BIM world coordinates) against the view frustum. If the Tile's range
+ Starting at the root Tile, intersect the Tile's range (in DGNDB world coordinates) against the view frustum. If the Tile's range
  is completely outside the view frustum, stop. Otherwise, calculate the size, in pixels, of the Tile by dividing the
  radius of a sphere enclosing the Tile's range by the size (in meters) of the pixel a the center of the Tile. If the pixel size is
  less than the Tile's "maximum pixel size", or if it has no child Tiles, it is displayed. Otherwise, recursively display each of
@@ -162,7 +162,7 @@ public:
 };
 
 /*=================================================================================**//**
-//! The root of a tree of tiles. This object stores the location of the tree relative to the BIM. It also facilitates
+//! The root of a tree of tiles. This object stores the location of the tree relative to the DGNDB. It also facilitates
 //! local caching of HTTP-based tiles.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
@@ -200,7 +200,7 @@ public:
 
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()'
-    //! @param location The transform from tile coordinates to BIM world coordinates.
+    //! @param location The transform from tile coordinates to DGNDB world coordinates.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param rootUrl The root url for loading tiles. This name will be prepended to tile names.
     //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.

@@ -52,7 +52,7 @@ public:
 
 END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
+* set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
@@ -62,7 +62,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
     }
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
+* set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isElementIdInKeySet(bset<BeInt64Id> const& theSet, DgnElementId element)
@@ -143,7 +143,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 // Wait for some other free map tile server
 //TEST_F(TransactionManagerTests, StreetMapModel)
 //    {
-//    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_StreetMapModel.ibim", Db::OpenMode::ReadWrite);
+//    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OpenMode::ReadWrite);
 //
 //    auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
 //    ASSERT_TRUE( newModelId.IsValid() );
