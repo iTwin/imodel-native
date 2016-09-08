@@ -639,7 +639,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     //  ------------------------------------------------------------------
     //  Set Markup-specific project properties
     //  ------------------------------------------------------------------
-    SavePropertyString(DgnProjectProperty::ProjectType(), s_projectType);   // identifies the .dgndb as a Markup project.
+    SavePropertyString(DgnProjectProperty::ProjectType(), s_projectType);   // identifies the .bim as a Markup project.
     SetAssociation(mpp.GetSubjectDgnProject());
 
     if (mpp.GetSpatialRedlining())

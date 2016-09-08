@@ -233,7 +233,7 @@ BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
     data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
-    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in DGNDB world coordinates)
+    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
@@ -246,8 +246,8 @@ BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Attempt to reproject the corners of this tile through the non-linear GCS of the DGNDB file. For LatLong points far
-* away from the center of the DGNDB, this reprojection may fail. In that case, mark this tile as "not reprojected". Its
+* Attempt to reproject the corners of this tile through the non-linear GCS of the BIM file. For LatLong points far
+* away from the center of the BIM, this reprojection may fail. In that case, mark this tile as "not reprojected". Its
 * coordinates will be calculated through the approximate linear transform for purposes of volume testing, but we will
 * never display this tile.
 * @bsimethod                                    Keith.Bentley                   09/16
@@ -272,7 +272,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> DGNDB world.
+* Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.
 * If the projection fails, the tile will not be displayable (but we still need an approximate range for
 * frustum testing).
 * @bsimethod                                    Keith.Bentley                   08/16
@@ -292,7 +292,7 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
     llPts[2].Init(east, south, 0.0);   //  | [2]     [3]
     llPts[3].Init(west, south, 0.0);   //  v
 
-    // attempt tor reproject using DGNDB's GCS
+    // attempt tor reproject using BIM's GCS
     if (SUCCESS != ReprojectCorners(llPts))
         {
         // reprojection failed, use linear transform
@@ -309,8 +309,8 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Convert a LatLongPoint to a "DGNDB world" point by transforming from LL -> WebMercator -> world. This is only useful
-* for points far away from the GCS of the DGNDB file. Otherwise we use GCS projection routines.
+* Convert a LatLongPoint to a "BIM world" point by transforming from LL -> WebMercator -> world. This is only useful
+* for points far away from the GCS of the BIM file. Otherwise we use GCS projection routines.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
@@ -344,8 +344,8 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
 
-    // We need a linear transform for the topmost tiles that are out of range for the DGNDB's reprojection system. To do that, create a GCS for
-    // the web Mercator projection system used by map servers, and then get the transform at the center of the DGNDB's project extents.
+    // We need a linear transform for the topmost tiles that are out of range for the BIM's reprojection system. To do that, create a GCS for
+    // the web Mercator projection system used by map servers, and then get the transform at the center of the BIM's project extents.
     WString warningMsg;
     StatusInt status, warning;
     DgnGCSPtr wgs84 = DgnGCS::CreateGCS(db);

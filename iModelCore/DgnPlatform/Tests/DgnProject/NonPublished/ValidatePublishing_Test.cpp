@@ -121,7 +121,7 @@ void ValidatePublishing::setupPathsNames()
     DgnFullFileName = GetParam();
     DgnFileName = DgnFullFileName.substr(DgnFullFileName.find_last_of(L"\\"), DgnFullFileName.length());
     DgnDbFileName = XMLFileName = DgnFileName.substr(0, DgnFileName.find_last_of(L"."));
-    DgnDbFileName = DgnDbFileName.AppendA(".dgndb");
+    DgnDbFileName = DgnDbFileName.AppendA(".ibim");
     XMLFileName = XMLFileName.AppendA(".xml");
 
     DgnDbsRoot = XMLRoot = DgnFullFileName.substr(0, DgnFullFileName.find_last_of(L"\\"));

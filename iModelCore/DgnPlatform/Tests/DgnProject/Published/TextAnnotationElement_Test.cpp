@@ -46,10 +46,10 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
     // To defeat element caching, liberally open and close the DB.
 
     BeFileName fileName(TEST_FIXTURE_NAME, true);
-    fileName.AppendToPath(L"TextAnnotation2dTest-BasicCrud.dgndb");
+    fileName.AppendToPath(L"TextAnnotation2dTest-BasicCrud.bim");
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", fileName.c_str(), __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -225,10 +225,10 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
     // To defeat element caching, liberally open and close the DB.
 
     BeFileName fileName(TEST_FIXTURE_NAME, true);
-    fileName.AppendToPath(L"TextAnnotation3dTest-BasicCrud.dgndb");
+    fileName.AppendToPath(L"TextAnnotation3dTest-BasicCrud.bim");
     
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", fileName.c_str(), __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;

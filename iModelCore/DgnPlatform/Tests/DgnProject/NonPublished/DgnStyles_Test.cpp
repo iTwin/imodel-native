@@ -57,7 +57,7 @@ struct DgnLineStyleTest : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, ReadLineStyles)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"ReadLineStyles.idgndb", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile (L"SubStation_NoFence.i.ibim", L"ReadLineStyles.ibim", Db::OpenMode::ReadWrite);
     DgnDbPtr      project = m_db;
     
     //Get line styles
@@ -98,7 +98,7 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineStyle)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"InsertLineStyle.idgndb", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile (L"SubStation_NoFence.i.ibim", L"InsertLineStyle.ibim", Db::OpenMode::ReadWrite);
     DgnDbPtr      project = m_db;
 
     //Get line styles
@@ -121,7 +121,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"InsertAndQueryWithoutCacheReLoad.idgndb", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile (L"SubStation_NoFence.i.ibim", L"InsertAndQueryWithoutCacheReLoad.ibim", Db::OpenMode::ReadWrite);
     DgnDbPtr      project = m_db;
 
     //Get line styles
@@ -213,7 +213,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"UpdateLineStyleWithExistingName.idgndb", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile (L"SubStation_NoFence.i.ibim", L"UpdateLineStyleWithExistingName.ibim", Db::OpenMode::ReadWrite);
     DgnDbPtr      project = m_db;
 
     //Get line styles
@@ -244,7 +244,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, IteratorLineStyleElement)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"IteratorLineStyleElement.idgndb", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile (L"SubStation_NoFence.i.ibim", L"IteratorLineStyleElement.ibim", Db::OpenMode::ReadWrite);
     DgnDbPtr      project = m_db;
 
     int count = 0;

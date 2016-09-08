@@ -20,7 +20,7 @@ struct SessionFile
     public:
         enum class Type
             {
-            DgnDb,
+            Bim,
             ECDb
             };
 
@@ -41,13 +41,13 @@ struct SessionFile
         BeSQLite::EC::ECDb& GetHandleR() const { return _GetHandle(); }
         Utf8CP GetPath() const { return IsOpen() ? GetHandle().GetDbFileName() : nullptr; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
-        static Utf8CP TypeToString(Type type) { return type == Type::DgnDb ? "DgnDb" : "ECDb"; }
+        static Utf8CP TypeToString(Type type) { return type == Type::Bim ? "BIM" : "ECDb"; }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
-struct DgnDbFile : SessionFile
+struct BimFile : SessionFile
     {
     private:
         Dgn::DgnDbPtr m_file;
@@ -56,8 +56,8 @@ struct DgnDbFile : SessionFile
         virtual BeSQLite::EC::ECDb& _GetHandle() const override { BeAssert(IsOpen()); return *m_file; }
 
     public:
-        explicit DgnDbFile(Dgn::DgnDbPtr dgndb) : SessionFile(Type::DgnDb), m_file(dgndb) {}
-        ~DgnDbFile() {}
+        explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
+        ~BimFile() {}
     };
 
 //---------------------------------------------------------------------------------------

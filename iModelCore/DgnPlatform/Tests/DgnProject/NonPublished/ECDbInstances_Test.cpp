@@ -34,7 +34,7 @@ TEST(ECDbInstances, DgnElement)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb");
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim");
     DgnDbR project = *tdm.GetDgnProjectP();
 
     ECN::ECSchemaP dgnschema = NULL;
@@ -90,7 +90,7 @@ TEST(ECDbInstances, DgnElementByElementId)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb");
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim");
     DgnDbR project = *tdm.GetDgnProjectP();
 
     bvector<DgnElementId> elements;
@@ -314,7 +314,7 @@ TEST(ECDbInstances, JsonValueFormatting)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdm(L"rxmrlw1f.idgndb");
+    DgnDbTestDgnManager tdm(L"rxmrlw1f.ibim");
     DgnDbR project = *tdm.GetDgnProjectP();
 
     // Make sure that all models are loaded and filled, so that call to dgnFile->FindElementById below will work.
@@ -735,7 +735,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb");
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim");
     auto dgnFile = tdm.GetLoadedDgnPtr();
     auto& project = dgnFile->GetDgnProject();
 
@@ -948,7 +948,7 @@ TEST(ECDbInstances3, BGRJoinedTable)
     ScopedDgnHost host;
 
     auto seedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
-    DgnDbPtr dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedInfo.fileName, L"ECDbInstances3/bgr.idgndb");
+    DgnDbPtr dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedInfo.fileName, L"ECDbInstances3/bgr.ibim");
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
@@ -961,7 +961,7 @@ TEST(ECDbInstances3, BGRJoinedTable)
     dgnDb->ClearECDbCache();
     dgnDb->SaveChanges();
 
-    //BeFileName bgr(L"f:\\temp\\BGRSubset.i.idgndb");
+    //BeFileName bgr(L"f:\\temp\\BGRSubset.i.ibim");
     //DgnDbPtr dgnDb = DgnDb::OpenDgnDb(NULL, bgr, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
 
     ECSchemaCP review = dgnDb->Schemas().GetECSchema("ReviewVisualization");

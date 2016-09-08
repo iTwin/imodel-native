@@ -65,7 +65,7 @@ void GenericDgnModel2dTestFixture::SetUpTestCase()
     DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
 
     GenericDgnModel2dTestFixture::s_seedFileInfo = rootSeedInfo;
-    GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.SetName(L"Seed_GenericDgnModel2d/DgnDbTestUtils_OneSpatialMoelWithOneGeometricModel2d.dgndb");
+    GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.SetName(L"Seed_GenericDgnModel2d/DgnDbTestUtils_OneSpatialMoelWithOneGeometricModel2d.bim");
 
     //// Make a copy of the root seed which will be customized as a seed for tests in this group
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, GenericDgnModel2dTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed

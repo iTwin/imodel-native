@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
 
-static WCharCP s_dgndbExt   = L".dgndb";
+static WCharCP s_dgndbExt   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
 * used to check names saved in categories, models, etc.

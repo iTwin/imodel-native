@@ -36,9 +36,7 @@
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*,MacOS*,Linux*">
-        <!-- Do not use OpenCASCADE on DgnDb61-16Q4. -->
-        <!-- If still see this commented out on Bim0200, please uncomment. -->
-        <!-- <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/> -->
+        <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->

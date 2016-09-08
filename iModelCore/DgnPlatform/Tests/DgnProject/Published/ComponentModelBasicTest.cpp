@@ -376,9 +376,9 @@ TEST_F(ComponentModelBasicTest, DeleteComponentDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_Export)
     {
-    SetupSeedProject(L"ComponentDef_Export_Source.dgndb");
+    SetupSeedProject(L"ComponentDef_Export_Source.bim");
     ASSERT_TRUE(m_db.IsValid());
-    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.dgndb");
+    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.bim");
     ASSERT_TRUE(clientDb.IsValid());
 
     // Create Category and Component Schema

@@ -142,7 +142,7 @@ TEST_F(MaterialTest, ParentChildCycles)
 TEST_F(MaterialTest, ParentChildClone)
     {
     SetupSeedProject();
-    DgnDbPtr db2 = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, L"clonematerials.dgndb");
+    DgnDbPtr db2 = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, L"clonematerials.bim");
 
     Utf8String palette("Palette");
     DgnMaterialCPtr parent = CreateMaterial(palette, "Parent");

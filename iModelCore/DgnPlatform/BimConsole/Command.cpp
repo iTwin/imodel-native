@@ -102,8 +102,8 @@ Utf8CP const OpenCommand::READWRITE_SWITCH = "readwrite";
 //---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] <DGNDB/ECDb file>\r\n"
-        COMMAND_USAGE_IDENT "Opens a DgnDb or ECDb file. Default open mode: read-only.\r\n";
+    return " .open [readonly|readwrite] <BIM/ECDb file>\r\n"
+        COMMAND_USAGE_IDENT "Opens a BIM or ECDb file. Default open mode: read-only.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,11 +151,11 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     DbResult bimStat;
     DgnDb::OpenParams params(openMode);
-    DgnDbPtr dgndb = DgnDb::OpenDgnDb(&bimStat, filePath, params);
+    DgnDbPtr bim = DgnDb::OpenDgnDb(&bimStat, filePath, params);
     if (BE_SQLITE_OK == bimStat)
         {
-        session.SetFile(std::unique_ptr<SessionFile>(new DgnDbFile(dgndb)));
-        Console::WriteLine("Opened DGNDB file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+        Console::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
         return;
         }
 
@@ -195,7 +195,7 @@ void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 Utf8String CreateCommand::_GetUsage() const
     {
-    return  " .create [dgndb|ecdb] <file path> Creates a new DgnDb (default) or ECDb file.";
+    return  " .create [bim|ecdb] <file path> Creates a new BIM (default) or ECDb file.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
         }
 
     BeFileName filePath;
-    SessionFile::Type fileType = SessionFile::Type::DgnDb;
+    SessionFile::Type fileType = SessionFile::Type::Bim;
     if (args.size() == 3)
         {
         if (args[1].EqualsIAscii("ecdb"))
@@ -234,21 +234,21 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
         return;
         }
 
-    if (fileType == SessionFile::Type::DgnDb)
+    if (fileType == SessionFile::Type::Bim)
         {
         CreateDgnDbParams createParams;
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;
-        DgnDbPtr dgndb = DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+        DgnDbPtr bim = DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
         if (BE_SQLITE_OK != fileStatus)
             {
-            Console::WriteErrorLine("Failed to create DGNDB file %s.", filePath.GetNameUtf8().c_str());
+            Console::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
             return;
             }
 
-        session.SetFile(std::unique_ptr<SessionFile>(new DgnDbFile(dgndb)));
-        Console::WriteLine("Successfully created DGNDB file %s", filePath.GetNameUtf8().c_str());
+        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+        Console::WriteLine("Successfully created BIM file %s", filePath.GetNameUtf8().c_str());
         return;
         }
 

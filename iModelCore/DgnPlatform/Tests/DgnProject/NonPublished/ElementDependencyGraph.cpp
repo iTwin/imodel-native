@@ -19,7 +19,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 #define GROUP_SUBDIR L"ElementDependencyGraph"
-#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.dgndb"
+#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.bim"
 #define DEFAULT_MODEL_NAME "Default"
 #define DEFAULT_CATEGORY_NAME "DefaultCat"
 #define DEFAULT_VIEW_NAME "DefaultView"
@@ -209,7 +209,7 @@ void ElementDependencyGraph::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
     {
-    return WPrintfString(L"%ls.idgndb",testname);
+    return WPrintfString(L"%ls.ibim",testname);
     }
 
 /*---------------------------------------------------------------------------------**//**

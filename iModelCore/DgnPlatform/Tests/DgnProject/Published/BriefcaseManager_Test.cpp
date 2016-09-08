@@ -995,7 +995,7 @@ public:
 
     virtual void _OnSetupDb(DgnDbR db) { }
 
-    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.idgndb")
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.ibim")
         {
         //** Force to copy the file in Sub-Directory of TestCase
         BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
@@ -1220,7 +1220,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     {
-    SetupDb(L"AcquireLocks.dgndb", m_bcId);
+    SetupDb(L"AcquireLocks.bim", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelPtr pModel = db.Models().GetModel(m_modelId);
@@ -1299,7 +1299,7 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     {
-    SetupDb(L"RelinquishLocks.dgndb", m_bcId);
+    SetupDb(L"RelinquishLocks.bim", m_bcId);
 
     // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
@@ -1335,7 +1335,7 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     {
-    SetupDb(L"LocallyCreatedObjects.dgndb", m_bcId);
+    SetupDb(L"LocallyCreatedObjects.bim", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelPtr model = db.Models().GetModel(m_modelId);
@@ -1395,7 +1395,7 @@ TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
     BeFileName filename;
     DgnModelId newModelId;
         {
-        SetupDb(L"DisconnectedWorkflow.dgndb", m_bcId);
+        SetupDb(L"DisconnectedWorkflow.bim", m_bcId);
 
         DgnDbR db = *m_db;
         DgnModelPtr pModel = db.Models().GetModel(m_modelId);
@@ -1474,7 +1474,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
             m_dbB->SaveChanges();
         }
 
-    static WCharCP SeedFileName() { return L"ElementsSymbologyByLevel.idgndb"; }
+    static WCharCP SeedFileName() { return L"ElementsSymbologyByLevel.ibim"; }
     
     DgnModelId Model3dId() { return m_modelIds[0]; }
     DgnModelId Model2dId() { return m_modelIds[1]; }
@@ -1504,8 +1504,8 @@ struct DoubleBriefcaseTest : LocksManagerTest
     void SetupDbs(uint32_t baseBcId=2)
         {
         //ScopedDgnHost tempHost;
-        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(baseBcId), SeedFileName());
-        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(baseBcId+1), SeedFileName());
+        m_dbA = SetupDb(L"DbA.bim", BeBriefcaseId(baseBcId), SeedFileName());
+        m_dbB = SetupDb(L"DbB.bim", BeBriefcaseId(baseBcId+1), SeedFileName());
 
         ASSERT_TRUE(m_dbA.IsValid());
         ASSERT_TRUE(m_dbB.IsValid());
@@ -2187,7 +2187,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
     };
 
     AssertScope V_V_V_Asserts;
-    m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
+    m_db = SetupDb(L"UsedLocks.bim", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelR model = *db.Models().GetModel(m_modelId);
@@ -2373,7 +2373,7 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     {
-    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
@@ -2419,7 +2419,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
     {
-    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
 
     // Simulate a pre-existing style having been committed in a previous revision
@@ -2476,7 +2476,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, CodesInRevisions)
     {
-    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.dgndb", BeBriefcaseId(2));
+    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 

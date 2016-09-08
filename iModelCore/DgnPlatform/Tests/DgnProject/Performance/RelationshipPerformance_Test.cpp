@@ -35,7 +35,7 @@ TEST(Performance, Relationship_Retrieval_LinkTables)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdm (L"BGRSubset.i.idgndb"); // ConstructSim i-model - Note that this version is published as part of a Windows build
+    DgnDbTestDgnManager tdm (L"BGRSubset.i.ibim"); // ConstructSim i-model - Note that this version is published as part of a Windows build
     DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
 
@@ -97,7 +97,7 @@ TEST(Performance, Relationship_Import_LinkTables)
     DgnDbPtr project;
     StopWatch sw (L"", false);
     sw.Start();
-    DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"BGRSubset.idgndb"), 
+    DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"BGRSubset.ibim"), 
         DgnDbTestDgnManager::GetSeedFilePath (L"BGRSubset.i.dgn.v8")); // ConstructSim i-model
     sw.Stop();
     ASSERT_TRUE( project != NULL);
@@ -140,7 +140,7 @@ TEST(Performance, Relationship_Import_LinkTables)
 TEST(Performance, Relationship_ConstructSim)
     {
     ScopedDgnHost host;
-    DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\ConstructSim\\BGRStatus.i.idgndb"); 
+    DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\ConstructSim\\BGRStatus.i.ibim"); 
 
     DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
@@ -185,7 +185,7 @@ TEST(Performance, Relationship_ConstructSim)
 TEST(Performance, Relationship_OpenPlant)
     {
     ScopedDgnHost host;
-    DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\DeliveredSamples\\Hydrotreater Expansion.i.idgndb"); 
+    DgnDbTestDgnManager tdm (L"d:\\temp\\Graphite\\TestCases\\ByDiscipline\\DeliveredSamples\\Hydrotreater Expansion.i.ibim"); 
 
     DgnDbR project = *tdm.GetDgnProjectP();
     ECDbStoreCR ecDbStore = project.GetEC();
