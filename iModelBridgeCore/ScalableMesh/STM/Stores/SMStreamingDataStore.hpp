@@ -695,8 +695,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
 
     if (header->m_isTextured)
         {
-        header->m_textureID.resize(1);
-        header->m_textureID[0] = ISMStore::GetNullNodeID();
+        header->m_textureID = ISMStore::GetNullNodeID();
         header->m_ptsIndiceID.resize(2);
         header->m_ptsIndiceID[1] = (int)idx;
         header->m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;
