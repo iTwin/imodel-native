@@ -48,7 +48,7 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
     {
     // ###TODO: Assumes 3d-only...
     // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g "
+    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                                 "WHERE e.Id=? AND g.ElementId=e.Id";
 
     BeSQLite::Statement stmt;
