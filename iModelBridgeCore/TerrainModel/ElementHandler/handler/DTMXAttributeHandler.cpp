@@ -612,8 +612,6 @@ void DTMXAttributeHandler::EndModify ()
             if (m_handle.GetDisplayHandler ())
                 m_handle.GetDisplayHandler ()->ValidateElementRange (m_handle, true);
 
-            if (m_handle.GetElementRef() && !m_noSchedule)
-                ReplaceInModel ();
             m_noSchedule = false;
             }
 
@@ -791,6 +789,9 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
                 {
                 switch(id.GetMinorId())
                     {
+                    case XATTRIBUTES_SUBID_DTM_FEATURETABLEMAP:
+                        if (m_nextIndex < iter.GetId())
+                            m_nextIndex = iter.GetId();
                     case XATTRIBUTES_SUBID_DTM_POINTARRAY:
                     case XATTRIBUTES_SUBID_DTM_FEATUREARRAY:
                     case XATTRIBUTES_SUBID_DTM_NODEARRAY:
@@ -806,6 +807,7 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
                             case XATTRIBUTES_SUBID_DTM_NODEARRAY:    type = DTMPartition::Node;    partitionArray = &nodeArrays;    break;
                             case XATTRIBUTES_SUBID_DTM_CLISTARRAY:   type = DTMPartition::CList;   partitionArray = &cListArrays;   break;
                             case XATTRIBUTES_SUBID_DTM_FLISTARRAY:   type = DTMPartition::FList;   partitionArray = &fListArrays;   break;
+                            case XATTRIBUTES_SUBID_DTM_FEATURETABLEMAP:   type = DTMPartition::None;   break;
                             }
 
                         data = (void*)iter.PeekData();
@@ -816,10 +818,12 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
                         else if (t != nullptr)
                             t->mem = data;
 
-                        if (partitionArray->size() <= iter.GetId())
-                            partitionArray->resize (iter.GetId() + 1);
-                        (*partitionArray)[iter.GetId()] = data;
-
+                        if (nullptr != partitionArray)
+                            {
+                            if (partitionArray->size() <= iter.GetId())
+                                partitionArray->resize(iter.GetId() + 1);
+                            (*partitionArray)[iter.GetId()] = data;
+                            }
                         m_hasScanned[(int)type] = true;
                         memoryMapT::const_iterator memIter = m_memory[(int)type].find (iter.GetId ());
 
@@ -848,10 +852,6 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
                             }
                         break;
                         }
-                    case XATTRIBUTES_SUBID_DTM_FEATURETABLEMAP:
-                        if (m_nextIndex < iter.GetId())
-                            m_nextIndex = iter.GetId();
-                        break;
                     }
                 }
 
@@ -1316,6 +1316,33 @@ void* DTMXAttributeHandler::GetDataHandle (DTMPartition type, int index)
 
     if (iter != m_memory[(int)type].end ())
         {
+#ifdef DOCHECK
+        if (type == DTMPartition::None && iter->second.state == existingBlock)
+            {
+            UInt16 xAttrId = XATTRIBUTES_SUBID_DTM_FEATURETABLEMAP; // GetXAttrId(type);
+            XAttributeHandlerId handlerId(TMElementMajorId, xAttrId);
+            ElementHandle::XAttributeIter xAttrIter(m_handle, handlerId, index);
+            BeAssert(xAttrIter.IsValid());
+            if (xAttrIter.IsValid())
+                {
+                void* mem;
+                size_t size;
+                XAttributeHandle* Xhandle = const_cast<XAttributeHandle*>((XAttributeHandle*)xAttrIter.GetElementXAttributeIter());
+
+                if (Xhandle)
+                    {
+                    mem = Xhandle->GetPtrForWrite();
+                    size = Xhandle->GetSize();
+                    }
+                else
+                    {
+                    mem = (void*)xAttrIter.PeekData();
+                    size = xAttrIter.GetSize();
+                    }
+                BeAssert(mem == iter->second.mem);
+                }
+            }
+#endif
         return iter->second.mem;
         }
 

@@ -2063,7 +2063,18 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
             case DTMFeatureState::PointsArray : 
             case DTMFeatureState::TinError    : 
             case DTMFeatureState::Rollback     : 
-                memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d)) ;
+                {
+                auto dataP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI);
+                if (dataP == nullptr)
+                    {
+                    free(*featPtsPP);
+                    *featPtsPP = nullptr;
+                    *numFeatPtsP = 0;
+                    BeAssert(false);
+                    goto errexit;
+                    }
+                memcpy(*featPtsPP, dataP, dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d));
+                }
                 break ;
                 /*
                 **     Get Points From Point Offset Array
