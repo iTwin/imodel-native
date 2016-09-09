@@ -567,7 +567,7 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
             }
 
         if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
-            str.append(" At least one constraint definition is not complete.");
+            str.append(" The relationship class is not abstract and therefore constraints must be defined.");
 
         if (Enum::Contains(kind, Kind::IsAbstractAndConstraintsAreDefined))
             str.append(" The relationship class is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
