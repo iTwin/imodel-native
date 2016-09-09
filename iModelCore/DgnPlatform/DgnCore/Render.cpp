@@ -102,7 +102,15 @@ void Render::Queue::AddTask(Task& task)
         }
 
     task._OnQueued();
-    m_tasks.push_back(&task);
+    auto entry=m_tasks.begin();
+    for (; entry != m_tasks.end(); ++entry)
+        {
+        if ((*entry)->GetPriority().m_value > task.GetPriority().m_value)
+            break;
+        }
+
+    m_tasks.insert(entry, &task);
+
     mux.unlock();      // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
     m_cv.notify_all(); 
     }
@@ -255,7 +263,7 @@ struct DestroyTargetTask : Render::SceneTask
 {
     virtual Utf8CP _GetName() const override {return "Destroy Target";}
     virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
-    DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget) {}
+    DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget, Priority::Highest()) {}
 };
 
 /*---------------------------------------------------------------------------------**//**

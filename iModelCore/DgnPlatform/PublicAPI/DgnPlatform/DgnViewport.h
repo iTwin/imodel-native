@@ -158,8 +158,8 @@ protected:
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame();
-    void ShowChanges(ViewManagerCR);
+    void QueueDrawFrame(Render::Task::Priority);
+    void ShowChanges(ViewManagerCR, Render::Task::Priority);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);
@@ -181,7 +181,7 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    ProgressiveTask::Completion DoProgressiveTasks();
+    ProgressiveTask::Completion DoProgressiveTasks(Render::Task::Priority priority);
     void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
     void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
@@ -223,10 +223,10 @@ public:
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
-    void ChangeDynamics(Render::GraphicListP list);
-    DGNVIEW_EXPORT void ChangeRenderPlan();
+    void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
+    DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
     void ApplyViewState(DgnEditElementCollector const& val, int animationTime);
-    DGNVIEW_EXPORT void Refresh();
+    DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
