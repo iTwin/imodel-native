@@ -39,7 +39,7 @@ rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.
                                   $(RasterSchemaPublicApiSrc)WmsHandler.h
 
 rasterDisplayDepends =  $(SrcRasterSchema)RasterSource.h \
-                        $(SrcRasterSchema)RasterQuadTree.h
+                        $(SrcRasterSchema)RasterTileTree.h
 
 wmsDepends    = $(rasterSchemaDepends) \
                 $(rasterDisplayDepends) \
@@ -88,7 +88,7 @@ $(o)RasterFileHandler$(oext)    : $(SrcRasterSchema)RasterFileHandler.cpp   $(ra
 
 $(o)RasterDomain$(oext)         : $(SrcRasterSchema)RasterDomain.cpp        $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterQuadTree$(oext)       : $(SrcRasterSchema)RasterQuadTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterTileTree$(oext)       : $(SrcRasterSchema)RasterTileTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 $(o)RasterSource$(oext)         : $(SrcRasterSchema)RasterSource.cpp        $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
@@ -135,6 +135,10 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+
+%if defined (BENTLEYCONFIG_FOLLY)
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%endif
 
 
 %include $(sharedMki)LinkLibrary.mki

@@ -15,6 +15,7 @@
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 struct RasterFileModelHandler;
+struct RasterRoot;
 
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     06/2015
@@ -77,9 +78,9 @@ protected:
 
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
-    virtual BentleyStatus   _LoadQuadTree() const override;
+    virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-
+    
     virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_transform;}
 
 public:

@@ -8,13 +8,14 @@
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterFileHandler.h>
 #include "RasterSource.h"
-#include "RasterQuadTree.h"
+#include "RasterTileTree.h"
 #include "RasterFileSource.h"
+
+HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 
-HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterFileProperties  ---------------------------------
@@ -239,7 +240,6 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 :T_Super (params),
  m_fileProperties(properties)
     {
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -247,30 +247,30 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 //----------------------------------------------------------------------------------------
 RasterFileModel::~RasterFileModel()
     {
+    DEBUG_PRINTF("RasterFileModel Destroyed");
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
+// @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileModel::_LoadQuadTree() const
+BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     {
-    m_rasterTreeP = nullptr;
-   
+    if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
+        return SUCCESS;
+
     // Resolve raster name
     BeFileName fileName;
     BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
     if (status != SUCCESS)
-        {
-        return ERROR;
-        }
+        return ERROR;        
+
     Utf8String resolvedName(fileName);
 
-    // Create RasterQuadTree
     RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
-    if(pSource.IsValid())
-        m_rasterTreeP = RasterQuadTree::Create(*pSource, const_cast<RasterFileModel&>(*this));
-
-    return m_rasterTreeP.IsValid() ? SUCCESS : ERROR;
+    if (pSource.IsValid())
+        m_root = new RasterRoot(*pSource, const_cast<RasterFileModel&>(*this), renderSys);
+        
+    return m_root.IsValid() ? SUCCESS : ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -298,3 +298,4 @@ void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
     T_Super::_ReadJsonProperties(v);
     m_fileProperties.FromJson(v);
     }
+
