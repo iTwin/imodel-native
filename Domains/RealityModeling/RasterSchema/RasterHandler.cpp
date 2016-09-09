@@ -302,11 +302,13 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
-    // Wait for tasks that we may have queued. 
-    //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
-    BeFolly::IOThreadPool::GetPool().WaitForIdle();
-
-    m_root = nullptr;
+    if (m_root.IsValid())
+        {
+        // Wait for tasks that we may have queued. 
+        //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
+        BeFolly::IOThreadPool::GetPool().WaitForIdle();
+        m_root = nullptr;
+        }
     }
 
 //----------------------------------------------------------------------------------------
