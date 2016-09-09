@@ -715,6 +715,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
+        bool m_isInsertingClips;
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -723,6 +724,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
+
 
         size_t m_texId = 0;
 

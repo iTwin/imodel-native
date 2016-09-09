@@ -1107,7 +1107,7 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
     {
     clippedMesh->Triangulate();
 
-    bvector<bvector<int32_t>> idxOfFaces(clipPolys.size());
+    bvector<bvector<int>> idxOfFaces(clipPolys.size());
     bvector<int32_t> nCrossingPolys(clippedMesh->GetPointIndexCount() / 4, 0);
 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
@@ -1144,6 +1144,13 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         polyfaces[i].push_back(vec);
         if (vec->GetPointIndexCount() > 0) hasBeenClipped = true;
         }
+/*    bvector<PolyfaceHeaderPtr> outmeshes;
+    clippedMesh->CopyPartitions(idxOfFaces, outmeshes);
+    for (size_t i = 1; i < clipPolys.size() + 1; ++i)
+        {
+        polyfaces[i].push_back(outmeshes[i-1]);
+        if (outmeshes[i-1]->GetPointIndexCount() > 0) hasBeenClipped = true;
+        }*/
     polyfaces[0].push_back(CreateFromSubsetAndValues(clippedMesh, nCrossingPolys, 0));
     return hasBeenClipped;
     }
@@ -1166,13 +1173,14 @@ void CreatePlanes(bvector<DPlane3d>& planes, const bvector<DPoint3d>& lineSegmen
         }
     }
 
-bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri)
+bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri, bvector<bvector<double>>& pointDistanceTable, int* pointIdxTri, size_t planeIdx)
     {
     double sign = 0;
     bool planeCutsTriangle = false;
     for (size_t j = 0; j < 3 && !planeCutsTriangle; j++)
         {
-        double sideOfPoint = plane.Evaluate(tri[j]);
+        if (pointDistanceTable[pointIdxTri[j]][planeIdx] == DBL_MAX)pointDistanceTable[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
+        double sideOfPoint = pointDistanceTable[pointIdxTri[j]][planeIdx];
         if (fabs(sideOfPoint) < 1e-8) sideOfPoint = 0;
         if (sign == 0) sign = sideOfPoint;
         else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
@@ -1278,13 +1286,14 @@ void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<Inte
         }
     }
 
-void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>& foundIntersects,const DPoint3d* tri, const int* paramIndex, const int* pointIndex, bool isTexturedMesh)
+void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>& foundIntersects, const DPoint3d* tri, const int* paramIndex, const int* pointIndex, bool isTexturedMesh, bvector<bvector<double>>& pointDistanceTable, size_t nOfDistsPerPoint)
     {
     for (auto& intersect : foundIntersects)
         {
         if (intersect.onVertex == -1)
             {
             intersect.newPtIdx = (int)inOutMesh->Point().AppendAndReturnIndex(intersect.pt);
+            pointDistanceTable.push_back(bvector<double>(nOfDistsPerPoint, DBL_MAX));
             if (isTexturedMesh)
                 {
                 DPoint3d barycentric;
@@ -1307,66 +1316,84 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
     bvector<DPlane3d> planesFromSegments;
     bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
     CreatePlanes(planesFromSegments, clipSegments);
-    for (auto& plane : planesFromSegments)
-        {
-        size_t originalNIdx = inOutMesh->GetPointIndexCount() - 1;
+    bvector<bvector<double>> pointToPlaneDists(inOutMesh->GetPointCount());
+    for (auto& dist : pointToPlaneDists)dist.resize(planesFromSegments.size(), DBL_MAX);
+   // for (auto& plane : planesFromSegments)
+  //      {
+  //      size_t originalNIdx = inOutMesh->GetPointIndexCount() - 1;
         bvector<int> &pointIndex = vis->ClientPointIndex();
         bvector<int> &param = vis->ClientParamIndex();
+        bvector<bvector<bool>> pointToPlaneChecks(inOutMesh->GetPointIndexCount()/3);
+        for (auto& check : pointToPlaneChecks)check.resize(planesFromSegments.size(), true);
 
-        for (vis->Reset(); vis->AdvanceToNextFace() && vis->GetReadIndex() <= originalNIdx; )
+        for (vis->Reset(); vis->AdvanceToNextFace();)// && vis->GetReadIndex() <= originalNIdx;)
             {
             DPoint3d tri[3] = { inOutMesh->GetPointCP()[pointIndex[0]], inOutMesh->GetPointCP()[pointIndex[1]], inOutMesh->GetPointCP()[pointIndex[2]] };
             if (faceRanges[vis->GetReadIndex() / 3].IsNull())faceRanges[vis->GetReadIndex() / 3] = DRange2d::From(tri, 3);
             if (!faceRanges[vis->GetReadIndex() / 3].IntersectsWith(polyRange)) continue;
-            bvector<IntersectionLocation> results;
-            if (ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri))
+            for (auto& plane : planesFromSegments)
                 {
-
-
-                assert(results.size() == 2);
-                InsertCutPoints(inOutMesh, results, tri, meshHasTexture? param.data() : nullptr, pointIndex.data(), meshHasTexture);
-
-                bvector<bvector<int32_t>> newFaces;
-                ComputeReplacementFacets(newFaces, results, pointIndex);
-                assert(!newFaces.empty());
-                if (!newFaces.empty())
+                bvector<IntersectionLocation> results;
+                if (!pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]]) continue;
+                if (ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri, pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
                     {
-                    inOutMesh->PointIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
-                    inOutMesh->PointIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
-                    inOutMesh->PointIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
-                    faceRanges[vis->GetReadIndex() / 3] = DRange2d::From(&inOutMesh->Point()[newFaces[0][0]], 1);
-                    faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][1]]);
-                    faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][2]]);
-                    for (size_t i = 1; i < newFaces.size(); ++i)
-                        {
-                        inOutMesh->PointIndex().push_back(newFaces[i][0] + 1);
-                        inOutMesh->PointIndex().push_back(newFaces[i][1] + 1);
-                        inOutMesh->PointIndex().push_back(newFaces[i][2] + 1);
-                        faceRanges.push_back(DRange2d::NullRange());
-                        }
-                    }
 
-                if (meshHasTexture)
-                    {
+
+                    assert(results.size() == 2);
+                    InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, pointToPlaneDists, planesFromSegments.size());
+                    pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]] = false;
                     bvector<bvector<int32_t>> newFaces;
-                    ComputeReplacementFacets(newFaces, results, param, true);
+                    ComputeReplacementFacets(newFaces, results, pointIndex);
                     assert(!newFaces.empty());
                     if (!newFaces.empty())
                         {
-                        inOutMesh->ParamIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
-                        inOutMesh->ParamIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
-                        inOutMesh->ParamIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
+                        inOutMesh->PointIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
+                        inOutMesh->PointIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
+                        inOutMesh->PointIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
+                        tri[0] = inOutMesh->GetPointCP()[newFaces[0][0]];
+                        tri[1] = inOutMesh->GetPointCP()[newFaces[0][1]];
+                        tri[2] = inOutMesh->GetPointCP()[newFaces[0][2]];
+                        pointIndex[0] = newFaces[0][0];
+                        pointIndex[1] = newFaces[0][1];
+                        pointIndex[2] = newFaces[0][2];
+                        faceRanges[vis->GetReadIndex() / 3] = DRange2d::From(&inOutMesh->Point()[newFaces[0][0]], 1);
+                        faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][1]]);
+                        faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][2]]);
                         for (size_t i = 1; i < newFaces.size(); ++i)
                             {
-                            inOutMesh->ParamIndex().push_back(newFaces[i][0] + 1);
-                            inOutMesh->ParamIndex().push_back(newFaces[i][1] + 1);
-                            inOutMesh->ParamIndex().push_back(newFaces[i][2] + 1);
+                            inOutMesh->PointIndex().push_back(newFaces[i][0] + 1);
+                            inOutMesh->PointIndex().push_back(newFaces[i][1] + 1);
+                            inOutMesh->PointIndex().push_back(newFaces[i][2] + 1);
+                            faceRanges.push_back(DRange2d::NullRange());
+                            pointToPlaneChecks.push_back(pointToPlaneChecks[vis->GetReadIndex() / 3]);
+                            pointToPlaneChecks[(inOutMesh->PointIndex().size()-3) / 3][&plane - &planesFromSegments[0]] = false;
+                            }
+                        }
+
+                    if (meshHasTexture)
+                        {
+                        bvector<bvector<int32_t>> newFaces;
+                        ComputeReplacementFacets(newFaces, results, param, true);
+                        assert(!newFaces.empty());
+                        if (!newFaces.empty())
+                            {
+                            inOutMesh->ParamIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
+                            inOutMesh->ParamIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
+                            inOutMesh->ParamIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
+                            param[0] = newFaces[0][0];
+                            param[1] = newFaces[0][1];
+                            param[2] = newFaces[0][2];
+                            for (size_t i = 1; i < newFaces.size(); ++i)
+                                {
+                                inOutMesh->ParamIndex().push_back(newFaces[i][0] + 1);
+                                inOutMesh->ParamIndex().push_back(newFaces[i][1] + 1);
+                                inOutMesh->ParamIndex().push_back(newFaces[i][2] + 1);
+                                }
                             }
                         }
                     }
                 }
             }
-        }
     }
 
 bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP)

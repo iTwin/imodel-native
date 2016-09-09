@@ -1836,6 +1836,7 @@ template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
+    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;
     if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
     }
 
