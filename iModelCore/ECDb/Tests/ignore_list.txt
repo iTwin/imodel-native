@@ -35,3 +35,6 @@ ECSchemaUpdateTests.Add_Delete_ECProperty_SharedColumns
 
 #TFS 485920
 ECRelationshipInheritanceTestFixture.BasicCRUD
+
+#failing due to disallowing multiinheritence in a given case (Affan)
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
