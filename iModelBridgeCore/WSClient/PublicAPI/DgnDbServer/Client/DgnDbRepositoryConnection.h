@@ -259,27 +259,30 @@ public:
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
     //! @param[in] briefcaseId
+    //! @param[in] masterFileId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-         Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+        Utf8StringCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Attempt to acquire the requested set of locks.
     //! @param[in] locks Set of locks to check
     //! @param[in] codes Set of codes to check
     //! @param[in] briefcaseId
+    //! @param[in] masterFileId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+        Utf8StringCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
     //! @param[in] codes Set of codes to release
     //! @param[in] briefcaseId
+    //! @param[in] masterFileId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
-                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
+        Utf8StringCR masterFileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete all currently held locks by specific briefcase.
     //! @param[in] briefcaseId
