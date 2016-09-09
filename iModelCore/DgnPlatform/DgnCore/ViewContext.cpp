@@ -72,7 +72,7 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::WorldToNpc(DPoint3dP npxcPts, DPoint3dCP worldPts, int nPts) const
+void ViewContext::WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const
     {
     m_worldToNpc.M0.MultiplyAndRenormalize(npcPts, worldPts, nPts);
     }
