@@ -280,13 +280,13 @@
             </ECCustomAttributes>
         </ECProperty>
 		
-		<ECProperty propertyName="CloudCoverage" typeName="double">
+		<ECProperty propertyName="Occlusion" typeName="double">
             <ECCustomAttributes>
                 <DBColumn>
-                    <ColumnName>CloudCoverage</ColumnName>
+                    <ColumnName>Occlusion</ColumnName>
                 </DBColumn>
                 <MimicDBColumn>
-                    <OverrideColumnName>CloudCoverage</OverrideColumnName>
+                    <OverrideColumnName>Occlusion</OverrideColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1613,6 +1613,17 @@
             </ECCustomAttributes>
         </ECProperty>
             
+        <ECProperty propertyName="Occlusion" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Occlusion</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Occlusion</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+			
         <ECProperty propertyName="ThumbnailURL" typeName="string" />
         <ECProperty propertyName="MetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
@@ -1620,32 +1631,6 @@
         <ECProperty propertyName="SubAPI" typeName="string" />
         
     </ECClass>
-    
-<!--     <ECClass typeName="USGSEntity" isDomainClass="true">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>usgsapi</QueryType>
-            </QueryType>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Title" typeName="string" />
-        <ECProperty propertyName="PreviewLink" typeName="string" />
-        <ECProperty propertyName="DownloadLink" typeName="string" />
-        <ECProperty propertyName="BoundingBox" typeName="string" />
-    </ECClass> -->
-    
-    <!--ECClass typeName="USGSThumbnail" isDomainClass="true">
-        <ECCustomAttributes>
-            <QueryType>
-                <QueryType>USGSAPI</QueryType>
-            </QueryType>
-            <FileHolder>
-                <Type>USGSThumbnail</Type>
-                <LocationHoldingPropertyName></LocationHoldingPropertyName>
-            </FileHolder>
-        </ECCustomAttributes>
-
-        <ECProperty propertyName="ThumbnailURL" typeName="string" />
-    </ECClass-->
     
     <ECRelationshipClass 
       typeName="SpatialEntityDatasetToSpatialEntityBase" 

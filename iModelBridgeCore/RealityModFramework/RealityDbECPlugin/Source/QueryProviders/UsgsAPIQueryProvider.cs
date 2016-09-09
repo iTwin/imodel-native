@@ -642,6 +642,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
+            instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
             instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
             instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
@@ -1334,6 +1335,8 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         //instance["Name"].StringValue = jtoken.TryToGetString("title");
                         instance["Name"].StringValue = item.Title;
+
+                        instance["Legal"].StringValue = item.Title + legalString;
 
                         var bbox = jtoken["boundingBox"];
 
