@@ -533,9 +533,9 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
             }
         }
 
-    if (m_isPolymorphic && !classMap->IsParentOfJoinedTable())
+    if (m_isPolymorphic && !classMap->IsParentOfJoinedTable() && (classMap->IsRelationshipClassMap() || classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable) )
         {
-        ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? m_map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
+        ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
         for (ECClassCP derivedClass : derivedClasses)
             {
             if (SUCCESS != ComputeViewMembers(viewMembers, *derivedClass, ensureDerivedClassesAreLoaded))
@@ -748,7 +748,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     Utf8String where;
     if (firstChildClassMap->GetECClassIdPropertyMap()->IsPersisted())
         {
-        auto tableP = &firstChildClassMap->GetPrimaryTable();
+        auto tableP = &firstChildClassMap->GetJoinedTable();
         bool noClassIdFilterOption = false;
         if (m_prepareContext)
             {
@@ -758,7 +758,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
 
         if (!noClassIdFilterOption)
             {
-            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *firstChildClassMap->GetECClassIdPropertyMap()->GetSingleColumn(), m_isPolymorphic, tableP != &table, table.GetName().c_str()))
+            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *firstChildClassMap->GetECClassIdPropertyMap()->GetSingleColumn(), m_isPolymorphic, true, tableP->GetName().c_str()))
                 return ERROR;
             }
         }
@@ -984,14 +984,15 @@ BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql
         switch (cm->GetType())
             {
                 case ClassMap::Type::RelationshipEndTable:
-                    if (!unionQuery.IsEmpty())
-                        unionQuery.Append(" UNION ");
+                {
+                if (!unionQuery.IsEmpty())
+                    unionQuery.Append(" UNION ");
 
                     if (SUCCESS != CreateViewForRelationshipClassEndTableMap(unionQuery, *static_cast<RelationshipClassEndTableMap const*>(cm), relationMap))
-                        return ERROR;
+                    return ERROR;
 
-                    break;
-
+                break;
+                }
                 case ClassMap::Type::RelationshipLinkTable:
                 {
                 if (!unionQuery.IsEmpty())
