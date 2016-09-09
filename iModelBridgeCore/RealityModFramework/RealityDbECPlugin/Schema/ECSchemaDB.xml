@@ -516,6 +516,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="MetadataURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>MetadataURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>MetadataURL</OverrideColumnName>
+                    <CacheColumnName>MetadataURL</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="DisplayStyle" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
