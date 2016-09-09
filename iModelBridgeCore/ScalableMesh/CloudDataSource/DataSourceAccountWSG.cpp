@@ -134,11 +134,11 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
     {
     DataSourceURL url(this->wsgProtocol + L"//");
     url.append(this->getAccountIdentifier());
-    if (!this->wsgPort.empty())
-        {
-        // using the += operator prevents appending an unwanted separator
-        url += (L":" + this->wsgPort);
-        }
+    //if (!this->wsgPort.empty())
+    //    {
+    //    // using the += operator prevents appending an unwanted separator
+    //    url += (L":" + this->wsgPort);
+    //    }
     url.append(this->wsgVersion);
     url.append(this->wsgAPIID);
     url.append(this->wsgRepository);
@@ -175,11 +175,12 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, Data
     CURL *curl_handle;
 
     struct CURLDataMemoryBuffer buffer;
+    //struct CURLDataResponseHeader response_header;
+
     buffer.data = dest;
     buffer.size = 0;
 
     curl_handle = curl_easy_init();
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, this->CURLWriteDataCallback);
 
     std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
 
@@ -195,11 +196,16 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, Data
     curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &response_header);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
     curl_easy_setopt(curl_handle, CURLOPT_CAINFO, certificatePath.c_str());
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&buffer);
-    
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, this->CURLWriteDataCallback);
+    //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl_handle, CURLOPT_STDERR, std::cout);
+
     /* get it! */
     CURLcode res = curl_easy_perform(curl_handle);
 
