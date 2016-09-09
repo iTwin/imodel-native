@@ -71,6 +71,7 @@
     <!-- ==================       Sources      ===================== -->
     <!-- =========================================================== -->
     <!-- =========================================================== -->
+
     <xs:complexType name="ListOfFilesType">
        <xs:annotation>
             <xs:documentation>
@@ -155,6 +156,17 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="NoDataValue" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element specifies the no data value if it is not integraly part of the format. This will occur for example with
+                    some raster files originating from Landsat data. Rasters are captured rotated but the file is not imposing a no-data padding
+                    which is color zero (0) for Landsat images.
+                    This element is a string. It is usually numeric but may of another format appropriate to the type of the data.
+                    Interpretation is the responsibility of the application.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="SisterFiles" type="ListOfFilesType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -190,7 +202,70 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-        
+
+    <!-- =========================================================== -->
+
+    <xs:complexType name="BandType">
+        <xs:annotation>
+            <xs:documentation>
+            A band is the definition of a band in a multiband source. A band essentially contains a source for the band data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Source" type="SourceType" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The source of the band data.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+
+    <xs:complexType name="MultiBandSourceType">
+        <xs:annotation>
+            <xs:documentation>
+            This is a descendant of source type that allows specification of multiband raster data. Normally it does not apply to
+            any other type. When the source is of this type then the attribute 'uri' of the source should contain either one of the bands, ideally the panchromatic if present.
+            </xs:documentation>
+        </xs:annotation>      
+        <xs:complexContent>
+            <xs:extension base="SourceType">
+                <xs:sequence>
+                    <xs:element name="Red" type="BandType" minOccurs="1" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The band contains a source used for the red band.
+                            </xs:documentation>
+                        </xs:annotation>                    
+                    </xs:element>   
+                    <xs:element name="Green" type="BandType" minOccurs="1" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The band contains a source used for the red band.
+                            </xs:documentation>
+                        </xs:annotation>                    
+                    </xs:element>   
+                    <xs:element name="Blue" type="BandType" minOccurs="1" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The band contains a source used for the blue band.
+                            </xs:documentation>
+                        </xs:annotation>                    
+                    </xs:element>   
+                    <xs:element name="PanChromatic" type="BandType" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The optional panchromatic band.
+                            </xs:documentation>
+                        </xs:annotation>                    
+                    </xs:element>   
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <!-- =========================================================== 
     <simpleType name="longitudeType">
         <restriction base="double">
@@ -362,6 +437,7 @@
             <xs:choice>
                 <xs:element name="Source" type="SourceType" minOccurs = "0" maxOccurs="unbounded"/>
                 <xs:element name="WmsSource" type="WmsSourceType" minOccurs = "0" maxOccurs="unbounded"/>  
+                <xs:element name="MultiBandSource" type="MultiBandSourceType" minOccurs = "0" maxOccurs="unbounded"/>  
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
