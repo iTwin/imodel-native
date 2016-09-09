@@ -3768,7 +3768,10 @@ BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
             DRange3d range;
 
             if (geom.IsValid() && geom->GetRange(range))
+                {
                 localRange.Extend(range);
+                m_facetCount += m_facetCounter.GetFacetCount(*geom);
+                }
             }
 
         if (!localRange.IsValid())
@@ -3776,6 +3779,7 @@ BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
         }
 
     part.SetBoundingBox(localRange);
+    part.SetFacetCount(GetFacetCount());
 
     return SUCCESS;
     }
@@ -3828,6 +3832,7 @@ BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
         }
 
     source.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    source._RecordFacetCount(GetFacetCount());
 
     return SUCCESS;
     }

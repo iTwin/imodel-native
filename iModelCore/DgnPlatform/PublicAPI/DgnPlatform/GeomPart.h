@@ -37,6 +37,7 @@ private:
     ElementAlignedBox3d         m_bbox;     //!< Bounding box of part geometry
     mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream = false;
+    size_t                      m_facetCount = 0;
 
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
@@ -56,6 +57,7 @@ protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
     void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
+    void SetFacetCount(size_t facetCount) {m_facetCount = facetCount;}
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geometry.GetAllocSize();}
     virtual DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
 
@@ -73,6 +75,9 @@ public:
 
     //! Get the bounding box for this part (part local coordinates)
     ElementAlignedBox3dCR GetBoundingBox() const {return m_bbox;}
+
+    //! Get an approximation of the number of facets in this part's geometry
+    size_t GetFacetCount() const {return m_facetCount;}
 
     //! Get the cached set of Render::Graphics for this DgnGeometryPart.
     Render::GraphicSet& Graphics() const {return m_graphics;}

@@ -42,6 +42,7 @@
 #define GEOM_Origin "Origin"
 #define GEOM_Box_Low "BBoxLow"
 #define GEOM_Box_High "BBoxHigh"
+#define GEOM_FacetCount "FacetCount"
 #define GEOM2_Rotation "Rotation"
 #define GEOM3_InSpatialIndex "InSpatialIndex"
 #define GEOM3_Yaw "Yaw"
@@ -3406,6 +3407,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
         return status;
 
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
+    m_facetCount = stmt.GetValueUInt64(params.GetSelectIndex(GEOM_FacetCount));
 
     // Read GeomStream
     auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
@@ -3441,6 +3443,7 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
+    stmt.BindInt64(stmt.GetParameterIndex(GEOM_FacetCount), static_cast<int64_t>(m_facetCount));
     return m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 
