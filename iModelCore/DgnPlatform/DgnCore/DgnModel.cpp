@@ -543,7 +543,7 @@ GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
     {
-    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() && !element.IsDefinitionElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

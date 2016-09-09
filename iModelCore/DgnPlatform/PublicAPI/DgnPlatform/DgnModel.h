@@ -1008,9 +1008,9 @@ public:
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    08/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : DefinitionModel
+struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : InformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, DefinitionModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, InformationModel);
 protected:
     virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1040,8 +1040,9 @@ public:
 };
 
 //=======================================================================================
-//! A model which contains only GroupInformationElements.
-//! @ingroup GROUP_DgnModel
+//! A model which contains only grouping information.
+//! @deprecated
+//! @private
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
@@ -1627,9 +1628,9 @@ namespace dgn_ModelHandler
     };
 
     //! The ModelHandler for RepositoryModel
-    struct EXPORT_VTABLE_ATTRIBUTE Repository : Definition
+    struct EXPORT_VTABLE_ATTRIBUTE Repository : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, RepositoryModel, Repository, Definition, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, RepositoryModel, Repository, Model, DGNPLATFORM_EXPORT)
     };
 };
 

@@ -733,10 +733,6 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
-        <BaseClass>InformationReferenceElement</BaseClass>
-    </ECEntityClass>
-
     <ECEntityClass typeName="Document" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>

@@ -103,12 +103,12 @@ public:
 };
 
 //=======================================================================================
-//! A GroupInformationElement that groups SpatialElements using the ElementGroupsMembers relationship
+//! Groups SpatialElements using the ElementGroupsMembers relationship
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : GroupInformationElement, IElementGroupOf<GeometricElement3d>
+struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : InformationReferenceElement, IElementGroupOf<GeometricElement3d>
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GroupInformationElement)
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, InformationReferenceElement)
     friend struct generic_ElementHandler::GenericSpatialGroupHandler;
 
 protected:
@@ -121,12 +121,12 @@ public:
 };
 
 //=======================================================================================
-//! A GroupInformationElement that groups GraphicalElement2ds using the ElementGroupsMembers relationship
+//! Groups GraphicalElement2ds using the ElementGroupsMembers relationship
 // @bsiclass                                                   Carole.MacDonald            03/2016
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2d : GroupInformationElement, IElementGroupOf<GraphicalElement2d>
+struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2d : InformationReferenceElement, IElementGroupOf<GraphicalElement2d>
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, GroupInformationElement)
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, InformationReferenceElement)
     friend struct generic_ElementHandler::GenericGraphicGroup2dHandler;
 
 protected:
