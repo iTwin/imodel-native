@@ -588,7 +588,7 @@ namespace IndexECPlugin.Tests
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
 
             double overridenCC = 12.3;
-            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
+            overrideInstance["Occlusion"].DoubleValue = overridenCC;
 
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
@@ -633,7 +633,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
-                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
+                Assert.AreEqual(overridenCC, modifiedInstance["Occlusion"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
