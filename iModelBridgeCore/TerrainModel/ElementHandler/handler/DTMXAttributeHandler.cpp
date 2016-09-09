@@ -165,6 +165,28 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
             return s_instance;
             }
 
+        //! Called when the transaction is undone
+        virtual void _OnReverse()
+            {
+            for (auto elmRef : m_tmPersistElements)
+                ReloadData(elmRef);
+            m_tmPersistElements.clear();
+            }
+        //! Called when the transaction is redone
+        virtual void _OnReinstate()
+            {
+            for (auto elmRef : m_tmPersistElements)
+                ReloadData(elmRef);
+            m_tmPersistElements.clear();
+            }
+        //! Called when the transaction is cancelled after being undone. Releases the pointer to the custom entry.
+        virtual void _OnCancel()
+            {
+            for (auto elmRef : m_tmPersistElements)
+                ReloadData(elmRef);
+            m_tmPersistElements.clear();
+            }
+
         // Before we persist a TM (for modify new one doesn't matter!) we Save a custom entry in the undo buffer.
         // We store the Header of the
         void StartTMPersist ()
@@ -178,6 +200,7 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
             bool end = true;
             ITxnManager::GetCurrentTxn ().SaveCustomEntryInUndo ((byte*)&end, sizeof (end), DeserializeCustomItemFunc);
             }
+
         };
 
 RefCountedPtr<DTMTxnMonitor> DTMTxnMonitor::s_instance;
@@ -496,6 +519,7 @@ void DTMXAttributeHandler::StartModify (bool disableUndo)
     write_to_log(L"StartModify %x (%d)", this, m_writeCount);
     if (m_writeCount == 0)
         {
+        DTMTxnMonitor::GetInstance().StartTMPersist();
         DTMTxnMonitor::GetInstance().AddToTxn (this);
         m_writeCount++;
         if (!disableUndo)
@@ -837,6 +861,7 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
         m_nextIndex++;
         if (headerData)
             bcdtmObject_updateDtmObjectForDtmElement (m_dtm->GetTinHandle(), (void*)headerData, &featureArrays[0], &pointArrays[0], &nodeArrays[0], &fListArrays[0], &cListArrays[0]);
+        m_dtm->CheckTriangulation();
         }
     }
 
