@@ -195,6 +195,12 @@ public:
     //! @param[in]      nPts        Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
+    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
+
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
