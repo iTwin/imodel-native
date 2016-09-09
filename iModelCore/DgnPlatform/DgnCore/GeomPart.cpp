@@ -158,9 +158,26 @@ BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElem
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnGeometryPart::QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId)
     {
+    return QueryRangeAndFacetCount(range, nullptr, db, geomPartId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(DRange3dR range, size_t& facetCount, DgnDbR db, DgnGeometryPartId geomPartId)
+    {
+    return QueryRangeAndFacetCount(range, &facetCount, db, geomPartId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnGeometryPart::QueryRangeAndFacetCount(DRange3dR range, size_t* facetCount, DgnDbR db, DgnGeometryPartId geomPartId)
+    {
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
+    // ###TODO_FACET_COUNT: add a column for facet count...
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT " PARAM_BBoxLow "," PARAM_BBoxHigh " FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return BentleyStatus::ERROR;
@@ -173,6 +190,10 @@ BentleyStatus DgnGeometryPart::QueryGeometryPartRange(DRange3dR range, DgnDbR db
     DPoint3d bboxHigh = statement->GetValuePoint3D(1);
     ElementAlignedBox3d bbox(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
     range = bbox;
+
+    if (nullptr != facetCount)
+        *facetCount = 0;
+
     return BentleyStatus::SUCCESS;
     }
 

@@ -51,6 +51,7 @@ private:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
 
+    static BentleyStatus QueryRangeAndFacetCount(DRange3dR range, size_t* facetCount, DgnDbR db, DgnGeometryPartId partId);
 protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
@@ -88,6 +89,14 @@ public:
     //! @param[in] geomPartId The ID of the DgnGeometryPart to query
     //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
     DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId);
+
+    //! Query the range of a DgnGeometryPart by ID.
+    //! @param[out] range On successful return, holds the DgnGeometryPart's range
+    //! @param[out] facetCount On successful return, holds the DgnGeometryPart's approximate facet count
+    //! @param[in] db The DgnDb to query
+    //! @param[in] geomPartId The ID of the DgnGeometryPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
+    DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRangeAndFacetCount(DRange3dR range, size_t& facetCount, DgnDbR db, DgnGeometryPartId geomPartId);
 
     //! Insert the ElementUsesGeometryParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
