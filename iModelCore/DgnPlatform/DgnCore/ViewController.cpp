@@ -94,16 +94,16 @@ void ViewFlags::From3dJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::ToBaseJson(JsonValueR val) const
     {
-    val[ViewJson::Construction()] = m_constructions;
-    val[ViewJson::NoText()] = !m_text;
-    val[ViewJson::NoDimension()] = !m_dimensions;
-    val[ViewJson::NoPattern()] = !m_patterns;
-    val[ViewJson::NoWeight()] = !m_weights;
-    val[ViewJson::NoStyle()] = !m_styles;
-    val[ViewJson::NoTransparency()] = !m_transparency;
-    val[ViewJson::Fill()] = m_fill;
-    val[ViewJson::Grid()] = m_grid;
-    val[ViewJson::Acs()] = m_acsTriad;
+    if (m_constructions) val[ViewJson::Construction()] = m_constructions;
+    if (!m_text) val[ViewJson::NoText()] = !m_text;
+    if (!m_dimensions) val[ViewJson::NoDimension()] = !m_dimensions;
+    if (!m_patterns) val[ViewJson::NoPattern()] = !m_patterns;
+    if (!m_weights) val[ViewJson::NoWeight()] = !m_weights;
+    if (!m_styles) val[ViewJson::NoStyle()] = !m_styles;
+    if (!m_transparency) val[ViewJson::NoTransparency()] = !m_transparency;
+    if (m_fill) val[ViewJson::Fill()] = m_fill;
+    if (m_grid) val[ViewJson::Grid()] = m_grid;
+    if (m_acsTriad) val[ViewJson::Acs()] = m_acsTriad;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,14 +111,14 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::To3dJson(JsonValueR val) const
     {
-    val[ViewJson::NoTexture()] = !m_textures;
-    val[ViewJson::NoMaterial()] = !m_materials;
-    val[ViewJson::NoSceneLight()] = !m_sceneLights;
-    val[ViewJson::VisibleEdges()] = m_visibleEdges;
-    val[ViewJson::HiddenEdges()] = m_hiddenEdges;
-    val[ViewJson::Shadows()] = m_shadows;
-    val[ViewJson::NoClipVolume()] = m_noClipVolume;
-    val[ViewJson::IgnoreLighting()] = m_ignoreLighting;
+    if (!m_textures) val[ViewJson::NoTexture()] = !m_textures;
+    if (!m_materials) val[ViewJson::NoMaterial()] = !m_materials;
+    if (!m_sceneLights) val[ViewJson::NoSceneLight()] = !m_sceneLights;
+    if (m_visibleEdges) val[ViewJson::VisibleEdges()] = m_visibleEdges;
+    if (m_hiddenEdges) val[ViewJson::HiddenEdges()] = m_hiddenEdges;
+    if (m_shadows) val[ViewJson::Shadows()] = m_shadows;
+    if (m_noClipVolume) val[ViewJson::NoClipVolume()] = m_noClipVolume;
+    if (m_ignoreLighting) val[ViewJson::IgnoreLighting()] = m_ignoreLighting;
 
     val[ViewJson::RenderMode()] =(uint8_t) m_renderMode;
     }
@@ -320,6 +320,9 @@ void ViewController::_SaveToSettings() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Save()
     {
+    // initialize m_settings[ViewJson::Flags()] to an empty object before having contoller populate it.
+    m_settings[ViewJson::Flags()] = Json::Value (Json::objectValue);
+
     _SaveToSettings();
 
     return ViewDefinition::SaveSettings(Json::FastWriter::ToString(m_settings), m_viewId, m_dgndb);
