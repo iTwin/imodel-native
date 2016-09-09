@@ -212,6 +212,8 @@
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
         <ProductDirectory Name="PPNativeAssemblies"             Path=""/>
@@ -238,6 +240,61 @@
         <SubPart PartName="RealityDbECPluginCNuGet"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
+
+
+    <!-- // "RealityModelingFramework-Minimal Section                                           // -->
+    <Part Name="RealityModelingFramework-Minimal-WinX64-Only" BentleyBuildMakeFile="PublishedApi.mke" OnlyPlatforms="x64">
+        <SubProduct ProductName="RealityModelingFramework-Minimal-WinX64"/>
+        <Bindings>
+            <PublicAPI Domain="RealityModFramework" />
+            <Directory SourceName="Delivery/RealityModFrameworkIncludeDirectory" ProductDirectoryName="RealityModFrameworkIncludeDirectory" SubPartDirectory="PublicAPI" Required="true"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="RealityModelingFramework-Minimal-WinX64" SaveProduct="true">
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <!--<SubPart PartName="PublishedApi" />-->
+
+        <!-- This must be listed last so that it can delivery=false items defined in preceding directory list(s). -->
+        <Directories DirectoryListName="RealityModelingFramework-Minimal"/>
+    </Product>
+
+    <Part Name ="PublishedApi" BentleyBuildMakeFile="PublishedApi.mke">
+        <!--<SubPart PartName="DgnClientFxPublicApi"/>
+        <SubPart PartName="DgnClientFxLibrarySubParts"/>-->
+        <Bindings>
+            <Directory SourceName="Delivery/RealityModFrameworkIncludeDirectory" ProductDirectoryName="RealityModFrameworkIncludeDirectory" SubPartDirectory="PublishedApi" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealityModelingFramework-Minimal">
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"                       Path="lib" RelativeTo="applicationroot"/>
+
+        <ProductDirectory Name="VendorNotices"                      Deliver="true"  LibType="dynamic" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" LibType="Static"/>
+
+        <!-- include/ -->
+        <ProductDirectory Name="RealityModFrameworkIncludeDirectory"       Deliver="true" Path="include"/>
+        <ProductDirectory Name="RealityModFrameworkIncludeDirectory"       Deliver="true" Path="include" LibType="Static"/>
+
+        <!--needed for the moment from LkgsVancouver -->
+        <ProductDirectory Name="JsonNetAssemblies"              Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PlatformTechAssemblies"         Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECSchemas"                      RelativeTo="applicationroot"/>
+    </ProductDirectoryList>
+
+
+
 
     <!-- ********************************************************************************************** -->
     <!-- Nunit tests -->

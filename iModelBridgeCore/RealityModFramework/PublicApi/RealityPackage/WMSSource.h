@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__BENTLEY_INTERNAL_ONLY__
+
 #include <RealityPackage/RealityPackage.h>
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
