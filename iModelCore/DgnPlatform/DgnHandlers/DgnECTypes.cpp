@@ -755,6 +755,14 @@ bool                IDgnECStandaloneTypeAdapterContext::ReInitialize (ECN::ECPro
 /////////////////////////////////////////////////////////////////////////////////
 //  StandaloneTypeAdapterContext
 /////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneTypeAdapterContext::StandaloneTypeAdapterContext(ECN::ECPropertyCR prop, uint32_t comp, DgnModelP model)
+    : m_property(&prop), m_componentIndex(comp), m_is3d(IS3D_Uninitialized), m_model(model)
+    {
+    m_unitsClassLocater = ECUnitsClassLocater::Create();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
@@ -804,7 +812,7 @@ bool StandaloneTypeAdapterContext::_ReInitialize (ECN::ECPropertyCR ecproperty, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECClassLocaterR StandaloneTypeAdapterContext::_GetUnitsECClassLocater() const
     {
-    return m_model->GetDgnDb().GetClassLocater();
+    return *m_unitsClassLocater;
     }
 
 /*---------------------------------------------------------------------------------**//**
