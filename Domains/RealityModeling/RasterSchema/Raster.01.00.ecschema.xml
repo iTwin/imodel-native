@@ -3,26 +3,26 @@
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="RasterModel" isDomainClass="True" >
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:SpatialModel</BaseClass>
+        <BaseClass>bis:SpatialModel</BaseClass>
         <ECProperty propertyName="Clip" typeName="binary" />
     </ECClass>
 
     <ECClass typeName="WmsModel" isDomainClass="True" >
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>RasterModel</BaseClass>
     </ECClass>
 
     <ECClass typeName="RasterFileModel" isDomainClass="True" >
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>RasterModel</BaseClass>
     </ECClass>

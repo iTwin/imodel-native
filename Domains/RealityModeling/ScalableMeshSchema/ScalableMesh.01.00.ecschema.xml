@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="ScalableMesh" nameSpacePrefix="ScalableMesh" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
-  <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-  <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-  <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
-  <ECClass typeName="ScalableMeshModel" isDomainClass="True" >
-    <ECCustomAttributes>
-      <ClassHasHandler xmlns="dgn.02.00" />
-    </ECCustomAttributes>
-    <BaseClass>dgn:SpatialModel</BaseClass>
-  </ECClass>
+    <ECClass typeName="ScalableMeshModel" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:SpatialModel</BaseClass>
+    </ECClass>
 
 </ECSchema>
