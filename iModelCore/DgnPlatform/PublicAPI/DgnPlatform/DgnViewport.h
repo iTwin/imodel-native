@@ -214,7 +214,7 @@ public:
     DGNVIEW_EXPORT void ForceHeal();
     void ValidateQuery(UpdatePlan const&);
     StatusInt HealViewport(UpdatePlan const&);
-    StatusInt SynchronizeViewport(UpdatePlan const&);
+    void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();

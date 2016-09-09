@@ -1655,6 +1655,7 @@ struct Target : RefCounted<NonCopyableClass>
 
 protected:
     bool               m_abort;
+    int                m_id; // for debugging
     System&            m_system;
     DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
@@ -1705,6 +1706,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
 
+    int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}

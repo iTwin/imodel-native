@@ -88,7 +88,6 @@ void Render::Queue::AddTask(Task& task)
 
     BeMutexHolder mux(m_cv.GetMutex());
 
-
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
@@ -188,13 +187,14 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
+
     if (m_elapsedTime>.5)
-        ERROR_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        ERROR_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
     else if (m_elapsedTime>.125)
-        WARN_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        WARN_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
     else
         {
-//        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        DEBUG_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
         }
     }
 
@@ -292,7 +292,7 @@ Render::Plan::Plan(DgnViewportCR vp)
     {
     m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
-    m_frustum   = vp.GetFrustum(DgnCoordSystem::World, true);
+    m_frustum   = vp.GetFrustum();
     m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
@@ -405,7 +405,7 @@ void FrustumPlanes::Init(FrustumCR frustum)
 FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, double tolerance) const
     {
     BeAssert(IsValid());
-		
+
     bool allInside = true;
     for (ClipPlaneCR plane : m_planes)
         {
@@ -545,7 +545,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
 
     static const double FINE_ELEMENT_RES = 1 / 16.0; 
 
-    DEBUG_PRINTF("frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", frameRateGoal, smallestRangeDrawn, successPct);
+    DEBUG_PRINTF("[%d] frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", target.GetId(), frameRateGoal, smallestRangeDrawn, successPct);
 
     static volatile double s_longTermSuccessRate = 0.80;
 

@@ -1399,7 +1399,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     if (ViewportStatus::Success != stat)
         return  stat;
 
-    if (delta.z > CalculateMaxDepth(delta, zVec)) // make sure we're not zoomed in too far
+    if (delta.z > CalculateMaxDepth(delta, zVec)) // make sure we're not zoomed out too far
         return ViewportStatus::MaxDisplayDepth;
 
     // The origin is defined as the lower left of the view rectangle on the focus plane, projected to the back plane.
