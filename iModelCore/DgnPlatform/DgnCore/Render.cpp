@@ -102,6 +102,8 @@ void Render::Queue::AddTask(Task& task)
         }
 
     task._OnQueued();
+
+    // Put it after all existing tasks of equal or higher priority (lower values mean higher priority).
     auto entry=m_tasks.begin();
     for (; entry != m_tasks.end(); ++entry)
         {
@@ -202,7 +204,7 @@ void Render::Task::Perform(StopWatch& timer)
         WARN_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
     else
         {
-        DEBUG_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
+//        DEBUG_PRINTF("[%d] task=%s, elapsed=%lf", m_target.IsValid() ? m_target->GetId() : 0, _GetName(), m_elapsedTime);
         }
     }
 
@@ -603,8 +605,6 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
 
     return frameRateGoal;
     }
-
-
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
