@@ -24,7 +24,7 @@ namespace dgn_ElementHandler {struct GeometryPart;};
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DefinitionElement);
     friend struct dgn_ElementHandler::GeometryPart;
 
 //__PUBLISH_SECTION_END__
@@ -98,9 +98,9 @@ public:
 namespace dgn_ElementHandler
 {
     //! @private
-    struct GeometryPart : Element
+    struct GeometryPart : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DgnGeometryPart, GeometryPart, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Definition, DGNPLATFORM_EXPORT);
     };
 };
 

@@ -27,7 +27,15 @@ __PUBLISH_INSERT_FILE__ ToyTile_CreateView.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_ViewOverview3 See Also
+@section SECTION_ViewOverview3 Making Changes with a ViewController
+
+__PUBLISH_INSERT_FILE__ ViewController_Includes.sampleCode
+
+__PUBLISH_INSERT_FILE__ ViewController.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ViewOverview4 See Also
 
 @see GROUP_DgnView
 */

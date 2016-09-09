@@ -158,7 +158,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 static int countSheets(DgnDbR db)
     {
     int count = 0;
-    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
     for (auto const& sheet : db.Models().MakeIterator())
         {
         if (sheetClassId == sheet.GetClassId())
@@ -178,7 +178,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
     if (is3d)
         gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
@@ -214,11 +214,11 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         //  Create a sheet
         DPoint2d sheetSize = DPoint2d::From(.100, .100);
-        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
-                                DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
+        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
+                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
-        sheet1->SetLabel("a sheet model (in mm)");
+        sheet1->SetUserLabel("a sheet model (in mm)");
         ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert() );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
 
@@ -231,11 +231,11 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert() ) << "Should be illegal to add a second sheet with the same name";
 
         //  Create a second sheet
-        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
-                                DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
+        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
+                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE(sheet2.IsValid());
-        sheet2->SetLabel("a second sheet model");
+        sheet2->SetUserLabel("a second sheet model");
         ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert() );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
@@ -315,7 +315,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(4, iter.QueryCount()); // including DictionaryModel and GroupInformationModel...
+    ASSERT_EQ(5, iter.QueryCount()); // including RepositoryModel, DictionaryModel, and GroupInformationModel...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -325,18 +325,18 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
     for (DgnModels::Iterator::Entry const& entry : iter)
-    {
+        {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        if ((DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
+        if ((DgnModel::RepositoryModelId() == entry.GetModelId()) || (DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
             continue;
 
-        WString entryNameW(entry.GetCodeValue(), true);               // string conversion
-        WString entryDescriptionW(entry.GetLabel(), true); // string conversion
+        WString entryNameW(entry.GetCodeValue(), true); // string conversion
+        WString entryDescriptionW(entry.GetUserLabel(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
         testModel.IsEqual(models[i]);
         i++;
+        }
     }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -386,16 +386,16 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     //Inserts models
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     db.SaveChanges ("changeSet1");
 
     DgnModelPtr m2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
-    m2->SetLabel("Test Model 2");
+    m2->SetUserLabel("Test Model 2");
     m2->Insert ();
 
     DgnModelPtr m3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
-    m3->SetLabel("Test Model 3");
+    m3->SetUserLabel("Test Model 3");
     m3->Insert();
     db.SaveChanges ("changeSet1");
 
@@ -413,7 +413,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (6, iter.QueryCount ()); // including the DictionaryModel and GroupInformationModel...
+    EXPECT_EQ (7, iter.QueryCount ()); // including the RepositoryModel, DictionaryModel, and GroupInformationModel...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
@@ -422,7 +422,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model1", entry.GetCodeValue ());
-            EXPECT_STREQ ("Test Model 1", entry.GetLabel());
+            EXPECT_STREQ ("Test Model 1", entry.GetUserLabel());
             EXPECT_EQ (true, entry.GetInGuiList ());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -431,7 +431,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model2", entry.GetCodeValue ());
-            EXPECT_STREQ("Test Model 2", entry.GetLabel());
+            EXPECT_STREQ("Test Model 2", entry.GetUserLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -440,7 +440,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
             EXPECT_STREQ ("Model3", entry.GetCodeValue ());
-            EXPECT_STREQ("Test Model 3", entry.GetLabel());
+            EXPECT_STREQ("Test Model 3", entry.GetUserLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -464,7 +464,7 @@ TEST_F (DgnModelTests, AbandonChanges)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert ();
     EXPECT_TRUE (m1 != nullptr);
     db.SaveChanges ("changeSet1");
@@ -511,7 +511,7 @@ TEST_F (DgnModelTests, AddAppData)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert ();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -545,7 +545,7 @@ TEST_F (DgnModelTests, DropAppData)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());

@@ -175,7 +175,7 @@ module DgnScriptTests {
         // be testing for valves and girders and so on.) I could also be testing for the properties aspects,
         // or codes, or various other things.
         var spatialQuery = db.GetPreparedECSqlSelectStatement(
-            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName + 
+            "SELECT rt.ECInstanceId FROM BisCore.SpatialIndex rt, " + physObjClass.ECSqlName + 
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
         );
 
@@ -418,40 +418,40 @@ module DgnScriptTests {
     {
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;
-        var elementClass: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        var elementClass: be.ECClass = schemas.GetECClass(be.BIS_ECSCHEMA_NAME, be.BIS_CLASS_PhysicalElement);
         if (!elementClass)
-            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
+            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.BIS_ECSCHEMA_NAME + '.' + be.BIS_CLASS_PhysicalElement);
 
         // -----------------------------------------------
         // Test GetProperties and ECPropertyCollection
         // -----------------------------------------------
         var peprops: be.ECPropertyCollection = elementClass.Properties;
-        var foundCode: boolean = false;
+        var foundCodeValue: boolean = false;
         var propertyCount: number = 0;
         for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
         {
             var peprop: be.ECProperty = peprops.GetECProperty(propiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, peprop.Name);
-            if (peprop.Name == 'Code')
-                foundCode = true;
+            if (peprop.Name == 'CodeValue')
+                foundCodeValue = true;
             ++propertyCount;
         }
-        if (!foundCode)
-            be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
+        if (!foundCodeValue)
+            be.Script.ReportError('ECPropertyCollection must have failed -- the CodeValue property was not found');
         if (propertyCount <= 2)
             be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on GeometricElement3d');
 
         // -----------------------------------------------
         // Test GetProperty and PrimitiveECProperty
         // -----------------------------------------------
-        var codeProp = elementClass.GetProperty('Code');
-        if (!codeProp)
-            be.Script.ReportError('GetProperty failed to find Code property');
+        var codeValueProp = elementClass.GetProperty('CodeValue');
+        if (!codeValueProp)
+            be.Script.ReportError('GetProperty failed to find CodeValue property');
         else
         {
-            var primProp = codeProp.GetAsPrimitiveProperty();
-            if (primProp)
-                be.Script.ReportError('Code property is NOT a primitive property');
+            var primProp = codeValueProp.GetAsPrimitiveProperty();
+            if (!primProp)
+                be.Script.ReportError('CodeValue property is a primitive property');
         }
 
         var LastModProp = elementClass.GetProperty('LastMod');
@@ -484,7 +484,7 @@ module DgnScriptTests {
         if (baseCount != 1)
             be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
 
-        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
+        var se: be.ECClass = schemas.GetECClass(be.BIS_ECSCHEMA_NAME, be.BIS_CLASS_SpatialElement);
         var derivedclasses: be.ECClassCollection = se.DerivedClasses;
         var derivedCount: number = 0;
         for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter)) {
@@ -542,15 +542,15 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function testProperties(el: be.DgnElement)
     {
-        if (el.GetProperty('StringProperty'))
+        if (el.GetPropertyValue('StringProperty'))
             be.Script.ReportError('StringProperty should not be set at the outset');
 
-        if (0 != el.SetProperty('StringProperty', be.ECValue.FromString('stuff')))
+        if (0 != el.SetPropertyValue('StringProperty', be.ECValue.FromString('stuff')))
             be.Script.ReportError('SetProperty failed');
 
         el.Update();
 
-        var prop = el.GetProperty('StringProperty');
+        var prop = el.GetPropertyValue('StringProperty');
         if (!prop || prop.GetString() != 'stuff')
             be.Script.ReportError('SetProperty failed - changed value not verified');
     }

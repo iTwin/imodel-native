@@ -108,7 +108,7 @@ typedef DgnElementId AnnotationTextStyleId;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AnnotationTextStyle, DefinitionElement);
     
 private:
     friend struct AnnotationTextStylePersistence;
@@ -117,7 +117,7 @@ private:
     Utf8String m_description;
     AnnotationTextStylePropertyBag m_data;
 
-    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle); }
+    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationTextStyle); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -131,7 +131,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
     explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
@@ -218,9 +218,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for annotation text styles
     //=======================================================================================
-    struct AnnotationTextStyleHandler : Element
+    struct AnnotationTextStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

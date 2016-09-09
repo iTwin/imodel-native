@@ -522,12 +522,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     type DgnCategoryP = cxx_pointer<DgnCategory>;
 
-    /** DgnElement - Projection of BentleyApi::Dgn::DgnElement
-     *  <h2>Properties</h2>
-     *  On any given element, there may be the following kinds of properties:
-     *  * Properties that are defined by the ECClass -> Use GetProperty and SetProperty
-     *  * Properties that are not defined by the ECClass but are added by the user – “User Properties” - use GetUserProperty and SetUserProperty
-     */
+    /** DgnElement - Projection of BentleyApi::Dgn::DgnElement */
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
@@ -551,7 +546,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param name The name of property
          * @return the value of the property or null if the property is not found
          */
-        GetProperty(name: Bentley_Utf8String): ECValueP;
+        GetPropertyValue(name: Bentley_Utf8String): ECValueP;
 
         /**
          * Set the value of a property that is defined by the element's class
@@ -559,7 +554,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param value     The new value for the property
          * @return non-zero error status if the property is not found
          */
-        SetProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
+        SetPropertyValue(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
 
         /**
          * Get a handle to a user property on this element. 

@@ -217,16 +217,20 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
     {
     CreateDgnDb();
 
     ChangeSummary changeSummary(*m_testDb);
 
     m_testDb->SaveChanges();
-    
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -239,25 +243,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:2;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"ChangeSummaryModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"ChangeSummaryModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:4;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"ChangeSummaryCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"ChangeSummaryCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:5;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000004"
-                Code.Value;NULL;"ChangeSummaryCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000004"
+                CodeValue;NULL;"ChangeSummaryCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627780
@@ -270,8 +274,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627780
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -309,9 +313,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category, DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModel->GetModelId().GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_Category, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Insert));
 
     m_testDb->SaveChanges();
     ModifyElement(elementId);
@@ -333,7 +337,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 Yaw;0;0
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Update));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Update));
 
     m_testDb->SaveChanges();
     DeleteElement(elementId);
@@ -353,8 +357,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;-0.5;NULL
                 BBoxLow.Z;-0.5;NULL
                 CategoryId;1099511627780;NULL
-                Code.AuthorityId;1;NULL
-                Code.Namespace;"";NULL
+                CodeAuthorityId;1;NULL
+                CodeNamespace;"";NULL
                 GeometryStream;...;NULL
                 InSpatialIndex;1;NULL
                 LastMod;2.45749e+06;NULL
@@ -377,13 +381,13 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 TargetECInstanceId;0:4;NULL
     */
     EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Delete));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromSavedTransactions)
     {
     CreateDgnDb();
 
@@ -401,25 +405,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -432,8 +436,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627778
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -489,25 +493,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -520,8 +524,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627778
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -577,25 +581,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -625,12 +629,16 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -862,8 +870,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -904,11 +916,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
                 TargetECInstanceId;NULL;0:7
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
 
-    ECClassId relClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements);
-    ECClassId elClassId = m_testDb->Schemas().GetECClassId("Generic", GENERIC_CLASSNAME_PhysicalObject);
+    ECClassId relClassId = m_testDb->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    ECClassId elClassId = m_testDb->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject);
 
     ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
     ASSERT_TRUE(instance.IsValid());
@@ -968,7 +980,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.PhysicalElement el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status.IsSuccess());
     
@@ -987,7 +999,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
-    ECClassId elClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "Element");
+    ECClassId elClassId = m_testDb->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "Element");
     changeSummary.QueryByClass(changes, elClassId, true, ChangeSummary::QueryDbOpcode::All);
     changedElements.empty();
     for (bmap<ECInstanceId, ChangeSummary::Instance>::const_iterator iter = changes.begin(); iter != changes.end(); iter++)
@@ -1000,7 +1012,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
+TEST_F(ChangeSummaryTestFixture, DISABLED_QueryMultipleSessions)
     {
     CreateDgnDb();
     m_testDb->SaveChanges();
@@ -1032,7 +1044,7 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     // changeSummary.Dump();
 
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2; /* category and sub category are now elements */
-    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));
+    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_CLASS_Element)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1043,7 +1055,7 @@ TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
     CreateDgnDb();
     m_testDb->SaveChanges();
 
-    ECClassCP ecClass = m_testDb->Schemas().GetECClass("Generic", GENERIC_CLASSNAME_PhysicalObject);
+    ECClassCP ecClass = m_testDb->Schemas().GetECClass(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject);
     ASSERT_TRUE(ecClass != nullptr);
 
     ChangeSummary::TableMapPtr tableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecClass);
@@ -1053,12 +1065,11 @@ TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
     ASSERT_TRUE(tableMap->GetECClassIdColumn().GetIndex() >= 0);
     ASSERT_TRUE(tableMap->GetECInstanceIdColumn().GetIndex() >= 0);
 
-    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementHasLinks);
+    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementHasLinks);
     ASSERT_TRUE(ecRelClass != nullptr);
 
     ChangeSummary::TableMapPtr relTableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecRelClass);
 
     ASSERT_TRUE(relTableMap.IsValid());
-    ASSERT_EQ(false, relTableMap->ContainsECClassIdColumn());
-    ASSERT_TRUE(relTableMap->GetECClassId().IsValid());
+    ASSERT_TRUE(relTableMap->ContainsECClassIdColumn());
     }

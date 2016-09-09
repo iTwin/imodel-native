@@ -52,7 +52,6 @@ TEST_F(ElementGeomPartTests, CRUD)
     ExpectEqualRange(partBox, builder->GetPlacement3d().GetElementBox());
 
     // Insert
-    //
     ASSERT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
     DgnGeometryPartId partId = geomPartPtr->GetId();
     ASSERT_TRUE(partId.IsValid());
@@ -173,12 +172,11 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(1,(0xffffffffULL & stmt.GetValueInt64(0)));           // *** TRICKY: We are testing the low word, i.e., ignoring the briefcase id in the high word
-    ASSERT_EQ(elementId.GetValue(), stmt.GetValueInt64(1));
-    ASSERT_EQ(existingPartId.GetValue(), stmt.GetValueInt64(2));
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT SourceECInstanceId,TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(elementId.GetValue(), statement.GetValueInt64(0));
+    ASSERT_EQ(existingPartId.GetValue(), statement.GetValueInt64(1));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,9 +207,9 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
 
     // Delete Geom Part
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(existingPartId));
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,9 +240,9 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     m_db->SaveChanges ();
     // Delete Element
     ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(elementId)));
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
     EXPECT_TRUE(DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db).IsValid());
     }

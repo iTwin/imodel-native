@@ -119,16 +119,28 @@ public:
     //! @name Populating a DgnDb
     //! @{
 
-    //! Insert a SpatialModel 
-    static SpatialModelPtr InsertSpatialModel(DgnDbR, DgnCode modelCode);
+    //! Insert a PhysicalModel 
+    static PhysicalModelPtr InsertPhysicalModel(DgnDbR, DgnCodeCR modelCode);
     //! Insert a SheetModel 
     static SheetModelPtr InsertSheetModel(DgnDbR db, DgnCode modelCode);
     //! Create a Camera view of the specified SpatialModel 
-    static DgnViewId InsertCameraView(SpatialModelR, Utf8CP viewName = nullptr);
+    static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
+                                      StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade)
+        {
+        auto viewDef = CameraViewDefinition::MakeViewOfModel(model, viewName, viewVolume, rot, renderMode);
+        viewDef->Insert();
+        return viewDef->GetViewId();
+        }
     static void FitView(DgnDbR db, DgnViewId viewId);
-    
+
+    //! Create a new PERSISTENT modelselector
+    static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model);
+
     //! Create a new Category
     static DgnCategoryId InsertCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Scope scope = DgnCategory::Scope::Physical, DgnCategory::Rank rank = DgnCategory::Rank::Application);
+
+    //! Create a new PERSISTENT CategorySelector
+    static CategorySelectorCPtr InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categories = nullptr);
 
     //! Create a new CodeAuthority
     static DgnAuthorityId InsertNamespaceAuthority(DgnDbR, Utf8CP authorityName);

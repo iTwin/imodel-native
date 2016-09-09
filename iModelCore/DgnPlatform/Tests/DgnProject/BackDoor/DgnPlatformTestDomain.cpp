@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
@@ -131,7 +132,7 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_SetProperty(Utf8CP propName, ECN::ECValueCR value)
+DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value)
     {
 #define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
 #define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
@@ -152,13 +153,13 @@ DgnDbStatus TestElement::_SetProperty(Utf8CP propName, ECN::ECValueCR value)
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_SetProperty(propName, value);
+    return T_Super::_SetPropertyValue(propName, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_GetProperty(ECN::ECValueR value, Utf8CP propName) const
+DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName) const
     {
 #define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
 #define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
@@ -179,7 +180,7 @@ DgnDbStatus TestElement::_GetProperty(ECN::ECValueR value, Utf8CP propName) cons
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_GetProperty(value, propName);
+    return T_Super::_GetPropertyValue(value, propName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,12 +349,21 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTypeHandler::GetHandler());
+    return new TestPhysicalType(CreateParams(db, DgnModel::DictionaryId(), classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
-    stmt->BindId(1, GetAspectInstanceId(el));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
     m_testUniqueAspectProperty = stmt->GetValueText(0);
@@ -365,9 +375,9 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, GetAspectInstanceId(el));
+    stmt->BindId(2, el.GetElementId());
     return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
@@ -475,15 +485,15 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
+DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
-
 
     RegisterHandler(TestElementSub1Handler::GetHandler());
     RegisterHandler(TestElementSub2Handler::GetHandler());

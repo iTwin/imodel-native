@@ -4079,18 +4079,8 @@ LocalTransformerP   localTransformer
     // correctly, grouping the doubles and filling in the holes so just requires a memcpy.
     memcpy(&type66AppData[1], &type66, sizeof (GeoCoordType66));
     
-    // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection EXCEPT the Sys34 projection.
-    if ( (COORDSYS_SYS34 == type66.projType) || (COORDSYS_S3499 == type66.projType) || (COORDSYS_S3401 == type66.projType) )
-        {
-        // Sys34 and Sys34-1999
-        Byte*   outputData   = (Byte*) &type66AppData[429];
-        memcpy(outputData,   &projectionParams.sys34.zoneNo, 4);
-        memcpy(outputData+4, &projectionParams.sys34.x_off,  176);
-        }
-    else
-        {
-        memcpy(type66AppData+429, &projectionParams, sizeof(ProjectionParams));
-        }
+    // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection 
+    memcpy(type66AppData+429, &projectionParams, sizeof(ProjectionParams));
 
     //  The first short is the primary/alt flag
     //  The rest is the GeoCoordType66

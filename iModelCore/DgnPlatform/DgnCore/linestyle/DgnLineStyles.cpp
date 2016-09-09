@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/DgnLineStyles.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -47,7 +47,7 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
     Statement update;
-    update.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Style) " SET Name=?,Data=? WHERE Type=" DGN_STYLE_TYPE_Line " AND Id=?");
+    update.Prepare(m_dgndb, "UPDATE " DGN_TABLE(BIS_CLASS_Style) " SET Name=?,Data=? WHERE Type=" DGN_STYLE_TYPE_Line " AND Id=?");
     update.BindText(1, name, Statement::MakeCopy::No);
     update.BindBlob(2, (void const*)&data[0], (int)data.size() + 1, Statement::MakeCopy::No);
     update.BindId(3, styleId);

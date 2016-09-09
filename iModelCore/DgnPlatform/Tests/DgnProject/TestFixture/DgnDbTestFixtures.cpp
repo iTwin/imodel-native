@@ -269,24 +269,3 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
     return m_db->Elements().Insert(*el)->GetElementId();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
-    {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
-    EXPECT_TRUE(view.Insert().IsValid());
-
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-
-    SpatialViewController viewController (dgnDb, view.GetViewId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
-    viewController.ChangeCategoryDisplay(categoryId, true);
-    viewController.ChangeModelDisplay(model.GetModelId(), true);
-
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-    }
-
-

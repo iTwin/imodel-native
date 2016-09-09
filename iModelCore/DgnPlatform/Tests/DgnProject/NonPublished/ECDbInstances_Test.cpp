@@ -38,9 +38,9 @@ TEST(ECDbInstances, DgnElement)
     DgnDbR project = *tdm.GetDgnProjectP();
 
     ECN::ECSchemaP dgnschema = NULL;
-    auto schemaStat = project.Schemas().GetECSchema(dgnschema, DGN_ECSCHEMA_NAME);
+    auto schemaStat = project.Schemas().GetECSchema(dgnschema, BIS_ECSCHEMA_NAME);
     ASSERT_EQ(SUCCESS, schemaStat);
-    WString classNameW(DGN_CLASSNAME_ElementGraphics, BentleyCharEncoding::Utf8);
+    WString classNameW(BIS_CLASS_ElementGraphics, BentleyCharEncoding::Utf8);
     ECN::ECClassP elementClass = dgnschema->GetClassP(classNameW.c_str());
     ASSERT_TRUE(elementClass != NULL);
 
@@ -406,8 +406,7 @@ DgnDbPtr CreateEmptyProject(DgnDbPtr& project, WCharCP projectPathname)
             return NULL;
         }
 
-    CreateDgnDbParams params;
-    return DgnDb::CreateDgnDb(NULL, BeFileName(projectPathname), params);
+    return DgnDb::CreateDgnDb(NULL, BeFileName(projectPathname), CreateDgnDbParams("ECDbInstances_Test"));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -21,19 +21,19 @@
     // Set an entry in the dictionary of DgnDbScript functions
     export function RegisterDgnDbScript(scriptName: string, scriptFunction: any): void { m_dgnDbScriptFunctions[scriptName] = scriptFunction; }
 
-    /** The alias of the dgn schema namespace */
-    export var DGN_ECSCHEMA_NAME = "dgn";
+    /** The alias of the BisCore schema namespace */
+    export var BIS_ECSCHEMA_NAME = "BisCore";
     /** The alias of the Generic schema namespace */
     export var GENERIC_ECSCHEMA_NAME = "Generic";
 
     /** The name of the GeometricElement class in the dgn schema. */
-    export var DGN_CLASSNAME_GeometricElement = "GeometricElement";
+    export var BIS_CLASS_GeometricElement = "GeometricElement";
     /** The name of the GeometricElement3d class in the dgn schema. */
-    export var DGN_CLASSNAME_GeometricElement3d = "GeometricElement3d";
+    export var BIS_CLASS_GeometricElement3d = "GeometricElement3d";
     /** The name of the SpatialElement class in the dgn schema. */
-    export var DGN_CLASSNAME_SpatialElement = "SpatialElement";
+    export var BIS_CLASS_SpatialElement = "SpatialElement";
     /** The name of the PhysicalElement class in the dgn schema. */
-    export var DGN_CLASSNAME_PhysicalElement = "PhysicalElement";
+    export var BIS_CLASS_PhysicalElement = "PhysicalElement";
     /** The name of the PhysicalObject class in the Generic schema. */
     export var GENERIC_CLASSNAME_PhysicalObject = "PhysicalObject";
 
@@ -49,9 +49,9 @@
     /**
      * Returns the fully qualified ECSQL name of the specified ECClass in the dgn schema. 
      */
-    export function DGN_SCHEMA(name: string): string
+    export function BIS_SCHEMA(name: string): string
     {
-        return DGN_ECSCHEMA_NAME + "." + name;
+        return BIS_ECSCHEMA_NAME + "." + name;
     }
 
     /**

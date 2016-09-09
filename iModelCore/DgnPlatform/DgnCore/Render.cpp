@@ -297,9 +297,9 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    DgnQueryViewCP qv = const_cast<DgnViewportR>(vp).GetQueryViewCP();
-    if (nullptr != qv)
-        m_activeVolume = qv->GetActiveVolume();
+    SpatialViewControllerCP sv = vp.GetSpatialViewControllerCP();
+    if (nullptr != sv)
+        m_activeVolume = sv->GetActiveVolume();
     }
 
 /*---------------------------------------------------------------------------------**//**

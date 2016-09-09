@@ -199,7 +199,7 @@ TextAnnotationSeedPtr TextAnnotationSeed::CreateEffectiveSeed(TextAnnotationSeed
 //---------------------------------------------------------------------------------------
 size_t TextAnnotationSeed::QueryCount(DgnDbR db)
     {
-    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed));
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_TextAnnotationSeed));
     if (!select.IsValid())
         return 0;
 
@@ -215,7 +215,7 @@ size_t TextAnnotationSeed::QueryCount(DgnDbR db)
 TextAnnotationSeed::Iterator TextAnnotationSeed::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_TextAnnotationSeed), 0);
 
     return iter;
     }

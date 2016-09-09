@@ -51,7 +51,6 @@
 #include <DgnPlatform/JsonUtils.h>
 #include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/NullContext.h>
-#include <DgnPlatform/QueryView.h>
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/RegionUtil.h>
 #include <DgnPlatform/RenderMaterial.h>

@@ -74,7 +74,7 @@ namespace dgn_ElementHandler
     {
         friend struct Dgn::DgnElement;
         friend struct Dgn::DgnElements;
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
@@ -96,25 +96,85 @@ namespace dgn_ElementHandler
     //! The ElementHandler for GeometricElement3d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for PhysicalElement
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SpatialLocationElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialLocationElement, SpatialLocation, Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for AnnotationElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Annotation2d : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for DrawingGraphic
     struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationContentElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationContent : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationContentElement, InformationContentElement, InformationContent, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationCarrierElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationCarrier : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationCarrierElement, InformationCarrierElement, InformationCarrier, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Document
+    struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Document, Dgn::Document, Document, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Drawing
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Document
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Drawing, Dgn::Drawing, Drawing, Document, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Sheet
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Sheet, Dgn::Sheet, Sheet, Document, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for DefinitionElement
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for PhysicalType
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Subject
+    struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, InformationContent, DGNPLATFORM_EXPORT)
     };
 };
 
@@ -133,7 +193,7 @@ namespace dgn_AspectHandler
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : DgnDomain::Handler
     {
         friend struct DgnElement;
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
     public:

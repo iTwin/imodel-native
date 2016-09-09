@@ -12,6 +12,8 @@ GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
 #----------------------------------------------------------------------------------------
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
+DgnElementTests.ResetStatistics                         # Improper assumptions about element counts
+
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -81,7 +83,7 @@ DgnChangeSummaryTestFixture.ValidateChangeSummaries
 RevisionTestFixture.Codes
 
 DgnScriptTest.TestEga
-
+BackwardsCompatibilityTests.OpenDgndbInCurrent # bim0100 is not backwards compatible with dgndb0601-16q2
 RealityDataWorkerThread.DoWork
     # DgnDb61-16Q2-Dev, DEBUG, WinX86
     # [ RUN      ] RealityDataWorkerThread.DoWork
@@ -130,19 +132,3 @@ RealityDataThreadPool.SpawnsThreads
     # Actual: false
     # Expected: true
     # [  FAILED  ] RealityDataThreadPool.SpawnsThreads (5172 ms)
-
-CsvFileTests.GetColumns
-    # DgnDb0601Dev, WinX64, DEBUG
-    # [ RUN      ] CsvFileTests.GetColumns
-    # F:\DgnDb0601Dev\src-staging\DgnPlatform\Tests\DgnProject\NonPublished\CsvFile_Test.cpp(105): error: Value of: csvfile != nullptr
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] CsvFileTests.GetColumns (1 ms)
-
-CsvFileTests.GetRowAndMaxColumnCount
-    # DgnDb0601Dev, WinX64, DEBUG
-    # [ RUN      ] CsvFileTests.GetRowAndMaxColumnCount
-    # F:\DgnDb0601Dev\src-staging\DgnPlatform\Tests\DgnProject\NonPublished\CsvFile_Test.cpp(122): error: Value of: csvfile != nullptr
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] CsvFileTests.GetRowAndMaxColumnCount (0 ms)

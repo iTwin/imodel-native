@@ -225,6 +225,9 @@ DRange3d _GetEntityRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool _IsEqual (ISolidKernelEntityCR entity) const override
     {
+    if (this == &entity)
+        return true;
+
     OpenCascadeEntity const* ocEntity;
 
     if (NULL == (ocEntity = dynamic_cast <OpenCascadeEntity const*>(&entity)))

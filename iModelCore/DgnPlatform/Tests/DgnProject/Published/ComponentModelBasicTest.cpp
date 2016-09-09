@@ -84,17 +84,6 @@ DgnDbPtr ComponentModelBasicTest::initDb(WCharCP fileName, Db::OpenMode mode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
-    {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
-    catalogModel->SetInGuiList(false);
-    return catalogModel->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelBasicTest:: SetScriptLibrary()
@@ -165,7 +154,7 @@ void ComponentModelBasicTest::CreateAndImportComponentSchema(DgnDbPtr& db)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     TsComponentParameterSet params;
     params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
@@ -192,7 +181,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
@@ -225,7 +214,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
@@ -449,7 +438,7 @@ TEST_F(ComponentModelBasicTest, QueryComponentDefs)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
@@ -493,8 +482,8 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
     EXPECT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
-    SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
+    PhysicalModelPtr targetModel = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
+    EXPECT_TRUE(targetModel.IsValid());
 
     // When Script library is not enabled
     DgnElementCPtr uniqueInstance = ComponentDef::MakeUniqueInstance(&status, *targetModel, *cdef->MakeVariationSpec());
@@ -530,8 +519,8 @@ TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
     EXPECT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
-    SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
+    PhysicalModelPtr targetModel = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
+    EXPECT_TRUE(targetModel.IsValid());
 
     // When Script library is not enabled
     DgnElementCPtr uniqueInstance = ComponentDef::MakeUniqueInstance(&status, *targetModel, *cdef->MakeVariationSpec());
@@ -565,12 +554,15 @@ TEST_F(ComponentModelBasicTest, Variations)
 
     //---------------------------------------------------------------------------------------------------------------
     //  Create the catalog model in the client.
-    SpatialModelPtr catalogModel1;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel1, *m_db, DgnModel::CreateModelCode("CatelogModel")));
-    SpatialModelPtr catalogModel2;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel2, *m_db, DgnModel::CreateModelCode("OtherCatelogModel")));
-    SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
+    SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
+    SubjectCPtr subjectCatalog1 = Subject::CreateAndInsert(*rootSubject, "Catalog");
+    PhysicalModelPtr catalogModel1 = PhysicalModel::CreateAndInsert(*subjectCatalog1, DgnModel::CreateModelCode("CatalogModel"));
+    ASSERT_TRUE(catalogModel1.IsValid());
+    SubjectCPtr subjectCatalog2 = Subject::CreateAndInsert(*rootSubject, "OtherCatalog");
+    PhysicalModelPtr catalogModel2 = PhysicalModel::CreateAndInsert(*subjectCatalog2, DgnModel::CreateModelCode("OtherCatalogModel"));
+    ASSERT_TRUE(catalogModel2.IsValid());
+    SubjectCPtr subjectInstances = Subject::CreateAndInsert(*rootSubject, "Instances");
+    PhysicalModelPtr targetModel = PhysicalModel::CreateAndInsert(*subjectInstances, DgnModel::CreateModelCode("Instances"));
     
     // Register Script
     RegisterBoxModelResolverScript();
@@ -643,8 +635,11 @@ TEST_F(ComponentModelBasicTest, MakeVariationInstance)
     ASSERT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
-    SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
+    SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
+    SubjectCPtr targetModelSubject = Subject::CreateAndInsert(*rootSubject, "Instances"); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(targetModelSubject.IsValid());
+    PhysicalModelPtr targetModel = PhysicalModel::Create(*targetModelSubject, DgnModel::CreateModelCode("Instances"));
+    EXPECT_TRUE(targetModel.IsValid());
 
     //---------------------------------------------------------------------------------------------------------------
     // Register Scripts
