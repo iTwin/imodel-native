@@ -140,7 +140,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RemoveBasicUser(Credentials credentials, I
 
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::UserDefinition);
     Utf8String filter;
-    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::Name, credentials.GetUsername());
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::Name, credentials.GetUsername().c_str());
     query.SetFilter(filter);
 
     auto finalResult = std::make_shared<DgnDbServerStatusResult>();
