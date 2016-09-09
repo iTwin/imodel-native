@@ -1030,6 +1030,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
     LockRequestCR         locks,
     DgnCodeSet            codes,
     BeBriefcaseId         briefcaseId,
+    Utf8StringCR          masterFileId,
     Utf8StringCR          lastRevisionId,
     ICancellationTokenPtr cancellationToken
 ) const
@@ -1063,11 +1064,11 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
     {
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
-    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, false, true);
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, false, true);
 
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
