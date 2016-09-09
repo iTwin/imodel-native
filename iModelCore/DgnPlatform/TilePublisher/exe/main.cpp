@@ -323,7 +323,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
 
     auto cameraView = m_viewController._ToCameraView();
-    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    bool useCamera = nullptr != cameraView /* ###TODO? Apparently no longer possible to turn camera off && cameraView->IsCameraOn() */;
     DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
     if (!useCamera)
         {
