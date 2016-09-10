@@ -1903,6 +1903,7 @@ ITransactionHandler::PreActionStatus DTMElementDisplayHandler::_OnReplace (EditE
         ElementHandle::XAttributeIter xAttrHandle (element);
 
         bvector<XAttributeId> deleteMap;
+        DTMXAttributeHandler::StartTMPersist();
         while (xAttrHandle.IsValid())
             {
             XAttributeHandlerId handId = xAttrHandle.GetHandlerId();
@@ -1937,6 +1938,7 @@ ITransactionHandler::PreActionStatus DTMElementDisplayHandler::_OnReplace (EditE
             }
 
         TMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
+        DTMXAttributeHandler::EndTMPersist();
 
         DTMXAttributeHandler::ReloadData (dtmDataEl.GetElementRef ());
         }

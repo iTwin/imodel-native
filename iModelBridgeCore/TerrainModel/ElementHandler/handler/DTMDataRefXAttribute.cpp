@@ -248,6 +248,16 @@ StatusInt DTMDataRefXAttribute::ReplaceDTM (BcDTMR bcDTM, bool disposeDTM)
     }
 
 //=======================================================================================
+// @bsimethod                                                    Daryl.Holmwood  07/10
+//=======================================================================================
+bool DTMDataRefXAttribute::IsSameDTM(BcDTMR bcDTM)
+    {
+    if (nullptr != m_allocator &&  bcDTM.GetTinHandle() == m_allocator->GetDTM()->GetTinHandle())
+        return true;
+    return false;
+    }
+
+//=======================================================================================
 // @bsiclass                                                    Daryl.Holmwood  08/11
 //=======================================================================================
 double DTMDataRefXAttribute::_GetLastModified()

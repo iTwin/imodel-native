@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmCheck.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -92,99 +92,114 @@ BENTLEYDTM_EXPORT int bcdtmCheck_tinComponentDtmObject(BC_DTM_OBJ *dtmP)
 ** This Function Checks The Integrity Of A Dtm Object
 **
 */
-{
- int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
-/*
-** Write Entry Message
-*/
- if( dbg ) bcdtmWrite_message(0,0,0,"Check DTM Object %p Tin Component",dtmP) ;
-/*
-** Test For Valid Dtm Object
-*/
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
-/*
-** Check For Tin Error State
-*/
-  if( dtmP->dtmState == DTMState::TinError ) 
     {
-     bcdtmWrite_message(0,0,0,"DTM Object %p Tin Structure Is Invalid",dtmP) ;
-     goto errexit ;
+    int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
+    /*
+    ** Write Entry Message
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Check DTM Object %p Tin Component", dtmP);
+    /*
+    ** Test For Valid Dtm Object
+    */
+    if (bcdtmObject_testForValidDtmObject(dtmP)) goto errexit;
+    /*
+    ** Check For Tin Error State
+    */
+    if (dtmP->dtmState == DTMState::TinError)
+        {
+        bcdtmWrite_message(0, 0, 0, "DTM Object %p Tin Structure Is Invalid", dtmP);
+        goto errexit;
+        }
+
+    long dtmFeature;
+    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
+        {
+        DPoint3d* featurePtsP = nullptr;
+        long numFeaturePts;
+        if (bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP, dtmFeature, (DPoint3d **)&featurePtsP, &numFeaturePts))
+            {
+            bcdtmWrite_message(1, 0, 0, "Failed to get points"); goto errexit;
+            goto errexit;
+            }
+        if (nullptr == featurePtsP)
+            goto errexit;
+        free(featurePtsP);
+        }
+    /*
+    ** Only Check Tin Component Of Dtm Object
+    */
+    if (dtmP->dtmState == DTMState::Tin)
+        {
+        /*
+        **   Check Topology
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking Tin Topology");
+        if (bcdtmCheck_topologyDtmObject(dtmP, 1))
+            {
+            bcdtmWrite_message(1, 0, 0, "Tin Topology Invalid"); goto errexit;
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Tin Topology Valid");
+        /*
+        **   Check Precision
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking Tin Precision");
+        if (bcdtmCheck_precisionDtmObject(dtmP, 0))
+            {
+            bcdtmWrite_message(1, 0, 0, "Tin Precision Invalid");
+            goto errexit;
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Tin Precision Valid");
+        /*
+        **   Check Topology DTM Features
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking Tin Feature Topology");
+        if (bcdtmCheck_topologyDtmFeaturesDtmObject(dtmP, dbg))
+            {
+            bcdtmWrite_message(1, 0, 0, "Tin Feature Topolgy Invalid");
+            goto errexit;
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Tin Feature Topology Valid");
+        /*
+        **   Check Sort Order Dtm Object
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking Dtm Sort Order");
+        if (bcdtmCheck_sortOrderDtmObject(dtmP, 0))
+            {
+            bcdtmWrite_message(1, 0, 0, "Dtm Sort Order Invalid");
+            goto errexit;
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Dtm Sort Order Valid");
+        /*
+        **   Check For Intersecting Hull Lines
+        */
+        /*
+             if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Intersecting Hull Lines") ;
+             if( bcdtmCheck_forIntersectingTinHullLinesDtmObject(dtmP,0) )
+               {
+                bcdtmWrite_message(1,0,0,"Intersecting Hull Lines") ;
+                goto errexit ;
+            }
+             if( dbg ) bcdtmWrite_message(0,0,0,"No Intersecting Hull Lines") ;
+        */
+
+        }
+    /*
+    ** Clean Up
+    */
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check DTM Object %p Tin Component Completed", dtmP);
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check DTM Object %p Tin Component Error", dtmP);
+cleanup:
+    /*
+    ** Job Completed
+    */
+    return(ret);
+    /*
+    ** Error Exit
+    */
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
     }
-/*
-** Only Check Tin Component Of Dtm Object
-*/
-  if( dtmP->dtmState == DTMState::Tin )
-    {
-/*
-**   Check Topology
-*/
-     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Tin Topology") ;
-     if( bcdtmCheck_topologyDtmObject(dtmP,1))
-       { 
-        bcdtmWrite_message(1,0,0,"Tin Topology Invalid") ; goto errexit ; 
-       }
-     if( dbg ) bcdtmWrite_message(0,0,0,"Tin Topology Valid") ;
-/*
-**   Check Precision
-*/
-     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Tin Precision") ;
-     if( bcdtmCheck_precisionDtmObject(dtmP,0) ) 
-       { 
-        bcdtmWrite_message(1,0,0,"Tin Precision Invalid") ;
-        goto errexit ;
-       }
-     if( dbg ) bcdtmWrite_message(0,0,0,"Tin Precision Valid") ;
-/*
-**   Check Topology DTM Features
-*/
-     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Tin Feature Topology") ;
-     if( bcdtmCheck_topologyDtmFeaturesDtmObject(dtmP,dbg))
-       {
-        bcdtmWrite_message(1,0,0,"Tin Feature Topolgy Invalid") ;
-        goto errexit ;
-       }
-     if( dbg ) bcdtmWrite_message(0,0,0,"Tin Feature Topology Valid") ;
-/*
-**   Check Sort Order Dtm Object
-*/
-     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Dtm Sort Order") ;
-     if( bcdtmCheck_sortOrderDtmObject(dtmP,0) ) 
-       { 
-        bcdtmWrite_message(1,0,0,"Dtm Sort Order Invalid") ;
-        goto errexit ; 
-       }
-     if( dbg ) bcdtmWrite_message(0,0,0,"Dtm Sort Order Valid") ;
-/*
-**   Check For Intersecting Hull Lines
-*/
-/*
-     if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Intersecting Hull Lines") ;
-     if( bcdtmCheck_forIntersectingTinHullLinesDtmObject(dtmP,0) )
-       {
-        bcdtmWrite_message(1,0,0,"Intersecting Hull Lines") ;
-        goto errexit ; 
-    } 
-     if( dbg ) bcdtmWrite_message(0,0,0,"No Intersecting Hull Lines") ;
-*/     
-     
-    } 
-/*
-** Clean Up
-*/
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Check DTM Object %p Tin Component Completed",dtmP) ;
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Check DTM Object %p Tin Component Error",dtmP) ;
- cleanup :
-/*
-** Job Completed
-*/
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup  ;
-}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

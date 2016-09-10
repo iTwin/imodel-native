@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmObj.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
  #include "bcDTMBaseDef.h"
@@ -5344,8 +5344,19 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
        case DTMFeatureState::PointsArray : 
        case DTMFeatureState::TinError    : 
        case DTMFeatureState::Rollback     : 
-          memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d)) ;
-       break ;
+           {
+           auto dataP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI);
+           if (dataP == nullptr)
+               {
+               free(*featPtsPP);
+               *featPtsPP = nullptr;
+               *numFeatPtsP = 0;
+               BeAssert(false);
+               goto errexit;
+               }
+           memcpy(*featPtsPP, dataP, dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d));
+           }
+           break ;
 /*
 **     Get Points From Point Offset Array
 */ 

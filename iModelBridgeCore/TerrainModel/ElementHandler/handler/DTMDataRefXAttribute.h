@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRefXAttribute.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,7 @@ public:
     public: virtual DTMQvCacheDetails* _GetDTMDetails (ElementHandleCR element, DTMDataRefPurpose purpose, ViewContextR context, DTMDrawingInfo& drawingInfo) override;
 #endif
     public: StatusInt ReplaceDTM(BcDTMR bcDTM, bool disposeDTM);   // Shouldn't be needed
+    public: bool IsSameDTM(BcDTMR bcDTM);
     virtual ElementHandleCR GetGraphicalElement (void) const override
         {
         return m_graphicalElement;

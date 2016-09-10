@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayUtils.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -90,6 +90,9 @@ bool GetViewVectorPoints (DTMDrawingInfo& drawingInfo, ViewContextR context, DTM
     Transform trans;
     context.GetCurrLocalToFrustumTrans (trans);
     trans.inverseOf (&trans);
+
+    if (!context.GetIPickGeom ())
+        return false;
 
     point = context.GetIPickGeom ()->GetPickPointRoot();
 

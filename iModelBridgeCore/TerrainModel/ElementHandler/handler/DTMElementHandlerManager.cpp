@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementHandlerManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -332,6 +332,12 @@ void DTMElementHandlerManager::ScheduleFromMrDtmFile(DgnModelRefP dgnModelRefP, 
 //=======================================================================================
 StatusInt DTMElementHandlerManager::ScheduleFromDtm (EditElementHandleR editHandle, ElementHandleCP templateElement, BcDTMR dtm, TransformCR storageTransformation, DgnModelRefR modelRef, bool disposeDTM)
     {
+    RefCountedPtr<DTMDataRef> dataRef;
+    DTMElementHandlerManager::GetDTMDataRef(dataRef, editHandle);
+    DTMDataRefXAttribute* xAttributeDTMDataRef = dynamic_cast<DTMDataRefXAttribute*>(dataRef.get());
+
+    if (nullptr != xAttributeDTMDataRef && xAttributeDTMDataRef->IsSameDTM(dtm))
+        return false;
     Transform trsf;
     Transform dtmTransform;
 
