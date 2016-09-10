@@ -466,7 +466,7 @@ static RefCountedPtr<PublishTileNode> tileFromNode(NodeR node, SceneR scene, Tra
     toTile.Multiply (range, range);
 
     RefCountedPtr<PublishTileNode>  tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
-    static size_t                   s_depthLimit = 4;                    // Useful for limiting depth when debugging...
+    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
