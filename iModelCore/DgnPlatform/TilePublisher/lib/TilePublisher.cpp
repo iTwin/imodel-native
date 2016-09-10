@@ -93,7 +93,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #endif
 
     TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
+    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, false);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -1092,6 +1092,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     if (realityModelTilesets.empty())
         m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
+
+    progressMeter._SetModel (m_viewController.GetTargetModel());
 
     WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
     Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);
