@@ -113,7 +113,7 @@ private:
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : Dgn::TileTree::Tile(parent) {}
+    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxSize (0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}

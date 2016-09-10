@@ -390,7 +390,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
                 continue;
 
             PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
-            static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
+            static bool         s_supplyNormalsForLighting = false;         // Not needed as we are going to ignore lighting (it is baked into the capture).
 
             if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
                 polyface->BuildPerFaceNormals();
@@ -426,7 +426,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
                 builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
 
             }
-        }
+        }                                                                                                                                                                                                                        
 
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
@@ -437,7 +437,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
 
 };  //  PublishTileNode
 
-//=======================================================================================
+//=======================================================================================                                                               a
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct Publish3mxScene : Scene
@@ -466,7 +466,7 @@ static RefCountedPtr<PublishTileNode> tileFromNode(NodeR node, SceneR scene, Tra
     toTile.Multiply (range, range);
 
     RefCountedPtr<PublishTileNode>  tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
-    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    static size_t                   s_depthLimit = 4;                    // Useful for limiting depth when debugging...
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
@@ -499,3 +499,6 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
     rootTile = rootPublishTile;
     return TileGenerator::Status::Success;
     }
+
+
+                                       
