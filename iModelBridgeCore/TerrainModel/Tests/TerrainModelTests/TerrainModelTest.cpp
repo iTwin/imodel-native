@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     int stat = RUN_ALL_TESTS();
     g_stackExaminer->DumpStackInfo();
 
-    printf(" BSIBaseGeom counters: (Malloc %ld) (Calloc %ld) (Realloc %ld) (Free %ld) (DIFF %ld)\n",
+    printf(" BSIBaseGeom counters: (Malloc %lld) (Calloc %lld) (Realloc %lld) (Free %lld) (DIFF %lld)\n",
         BSIBaseGeom::GetNumMalloc(),
         BSIBaseGeom::GetNumCalloc(),
         BSIBaseGeom::GetNumRealloc(),

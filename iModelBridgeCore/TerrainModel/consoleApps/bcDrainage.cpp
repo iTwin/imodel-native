@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcDrainage.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "stdafx.h"
@@ -309,7 +309,7 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                                  //  Get Point For Pond Determination
 
                                  int ap,np,sp = tempDtmP->hullPoint ;
-                                 double x,y,z ;
+                                 double x_local,y_local,z ;
                                  bool pointFound=false ; 
                                  do
                                      {
@@ -318,8 +318,8 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                                      if( nodeAddrP(tempDtmP,ap)->hPtr != sp )
                                          {
                                           pointFound = true ;
-                                          x = ( pointAddrP(tempDtmP,sp)->x + pointAddrP(tempDtmP,ap)->x ) / 2.0 ;
-                                          y = ( pointAddrP(tempDtmP,sp)->y + pointAddrP(tempDtmP,ap)->y ) / 2.0 ;
+                                          x_local = ( pointAddrP(tempDtmP,sp)->x + pointAddrP(tempDtmP,ap)->x ) / 2.0 ;
+                                          y_local = ( pointAddrP(tempDtmP,sp)->y + pointAddrP(tempDtmP,ap)->y ) / 2.0 ;
                                           z = ( pointAddrP(tempDtmP,sp)->z + pointAddrP(tempDtmP,ap)->z ) / 2.0 ;
                                          } 
                                      sp = np ; 
@@ -328,8 +328,8 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                                  if( ! pointFound && tempDtmP->numPoints == 3 )
                                      {
                                      pointFound = true ;
-                                     x = ( pointAddrP(tempDtmP,0)->x + pointAddrP(tempDtmP,1)->x + pointAddrP(tempDtmP,2)->x ) / 3.0 ;
-                                     y = ( pointAddrP(tempDtmP,0)->y + pointAddrP(tempDtmP,1)->y + pointAddrP(tempDtmP,2)->y ) / 3.0 ;
+                                     x_local = ( pointAddrP(tempDtmP,0)->x + pointAddrP(tempDtmP,1)->x + pointAddrP(tempDtmP,2)->x ) / 3.0 ;
+                                     y_local = ( pointAddrP(tempDtmP,0)->y + pointAddrP(tempDtmP,1)->y + pointAddrP(tempDtmP,2)->y ) / 3.0 ;
                                      z = ( pointAddrP(tempDtmP,0)->z + pointAddrP(tempDtmP,1)->z + pointAddrP(tempDtmP,2)->z ) / 3.0 ;
                                     } 
 
@@ -340,7 +340,7 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                                       bool pondDetermined=false ; 
                                       double pondElevation,pondDepth,pondVolume,pondArea ;
                                       Bentley::TerrainModel::DTMDynamicFeatureArray pondFeatures ;
-                                      if( BcDTMDrainage::CalculatePondForPoint(ibcDtm.get(),x,y,0.0,pondDetermined,pondElevation,pondDepth,pondArea,pondVolume,pondFeatures) == DTM_SUCCESS)
+                                      if( BcDTMDrainage::CalculatePondForPoint(ibcDtm.get(), x_local, y_local,0.0,pondDetermined,pondElevation,pondDepth,pondArea,pondVolume,pondFeatures) == DTM_SUCCESS)
                                       if( dbg && pondDetermined )
                                          {
                                          bcdtmWrite_message(0,0,0,"Pond Determined ** elevation = %8.3lf depth = %8.3lf volume = %12.3lf area = %15.8lf",pondElevation,pondDepth,pondVolume,pondArea) ;  
