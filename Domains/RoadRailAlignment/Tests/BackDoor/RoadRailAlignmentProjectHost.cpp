@@ -144,8 +144,8 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelI
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
-    createDgnDbParams.SetProjectName("RoadRailAlignmentProject");
-    createDgnDbParams.SetProjectDescription("Created by RoadRailAlignmentProjectHost");
+    createDgnDbParams.SetRootSubjectLabel("RoadRailAlignmentProject");
+    createDgnDbParams.SetRootSubjectDescription("Created by RoadRailAlignmentProjectHost");
     createDgnDbParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
     DbResult createStatus;
