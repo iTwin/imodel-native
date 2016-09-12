@@ -93,7 +93,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
 #endif
 
     TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
+    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, false);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -377,6 +377,11 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
  Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP  suffix)
     {
+    auto const& found = m_textureImages.find (&textureImage);
+
+    if (found != m_textureImages.end())
+        return found->second;
+
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
 
     Utf8String  textureId = Utf8String ("texture_") + suffix;
@@ -406,9 +411,9 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
     rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
 
-    size_t current_buffer_size = m_binaryData.size();
-    m_binaryData.resize(m_binaryData.size() + imageData.size());
-    memcpy(m_binaryData.data() + current_buffer_size, imageData.data(), imageData.size());
+    AddBinaryData (imageData.data(), imageData.size());
+
+    m_textureImages.Insert (&textureImage, textureId);
 
     return textureId;
     }
@@ -667,7 +672,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
             }
 
-        if (!isPolyline)
+        if (!isPolyline && !displayParams->GetIgnoreLighting())
             {
             materialValue["values"]["specularExponent"] = specularExponent;
 
@@ -782,18 +787,28 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
                accNormalId      = Concat("accNormal_", idStr),
                accBatchId       = Concat("accBatch_", idStr);
 
-    bvector<unsigned int> indices;
+    bvector<uint32_t>   indices;
+    bvector<uint16_t>   shortIndices;
+    bool                useShortIndices = mesh.Points().size() <= 0xffff;
 
     BeAssert (mesh.Triangles().empty() || mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
 
     if (!mesh.Triangles().empty())
         {
-        indices.reserve(mesh.Triangles().size() * 3);
         for (auto const& tri : mesh.Triangles())
             {
-            indices.push_back((unsigned int)tri.m_indices[0]);
-            indices.push_back((unsigned int)tri.m_indices[1]);
-            indices.push_back((unsigned int)tri.m_indices[2]);
+            if (useShortIndices)
+                {
+                shortIndices.push_back((uint16_t)tri.m_indices[0]);
+                shortIndices.push_back((uint16_t)tri.m_indices[1]);
+                shortIndices.push_back((uint16_t)tri.m_indices[2]);
+                }
+            else
+                {
+                indices.push_back(tri.m_indices[0]);
+                indices.push_back(tri.m_indices[1]);
+                indices.push_back(tri.m_indices[2]);
+                }
             }
         }
     else if (!mesh.Polylines().empty())
@@ -802,8 +817,16 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
             {
             for (size_t i=0; i<polyline.m_indices.size()-1; i++)
                 {
-                indices.push_back (polyline.m_indices[i]);
-                indices.push_back (polyline.m_indices[i+1]);
+                if (useShortIndices)
+                    {
+                    shortIndices.push_back ((uint16_t)polyline.m_indices[i]);
+                    shortIndices.push_back ((uint16_t)polyline.m_indices[i+1]);
+                    }
+                else
+                    {
+                    indices.push_back (polyline.m_indices[i]);
+                    indices.push_back (polyline.m_indices[i+1]);
+                    }
                 }
             }
         }
@@ -860,10 +883,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["bufferViews"][bvIndexId] = Json::objectValue;
     rootNode["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
     rootNode["bufferViews"][bvIndexId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvIndexId]["byteLength"] = indices.size() * sizeof(unsigned int);
-    rootNode["bufferViews"][bvIndexId]["target"] = GLTF_ELEMENT_ARRAY_BUFFER;
+    rootNode["bufferViews"][bvIndexId]["byteLength"] = useShortIndices ? (shortIndices.size() * sizeof(uint16_t)) : (indices.size() * sizeof(uint32_t));
+    rootNode["bufferViews"][bvIndexId]["target"] =  GLTF_ELEMENT_ARRAY_BUFFER;
 
-    AddBinaryData (indices.data(),  indices.size() *sizeof(unsigned int));
+    if (useShortIndices)
+        AddBinaryData (shortIndices.data(),  shortIndices.size() *sizeof(uint16_t));
+    else
+        AddBinaryData (indices.data(),  indices.size() *sizeof(uint32_t));
 
     if (mesh.ValidIdsPresent())
         {
@@ -895,8 +921,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId] = Json::objectValue;
     rootNode["accessors"][accIndexId]["bufferView"] = bvIndexId;
     rootNode["accessors"][accIndexId]["byteOffset"] = 0;
-    rootNode["accessors"][accIndexId]["componentType"] = GLTF_UINT32;
-    rootNode["accessors"][accIndexId]["count"] = indices.size();
+    rootNode["accessors"][accIndexId]["componentType"] = useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32;
+    rootNode["accessors"][accIndexId]["count"] = useShortIndices ? shortIndices.size() : indices.size();
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
 
@@ -1092,6 +1118,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     if (realityModelTilesets.empty())
         m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
+
+    progressMeter._SetModel (m_viewController.GetTargetModel());
 
     WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
     Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);

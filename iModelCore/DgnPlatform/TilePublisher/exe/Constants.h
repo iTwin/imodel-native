@@ -86,7 +86,9 @@ var tileset=%s
 var curPickedObjects = null;
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
-   %s
+   %s  // View options.
+   %s  // Tileset height adjustment. 
+
    viewer.camera.setView({
         "destination": new Cesium.Cartesian3(%f,%f,%f),
         "orientation": {
@@ -95,6 +97,7 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
         },
         "endTransform": tf
     });
+
 
    var elementIdCheckbox = document.getElementById('elementIdCheckbox');
    var pickingEnabled = elementIdCheckbox.checked;
@@ -130,6 +133,43 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
        }
    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 });
+
+function adjustTilesetHeight()
+    {
+	// Height adjustment. For now just try to move the mininum down to ground level (without terrain).
+	var terrainProvider = viewer.terrainProvider;
+    if (undefined != terrainProvider)
+		{
+        var root            = tileset._root;
+        var center          = root._boundingVolume._orientedBoundingBox.center;
+        var halfZ           = new Cesium.Cartesian3(), bottomCenter = new Cesium.Cartesian3();
+
+        Cesium.Matrix3.getColumn (root._boundingVolume._orientedBoundingBox.halfAxes, 2, halfZ);
+        Cesium.Cartesian3.multiplyByScalar (halfZ, .5, halfZ);      // Are these really half?? -- apparently not.
+        Cesium.Cartesian3.subtract (center, halfZ, bottomCenter);
+
+        var cartographic    = Cesium.Cartographic.fromCartesian (bottomCenter);
+
+        var positions = [ cartographic ];
+        var currentHeight = cartographic.height;
+
+        Cesium.sampleTerrain (terrainProvider, 15, positions).then(function() 
+            { 
+            var targetHeight = positions[0].height; 
+            var heightDelta  = targetHeight - currentHeight;
+
+            var deltaMagnitude = heightDelta / Cesium.Cartesian3.magnitude(center);
+            var delta = new Cesium.Cartesian3();
+            Cesium.Cartesian3.multiplyByScalar (center, deltaMagnitude, delta);
+
+            tileset.modelMatrix[12] += delta.x;
+            tileset.modelMatrix[13] += delta.y;
+            tileset.modelMatrix[14] += delta.z;
+            });
+		}
+    }
+
+
 
 </script>
 <div style="z-index:10000; position:absolute;top:0;left:0;background-color:whitesmoke;opacity:0.5;padding:5px; margin:5px">

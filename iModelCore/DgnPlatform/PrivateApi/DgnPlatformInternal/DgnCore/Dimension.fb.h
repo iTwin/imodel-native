@@ -10,7 +10,7 @@
 #include "flatbuffers/flatbuffers.h"
 
 
-namespace BentleyG0601 {
+namespace BentleyB0200 {
 namespace Dgn {
 namespace FB {
 
@@ -67,6 +67,6 @@ inline flatbuffers::Offset<DimensionPoints> CreateDimensionPoints(flatbuffers::F
 
 }  // namespace FB
 }  // namespace Dgn
-}  // namespace BentleyG0601
+}  // namespace BentleyB0200
 
 #endif  // FLATBUFFERS_GENERATED_DIMENSION_BENTLEYG0601_DGN_FB_H_

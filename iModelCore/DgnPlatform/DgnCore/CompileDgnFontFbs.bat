@@ -2,7 +2,7 @@
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: DgnCore/CompileDgnFontFbs.bat $
-rem   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=DgnFont
@@ -11,7 +11,7 @@ SET SrcFile=%SrcDir%%BaseName%.fbs
 SET GeneratedDir=%SrcDir%
 SET GeneratedFileName=%BaseName%_generated.h
 SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
-SET OutDir=%SrcRoot%DgnPlatform\PublicApi\DgnPlatform\DgnCore\
+SET OutDir=%SrcRoot%DgnPlatform\PublicApi\DgnPlatform\
 SET OutFile=%OutDir%%BaseName%.fb.h
 
 SET CompileCmd=%SrcRoot%libsrc\flatbuffers\bin\beflatc.exe -c

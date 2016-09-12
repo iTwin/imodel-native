@@ -34,12 +34,12 @@ struct TileCache : RealityData::Cache
 struct TileData
 {
 protected:
-    Root& m_root;
-    TilePtr m_tile;
-    Utf8String m_fileName;
-    Utf8String m_shortName;
-    mutable StreamBuffer m_tileBytes;
-    StreamBuffer* m_output;
+    Root& m_root;               // save this separate from tile, since that can be null
+    TilePtr m_tile;             // tile to be loaded.
+    Utf8String m_fileName;      // full file or URL name
+    Utf8String m_shortName;     // for loading or saving to tile cache
+    mutable StreamBuffer m_tileBytes; // when available, bytes are saved here
+    StreamBuffer* m_output;     // for "non tile" requests
 
 public:
     TileData(Utf8StringCR filename, TileP tile, Root& root, StreamBuffer* output) : m_fileName(filename), m_root(root), m_tile(tile), m_output(output) 
@@ -319,9 +319,9 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile)
         return ERROR;
         }
 
-    tile.SetIsQueued();
+    tile.SetIsQueued(); // mark as queued so we don't request it again.
     TileData data(_ConstructTileName(tile), (TileP) &tile, *this, nullptr);
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.DoRead();});
+    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.DoRead();}); // add to download queue
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,6 +483,7 @@ ElementAlignedBox3d Tile::ComputeRange() const
 
 /*-----------------------------------------------------------------------------------**//**
 * Count the number of tiles for this tile and all of its children.
+* for diagnostics only
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Tile::CountTiles() const
@@ -500,6 +501,7 @@ int Tile::CountTiles() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)
@@ -523,6 +525,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
         m_context.OutputGraphic(*branch, nullptr);
         }
 
+    // Substitute tiles are drawn behind "real" tiles so that when they arrive the better tiles overwrite the substitute ones.
     if (!m_substitutes.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
@@ -538,11 +541,12 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::RequestMissingTiles(RootR root)
     {
-    // this requests tiles in depth first order. Could also include distance to frontplane sort too.
+    // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
     for (auto const& tile : m_missing)
         {
         if (tile.second->IsNotLoaded())

@@ -207,6 +207,7 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
+    uint32_t    m_priority = 0;
     uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
     bool        m_timeoutIsPct = false;
     Query       m_query;
@@ -215,6 +216,8 @@ struct UpdatePlan
 public:
     Query& GetQueryR() {return m_query;}
     Query const& GetQuery() const {return m_query;}
+    void SetPriority(uint32_t val) {m_priority=val;}
+    uint32_t GetPriority() const {return m_priority;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void SetCreateSceneTimeoutMillis(uint32_t milliseconds) { m_timeout = milliseconds; m_timeoutIsPct=false;}
