@@ -52,3 +52,7 @@ CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCa
 ChangeManagerTests.CreateRelationship_SyncSetToActive_Success
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Crash, no output or stack printed>
+
+ChangeGraphTests.BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Crash, no output or stack printed>
