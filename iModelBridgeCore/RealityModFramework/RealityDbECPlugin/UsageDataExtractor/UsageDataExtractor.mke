@@ -1,0 +1,13 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityDbECPlugin/UsageDataExtractor/UsageDataExtractor.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+MsBuildPath=$(ProgramFiles)\MSBuild\12.0\Bin\msbuild.exe
+
+always:
+	|Calling msbuild from $(MsBuildPath)...
+	""$(MsBuildPath)" "$(_MakeFilePath)\$(_MakeFileName).csproj""

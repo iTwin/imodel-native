@@ -29,15 +29,59 @@ namespace UsageDataExtractor
             {
             try
                 {
-                if ( args.Length == 3 )
+                string fetchResultsFileName;
+                if ( args.Length == 4 )
                     {
-                    string fetchResultsFileName = args[1];
+                    fetchResultsFileName = args[1];
                     if ( args[0].ToLower() == "fetch" )
                         {
-                        string tableName = args[2];
-                        FetchResults(fetchResultsFileName, tableName);
-                        return;
+
+                        if ( !File.Exists(fetchResultsFileName) )
+                            {
+                            using ( StreamWriter file = new System.IO.StreamWriter(fetchResultsFileName) )
+                                {
+                                int year = Convert.ToInt32(args[2]);
+                                int month = Convert.ToInt32(args[3]);
+
+                                DateTime time = new DateTime(year, month, 1);
+
+                                string tableName = "BCLogETW" + time.ToString("yyyyMM");
+                                int day = 1;
+                                while ( day <= 31 )
+                                    {
+                                    int hour = 0;
+                                    while ( hour <= 23 )
+                                        {
+                                        try
+                                            {
+                                            time = new DateTime(year, month, day, hour, 0, 0);
+                                            string lowerPartitionKey = time.ToString("yyyy-MM-dd:HH");
+                                            string upperPartitionKey = time.AddHours(1).ToString("yyyy-MM-dd:HH");
+
+                                            FetchResults(file, tableName, lowerPartitionKey, upperPartitionKey);
+                                            }
+                                        catch ( ArgumentOutOfRangeException )
+                                            {
+                                            //This is not a valid day, meaning we've ended the month.
+                                            hour = 50;
+                                            day = 50;
+                                            }
+                                        hour++;
+                                        }
+                                    day++;
+                                    }
+                                }
+                            return;
+                            }
+                        else
+                            {
+                            throw new IOException("The output file already exists.");
+                            }
                         }
+                    }
+                else if ( args.Length == 3 )
+                    {
+                    fetchResultsFileName = args[1];
                     if ( args[0].ToLower() == "extract" )
                         {
                         string extractionResultsFileNameBase = args[2];
@@ -58,11 +102,14 @@ namespace UsageDataExtractor
 
         private static void PrintUsage()
             {
-            Console.Out.WriteLine("Usage 1: UsageDataExtractor.exe fetch [fetchFileName] [azureTableName]");
+            Console.Out.WriteLine("Usage 1: UsageDataExtractor.exe fetch [fetchFileName] [Year] [Month]");
             Console.Out.WriteLine("The fetch mode searches the GCS logs located in the azure table and gets all xrdp GUIDs captured by the logs, along with the email of the requester.");
             Console.Out.WriteLine("[fetchFileName] is the name of the file that will be written on disk and contain the results of the fetch operation.");
-            Console.Out.WriteLine("[azureTableName] is the name of the azure table containing the logs of the GCS. Typically covers only one month.");
-            Console.Out.WriteLine(@"Example: UsageDataExtractor.exe fetch C:\Users\MyName\Documents\QueryResults\xrdpGUIDsAUGUST.txt BCLogETW201608");
+            Console.Out.WriteLine("[Year] Is the year of the period for which we want the data.");
+            Console.Out.WriteLine("[Month] Is the month of the period for which we want the data.");
+            Console.Out.WriteLine("The extractor uses the year and month to know from which azure table to extract the data. Example : For 2016 08, the table name is BCLogETW201608");
+            Console.Out.WriteLine(@"Example: UsageDataExtractor.exe fetch C:\Users\MyName\Documents\QueryResults\xrdpGUIDsAUGUST.txt 2016 08");
+            Console.Out.WriteLine("BE WARNED: THIS MODE CAN RUN FOR MANY HOURS, PROBABLY SEVERAL DAYS");
             Console.Out.WriteLine("-------------------------------------------------------------------------");
             Console.Out.WriteLine("Usage 2: UsageDataExtractor.exe extract [fetchFileName] [resultsFileNameBase]");
             Console.Out.WriteLine("Downloads the actual xrdp files from the GCS and extracts useful information.");
@@ -71,20 +118,17 @@ namespace UsageDataExtractor
             Console.Out.WriteLine(@"Example: UsageDataExtractor.exe extract C:\Users\MyName\Documents\QueryResults\xrdpGUIDsAUGUST.txt C:\Users\MyName\Documents\QueryResults\resultsAUGUST");
             }
 
-        private static void FetchResults (string fileName, string tableName)
+        private static void FetchResults (StreamWriter file, string tableName, string lowerPartitionKey, string upperPartitionKey)
             {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["connectionString"]);
             CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
             CloudTable logTable = tableClient.GetTableReference(tableName);
             //string condition = TableQuery.GenerateFilterCondition("ProductShortName", QueryComparisons.Equal, "ContextServices") + " and " +;
-            string condition = "ProductShortName eq 'ContextServices' and HttpMethod eq 'GET' and Content gt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--server/RealityModeling/PreparedPackag' and Content lt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--server/RealityModeling/PreparedPackah'";
+            string condition = "PartitionKey ge '" + lowerPartitionKey + "' and PartitionKey lt '" + upperPartitionKey + "' and ProductShortName eq 'ContextServices' and HttpMethod eq 'GET' and Content gt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackag' and Content lt 'INFO - Bentley.Mas: Request GET:''https://connect-contextservices.bentley.com/v2.3/Repositories/IndexECPlugin--Server/RealityModeling/PreparedPackah'";
             TableQuery<DynamicTableEntity> query = new TableQuery<DynamicTableEntity>().Where(condition).Select(new string[] { "Content", "User" });
 
             IEnumerable<DynamicTableEntity> results = logTable.ExecuteQuery(query);
-            if ( !File.Exists(fileName) )
-                {
-                using ( StreamWriter file = new System.IO.StreamWriter(fileName) )
-                    {
+
                     foreach ( var result in results )
                         {
                         string content = result.Properties["Content"].StringValue;
@@ -96,12 +140,7 @@ namespace UsageDataExtractor
                         file.Flush();
                         System.Console.WriteLine(id + " " + user);
                         }
-                    }
-                }
-            else
-                {
-                throw new IOException("The output file already exists.");
-                }
+
             }
 
         static void Extract (string inputName, string baseResultName)
