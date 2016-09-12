@@ -13,7 +13,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BeSQLite" BentleyBuildMakeFile="BeSQLite.mke" ApiNumber="G06">
+    <Part Name="BeSQLite" BentleyBuildMakeFile="BeSQLite.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
@@ -150,7 +150,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=BeSQLite -dTEST_COLLECTION_PRODUCT=BeSQLite-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="BeSQLite-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
