@@ -1342,10 +1342,11 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
     statement->BindId(1, instanceToDelete.GetECInstanceId());
 
     auto status = statement->Step();
+    if (BE_SQLITE_DONE == status)
+        return SUCCESS; // Relationship not found
+
     if (BE_SQLITE_ROW != status)
-        {
         return ERROR;
-        }
 
     ECInstanceKey child(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
 
