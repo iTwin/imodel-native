@@ -120,9 +120,19 @@ struct Task : RefCounted<NonCopyableClass>
         Finished,  //!< successfully finished processing
     };
 
+    struct Priority
+    {
+        uint32_t m_value;
+        static Priority Highest() {return Priority(0);}
+        static Priority Lowest() {return Priority(0xffff);}
+        Priority& operator++() {++m_value; return *this;}
+        explicit Priority(uint32_t val=0) : m_value(val) {}
+    };
+
     friend struct Queue;
 
 protected:
+    Priority    m_priority;
     Operation   m_operation;
     TargetPtr   m_target;
     Outcome     m_outcome = Outcome::Waiting;
@@ -148,12 +158,13 @@ public:
     //! called when this task is entered into the render queue
     virtual void _OnQueued() const {}
 
+    Priority GetPriority() const {return m_priority;} //!< Get the priority of this task
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
     Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
     Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
     double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
 
-    Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
+    Task(Target* target, Operation operation, Priority priority) : m_target(target), m_operation(operation), m_priority(priority) {}
 };
 
 //=======================================================================================
@@ -1655,6 +1666,7 @@ struct Target : RefCounted<NonCopyableClass>
 
 protected:
     bool               m_abort;
+    int                m_id; // for debugging
     System&            m_system;
     DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
@@ -1705,6 +1717,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
 
+    int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}

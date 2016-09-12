@@ -114,6 +114,7 @@ private:
     TileNodeCR              m_tile;
     ByteStream              m_binaryData;
     PublisherContext&       m_context;
+    bmap<TileTextureImageCP, Utf8String>    m_textureImages;
 
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
