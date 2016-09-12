@@ -471,12 +471,6 @@ bool ValidRelationshipRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClass
     if (relClass == nullptr)
         return true;
 
-    if (relClass->GetBaseClasses().size() > 1)
-        {
-        m_error->AddInconsistency(*relClass, Error::Kind::MultiInheritance);
-        return false;
-        }
-
     return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
     }
 
@@ -558,9 +552,6 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
         str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
 
         const Kind kind = inconsistency.m_kind;
-        if (Enum::Contains(kind, Kind::MultiInheritance))
-            str.append(" It has more than one base class which is not supported for ECRelationshipClasses.");
-
         if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
             str.append(" AnyClass must not be used as constraint.");
 

@@ -548,8 +548,6 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     ECRelationshipClass const* relClass = m_ecClass.GetRelationshipClassCP();
     BeAssert(relClass != nullptr);
 
-    BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
-
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
     ECDbLinkTableRelationshipMap linkTableRelationMap;

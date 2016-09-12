@@ -248,11 +248,10 @@ struct ValidRelationshipRule : ECSchemaValidationRule
             enum class Kind
                 {
                 None = 0,
-                MultiInheritance = 1,
-                HasAnyClassConstraint = 2,
-                HasRelationshipClassAsConstraint = 4,
-                IncompleteConstraintDefinition = 8,
-                HasKeyProperties = 16
+                HasAnyClassConstraint = 1,
+                HasRelationshipClassAsConstraint = 2,
+                IncompleteConstraintDefinition = 4,
+                HasKeyProperties = 8
                 };
 
             private:
