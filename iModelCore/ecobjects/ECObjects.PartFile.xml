@@ -12,7 +12,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="G06">
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 
@@ -243,7 +243,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="ECObjects-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
