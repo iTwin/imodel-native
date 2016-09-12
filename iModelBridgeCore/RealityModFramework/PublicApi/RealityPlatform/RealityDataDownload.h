@@ -92,8 +92,11 @@ public:
             {}
         };
 
+    //{{url, file},{url, file}}
     typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
+    //{{mirror set:{url, file}, {url, file}}, {mirror set: ...}} 
     typedef bvector<bvector<std::pair<AString, WString>>> Link_File_wMirrors;
+    //{{mirror set:{sister set:{url, file}, {url, file}}, {sister set:{url, file}}}{mirror set: ...}}
     typedef bvector<bvector<bvector<std::pair<AString, WString>>>> Link_File_wMirrors_wSisters;
 
     //! Create an instance of RealityDataDownload
