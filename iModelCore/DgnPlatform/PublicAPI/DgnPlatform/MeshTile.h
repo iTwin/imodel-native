@@ -351,6 +351,7 @@ public:
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     WStringCR GetSubdirectory() const { return m_subdirectory; }
     void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
+    void SetRange (DRange3dCR range) { m_range = range; }
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
