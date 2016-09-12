@@ -9,7 +9,7 @@
         <SubPart PartName="BeSecurityMavenArchive" />
     </Part>
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="G06">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
         <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
@@ -25,7 +25,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="G06">
+    <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeSecurityLibrary-OpenSSL" />
         <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
