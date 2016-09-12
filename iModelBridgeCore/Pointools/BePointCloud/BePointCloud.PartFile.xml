@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="G06">
+    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll"      PartFile="Bentley"   Repository="Bentley"/>
         <SubPart PartName="BePointCloudSubParts"/>
         <SubPart PartName="VortexLibs" PartFile="PointoolsVortexAPI" Repository="PointoolsVortexAPI" />
