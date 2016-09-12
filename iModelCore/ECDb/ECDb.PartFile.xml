@@ -17,7 +17,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke" ApiNumber="G06">
+    <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"  Repository="BESQLite"/>
         <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects" />
@@ -189,7 +189,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -221,7 +221,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
