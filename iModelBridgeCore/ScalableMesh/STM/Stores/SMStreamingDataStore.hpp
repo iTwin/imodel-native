@@ -10,6 +10,7 @@
 #pragma once
 
 #include "SMStreamingDataStore.h"
+#include "SMSQLiteStore.h"
 #include "../Threading\LightThreadPool.h"
 #include <condition_variable>
 #include <CloudDataSource/DataSourceAccount.h>
@@ -24,7 +25,8 @@ USING_NAMESPACE_IMAGEPP
 
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
-    :m_pathToHeaders(headers_path.c_str()),
+    : SMSQLiteSisterFile(nullptr),
+     m_pathToHeaders(headers_path.c_str()),
      m_use_node_header_grouping(areNodeHeadersGrouped),
      m_use_virtual_grouping(isVirtualGrouping)
     {
@@ -150,7 +152,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         accountAzure->setCaching(*accountCaching, DataSourceURL());
 
         // Set up default container
-        accountAzure->setPrefixPath(DataSourceURL((WString(L"scalablemeshtest/") + directory).c_str()));
+        accountAzure->setPrefixPath(DataSourceURL(directory.c_str()));
         }
 
     return DataSourceStatus();
@@ -347,7 +349,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_balanced = masterHeader["balanced"].asBool();
             indexHeader->m_depth = masterHeader["depth"].asUInt();
             // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
-            indexHeader->m_isTerrain = false/*masterHeader["isTerrain"].asBool()*/; 
+            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool(); 
 
             auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
             indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
@@ -699,8 +701,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    assert(!"Should be handled by local file");
-    return false;
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
@@ -925,8 +926,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
-    assert(!"Should not be called");
-    return false;    
+    if (!IsProjectFilesPathSet())
+        return false;
+
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
+    assert(sqliteFilePtr.IsValid() == true);
+
+    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
+
+    return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
@@ -937,10 +945,17 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
-    //NEW_SSTORE_RB : Need to be implement
-    assert(dataType != SMStoreDataType::Skirt && dataType != SMStoreDataType::ClipDefinition);
-    auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
+        {
+        SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
+        assert(sqlFilePtr.IsValid());
+        dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+        }
+    else
+        {
+        auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
+        }
 
     return true;    
     }

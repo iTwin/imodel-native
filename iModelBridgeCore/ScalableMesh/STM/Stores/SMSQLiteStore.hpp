@@ -5,6 +5,7 @@
 
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
+    : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
     }
@@ -14,18 +15,6 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
     // We didn't want to close it. It's ScalableMesh which did this stuff now (and if SMSQLiteFilePtr is destroy, close is automatically called)
     //m_smSQLiteFile->Close();    
 
-    if (m_smFeatureSQLiteFile.IsValid())
-        {
-        Utf8String dbFileName;         
-        bool result = m_smFeatureSQLiteFile->GetFileName(dbFileName); 
-        assert(result == true);
-        assert(m_smFeatureSQLiteFile->GetRefCount() == 1);
-        m_smFeatureSQLiteFile->Close();
-        m_smFeatureSQLiteFile = 0;        
-        WString dbFileNameW;
-        dbFileNameW.AssignUtf8(dbFileName.c_str());
-        _wremove(dbFileNameW.c_str());
-        }    
     }
 
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const
@@ -97,17 +86,7 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    if (m_projectFilesPath.length() > 0)
-        return false;
-    
-    m_projectFilesPath = projectFilesPath;
-
-    //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
-    //Force the opening/creation of project file in main thread to avoid global mutex.
-    GetSisterSQLiteFile(SMStoreDataType::DiffSet);        
-    GetSisterSQLiteFile(SMStoreDataType::Skirt);        
-
-    return true; 
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
@@ -132,7 +111,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
-    if (m_projectFilesPath.empty())
+    if (!IsProjectFilesPathSet())
         return false; 
 
     SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
@@ -141,117 +120,6 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDa
     dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
 
     return true;    
-    }
-
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType)
-    {    
-    switch (dataType)
-        {
-        case SMStoreDataType::LinearFeature :
-            {
-            Utf8String dbFileName;         
-            bool result = m_smSQLiteFile->GetFileName(dbFileName); 
-            assert(result == true);
-
-            WString name;
-            name.AssignUtf8(dbFileName.c_str());
-
-            sqlFileName = name.append(L"_feature"); //temporary file, deleted after generation
-            }
-            return true;
-            break;
-
-        case SMStoreDataType::DiffSet :
-            sqlFileName = m_projectFilesPath;
-            sqlFileName.append(L"_clips"); 
-            return true;
-            break;
-        case SMStoreDataType::ClipDefinition :
-        case SMStoreDataType::Skirt :
-            sqlFileName = m_projectFilesPath;
-            sqlFileName.append(L"_clipDefinitions"); 
-            return true;
-            break;
-
-        default : 
-            assert(!"Unknown data type");
-            break;
-        }    
-
-    return false;
-    }
-
-
-template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFile(SMStoreDataType dataType)
-    {    
-    SMSQLiteFilePtr sqlFilePtr; 
-
-    switch (dataType)
-        {
-        case SMStoreDataType::LinearFeature : 
-            {
-            if (!m_smFeatureSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
-                        
-                _wremove(sqlFileName.c_str());
-
-                m_smFeatureSQLiteFile = new SMSQLiteFile();
-                m_smFeatureSQLiteFile->Create(sqlFileName); 
-                }
-
-            sqlFilePtr = m_smFeatureSQLiteFile;        
-            }
-            break;
-        
-        case SMStoreDataType::DiffSet :         
-            {
-            if (!m_smClipSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);  
-
-                StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
-
-                if (status == 0)
-                    {                    
-                    m_smClipSQLiteFile->Create(sqlFileName); 
-                    }                                                                
-                }
-
-            sqlFilePtr = m_smClipSQLiteFile;                   
-            }
-            break;
-
-        case SMStoreDataType::ClipDefinition :
-        case SMStoreDataType::Skirt : 
-            {
-            if (!m_smClipDefinitionSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);  
-
-                StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
-
-                if (status == 0)
-                    {                    
-                    m_smClipDefinitionSQLiteFile->Create(sqlFileName); 
-                    }                                                                
-                }  
-
-            sqlFilePtr = m_smClipDefinitionSQLiteFile;                   
-            }
-            break;            
-
-        default : 
-            assert(!"Unknown datatype");
-            break;
-        }
-        
-    return sqlFilePtr;
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)

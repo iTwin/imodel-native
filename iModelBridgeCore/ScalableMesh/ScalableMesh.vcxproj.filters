@@ -756,12 +756,6 @@
     <ClInclude Include="STM\Threading\LightThreadPool.h">
       <Filter>Includes\Core\Threading</Filter>
     </ClInclude>
-    <ClInclude Include="STM\SMStreamingTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMStreamingTextureTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\CGALEdgeCollapse.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -965,6 +959,9 @@
     </ClInclude>
     <ClInclude Include="STM\SMNodeGroup.h">
       <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h">
+      <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1313,9 +1310,6 @@
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp">
       <Filter>Includes\AutomaticGroundDetection</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="STM\ScalableMeshNodeCreator.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1355,9 +1349,6 @@
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMStreamingTileStore.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\SMMemoryPool.cpp">
       <Filter>Includes\Core</Filter>
     </ClCompile>
@@ -1391,6 +1382,10 @@
     </ClCompile>
     <ClCompile Include="STM\Edits\ClipRegistry.cpp">
       <Filter>Source\Core\Edits</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
+    <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
+      <Filter>Source\Core\Stores</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

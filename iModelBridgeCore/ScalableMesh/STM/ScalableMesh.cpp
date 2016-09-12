@@ -780,7 +780,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             }
                         else 
                             {
-                            streamingSourcePath = datasetName;
+                            streamingSourcePath = L"scalablemeshtest/" + datasetName;
                             }
                         }
                     else
@@ -825,8 +825,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
-            if (isSingleFile && m_scmIndexPtr->IsTerrain())
+            if (m_scmIndexPtr->IsTerrain())
                 {
 
                 BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
