@@ -201,15 +201,12 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
     DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());
-    DgnModelPtr groupInformationModel = m_db->Models().GetModel(DgnModel::GroupInformationId());
     
     ASSERT_TRUE(repositoryModel.IsValid());
     ASSERT_TRUE(dictionaryModel.IsValid());
-    ASSERT_TRUE(groupInformationModel.IsValid());
 
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, repositoryModel->GetCode().GetNamespace().c_str());
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
-    ASSERT_STREQ(BIS_ECSCHEMA_NAME, groupInformationModel->GetCode().GetNamespace().c_str());
 
     // make sure that Delete against the root Subject fails
         {

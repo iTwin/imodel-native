@@ -172,8 +172,8 @@ TEST_F(DgnViewElemTest, CRUD)
     // Create a new view
     CameraViewDefinition tempView(*m_db, "TestView");
     tempView.SetDescr("Test Description");
-    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModelId((uint64_t)2)));
-    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1));
+    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
+    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1)); // FIXME: Need to point at a DrawingModel!
     tempView.SetDescr("TestDrawingView Description");
 
     // Insert 
