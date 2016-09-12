@@ -26,9 +26,6 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_MethodSpecified_HandShakeWithSame
     request.PerformAsync()->Wait();
     }
 
-// request.GetHeaders().GetContentDisposition() is coming back with '.' escaped as %2E. I'll file a defect to Grigas to help.
-#ifndef BENTLEY_WINRT
-
 TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequiredHandshakeHeaders)
     {
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
@@ -39,7 +36,13 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequire
         {
         EXPECT_STREQ("foo", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes */4", request.GetHeaders().GetContentRange());
+#ifdef BENTLEY_WINRT
+        // Note: Casablanca library used on WinRT expects '.' to be escaped with '%2E', so we need this ifdef.
+        // It should be removed once the HTTP library starts using CURL on WinRT
+        EXPECT_STREQ("attachment; filename=Test%2Etxt", request.GetHeaders().GetContentDisposition());
+#else
         EXPECT_STREQ("attachment; filename=Test.txt", request.GetHeaders().GetContentDisposition());
+#endif
         return StubHttpResponse(ConnectionStatus::Canceled);
         });
 
@@ -53,14 +56,18 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_
 
     GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
         {
+#ifdef BENTLEY_WINRT
+        // Note: Casablanca library used on WinRT expects '.' to be escaped with '%2E', so we need this ifdef.
+        // It should be removed once the HTTP library starts using CURL on WinRT
+        EXPECT_STREQ("attachment; filename=%27A%20B%27%2Etxt", request.GetHeaders().GetContentDisposition());
+#else
         EXPECT_STREQ("attachment; filename=%27A%20B%27.txt", request.GetHeaders().GetContentDisposition());
+#endif
         return StubHttpResponse();
         });
 
     request.PerformAsync()->Wait();
     }
-
-#endif
 
 TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequiredHandshakeHeaders)
     {
