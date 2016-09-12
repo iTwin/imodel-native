@@ -25,7 +25,7 @@ Utf8String Node::GetChildFile() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
+* Draw this node. 
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::_DrawGraphics(DrawArgsR args, int depth) const
@@ -42,7 +42,6 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
         args.m_graphics.Add(*graphic);
         }
 
-    // This node is either fine enough for the current view or has no loaded children. We'll draw it.
     if (!m_geometry.empty()) // if we have geometry, draw it now
         {
         for (auto geom : m_geometry)
