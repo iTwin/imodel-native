@@ -12,7 +12,7 @@
     <Part Name="LoggingNativeLog4cxxAtp" BMakeFile="src\native\log4cxx\atp\log4cxxtest.mke">
     </Part>
 
-    <Part Name="LoggingNativeLog4cxx" BMakeFile="src\native\log4cxx\log4cxx.mke" ApiNumber="G06">
+    <Part Name="LoggingNativeLog4cxx" BMakeFile="src\native\log4cxx\log4cxx.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" PartFile="log4cxx" Repository="Libsrc-Log4cxx"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
@@ -34,7 +34,7 @@
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>
 
-    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="G06">
+    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="B02">
         <Bindings>
             <Assemblies>Delivery\Bentley.logging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
@@ -55,7 +55,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="G06" ExcludePlatforms="WinRT*">
+    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="B02" ExcludePlatforms="WinRT*">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
