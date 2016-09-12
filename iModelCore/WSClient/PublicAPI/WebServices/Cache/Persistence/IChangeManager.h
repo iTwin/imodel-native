@@ -203,6 +203,7 @@ struct IChangeManager::ObjectChange
     public:
         WSCACHE_EXPORT ObjectChange();
         WSCACHE_EXPORT ObjectChange(ECInstanceKeyCR instanceKey, ChangeStatus changeStatus, SyncStatus syncStatus, uint64_t changeNumber);
+        WSCACHE_EXPORT virtual ~ObjectChange() {}
         WSCACHE_EXPORT ECInstanceKeyCR GetInstanceKey() const;
         WSCACHE_EXPORT void SetInstanceKey(ECInstanceKeyCR instanceKey);
         WSCACHE_EXPORT ChangeStatus GetChangeStatus() const;
