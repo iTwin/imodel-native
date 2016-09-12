@@ -31,7 +31,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
         <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
@@ -71,7 +71,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
@@ -117,7 +117,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke"  ApiNumber="G06" ExcludePlatforms="Android*">
+    <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
@@ -154,7 +154,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
+    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
@@ -470,7 +470,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
