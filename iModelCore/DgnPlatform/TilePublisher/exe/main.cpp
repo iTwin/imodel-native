@@ -458,7 +458,9 @@ PublisherContext::Status TilesetPublisher::Publish()
 
 #if defined(WIP_FACET_COUNT)
     TileNodePtr rootTile = new TileNode();
+    StopWatch timer(true);
     status = ConvertStatus(generator.GenerateTiles(*rootTile, m_viewController, 20000));
+    printf("%u tiles in: %f\n", static_cast<uint32_t>(rootTile->GetNodeCount()), timer.GetCurrentSeconds());
     if (Status::Success != status)
         printf("No geometry...\n");
     else

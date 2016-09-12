@@ -1472,14 +1472,19 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, ViewControlle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db)
+static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, size_t maxFacets)
     {
+#define GEOM3D_Class BIS_SCHEMA(BIS_CLASS_GeometricElement3d)
+#define SPATIAL_Class BIS_SCHEMA(BIS_CLASS_SpatialIndex)
+#define ELEMENT_Class BIS_SCHEMA(BIS_CLASS_Element)
+
     static const Utf8CP s_sql =
         "SELECT g.FacetCount,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
-        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r, " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
-        "WHERE r.ECInstanceId=e.ECInstanceId AND e.ECInstanceId=g.ECInstanceId "
-        "AND NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
-        "AND InVirtualSet(?,e.ModelId,g.CategoryId) ORDER BY g.FacetCount";
+        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId) "
+        "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " AS e ON g.ECInstanceId = e.ECInstanceId "
+        "WHERE NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
+        "AND InVirtualSet(?,e.ModelId,g.CategoryId) "
+        "ORDER BY g.FacetCount";
 
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
     stmt->BindDouble(1, range.high.x);
@@ -1490,9 +1495,8 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db)
     stmt->BindDouble(6, range.low.z);
     stmt->BindVirtualSet(7, vset);
 
-    // ###TODO: Halt as soon as we exceed max facets...
     size_t facetCount = 0;
-    while (BE_SQLITE_ROW == stmt->Step())
+    while (BE_SQLITE_ROW == stmt->Step() /*&& facetCount <= maxFacets*/) // NB: Caller wants the full facet count...can't halt when hit limit
         {
         DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
                                           stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
@@ -1520,7 +1524,7 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Virt
     static const size_t s_depthLimit = 0xffff;
     static const double s_targetChildCount = 5.0;
 
-    size_t facetCount = countFacets(m_range, vset, db);
+    size_t facetCount = countFacets(m_range, vset, db, maxPointsPerTile);
     if (facetCount < maxPointsPerTile)
         {
         m_tolerance = chordTolerance;
@@ -1575,7 +1579,7 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
 
     for (auto& bisectRange : bisectRanges)
         {
-        size_t facetCount = countFacets(bisectRange, vset, db);
+        size_t facetCount = countFacets(bisectRange, vset, db, maxPointsPerSubTile);
         if (facetCount < maxPointsPerSubTile)
             {
             if (facetCount != 0)
