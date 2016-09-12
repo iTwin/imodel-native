@@ -2,7 +2,7 @@
 #
 #     $Source: src/managed/log4net/log4net.mke $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ASSEMBLY_WARN_AS_ERROR=2
@@ -10,10 +10,10 @@ ASSEMBLY_WARN_AS_ERROR=2
 %include mdl.mki
 %include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-programName         = Bentley.logging.log4net-2.0
+programName         = Bentley.logging.log4net$(DLM_API_NUMBER)
 prodSrc             = $(_MakeFilePath)
 
-ASSEMBLY_REFERENCE  = $(BuildContextDelivery)Bentley.logging-2.0.dll
+ASSEMBLY_REFERENCE  = $(BuildContextDelivery)Bentley.logging$(DLM_API_NUMBER).dll
 %include csrefapnd.mki
 
 CSCOpt + -d:NET_2_0

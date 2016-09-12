@@ -40,18 +40,18 @@
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedConsole" BMakeFile="src\managed\console\console.mke" ExcludeLibType="Static">
+    <Part Name="LoggingManagedConsole" BMakeFile="src\managed\console\console.mke" ExcludeLibType="Static" ApiNumber="B02">
         <SubPart PartName="LoggingManagedLog4net"/>
         <Bindings>
-            <Assemblies>Delivery\Bentley.Logging.console-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.Logging.console$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedLog4net" BMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static">
+    <Part Name="LoggingManagedLog4net" BMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="B02">
         <RequiredRepository>libsrc-Log4net</RequiredRepository>
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
-            <Assemblies>Delivery\Bentley.Logging.log4net-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.Logging.log4net$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
