@@ -65,7 +65,6 @@ parent node is SearchNodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bvector<SearchQuerySpecification*> m_querySpecifications;
         bool     m_groupByClass;
@@ -84,7 +83,6 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification ();

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,6 @@ and particular set of schemas .
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRuleSet : public RefCountedBase
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String                             m_ruleSetId;
         Utf8String                             m_supportedSchemas;
@@ -68,7 +67,6 @@ struct PresentationRuleSet : public RefCountedBase
         //Writes PresentationRuleSet to XML.
         void                                            WriteXml (BeXmlDomR xmlDom);
 
-    /*__PUBLISH_SECTION_START__*/
     private:
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,6 @@ ContentRule defines rules for generating content for selected items.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         ContentSpecificationList  m_specifications;
         Utf8String                   m_customControl;
@@ -37,7 +36,6 @@ struct ContentRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentRule ();

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,6 @@ Base class for all ContentSpecifications.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification : PresentationRuleSpecification
     {
-//__PUBLISH_SECTION_END__
 private:
     int                                  m_priority;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
@@ -45,8 +44,6 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void                         _WriteXml (BeXmlNodeP xmlNode) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Destructor.
     ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SelectedNodeInstancesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,6 @@ Specification that creates content ECQueries for selected items.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SelectedNodeInstancesSpecification : public ContentSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_acceptableSchemaName;
         WString  m_acceptableClassNames;
@@ -40,7 +39,6 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SelectedNodeInstancesSpecification ();

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/AllRelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,6 @@ This specification returns all instance nodes available in the repository.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
         bool                       m_groupByRelationship;
@@ -44,7 +43,6 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification ();

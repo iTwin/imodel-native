@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,13 +25,11 @@ specifications by using sub-conditions.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SubCondition
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String                 m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SubCondition ();
@@ -67,7 +65,6 @@ ChildNodeRule defines rules for generating child nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         RuleTargetTree             m_targetTree;
         SubConditionList           m_subConditions;
@@ -76,7 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
@@ -84,7 +81,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ChildNodeRule ();
@@ -93,7 +89,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         ECOBJECTS_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
 
         //! Destructor.
-        ECOBJECTS_EXPORT                                ~ChildNodeRule (void);
+        ECOBJECTS_EXPORT virtual ~ChildNodeRule (void);
 
         //! Returns target tree for which rule should be applied.
         ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void) const;
@@ -123,7 +119,6 @@ RootNodeRule defines rules for generating root nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool m_autoExpand;
 
@@ -137,7 +132,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RootNodeRule ();

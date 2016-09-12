@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CustomNodeSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,6 @@ This specification returns customly defined nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE CustomNodeSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String  m_type;
         Utf8String  m_label;
@@ -40,7 +39,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CustomNodeSpecification : public ChildNodeSpecifi
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT CustomNodeSpecification ();

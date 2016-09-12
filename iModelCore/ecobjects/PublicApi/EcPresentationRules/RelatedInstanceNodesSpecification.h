@@ -35,7 +35,6 @@ not ECInstance node!
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
         bool                       m_groupByRelationship;
@@ -61,7 +60,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildN
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ();

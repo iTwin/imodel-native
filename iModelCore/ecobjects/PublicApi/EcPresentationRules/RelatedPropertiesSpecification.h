@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedPropertiesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,6 @@ properties of related classes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RelatedPropertiesSpecification : PresentationRuleSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         RequiredRelationDirection          m_requiredDirection;
         Utf8String                         m_relationshipClassNames;
@@ -34,7 +33,6 @@ struct RelatedPropertiesSpecification : PresentationRuleSpecification
         //! Allows the visitor to visit this specification.
         ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification ();

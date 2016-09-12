@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CheckBoxRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,6 @@ Presentation rule for adding and configuring check boxes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CheckBoxRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String              m_propertyName;
         bool                    m_useInversedPropertyValue;
@@ -36,7 +35,6 @@ struct CheckBoxRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT CheckBoxRule ();
