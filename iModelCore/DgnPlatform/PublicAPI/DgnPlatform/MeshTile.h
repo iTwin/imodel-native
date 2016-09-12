@@ -12,6 +12,8 @@
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 
+#define WIP_FACET_COUNT
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -365,6 +367,11 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
+#if defined(WIP_FACET_COUNT)
+public:
+    void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
+    static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
+#endif
 };
 
 //=======================================================================================
@@ -430,6 +437,10 @@ public:
 
     Statistics const& GetStatistics() const { return m_statistics; }
     TileGeometryCacheR GetGeometryCache() { return m_geometryCache; }
+
+#if defined(WIP_FACET_COUNT)
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR root, ViewControllerR view, size_t maxPointsPerTile);
+#endif
 };
 
 //=======================================================================================
