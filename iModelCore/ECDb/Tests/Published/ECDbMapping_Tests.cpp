@@ -9445,6 +9445,70 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan Eberle                     09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, SharedColumnsAndMultiInheritance)
+    {
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, SchemaItem("<?xml version = '1.0' encoding = 'utf-8'?>"
+                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                       "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                       "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                       "    <ECCustomAttributes>"
+                       "        <ClassMap xmlns='ECDbMap.01.00'>"
+                       "            <MapStrategy>"
+                       "               <Strategy>SharedTable</Strategy>"
+                       "               <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+                       "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+                       "            </MapStrategy>"
+                       "        </ClassMap>"
+                       "    </ECCustomAttributes>"
+                       "    <ECProperty propertyName='Code' typeName='string' />"
+                       "  </ECEntityClass>"
+                       "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
+                       "    <BaseClass>Element</BaseClass>"
+                       "    <ECProperty propertyName='GeometryStream' typeName='binary' />"
+                       "  </ECEntityClass>"
+                       "  <ECEntityClass typeName='DomainBaseClass1' modifier='Abstract'>"
+                       "    <BaseClass>Geometric3dElement</BaseClass>"
+                       "    <ECProperty propertyName='PropOfInterest' typeName='string' />"
+                       "  </ECEntityClass>"
+                       "  <ECEntityClass typeName='DomainBaseClass2' modifier='Abstract'>"
+                       "    <BaseClass>Geometric3dElement</BaseClass>"
+                       "    <ECProperty propertyName='AnotherProp' typeName='string' />"
+                       "  </ECEntityClass>"
+                       "  <ECEntityClass typeName='MyClass' >"
+                       "    <BaseClass>DomainBaseClass2</BaseClass>"
+                       "    <BaseClass>DomainBaseClass1</BaseClass>"
+                       "    <ECProperty propertyName='SomethingElse' typeName='string' />"
+                       "  </ECEntityClass>"
+                       "</ECSchema>"), "sharedcolumnsandmultiinheritance.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.MyClass(Code,PropOfInterest,AnotherProp,SomethingElse) "
+                                                 "VALUES('MyClass1','PropOfInterestValue', 'AnotherPropValue', 'SomethingElseValue')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PropOfInterest FROM ts.MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    ASSERT_STREQ("PropOfInterestValue", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PropOfInterest FROM ts.DomainBaseClass1 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    ASSERT_STREQ("PropOfInterestValue", stmt.GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture
