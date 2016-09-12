@@ -2022,7 +2022,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnClassId pclassId = DgnClassId(db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject));
+    DgnClassId pclassId = DgnClassId(db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject));
     ASSERT_TRUE(pclassId.IsValid());
 
     //make diagram from scope

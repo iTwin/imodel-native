@@ -519,26 +519,6 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
-    {
-    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const& modelCode)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::GroupInformation::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, modelCode));
-
-    return dynamic_cast<GroupInformationModelP>(model.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
@@ -1357,13 +1337,31 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* DEPRECATED: Remove this method when QueryFirstModelId is removed!
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isGeometricModel(DgnDbR db, DgnModelId modelId)
+    {
+    DgnModelPtr model = db.Models().GetModel(modelId);
+    return model.IsValid() && model->IsGeometricModel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* DEPRECATED: Do not add any new callers to this method as it will be removed!
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryFirstModelId() const
     {
-    for (auto const& model : MakeIterator())
-        if ((model.GetModelId() != DgnModel::RepositoryModelId()) && (model.GetModelId() != DgnModel::DictionaryId()) && (model.GetModelId() != DgnModel::GroupInformationId()))
-            return model.GetModelId();
+    for (auto const& modelEntry : MakeIterator())
+        {
+        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+
+        if (!isGeometricModel(m_dgndb, modelEntry.GetModelId()))
+            continue;
+
+        return modelEntry.GetModelId();
+        }
 
     return DgnModelId();
     }

@@ -34,16 +34,15 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SpatialGroup">
-        <!-- Groups SpatialElements using the ElementGroupsMembers relationship -->
-        <BaseClass>bis:InformationReferenceElement</BaseClass>
+    <ECEntityClass typeName="GroupModel">
+        <BaseClass>bis:InformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GraphicGroup2d">
-        <!-- Groups GraphicalElement2ds using the ElementGroupsMembers relationship -->
+    <ECEntityClass typeName="Group">
+        <!-- Groups elements using the ElementGroupsMembers relationship -->
         <BaseClass>bis:InformationReferenceElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

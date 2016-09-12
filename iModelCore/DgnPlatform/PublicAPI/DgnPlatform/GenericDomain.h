@@ -10,13 +10,13 @@
 
 #include <DgnPlatform/DgnDomain.h>
 
-DGNPLATFORM_TYPEDEFS(GenericSpatialGroup)
-DGNPLATFORM_TYPEDEFS(GenericGraphicGroup2d)
+DGNPLATFORM_TYPEDEFS(GenericGroup)
+DGNPLATFORM_TYPEDEFS(GenericGroupModel)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
 
-DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialGroup)
-DGNPLATFORM_REF_COUNTED_PTR(GenericGraphicGroup2d)
+DGNPLATFORM_REF_COUNTED_PTR(GenericGroup)
+DGNPLATFORM_REF_COUNTED_PTR(GenericGroupModel)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 
@@ -24,16 +24,17 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_DOMAIN_NAME                 "Generic"
 #define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
 
-#define GENERIC_CLASSNAME_Graphic3d         "Graphic3d"
-#define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
-#define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
-#define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
-#define GENERIC_CLASSNAME_GraphicGroup2d    "GraphicGroup2d"
-#define GENERIC_CLASSNAME_MultiAspect       "MultiAspect"
+#define GENERIC_CLASS_Graphic3d             "Graphic3d"
+#define GENERIC_CLASS_PhysicalObject        "PhysicalObject"
+#define GENERIC_CLASS_SpatialLocation       "SpatialLocation"
+#define GENERIC_CLASS_Group                 "Group"
+#define GENERIC_CLASS_GroupModel            "GroupModel"
+#define GENERIC_CLASS_MultiAspect           "MultiAspect"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace generic_ElementHandler {struct GenericSpatialGroupHandler; struct GenericGraphicGroup2dHandler;};
+namespace generic_ModelHandler {struct GenericGroupModelHandler;};
+namespace generic_ElementHandler {struct GenericGroupHandler;};
 
 //=======================================================================================
 //! The Generic DgnDomain
@@ -60,7 +61,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3d : GraphicalElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_Graphic3d, GraphicalElement3d);
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Graphic3d, GraphicalElement3d);
 
 public:
     explicit GenericGraphic3d(CreateParams const& params) : T_Super(params) {} 
@@ -74,7 +75,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObject : PhysicalElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, PhysicalElement);
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalObject, PhysicalElement);
 
 public:
     explicit GenericPhysicalObject(CreateParams const& params) : T_Super(params) {}
@@ -96,47 +97,63 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocation : SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, SpatialLocationElement);
 
 public:
     explicit GenericSpatialLocation(CreateParams const& params) : T_Super(params) {} 
 };
 
 //=======================================================================================
-//! Groups SpatialElements using the ElementGroupsMembers relationship
+//! A model which contains only GenericGroups.
+//! @see GenericGroup
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, InformationModel);
+    friend struct generic_ModelHandler::GenericGroupModelHandler;
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    explicit GenericGroupModel(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static GenericGroupModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static GenericGroupModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+};
+
+//=======================================================================================
+//! Groups elements using the ElementGroupsMembers relationship
+//! @see GenericGroupModel
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : InformationReferenceElement, IElementGroupOf<GeometricElement3d>
+struct EXPORT_VTABLE_ATTRIBUTE GenericGroup : InformationReferenceElement, IElementGroupOf<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, InformationReferenceElement)
-    friend struct generic_ElementHandler::GenericSpatialGroupHandler;
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Group, InformationReferenceElement)
+    friend struct generic_ElementHandler::GenericGroupHandler;
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
     virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
-    explicit GenericSpatialGroup(CreateParams const& params) : T_Super(params) {}
+    explicit GenericGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static GenericSpatialGroupPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
+    DGNPLATFORM_EXPORT static GenericGroupPtr Create(GenericGroupModelCR model, DgnCodeCR code = DgnCode());
 };
 
 //=======================================================================================
-//! Groups GraphicalElement2ds using the ElementGroupsMembers relationship
-// @bsiclass                                                   Carole.MacDonald            03/2016
+//! The namespace that only contains ModelHandlers for the GenericDomain
+//! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2d : InformationReferenceElement, IElementGroupOf<GraphicalElement2d>
+namespace generic_ModelHandler
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, InformationReferenceElement)
-    friend struct generic_ElementHandler::GenericGraphicGroup2dHandler;
-
-protected:
-    Dgn::IElementGroupCP _ToIElementGroup() const override final { return this; }
-    virtual Dgn::DgnElementCP _ToGroupElement() const override final { return this; }
-    explicit GenericGraphicGroup2d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static GenericGraphicGroup2dPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
-};
+    //! The ModelHandler for GroupModel
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
+    };
+}
 
 //=======================================================================================
 //! The namespace that only contains ElementHandlers for the GenericDomain
@@ -148,35 +165,28 @@ namespace generic_ElementHandler
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3dHandler : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_Graphic3d, GenericGraphic3d, GenericGraphic3dHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Graphic3d, GenericGraphic3d, GenericGraphic3dHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericPhysicalObject
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Physical
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericSpatialLocation
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::SpatialLocation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::SpatialLocation, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::SpatialLocation, DGNPLATFORM_EXPORT)
     };
     
-    //! The ElementHandler for GenericSpatialGroup
+    //! The ElementHandler for GenericGroup
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroupHandler : dgn_ElementHandler::InformationContent
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupHandler : dgn_ElementHandler::InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GenericSpatialGroup, GenericSpatialGroupHandler, dgn_ElementHandler::InformationContent, DGNPLATFORM_EXPORT)
-    };
-    
-    //! The ElementHandler for GenericGraphicGroup2d
-    //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2dHandler : dgn_ElementHandler::InformationContent
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, GenericGraphicGroup2d, GenericGraphicGroup2dHandler, dgn_ElementHandler::InformationContent, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Group, GenericGroup, GenericGroupHandler, dgn_ElementHandler::InformationContent, DGNPLATFORM_EXPORT)
     };
 }
 

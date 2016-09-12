@@ -21,7 +21,6 @@ DGNPLATFORM_TYPEDEFS(RepositoryModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
-DGNPLATFORM_TYPEDEFS(GroupInformationModel)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(CheckStop)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
@@ -30,7 +29,6 @@ DGNPLATFORM_TYPEDEFS(DictionaryModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(GroupInformationModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -640,17 +638,15 @@ public:
 
     //! Returns the ID used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() { return DgnModelId((uint64_t)1LL); }
-    //! Returns the ID used by the unique dictionary model associated with each DgnDb
-    static DgnModelId DictionaryId() { return DgnModelId((uint64_t)2LL); }
 //__PUBLISH_SECTION_END__
     //-------------------------------------------------------------------------------------
-    // NOTE: Setting GroupInformationModelId to 64 effectively reserves the IDs below it. 
-    // NOTE: New auto-created BisCore models must be below 64 to prevent ID remapping issues during file format upgrades.
+    // NOTE: Setting DictionaryId to 16 effectively reserves the IDs below it. 
+    // NOTE: New auto-created BisCore models must be below 16 to prevent ID remapping issues during file format upgrades.
     // NOTE: Applications/domains should look up models by code and not hard-code IDs
     //-------------------------------------------------------------------------------------
 //__PUBLISH_SECTION_START__
-    //! Returns the ID used by the default GroupInformationModel associated with each DgnDb
-    static DgnModelId GroupInformationId() { return DgnModelId((uint64_t)64LL); }
+    //! Returns the ID used by the unique dictionary model associated with each DgnDb
+    static DgnModelId DictionaryId() { return DgnModelId((uint64_t)16LL); }
 
     //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
     //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
@@ -1037,22 +1033,6 @@ protected:
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
-};
-
-//=======================================================================================
-//! A model which contains only grouping information.
-//! @deprecated
-//! @private
-// @bsiclass                                                    Shaun.Sewall    05/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, InformationModel);
-protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-public:
-    explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT static GroupInformationModelPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
 };
 
 struct ComponentDef;
@@ -1619,12 +1599,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for GroupInformationModel
-    struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, GroupInformationModel, GroupInformation, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RepositoryModel

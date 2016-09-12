@@ -380,12 +380,6 @@
         </ECCustomAttributes>
         <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GroupInformationModel" displayLabel="Group Information Model">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>InformationModel</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel" displayLabel="Web Mercator Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
