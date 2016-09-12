@@ -238,33 +238,33 @@
 
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
         <SubPart PartName="RealityDbECPluginCNuGet"/>
+        <!--<SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
 
-    <!-- // "RealityModelingFramework-Minimal Section                                           // -->
-    <Part Name="RealityModelingFramework-Minimal-WinX64-Only" BentleyBuildMakeFile="PublishedApi.mke" OnlyPlatforms="x64">
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // "RealityModelingFramework-Minimal Section                                       // -->
+
+    <Part Name="RealityModelingFramework-Minimal-WinX64-Only" OnlyPlatforms="x64">
         <SubProduct ProductName="RealityModelingFramework-Minimal-WinX64"/>
         <Bindings>
             <PublicAPI Domain="RealityModFramework" />
-            <Directory SourceName="Delivery/RealityModFrameworkIncludeDirectory" ProductDirectoryName="RealityModFrameworkIncludeDirectory" SubPartDirectory="PublicAPI" Required="true"/>
         </Bindings>
     </Part>
 
     <Product Name="RealityModelingFramework-Minimal-WinX64" SaveProduct="true">
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
-        <!--<SubPart PartName="PublishedApi" />-->
+        <SubPart PartName="IncludeApi" />
 
         <!-- This must be listed last so that it can delivery=false items defined in preceding directory list(s). -->
         <Directories DirectoryListName="RealityModelingFramework-Minimal"/>
     </Product>
 
-    <Part Name ="PublishedApi" BentleyBuildMakeFile="PublishedApi.mke">
-        <!--<SubPart PartName="DgnClientFxPublicApi"/>
-        <SubPart PartName="DgnClientFxLibrarySubParts"/>-->
+    <Part Name ="IncludeApi">
         <Bindings>
-            <Directory SourceName="Delivery/RealityModFrameworkIncludeDirectory" ProductDirectoryName="RealityModFrameworkIncludeDirectory" SubPartDirectory="PublishedApi" Required="false"/>
+            <Directory SourceName="PublicAPI" ProductDirectoryName="RealityModFrameworkIncludeDirectory" Required="false"/>
         </Bindings>
     </Part>
 
