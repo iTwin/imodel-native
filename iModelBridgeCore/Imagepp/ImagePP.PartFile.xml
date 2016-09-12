@@ -96,7 +96,7 @@
     </Part>
     
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G06">
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="B02">
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
@@ -126,7 +126,7 @@
 
   
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G06" OnlyPlatforms="x86,x64">
+    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="B02" OnlyPlatforms="x86,x64">
         <SubPart PartName="ImagePPDll" />       
         <Bindings>
             <!-- For now, we build imaging client but we do not implicitly deliver it. -->

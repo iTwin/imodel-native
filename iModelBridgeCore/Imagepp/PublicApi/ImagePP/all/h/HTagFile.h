@@ -133,7 +133,7 @@ public:
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const uint64_t* pi_pVal);
 
     // No implementation use GetFieldA or GetFieldW. 
-    // They are public to a fix: HTIFFFile.h(97): error C2876: 'BentleyG0601::ImagePP::HTagFile': not all overloads are accessible
+    // They are public to a fix: HTIFFFile.h(97): error C2876: 'BentleyB0200::ImagePP::HTagFile': not all overloads are accessible
 //     bool                       GetField(HTagID pi_Tag, CharP*) const;
 //     bool                       GetField(HTagID pi_Tag, WCharP*) const;
 
