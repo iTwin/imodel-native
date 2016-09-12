@@ -53,7 +53,7 @@ private:
     bool m_reprojected = false;  /*&&MM todo*/              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     Dgn::Render::GraphicPtr m_graphic;                      //! the texture for this tile.
 
-    double m_maxSize;                                       //! the maximum size, in pixels, that this Tile should occupy on the screen
+    double m_maxSize;                                       //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
     
 public:
     friend TileQuery;
@@ -83,7 +83,7 @@ public:
 
     virtual double _GetMaximumSize() const override 
         {
-        static double s_qualityFactor = 1.0;
+        static double s_qualityFactor = 1.15; // 1.0 is full quality.
         return m_maxSize * s_qualityFactor; 
         }
 };
