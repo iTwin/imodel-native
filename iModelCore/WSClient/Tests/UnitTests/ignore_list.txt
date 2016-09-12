@@ -58,3 +58,7 @@ ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActive
 CachingDataSourceTests.SyncCachedData_AlreadyCachedInstanceReturnedFromQuery_QueryProviderIsNotCalledAgainWithSameInstance
     # DgnDb61-16Q2-Dev, WinX86, DEBUG
     # <Hung, no output printed>
+
+CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
+    # DgnDb61-16Q2-Dev, WinX64, DEBUG
+    # <Crash, no output or stack printed>
