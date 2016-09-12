@@ -1448,8 +1448,26 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, ViewControlle
     DRange3d viewRange = DRange3d::NullRange();
     DgnDbR db = view.GetDgnDb();
 
+#ifdef USE_CACHED_STATEMENT
     auto stmt = db.GetPreparedECSqlStatement(s_spatialSql);
+#elif defined(USE_ECSQL)
+    ECSqlStatement ecsqlStatement;
+    ecsqlStatement.Prepare(db, s_spatialSql);
+    auto stmt = &ecsqlStatement;
+#else
+    static const Utf8CP s_nativeSql = "SELECT [s].[MinX],[s].[MinY],[s].[MinZ],[s].[MaxX],[s].[MaxY],[s].[MaxZ] FROM (SELECT [dgn_SpatialIndex].[ElementId],287 ECClassId,[dgn_SpatialIndex].[MinX],[dgn_SpatialIndex].[MaxX],[dgn_SpatialIndex].[MinY],[dgn_SpatialIndex].[MaxY],[dgn_SpatialIndex].[MinZ],[dgn_SpatialIndex].[MaxZ] FROM [dgn_SpatialIndex]) [s],(SELECT [bis_GeometricElement3d].[ElementId],[bis_GeometricElement3d].[ECClassId],[bis_Element].[ModelId],[bis_GeometricElement3d].[CategoryId] FROM [bis_GeometricElement3d] INNER JOIN [bis_Element] ON [bis_GeometricElement3d].[ElementId] = [bis_Element].[Id] ) [g],(SELECT [bis_Element].[Id],[bis_Element].[ECClassId],[bis_Element].[ModelId] FROM [bis_Element]) [e]  WHERE [g].[ElementId] = [e].[Id] AND [s].[ElementId] = [e].[Id] AND InVirtualSet(?,[e].[ModelId],[g].[CategoryId])";
+    auto stmt = db.GetCachedStatement(s_nativeSql);
+#endif
+
     stmt->BindVirtualSet(1, vset);
+
+    //static bool s_printedStmt = false;
+    //if (!s_printedStmt)
+    //    {
+    //    s_printedStmt = true;
+    //    printf("%s\n=>\n%s\n\n", s_spatialSql, stmt->GetNativeSql());
+    //    }
+
     while (BE_SQLITE_ROW == stmt->Step())
         {
         DRange3d elemRange = DRange3d::From(stmt->GetValueDouble(0), stmt->GetValueDouble(1), stmt->GetValueDouble(2),
@@ -1459,6 +1477,9 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, ViewControlle
 
     if (viewRange.IsNull())
         return Status::NoGeometry;
+
+    stmt->Reset();
+    stmt = nullptr;
 
     // Collect the tiles
     static const double s_leafTolerance = 0.01;
@@ -1486,7 +1507,18 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
         "AND InVirtualSet(?,e.ModelId,g.CategoryId) "
         "ORDER BY g.FacetCount";
 
+#ifdef USE_CACHED_STATEMENT
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
+#elif defined(USE_ECSQL)
+    ECSqlStatement ecsqlStatement;
+    ecsqlStatement.Prepare(db, s_sql);
+    auto stmt = &ecsqlStatement;
+#else
+    static const Utf8CP s_nativeSql = "SELECT [g].[FacetCount],[r].[MinX],[r].[MinY],[r].[MinZ],[r].[MaxX],[r].[MaxY],[r].[MaxZ] FROM (SELECT [dgn_SpatialIndex].[ElementId],287 ECClassId,[dgn_SpatialIndex].[MinX],[dgn_SpatialIndex].[MaxX],[dgn_SpatialIndex].[MinY],[dgn_SpatialIndex].[MaxY],[dgn_SpatialIndex].[MinZ],[dgn_SpatialIndex].[MaxZ] FROM [dgn_SpatialIndex]) [r] INNER JOIN (SELECT [bis_GeometricElement3d].[ElementId],[bis_GeometricElement3d].[ECClassId],[bis_Element].[ModelId],[bis_GeometricElement3d].[CategoryId],[bis_GeometricElement3d].[FacetCount] FROM [bis_GeometricElement3d] INNER JOIN [bis_Element] ON [bis_GeometricElement3d].[ElementId] = [bis_Element].[Id] ) [g] ON ([g].[ElementId] = [r].[ElementId])  INNER JOIN (SELECT [bis_Element].[Id],[bis_Element].[ECClassId],[bis_Element].[ModelId] FROM [bis_Element]) [e] ON [g].[ElementId] = [e].[Id]   WHERE NOT ([r].[MinX] > ? OR [r].[MinY] > ? OR [r].[MinZ] > ? OR [r].[MaxX] < ? OR [r].[MaxY] < ? OR [r].[MaxZ] < ?) AND InVirtualSet(?,[e].[ModelId],[g].[CategoryId]) ORDER BY [g].[FacetCount]";
+
+    auto stmt = db.GetCachedStatement(s_nativeSql);
+#endif
+
     stmt->BindDouble(1, range.high.x);
     stmt->BindDouble(2, range.high.y);
     stmt->BindDouble(3, range.high.z);
@@ -1494,6 +1526,13 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
     stmt->BindDouble(5, range.low.y);
     stmt->BindDouble(6, range.low.z);
     stmt->BindVirtualSet(7, vset);
+
+    //static bool s_printedStmt = false;
+    //if (!s_printedStmt)
+    //    {
+    //    s_printedStmt = true;
+    //    printf("%s\n=>\n%s\n\n", s_sql, stmt->GetNativeSql());
+    //    }
 
     size_t facetCount = 0;
     while (BE_SQLITE_ROW == stmt->Step() /*&& facetCount <= maxFacets*/) // NB: Caller wants the full facet count...can't halt when hit limit
@@ -1512,6 +1551,9 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
             facetCount += static_cast<size_t>(facetCountDensity * intersection.Volume());
             }
         }
+
+    stmt->Reset();
+    stmt = nullptr;
 
     return facetCount;
     }
