@@ -228,6 +228,16 @@ size_t FacetCounter::GetFacetCount (CurveVectorCR curveVector) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(ICurvePrimitiveCR primitive) const
+    {
+    bvector<DPoint3d> strokePoints;
+    primitive.AddStrokes(strokePoints, const_cast<IFacetOptionsR>(m_facetOptions), true, 0.0, 1.0); // NEEDSWORK_EARLIN_CONST
+    return strokePoints.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) const
@@ -277,6 +287,14 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(PolyfaceQueryCR geom) const
+    {
+    return geom.GetNumFacet();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
@@ -296,10 +314,36 @@ size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
         return GetFacetCount (*bsplineSurface);
 
     if ((polyface = geometry.GetAsPolyfaceHeader()).IsValid())
-        return polyface->GetNumFacet();
+        return GetFacetCount(*polyface);
 
     BeAssert (false);
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(TextStringCR geom) const
+    {
+    return 0; // ###TODO_FACET_COUNT: TextStrings...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
+    {
+    switch (geom.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:      return GetFacetCount(*geom.GetAsICurvePrimitive());
+        case GeometricPrimitive::GeometryType::CurveVector:         return GetFacetCount(*geom.GetAsCurveVector());
+        case GeometricPrimitive::GeometryType::SolidPrimitive:      return GetFacetCount(*geom.GetAsISolidPrimitive());
+        case GeometricPrimitive::GeometryType::BsplineSurface:      return GetFacetCount(*geom.GetAsMSBsplineSurface());
+        case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
+        case GeometricPrimitive::GeometryType::SolidKernelEntity:   return GetFacetCount(*geom.GetAsISolidKernelEntity());
+        case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
+        default:                                                    BeAssert(false); return 0;
+        }
     }
 
 #ifdef BENTLEYCONFIG_OPENCASCADE

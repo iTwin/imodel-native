@@ -420,6 +420,26 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
         }
     }
 
+#if defined(WIP_FACET_COUNT)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void printTileTree(TileNodeCR node)
+    {
+    Utf8String indent;
+    indent.append(node.GetDepth(), ' ');
+
+    DRange3dCR r = node.GetRange();
+    printf("%s %f (%f,%f,%f)-(%f,%f,%f)\n",
+            indent.c_str(), node.GetTolerance(),
+            r.low.x, r.low.y, r.low.z,
+            r.high.x, r.high.y, r.high.z);
+
+    for (auto const& child : node.GetChildren())
+        printTileTree(*child);
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -435,6 +455,17 @@ PublisherContext::Status TilesetPublisher::Publish()
     static double       s_toleranceInMeters = 0.01;
 
     m_generator = &generator;
+
+#if defined(WIP_FACET_COUNT)
+    TileNodePtr rootTile = new TileNode();
+    status = ConvertStatus(generator.GenerateTiles(*rootTile, m_viewController, 20000));
+    if (Status::Success != status)
+        printf("No geometry...\n");
+    else
+        printTileTree(*rootTile);
+
+    return status;
+#else
     PublishViewModels (generator, *this, s_toleranceInMeters, progressMeter);
     m_generator = nullptr;
 
@@ -444,6 +475,7 @@ PublisherContext::Status TilesetPublisher::Publish()
     OutputStatistics(generator.GetStatistics());
 
     return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

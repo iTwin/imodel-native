@@ -12,6 +12,8 @@
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 
+#define WIP_FACET_COUNT
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -365,6 +367,11 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
+#if defined(WIP_FACET_COUNT)
+public:
+    void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
+    static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
+#endif
 };
 
 //=======================================================================================
@@ -430,46 +437,11 @@ public:
 
     Statistics const& GetStatistics() const { return m_statistics; }
     TileGeometryCacheR GetGeometryCache() { return m_geometryCache; }
-};
 
-//=======================================================================================
-//! Provides helper methods to approximate the number of facets a geometric primitive
-//! will contain after facetting with specific facet options.
-// @bsistruct                                                   Diego.Pinate    07/16
-//=======================================================================================
-struct FacetCounter
-{
-private:
-    IFacetOptionsCR m_facetOptions;
-    int32_t         m_faceMultiplier;
-
-    static int32_t ComputeFaceMultiplier(int32_t maxPerFace)
-        {
-        // TO-DO: Come up with a general formula that works for faces with more than four faces
-        return (maxPerFace == 3) ? 2 : 1;
-        }
-public:
-    explicit FacetCounter(IFacetOptionsCR options) : m_facetOptions(options), m_faceMultiplier(ComputeFaceMultiplier(options.GetMaxPerFace())) { }
-
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnTorusPipeDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnConeDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnBoxDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnSphereDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnExtrusionDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRotationalSweepDetailCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRuledSweepDetailCR) const;
-
-    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidPrimitiveCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(CurveVectorCR) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(MSBsplineSurfaceCR, bool useMax=false) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(IGeometryCR) const;
-
-#ifdef BENTLEYCONFIG_OPENCASCADE
-    DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
+#if defined(WIP_FACET_COUNT)
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR root, ViewControllerR view, size_t maxPointsPerTile);
 #endif
 };
-
 
 //=======================================================================================
 // Interface for models to generate HLOD tree of TileNodes 

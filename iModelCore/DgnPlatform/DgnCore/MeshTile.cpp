@@ -1427,3 +1427,166 @@ void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoin
         }
     }
 
+#if defined(WIP_FACET_COUNT)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, ViewControllerR view, size_t maxPointsPerTile)
+    {
+    // Filter elements by viewed models + categories
+    ModelAndCategorySet vset(view);
+    if (vset.IsEmpty())
+        return Status::NoGeometry;
+
+    // Compute union of ranges of all elements
+    // ###TODO_FACET_COUNT: Assuming 3d spatial view for now...
+    static const Utf8CP s_spatialSql =  "SELECT s.MinX,s.MinY,s.MinZ,s.MaxX,s.MaxY,s.MaxZ FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS s, "
+                                        BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
+                                        "WHERE g.ECInstanceId=e.ECInstanceId AND s.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+
+    DRange3d viewRange = DRange3d::NullRange();
+    DgnDbR db = view.GetDgnDb();
+
+    auto stmt = db.GetPreparedECSqlStatement(s_spatialSql);
+    stmt->BindVirtualSet(1, vset);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        DRange3d elemRange = DRange3d::From(stmt->GetValueDouble(0), stmt->GetValueDouble(1), stmt->GetValueDouble(2),
+                                            stmt->GetValueDouble(3), stmt->GetValueDouble(4), stmt->GetValueDouble(5));
+        viewRange.Extend(elemRange);
+        }
+
+    if (viewRange.IsNull())
+        return Status::NoGeometry;
+
+    // Collect the tiles
+    static const double s_leafTolerance = 0.01;
+    double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
+    root = TileNode(viewRange, 0, 0, tolerance, nullptr);
+    root.ComputeTiles(s_leafTolerance, maxPointsPerTile, vset, db);
+
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db)
+    {
+    static const Utf8CP s_sql =
+        "SELECT g.FacetCount,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
+        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r, " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
+        "WHERE r.ECInstanceId=e.ECInstanceId AND e.ECInstanceId=g.ECInstanceId "
+        "AND NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
+        "AND InVirtualSet(?,e.ModelId,g.CategoryId) ORDER BY g.FacetCount";
+
+    auto stmt = db.GetPreparedECSqlStatement(s_sql);
+    stmt->BindDouble(1, range.high.x);
+    stmt->BindDouble(2, range.high.y);
+    stmt->BindDouble(3, range.high.z);
+    stmt->BindDouble(4, range.low.x);
+    stmt->BindDouble(5, range.low.y);
+    stmt->BindDouble(6, range.low.z);
+    stmt->BindVirtualSet(7, vset);
+
+    // ###TODO: Halt as soon as we exceed max facets...
+    size_t facetCount = 0;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
+                                          stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
+        double elVolume = elRange.Volume();
+        if (0.0 == elVolume)
+            continue;
+
+        DRange3d intersection;
+        intersection.IntersectionOf(elRange, range);
+        if (!intersection.IsNull())
+            {
+            double facetCountDensity = static_cast<double>(stmt->GetValueUInt64(0)) / elVolume;
+            facetCount += static_cast<size_t>(facetCountDensity * intersection.Volume());
+            }
+        }
+
+    return facetCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, VirtualSet const& vset, DgnDbR db)
+    {
+    static const size_t s_depthLimit = 0xffff;
+    static const double s_targetChildCount = 5.0;
+
+    size_t facetCount = countFacets(m_range, vset, db);
+    if (facetCount < maxPointsPerTile)
+        {
+        m_tolerance = chordTolerance;
+        }
+    else if (m_depth < s_depthLimit)
+        {
+        bvector<DRange3d> subRanges;
+        size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
+        size_t siblingIndex = 0;
+
+        ComputeSubTiles(subRanges, m_range, targetChildFacetCount, vset, db);
+        for (auto& subRange : subRanges)
+            {
+            double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
+            m_children.push_back(new TileNode(subRange, m_depth+1, siblingIndex++, childTolerance, this));
+            }
+
+        for (auto& child : m_children)
+            child->ComputeTiles(chordTolerance, maxPointsPerTile, vset, db);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, VirtualSet const& vset, DgnDbR db)
+    {
+    bvector<DRange3d> bisectRanges;
+    DVec3d diagonal = range.DiagonalVector();
+
+    if (diagonal.x > diagonal.y && diagonal.x > diagonal.z)
+        {
+        double bisectValue = (range.low.x + range.high.x) / 2.0;
+
+        bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, range.low.z, bisectValue, range.high.y, range.high.z));
+        bisectRanges.push_back (DRange3d::From (bisectValue, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
+        }
+    else if (diagonal.y > diagonal.z)
+        {
+        double bisectValue = (range.low.y + range.high.y) / 2.0;
+
+        bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, bisectValue, range.high.z));
+        bisectRanges.push_back (DRange3d::From (range.low.x, bisectValue, range.low.z, range.high.x, range.high.y, range.high.z));
+        }
+    else
+        {
+        double bisectValue = (range.low.z + range.high.z) / 2.0;
+
+        bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, bisectValue));
+        bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, bisectValue, range.high.x, range.high.y, range.high.z));
+        }
+
+    for (auto& bisectRange : bisectRanges)
+        {
+        size_t facetCount = countFacets(bisectRange, vset, db);
+        if (facetCount < maxPointsPerSubTile)
+            {
+            if (facetCount != 0)
+                subRanges.push_back(bisectRange);
+            }
+        else
+            {
+            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, vset, db);
+            }
+        }
+    }
+
+#endif
+
