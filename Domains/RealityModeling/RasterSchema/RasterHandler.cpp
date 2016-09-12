@@ -75,7 +75,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     :m_dgnDb(model.GetDgnDb()),
     m_categoryId(DgnCategory::QueryFirstCategoryId(model.GetDgnDb())),
     m_hilited(DgnElement::Hilited::None),
-    m_infoString(model.GetLabel())
+    m_infoString(model.GetUserLabel())
     {
     if (m_infoString.empty())
         m_infoString = model.GetCode().GetValueCP();
@@ -344,7 +344,7 @@ void RasterModel::_OnFitView(Dgn::FitContextR context)
     if (NULL != pTree)
         {
         ElementAlignedBox3d box;
-        box.InitFrom(pTree->GetRoot().GetCorners(), 4);
+        box.InitFrom(pTree->GetRoot().GetCorners().m_pts, 4);
         context.ExtendFitRange(box, Transform::FromIdentity());
         }    
     }

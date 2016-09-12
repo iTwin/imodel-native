@@ -57,8 +57,6 @@ protected:
     Utf8String      m_displayStyleName;
     int32_t         m_displayStyleIndex;
 
-    explicit PointCloudViewSettings(JsonValueCR settings) {_RestoreFromSettings(settings);}
-
 public:
     static float GetDefaultViewContrast() {return 50.0;}
     static float GetDefaultViewBrightness() {return 180.0;}
@@ -107,8 +105,8 @@ public:
     int32_t GetDisplayStyleIndex() const {return m_displayStyleIndex;}
     void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
 
-    void _SaveToSettings(JsonValueR) const override;
-    void _RestoreFromSettings(JsonValueCR) override;
+    void _SaveToUserProperties(ViewDefinitionR) const override;
+    void _LoadFromUserProperties(ViewDefinitionCR) override;
 
     POINTCLOUDSCHEMA_EXPORT static PointCloudViewSettings& FromView(SpatialViewController const&);
 };
@@ -127,8 +125,6 @@ protected:
     bool            m_activeState[CLASSIFICATION_STATES];
     ColorDef        m_unclassColor;
     bool            m_unclassVisible;
-
-    explicit PointCloudClassificationSettings(JsonValueCR settings) {_RestoreFromSettings(settings);}
 
 public:
     PointCloudClassificationSettings() {InitDefaults();}
@@ -174,8 +170,8 @@ public:
     bool GetUnclassVisible() const { return m_unclassVisible; }
     void SetUnclassVisible(bool unclassVisible) { m_unclassVisible = unclassVisible; }
 
-    void _SaveToSettings(JsonValueR) const override;
-    void _RestoreFromSettings(JsonValueCR) override;
+    void _SaveToUserProperties(ViewDefinitionR) const override;
+    void _LoadFromUserProperties(ViewDefinitionCR) override;
     POINTCLOUDSCHEMA_EXPORT static PointCloudClassificationSettings& FromView(SpatialViewController const&);
 };
 

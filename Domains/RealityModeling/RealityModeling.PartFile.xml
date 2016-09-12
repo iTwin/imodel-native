@@ -39,7 +39,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PointCloudSchema" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.mke" ApiNumber="G06">
+    <Part Name="PointCloudSchema" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.mke" ApiNumber="B02">
         <SubPart PartName="PointCloudSchemaPublicAPI"/>
         <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
@@ -65,7 +65,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RasterSchema" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" ApiNumber="G06" >
+    <Part Name="RasterSchema" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" ApiNumber="B02" >
         <SubPart PartName="RasterSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
@@ -89,7 +89,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.mke" ApiNumber="G06">
+    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>

@@ -29,10 +29,6 @@
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_RENDER
-USING_NAMESPACE_TILETREE
-
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
@@ -54,13 +50,13 @@ protected:
     bvector<FPoint3d> m_normals;
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
-    GraphicPtr m_graphic;
+    Dgn::Render::GraphicPtr m_graphic;
 
 public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(IGraphicBuilder::TriMeshArgs const&, SceneR);
+    THREEMX_EXPORT Geometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
-    void Draw(TileTree::DrawArgsR);
+    void Draw(Dgn::TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
     bool IsEmpty() const {return m_points.empty();}
 };
@@ -75,7 +71,7 @@ struct SceneInfo
     Utf8String m_reprojectionSystem;
     DPoint3d m_origin = DPoint3d::FromZero();
     Utf8String m_rootNodePath;
-    BentleyStatus Read(TileTree::StreamBuffer&);
+    BentleyStatus Read(Dgn::TileTree::StreamBuffer&);
 };
 
 /*=================================================================================**//**
@@ -96,30 +92,35 @@ struct SceneInfo
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Node : TileTree::Tile
+struct Node : Dgn::TileTree::Tile
 {
+    DEFINE_T_SUPER(Dgn::TileTree::Tile);
     friend struct Scene;
     typedef std::forward_list<GeometryPtr> GeometryList;
 
 private:
+    double m_maxSize;
     GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
-    BentleyStatus Read3MXB(TileTree::StreamBuffer&, SceneR);
+    BentleyStatus Read3MXB(Dgn::TileTree::StreamBuffer&, SceneR);
     Utf8String GetChildFile() const;
-    BentleyStatus DoRead(StreamBuffer& in, SceneR scene);
+    BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
-    BentleyStatus _Read(TileTree::StreamBuffer& buffer, TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
-    VisitComplete _Draw(TileTree::DrawArgsR, int depth) const override;
+    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : TileTree::Tile(parent) {}
+    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxSize (0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
-    ChildTiles const* _GetChildren() const override {return IsReady() ? &m_children : nullptr;}
-    ElementAlignedBox3d ComputeRange();
+    ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
+    double _GetMaximumSize() const override {return m_maxSize;}
+    void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
+    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+    Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
 };
 
@@ -127,33 +128,31 @@ public:
 * A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Scene : TileTree::Root
+struct Scene : Dgn::TileTree::Root
 {
     friend struct Node;
     friend struct Geometry;
     friend struct ThreeMxModel;
 
 private:
-    SystemP m_renderSystem = nullptr;
-
     BentleyStatus ReadGeoLocation(SceneInfo const&);
-    virtual Utf8String _ConstructTileName(TileTree::TileCR tile) {return m_rootDir + tile._GetTileName();}
-    virtual GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const {return m_renderSystem->_CreateTexture(source, targetFormat, bottomUp);}
+    virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
+    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem->_CreateTexture(source, targetFormat, bottomUp);}
 
 public:
-    SystemP GetRenderSystem() const {return m_renderSystem;}
+    using Root::Root;
+
+    Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     BentleyStatus LoadNodeSynchronous(NodeR);
     BentleyStatus LoadScene(); // synchronous
     
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
-    Scene(DgnDbR db, TransformCR location, Utf8CP cacheName, Utf8CP sceneFile, SystemP system) : Root(db, location, cacheName, sceneFile), m_renderSystem(system) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : DgnDomain
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
     THREEMX_EXPORT ThreeMxDomain();
@@ -167,7 +166,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : DgnDomain
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : SpatialModel, IPublishModelTiles
+struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -178,19 +177,18 @@ private:
     mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
-    void Load(SystemP) const;
+    void Load(Dgn::Render::SystemP) const;
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    THREEMX_EXPORT void _AddTerrainGraphics(TerrainContextR) const override;
+    THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
-    THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
-    THREEMX_EXPORT void _OnFitView(FitContextR) override;
-    THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) override;
-
+    THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
+    THREEMX_EXPORT Dgn::Render::TileGenerator::Status _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
@@ -201,10 +199,10 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct ModelHandler :  dgn_ModelHandler::Spatial
+struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static DgnModelId CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
+    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE

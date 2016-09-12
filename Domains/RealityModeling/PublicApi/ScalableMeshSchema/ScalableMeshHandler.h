@@ -38,8 +38,8 @@ private :
 public : 
 
     int m_currentQuery;
-    bvector<BentleyG0601::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
-    bvector<BentleyG0601::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
+    bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
+    bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
 
 public : 
         

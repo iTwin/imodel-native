@@ -133,7 +133,6 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
         props.m_transform = *params.m_transformP;
     else
         {
-        //&&ep - is this ok ?
         props.m_transform = rasterFilePtr->GetGeoTransform();
         }
 
@@ -161,7 +160,7 @@ static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
 ReprojectStatus RasterFileModelHandler::GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, DgnDbCR db) 
     {
     DPoint3d srcCornersCartesian[4];
-    rasterFile.GetCorners(srcCornersCartesian);
+    rasterFile.GetCorners(srcCornersCartesian); //&&ep - don't use this GetCorners here
 
     // Use raster GCS as source
     GeoCoordinates::BaseGCSPtr sourceGcsPtr = rasterFile.GetBaseGcs();
