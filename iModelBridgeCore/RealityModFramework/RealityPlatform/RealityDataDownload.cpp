@@ -130,6 +130,17 @@ RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors& pi_
         return NULL;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Spencer.Mason      9/2015
+//----------------------------------------------------------------------------------------
+RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters)
+{
+    if (pi_Link_File_wMirrors_wSisters.size() > 0)
+        return new RealityDataDownload(pi_Link_File_wMirrors_wSisters);
+    else
+        return NULL;
+}
+
 RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -144,11 +155,11 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i=0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].urls = bvector<AString>();
-        m_pEntries[i].urls.push_back(pi_Link_FileName[i].first);
-        m_pEntries[i].filename = pi_Link_FileName[i].second;
+        m_pEntries[i].InsertMirror(pi_Link_FileName[i], 0);
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
 
         m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
@@ -168,24 +179,94 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_
 
     m_curEntry = 0;
     m_nbEntry = pi_Link_File_wMirrors.size();
-    size_t mirrorCount;
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i = 0; i<m_nbEntry; ++i)
         {
-        mirrorCount = pi_Link_File_wMirrors[i].first.size();
-
+        size_t mirrorCount = pi_Link_File_wMirrors[i].size();
         for(size_t j = 0; j < mirrorCount; ++j)
-            {
-            m_pEntries[i].urls = pi_Link_File_wMirrors[i].first;
-            m_pEntries[i].filename = pi_Link_File_wMirrors[i].second;
-            m_pEntries[i].iAppend = 0;
-            m_pEntries[i].nbRetry = 0;
+            m_pEntries[i].InsertMirror(pi_Link_File_wMirrors[i][j], j);
+        m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
 
-            m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
-            m_pEntries[i].filesize = 0;
-            m_pEntries[i].fromCache = true;                                 // from cache if possible by default
-            m_pEntries[i].progressStep = 0.01;
+        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+        m_pEntries[i].filesize = 0;
+        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+        m_pEntries[i].progressStep = 0.01;
+        }
+    }
+
+void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index)
+    {
+    FileTransfer* sisFT = new FileTransfer(ft);
+    Mirror_struct ms;
+    ms.url = sisters[index].first;
+    sisFT->filename = ms.filename = sisters[index].second;
+    ms.nextSister = nullptr;
+    sisFT->mirrors.clear();
+    sisFT->mirrors.push_back(ms);
+
+    ft->mirrors.back().nextSister = sisFT;
+    index++;
+    if (index >= sisters.size())
+        return;
+    else
+        AddSisterFiles(sisFT, sisters, index);
+    }
+
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters)
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
+    m_certPath = WString();
+
+    m_curEntry = 0;
+    m_nbEntry = pi_Link_File_wMirrors_wSisters.size();
+    m_pEntries = new FileTransfer[m_nbEntry];
+    size_t sisterCount, mirrorCount;
+    for (size_t i = 0; i<m_nbEntry; ++i)
+        {
+        m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+
+        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+        m_pEntries[i].filesize = 0;
+        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+        m_pEntries[i].progressStep = 0.01;
+
+        mirrorCount = pi_Link_File_wMirrors_wSisters[i].size();
+        
+        for (size_t j = 0; j < mirrorCount; ++j)
+            {
+            sisterCount = pi_Link_File_wMirrors_wSisters[i][j].size();
+            m_pEntries[i].InsertMirror(pi_Link_File_wMirrors_wSisters[i][j][0], j);
+            if(pi_Link_File_wMirrors_wSisters[i][j].size() > 1)
+                AddSisterFiles(&m_pEntries[i], pi_Link_File_wMirrors_wSisters[i][j], 1);
+            /*for (size_t k = 1; k < sisterCount; ++k)
+                {
+                sister = FileTransfer();
+                sister.InsertMirror(pi_Link_File_wMirrors_wSisters[i][j][k], 0);
+                sister.iAppend = 0;
+                sister.nbRetry = 0;
+                sister.familyId = i;
+
+                sister.downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+                sister.filesize = 0;
+                sister.fromCache = true;                                 // from cache if possible by default
+                sister.progressStep = 0.01;
+                sister.filename = sister.mirrors[0].filename;
+
+                m_pEntries[i].mirrors[j].sisterFiles.pushback(sister);
+                }*/
             }
+
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
+
         }
     }
 
@@ -286,7 +367,7 @@ bool RealityDataDownload::Perform()
 #ifdef TRACE_DEBUG
                         fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
 #endif
-                        SetupCurlandFile(pFileTrans->index);
+                        SetupCurlandFile(&m_pEntries[pFileTrans->index]);
                         still_running++;
                         }
                     else
@@ -306,8 +387,20 @@ bool RealityDataDownload::Perform()
                     }
                 else if ((msg->data.result != CURLE_OK) && SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
                     {
-                    pFileTrans->nbRetry = 0;
                     still_running++;
+                    }
+                else if (msg->data.result == CURLE_OK)
+                    {
+                    if (m_pStatusFunc)
+                        m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+#ifdef TRACE_DEBUG
+                    fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#endif
+                    if(pFileTrans->mirrors[0].nextSister != nullptr)
+                        {
+                        SetupCurlandFile(pFileTrans->mirrors[0].nextSister);
+                        still_running++;
+                        }
                     }
                 else
                     {
@@ -347,21 +440,21 @@ bool RealityDataDownload::Perform()
 //
 // false --> Curl error or file already there, skip download.
 //
-bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
+bool RealityDataDownload::SetupCurlandFile(FileTransfer* ft)
     {
     // If file already there, consider the download completed.
-    if (m_pEntries[pi_index].fromCache && BeFileName::DoesPathExist(m_pEntries[pi_index].filename.c_str()))
+    if (ft->fromCache && BeFileName::DoesPathExist(ft->filename.c_str()))
         return true;
 
     // File not in the cache, we will download it
-    m_pEntries[pi_index].fromCache = false;
+    ft->fromCache = false;
 
     CURL *pCurl = NULL;
 
     pCurl = curl_easy_init();
     if (pCurl)
         {
-        curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].urls.front());
+        curl_easy_setopt(pCurl, CURLOPT_URL, ft->mirrors.front().url); 
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -385,19 +478,18 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         /* Define our callback to get called when there's data to be written */
         curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, callback_fwrite_func);
         /* Set a pointer to our struct to pass to the callback */
-        curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, ft);
         /* Switch on full protocol/debug output set 1L*/
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
 
         curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
         curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, ft);
 
-        curl_easy_setopt(pCurl, CURLOPT_PRIVATE, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_PRIVATE, ft);
 
-        m_pEntries[pi_index].index = pi_index;
-        m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
-        m_pEntries[pi_index].progressStep = m_progressStep;
+        ft->pProgressFunc = m_pProgressFunc;
+        ft->progressStep = m_progressStep;
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         }
@@ -407,21 +499,29 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 
 bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
 {
-    if(m_pEntries[index].urls.size() <= 1)
+    if(m_pEntries[index].mirrors.size() <= 1)
         return false;
 
     if(m_pStatusFunc)
         {
         char errorMsg[512];
-        sprintf(errorMsg, "could not download %s, error code %d. Attempting to contact mirror %s",
-            m_pEntries[index].urls[0].c_str(),
+        sprintf(errorMsg, "could not download %ls, error code %d. Attempting to retrieve mirror file %ls",
+            m_pEntries[index].mirrors[0].filename.c_str(),
             errorCode,
-            m_pEntries[index].urls[1].c_str());
+            m_pEntries[index].mirrors[1].filename.c_str());
         m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_RETRY_TENTATIVE, errorMsg);
         }
 
-    m_pEntries[index].urls.erase(m_pEntries[index].urls.begin());
-    SetupCurlandFile(index);
+    m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
+    m_pEntries[index].filename = m_pEntries[index].mirrors.front().filename;
+    m_pEntries[index].iAppend = 0;
+    m_pEntries[index].nbRetry = 0;
+
+    m_pEntries[index].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+    m_pEntries[index].filesize = 0;
+    m_pEntries[index].fromCache = true;                                 // from cache if possible by default
+    m_pEntries[index].progressStep = 0.01;
+    SetupCurlandFile(&m_pEntries[index]);
     return true;
 }
 
@@ -431,7 +531,7 @@ bool RealityDataDownload::SetupNextEntry()
         {
         if (m_curEntry < m_nbEntry)
             {
-            SetupCurlandFile(m_curEntry);
+            SetupCurlandFile(&m_pEntries[m_curEntry]);
             if (m_pEntries[m_curEntry].fromCache)
                 {
                 if (m_pStatusFunc)

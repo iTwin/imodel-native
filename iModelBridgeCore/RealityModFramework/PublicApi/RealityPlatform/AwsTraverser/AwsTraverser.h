@@ -23,11 +23,11 @@ struct AwsData
     float m_cloudCover;
     DRange2d m_ftPrint;
     float m_redSize, m_blueSize, m_greenSize, m_panSize;
-    SQLINTEGER serverId, metadataId;
+    SQLINTEGER serverId;
 
     AwsData(std::string id, std::string downloadUrl, float cloudCover,
         DRange2d ftPrint, float red, float green, float blue, float pan,
-        SQLINTEGER sId, SQLINTEGER mId);
+        SQLINTEGER sId);
 
     std::string GetId() { return m_id; }
     std::string GetUrl() { return m_downloadUrl; }
@@ -38,7 +38,6 @@ struct AwsData
     float GetGreenSize() { return m_greenSize; }
     float GetPanchromaticSize() { return m_panSize; }
     SQLINTEGER GetServerId() { return serverId; }
-    SQLINTEGER GetMetadataId() { return metadataId; }
     };
 
 struct AwsPinger

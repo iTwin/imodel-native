@@ -21,7 +21,7 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
-WString sOutputFolder = L"k:\\tmp\\data\\";     // Could be override by parameter at the execution.
+WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be override by parameter at the execution.
 
 static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,size_t ByteTotal)
     {
@@ -132,7 +132,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     //for (int iArg = 0; iArg < pi_Argc; iArg++)
     //    printf("argv[%d] = %ls\n", iArg, pi_ppArgv[iArg]);
 
-    RealityDataDownload::Link_File_wMirrors urlList;
+    RealityDataDownload::Link_File_wMirrors_wSisters urlList;
 
     if (pi_Argc != 3 && pi_Argc != 1)
         { 
@@ -161,6 +161,8 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             return 1;
             }
 
+        bvector<std::pair<AString, WString>> wMirrors;
+        bvector<bvector<std::pair<AString, WString>>> wSisters;
         for (auto& realityData : DownloadList)
             {
             RealityDataSourceCP pSource = dynamic_cast<RealityDataSourceCP>(&realityData->GetSource(0));
@@ -169,9 +171,11 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
             WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFilesize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
-            bvector<AString> bv = bvector<AString>();
-            bv.push_back(pSource->GetUri());
-            urlList.push_back(std::make_pair(bv, filename));
+            wMirrors = bvector<std::pair<AString, WString>>();
+            wMirrors.push_back(std::make_pair(pSource->GetUri(), filename));
+            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wSisters.push_back(wMirrors);
+            urlList.push_back(wSisters); //insert each entry as completely independant from the others
             }
         }
     else 
@@ -197,15 +201,46 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
              "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
             };
 
+        WString filename1(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename1, L"can01.zip");
+        WString filename2(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename2, L"badFile.zip");
+        WString filename5(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename5, L"can05.zip");
+        WString filename6(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename6, L"can06.zip");
+        WString filename7(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename7, L"can07.zip");
+        WString filename8(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename8, L"can08.zip");
+
+        bvector<bvector<std::pair<AString, WString>>> sisterFileTest = 
+            {
+                {
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a01_tif.zip", filename1),
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_0121_tif.zip", filename2)
+                },
+                {
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a05_tif.zip", filename5),
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7),
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a08_tif.zip", filename8)
+                }
+            };
+
+        bvector<std::pair<AString, WString>> wMirrors;
+        bvector<bvector<std::pair<AString, WString>>> wSisters;
 
         for (size_t i=0; i<urlUSGSLink.size(); ++i)
             {
             WString filename(sOutputFolder);
             RealityDataDownload::ExtractFileName(filename, urlUSGSLink[i]);
 
-            bvector<AString> bv = bvector<AString>();
-            bv.push_back(urlUSGSLink[i]);
-            urlList.push_back(std::make_pair(bv, filename));
+            wMirrors = bvector<std::pair<AString, WString>>();
+            wMirrors.push_back(std::make_pair(urlUSGSLink[i], filename));
+            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wSisters.push_back(wMirrors);
+            urlList.push_back(wSisters); //independant file test
             }
 
         for (size_t i = 0; i < urlOSMLink.size(); ++i)
@@ -213,11 +248,15 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             wchar_t filename[1024];
             swprintf (filename, 1024, L"%lsOsmFile_%2llu.osm", sOutputFolder.c_str(), i);
 
-            bvector<AString> bv = bvector<AString>();
-            bv.push_back("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019"); //url with typo, to force use of mirror
-            bv.push_back(urlOSMLink[i]);
-            urlList.push_back(std::make_pair(bv, WString (filename)));
+            wMirrors = bvector<std::pair<AString, WString>>();
+            wMirrors.push_back(std::make_pair("http://api.openstreetmap.org/api/0.6/map?ddox=-112.132,40.5292,-111.52,40.8019", WString(filename))); //url with typo, to force use of mirror
+            wMirrors.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
+            wSisters = bvector<bvector<std::pair<AString, WString>>>();
+            wSisters.push_back(wMirrors);
+            urlList.push_back(wSisters); //mirror file test
             }
+
+        urlList.push_back(sisterFileTest); //sister file test
         }
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);

@@ -47,15 +47,25 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
 
+    typedef std::pair<AString, WString>     url_file_pair;
+
+    struct FileTransfer;
+
+    struct Mirror_struct
+        {
+        AString url;
+        WString filename;
+        FileTransfer* nextSister;
+        };
+
     struct FileTransfer 
         {
-        bvector<AString>  urls;
+        bvector<Mirror_struct>  mirrors;
         WString  filename;
         size_t   index;
         bool     fromCache;         // as input: skip the download if the file already exist
                                     // as output: specify if the file was downloaded or not.
-
-
+        
         // internal used only
         BeFile                  fileStream;
         size_t                  iAppend;
@@ -64,16 +74,34 @@ public:
         size_t                  downloadedSizeStep;
         float                   progressStep;
         int                     nbRetry;
+
+        void InsertMirror(url_file_pair ufPair, size_t id)
+            {
+            Mirror_struct ms;
+            ms.url = ufPair.first;
+            ms.filename = ufPair.second;
+            ms.nextSister = nullptr;
+            mirrors.push_back(ms);
+            }
+
+        FileTransfer(){}
+
+        FileTransfer(FileTransfer* ft):mirrors(bvector<Mirror_struct>()), filename(ft->filename), index(ft->index), 
+            fromCache(false), iAppend(ft->iAppend), pProgressFunc(ft->pProgressFunc), filesize(ft->filesize),
+            downloadedSizeStep(ft->downloadedSizeStep), progressStep(ft->progressStep), nbRetry(ft->nbRetry)
+            {}
         };
 
     typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
-    typedef bvector<std::pair<bvector<AString>, WString>> Link_File_wMirrors;        
+    typedef bvector<bvector<std::pair<AString, WString>>> Link_File_wMirrors;
+    typedef bvector<bvector<bvector<std::pair<AString, WString>>>> Link_File_wMirrors_wSisters;
 
     //! Create an instance of RealityDataDownload
     //! @param[in]  pi_Link_FileName A list of (Url link, url file)
     //! @return NULL if error   
     REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const UrlLink_UrlFile& pi_Link_FileName);
     REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const Link_File_wMirrors& pi_Link_File_wMirrors);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
 
     // pio_rFileName could already contain the first part of the path, like "C:\\Data\\"
     //               the filename extract from the url, will be concatenated. 
@@ -106,11 +134,13 @@ private:
     RealityDataDownload() { m_pCurlHandle=NULL;};
     RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
     RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors);
+    RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
     ~RealityDataDownload();
 
-    bool SetupCurlandFile(size_t pi_index);
+    bool SetupCurlandFile(FileTransfer* ft);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
+    void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;
