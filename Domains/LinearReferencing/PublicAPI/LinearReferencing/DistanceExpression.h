@@ -22,8 +22,8 @@ private:
     NullableDouble m_lateralOffset, m_verticalOffset, m_distanceAlongFromReferent;
 
 public:
-    DistanceExpression();
-    DistanceExpression(double distanceAlong, NullableDouble lateralOffset, NullableDouble verticalOffset, NullableDouble distanceAlongFromReferent);
+    LINEARREFERENCING_EXPORT DistanceExpression();
+    LINEARREFERENCING_EXPORT DistanceExpression(double distanceAlong, NullableDouble lateralOffset = NullableDouble(), NullableDouble verticalOffset = NullableDouble(), NullableDouble distanceAlongFromReferent = NullableDouble());
 
     LINEARREFERENCING_EXPORT double GetDistanceAlongFromStart() const { return m_distanceAlong; }
     LINEARREFERENCING_EXPORT NullableDouble GetLateralOffsetFromILinearElement() const { return m_lateralOffset; }

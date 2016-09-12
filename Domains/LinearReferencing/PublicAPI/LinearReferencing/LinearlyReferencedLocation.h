@@ -17,7 +17,7 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 //! Specifies where a linearly located element occurs or where a linearly located attribution applies. 
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyReferencedLocation : Dgn::DgnElement::MultiAspect
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedLocation : Dgn::DgnElement::MultiAspect
 {
     DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
 
@@ -31,7 +31,7 @@ protected:
 //! Single location whose position is specified using linear referencing.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyReferencedAtLocation : LinearlyReferencedLocation
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedAtLocation : LinearlyReferencedLocation
 {
     DEFINE_T_SUPER(LinearlyReferencedAtLocation)
     friend struct LinearlyReferencedAtLocationHandler;
@@ -56,7 +56,7 @@ public:
 //! Range location whose position is specified using linear referencing.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyReferencedFromToLocation : LinearlyReferencedLocation
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedFromToLocation : LinearlyReferencedLocation
 {
     DEFINE_T_SUPER(LinearlyReferencedFromToLocation)
     friend struct LinearlyReferencedFromToLocationHandler;
@@ -83,7 +83,7 @@ public:
 //! Handler for LinearlyReferencedAtLocation Aspects
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyReferencedAtLocationHandler : Dgn::dgn_AspectHandler::Aspect
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedAtLocationHandler : Dgn::dgn_AspectHandler::Aspect
 {
 DOMAINHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyReferencedAtLocation, LinearlyReferencedAtLocationHandler, Dgn::dgn_AspectHandler::Aspect, LINEARREFERENCING_EXPORT)
 
@@ -96,7 +96,7 @@ protected:
 //! Handler for LinearlyReferencedFromToLocation Aspects
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyReferencedFromToLocationHandler : Dgn::dgn_AspectHandler::Aspect
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedFromToLocationHandler : Dgn::dgn_AspectHandler::Aspect
 {
 DOMAINHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyReferencedFromToLocation, LinearlyReferencedFromToLocationHandler, Dgn::dgn_AspectHandler::Aspect, LINEARREFERENCING_EXPORT)
 

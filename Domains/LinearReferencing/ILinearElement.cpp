@@ -10,8 +10,8 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocated::ILinearlyLocated(ILinearElementCR linearElement):
-    m_linearElementId(linearElement.ToElement().GetElementId())
+ILinearlyLocated::ILinearlyLocated(Dgn::DgnElementId linearElementId):
+    m_linearElementId(linearElementId)
     {
     }
 
@@ -60,7 +60,23 @@ LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(Lin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocated::AddLinearlyReferencedLocation(LinearlyReferencedLocationR location)
+void ILinearlyLocated::_AddLinearlyReferencedLocation(LinearlyReferencedLocationR location)
     {
     DgnElement::MultiAspect::AddAspect(*ToElementP(), location);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ILinearlyLocatedAttribution::ILinearlyLocatedAttribution(Dgn::DgnElementId linearElementId):
+    T_Super(linearElementId)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ILinearlyLocatedElement::ILinearlyLocatedElement(Dgn::DgnElementId linearElementId):
+    T_Super(linearElementId)
+    {
     }
