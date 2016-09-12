@@ -117,6 +117,6 @@ GUNITTEST_NOEXEC = 1
 # WIP - Link ConnectWebServicesClientC DLL, because it currently isn't being delivered by
 #       DgnClientSdk. To Force SDK delivery, edit DgnClientFx/PublicMki/Win7/deliver.mki.
 #----------------------------------------------------------------------------------------
-ApiNumber = G06
+ApiNumber = B02
 always:
     @CreateSymLinks.py -f"$(o)$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)"

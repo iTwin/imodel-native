@@ -27,7 +27,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 	bool isSuccess = false;
 	switch (eventType)
 	    {
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::LockEvent:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::LockEvent:
 	        {
 		    if (
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
@@ -42,7 +42,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::RevisionEvent:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::RevisionEvent:
 	        {
 		    if (
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
@@ -54,7 +54,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::CodeEvent:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::CodeEvent:
 	        {
 		    if (
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
@@ -71,8 +71,8 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::AllLocksDeletedEvent:
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::AllCodesDeletedEvent:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::AllLocksDeletedEvent:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::AllCodesDeletedEvent:
 	        {
 		    if (
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
@@ -85,7 +85,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    isSuccess = true;
 		    break;
 	        }
-	    case BentleyG0601::DgnDbServer::DgnDbServerEvent::UnknownEventType:
+	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::UnknownEventType:
 	    default:
 	        {
 		    break;
