@@ -61,5 +61,8 @@
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:IReferent</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
 </ECSchema>

@@ -65,6 +65,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_CLASS_Alignment                                        "Alignment"
 #define BRRA_CLASS_AlignmentHorizontal                              "AlignmentHorizontal"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
+#define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
 #define BRRA_CLASS_AlignmentVertical                                "AlignmentVertical"
 
 
@@ -125,11 +126,13 @@ ROADRAILALIGNMENT_TYPEDEFS(Alignment)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentHorizontal)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentVertical)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentHorizontal)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
 
 
@@ -138,4 +141,5 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
 //-----------------------------------------------------------------------------------------
 #include "AlignmentModel.h"
 #include "Alignment.h"
+#include "AlignmentStation.h"
 #include "RoadRailAlignmentDomain.h"

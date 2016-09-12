@@ -43,6 +43,9 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentDomain.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentStation.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml" />
@@ -61,6 +64,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadRailAlignmentDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlignmentStation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
