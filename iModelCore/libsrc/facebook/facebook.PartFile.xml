@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-   <Part Name="folly" BentleyBuildMakeFile="folly.mke" ApiNumber="G06">
+   <Part Name="folly" BentleyBuildMakeFile="folly.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll" PartFile="Bentley"  Repository="Bentley" />
         <Bindings>
             <VendorNotices>Delivery/folly-notice.txt</VendorNotices>
