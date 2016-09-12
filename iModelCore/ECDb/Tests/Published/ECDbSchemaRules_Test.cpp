@@ -539,7 +539,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "      <Class class='B'/>"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "</ECSchema>", true, "RelationshipClass can have multiple base classes. This will be desupported in bim02")
+                   "</ECSchema>", false, "RelationshipClass cannot have multiple base classes.")
                 };
 
     for (SchemaItem const& testItem : testItems)
@@ -1049,8 +1049,8 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
-                                  "</ECSchema>", true, "Relationship multi inheritance"), 
-                       "reliinheritance2.ecdb"); //will only be desupported in bim02
+                                  "</ECSchema>", false, "Relationship multi inheritance"), 
+                       "reliinheritance2.ecdb");
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
