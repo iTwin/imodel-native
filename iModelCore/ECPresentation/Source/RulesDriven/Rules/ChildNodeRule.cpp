@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -204,7 +204,7 @@ bool ChildNodeRule::GetStopFurtherProcessing (void) const { return m_stopFurther
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRule::RootNodeRule () : ChildNodeRule ()
+RootNodeRule::RootNodeRule () : ChildNodeRule (), m_autoExpand(false)
     {
     }
 
