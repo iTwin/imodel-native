@@ -323,7 +323,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
 
     auto cameraView = m_viewController._ToCameraView();
-    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    bool useCamera = nullptr != cameraView /* ###TODO? Apparently no longer possible to turn camera off && cameraView->IsCameraOn() */;
     DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
     if (!useCamera)
         {
@@ -343,11 +343,12 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     bool geoLocated = !m_tileToEcef.IsIdentity();
     Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
     Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
+    Utf8CP adjustHeightString = geoLocated ? "adjustTilesetHeight(); viewer.scene.terrainProviderChanged.addEventListener(function() { adjustTilesetHeight(); }, this);viewer.scene.globe.depthTestAgainstTerrain = false;": "";
 
     Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
 
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, adjustHeightString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");

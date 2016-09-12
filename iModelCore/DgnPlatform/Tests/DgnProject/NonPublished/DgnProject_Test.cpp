@@ -904,14 +904,14 @@ TEST_F(ElementUriTests, TestLegacyUris)
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     DgnDbPtr db;
     
-    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Office Building.i.idgndb"), openParams);
+    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Office Building.i.ibim"), openParams);
     ASSERT_TRUE(db.IsValid());
     testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3APlanting&RevitConnectorID=513243");
     testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3ARoofs&RevitConnectorID=343500");
     testProvenanceUri(*db, "/DgnElements?SourceId=Civil%2Edgn%2Ei%2Edgn&ElementId=8512");
     testProvenanceUri(*db, "/DgnDb?FileName=office%20building%2Ei%2Edgn%3C2%3Ecivil%2Edgn%2Ei%2Edgn&ElementId=8512");
 
-    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.idgndb"), openParams);
+    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.ibim"), openParams);
     ASSERT_TRUE(db.IsValid());
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
@@ -920,7 +920,7 @@ TEST_F(ElementUriTests, TestLegacyUris)
 
     if (true)
         {
-        db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\BGRSmall976.dgndb"), openParams);
+        db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\BGRSmall976.bim"), openParams);
         ASSERT_TRUE(db.IsValid());
 
         auto eid1 = db->Elements().QueryElementIdByURI("/DgnDb?Code=29V%252D9&A=ConstructionPlanning%255FPhysicalHierarchy&N=Equipment");

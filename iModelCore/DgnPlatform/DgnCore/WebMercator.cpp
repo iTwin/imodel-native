@@ -254,7 +254,7 @@ BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     {
-    if (m_id.m_zoomLevel < 1)   // top zoom level never re-project properly
+    if (m_id.m_zoomLevel < 1) // level 0 tile never re-projects properly
         return ERROR;
 
     IGraphicBuilder::TileCorners corners;

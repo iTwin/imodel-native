@@ -447,9 +447,10 @@ struct DynamicsContext : RenderContext
 {
     friend struct DgnPrimitiveTool;
 private:
+    Render::Task::Priority m_priority;
     Render::GraphicListR m_dynamics;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
-    DynamicsContext(DgnViewportR);
+    DynamicsContext(DgnViewportR, Render::Task::Priority);
     ~DynamicsContext();
     void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
 

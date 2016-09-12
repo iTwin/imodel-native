@@ -405,33 +405,36 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
         delta.z = extents.high.z - origin.z;
         }
 
+    double backFraction = 1.0;
+    if (m_isCameraOn)
+        {
+        DPoint3d orgWorld = origin;
+        m_rotMatrix.MultiplyTranspose(orgWorld);
+
+        DPoint3d eyeOrg;
+        eyeOrg.DifferenceOf(m_camera.GetEyePoint(), orgWorld);
+        m_rotMatrix.Multiply(eyeOrg);
+        backFraction  = eyeOrg.z / m_camera.GetFocusDistance(); // Perspective fraction at back clip plane.
+
+        if (backFraction <= 0.0)
+            {
+            origin = saveOrg;
+            delta = saveDelta;
+            return;
+            }
+        }
+
     delta.z = std::max(delta.z, DgnUnits::OneMeter());
-    double maxDelta = std::max(delta.x, delta.y);
+
+    double maxDelta = std::max(delta.x, delta.y) * backFraction;
     if (maxDelta > delta.z)
         {
         double offset = maxDelta - delta.z;
-        origin.z -= offset;
-        delta.z += offset*2.0;
+        origin.z -= offset/2.0;
+        delta.z += offset;
         }
 
     m_rotMatrix.MultiplyTranspose(origin);
-
-    if (!m_isCameraOn)
-        return;
-
-    DVec3d cameraDir;
-    cameraDir.DifferenceOf(m_camera.GetEyePoint(), origin);
-    m_rotMatrix.Multiply(cameraDir);
-
-    if (cameraDir.z < DgnUnits::OneMeter()) // camera is outside project extents, pointed away. Reset to original values.
-        {
-        origin = saveOrg;
-        delta = saveDelta;
-        return;
-        }
-
-    // set the front plane distance to about 6 inches
-//    delta.z = cameraDir.z - (15.2 * DgnUnits::OneCentimeter());
     }
 
 struct ViewChangedCaller
@@ -508,9 +511,9 @@ ViewportStatus DgnViewport::SetupFromViewController()
                     DVec3d cameraDir;
                     cameraDir.DifferenceOf(m_camera.GetEyePoint(), origin);
                     m_rotMatrix.Multiply(cameraDir);
-
-                    if (delta.z > cameraDir.z - DgnUnits::OneMillimeter())
-                        delta.z = cameraDir.z - DgnUnits::OneMillimeter();
+                    double maxDeltaZ = cameraDir.z - (15.2 * DgnUnits::OneCentimeter()); // about 6 inches
+                    if (delta.z > maxDeltaZ)
+                        delta.z = maxDeltaZ;
                     }
                 }
             }
@@ -535,6 +538,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     DMap4d npcToView = CalcNpcToView();
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
+    m_sync.InvalidateRenderPlan();
     m_sync.SetValidController();
 
     m_trackers.CallAllHandlers(ViewChangedCaller());
