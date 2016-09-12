@@ -83,6 +83,20 @@ RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
 #include "ImagePPAdmin.h"
 #include "RasterFile.h"
 
+//#define RASTER_TRACE 1
+#if defined (RASTER_TRACE)
+#   define RASTERLOG (*NativeLogging::LoggingManager::GetLogger ("Raster"))
+#   define DEBUG_PRINTF RASTERLOG.debugv
+#   define INFO_PRINTF  RASTERLOG.infov
+#   define WARN_PRINTF  RASTERLOG.warningv
+#   define ERROR_PRINTF RASTERLOG.errorv
+#else
+#   define DEBUG_PRINTF(...)
+#   define INFO_PRINTF(...)
+#   define WARN_PRINTF(...)
+#   define ERROR_PRINTF(...)
+#endif
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_IMAGEPP
