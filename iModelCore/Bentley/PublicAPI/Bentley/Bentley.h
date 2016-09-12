@@ -155,7 +155,7 @@
       #define BENTLEY_NAMESPACE_NAME BentleyApi
   #else
       // The actual version-specific namespace name from a code/type perspective
-      #define BENTLEY_NAMESPACE_NAME BentleyG0601
+      #define BENTLEY_NAMESPACE_NAME BentleyB0200
   #endif
 
   #define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {

@@ -39,7 +39,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G06" BMakeOptions="+dTMP_BUILD_STATIC">
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="B02" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <Bindings>
@@ -176,7 +176,7 @@
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=Bentley -dTEST_COLLECTION_PRODUCT=Bentley-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="G06"
+        ApiNumber="B02"
         >
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
