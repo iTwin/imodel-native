@@ -213,6 +213,14 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
     return DataSourceStatus();
 }
 
+DataSourceStatus DataSourceAccountAzure::uploadBlobSync(DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    DataSourceURL    url;
+    dataSource.getURL(url);
+
+    return uploadBlobSync(url, source, size);
+    }
+
 DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
 {
     DataSourceURL        containerName;
