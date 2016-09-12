@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="G06">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
@@ -20,7 +20,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="G06">
+    <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary-Curl"/>
         <SubPart PartName="BeHttpLibrary-Casablanca"/>
