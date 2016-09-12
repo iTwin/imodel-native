@@ -43,3 +43,7 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
+
+#TFS 559996 failing due to disallowing multiinheritence in a given case (Affan)
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
+

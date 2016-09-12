@@ -377,7 +377,7 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
             }
 
         if (Enum::Contains(kind, Kind::HasIncompleteConstraintDefinition))
-            str.append(" At least one constraint definition is not complete.");
+            str.append(" The relationship class is not abstract and therefore constraints must be defined.");
 
         if (Enum::Contains(kind, Kind::HasKeyProperties))
             str.append(" At least one constraint defines Key properties. Key properties are not supported in EC3 ECSchemas.");
