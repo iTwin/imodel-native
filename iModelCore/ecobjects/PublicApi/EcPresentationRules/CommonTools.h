@@ -20,7 +20,6 @@ Helper class for commonly used functions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CommonTools
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     CommonTools() {}
 
@@ -98,7 +97,6 @@ public:
             rule->WriteXml (parentXmlNode);
         }
 
-/*__PUBLISH_SECTION_START__*/
 public:
     //! Adds an element to the specified list sorted by elements priority
     template<typename ElementType, typename ListType> static void AddToListByPriority(ListType& list, ElementType& element)
