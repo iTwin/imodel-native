@@ -85,7 +85,7 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(tile.GetCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
@@ -143,7 +143,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
     {
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
-    WriteBoundingVolume(root, tile.GetRange());
+    WriteBoundingVolume(root, tile.GetTileRange());
 
     root[JSON_Content]["url"] = Utf8String(m_context.GetTileUrl(tile, s_binaryDataExtension));
     if (!tile.GetChildren().empty())
@@ -170,7 +170,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
 
                 child["refine"] = "replace";
                 child[JSON_GeometricError] = childTile->GetTolerance();
-                WriteBoundingVolume(child, childTile->GetRange());
+                WriteBoundingVolume(child, childTile->GetTileRange());
 
                 child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
                 root[JSON_Children].append(child);
@@ -1041,10 +1041,10 @@ PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& ro
         {
         Json::Value         child;
 
-        rootRange.Extend (rootTile.GetRange());
+        rootRange.Extend (rootTile.GetTileRange());
         rootJson["refine"] = "replace";
         rootJson[JSON_GeometricError] = rootTile.GetTolerance();
-        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetRange());
+        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 
         rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
         }

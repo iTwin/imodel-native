@@ -216,17 +216,16 @@ private:
     typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
     typedef bset<TriangleKey> TriangleSet;
 
-    Transform           m_transformToDgn;
     TileMeshPtr         m_mesh;
     VertexMap           m_vertexMap;
     TriangleSet         m_triangleSet;
     double              m_tolerance;
     size_t              m_triangleIndex;
 
-    TileMeshBuilder(TileDisplayParamsPtr& params, TransformCP transformToDgn, double tolerance) : m_mesh(TileMesh::Create(params)), m_vertexMap(VertexKey::Comparator(tolerance)),
-            m_transformToDgn(nullptr != transformToDgn ? *transformToDgn : Transform::FromIdentity()), m_tolerance(tolerance), m_triangleIndex(0) { }
+    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance) : m_mesh(TileMesh::Create(params)), m_vertexMap(VertexKey::Comparator(tolerance)),
+            m_tolerance(tolerance), m_triangleIndex(0) { }
 public:
-    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, TransformCP transformToDgn, double tolerance) { return new TileMeshBuilder(params, transformToDgn, tolerance); }
+    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance) { return new TileMeshBuilder(params, tolerance); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
@@ -255,7 +254,7 @@ struct TileGeometry : RefCountedBase
 private:
     TileDisplayParamsPtr    m_params;
     Transform               m_transform;
-    DRange3d                m_range;
+    DRange3d                m_tileRange;
     DgnElementId            m_elementId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
@@ -263,7 +262,7 @@ private:
     bool                    m_hasTexture;
 
 protected:
-    TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
+    TileGeometry(TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
@@ -273,7 +272,7 @@ protected:
 public:
     TileDisplayParamsPtr GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
-    DRange3dCR GetRange() const { return m_range; }
+    DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetElementId() const { return m_elementId; } //!< The ID of the element from which this geometry was produced
 
     size_t GetFacetCount() const { return m_facetCount; }
@@ -286,9 +285,9 @@ public:
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
 };
 
 //=======================================================================================
@@ -299,26 +298,29 @@ public:
 struct TileNode : RefCountedBase
 {
 private:
-    DRange3d            m_range;
+    DRange3d            m_dgnRange;
     TileNodeList        m_children;
     size_t              m_depth;
     size_t              m_siblingIndex;
     double              m_tolerance;
     TileNodeP           m_parent;
     WString             m_subdirectory;
+    Transform           m_transformFromDgn;
 
 protected:
-    TileNode() : TileNode(DRange3d::NullRange(), 0, 0, 0.0, nullptr) { }
-    TileNode(DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
-        : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
+    TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, 0.0, nullptr) { }
+    TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+        : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn) { }
 
+    TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 public:
-    static TileNodePtr Create() { return new TileNode(); }
-    static TileNodePtr Create(DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
-        { return new TileNode(range, depth, siblingIndex, tolerance, parent); }
+    static TileNodePtr Create(TransformCR transformFromDgn) { return new TileNode(transformFromDgn); }
+    static TileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+        { return new TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent); }
 
-    DRange3dCR GetRange() const { return m_range; }
-    DPoint3d   GetCenter() const { return DPoint3d::FromInterpolate (m_range.low, .5, m_range.high); }
+    DRange3dCR GetDgnRange() const { return m_dgnRange; }
+    DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
+    DPoint3d GetTileCenter() const { DRange3d range = GetTileRange(); return DPoint3d::FromInterpolate (range.low, .5, range.high); }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }
@@ -329,11 +331,9 @@ public:
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     WStringCR GetSubdirectory() const { return m_subdirectory; }
     void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
-    void SetRange (DRange3dCR range) { m_range = range; }
+    void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
+    void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
 
-    DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
-
-    //! Generate a list of meshes from this tile's geometry.
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
@@ -394,6 +394,7 @@ struct TileGenerator
 private:
     Statistics          m_statistics;
     IProgressMeter&     m_progressMeter;
+    Transform           m_transformFromDgn;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
@@ -402,6 +403,7 @@ public:
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
 
+    TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
 
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile);

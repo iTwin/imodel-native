@@ -433,15 +433,6 @@ WString TileNode::GetRelativePath (WCharCP rootName, WCharCP extension) const
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-double TileNode::GetMaxDiameter(double tolerance) const
-    {
-    static double s_maxPixelRatio = 0.25;
-    return m_range.DiagonalDistance() / (tolerance * s_maxPixelRatio);
-    }
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2016
 +===============+===============+===============+===============+===============+======*/
@@ -536,7 +527,7 @@ TileNodePList TileNode::GetTiles()
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
-    : m_params(params), m_transform(tf), m_range(range), m_elementId(elemId), m_isCurved(isCurved), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
+    : m_params(params), m_transform(tf), m_tileRange(range), m_elementId(elemId), m_isCurved(isCurved), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
     {
     //
     }
@@ -547,7 +538,7 @@ TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId
 void TileGeometry::SetFacetCount(size_t numFacets)
     {
     m_facetCount = numFacets;
-    double rangeVolume = m_range.Volume();
+    double rangeVolume = m_tileRange.Volume();
     m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
     }
 
@@ -829,7 +820,7 @@ void TileGenerator::SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh,
     ComputeSubRanges(subRanges, points, maxPoints, DRange3d::From(points));
     for (auto const& subRange : subRanges)
         {
-        auto meshBuilder = TileMeshBuilder::Create(displayParams, nullptr, 1.0E-6);
+        auto meshBuilder = TileMeshBuilder::Create(displayParams, 1.0E-6);
         for (auto const& triangle : mesh.Triangles())
             if (subRange.IntersectsWith(mesh.GetTriangleRange(triangle)))
                 meshBuilder->AddTriangle(triangle, mesh);
@@ -887,7 +878,7 @@ void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile)
     {
-    root = TileNode::Create();
+    root = TileNode::Create(GetTransformFromDgn());
 
     // Filter elements by viewed models + categories
     ModelAndCategorySet vset(view);
@@ -923,7 +914,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
     // Collect the tiles
     static const double s_leafTolerance = 0.01;
     double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
-    root = TileNode::Create(viewRange, 0, 0, tolerance, nullptr);
+    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
     root->ComputeTiles(s_leafTolerance, maxPointsPerTile, vset, db);
 
     return Status::Success;
@@ -983,7 +974,7 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Virt
     static const size_t s_depthLimit = 0xffff;
     static const double s_targetChildCount = 5.0;
 
-    size_t facetCount = countFacets(m_range, vset, db, maxPointsPerTile);
+    size_t facetCount = countFacets(m_dgnRange, vset, db, maxPointsPerTile);
     if (facetCount < maxPointsPerTile)
         {
         m_tolerance = chordTolerance;
@@ -994,11 +985,11 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Virt
         size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
         size_t siblingIndex = 0;
 
-        ComputeSubTiles(subRanges, m_range, targetChildFacetCount, vset, db);
+        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, vset, db);
         for (auto& subRange : subRanges)
             {
             double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode::Create(subRange, m_depth+1, siblingIndex++, childTolerance, this));
+            m_children.push_back(TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, childTolerance, this));
             }
 
         for (auto& child : m_children)
@@ -1054,7 +1045,7 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct TileMeshProcessor : IGeometryProcessor
+struct TileGeometryProcessor : IGeometryProcessor
 {
 private:
     IFacetOptionsR      m_facetOptions;
@@ -1063,6 +1054,7 @@ private:
     ViewControllerCR    m_view;
     TileGeometryList    m_geometries;
     DRange3d            m_range;
+    Transform           m_transformFromDgn;
 
     void AddGeometry(TileGeometryR geom);
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
@@ -1080,10 +1072,10 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
-    TileMeshProcessor(ViewControllerCR view, DRange3dCR range, IFacetOptionsR facetOptions)
-        : m_facetOptions(facetOptions), m_targetFacetOptions(&facetOptions), m_view(view), m_range(range)
+    TileGeometryProcessor(ViewControllerCR view, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn)
+        : m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_view(view), m_range(range), m_transformFromDgn(transformFromDgn)
         {
-        // ###TODO_FACET_COUNT: Scale target facet options by dgn-to-target
+        m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         }
 
     TileGeometryList const& GetGeometries() const { return m_geometries; }
@@ -1092,7 +1084,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshProcessor::AddGeometry(TileGeometryR geom)
+void TileGeometryProcessor::AddGeometry(TileGeometryR geom)
     {
     TileGeometryPtr geomPtr = &geom;
     auto pos = std::lower_bound(m_geometries.begin(), m_geometries.end(), geomPtr,
@@ -1104,13 +1096,13 @@ void TileMeshProcessor::AddGeometry(TileGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
         return false;   // ignore and continue
 
-    auto tf = gf.GetLocalToWorldTransform();
+    auto tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     tf.Multiply(range, range);
     
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
@@ -1123,7 +1115,7 @@ bool TileMeshProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simplify
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
+bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
     {
     if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
         return false;   // process as facets.
@@ -1136,7 +1128,7 @@ bool TileMeshProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
+bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
     bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
     if (!hasCurvedFaceOrEdge)
@@ -1150,7 +1142,7 @@ bool TileMeshProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
+bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
     {
     MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
     clone->CopyFrom(surface);
@@ -1163,13 +1155,13 @@ bool TileMeshProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGrap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
+bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
     PolyfaceHeaderPtr clone = polyface.Clone();
     if (!clone->IsTriangulated())
         clone->Triangulate();
 
-    clone->Transform(gf.GetLocalToWorldTransform());
+    clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
     DRange3d range = clone->PointRange();
 
@@ -1185,12 +1177,12 @@ bool TileMeshProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
+bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
     ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
     DRange3d range = clone->GetEntityRange();
 
-    Transform localTo3mx = gf.GetLocalToWorldTransform();
+    Transform localTo3mx = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     Transform solidTo3mx = Transform::FromProduct(localTo3mx, clone->GetEntityTransform());
 
     solidTo3mx.Multiply(range, range);
@@ -1206,7 +1198,7 @@ bool TileMeshProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshProcessor::_OutputGraphics(ViewContextR context)
+void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
     // ###TODO_FACET_COUNT: Separate range query from add'l criteria; allow add'l criteria to be customized
     ModelAndCategorySet vset(m_view);
@@ -1255,16 +1247,17 @@ TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::Norm
 
     // Collect geometry from elements in this node, sorted by facet count density
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
-    TileMeshProcessor processor(view, GetRange(), *facetOptions);
+    TileGeometryProcessor processor(view, GetDgnRange(), *facetOptions, m_transformFromDgn);
 
     GeometryProcessor::Process(processor, view.GetDgnDb());
 
     // Convert to meshes
     MeshBuilderMap builderMap;
     size_t geometryCount = 0;
+    DRange3d myTileRange = GetTileRange();
     for (auto& geom : processor.GetGeometries())
         {
-        DRange3dCR geomRange = geom->GetRange();
+        DRange3dCR geomRange = geom->GetTileRange();
         double rangePixels = geomRange.DiagonalDistance() / tolerance;
         if (rangePixels < s_minRangeBoxSize)
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
@@ -1282,9 +1275,9 @@ TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::Norm
         if (builderMap.end() != found)
             meshBuilder = found->second;
         else
-            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, nullptr, vertexTolerance); // ###TODO_FACET_COUNT: Builder never uses transform...remove.
+            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance);
 
-        bool isContained = geomRange.IsContained(m_range);
+        bool isContained = geomRange.IsContained(myTileRange);
         bool doVertexClustering = rangePixels < s_decimateThresholdPixels;
 
         ++geometryCount;
@@ -1294,7 +1287,7 @@ TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::Norm
             {
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 {
-                if (isContained || m_range.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+                if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                     {
                     DgnElementId elemId;
                     if (!maxGeometryCountExceeded)
