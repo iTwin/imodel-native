@@ -14,10 +14,12 @@
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
 #include <DgnDbServer/Client/DgnDbRepositoryManager.h>
+#include <DgnDbServer/Client/DgnDbRepositoryAdmin.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbClient);
@@ -26,6 +28,7 @@ DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
 DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfo, DgnDbServerBriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(DgnDbRepositoryManagerPtr, DgnDbRepositoryManager);
 
 typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, RepositoryInfoCR, FileInfoCR)> BriefcaseFileNameCallback;
 
@@ -64,12 +67,12 @@ struct DgnDbClient
 {
 //__PUBLISH_SECTION_END__
 private:
-    DgnDbRepositoryManagerPtr   m_repositoryManager;
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
     Utf8String                  m_projectId;
     ClientInfoPtr               m_clientInfo;
     AuthenticationHandlerPtr    m_authenticationHandler;
+    DgnDbRepositoryAdmin        m_repositoryAdmin;
 
     DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
@@ -190,8 +193,19 @@ public:
     //! @param[in] cancellationToken Cancellation is not going to prevent repository deletion, if the request is already sent.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Returns DgnDbServer RepositoryManager.
-    DGNDBSERVERCLIENT_EXPORT IRepositoryManager* GetRepositoryManagerP();
+    //! Returns repository admin that caches DgnDbRepositoryManager instances.
+    //! @return Returns pointer to DgnDbClient managed repository admin.
+    DGNDBSERVERCLIENT_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();
+
+    //! Creates repository manager that is not managed by DgnDbClient.
+    //! @param[in] repositoryInfo
+    //! @param[in] fileInfo
+    //! @param[in] briefcaseInfo
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has briefcase manager as result. See DgnDbRepositoryManager.
+    //! @note Should use DgnDbRepositoryAdmin provided by DgnDbClient::GetRepositoryAdmin.
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryManagerTaskPtr CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbBriefcaseInfoCR briefcaseInfo,
+        ICancellationTokenPtr cancellationToken = nullptr);
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

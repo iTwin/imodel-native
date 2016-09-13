@@ -30,7 +30,6 @@ using namespace std;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbRepositoryConnection);
 typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRepositoryConnectionPtr;
-typedef struct DgnDbRepositoryConnection const&                         DgnDbRepositoryConnectionCR;
 
 struct DgnDbCodeLockSetResultInfo;
 struct DgnDbCodeTemplate;
@@ -257,6 +256,13 @@ public:
     static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                    ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
+    //! Checks whether master file with specified fileId is active.
+    //! @param[in] fileId Db guid of the master file.
+    //! @param[in] briefcaseId Briefcase id.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that returns error if there is no active master file with specified id.
+    DgnDbServerStatusTaskPtr ValidateBriefcase (BeGuidCR fileId, BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
@@ -265,7 +271,7 @@ public:
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        Utf8StringCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+        BeGuidCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Attempt to acquire the requested set of locks.
     //! @param[in] locks Set of locks to check
@@ -275,7 +281,7 @@ public:
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        Utf8StringCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+        BeGuidCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
@@ -284,7 +290,7 @@ public:
     //! @param[in] masterFileId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
-        Utf8StringCR masterFileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+        BeGuidCR masterFileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete all currently held locks by specific briefcase.
     //! @param[in] briefcaseId
@@ -298,7 +304,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the status of acquiring repository lock as result.
     //! @note Part of master file replacement. Should be used only if repository should be locked while the new file is created. See UploadNewFile.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Replace a master file on the server.
     //! @param[in] filePath The path to the BIM file to upload.
@@ -323,7 +329,7 @@ public:
     //! @param[in] fileId DbGuid of the queried master file 
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFilesTaskPtr GetMasterFilesById(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFilesTaskPtr GetMasterFilesById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a copy of the master file from the repository
     //! @param[in] localFile Location where the downloaded file should be placed.
