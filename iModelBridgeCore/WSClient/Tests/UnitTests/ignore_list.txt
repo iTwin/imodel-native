@@ -48,3 +48,11 @@ DataSourceCacheTests.CacheResponse_NewResponseIsEmpty_RemovesCachedInstances
 CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
     # DgnDb61-16Q2-Dev, WinX64, DEBUG
     # <Crash, no output or stack printed>
+
+ChangeManagerTests.CreateRelationship_SyncSetToActive_Success
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Crash, no output or stack printed>
+
+ChangeGraphTests.BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Crash, no output or stack printed>
