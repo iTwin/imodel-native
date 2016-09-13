@@ -12,13 +12,6 @@
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 
-// #define WIP_FACET_COUNT
-
-BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-class XYZRangeTreeRoot;
-END_BENTLEY_GEOMETRY_NAMESPACE
-
-BENTLEY_RENDER_TYPEDEFS(TileGeometryCache);
 BENTLEY_RENDER_TYPEDEFS(Triangle);
 BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
@@ -53,9 +46,13 @@ struct TileTextureImage : RefCountedBase
         ImageSource       m_imageSource;
 
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
-    public:
+
         TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
         TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
+    public:
+        static TileTextureImagePtr Create(ImageSource&& imageSource) { return new TileTextureImage(std::move(imageSource)); }
+        static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
+
         ImageSourceCR GetImageSource() const { return m_imageSource; }
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };
@@ -72,11 +69,13 @@ private:
     TileTextureImagePtr     m_textureImage;
     bool                    m_ignoreLighting;
 
-public:
-    TileDisplayParams() : TileDisplayParams(nullptr, nullptr) { }
-    TileDisplayParams (uint32_t fillColor, TileTextureImagePtr& textureImage, bool ignoreLighting=true) : m_fillColor(fillColor), m_textureImage (textureImage), m_ignoreLighting(ignoreLighting) { }
-    TileDisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) : TileDisplayParams(&graphicParams, &geometryParams) { }
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
+    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
+public:
+    static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
+    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
+    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
+    static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
 
     bool operator<(TileDisplayParams const& rhs) const;
 
@@ -86,29 +85,6 @@ public:
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
-};
-
-//=======================================================================================
-//! Holds geometry processed during tile generation. Objects produced during this process
-//! may holds pointers into the cache; they become invalid once the cache itself is
-//! destroyed.
-// @bsistruct                                                   Paul.Connelly   07/16
-//=======================================================================================
-struct TileGeometryCache
-{
-private:
-
-    XYZRangeTreeRoot*       m_tree;
-    Transform               m_transformToDgn;
-    Transform               m_transformFromDgn;
-public:
-    DGNPLATFORM_EXPORT TileGeometryCache(TransformCR transformFromDgn);
-    DGNPLATFORM_EXPORT ~TileGeometryCache();
-
-    XYZRangeTreeRoot& GetTree() const { return *m_tree; }
-    DGNPLATFORM_EXPORT DRange3d GetRange() const;
-    TransformCR GetTransformToDgn() const { return m_transformToDgn; }
-    TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 };
 
 //=======================================================================================
@@ -151,7 +127,7 @@ struct TilePolyline
 struct TileMesh : RefCountedBase
 {
 private:
-    TileDisplayParamsPtr    m_displayParams;   // pointer into TileGeometryCache
+    TileDisplayParamsPtr    m_displayParams;
     bvector<Triangle>       m_triangles;
     bvector<TilePolyline>   m_polylines;
     bvector<DPoint3d>       m_points;
@@ -331,13 +307,15 @@ private:
     TileNodeP           m_parent;
     WString             m_subdirectory;
 
-    static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, TileGeometryCacheR geometryCache, DRange3dCR range, size_t maxFacetsPerSubTile);
-
-    TileMeshPtr GetRangeMesh(DRange3dCR range, TileGeometryCacheR geometryCache) const;
-public:
+protected:
     TileNode() : TileNode(DRange3d::NullRange(), 0, 0, 0.0, nullptr) { }
     TileNode(DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
         : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
+
+public:
+    static TileNodePtr Create() { return new TileNode(); }
+    static TileNodePtr Create(DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+        { return new TileNode(range, depth, siblingIndex, tolerance, parent); }
 
     DRange3dCR GetRange() const { return m_range; }
     DPoint3d   GetCenter() const { return DPoint3d::FromInterpolate (m_range.low, .5, m_range.high); }
@@ -353,13 +331,9 @@ public:
     void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
     void SetRange (DRange3dCR range) { m_range = range; }
 
-    DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
 
     //! Generate a list of meshes from this tile's geometry.
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
-    DGNPLATFORM_EXPORT TileMeshPtr GetDefaultMesh(TileGeometryCacheR geometryCache) const;
-    DGNPLATFORM_EXPORT TileMeshPtr GetRangeMesh(TileGeometryCacheR geometryCache) const;
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
@@ -368,12 +342,9 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
-#if defined(WIP_FACET_COUNT)
-public:
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
     DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
     DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
-#endif
 };
 
 //=======================================================================================
@@ -422,27 +393,18 @@ struct TileGenerator
     };
 private:
     Statistics          m_statistics;
-    TileGeometryCache   m_geometryCache;
     IProgressMeter&     m_progressMeter;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, IProgressMeter* progressMeter=nullptr);
 
-    //! Populates the TileGeometryCache from the contents of the specified view
-    DGNPLATFORM_EXPORT Status LoadGeometry(ViewControllerR view, double toleranceInMeters);
-    //! Generates the HLOD tree from the contents of the TileGeometryCache within the specified range
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR rootTile, DRange3dCR range, double leafTolerance, size_t maxPointsPerTile=30000);
-    Status GenerateTiles(TileNodeR rootTile, double leafTolerance, size_t maxPointsPerTile=30000) { return GenerateTiles(rootTile, m_geometryCache.GetRange(), leafTolerance, maxPointsPerTile); }
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
 
     Statistics const& GetStatistics() const { return m_statistics; }
-    TileGeometryCacheR GetGeometryCache() { return m_geometryCache; }
 
-#if defined(WIP_FACET_COUNT)
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR root, ViewControllerR view, size_t maxPointsPerTile);
-#endif
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile);
 };
 
 //=======================================================================================

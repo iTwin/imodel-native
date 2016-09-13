@@ -280,7 +280,6 @@ private:
     Status              m_acceptTileStatus = Status::Success;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
-    virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
@@ -315,7 +314,6 @@ public:
     Status Publish(bool appOnly, DPoint3dCR groundPoint);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
-    TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,26 +454,6 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
         }
     }
 
-#if defined(WIP_FACET_COUNT)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void printTileTree(TileNodeCR node)
-    {
-    Utf8String indent;
-    indent.append(node.GetDepth(), ' ');
-
-    DRange3dCR r = node.GetRange();
-    printf("%s %f (%f,%f,%f)-(%f,%f,%f)\n",
-            indent.c_str(), node.GetTolerance(),
-            r.low.x, r.low.y, r.low.z,
-            r.high.x, r.high.y, r.high.z);
-
-    for (auto const& child : node.GetChildren())
-        printTileTree(*child);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -494,37 +472,22 @@ PublisherContext::Status TilesetPublisher::Publish(bool appOnly, DPoint3dCR grou
 
         m_generator = &generator;
 
-#if defined(WIP_FACET_COUNT)
-    TileNodePtr rootTile = new TileNode();
-    StopWatch timer(true);
-    status = ConvertStatus(generator.GenerateTiles(*rootTile, m_viewController, 20000));
-    printf("%u tiles in: %f\n", static_cast<uint32_t>(rootTile->GetNodeCount()), timer.GetCurrentSeconds());
-    if (Status::Success != status)
-        printf("No geometry...\n");
-    else
-        printTileTree(*rootTile);
-
-    if (Status::Success != status)
-        return status;
-
-    Json::Value elementTileSet;
-    DRange3d rootRange = DRange3d::NullRange();;
-    status = CollectOutputTiles(elementTileSet, rootRange, rootTile, GetRootName(), generator, *this);
-    if (Status::Success == status)
-        status = WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile));
-
-    return status;
-#else
-        PublishViewModels (generator, *this, s_toleranceInMeters, progressMeter);
-        m_generator = nullptr;
+        TileNodePtr rootTile;
+        StopWatch timer(true);
+        status = ConvertStatus(generator.GenerateTiles(rootTile, m_viewController, 20000));
+        printf("%u tiles in: %f\n", static_cast<uint32_t>(rootTile->GetNodeCount()), timer.GetCurrentSeconds());
 
         if (Status::Success != status)
-            return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+            return status;
 
-        OutputStatistics(generator.GetStatistics());
+        Json::Value elementTileSet;
+        DRange3d rootRange = DRange3d::NullRange();;
+        status = CollectOutputTiles(elementTileSet, rootRange, *rootTile, GetRootName(), generator, *this);
+        if (Status::Success != status)
+            return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
         }
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), groundPoint);
-#endif
+
+    return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**

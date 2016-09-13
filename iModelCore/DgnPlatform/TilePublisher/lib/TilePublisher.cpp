@@ -92,12 +92,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-#if defined(WIP_FACET_COUNT)
     m_meshes = m_tile._GenerateMeshes(context.GetViewController(), TileGeometry::NormalMode::Always, false);
-#else
-    TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, false);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1034,24 +1029,24 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodePtr& rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
+PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
     {
     Status                      status;
     AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
 
     if (0 != m_maxTilesPerDirectory)
-        rootTile->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+        rootTile.GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
 
-    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (*rootTile, collector))))
+    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (rootTile, collector))))
         {
         Json::Value         child;
 
-        rootRange.Extend (rootTile->GetRange());
+        rootRange.Extend (rootTile.GetRange());
         rootJson["refine"] = "replace";
-        rootJson[JSON_GeometricError] = rootTile->GetTolerance();
-        TilePublisher::WriteBoundingVolume(rootJson, rootTile->GetRange());
+        rootJson[JSON_GeometricError] = rootTile.GetTolerance();
+        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetRange());
 
-        rootJson[JSON_Content]["url"] = Utf8String (rootTile->GetRelativePath (name.c_str(), s_metadataExtension).c_str());
+        rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
         }
     return status;
     }
@@ -1062,7 +1057,7 @@ PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& ro
 PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
     {
     IGenerateMeshTiles*         generateMeshTiles;
-    TileNodePtr                 rootTile = new TileNode();
+    TileNodePtr                 rootTile;
     Status                      status;
 
     if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
@@ -1075,7 +1070,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
         return status;
 
-    return CollectOutputTiles (rootJson, rootRange, rootTile, name, generator, collector); 
+    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,15 +1079,14 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
 PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
-    TileNodePtr             rootTile = new TileNode();
+    TileNodePtr             rootTile;
     Status                  status;
     static size_t           s_maxPointsPerTile = 20000;
 
-    if (Status::Success != (status = ConvertStatus(generator.LoadGeometry(m_viewController, toleranceInMeters))) ||
-        Status::Success != (status = ConvertStatus(generator.GenerateTiles (*rootTile, toleranceInMeters, s_maxPointsPerTile))))
+    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, m_viewController, s_maxPointsPerTile))))
         return status;
         
-    return CollectOutputTiles (rootJson, rootRange, rootTile, name, generator, collector); 
+    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
     }
 
 /*---------------------------------------------------------------------------------**//**
