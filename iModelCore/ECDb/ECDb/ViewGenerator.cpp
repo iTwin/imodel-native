@@ -618,10 +618,6 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
             if (generateECClassView)
                 m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
 
-            ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
-            if (generateECClassView)
-                m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
-
             if (second)
                 viewSql.AppendComma();
             else
@@ -633,6 +629,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 }
             else
                 {
+                ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
                 if (ecclassIdPropertyMap->IsPersisted())
                     {
                     viewSql.AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetTable().GetName().c_str()).AppendDot().AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetName().c_str());
