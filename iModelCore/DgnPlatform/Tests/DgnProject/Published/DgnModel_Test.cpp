@@ -176,7 +176,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 
     DgnElementPtr gelem;
     if (is3d)
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
     else
         gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
@@ -315,7 +315,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(5, iter.QueryCount()); // including RepositoryModel, DictionaryModel, and GroupInformationModel...
+    ASSERT_EQ(5, iter.QueryCount()); // including RepositoryModel, DictionaryModel, and Converter's GroupModel
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -327,7 +327,10 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     for (DgnModels::Iterator::Entry const& entry : iter)
         {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        if ((DgnModel::RepositoryModelId() == entry.GetModelId()) || (DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
+        DgnModelPtr model = modelTable.GetModel(entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+
+        if (!model->IsGeometricModel())
             continue;
 
         WString entryNameW(entry.GetCodeValue(), true); // string conversion
@@ -413,7 +416,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (7, iter.QueryCount ()); // including the RepositoryModel, DictionaryModel, and GroupInformationModel...
+    EXPECT_EQ (6, iter.QueryCount ()); // including the RepositoryModel and DictionaryModel
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
