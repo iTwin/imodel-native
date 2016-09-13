@@ -410,7 +410,7 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
     printf("Statistics:\n"
            "Tile count: %u\n"
            "Tile depth: %u\n"
-           "Geometry collection time: %.4f seconds\n"
+           "Range tree generation time: %.4f seconds\n"
            "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
            static_cast<uint32_t>(stats.m_tileCount),
            static_cast<uint32_t>(stats.m_tileDepth),
@@ -446,7 +446,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Collecting Geometry";
+    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Generating range tree";
     if (!m_taskName.Equals(newTaskName))
         {
         m_lastNumCompleted = 0xffffffff;
