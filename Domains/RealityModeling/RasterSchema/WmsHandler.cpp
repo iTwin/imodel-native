@@ -8,7 +8,7 @@
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/WmsHandler.h>
 #include "RasterSource.h"
-#include "RasterQuadTree.h"
+#include "RasterTileTree.h"
 #include "WmsSource.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -236,15 +236,16 @@ WmsModel::~WmsModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsModel::_LoadQuadTree() const
+BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
     {
-    m_rasterTreeP = nullptr;
-
+    if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
+        return SUCCESS;
+    
     RasterSourcePtr pSource = WmsSource::Create(m_map);
     if(pSource.IsValid())
-        m_rasterTreeP = RasterQuadTree::Create(*pSource, const_cast<WmsModel&>(*this));
+        m_root = new RasterRoot(*pSource, const_cast<WmsModel&>(*this), renderSys);
 
-    return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
+    return m_root.IsValid() ? BSISUCCESS : BSIERROR;
     }
 
 //----------------------------------------------------------------------------------------

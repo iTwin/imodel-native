@@ -8,7 +8,7 @@
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterHandler.h>
 #include "RasterSource.h"
-#include "RasterQuadTree.h"
+#include "RasterTileTree.h"
 #include "WmsSource.h"
 
 #define RASTER_MODEL_PROP_Clip "Clip"
@@ -294,7 +294,7 @@ ClipVectorCP RasterClip::GetClipVector() const
 //----------------------------------------------------------------------------------------
 RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
     {
-    m_loadStatus = LoadRasterStatus::Unloaded;
+    //m_loadStatus = LoadRasterStatus::Unloaded;
     }
 
 //----------------------------------------------------------------------------------------
@@ -302,6 +302,11 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
+    // Wait for tasks that we may have queued. 
+    //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
+    BeFolly::IOThreadPool::GetPool().WaitForIdle();
+
+    m_root = nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -310,29 +315,13 @@ RasterModel::~RasterModel()
 DMatrix4dCR  RasterModel::GetSourceToWorld() const { return _GetSourceToWorld(); }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-RasterQuadTreeP RasterModel::GetTree() const
-    {
-    if (LoadRasterStatus::Unloaded == m_loadStatus)
-        {
-        BeAssert(!m_rasterTreeP.IsValid());
-        if (SUCCESS == _LoadQuadTree() && m_rasterTreeP.IsValid())
-            m_loadStatus = LoadRasterStatus::Loaded;
-        else
-            m_loadStatus = LoadRasterStatus::UnknownError;  // Will not attempt to load again.
-        }        
-        
-    return m_rasterTreeP.get();
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
 void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
     {
-    if (m_rasterTreeP.IsValid())
-        m_rasterTreeP->DropGraphicsForViewport(viewport);
+    //&&MM todo
+//     if (m_rasterTreeP.IsValid())
+//         m_rasterTreeP->DropGraphicsForViewport(viewport);
     }
 
 //----------------------------------------------------------------------------------------
@@ -340,13 +329,12 @@ void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
 //----------------------------------------------------------------------------------------
 void RasterModel::_OnFitView(Dgn::FitContextR context) 
     {
-    RasterQuadTreeP pTree = GetTree();
-    if (NULL != pTree)
-        {
-        ElementAlignedBox3d box;
-        box.InitFrom(pTree->GetRoot().GetCorners().m_pts, 4);
-        context.ExtendFitRange(box, Transform::FromIdentity());
-        }    
+    _Load(nullptr);
+    if (!m_root.IsValid())
+        return;
+
+    ElementAlignedBox3d rangeWorld = m_root->ComputeRange();
+    context.ExtendFitRange(rangeWorld, m_root->GetLocation());
     }
 
 #if 0 // This is how we pick a raster. We do not require this feature for now so disable it.
@@ -357,10 +345,10 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
     {
     if (context.GetDrawPurpose() == DrawPurpose::Pick)
         {
-        RasterQuadTreeP pTree = GetTree();
-        if (NULL != pTree)
+        _Load(nullptr);
+        if (m_root.IsValid())
             {
-            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(pTree->GetRoot().GetCorners(), *this));
+            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(m_root.GetCorners(), *this));
             RefCountedPtr<RasterBorderGeometrySource::ElemTopology> pTopology = RasterBorderGeometrySource::ElemTopology::Create(*pSource);
 
             context.SetElemTopology(pTopology.get());
@@ -376,10 +364,27 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
 //----------------------------------------------------------------------------------------
 void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-    //Note that this call occurs on the client thread and that is must be fast.
-    RasterQuadTreeP pTree = GetTree();
-    if(NULL != pTree)
-        pTree->Draw(context);
+    _Load(&context.GetTargetR().GetSystem());
+
+    if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto now = std::chrono::steady_clock::now();
+    TileTree::DrawArgs args(context, m_root->GetLocation(), now, now - m_root->GetExpirationTime());
+    m_root->Draw(args);
+
+    DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
+
+    args.DrawGraphics(context);
+
+    if (!args.m_missing.empty())
+        {
+        args.RequestMissingTiles(*m_root);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing));
+        }
     }
 
 

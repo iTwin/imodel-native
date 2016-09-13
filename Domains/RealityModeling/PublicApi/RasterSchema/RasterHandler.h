@@ -18,7 +18,7 @@ struct RasterModelHandler;
 // @bsiclass                                                    Mathieu.Marchand  7/2016
 //=======================================================================================
 struct RasterClip
-    {   
+ {   
 public:
     typedef bvector<CurveVectorPtr> MaskVector;
 
@@ -60,7 +60,8 @@ public:
 
     //! Add a single clip mask to the list. Curve is not copied, its refcount will be incremented. Curve must be of inner type.
     RASTERSCHEMA_EXPORT StatusInt AddMask(CurveVectorR curve);
-    };
+ };
+
 
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
@@ -82,8 +83,8 @@ protected:
         UnknownError,
         };
 
-    mutable LoadRasterStatus  m_loadStatus;
-    mutable RasterQuadTreePtr m_rasterTreeP;
+    //&&MM TODO avoid trying to load over and over in case of error. mutable LoadRasterStatus  m_loadStatus;
+    mutable RasterRootPtr m_root;
 
     RasterClip m_clips;
     
@@ -92,9 +93,7 @@ protected:
     // We now use _AddTerrainGraphics which will be called for every frame. This is required when zooming out otherwise we get flickering.
     //virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
     virtual void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
-    virtual BentleyStatus _LoadQuadTree() const {return BSIERROR;}
-
-    RasterQuadTreeP GetTree() const;
+    virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const { return BSIERROR; }
 
     virtual void _OnFitView(Dgn::FitContextR) override;
 
