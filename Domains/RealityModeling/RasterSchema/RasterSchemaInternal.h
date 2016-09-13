@@ -20,6 +20,10 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
 #include <DgnPlatform/JsonUtils.h>
+#include <DgnPlatform/TileTree.h>
+#include <folly/BeFolly.h>
+
+
 #include <Imagepp/h/ImageppAPI.h>
 
 #ifdef GetCurrentTime
@@ -69,9 +73,6 @@
 #include <RasterSchema/RasterFileHandler.h>
 #include <RasterSchema/RasterDomain.h>
 
-RASTERSCHEMA_TYPEDEFS(RasterTile)
-RASTERSCHEMA_REF_COUNTED_PTR(RasterTile)
-
 RASTERSCHEMA_TYPEDEFS(RasterSource)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
 
@@ -79,17 +80,20 @@ RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
 // Internal header files
 //
 #include "RasterSource.h"
-#include "RasterQuadTree.h"
+#include "RasterTileTree.h"
 #include "ImagePPAdmin.h"
 #include "RasterFile.h"
 
+#ifndef NDEBUG
 //#define RASTER_TRACE 1
+#endif
+
 #if defined (RASTER_TRACE)
-#   define RASTERLOG (*NativeLogging::LoggingManager::GetLogger ("Raster"))
-#   define DEBUG_PRINTF RASTERLOG.debugv
-#   define INFO_PRINTF  RASTERLOG.infov
-#   define WARN_PRINTF  RASTERLOG.warningv
-#   define ERROR_PRINTF RASTERLOG.errorv
+#   define PCLOG (*NativeLogging::LoggingManager::GetLogger ("Raster"))
+#   define DEBUG_PRINTF PCLOG.debugv
+#   define INFO_PRINTF  PCLOG.infov
+#   define WARN_PRINTF  PCLOG.warningv
+#   define ERROR_PRINTF PCLOG.errorv
 #else
 #   define DEBUG_PRINTF(...)
 #   define INFO_PRINTF(...)
