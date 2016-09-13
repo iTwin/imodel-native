@@ -206,6 +206,60 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     EXPECT_EQ(1, statement.GetValueId <ECInstanceId>(0).GetValue());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
+    {
+    ECDbR ecdb = SetupECDb("ecprimitivevaluefromjson.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='s' typeName='string' />"
+        "        <ECProperty propertyName='p2d' typeName='point2d' />"
+        "        <ECProperty propertyName='p3d' typeName='point3d' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true), 0);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    rapidjson::Document rapidJsonVal;
+    rapidJsonVal.SetObject();
+    rapidJsonVal.AddMember("Price", 3.0003, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("s", "StringVal", rapidJsonVal.GetAllocator());
+
+    //add point2d member
+    rapidjson::Value point2dObjValue;
+    point2dObjValue.SetObject();
+    point2dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
+    point2dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("p2d", point2dObjValue, rapidJsonVal.GetAllocator());
+
+    //add point3d member
+    rapidjson::Value point3dObjValue;
+    point3dObjValue.SetObject();
+    point3dObjValue.AddMember("x", 0, rapidJsonVal.GetAllocator());
+    point3dObjValue.AddMember("y", 0, rapidJsonVal.GetAllocator());
+    point3dObjValue.AddMember("z", 0, rapidJsonVal.GetAllocator());
+    rapidJsonVal.AddMember("p3d", point3dObjValue, rapidJsonVal.GetAllocator());
+
+    ECClassCP parentClass = ecdb.Schemas().GetECClass("TestSchema", "Parent");
+    ASSERT_TRUE(parentClass != nullptr);
+    JsonInserter inserter(ecdb, *parentClass);
+
+    ECInstanceKey key;
+    ASSERT_EQ(SUCCESS, inserter.Insert(key, rapidJsonVal));
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ECSqlStatus prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
+    stmt.BindPoint2D(1, DPoint2d::From(0, 0));
+    stmt.BindPoint3D(2, DPoint3d::From(0, 0, 0));
+    DbResult stepStatus = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
+    }
+
 #define JSONTABLE_NAME "testjson"
 
 #define BOOLVALUE true
