@@ -17,7 +17,7 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
     RegisterHandler(AlignmentHorizontalHandler::GetHandler());
-    RegisterHandler(AlignmentStationHandler::GetHandler());
+    RegisterHandler(AlignmentReferentHandler::GetHandler());
     RegisterHandler(AlignmentVerticalHandler::GetHandler());    
     }
 

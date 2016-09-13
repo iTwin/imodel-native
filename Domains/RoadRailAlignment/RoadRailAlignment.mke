@@ -47,7 +47,7 @@ $(o)Alignment$(oext) : $(_MakeFilePath)Alignment.cpp ${MultiCompileDepends} $(ap
 
 $(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
 
-$(o)AlignmentStation$(oext) : $(_MakeFilePath)AlignmentStation.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentStation.h
+$(o)AlignmentReferent$(oext) : $(_MakeFilePath)AlignmentReferent.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentReferent.h
 
 $(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
 

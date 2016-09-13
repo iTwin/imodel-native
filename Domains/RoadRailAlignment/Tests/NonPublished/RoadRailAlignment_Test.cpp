@@ -35,10 +35,10 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_EQ(1, verticalIds.size());
     ASSERT_EQ(verticalAlignmPtr->GetElementId(), *verticalIds.begin());
 
-    // Create Stations
-    auto station1Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
-    ASSERT_TRUE(station1Ptr->Insert().IsValid());
+    // Create Referents
+    auto referent1Ptr = AlignmentReferent::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
+    ASSERT_TRUE(referent1Ptr->Insert().IsValid());
 
-    auto station2Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
-    ASSERT_TRUE(station2Ptr->Insert().IsValid());
+    auto referent2Ptr = AlignmentReferent::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
+    ASSERT_TRUE(referent2Ptr->Insert().IsValid());
     }

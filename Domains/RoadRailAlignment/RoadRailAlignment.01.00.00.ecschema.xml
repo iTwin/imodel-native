@@ -57,7 +57,7 @@
             <Class class="AlignmentVertical"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="AlignmentStation" modifier="Sealed">
+    <ECEntityClass typeName="AlignmentReferent" modifier="Sealed">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:IReferent</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
