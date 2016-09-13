@@ -2226,18 +2226,6 @@ public:
 };
 
 //=======================================================================================
-//! Abstract base class for group-related information elements.
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    04/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceElement
-{
-    DEFINE_T_SUPER(InformationReferenceElement);
-protected:
-    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
 //! Abstract base class for roles played by other (typically physical) elements.
 //! For example:
 //! - <i>Lawyer</i> and <i>employee</i> are potential roles of a person
