@@ -91,8 +91,6 @@ iframe.removeAttribute('sandbox');
 var tileset=%s
 %s  // Tileset height adjustment. 
 
-var curPickedObjects = null;
-
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    %s  // View options.
 
@@ -105,40 +103,8 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
         "endTransform": tf
     });
 
-
-   var elementIdCheckbox = document.getElementById('elementIdCheckbox');
-   var pickingEnabled = elementIdCheckbox.checked;
-   elementIdCheckbox.onchange = function() {
-       pickingEnabled = elementIdCheckbox.checked;
-   };
-
-   var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-   handler.setInputAction(function(movement) {
-       var pickedObjects = pickingEnabled ? viewer.scene.pick(movement.endPosition) : null;
-       if (pickedObjects !== curPickedObjects) {
-           var elemId = null;
-           curPickedObjects = pickedObjects;
-           if (Cesium.defined(curPickedObjects)) {
-               elemId = pickedObjects.getProperty("element");
-               if (0 == elemId)
-                   elemId = null;
-           }
-
-           // Update field displaying ID of moused-over element
-           var field = document.getElementById("field_elementId");
-           field.firstChild.nodeValue = null != elemId ? elemId : "None";
-
-           // Update tileset style to hilite moused-over element
-           var style = undefined;
-           if (null !== elemId) {
-           style = new Cesium.Cesium3DTileStyle({
-               "color": "(${element} === '" + elemId + "') ? color('#808080') : color('#ffffff')"
-               });
-           }
-
-           tileset.style = style;
-       }
-   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+   var fitViewButton = document.getElementById('fitViewButton');
+   fitViewButton.onclick = function() { viewer.camera.viewBoundingSphere(tileset.boundingSphere); }
 });
 
 function adjustTilesetHeight()
@@ -172,8 +138,7 @@ function adjustTilesetHeight()
 
 </script>
 <div style="z-index:10000; position:absolute;top:0;left:0;background-color:whitesmoke;opacity:0.5;padding:5px; margin:5px">
-    <input type="checkbox" checked="true" id="elementIdCheckbox" />
-    <span>ElementId: <b id="field_elementId">None</b></span>
+    <input type="button" id="fitViewButton" value="Fit View" />
 </div>
 </body>
 </html>)HTML";
