@@ -18,6 +18,10 @@
 #include <windows.h>
 #endif
 
+#if defined(WIP_FACET_COUNT)
+#define MESHTILE_SINGLE_THREADED
+#endif
+
 USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
@@ -1441,6 +1445,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, ViewControlle
 
     // Compute union of ranges of all elements
     // ###TODO_FACET_COUNT: Assuming 3d spatial view for now...
+    // ###TODO_FACET_COUNT: Split the range query from the additional (customizable) element selection criteria
     static const Utf8CP s_spatialSql =  "SELECT s.MinX,s.MinY,s.MinZ,s.MaxX,s.MaxY,s.MaxZ FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS s, "
                                         BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
                                         "WHERE g.ECInstanceId=e.ECInstanceId AND s.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
@@ -1593,6 +1598,291 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
             ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, vset, db);
             }
         }
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileMeshProcessor : IGeometryProcessor
+{
+private:
+    IFacetOptionsR      m_facetOptions;
+    IFacetOptionsPtr    m_targetFacetOptions;
+    DgnElementId        m_curElemId;
+    ViewControllerCR    m_view;
+    TileGeometryList    m_geometries;
+    DRange3d            m_range;
+
+    void AddGeometry(TileGeometryR geom);
+    bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
+
+    virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
+    virtual void _OutputGraphics(ViewContextR context) override;
+
+    virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
+    virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
+    virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
+    virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
+    virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
+
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
+public:
+    TileMeshProcessor(ViewControllerCR view, DRange3dCR range, IFacetOptionsR facetOptions)
+        : m_facetOptions(facetOptions), m_targetFacetOptions(&facetOptions), m_view(view), m_range(range)
+        {
+        // ###TODO_FACET_COUNT: Scale target facet options by dgn-to-target
+        }
+
+    TileGeometryList const& GetGeometries() const { return m_geometries; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshProcessor::AddGeometry(TileGeometryR geom)
+    {
+    TileGeometryPtr geomPtr = &geom;
+    auto pos = std::lower_bound(m_geometries.begin(), m_geometries.end(), geomPtr,
+        [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs) { return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity(); });
+
+    m_geometries.insert(pos, geomPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+    {
+    DRange3d range;
+    if (!geom.TryGetRange(range))
+        return false;   // ignore and continue
+
+    auto tf = gf.GetLocalToWorldTransform();
+    tf.Multiply(range, range);
+    
+    TileDisplayParamsPtr displayParams = new TileDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+
+    AddGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_view.GetDgnDb()));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
+    {
+    if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
+        return false;   // process as facets.
+
+    CurveVectorPtr clone = curves.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return ProcessGeometry(*geom, false, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
+    {
+    bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
+    if (!hasCurvedFaceOrEdge)
+        return false;   // Process as facets.
+
+    ISolidPrimitivePtr clone = prim.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
+    {
+    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
+    clone->CopyFrom(surface);
+    IGeometryPtr geom = IGeometry::Create(clone);
+
+    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
+    return ProcessGeometry(*geom, isCurved, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
+    {
+    PolyfaceHeaderPtr clone = polyface.Clone();
+    if (!clone->IsTriangulated())
+        clone->Triangulate();
+
+    clone->Transform(gf.GetLocalToWorldTransform());
+
+    DRange3d range = clone->PointRange();
+
+    TileDisplayParamsPtr displayParams = new TileDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+
+    IGeometryPtr geom = IGeometry::Create(clone);
+    AddGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_view.GetDgnDb()));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
+    {
+    ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
+    DRange3d range = clone->GetEntityRange();
+
+    Transform localTo3mx = gf.GetLocalToWorldTransform();
+    Transform solidTo3mx = Transform::FromProduct(localTo3mx, clone->GetEntityTransform());
+
+    solidTo3mx.Multiply(range, range);
+
+    TileDisplayParamsPtr displayParams = new TileDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+
+    AddGeometry(*TileGeometry::Create(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshProcessor::_OutputGraphics(ViewContextR context)
+    {
+    // ###TODO_FACET_COUNT: Separate range query from add'l criteria; allow add'l criteria to be customized
+    ModelAndCategorySet vset(m_view);
+    if (vset.IsEmpty())
+        return;
+
+    // ###TODO_FACET_COUNT: Support non-spatial views...
+    static const Utf8CP s_sql =
+        "SELECT r.ECInstanceId "
+        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId) "
+        "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " AS e ON g.ECInstanceId = e.ECInstanceId "
+        "WHERE NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
+        "AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+
+    DgnDbR db = m_view.GetDgnDb();
+    context.SetDgnDb(db);
+
+    auto stmt = db.GetPreparedECSqlStatement(s_sql);
+    stmt->BindDouble(1, m_range.high.x);
+    stmt->BindDouble(2, m_range.high.y);
+    stmt->BindDouble(3, m_range.high.z);
+    stmt->BindDouble(4, m_range.low.x);
+    stmt->BindDouble(5, m_range.low.y);
+    stmt->BindDouble(6, m_range.low.z);
+    stmt->BindVirtualSet(7, vset);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        m_curElemId = stmt->GetValueId<DgnElementId>(0);
+        context.VisitElement(m_curElemId, true);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+    {
+    static const double s_minRangeBoxSize = 0.5;
+    static const double s_vertexToleranceRatio = 1.0;
+    static const double s_decimateThresholdPixels = 50.0;
+    static const size_t s_maxGeometryIdCount = 0xffff;
+
+    double tolerance = GetTolerance();
+    double vertexTolerance = tolerance * s_vertexToleranceRatio;
+
+    // Collect geometry from elements in this node, sorted by facet count density
+    IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
+    TileMeshProcessor processor(view, GetRange(), *facetOptions);
+
+    GeometryProcessor::Process(processor, view.GetDgnDb());
+
+    // Convert to meshes
+    MeshBuilderMap builderMap;
+    size_t geometryCount = 0;
+    for (auto& geom : processor.GetGeometries())
+        {
+        DRange3dCR geomRange = geom->GetRange();
+        double rangePixels = geomRange.DiagonalDistance() / tolerance;
+        if (rangePixels < s_minRangeBoxSize)
+            continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
+
+        CurveVectorPtr strokes = geom->GetStrokedCurve(tolerance);
+        PolyfaceHeaderPtr polyface = geom->GetPolyface(tolerance, normalMode);
+        if (strokes.IsNull() && polyface.IsNull())
+            continue;
+
+        TileDisplayParamsPtr displayParams = geom->GetDisplayParams();
+        MeshBuilderKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+
+        TileMeshBuilderPtr meshBuilder;
+        auto found = builderMap.find(key);
+        if (builderMap.end() != found)
+            meshBuilder = found->second;
+        else
+            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, nullptr, vertexTolerance); // ###TODO_FACET_COUNT: Builder never uses transform...remove.
+
+        bool isContained = geomRange.IsContained(m_range);
+        bool doVertexClustering = rangePixels < s_decimateThresholdPixels;
+
+        ++geometryCount;
+        bool maxGeometryCountExceeded = geometryCount > s_maxGeometryIdCount;
+
+        if (polyface.IsValid())
+            {
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+                {
+                if (isContained || m_range.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+                    {
+                    DgnElementId elemId;
+                    if (!maxGeometryCountExceeded)
+                        elemId = geom->GetElementId();
+
+                    meshBuilder->AddTriangle (*visitor, elemId, doVertexClustering, twoSidedTriangles);
+                    }
+                }
+            }
+
+        if (strokes.IsValid())
+            {
+            for (auto& curvePrimitive : *strokes)
+                {
+                bvector<DPoint3d> const* lineString = curvePrimitive->GetLineStringCP ();
+
+                if (nullptr == lineString)
+                    {
+                    BeAssert (false);
+                    continue;
+                    }
+
+                DgnElementId elemId;
+                if (!maxGeometryCountExceeded)
+                    elemId = geom->GetElementId();
+
+                meshBuilder->AddPolyline (*lineString, elemId, doVertexClustering);
+                }
+            }
+        }
+
+    TileMeshList meshes;
+    for (auto& builder : builderMap)
+        if (!builder.second->GetMesh()->IsEmpty())
+            meshes.push_back (builder.second->GetMesh());
+
+    // ###TODO: statistics: record empty node...
+
+    return meshes;
     }
 
 #endif

@@ -466,6 +466,15 @@ PublisherContext::Status TilesetPublisher::Publish()
     else
         printTileTree(*rootTile);
 
+    if (Status::Success != status)
+        return status;
+
+    Json::Value elementTileSet;
+    DRange3d rootRange = DRange3d::NullRange();;
+    status = CollectOutputTiles(elementTileSet, rootRange, rootTile, GetRootName(), generator, *this);
+    if (Status::Success == status)
+        status = WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile));
+
     return status;
 #else
     PublishViewModels (generator, *this, s_toleranceInMeters, progressMeter);

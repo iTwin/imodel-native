@@ -92,9 +92,14 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
+#if defined(WIP_FACET_COUNT)
+    m_meshes = m_tile._GenerateMeshes(context.GetViewController(), TileGeometry::NormalMode::Always, false);
+#else
     TileGeometryCacheR geomCache = GetGeometryCache();
     m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, false);
+#endif
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -102,7 +107,6 @@ void TilePublisher::AppendUInt32(uint32_t value)
     {
     std::fwrite(&value, 1, sizeof(value), m_outputFile);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/16
