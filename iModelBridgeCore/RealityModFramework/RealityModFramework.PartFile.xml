@@ -130,6 +130,18 @@
         </Bindings>
     </Part>
     
+    <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
+        <!--SubPart PartName="JsonNet45"            PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" /-->
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">BentleyIT.STS.RelyingPartyCommon</NuGetPackage>
+        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
+    </Part>
+    
     <Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
@@ -212,6 +224,8 @@
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
         <ProductDirectory Name="PPNativeAssemblies"             Path=""/>
@@ -236,8 +250,66 @@
 
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
         <SubPart PartName="RealityDbECPluginCNuGet"/>
+        <SubPart PartName="UsageDataExtractor"/>
+        <SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
+
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // "RealityModelingFramework-Minimal Section                                       // -->
+
+    <Part Name="RealityModelingFramework-Minimal-WinX64-Only" OnlyPlatforms="x64">
+        <SubProduct ProductName="RealityModelingFramework-Minimal-WinX64"/>
+        <Bindings>
+            <PublicAPI Domain="RealityModFramework" />
+        </Bindings>
+    </Part>
+
+    <Product Name="RealityModelingFramework-Minimal-WinX64" SaveProduct="true">
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <SubPart PartName="IncludeApi" />
+
+        <!-- This must be listed last so that it can delivery=false items defined in preceding directory list(s). -->
+        <Directories DirectoryListName="RealityModelingFramework-Minimal"/>
+    </Product>
+
+    <Part Name ="IncludeApi">
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Directory SourceName="PublicAPI" ProductDirectoryName="RealityModFrameworkIncludeDirectory" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealityModelingFramework-Minimal">
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"                       Path="lib" RelativeTo="applicationroot"/>
+
+        <ProductDirectory Name="VendorNotices"                      Deliver="true"  LibType="dynamic" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" LibType="Static"/>
+
+        <!-- include/ -->
+        <ProductDirectory Name="RealityModFrameworkIncludeDirectory"       Deliver="true" Path="include"/>
+        <ProductDirectory Name="RealityModFrameworkIncludeDirectory"       Deliver="true" Path="include" LibType="Static"/>
+
+        <!--needed for the moment from LkgsVancouver -->
+        <ProductDirectory Name="JsonNetAssemblies"              Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PlatformTechAssemblies"         Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path="lib" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="ECSchemas"                      RelativeTo="applicationroot"/>
+    </ProductDirectoryList>
+
+
+
 
     <!-- ********************************************************************************************** -->
     <!-- Nunit tests -->

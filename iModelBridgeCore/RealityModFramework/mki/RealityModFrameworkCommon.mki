@@ -2,7 +2,7 @@
 #
 #  $Source: mki/RealityModFrameworkCommon.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -30,8 +30,5 @@ DLM_DEST                    = $(o)
 DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_OBJECT_DEST             = $(o)
-DLM_NO_DEF                  = 1
-DLM_NOMSBUILTINS            = 1
-DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
 

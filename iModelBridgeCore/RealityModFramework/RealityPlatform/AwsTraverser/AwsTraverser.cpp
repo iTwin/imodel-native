@@ -71,9 +71,9 @@ AwsPinger& AwsPinger::GetInstance()
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
 AwsData::AwsData(std::string id, std::string downloadUrl, float cloudCover, DRange2d ftPrint, 
-    float red, float green, float blue, float pan, SQLINTEGER sId, SQLINTEGER mId) :
+    float red, float green, float blue, float pan, SQLINTEGER sId) :
 m_id(id), m_downloadUrl(downloadUrl), m_cloudCover(cloudCover), m_ftPrint(ftPrint),
-m_redSize(red), m_greenSize(green), m_blueSize(blue), m_panSize(pan), serverId(sId), metadataId(mId)
+m_redSize(red), m_greenSize(green), m_blueSize(blue), m_panSize(pan), serverId(sId)
 {}
 
 //-------------------------------------------------------------------------------------
@@ -405,7 +405,6 @@ int main(int argc, char *argv[])
         getline(file, line);
 
         SQLINTEGER serverId = serverConnection.SaveServer("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
-        SQLINTEGER metadataId = serverConnection.SaveMetadata();
 
         size_t comma;
         std::string id, rest, downloadUrl;
@@ -413,6 +412,10 @@ int main(int argc, char *argv[])
         size_t idx;
         AwsPinger& pinger = AwsPinger::GetInstance();
         AwsData* data;
+        float redSize = 0;
+        float blueSize = 0;
+        float greenSize = 0;
+        float panSize = 0;
 
         do {
             comma = line.find(",");
@@ -471,18 +474,16 @@ int main(int argc, char *argv[])
 
             Utf8CP url = downloadUrl.c_str();
 
-            float redSize = 0;
-            float blueSize = 0;
-            float greenSize = 0;
-            float panSize = 0;
-
-
+            redSize = 0;
+            blueSize = 0;
+            greenSize = 0;
+            panSize = 0;
 
             pinger.ReadPage(url, redSize, greenSize, blueSize, panSize);
 
             if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
                 {
-                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId, metadataId);
+                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId);
 
                 serverConnection.Save(*data);
                 }
@@ -542,35 +543,6 @@ SQLINTEGER ServerConnection::SaveServer(std::string url)
     return id;
     }
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-SQLINTEGER ServerConnection::SaveMetadata()
-{
-    CHAR preQuery[512];
-    sprintf(preQuery, "SELECT * FROM [%s].[dbo].[Metadatas] WHERE [Provenance] = 'landsat8'", m_dbName);
-    CHAR serverStatement[512];
-    if (!HasEntries(preQuery))
-        {
-        sprintf(serverStatement, "INSERT INTO [%s].[dbo].[Metadatas] ([Description], [Provenance]) VALUES ('Landsat data provided by Amazon Web Services', 'landsat8')",
-            m_dbName);
-        ExecuteSQL(serverStatement);
-        ReleaseStmt();
-        }
-
-    SQLINTEGER id;
-    SQLLEN len;
-
-    CHAR idQuery[256];
-    sprintf(idQuery, "SELECT [ID] FROM [%s].[dbo].[Metadatas] WHERE [Provenance] = 'landsat8'", m_dbName);
-    ExecuteSQL(idQuery);
-    SQLBindCol(hStmt, 1, SQL_INTEGER, &id, 2, &len);
-    TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
-    ReleaseStmt();
-
-    return id;
-}
-
 bool ServerConnection::CheckExists(std::string id)
     {
 
@@ -600,6 +572,22 @@ void ServerConnection::Save(AwsData awsdata)
     redUrl.append("_B4.TIF");
     std::string panUrl = baseUrl;
     panUrl.append("_B8.TIF");
+    std::string metadataUrl = baseUrl;
+    metadataUrl.append("_MTL.txt");
+
+    CHAR serverStatement[512];
+    sprintf(serverStatement, "INSERT INTO [%s].[dbo].[Metadatas] ([Description], [Provenance], [MetadataURL], [Legal]) VALUES ('Landsat data provided by Amazon Web Services', 'landsat8', '%s', 'Data available from the U.S. Geological Survey.')",
+        m_dbName,
+        metadataUrl.c_str());
+    ExecuteSQL(serverStatement);
+    ReleaseStmt();
+
+    SQLINTEGER metadataId;
+    SQLLEN len;
+    CHAR tableName[128];
+
+    sprintf(tableName, "[%s].[dbo].[Metadatas]", m_dbName);
+    FetchTableIdentity(metadataId, tableName, len);
 
     CHAR thumbnailQuery[1000];
     sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailUrl]) VALUES ('Provided by Amazon Web Services', 'png', '%ls', 'Provided by Amazon Web Services', '%s')",
@@ -610,20 +598,19 @@ void ServerConnection::Save(AwsData awsdata)
     RETCODE retCode;
     retCode = ExecuteSQL(thumbnailQuery);
     ReleaseStmt();
-    SQLINTEGER thumbnailId;
-    SQLLEN len;
 
-    CHAR tableName[128];
+    SQLINTEGER thumbnailId;
+
     sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
     FetchTableIdentity(thumbnailId, tableName, len);
     
     SQLINTEGER entityId;
 
     CHAR entityBaseQuery[2000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 4326), ?, %d, %d)",
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 4326), ?, %d, %d, 'TIF')",
         m_dbName,
         awsdata.GetId().c_str(),
-        awsdata.GetMetadataId(),
+        metadataId,
         thumbnailId);
 
     SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
@@ -665,7 +652,7 @@ void ServerConnection::Save(AwsData awsdata)
     ReleaseStmt();
 
     CHAR entityQuery[255];
-    sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id], [CloudCoverage]) VALUES (%d, %f)",
+    sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id], [Occlusion]) VALUES (%d, %f)",
         m_dbName,
         entityId,
         awsdata.GetCover());

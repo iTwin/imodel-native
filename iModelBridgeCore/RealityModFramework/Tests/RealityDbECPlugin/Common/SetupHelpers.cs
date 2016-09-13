@@ -71,7 +71,7 @@ namespace IndexECPlugin.Tests.Common
             instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
             instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
             instance["DataSourceTypesAvailable"].StringValue = "IMG";
-            //instance["CloudCoverage"].DoubleValue = 0;
+            //instance["Occlusion"].DoubleValue = 0;
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
             instance["Classification"].StringValue = "Terrain";

@@ -298,10 +298,10 @@ void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCo
     if (ErrorCode == 0)
         {
         // Construct repo mapping (remote location, local location) for downloaded file.
-        if(pEntry->urls.empty())
+        if(pEntry->mirrors.empty())
             return;
-        Utf8String url(pEntry->urls.front());
-        Utf8String filename(pEntry->filename);
+        Utf8String url(pEntry->mirrors.front().url);
+        Utf8String filename(pEntry->mirrors.front().filename);
 
         m_dataRepositories.push_back(make_bpair(url.c_str(), filename.c_str()));
 

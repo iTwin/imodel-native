@@ -101,29 +101,29 @@
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_BentleyFiles">
-      <Component Id="BeCurlG06.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
-        <File Id="BeCurlG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlG06.dll" />
+      <Component Id="BeCurlB02.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
+        <File Id="BeCurlB02.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlB02.dll" />
       </Component>
-      <Component Id="BeIcu4cG06.dll" Directory="bin" Guid="{3425543D-91A9-4524-849E-1FAE356317F9}">
-        <File Id="BeIcu4cG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeIcu4cG06.dll" />
+      <Component Id="BeIcu4cB02.dll" Directory="bin" Guid="{3425543D-91A9-4524-849E-1FAE356317F9}">
+        <File Id="BeIcu4cB02.dll" KeyPath="yes" Source="$(var.ProductDir)BeIcu4cB02.dll" />
       </Component>
-      <Component Id="BeLibxml2G06.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
-        <File Id="BeLibxml2G06.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2G06.dll" />
+      <Component Id="BeLibxml2B02.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
+        <File Id="BeLibxml2B02.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2B02.dll" />
       </Component>
-      <Component Id="BentleyG06.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
-        <File Id="BentleyG06.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG06.dll" />
+      <Component Id="BentleyB02.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
+        <File Id="BentleyB02.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyB02.dll" />
       </Component>
-      <Component Id="BentleyGeomG06.dll" Directory="bin" Guid="{66A8B1B7-650F-4BAA-B91C-A978420299E7}">
-        <File Id="BentleyGeomG06.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomG06.dll" />
+      <Component Id="BentleyGeomB02.dll" Directory="bin" Guid="{66A8B1B7-650F-4BAA-B91C-A978420299E7}">
+        <File Id="BentleyGeomB02.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomB02.dll" />
       </Component>
-      <Component Id="BeOpenSSLG06.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
-        <File Id="BeOpenSSLG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSLG06.dll" />
+      <Component Id="BeOpenSSLB02.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
+        <File Id="BeOpenSSLB02.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSLB02.dll" />
       </Component>
-      <Component Id="BeSQLiteG06.dll" Directory="bin" Guid="{641FED9B-9A14-4CB1-BC22-3DE18562CF44}">
-        <File Id="BeSQLiteG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeSQLiteG06.dll" />
+      <Component Id="BeSQLiteB02.dll" Directory="bin" Guid="{641FED9B-9A14-4CB1-BC22-3DE18562CF44}">
+        <File Id="BeSQLiteB02.dll" KeyPath="yes" Source="$(var.ProductDir)BeSQLiteB02.dll" />
       </Component>
-      <Component Id="BeXmlG06.dll" Directory="bin" Guid="{3C48BDAE-0D90-4CDA-8993-70CAAB456216}">
-        <File Id="BeXmlG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeXmlG06.dll" />
+      <Component Id="BeXmlB02.dll" Directory="bin" Guid="{3C48BDAE-0D90-4CDA-8993-70CAAB456216}">
+        <File Id="BeXmlB02.dll" KeyPath="yes" Source="$(var.ProductDir)BeXmlB02.dll" />
       </Component>
       <Component Id="NCSEcw.dll" Directory="bin" Guid="{20521954-2999-45EC-B45D-93F8DECB776B}">
         <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
