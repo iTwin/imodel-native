@@ -29,8 +29,8 @@ DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned)
-    : m_id(id), m_userOwned(userOwned)
+DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeGuid fileId)
+    : m_id(id), m_userOwned(userOwned), m_fileId(fileId)
     {
     }
 
@@ -51,6 +51,26 @@ Utf8StringCR DgnDbBriefcaseInfo::GetUserOwned() const
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis           09/2016
+//---------------------------------------------------------------------------------------
+BeGuid DgnDbBriefcaseInfo::GetFileId() const
+    {
+    return m_fileId;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis           09/2016
+//---------------------------------------------------------------------------------------
+bool GuidFromJson(BeGuid& guid, JsonValueCR json)
+    {
+    Utf8String guidString = json.asString();
+    if (guidString.size() > 0)
+        return BentleyStatus::SUCCESS == guid.FromString(guidString.c_str());
+    else
+        return false;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
 DgnDbBriefcaseInfoPtr DgnDbBriefcaseInfo::FromJson(JsonValueCR json)
@@ -60,8 +80,10 @@ DgnDbBriefcaseInfoPtr DgnDbBriefcaseInfo::FromJson(JsonValueCR json)
     BeSQLite::BeBriefcaseId id;
     RepositoryJson::BriefcaseIdFromJson(id, properties[ServerSchema::Property::BriefcaseId]);
     Utf8String  userOwned = properties[ServerSchema::Property::UserOwned].asString();
+    BeGuid fileId;
+    GuidFromJson(fileId, properties[ServerSchema::Property::FileId]);
 
-    return std::make_shared<DgnDbBriefcaseInfo>(id, userOwned);
+    return std::make_shared<DgnDbBriefcaseInfo>(id, userOwned, fileId);
     }
 
 //---------------------------------------------------------------------------------------

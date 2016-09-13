@@ -12,7 +12,7 @@
 #include <DgnPlatform/RepositoryManager.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 typedef std::shared_ptr<struct DgnDbRepositoryManager> DgnDbRepositoryManagerPtr;
 
@@ -26,16 +26,12 @@ struct DgnDbRepositoryManager : public IRepositoryManager
 private:
     DgnDbRepositoryConnectionPtr m_connection;
     ICancellationTokenPtr        m_cancellationToken;
-    Credentials                  m_credentials;
-    WebServices::ClientInfoPtr   m_clientInfo;
-    AuthenticationHandlerPtr     m_authenticationHandler;
 
-    Response                     QueryCodesLocksAvailable(Request const& req, DgnDbR db);
     Response                     HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose);
     static RepositoryStatus      GetResponseStatus(DgnDbServerResult<void> result);
 
 protected:
-    DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
+    DgnDbRepositoryManager (DgnDbRepositoryConnectionPtr connection);
 
     virtual Response                                _ProcessRequest       (Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus                        _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
@@ -45,13 +41,9 @@ protected:
                                                                            DgnCodeSet const& codes) override;
 
 public:
-    static DgnDbRepositoryManagerPtr                Create                (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
-    void                                            SetCredentials        (CredentialsCR credentials) { m_credentials = credentials; };
-
-//__PUBLISH_SECTION_START__
-public:
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult  Connect               (DgnDbCR db);
-    DGNDBSERVERCLIENT_EXPORT void                     SetCancellationToken  (ICancellationTokenPtr cancellationToken);
+    static DgnDbRepositoryManagerPtr Create(DgnDbRepositoryConnectionPtr connection);
+    //__PUBLISH_SECTION_START__
+    DGNDBSERVERCLIENT_EXPORT void                   SetCancellationToken  (ICancellationTokenPtr cancellationToken);
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

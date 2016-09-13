@@ -67,7 +67,8 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
         }
     Utf8String lastRevisionId = GetLastRevisionPulled();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastRevisionId.c_str()) ? "No revisions pulled yet" : "Downloading revisions after revision ", lastRevisionId.c_str());
-    return m_repositoryConnection->DownloadRevisionsAfterId(lastRevisionId, callback, cancellationToken)->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
+    return m_repositoryConnection->DownloadRevisionsAfterId(lastRevisionId, GetDgnDb().GetDbGuid(), callback, cancellationToken)
+        ->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -295,7 +296,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
     //Needswork: think how to optimize this so that we would not need to download all revisions
     auto lastPulledRevision = GetLastRevisionPulled();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting revisions after revision %s.", lastPulledRevision.c_str());
-    return m_repositoryConnection->GetRevisionsAfterId(lastPulledRevision, cancellationToken)->Then<DgnDbServerBoolResult> ([=](DgnDbServerRevisionsResultCR result)
+    return m_repositoryConnection->GetRevisionsAfterId(lastPulledRevision, GetDgnDb().GetDbGuid(), cancellationToken)->Then<DgnDbServerBoolResult> ([=](DgnDbServerRevisionsResultCR result)
         {
         if (result.IsSuccess())
             {

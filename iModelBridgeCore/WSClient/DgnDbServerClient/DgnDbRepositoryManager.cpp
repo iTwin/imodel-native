@@ -47,51 +47,6 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Karolis.Dziedzelis              12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
-    {
-    const Utf8String methodName = "DgnDbRepositoryManager::Connect";
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    RepositoryInfo repositoryInfo;
-    auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, db);
-
-    if (!readResult.IsSuccess())
-        {
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-        return readResult;
-        }
-
-    if (m_connection)
-        {
-        if (repositoryInfo == m_connection->GetRepositoryInfo())
-            {
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-            return DgnDbServerStatusResult::Success();
-            }
-        }
-
-    auto connectionResult = DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_cancellationToken, m_authenticationHandler)->GetResult();
-    if (connectionResult.IsSuccess())
-        {
-        DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
-        m_connection = connection;
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-        return DgnDbServerStatusResult::Success();
-        }
-    else
-        {
-        m_connection = nullptr;
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
-        return DgnDbServerStatusResult::Error(connectionResult.GetError());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<void> result)
@@ -169,20 +124,20 @@ IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& r
 IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
     auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
-    if (!m_connection)
-        return Response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
     if (req.Locks ().IsEmpty () && req.Codes().empty())
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
 
+    if (!m_connection)
+        return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
-    
+
     DgnDbServerStatusResult result;
     if (queryOnly)
-        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid().ToString(), lastRevisionId, m_cancellationToken)->GetResult();
+        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastRevisionId, m_cancellationToken)->GetResult();
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid().ToString(), lastRevisionId, m_cancellationToken)->GetResult ();
+        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
@@ -196,14 +151,14 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
     {
-    if (!m_connection)
-        return RepositoryStatus::ServerUnavailable;
-
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
 
+    if (!m_connection)
+        return RepositoryStatus::ServerUnavailable;
+
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid().ToString(), m_cancellationToken)->GetResult ();
+    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -219,11 +174,11 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db)
     {
-    if (!m_connection)
-        return RepositoryStatus::ServerUnavailable;
-
     if (Resources::None == which) 
         return RepositoryStatus::Success;
+
+    if (!m_connection)
+        return RepositoryStatus::ServerUnavailable;
 
     auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
@@ -269,11 +224,11 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
     {
-    if (!m_connection)
-        return RepositoryStatus::ServerUnavailable;
-
     if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
+
+    if (!m_connection)
+        return RepositoryStatus::ServerUnavailable;
 
     auto result = m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken)->GetResult ();
 
@@ -292,18 +247,16 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRepositoryManager::DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
+DgnDbRepositoryManager::DgnDbRepositoryManager (DgnDbRepositoryConnectionPtr connection) : m_connection(connection)
     {
-    m_clientInfo = clientInfo;
-    m_authenticationHandler = authenticationHandler;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
+std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (DgnDbRepositoryConnectionPtr connection)
     {
-    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo, authenticationHandler));
+    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(connection));
     }
 
 /*---------------------------------------------------------------------------------**//**
