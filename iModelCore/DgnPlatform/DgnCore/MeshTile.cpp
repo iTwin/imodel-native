@@ -742,7 +742,7 @@ public:
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgressMeter* progressMeter) 
-    : m_progressMeter(nullptr != progressMeter ? *progressMeter : s_defaultProgressMeter)
+    : m_progressMeter(nullptr != progressMeter ? *progressMeter : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn)
     {
     //
     }
