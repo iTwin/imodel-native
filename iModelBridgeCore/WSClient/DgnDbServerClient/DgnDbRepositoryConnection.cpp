@@ -461,9 +461,9 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "DgnDbRepositoryConnection::DeleteLastMasterFile";
+    const Utf8String methodName = "DgnDbRepositoryConnection::CancelMasterFileCreation";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
@@ -540,7 +540,7 @@ DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFilesById(BeGuidCR f
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
-    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::FileId, fileId.ToString());
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::FileId, fileId.ToString().c_str());
     query.SetFilter(filter);
     return MasterFilesQuery(query, cancellationToken);
     }
@@ -2368,8 +2368,11 @@ ICancellationTokenPtr cancellationToken
             }
 
         Utf8String queryFilter;
-        queryFilter.Sprintf("%s+ge+%llu+and+%s+eq+'%s'", ServerSchema::Property::Index, index,
-                            ServerSchema::Property::MasterFileId, id.ToString());
+        if (id.IsValid())
+            queryFilter.Sprintf("%s+ge+%llu+and+%s+eq+'%s'", ServerSchema::Property::Index, index,
+                ServerSchema::Property::MasterFileId, id.ToString().c_str());
+        else
+            queryFilter.Sprintf("%s+ge+%llu", ServerSchema::Property::Index, index);
         query.SetFilter(queryFilter);
         RevisionsFromQuery(query, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
             {
