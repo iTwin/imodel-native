@@ -84,9 +84,8 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR r
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
-    : m_clientInfo(clientInfo), m_authenticationHandler(authenticationHandler), m_projectId("")
+    : m_clientInfo(clientInfo), m_authenticationHandler(authenticationHandler), m_projectId(""), m_repositoryAdmin(this)
     {
-    m_repositoryManager = DgnDbRepositoryManager::Create(clientInfo, authenticationHandler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -212,7 +211,6 @@ void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
 void DgnDbClient::SetCredentials(CredentialsCR credentials)
     {
     m_credentials = credentials;
-    m_repositoryManager->SetCredentials(credentials);
     }
 
 //---------------------------------------------------------------------------------------
@@ -588,7 +586,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
     if (!doSync)
         return briefcaseTask;
 
-    auto pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), callback, cancellationToken);
+    auto pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(briefcaseTask);
     tasks.insert(pullTask);
@@ -689,7 +687,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
 
         DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
-        connection->AcquireBriefcaseId(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
+        connection->CreateBriefcaseInstance(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
             {
             if (!briefcaseResult.IsSuccess())
                 {
@@ -766,7 +764,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR r
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::DeleteRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -794,10 +792,41 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
-Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
+DgnPlatformLib::Host::RepositoryAdmin* DgnDbClient::GetRepositoryAdmin()
     {
-    return dynamic_cast<Dgn::IRepositoryManager*>(m_repositoryManager.get());
+    return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_repositoryAdmin);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2016
+//---------------------------------------------------------------------------------------
+DgnDbRepositoryManagerTaskPtr DgnDbClient::CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbBriefcaseInfoCR briefcaseInfo, ICancellationTokenPtr cancellationToken)
+    {
+    DgnDbRepositoryManagerResultPtr finalResult = std::make_shared<DgnDbRepositoryManagerResult>();
+    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
+        {
+        if (!connectionResult.IsSuccess())
+            {
+            finalResult->SetError(connectionResult.GetError());
+            return;
+            }
+        auto connection = connectionResult.GetValue();
+        connection->ValidateBriefcase(fileInfo.GetFileId(), briefcaseInfo.GetId(), cancellationToken)->Then([=] (DgnDbServerStatusResultCR result)
+            {
+            if (!result.IsSuccess())
+                {
+                finalResult->SetError(result.GetError());
+                }
+            else
+                {
+                finalResult->SetSuccess(DgnDbRepositoryManager::Create(connection));
+                }
+            });
+        })->Then<DgnDbRepositoryManagerResult>([=] ()
+                {
+                return *finalResult;
+                });
     }
 

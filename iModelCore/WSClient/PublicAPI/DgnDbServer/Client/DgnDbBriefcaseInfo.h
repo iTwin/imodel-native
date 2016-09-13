@@ -13,7 +13,8 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 typedef std::shared_ptr<struct DgnDbBriefcaseInfo> DgnDbBriefcaseInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcaseInfo);
-DEFINE_TASK_TYPEDEFS(bvector<std::shared_ptr<DgnDbBriefcaseInfo>>, DgnDbBriefcasesInfo);
+DEFINE_TASK_TYPEDEFS(DgnDbBriefcaseInfoPtr, DgnDbBriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(bvector<DgnDbBriefcaseInfoPtr>, DgnDbBriefcasesInfo);
 
 //=======================================================================================
 //! Information about briefcase.
@@ -24,12 +25,13 @@ struct DgnDbBriefcaseInfo
     //__PUBLISH_SECTION_END__
     private:
         BeSQLite::BeBriefcaseId m_id;
+        BeSQLite::BeGuid m_fileId;
         Utf8String m_userOwned;
         //__PUBLISH_SECTION_START__
     public:
         DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo();
         DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id);
-        DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned);
+        DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId);
 
         //__PUBLISH_SECTION_END__
         bool operator==(DgnDbBriefcaseInfoCR briefcase) const;
@@ -37,5 +39,6 @@ struct DgnDbBriefcaseInfo
         //__PUBLISH_SECTION_START__
         DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetId() const;
         DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserOwned() const;
+        DGNDBSERVERCLIENT_EXPORT BeSQLite::BeGuid GetFileId() const;
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

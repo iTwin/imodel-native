@@ -141,7 +141,7 @@ FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
         Utf8String indexStr = json[ServerSchema::InstanceId].asString();
         uint64_t index64;
         BeStringUtilities::ParseUInt64(index64, indexStr.c_str());
-        info->m_index = (int32_t) index64;
+        info->m_index = (int32_t) (index64 & INT32_MAX);
         }
 
     Utf8String fileName = properties[ServerSchema::Property::FileName].asString();
