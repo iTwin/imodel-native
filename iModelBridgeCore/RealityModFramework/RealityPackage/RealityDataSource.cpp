@@ -17,6 +17,9 @@ USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------
+
+bool RealityDataSource::IsMultiBand() const {return _IsMultiBand();}
+
 Utf8StringCR RealityDataSource::GetUri() const { return m_uri; }
 void RealityDataSource::SetUri(Utf8CP uri) { m_uri = uri; }
 
@@ -32,8 +35,8 @@ void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
 Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
 void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
 
-uint64_t RealityDataSource::GetFilesize() const { return m_filesize; }
-void RealityDataSource::SetFilesize(uint64_t filesize) { m_filesize = filesize; }
+uint64_t RealityDataSource::GetFileSize() const { return m_filesize; }
+void RealityDataSource::SetFileSize(uint64_t filesize) { m_filesize = filesize; }
 
 Utf8StringCR RealityDataSource::GetFileInCompound() const { return m_fileInCompound; }
 void RealityDataSource::SetFileInCompound(Utf8CP filename) { m_fileInCompound = filename; }
@@ -43,6 +46,10 @@ void RealityDataSource::SetMetadata(Utf8CP metadata) { m_metadata = metadata; }
 
 const bvector<Utf8String>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
 void RealityDataSource::SetSisterFiles(const bvector<Utf8String>& sisterFiles) { m_sisterFiles = sisterFiles; }
+
+
+// Default _IsMultiBand() implementation to be overriden by multiband class.
+bool RealityDataSource::_IsMultiBand() const {return false;}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015

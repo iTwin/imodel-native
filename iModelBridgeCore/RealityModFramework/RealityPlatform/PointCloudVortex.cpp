@@ -762,7 +762,7 @@ void PointCloudVortex::GetPointCloudBounds(PtHandle cloudHandle, double* lower, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PtHandle PointCloudVortex::GetMetaDataHandle(PtHandle cloudHandle)
+PtHandle PointCloudVortex::GetMetadataHandle(PtHandle cloudHandle)
     {
     return ptGetMetaDataHandle(cloudHandle);
     }

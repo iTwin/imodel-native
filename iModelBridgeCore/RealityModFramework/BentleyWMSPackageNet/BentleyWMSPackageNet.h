@@ -161,7 +161,7 @@ namespace RealityDataPackageWrapper
             System::String^ GetProvider() { return m_provider; }
 
             //! Get the size in kilobytes. Default is 0. 
-            uint64_t GetFilesize() { return m_filesize; }
+            uint64_t GetFileSize() { return m_filesize; }
 
             //! Get main file in compound. Might be empty.
             System::String^ GetFileInCompound() { return m_fileInCompound; }

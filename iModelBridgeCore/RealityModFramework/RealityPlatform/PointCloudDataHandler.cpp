@@ -180,7 +180,7 @@ StatusInt PointCloudData::ExtractFootprint(DRange2dP pFootprint) const
     double   lower[3], upper[3];
     PointCloudVortex::GetPointCloudBounds(m_cloudHandle, lower, upper);
 
-    PtHandle metadataHandle = PointCloudVortex::GetMetaDataHandle(m_cloudHandle);
+    PtHandle metadataHandle = PointCloudVortex::GetMetadataHandle(m_cloudHandle);
     if (0 == metadataHandle)
         return 0;
 

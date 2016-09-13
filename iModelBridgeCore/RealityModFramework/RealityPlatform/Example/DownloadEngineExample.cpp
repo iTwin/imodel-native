@@ -167,7 +167,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             if (NULL == pSource)
                 continue;
 
-            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFilesize());
+            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFileSize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
             bvector<AString> bv = bvector<AString>();
             bv.push_back(pSource->GetUri());

@@ -104,7 +104,7 @@ TEST_F (PackageTestFixture, InvalidVersion)
     ASSERT_TRUE(!pPackage.IsValid());
     }
 
-#if (0)
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_A_SRC_1_ID              "6830609"
     #define RPACKAGE_IMDATA_A_SRC_1_COPYRIGHT       "http://open.canada.ca/en/open-government-licence-canada"
     #define RPACKAGE_IMDATA_A_SRC_1_PROVIDER        "GeoGratis"
-    #define RPACKAGE_IMDATA_A_SRC_1_SIZE            "43827"
+    #define RPACKAGE_IMDATA_A_SRC_1_SIZE            43827
     #define RPACKAGE_IMDATA_A_SRC_1_METTYPE         "ISO-19115"
     #define RPACKAGE_IMDATA_A_SRC_1_METADATA        "cdem_014E_pna.xml"
     #define RPACKAGE_IMDATA_A_SRC_1_NUMSIS          0
@@ -425,7 +425,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_B_SRC_1_ID              "545"
     #define RPACKAGE_IMDATA_B_SRC_1_COPYRIGHT       "http://open.canada.ca/en/open-government-licence-canada"
     #define RPACKAGE_IMDATA_B_SRC_1_PROVIDER        "GeoGratis"
-    #define RPACKAGE_IMDATA_B_SRC_1_SIZE            "437627"
+    #define RPACKAGE_IMDATA_B_SRC_1_SIZE            437627
     #define RPACKAGE_IMDATA_B_SRC_1_METTYPE         "ISO-19115"
     #define RPACKAGE_IMDATA_B_SRC_1_METADATA        "IMR_S4_05230_4828_20060814_1.0_pna.xml"
     #define RPACKAGE_IMDATA_B_SRC_1_NUMSIS          0
@@ -447,7 +447,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_B_SRC_2_ID              "546"
     #define RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT       "You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose."
     #define RPACKAGE_IMDATA_B_SRC_2_PROVIDER        "GeoGratis"
-    #define RPACKAGE_IMDATA_B_SRC_2_SIZE            "437627"
+    #define RPACKAGE_IMDATA_B_SRC_2_SIZE            437627
     #define RPACKAGE_IMDATA_B_SRC_2_METTYPE         "ISO-19115"
     #define RPACKAGE_IMDATA_B_SRC_2_METADATA        "IMR_S4_05230_4828_20060814_1.0_pna.xml"
     #define RPACKAGE_IMDATA_B_SRC_2_NUMSIS          0
@@ -461,7 +461,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_C_SRC_1_ID              "75643"
     #define RPACKAGE_IMDATA_C_SRC_1_COPYRIGHT       "http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada"
     #define RPACKAGE_IMDATA_C_SRC_1_PROVIDER        "GeoGratis"
-    #define RPACKAGE_IMDATA_C_SRC_1_SIZE            "43827"
+    #define RPACKAGE_IMDATA_C_SRC_1_SIZE            43827
     #define RPACKAGE_IMDATA_C_SRC_1_METTYPE         "FGDC"
     #define RPACKAGE_IMDATA_C_SRC_1_METADATA        "cded_001K11_1_0_fgdc_en.xml"
     #define RPACKAGE_IMDATA_C_SRC_1_NUMSIS          0
@@ -476,7 +476,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_D_SRC_1_ID              "gds:945m393090"
     #define RPACKAGE_IMDATA_D_SRC_1_COPYRIGHT       ""
     #define RPACKAGE_IMDATA_D_SRC_1_PROVIDER        ""
-    #define RPACKAGE_IMDATA_D_SRC_1_SIZE            "4927"
+    #define RPACKAGE_IMDATA_D_SRC_1_SIZE            4927
     #define RPACKAGE_IMDATA_D_SRC_1_METTYPE         ""
     #define RPACKAGE_IMDATA_D_SRC_1_METADATA        "http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.xml"
     #define RPACKAGE_IMDATA_D_SRC_1_NUMSIS          1
@@ -499,7 +499,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_E_SRC_1_ID              "gds:945m393089"
     #define RPACKAGE_IMDATA_E_SRC_1_COPYRIGHT       ""
     #define RPACKAGE_IMDATA_E_SRC_1_PROVIDER        ""
-    #define RPACKAGE_IMDATA_E_SRC_1_SIZE            "681927"
+    #define RPACKAGE_IMDATA_E_SRC_1_SIZE            681927
     #define RPACKAGE_IMDATA_E_SRC_1_METTYPE         "text"
     #define RPACKAGE_IMDATA_E_SRC_1_METADATA        "SanJuan_DOQ.fgdc"
     #define RPACKAGE_IMDATA_E_SRC_1_NUMSIS          1
@@ -515,7 +515,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_F_SRC_1_ID              "USGS:55098640e4b02e76d757f634"
     #define RPACKAGE_IMDATA_F_SRC_1_COPYRIGHT       "FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey"
     #define RPACKAGE_IMDATA_F_SRC_1_PROVIDER        "usgs"
-    #define RPACKAGE_IMDATA_F_SRC_1_SIZE            "25827"
+    #define RPACKAGE_IMDATA_F_SRC_1_SIZE            25827
     #define RPACKAGE_IMDATA_F_SRC_1_METTYPE         ""
     #define RPACKAGE_IMDATA_F_SRC_1_METADATA        "https://www.sciencebase.gov/catalog/file/get/55098640e4b02e76d757f634?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7"
     #define RPACKAGE_IMDATA_F_SRC_1_NUMSIS          1
@@ -528,7 +528,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_F_SRC_2_ID              "USGS:44098640e4b02e76d747f323"
     #define RPACKAGE_IMDATA_F_SRC_2_COPYRIGHT       "FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey"
     #define RPACKAGE_IMDATA_F_SRC_2_PROVIDER        "usgs"
-    #define RPACKAGE_IMDATA_F_SRC_2_SIZE            "34825"
+    #define RPACKAGE_IMDATA_F_SRC_2_SIZE            34825
     #define RPACKAGE_IMDATA_F_SRC_2_METTYPE         ""
     #define RPACKAGE_IMDATA_F_SRC_2_METADATA        "https://www.sciencebase.gov/catalog/file/get/44098640e4b02e76d747f323?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7"
     #define RPACKAGE_IMDATA_F_SRC_2_NUMSIS          0
@@ -540,7 +540,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_F_SRC_3_ID              "24098640e4b02e76d7475666"
     #define RPACKAGE_IMDATA_F_SRC_3_COPYRIGHT       "FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey"
     #define RPACKAGE_IMDATA_F_SRC_3_PROVIDER        "usgs"
-    #define RPACKAGE_IMDATA_F_SRC_3_SIZE            "54721"
+    #define RPACKAGE_IMDATA_F_SRC_3_SIZE            54721
     #define RPACKAGE_IMDATA_F_SRC_3_METTYPE         ""
     #define RPACKAGE_IMDATA_F_SRC_3_METADATA        "https://www.sciencebase.gov/catalog/file/get/24098640e4b02e76d7475666?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7"
     #define RPACKAGE_IMDATA_F_SRC_3_GEOCS           "EPSG:3857"
@@ -555,7 +555,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_G_SRC_1_ID              "USGS:55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_G_SRC_1_COPYRIGHT       "FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey"
     #define RPACKAGE_IMDATA_G_SRC_1_PROVIDER        "usgs"
-    #define RPACKAGE_IMDATA_G_SRC_1_SIZE            "25831"
+    #define RPACKAGE_IMDATA_G_SRC_1_SIZE            25831
     #define RPACKAGE_IMDATA_G_SRC_1_METTYPE         ""
     #define RPACKAGE_IMDATA_G_SRC_1_METADATA        "https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0"
     #define RPACKAGE_IMDATA_G_SRC_1_GEOCS           "EPSG:3857"
@@ -565,24 +565,24 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     #define RPACKAGE_IMDATA_MULTI_A_ID              "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_NAME            "Landsat 8 multiband raw imagery LC81390452014295LGN00"
-    #define RPACKAGE_IMDATA_MULTI_A_SRC             "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B8.TIF"
+    #define RPACKAGE_IMDATA_MULTI_A_SRC_URI         "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B8.TIF"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_URI_TYPE    "tif"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER    "Landsat8"
-    #define RPACKAGE_IMDATA_MULTI_A_SRC_SIZE        "253831"
-    #define RPACKAGE_IMDATA_MULTI_A_SRC_METTYPE     "text"
+    #define RPACKAGE_IMDATA_MULTI_A_SRC_SIZE        253831
+    #define RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE    "text"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_METADATA    "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_MTL.txt"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS       "EPSG:4326"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_NUMSIS      0
     #define RPACKAGE_IMDATA_MULTI_A_SRC_NODATA      "0"
 
-    #define RPACKAGE_IMDATA_MULTI_A_RED_SRC             "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B4.TIF"
+    #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_URI         "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B4.TIF"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_URI_TYPE    "tif"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER    "Landsat8"
-    #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE        "93831"
+    #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE        93831
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_GEOCS       "EPSG:4326"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_NUMSIS      1
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIS1        "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B4.TFW"
@@ -590,7 +590,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
 
 
-    #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC             "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B3.TIF"
+    #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI         "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B3.TIF"
     #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI_TYPE    "tif"
     #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
@@ -601,7 +601,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_NODATA      "0"
 
 
-    #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC             "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B2.TIF"
+    #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_URI         "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B2.TIF"
     #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_URI_TYPE    "tif"
     #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
@@ -612,7 +612,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_NODATA      "0"
 
 
-    #define RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC             "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B8.TIF"
+    #define RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI         "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B8.TIF"
     #define RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI_TYPE    "tif"
     #define RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
@@ -689,7 +689,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_PINDATA_B_SRC_1_ID             "457076095-66632-ROLE"
     #define RPACKAGE_PINDATA_B_SRC_1_COPYRIGHT      "Copyright Ville de Quebec 2014; all rights reserved."
     #define RPACKAGE_PINDATA_B_SRC_1_PROVIDER       "CanadaGouv"
-    #define RPACKAGE_PINDATA_B_SRC_1_SIZE           "155977"
+    #define RPACKAGE_PINDATA_B_SRC_1_SIZE           155977
     #define RPACKAGE_PINDATA_B_SRC_1_METTYPE        "text"
     #define RPACKAGE_PINDATA_B_SRC_1_METADATA       "FilmingConditions.pdf"
     #define RPACKAGE_PINDATA_B_SRC_1_NUMSIS         1
@@ -765,7 +765,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_B_SRC_1_ID             "USGS:53174905e4b0cd4cd83cf45d"
     #define RPACKAGE_TERDATA_B_SRC_1_COPYRIGHT      "USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey"
     #define RPACKAGE_TERDATA_B_SRC_1_PROVIDER       "usgs"
-    #define RPACKAGE_TERDATA_B_SRC_1_SIZE           "319061"
+    #define RPACKAGE_TERDATA_B_SRC_1_SIZE           319061
     #define RPACKAGE_TERDATA_B_SRC_1_METTYPE        ""
     #define RPACKAGE_TERDATA_B_SRC_1_METADATA       "https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f"
     #define RPACKAGE_TERDATA_B_SRC_1_NUMSIS         0
@@ -777,7 +777,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_B_SRC_2_ID             "USGS:53174905e4b0cd4cd83cf45d"
     #define RPACKAGE_TERDATA_B_SRC_2_COPYRIGHT      "USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey"
     #define RPACKAGE_TERDATA_B_SRC_2_PROVIDER       "usgs"
-    #define RPACKAGE_TERDATA_B_SRC_2_SIZE           "338121"
+    #define RPACKAGE_TERDATA_B_SRC_2_SIZE           338121
     #define RPACKAGE_TERDATA_B_SRC_2_METTYPE        ""
     #define RPACKAGE_TERDATA_B_SRC_2_METADATA       "https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f"
     #define RPACKAGE_TERDATA_B_SRC_2_NUMSIS         0
@@ -789,7 +789,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_B_SRC_3_ID             "USGS:53174905e4b0cd4cd83cf45d"
     #define RPACKAGE_TERDATA_B_SRC_3_COPYRIGHT      "USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey"
     #define RPACKAGE_TERDATA_B_SRC_3_PROVIDER       "usgs"
-    #define RPACKAGE_TERDATA_B_SRC_3_SIZE           "346171"
+    #define RPACKAGE_TERDATA_B_SRC_3_SIZE           346171
     #define RPACKAGE_TERDATA_B_SRC_3_METTYPE        ""
     #define RPACKAGE_TERDATA_B_SRC_3_METADATA       "https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f"
     #define RPACKAGE_TERDATA_B_SRC_3_NUMSIS         0
@@ -801,7 +801,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_B_SRC_4_ID             "USGS:53174905e4b0cd4cd83cf45d"
     #define RPACKAGE_TERDATA_B_SRC_4_COPYRIGHT      "USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey"
     #define RPACKAGE_TERDATA_B_SRC_4_PROVIDER       "usgs"
-    #define RPACKAGE_TERDATA_B_SRC_4_SIZE           "346171"
+    #define RPACKAGE_TERDATA_B_SRC_4_SIZE           346171
     #define RPACKAGE_TERDATA_B_SRC_4_METTYPE        ""
     #define RPACKAGE_TERDATA_B_SRC_4_METADATA       "https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f"
     #define RPACKAGE_TERDATA_B_SRC_4_NUMSIS         0
@@ -865,7 +865,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Provider>" RPACKAGE_IMDATA_A_SRC_1_PROVIDER "</Provider>"
                 "<!-- Size is always in kilo bytes. If element is absent or value is zero it can be assumed the "
                      "size of the source can only be known at dowload time or is a stream format -->"
-                "<Size>" RPACKAGE_IMDATA_A_SRC_1_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_A_SRC_1_SIZE) "</Size>"
                 "<!-- The following indicates a file located within the compound. If the string had been a fully formed URI then it would have indicated"
                     "an external resource. Note the presence of a type attribute. This type can be specified if known otherwise the "
                     "application will be in charge of trying to determine the type from the file content. -->"
@@ -884,7 +884,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_B_SRC_1_ID "</Id>"
                 "<Copyright>" RPACKAGE_IMDATA_B_SRC_1_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_B_SRC_1_PROVIDER "</Provider>"
-                "<Size>" RPACKAGE_IMDATA_B_SRC_1_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_B_SRC_1_SIZE) "</Size>"
                 "<Metadata type='" RPACKAGE_IMDATA_B_SRC_1_METTYPE "'>" RPACKAGE_IMDATA_B_SRC_1_METADATA "</Metadata>"
             "</Source>"
             "<!-- The mirror source is identical in format and structure but makes use of a different Geographic Coordinate System (LCC instead of UTM22)-->"
@@ -893,7 +893,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                  "<!-- Copyright notice can or cannot contain links. -->"
                 "<Copyright>" RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_B_SRC_2_PROVIDER "</Provider>"
-               " <Size>" RPACKAGE_IMDATA_B_SRC_2_SIZE "</Size>"
+               " <Size>" STRINGIFY(RPACKAGE_IMDATA_B_SRC_2_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_B_SRC_2_METADATA "</Metadata>"
                 "<!-- Notice the presence of spatial reference system (or geographic coordinate system). This value can be used as a default if the file format does not support it or if it is not set."
                 "     Any code within the Bentley Geographic Coordinate System library can be used here. -->"
@@ -916,7 +916,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                   "<Id>" RPACKAGE_IMDATA_C_SRC_1_ID "</Id>"
                   "<Copyright>" RPACKAGE_IMDATA_C_SRC_1_COPYRIGHT "</Copyright>"
                   "<Provider>" RPACKAGE_IMDATA_C_SRC_1_PROVIDER "</Provider>"
-                  "<Size>" RPACKAGE_IMDATA_C_SRC_1_SIZE "</Size>"
+                  "<Size>" STRINGIFY(RPACKAGE_IMDATA_C_SRC_1_SIZE) "</Size>"
                   "<Metadata type='" RPACKAGE_IMDATA_C_SRC_1_METTYPE "'>" RPACKAGE_IMDATA_C_SRC_1_METADATA "</Metadata>"
               "</Source>"
           "</Sources>"
@@ -927,7 +927,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Sources>"
             "<Source uri='" RPACKAGE_IMDATA_D_SRC_1_URI_PART1 "' type='" RPACKAGE_IMDATA_D_SRC_1_URI_TYPE "'>"
                 "<Id>" RPACKAGE_IMDATA_D_SRC_1_ID "</Id>"
-                "<Size>" RPACKAGE_IMDATA_D_SRC_1_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_D_SRC_1_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_D_SRC_1_METADATA "</Metadata>"
                 "<!-- The following sister file is essential to the interpretation of the TIFF file that does not contain the georeference -->"
                 "<SisterFiles>"
@@ -951,7 +951,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
              "not determine for sure prior to creation. It is then up to the application to select and interpret the data regardless no type is specified. -->"
         "<Source uri='" RPACKAGE_IMDATA_E_SRC_1_URI_PART1 "'>"
             "<Id>" RPACKAGE_IMDATA_E_SRC_1_ID "</Id>"
-            "<Size>" RPACKAGE_IMDATA_E_SRC_1_SIZE "</Size>"
+            "<Size>" STRINGIFY(RPACKAGE_IMDATA_E_SRC_1_SIZE) "</Size>"
             "<!-- Notice the type of the metadata. This TEXT indicates that the metadata is not in either FGDC or ISO-19115 format the only two other formats"
             "     supported. All other formats will be indicated as TEXT to be interpreted by a human. -->"
             "<Metadata type='" RPACKAGE_IMDATA_E_SRC_1_METTYPE "'>" RPACKAGE_IMDATA_E_SRC_1_METADATA "</Metadata>"
@@ -968,7 +968,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_F_SRC_1_ID "</Id>"
                 "<Copyright>" RPACKAGE_IMDATA_F_SRC_1_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_F_SRC_1_PROVIDER "</Provider>"
-                "<Size>" RPACKAGE_IMDATA_F_SRC_1_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_F_SRC_1_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_F_SRC_1_METADATA "</Metadata>"
                 "<!-- Notice the presence of spatial reference system (or geographic coordinate system). This value can be used as a default if the file format does not support it or if it is not set -->"
                 "<GeoCS>" RPACKAGE_IMDATA_F_SRC_1_GEOCS "</GeoCS>"
@@ -977,7 +977,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_F_SRC_2_ID "</Id>"
                 "<Copyright>" RPACKAGE_IMDATA_F_SRC_2_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_F_SRC_2_PROVIDER "</Provider>"
-                "<Size>" RPACKAGE_IMDATA_F_SRC_2_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_F_SRC_2_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_F_SRC_2_METADATA "</Metadata>"
                 "<GeoCS>" RPACKAGE_IMDATA_F_SRC_2_GEOCS "</GeoCS>"
             "</Source>"
@@ -985,7 +985,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_F_SRC_3_ID "</Id>"
                 "<Copyright>" RPACKAGE_IMDATA_F_SRC_3_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_F_SRC_3_PROVIDER "</Provider>"
-                "<Size>" RPACKAGE_IMDATA_F_SRC_3_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_F_SRC_3_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_F_SRC_3_METADATA "</Metadata>"
                 "<GeoCS>" RPACKAGE_IMDATA_F_SRC_3_GEOCS "</GeoCS>"
                 "<SisterFiles>"
@@ -1004,7 +1004,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_G_SRC_1_ID "</Id>"
                 "<Copyright>" RPACKAGE_IMDATA_G_SRC_1_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_G_SRC_1_PROVIDER "</Provider>"
-                "<Size>" RPACKAGE_IMDATA_G_SRC_1_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_G_SRC_1_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_G_SRC_1_METADATA "</Metadata>"
                 "<!-- Even though the PRJ sister file specifies the georeference of the JPEG 2000 raster, the default SRS can be specified but should be ignored in this case.-->"
                 "<GeoCS>" RPACKAGE_IMDATA_G_SRC_1_GEOCS "</GeoCS>"
@@ -1024,7 +1024,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Copyright>" RPACKAGE_IMDATA_MULTI_A_SRC_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER "</Provider>"
                 "<!-- Here the size will be the one of the band only but this info will not have much use -->"
-                "<Size>" RPACKAGE_IMDATA_MULTI_A_SRC_SIZE "</Size>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE) "</Size>"
                 "<Metadata type='" RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE ">" RPACKAGE_IMDATA_MULTI_A_SRC_METADATA "</Metadata>"
                 "<!-- The coordinate system is fixed -->"
                 "<GeoCS>" RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS "</GeoCS>"
@@ -1036,7 +1036,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                         "<Copyright>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT "</Copyright>"
                         "<Provider>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER "</Provider>"
                         "<!-- Here the size will be the one of the band only but this info will not have much use -->"
-                        "<Size>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE "</Size>"
+                        "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE) "</Size>"
                         "<GeoCS>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_GEOCS "</GeoCS>"
                         "<!-- The no data value is the padding color of raster file -->"
                         "<NoDataValue>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_NODATA "</NoDataValue>"
@@ -1102,7 +1102,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
             "<Sources>"
                 "<Source uri='" RPACKAGE_MODDATA_A_SRC_1_URI_PART1 "' type='" RPACKAGE_MODDATA_A_SRC_1_URI_TYPE "'> "
                     "<Copyright>" RPACKAGE_MODDATA_A_SRC_1_COPYRIGHT "</Copyright>"
-                    "<Size>" RPACKAGE_MODDATA_A_SRC_1_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_MODDATA_A_SRC_1_SIZE) "</Size>"
                 "</Source>"
                 "<Source uri='" RPACKAGE_MODDATA_A_SRC_2_URI_PART1 "' type='" RPACKAGE_MODDATA_A_SRC_2_URI_TYPE "'>"
                    "<Copyright>" RPACKAGE_MODDATA_A_SRC_2_COPYRIGHT "</Copyright>"
@@ -1144,7 +1144,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Id>" RPACKAGE_PINDATA_B_SRC_1_ID "</Id>"
                     "<Copyright>" RPACKAGE_PINDATA_B_SRC_1_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_PINDATA_B_SRC_1_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_PINDATA_B_SRC_1_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_PINDATA_B_SRC_1_SIZE) "</Size>"
                     "<!-- Metadata refers to a PDF file part of the compound -->"
                     "<Metadata type='" RPACKAGE_PINDATA_B_SRC_1_METTYPE "'>" RPACKAGE_PINDATA_B_SRC_1_METADATA "</Metadata>"
                     "<!-- The use of GeoCS element is meaningless in the context of pinned data since the data has no spatial nature"
@@ -1199,7 +1199,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Id>" RPACKAGE_TERDATA_A_SRC_1_ID "</Id>"
                     "<Copyright>" RPACKAGE_TERDATA_A_SRC_1_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_TERDATA_A_SRC_1_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_TERDATA_A_SRC_1_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_TERDATA_A_SRC_1_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_TERDATA_A_SRC_1_METADATA "</Metadata>"
                 "</Source>"
             "</Sources>"
@@ -1218,7 +1218,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Id>" RPACKAGE_TERDATA_B_SRC_1_ID "</Id>"
                     "<Copyright>" RPACKAGE_TERDATA_B_SRC_1_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_TERDATA_B_SRC_1_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_TERDATA_B_SRC_1_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_TERDATA_B_SRC_1_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_TERDATA_B_SRC_1_METADATA "</Metadata>"
                 "</Source>"
                 "<!-- Here the compound format should contain a grd ESRI format yet we could not determine the name of the file or the extension because"
@@ -1227,14 +1227,14 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Id>" RPACKAGE_TERDATA_B_SRC_2_ID "</Id>"
                     "<Copyright>" RPACKAGE_TERDATA_B_SRC_2_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_TERDATA_B_SRC_2_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_TERDATA_B_SRC_2_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_TERDATA_B_SRC_2_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_TERDATA_B_SRC_2_METADATA "</Metadata>"
                 "</Source>"
                 "<Source uri='" RPACKAGE_TERDATA_B_SRC_3_URI_PART1"#' type='" RPACKAGE_TERDATA_B_SRC_3_URI_TYPE "'>"
                     "<Id>" RPACKAGE_TERDATA_B_SRC_3_ID "</Id>"
                     "<Copyright>" RPACKAGE_TERDATA_B_SRC_3_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_TERDATA_B_SRC_3_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_TERDATA_B_SRC_3_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_TERDATA_B_SRC_3_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_TERDATA_B_SRC_3_METADATA "</Metadata>"
                 "</Source>"
                 "<!-- Notice here the empty type field. We know that the type is one form of XYZ but could not know if it is binary or ascii. "
@@ -1244,7 +1244,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Id>" RPACKAGE_TERDATA_B_SRC_4_ID "</Id>"
                     "<Copyright>" RPACKAGE_TERDATA_B_SRC_4_COPYRIGHT "</Copyright>"
                     "<Provider>" RPACKAGE_TERDATA_B_SRC_4_PROVIDER "</Provider>"
-                    "<Size>" RPACKAGE_TERDATA_B_SRC_4_SIZE "</Size>"
+                    "<Size>" STRINGIFY(RPACKAGE_TERDATA_B_SRC_4_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_TERDATA_B_SRC_4_METADATA "</Metadata>"
                 "</Source>"
             "</Sources>"
@@ -1280,15 +1280,318 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_EQ(2, pPackage->GetMajorVersion()); 
     ASSERT_EQ(0, pPackage->GetMinorVersion()); 
 
-    ASSERT_STREQ(RPACKAGE_NAME, pPackage->GetName().c_str()); 
-    ASSERT_STREQ(RPACKAGE_DESCRIPTION, pPackage->GetDescription().c_str()); 
-    ASSERT_STREQ(WIDEN(RPACKAGE_DATE), pPackage->GetCreationDate().ToString().c_str()); 
-    ASSERT_STREQ(RPACKAGE_COPYRIGHT, pPackage->GetCopyright().c_str());     
+    ASSERT_STREQ(RPACKAGE_NAME2, pPackage->GetName().c_str()); 
+    ASSERT_STREQ(RPACKAGE_DESCRIPTION2, pPackage->GetDescription().c_str()); 
+    ASSERT_STREQ(WIDEN(RPACKAGE_DATE2), pPackage->GetCreationDate().ToString().c_str()); 
+    ASSERT_STREQ(RPACKAGE_COPYRIGHT2, pPackage->GetCopyright().c_str());     
     ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
 
-    // Imagery
-    ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().c_str());
-    ASSERT_STREQ("image/jpeg", pPackage->GetImageryGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_ORIGIN2, pPackage->GetPackageOrigin().c_str());
+    ASSERT_STREQ(RPACKAGE_ID2, pPackage->GetPackageId().c_str());
+
+    // General package structure
+
+    // Imagery group
+    ASSERT_TRUE(pPackage->GetImageryGroup().size() == 8);
+
+    // image data 1
+    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_ID, pPackage->GetImageryGroup()[0]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_NAME, pPackage->GetImageryGroup()[0]->GetDataName().c_str());
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[0]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART1, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[0]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_ID, pPackage->GetImageryGroup()[0]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_PROVIDER, pPackage->GetImageryGroup()[0]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_A_SRC_1_SIZE, pPackage->GetImageryGroup()[0]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART2, pPackage->GetImageryGroup()[0]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METADATA, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METTYPE, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[0]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetSource(0).GetSisterFiles().size() == 0);
+
+
+    // image data 2
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetNumSources() == 2);
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_ID, pPackage->GetImageryGroup()[1]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_NAME, pPackage->GetImageryGroup()[1]->GetDataName().c_str());
+
+        // 2A
+    ASSERT_FALSE(pPackage->GetImageryGroup()[1]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_ID, pPackage->GetImageryGroup()[1]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_PROVIDER, pPackage->GetImageryGroup()[1]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_1_SIZE, pPackage->GetImageryGroup()[1]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART2, pPackage->GetImageryGroup()[1]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METADATA, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METTYPE, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(0).GetSisterFiles().size() == 0);
+
+        // 2B
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[1]->GetSource(1).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(1).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(1).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetSource(1).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_ID, pPackage->GetImageryGroup()[1]->GetSource(1).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_PROVIDER, pPackage->GetImageryGroup()[1]->GetSource(1).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_2_SIZE, pPackage->GetImageryGroup()[1]->GetSource(1).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART2, pPackage->GetImageryGroup()[1]->GetSource(1).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METADATA, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METTYPE, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(1).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(1).GetSisterFiles().size() == 0);
+
+
+
+    // image data 3
+    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_ID, pPackage->GetImageryGroup()[2]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_NAME, pPackage->GetImageryGroup()[2]->GetDataName().c_str());
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[2]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART1, pPackage->GetImageryGroup()[2]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[2]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[2]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_ID, pPackage->GetImageryGroup()[2]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_PROVIDER, pPackage->GetImageryGroup()[2]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_C_SRC_1_SIZE, pPackage->GetImageryGroup()[2]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART2, pPackage->GetImageryGroup()[2]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METADATA, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METTYPE, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[2]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetSource(0).GetSisterFiles().size() == 0);
+
+
+
+    // image data 4
+    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_ID, pPackage->GetImageryGroup()[3]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_NAME, pPackage->GetImageryGroup()[3]->GetDataName().c_str());
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[3]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART1, pPackage->GetImageryGroup()[3]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[3]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[3]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_ID, pPackage->GetImageryGroup()[3]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_PROVIDER, pPackage->GetImageryGroup()[3]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_D_SRC_1_SIZE, pPackage->GetImageryGroup()[3]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART2, pPackage->GetImageryGroup()[3]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METADATA, pPackage->GetImageryGroup()[3]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METTYPE, pPackage->GetImageryGroup()[3]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles().size() == 0);
+
+
+    // image data 5
+    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_ID, pPackage->GetImageryGroup()[4]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_NAME, pPackage->GetImageryGroup()[4]->GetDataName().c_str());
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[4]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART1, pPackage->GetImageryGroup()[4]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[4]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[4]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_ID, pPackage->GetImageryGroup()[4]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_PROVIDER, pPackage->GetImageryGroup()[4]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_E_SRC_1_SIZE, pPackage->GetImageryGroup()[4]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART2, pPackage->GetImageryGroup()[4]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METADATA, pPackage->GetImageryGroup()[4]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METTYPE, pPackage->GetImageryGroup()[4]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[4]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetSource(0).GetSisterFiles().size() == 0);
+
+
+    // image data 6
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetNumSources() == 3);
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_ID, pPackage->GetImageryGroup()[5]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_NAME, pPackage->GetImageryGroup()[5]->GetDataName().c_str());
+
+        // 6A
+    ASSERT_FALSE(pPackage->GetImageryGroup()[5]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_ID, pPackage->GetImageryGroup()[5]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_1_SIZE, pPackage->GetImageryGroup()[5]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METADATA, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(0).GetSisterFiles().size() == 0);
+
+
+        // 6B
+    ASSERT_FALSE(pPackage->GetImageryGroup()[5]->GetSource(1).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(1).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(1).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_ID, pPackage->GetImageryGroup()[5]->GetSource(1).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(1).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_2_SIZE, pPackage->GetImageryGroup()[5]->GetSource(1).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(1).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METADATA, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(1).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(1).GetSisterFiles().size() == 0);
+
+        // 6C
+    ASSERT_FALSE(pPackage->GetImageryGroup()[5]->GetSource(2).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(2).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(2).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_ID, pPackage->GetImageryGroup()[5]->GetSource(2).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(2).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_3_SIZE, pPackage->GetImageryGroup()[5]->GetSource(2).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(2).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METADATA, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(2).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles().size() == 0);
+
+
+    // image data 7
+    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_ID, pPackage->GetImageryGroup()[6]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_NAME, pPackage->GetImageryGroup()[6]->GetDataName().c_str());
+
+    ASSERT_FALSE(pPackage->GetImageryGroup()[6]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART1, pPackage->GetImageryGroup()[6]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[6]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_ID, pPackage->GetImageryGroup()[6]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_PROVIDER, pPackage->GetImageryGroup()[6]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_G_SRC_1_SIZE, pPackage->GetImageryGroup()[6]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART2, pPackage->GetImageryGroup()[6]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METADATA, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METTYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles().size() == 0);
+
+    // image data 8
+    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetNumSources() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_ID, pPackage->GetImageryGroup()[7]->GetDataId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_NAME, pPackage->GetImageryGroup()[7]->GetDataName().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetSource(0).IsMultiBand());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI, pPackage->GetImageryGroup()[7]->GetSource(0).GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI_TYPE, pPackage->GetImageryGroup()[7]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_COPYRIGHT, pPackage->GetImageryGroup()[7]->GetSource(0).GetCopyright().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_ID, pPackage->GetImageryGroup()[7]->GetSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER, pPackage->GetImageryGroup()[7]->GetSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE, pPackage->GetImageryGroup()[7]->GetSource(0).GetFileSize());
+
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetSource(0).GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METADATA, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadata().c_str());
+//     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadataType().c_str());
+
+//    ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetSource(0).GetGeoCS().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetSource(0).GetSisterFiles().size() == 0);
+
+    // Now cast as a multiband and extract information
+    // RealityDataMultiBandSource* pMultiBand;
+
+    // ASSERT_TRUE (NULL != (pMultiBand = dynamic_cast<RealityDataMultiBandSource const *>(&(pPackage->GetImageryGroup()[7]->GetSource(0)))));
+
+    // ASSERT_TRUE (pMultiBand->GetRedBand() != NULL);
+    // ASSERT_TRUE (pMultiBand->GetBlueBand() != NULL);
+    // ASSERT_TRUE (pMultiBand->GetGreenBand() != NULL);
+    // ASSERT_TRUE (pMultiBand->GetPanchromaticBand() != NULL);
+
+    // RealityDataSourceCP pRedBand = pMultiBand->GetRedBand();
+    // RealityDataSourceCP pGreenBand = pMultiBand->GetGreenBand();
+    // RealityDataSourceCP pBlueBand = pMultiBand->GetBlueBand();
+    // RealityDataSourceCP pPanchromaticBand = pMultiBand->GetPanchromaticBand();
+
+    // // Make sure that individual bands are not multiband (would not make sense)
+    // ASSERT_FALSE(pRedBand->IsMultiBand());
+    // ASSERT_FALSE(pGreenBand->IsMultiBand());
+    // ASSERT_FALSE(pBlueBand->IsMultiBand());
+    // ASSERT_FALSE(pPanchromaticBand->IsMultiBand());
+
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_URI, pRedBand->GetUri().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_URI_TYPE, pRedBand->GetType().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT, pRedBand->GetCopyright().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_ID, pRedBand->GetId().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER, pRedBand->GetProvider().c_str());
+    // ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE, pRedBand->GetFileSize());
+
+    // ASSERT_STREQ("", pRedBand->GetFileInCompound().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_METADATA, pRedBand->GetMetadata().c_str());
+// //     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_METATYPE, pRedBand->GetMetadataType().c_str());
+
+// //    ASSERT_STREQ("", pRedBand->GetGeoCS().c_str());
+
+    // ASSERT_TRUE(pRedBand->GetSisterFiles().size() == 0);
+
+
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI, pRedBand->GetUri().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI_TYPE, pRedBand->GetType().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_COPYRIGHT, pRedBand->GetCopyright().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_ID, pRedBand->GetId().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_PROVIDER, pRedBand->GetProvider().c_str());
+    // ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_SIZE, pRedBand->GetFileSize());
+
+    // ASSERT_STREQ("", pRedBand->GetFileInCompound().c_str());
+    // ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_METADATA, pRedBand->GetMetadata().c_str());
+// //     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_METATYPE, pRedBand->GetMetadataType().c_str());
+
+// //    ASSERT_STREQ("", pRedBand->GetGeoCS().c_str());
+
+    // ASSERT_TRUE(pRedBand->GetSisterFiles().size() == 0);
+
+
+
+
+
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
@@ -1499,4 +1802,4 @@ TEST_F (PackageTestFixture, CreateAndRead)
         ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
         }
     }
-#endif
+
