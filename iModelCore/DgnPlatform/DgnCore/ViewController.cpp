@@ -249,7 +249,7 @@ void ViewController::_StoreToDefinition() const
 void ViewController::StoreToDefinition()
     {
     // initialize m_settings[ViewJson::Flags()] to an empty object before having contoller populate it.
-    m_settings[ViewJson::Flags()] = Json::Value (Json::objectValue);
+    // m_settings[ViewJson::Flags()] = Json::Value (Json::objectValue);
 
     _StoreToDefinition();
 
