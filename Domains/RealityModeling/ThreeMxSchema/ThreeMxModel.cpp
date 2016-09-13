@@ -360,17 +360,17 @@ struct  PublishTileNode : TileNode
 {
     ScenePtr            m_scene;
     NodePtr             m_node;
-    Transform           m_transform;
 
-    PublishTileNode(SceneR scene, NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
-                    m_scene(&scene), m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent), m_scene(&scene), m_node(&node) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
+virtual TileMeshList _GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const override
     {
     TileMeshList        tileMeshes;
+    Transform           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
 
     if (nullptr == m_node->_GetChildren(true))
         {
@@ -398,7 +398,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
             if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
                 polyface->BuildPerFaceNormals();
 
-            polyface->Transform (m_transform);
+            polyface->Transform (sceneToTile);
 
             Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
             Publish3mxTexture*      publishTexture;
@@ -412,9 +412,9 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
                 
                 if (found == builderMap.end())
                     {
-                    TileTextureImagePtr     tileTexture = new TileTextureImage (publishTexture->m_source);
-                    TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
-                    builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
+                    TileTextureImagePtr     tileTexture = TileTextureImage::Create(publishTexture->m_source);
+                    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
+                    builder = TileMeshBuilder::Create(displayParams, 0.0);
 
                     builderMap.Insert (publishTexture, builder);
                     }
@@ -454,19 +454,20 @@ struct Publish3mxScene : Scene
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<PublishTileNode> tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR toTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+static RefCountedPtr<PublishTileNode> tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
+    TransformCR sceneToDgn = scene.GetLocation();
     double   tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
 
     range = node.GetRange();
-    toTile.Multiply (range, range);
+    sceneToDgn.Multiply (range, range);
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
 
     static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
     DRange3d                        childrenRange = DRange3d::NullRange();
-    RefCountedPtr<PublishTileNode>  tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
+    RefCountedPtr<PublishTileNode>  tileNode = new PublishTileNode (scene, node, transformFromDgn, range, depth, siblingIndex, tolerance, parent);
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
@@ -479,13 +480,14 @@ static RefCountedPtr<PublishTileNode> tileFromNode(DRange3dR range, NodeR node, 
                 {
                 DRange3d        childRange;
 
-                tileNode->GetChildren().push_back (tileFromNode (childRange, (NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
+                tileNode->GetChildren().push_back (tileFromNode (childRange, (NodeR) *child, scene, transformFromDgn, depth, childIndex++, tileNode.get()));
                 childrenRange.Extend (childRange);
                 }
             }
         }
+
     if (!childrenRange.IsNull())
-        tileNode->SetRange (range = childrenRange);
+        tileNode->SetDgnRange (range = childrenRange);
 
     return tileNode;
     }
@@ -501,8 +503,15 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    Transform   modelToTile = Transform::FromProduct(transformDbToTile, scene->GetLocation());
     DRange3d    range = DRange3d::NullRange();    
+
+    rootTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, 0, 0, nullptr).get();
+
+    return TileGenerator::Status::Success;
+
+
+
+    Transform   modelToTile = Transform::FromProduct(transformDbToTile, scene->GetLocation());
     
     RefCountedPtr<PublishTileNode>  rootPublishTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, modelToTile, 0, 0, nullptr);
     
