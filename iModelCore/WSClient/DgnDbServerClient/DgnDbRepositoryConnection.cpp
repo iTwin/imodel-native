@@ -181,6 +181,29 @@ AuthenticationHandlerPtr authenticationHandler
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::ValidateBriefcase(BeGuidCR fileId, BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+    {
+    return QueryBriefcaseInfo(briefcaseId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbBriefcaseInfoResultCR result)
+        {
+        if (!result.IsSuccess())
+            {
+            return DgnDbServerStatusResult::Error(result.GetError());
+            }
+
+        auto briefcase = result.GetValue();
+
+        if (briefcase->GetFileId() != fileId)
+            {
+            return DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidBriefcase);
+            }
+
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 Json::Value CreateFileJson(FileInfoCR fileInfo)
@@ -359,7 +382,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::LockRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -513,7 +536,7 @@ DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFiles(ICancellationT
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFilesById(BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+DgnDbServerFilesTaskPtr DgnDbRepositoryConnection::GetMasterFilesById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
@@ -691,7 +714,7 @@ Json::Value CreateLockInstanceJson
 (
 bvector<uint64_t> const& ids,
 BeBriefcaseId            briefcaseId,
-Utf8StringCR             masterFileId,
+BeGuidCR                 masterFileId,
 Utf8StringCR             releasedWithRevisionId,
 LockableType             type,
 LockLevel                level,
@@ -701,7 +724,7 @@ bool                     queryOnly
     Json::Value properties;
 
     properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
-    properties[ServerSchema::Property::MasterFileId]         = masterFileId;
+    properties[ServerSchema::Property::MasterFileId]         = masterFileId.ToString();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
     properties[ServerSchema::Property::QueryOnly]            = queryOnly;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
@@ -728,7 +751,7 @@ WSChangeset&                     changeset,
 WSChangeset::ChangeState const&  changeState,
 bvector<uint64_t> const&         ids,
 BeBriefcaseId                    briefcaseId,
-Utf8StringCR                     masterFileId,
+BeGuidCR                         masterFileId,
 Utf8StringCR                     releasedWithRevisionId,
 LockableType                     type,
 LockLevel                        level,
@@ -738,7 +761,8 @@ bool                             queryOnly
     if (ids.empty ())
         return;
     ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, masterFileId, releasedWithRevisionId, type, level, queryOnly)));
+    auto json = std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, masterFileId, releasedWithRevisionId, type, level, queryOnly));
+    changeset.AddInstance (lockObject, changeState, json);
     }
 
 //---------------------------------------------------------------------------------------
@@ -748,7 +772,7 @@ void SetLocksJsonRequestToChangeSet
 (
 const DgnLockSet&               locks,
 BeBriefcaseId                   briefcaseId,
-Utf8StringCR                    masterFileId,
+BeGuidCR                        masterFileId,
 Utf8StringCR                    releasedWithRevisionId,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState,
@@ -802,7 +826,7 @@ Json::Value CreateCodeInstanceJson
 bvector<DgnCode> const&      codes,
 DgnCodeStateCR               state,
 BeBriefcaseId                briefcaseId,
-Utf8StringCR                 masterFileId,
+BeGuidCR                     masterFileId,
 Utf8StringCR                 stateRevisionId,
 bool                         queryOnly
 )
@@ -818,7 +842,7 @@ bool                         queryOnly
     properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
     properties[ServerSchema::Property::Reserved]      = reserved;
     properties[ServerSchema::Property::Used]          = used;
-    properties[ServerSchema::Property::MasterFileId]  = masterFileId;
+    properties[ServerSchema::Property::MasterFileId]  = masterFileId.ToString();
     properties[ServerSchema::Property::StateRevision] = stateRevisionId;
     properties[ServerSchema::Property::QueryOnly]     = queryOnly;
 
@@ -923,7 +947,7 @@ WSChangeset::ChangeState const&  changeState,
 bvector<DgnCode> const&          codes,
 DgnCodeStateCR                   state,
 BeBriefcaseId                    briefcaseId,
-Utf8StringCR                     masterFileId,
+BeGuidCR                         masterFileId,
 Utf8StringCR                     stateRevisionId,
 bool                             queryOnly
 )
@@ -965,7 +989,7 @@ void SetCodesJsonRequestToChangeSet
 const DgnCodeSet                codes,
 DgnCodeState                    state,
 BeBriefcaseId                   briefcaseId,
-Utf8StringCR                    masterFileId,
+BeGuidCR                        masterFileId,
 Utf8StringCR                    stateRevisionId,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState,
@@ -1127,7 +1151,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
     LockRequestCR         locks,
     DgnCodeSet            codes,
     BeBriefcaseId         briefcaseId,
-    Utf8StringCR          masterFileId,
+    BeGuidCR              masterFileId,
     Utf8StringCR          lastRevisionId,
     ICancellationTokenPtr cancellationToken
 ) const
@@ -1154,7 +1178,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
     LockRequestCR         locks,
     DgnCodeSet            codes,
     BeBriefcaseId         briefcaseId,
-    Utf8StringCR          masterFileId,
+    BeGuidCR              masterFileId,
     Utf8StringCR          lastRevisionId,
     ICancellationTokenPtr cancellationToken
 ) const
@@ -1178,7 +1202,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DemoteCodesLocks
 const DgnLockSet&     locks,
 DgnCodeSet const&     codes,
 BeBriefcaseId         briefcaseId,
-Utf8StringCR          masterFileId,
+BeGuidCR              masterFileId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -2497,8 +2521,10 @@ ICancellationTokenPtr           cancellationToken
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
     usedLocks.FromRevision (*revision);
+    BeGuid masterFileId;
+    masterFileId.FromString(revision->GetDbGuid().c_str());
     if (!usedLocks.IsEmpty ())
-        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, revision->GetDbGuid(), revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
+        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, masterFileId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
 
     DgnCodeSet usedCodes;
     usedCodes = revision->GetAssignedCodes();
@@ -2506,7 +2532,7 @@ ICancellationTokenPtr           cancellationToken
         {
         DgnCodeState state;
         state.SetUsed(revision->GetId());
-        SetCodesJsonRequestToChangeSet(usedCodes, state, briefcaseId, revision->GetDbGuid(), revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(usedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
         }
 
     DgnCodeSet discardedCodes;
@@ -2515,7 +2541,7 @@ ICancellationTokenPtr           cancellationToken
         {
         DgnCodeState state;
         state.SetDiscarded(revision->GetId());
-        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, revision->GetDbGuid(), revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
         }
 
     //Push Revision initialization request and Locks update in a single batch
