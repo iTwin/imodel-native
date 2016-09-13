@@ -84,16 +84,13 @@ RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
 #include "ImagePPAdmin.h"
 #include "RasterFile.h"
 
-#ifndef NDEBUG
 //#define RASTER_TRACE 1
-#endif
-
 #if defined (RASTER_TRACE)
-#   define PCLOG (*NativeLogging::LoggingManager::GetLogger ("Raster"))
-#   define DEBUG_PRINTF PCLOG.debugv
-#   define INFO_PRINTF  PCLOG.infov
-#   define WARN_PRINTF  PCLOG.warningv
-#   define ERROR_PRINTF PCLOG.errorv
+#   define RASTERLOG (*NativeLogging::LoggingManager::GetLogger ("Raster"))
+#   define DEBUG_PRINTF RASTERLOG.debugv
+#   define INFO_PRINTF  RASTERLOG.infov
+#   define WARN_PRINTF  RASTERLOG.warningv
+#   define ERROR_PRINTF RASTERLOG.errorv
 #else
 #   define DEBUG_PRINTF(...)
 #   define INFO_PRINTF(...)
