@@ -469,6 +469,7 @@ private:
 protected:
     /*ctor*/                AnnotationTableAspect (AnnotationTableR t) : m_table (t), m_hasChanges(false) {}
     /*ctor*/                AnnotationTableAspect (AnnotationTableAspectCR rhs, bool isNew);
+    virtual                 ~AnnotationTableAspect() {}
 
     AnnotationTableAspectR  operator= (AnnotationTableAspectCR rhs);
 
@@ -801,6 +802,7 @@ public:
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableR);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other, bool isNew);
+    virtual                         ~AnnotationTableEdgeRun() {}
     void                            Initialize (EdgeRunHostType, uint32_t hostIndex);
 
     AnnotationTableEdgeRunR         operator= (AnnotationTableEdgeRunCR other);
