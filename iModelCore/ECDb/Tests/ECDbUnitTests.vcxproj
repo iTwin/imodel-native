@@ -37,6 +37,7 @@
     <ClCompile Include="Performance\PerformanceOverflowProps.cpp" />
     <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
+    <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp" />
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp" />

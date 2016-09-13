@@ -26,9 +26,11 @@ enum class ECPropertyKind
     Navigation = 4
     };
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+//!@remarks Only call these methods if you need to get the information from the DB. 
+//! If you want to leverage caches (which can speed up performance), then use ECDbSchemaManager::GerReader()
+// @bsimethod                                                    Affan.Khan        05/2012
+//+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbSchemaPersistenceHelper
     {
 public:
@@ -50,19 +52,14 @@ private:
     ~ECDbSchemaPersistenceHelper();
 
 public:
-    static ECN::ECSchemaId GetECSchemaId(ECDbCR, ECN::ECSchemaCR);
     static ECN::ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
-    static ECN::ECClassId GetECClassId(ECDbCR, ECN::ECClassCR);
     static ECN::ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
-    static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, ECN::ECEnumerationCR);
     static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
-    static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, ECN::KindOfQuantityCR);
     static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, Utf8CP schemaName, Utf8CP koqName);
-    static ECN::ECPropertyId GetECPropertyId(ECDbCR, ECN::ECPropertyCR);
     static ECN::ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static bool TryGetECSchemaKey(ECN::SchemaKey&, ECDbCR, Utf8CP schemaName);
-    static bool TryGetECSchemaKeyAndId(ECN::SchemaKey&, ECN::ECSchemaId& schemaId, ECDbCR, Utf8CP schemaName);
+    static bool TryGetECSchemaKeyAndId(ECN::SchemaKey&, ECN::ECSchemaId&, ECDbCR, Utf8CP schemaName);
 
     static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
     static BentleyStatus DeserializeRelationshipKeyProperties(ECN::ECRelationshipConstraintClassR, Utf8CP jsonStr);

@@ -471,13 +471,6 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
     if (AssertIfIsNotImportingSchema())
         return MappingStatus::Error;
 
-    if (!ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
-        {
-        LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
-        BeAssert(false);
-        return MappingStatus::Error;
-        }
-
     ClassMapPtr existingClassMap = nullptr;
     if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
         return MappingStatus::Error;
@@ -599,12 +592,17 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
 BentleyStatus ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock(m_mutex);
-    if (!ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
+
+    //we must use this method here and cannot just see whether ecClass has already an id
+    //because the ecClass object can come from an ECSchema deserialized from disk, hence
+    //not having the id set, and already imported in the ECSchema. In that case
+    //ECDb does not set the ids on the ECClass objects
+    if (!m_ecdb.Schemas().GetReader().GetECClassId(ecClass).IsValid())
         {
-        BeAssert(false && "TryGetClassMap fails because ecClass does not exist in the file.");
+        BeAssert(false && "ECClass must have an ECClassId when mapping to the ECDb.");
         return ERROR;
         }
-
+    
     classMap = DoGetClassMap(ecClass);
     if (classMap != nullptr)
         return SUCCESS;

@@ -214,11 +214,14 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
         if (schema == nullptr) 
             continue;
 
-        ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
-        if (schema->HasId() && (!id.IsValid() || id != schema->GetId()))
+        if (schema->HasId())
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
-            return ERROR;
+            ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
+            if (!id.IsValid() || id != schema->GetId())
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
             }
 
         BuildDependencyOrderedSchemaList(schemasToImport, schema);
@@ -322,7 +325,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool loadSchemaEnti
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId schemaId, bool loadSchemaEntities) const
     {
-    return m_schemaReader->GetECSchema(schemaId, loadSchemaEntities);
+    return GetReader().GetECSchema(schemaId, loadSchemaEntities);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -356,7 +359,7 @@ ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP classN
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
-    return m_schemaReader->GetECClass(ecClassId);
+    return GetReader().GetECClass(ecClassId);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -364,7 +367,8 @@ ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
-    return m_schemaReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
+    id = GetReader().GetECClassId(schemaNameOrPrefix, className, resolveSchema);
+    return id.IsValid();
     }
 
 //---------------------------------------------------------------------------------------
@@ -372,10 +376,10 @@ bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix
 //---------------------------------------------------------------------------------------
 ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecClass) const
     {
-    ECClassId id = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass);
+    ECClassId id = GetReader().GetECClassId(ecClass);
     if (id.IsValid())
         {
-        if (SUCCESS != m_schemaReader->EnsureDerivedClassesExist(id))
+        if (SUCCESS != GetReader().EnsureDerivedClassesExist(id))
             LOG.errorv("Could not load derived classes for ECClass %s.", ecClass.GetFullName());
         }
     else
@@ -389,7 +393,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
-    return m_schemaReader->GetECEnumeration(schemaName, enumName);
+    return GetReader().GetECEnumeration(schemaName, enumName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -397,17 +401,19 @@ ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP en
 //+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP ECDbSchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
     {
-    return m_schemaReader->GetKindOfQuantity(schemaName, koqName);
+    return GetReader().GetKindOfQuantity(schemaName, koqName);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::ClearCache() const { m_schemaReader->ClearCache(); }
+void ECDbSchemaManager::ClearCache() const { GetReader().ClearCache(); }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle               09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbSchemaReader const& ECDbSchemaManager::GetReader() const { BeAssert(m_schemaReader != nullptr); return *m_schemaReader; }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle               12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -426,7 +432,7 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType mat
     if (!foundKey.Matches(key, matchType))
         return nullptr;
 
-    ECSchemaCP schema = m_schemaReader->GetECSchema(foundId, true);
+    ECSchemaCP schema = GetReader().GetECSchema(foundId, true);
     if (schema == nullptr)
         return nullptr;
 

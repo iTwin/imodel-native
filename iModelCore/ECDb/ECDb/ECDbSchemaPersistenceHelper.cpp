@@ -13,28 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        05/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, ECSchemaCR ecSchema)
-    {
-    if (ecSchema.HasId())
-        {
-        BeAssert(GetECSchemaId(db, ecSchema.GetName().c_str()).IsValid());
-        return ecSchema.GetId();
-        }
-
-    const ECSchemaId schemaId = GetECSchemaId(db, ecSchema.GetName().c_str());
-    if (schemaId.IsValid())
-        {
-        //it is possible that the schema was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECSchemaR>(ecSchema).SetId(schemaId);
-        }
-
-    return schemaId;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
@@ -112,28 +90,6 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db,
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        05/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECClassCR ecClass)
-    {
-    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
-        {
-        BeAssert(GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName).IsValid());
-        return ecClass.GetId();
-        }
-
-    const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
-    if (classId.IsValid())
-        {
-        //it is possible that the ECClass was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECClassR>(ecClass).SetId(classId);
-        }
-
-    return classId;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
@@ -172,28 +128,6 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //---------------------------------------------------------------------------------------
-ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, ECEnumerationCR ecEnum)
-    {
-    if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
-        {
-        BeAssert(GetECEnumerationId(ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()).IsValid());
-        return ecEnum.GetId();
-        }
-
-    const ECEnumerationId id = GetECEnumerationId(ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
-    if (id.IsValid())
-        {
-        //it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECEnumerationR>(ecEnum).SetId(id);
-        }
-
-    return id;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   01/2016
-//---------------------------------------------------------------------------------------
 ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
     {
     //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
@@ -209,28 +143,6 @@ ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf
         return ECEnumerationId();
 
     return stmt->GetValueId<ECEnumerationId>(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   06/2016
-//---------------------------------------------------------------------------------------
-KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, KindOfQuantityCR koq)
-    {
-    if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
-        {
-        BeAssert(GetKindOfQuantityId(ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()).IsValid());
-        return koq.GetId();
-        }
-
-    const KindOfQuantityId id = GetKindOfQuantityId(ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
-    if (id.IsValid())
-        {
-        //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<KindOfQuantityR>(koq).SetId(id);
-        }
-
-    return id;
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,28 +165,6 @@ KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, U
         return KindOfQuantityId();
 
     return stmt->GetValueId<KindOfQuantityId>(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   06/2016
-//---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR ecdb, ECPropertyCR prop)
-    {
-    if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
-        {
-        BeAssert(GetECPropertyId(ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()).IsValid());
-        return prop.GetId();
-        }
-
-    const ECPropertyId id = GetECPropertyId(ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
-    if (id.IsValid())
-        {
-        //it is possible that the property was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECPropertyR>(prop).SetId(id);
-        }
-
-    return id;
     }
 
 //---------------------------------------------------------------------------------------
