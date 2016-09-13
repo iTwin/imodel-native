@@ -38,9 +38,11 @@ struct DgnDbCodeTemplateSetResultInfo;
 typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
+DEFINE_TASK_TYPEDEFS(bvector<FileInfoPtr>, DgnDbServerFiles);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
+DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerString);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeTemplateSetResultInfo, DgnDbServerCodeTemplateSet);
@@ -170,8 +172,8 @@ private:
     //! Sets the EventSubscription in the EventServiceClient
     bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Acquire a new briefcase id for this repository.
-    AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! Create a new briefcase instance for this repository.
+    AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance (ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Write the briefcaseId into the file.
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
@@ -194,7 +196,10 @@ private:
     //! Finalizes the file upload.
     DgnDbServerStatusTaskPtr InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Download a copy of the master file from the repository
+    //! Internal master files query.
+    DgnDbServerFilesTaskPtr MasterFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download a copy of the master file from the repository and initialize it as briefcase
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -223,9 +228,6 @@ private:
 
     //! Get Responses from the EventServiceClient
     DgnDbServerEventReponseTaskPtr GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
-
-    //! Get the index from a revisionId.
-    DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //Returns birefcases information for given query. Query should have its filter already set.
     DgnDbBriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;
@@ -312,6 +314,32 @@ public:
     //! @return Asynchronous task that is successful if file has been deleted.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteLastMasterFile(ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Returns all master files available in the server.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of file information as the result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFilesTaskPtr GetMasterFiles(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all master files with specified file id available in the server.
+    //! @param[in] fileId DbGuid of the queried master file 
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of file information as the result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFilesTaskPtr GetMasterFilesById(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download a copy of the master file from the repository
+    //! @param[in] localFile Location where the downloaded file should be placed.
+    //! @param[in] fileInfo Master file information retrieved from a query to server.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that results in an error if the download failed.
+    //! @note Should use GetMasterFiles or GetMasterFilesById to get FileInfo instance.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadMasterFile(BeFileName localFile, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr,
+                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Acquire briefcase id without downloading the briefcase file.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the new briefcase info as result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfoTaskPtr AcquireNewBriefcase(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all revisions available in the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
@@ -323,11 +351,13 @@ public:
     //! @return Asynchronous task that has the revision information as the result.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionTaskPtr GetRevisionById (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+
     //! Get all of the revisions after the specific revision id.
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
+    //! @param[in] fileId Id of the master file revisions belong to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr GetRevisionsAfterId (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr GetRevisionsAfterId (Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the revision files.
     //! @param[in] revisions Set of revisions to download.
@@ -340,11 +370,12 @@ public:
 
     //! Download all revision files after revisionId
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
+    //! @param[in] fileId Db guid of the master file.
     //! @param[in] callback Download callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of downloaded revisions metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr DownloadRevisionsAfterId (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr DownloadRevisionsAfterId (Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), Http::Request::ProgressCallbackCR callback = nullptr,
                                                                                   ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the revision on the server.
@@ -362,7 +393,7 @@ public:
     //! Returns briefcase info about specific briefcase.
     //! @param[in] briefcaseId for queried briefcase
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbBriefcasesInfoTaskPtr QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfoTaskPtr QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns info about selected briefcases.
     //! @param[in] briefcasesIds for which to return briefcases info
