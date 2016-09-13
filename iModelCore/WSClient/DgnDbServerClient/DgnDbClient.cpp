@@ -588,7 +588,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
     if (!doSync)
         return briefcaseTask;
 
-    auto pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), callback, cancellationToken);
+    auto pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(briefcaseTask);
     tasks.insert(pullTask);
@@ -689,7 +689,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
 
         DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
-        connection->AcquireBriefcaseId(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
+        connection->CreateBriefcaseInstance(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
             {
             if (!briefcaseResult.IsSuccess())
                 {
@@ -766,7 +766,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR r
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::DeleteRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
