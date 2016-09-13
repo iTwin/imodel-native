@@ -778,6 +778,27 @@ Utf8StringR value
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             09/2016
+//---------------------------------------------------------------------------------------
+Utf8String UriEncode(Utf8String input)
+    {
+    Utf8String result = BeStringUtilities::UriEncode(input.c_str());
+
+    Utf8String charsNotEncode = ",!'()";
+    for (char character : charsNotEncode)
+        {
+        Utf8String charString(&character, 1);
+        result.ReplaceAll(BeStringUtilities::UriEncode(charString.c_str()).c_str(), charString.c_str());
+        }
+
+    result.ReplaceAll("~", "~7E");
+    result.ReplaceAll("*", "~2A");
+    result.ReplaceAll("%", "~");
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 Utf8String FormatCodeId
@@ -791,9 +812,12 @@ Utf8StringCR                     value
 
     Utf8String encodedNamespace(nameSpace.c_str());
     EncodeIdString(encodedNamespace);
+    encodedNamespace = UriEncode(encodedNamespace);
+
     Utf8String encodedValue(value.c_str());
     EncodeIdString(encodedValue);
-
+    encodedValue = UriEncode(encodedValue);
+    
     idString.Sprintf("%d-%s-%s", authorityId, encodedNamespace.c_str(), encodedValue.c_str());
 
     return idString;
