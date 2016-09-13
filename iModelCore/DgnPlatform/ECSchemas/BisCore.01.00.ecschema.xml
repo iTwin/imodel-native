@@ -260,16 +260,6 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="UserLabel" typeName="string">
-            <!-- The "name" given by the User vs. the official "name" which is the CodeValue -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Properties" typeName="string">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">

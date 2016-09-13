@@ -44,8 +44,8 @@ public:
     DEFINE_T_SUPER(Dgn::InformationModel::CreateParams);
 
     protected:
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, Dgn::DgnCode code, bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, code, inGuiList)
             {}
 
     public:
@@ -57,10 +57,9 @@ public:
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The Code for the DgnModel
-        //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
-            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, Dgn::DgnCode code, bool inGuiList = true) :
+            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, code, inGuiList)
             {}
     };
 

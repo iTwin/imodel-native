@@ -34,7 +34,6 @@ TEST_F (DgnElementTests, ResetStatistics)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     m_db->SaveChanges("changeSet1");
@@ -111,7 +110,6 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");

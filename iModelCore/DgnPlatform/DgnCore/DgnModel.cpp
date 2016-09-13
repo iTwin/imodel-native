@@ -12,7 +12,6 @@
 #define MODEL_PROP_CodeAuthorityId "CodeAuthorityId"
 #define MODEL_PROP_CodeNamespace "CodeNamespace"
 #define MODEL_PROP_CodeValue "CodeValue"
-#define MODEL_PROP_UserLabel "UserLabel"
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_DependencyIndex "DependencyIndex"
@@ -38,7 +37,7 @@ DgnModelId DgnModels::QueryModelId(DgnCode code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeValue,UserLabel,ECClassId,Visibility,CodeNamespace,CodeAuthorityId,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue,ECClassId,Visibility,CodeNamespace,CodeAuthorityId,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -47,13 +46,12 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     if (out) // this can be null to just test for the existence of a model by id
         {
         out->m_id = id;
-        out->m_userLabel.AssignOrClear(stmt.GetValueText(1));
-        out->m_classId = stmt.GetValueId<DgnClassId>(2);
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
-        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
-        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(6);
-        out->m_federationGuid = stmt.GetValueGuid(7);
-        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(8));
+        out->m_classId = stmt.GetValueId<DgnClassId>(1);
+        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(2));
+        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(4), stmt.GetValueText(0), stmt.GetValueText(3));
+        out->m_modeledElementId = stmt.GetValueId<DgnElementId>(5);
+        out->m_federationGuid = stmt.GetValueGuid(6);
+        out->m_isTemplate = TO_BOOL(stmt.GetValueInt(7));
         }
 
     return SUCCESS;
@@ -167,7 +165,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId,FederationGuid,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -190,14 +188,13 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
 
 DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
 Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); return m_sql->GetValueText(1);}
-Utf8CP          DgnModels::Iterator::Entry::GetUserLabel() const {Verify(); return m_sql->GetValueText(2);}
-bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(3)); }
-DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(4);}
-Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
-DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
-DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(7);}
-BeGuid          DgnModels::Iterator::Entry::GetFederationGuid() const {Verify(); return m_sql->GetValueGuid(8);}
-bool            DgnModels::Iterator::Entry::GetIsTemplate() const { Verify(); return (0 != m_sql->GetValueInt(9)); }
+bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(2)); }
+DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(3);}
+Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(4);}
+DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(5);}
+DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(6);}
+BeGuid          DgnModels::Iterator::Entry::GetFederationGuid() const {Verify(); return m_sql->GetValueGuid(7);}
+bool            DgnModels::Iterator::Entry::GetIsTemplate() const { Verify(); return (0 != m_sql->GetValueInt(8)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -236,7 +233,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_userLabel(params.m_userLabel),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList),
     m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
@@ -590,11 +587,6 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(MODEL_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
         (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
-
-    if (!m_userLabel.empty())
-        statement.BindText(statement.GetParameterIndex(MODEL_PROP_UserLabel), m_userLabel.c_str(), IECSqlBinder::MakeCopy::No);
-    else
-        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_UserLabel));
 
     if (m_modeledElementId.IsValid())
         statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
@@ -1216,7 +1208,6 @@ DgnDbStatus DgnModel::Insert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_InitFrom(DgnModelCR other)
     {
-    m_userLabel = other.m_userLabel;
     m_inGuiList = other.m_inGuiList;
     m_dependencyIndex = other.m_dependencyIndex;
     m_isTemplate = other.m_isTemplate;
@@ -1272,7 +1263,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetCode(), model.GetUserLabel(), model.GetInGuiList());
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetCode(), model.GetInGuiList());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -1493,7 +1484,6 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(MODEL_PROP_UserLabel, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_DependencyIndex, ECSqlClassParams::StatementType::All);

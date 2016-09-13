@@ -307,7 +307,6 @@ public:
         DgnElementId m_modeledElementId;
         BeSQLite::BeGuid m_federationGuid;
         DgnCode m_code;
-        Utf8String m_userLabel;
         bool m_inGuiList = true;
         bool m_isTemplate = false;
 
@@ -316,7 +315,6 @@ public:
         Model(DgnCode code, DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
 
         void SetCode(DgnCode code) {m_code = code;}
-        void SetUserLabel(Utf8CP userLabel) {m_userLabel.AssignOrClear(userLabel);}
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
@@ -326,7 +324,6 @@ public:
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
         DgnCode const& GetCode() const {return m_code;}
-        Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
         bool GetInGuiList() const {return m_inGuiList;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
@@ -354,7 +351,6 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
             DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;

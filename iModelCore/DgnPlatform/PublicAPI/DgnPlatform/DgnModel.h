@@ -139,7 +139,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         DgnElementId        m_modeledElementId;
         BeSQLite::BeGuid    m_federationGuid;
         DgnCode             m_code;
-        Utf8String          m_userLabel;
         bool                m_inGuiList;
         bool                m_isTemplate = false;
 
@@ -148,18 +147,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The code for the DgnModel
-        //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, bool inGuiList = true) :
             m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_code(code), m_inGuiList(inGuiList)
             {
-            SetUserLabel(label);
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) { m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
         void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnModel created with this CreateParams
         void SetCode(DgnCode code) { m_code = code; } //!< Set the DgnCode for models created with this CreateParams
-        void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
@@ -202,7 +198,6 @@ protected:
     DgnElementId        m_modeledElementId;
     BeSQLite::BeGuid    m_federationGuid;
     DgnCode             m_code;
-    Utf8String          m_userLabel;
     bool                m_inGuiList;
     bool                m_isTemplate;
     int                 m_dependencyIndex;
@@ -424,7 +419,7 @@ protected:
 
     virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
-    virtual DgnCode const& _GetCode() const override final { return m_code; }
+    virtual DgnCodeCR _GetCode() const override final { return m_code; }
     virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
     virtual DgnModelCP _ToDgnModel() const override final { return this; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
@@ -480,13 +475,6 @@ public:
     //! Set the FederationGuid for this DgnModel.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
     void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
-
-    //! Get the label of this DgnModel.
-    //! @note may be nullptr
-    Utf8CP GetUserLabel() const { return m_userLabel.c_str(); }
-    
-    //! Set the label of this DgnModel.
-    void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); }
 
     //! Get the visibility in model lists shown to the user
     bool GetInGuiList() const { return m_inGuiList; }
@@ -786,11 +774,10 @@ public:
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The DgnCode for the DgnModel
-        //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, code, label, inGuiList), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, code, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
@@ -1460,11 +1447,10 @@ public:
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
-        //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
-            T_Super(dgndb, classId, modeledElementId, code, label, displayInfo, inGuiList), m_size(size)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, modeledElementId, code, displayInfo, inGuiList), m_size(size)
             {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
