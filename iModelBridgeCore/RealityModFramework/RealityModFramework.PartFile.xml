@@ -251,7 +251,7 @@
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
         <SubPart PartName="RealityDbECPluginCNuGet"/>
         <SubPart PartName="UsageDataExtractor"/>
-        <!--<SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>-->
+        <SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
