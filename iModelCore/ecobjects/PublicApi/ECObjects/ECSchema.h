@@ -3158,9 +3158,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value);
     //! Gets the minor version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionMinor() const;
-    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    //! Returns an iterable container of ECClasses sorted by name.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    //! Returns an iterable container of ECEnumerations sorted by name.
     ECEnumerationContainerCR GetEnumerations() const { return m_enumerationContainer; }
     //! Removes an enumeration from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);
