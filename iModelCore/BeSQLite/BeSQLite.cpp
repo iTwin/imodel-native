@@ -2209,11 +2209,11 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
     DbResult rc = DoOpenDb(dbName, params);
 
-    if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade)
+    if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade && !params.m_rawSQLite)
         {
         rc = _VerifySchemaVersion(params);
 
-        if (rc == BE_SQLITE_OK && !params.m_rawSQLite)
+        if (rc == BE_SQLITE_OK)
             rc = _OnDbOpened();
         }
 
