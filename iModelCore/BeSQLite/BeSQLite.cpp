@@ -207,15 +207,57 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
 BEGIN_UNNAMED_NAMESPACE
 static bool s_diagIsEnabled = true;
 
+NativeLogging::ILogger* s_diagnosticsPrepareLogger = nullptr;
+NativeLogging::ILogger* s_diagnosticsQueryPlanLogger = nullptr;
+NativeLogging::ILogger* s_diagnosticsQueryPlanWithTableScanLogger = nullptr;
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2015
+// @bsimethod                                                Krischan.Eberle      09/2016
 //---------------------------------------------------------------------------------------
-static NativeLogging::ILogger* getLoggerIfEnabledForSeverity(WCharCP loggerName)
+static NativeLogging::ILogger* getDiagnosticsPrepareLoggerIfEnabled()
     {
-    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger(loggerName);
-    BeAssert(logger != nullptr);
-    if (logger->isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        return logger;
+    if (s_diagnosticsPrepareLogger == nullptr)
+        {
+        s_diagnosticsPrepareLogger = NativeLogging::LoggingManager::GetLogger(DIAGNOSTICS_PREPARE_LOGGER_NAME);
+        BeAssert(s_diagnosticsPrepareLogger != nullptr);
+        }
+
+    if (s_diagnosticsPrepareLogger->isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        return s_diagnosticsPrepareLogger;
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2016
+//---------------------------------------------------------------------------------------
+static NativeLogging::ILogger* getDiagnosticsQueryPlanLoggerIfEnabled()
+    {
+    if (s_diagnosticsQueryPlanLogger == nullptr)
+        {
+        s_diagnosticsQueryPlanLogger = NativeLogging::LoggingManager::GetLogger(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
+        BeAssert(s_diagnosticsQueryPlanLogger != nullptr);
+        }
+
+    if (s_diagnosticsQueryPlanLogger->isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        return s_diagnosticsQueryPlanLogger;
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2016
+//---------------------------------------------------------------------------------------
+static NativeLogging::ILogger* getDiagnosticsQueryPlanWithTableScanLoggerIfEnabled()
+    {
+    if (s_diagnosticsQueryPlanWithTableScanLogger == nullptr)
+        {
+        s_diagnosticsQueryPlanWithTableScanLogger = NativeLogging::LoggingManager::GetLogger(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+        BeAssert(s_diagnosticsQueryPlanWithTableScanLogger != nullptr);
+        }
+
+    if (s_diagnosticsQueryPlanWithTableScanLogger->isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        return s_diagnosticsQueryPlanWithTableScanLogger;
 
     return nullptr;
     }
@@ -236,15 +278,15 @@ static void logStatementDiagnostics(Utf8CP sql, DbResult prepareStat, DbFileCR d
     if (!s_diagIsEnabled || suppressDiagnostics)
         return;
 
-    NativeLogging::ILogger* prepareLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_PREPARE_LOGGER_NAME);
+    NativeLogging::ILogger* prepareLogger = getDiagnosticsPrepareLoggerIfEnabled();
     if (prepareLogger != nullptr)
         prepareLogger->message(NativeLogging::LOG_DEBUG, sql);
 
     //only do query plan diagnostics if preparation succeeded
     if (BE_SQLITE_OK == prepareStat)
         {
-        NativeLogging::ILogger* queryPlanLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
-        NativeLogging::ILogger* queryPlanWithTableScansLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+        NativeLogging::ILogger* queryPlanLogger = getDiagnosticsQueryPlanLoggerIfEnabled();
+        NativeLogging::ILogger* queryPlanWithTableScansLogger = getDiagnosticsQueryPlanWithTableScanLoggerIfEnabled();
         if (queryPlanLogger == nullptr && queryPlanWithTableScansLogger == nullptr)
             return;
 
@@ -280,14 +322,13 @@ void StatementDiagnostics::LogComment(Utf8CP comment)
     if (!s_diagIsEnabled || Utf8String::IsNullOrEmpty(comment))
         return;
 
-    bvector<WCharCP> loggerNames;
-    loggerNames.push_back(DIAGNOSTICS_PREPARE_LOGGER_NAME);
-    loggerNames.push_back(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
-    loggerNames.push_back(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+    bvector<NativeLogging::ILogger*> loggers;
+    loggers.push_back(getDiagnosticsPrepareLoggerIfEnabled());
+    loggers.push_back(getDiagnosticsQueryPlanLoggerIfEnabled());
+    loggers.push_back(getDiagnosticsQueryPlanWithTableScanLoggerIfEnabled());
 
-    for (WCharCP loggerName : loggerNames)
+    for (NativeLogging::ILogger* logger : loggers)
         {
-        NativeLogging::ILogger* logger = getLoggerIfEnabledForSeverity(loggerName);
         if (logger != nullptr)
             logger->message(NativeLogging::LOG_DEBUG, comment);
         }
