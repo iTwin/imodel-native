@@ -5,11 +5,6 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if !defined (BENTLEY_RUN_XCTEST_DEVICE_NAME)
-    %warn To run XCTests, define BENTLEY_RUN_XCTEST_DEVICE_NAME as the name of the attached iOS device to use.
-    %return
-%endif
-
 %include mdl.mki
 
 %if $(TARGET_PLATFORM)!="iOS"
@@ -35,6 +30,18 @@ XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 %endif
 
 logFile = ${XCTEST_OUTPUT_DIR}/XCTest.log
+
+%if !defined (BENTLEY_RUN_XCTEST_DEVICE_NAME)
+    %warn To run XCTests, define BENTLEY_RUN_XCTEST_DEVICE_NAME as the name of the attached iOS device to use.
+
+    # Link a fake log file to satisfy partfile bindings.
+    always:
+        ~@mkdir ${XCTEST_OUTPUT_DIR}
+        touch $(logFile)
+        ~linkfile "$(BuildContext)Delivery/XCTest/Logs/$(XCTEST_LOGFILE_NAME)=$(logFile)"
+
+    %return
+%endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
 always:
