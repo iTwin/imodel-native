@@ -24,7 +24,7 @@ private:
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);
-    virtual ~RasterFileSource(){};
+    virtual ~RasterFileSource() {m_rasterFilePtr = nullptr;};
 
 protected:
     virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
