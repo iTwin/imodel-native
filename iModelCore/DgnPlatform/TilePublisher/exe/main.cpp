@@ -471,20 +471,13 @@ PublisherContext::Status TilesetPublisher::Publish(bool appOnly, DPoint3dCR grou
         static double       s_toleranceInMeters = 0.01;
 
         m_generator = &generator;
+        PublishViewModels(generator, *this, s_toleranceInMeters, progressMeter);
+        m_generator = nullptr;
 
-        TileNodePtr rootTile;
-        StopWatch timer(true);
-        status = ConvertStatus(generator.GenerateTiles(rootTile, m_viewController, 20000));
-        printf("%u tiles in: %f\n", static_cast<uint32_t>(rootTile->GetNodeCount()), timer.GetCurrentSeconds());
-
-        if (Status::Success != status)
-            return status;
-
-        Json::Value elementTileSet;
-        DRange3d rootRange = DRange3d::NullRange();;
-        status = CollectOutputTiles(elementTileSet, rootRange, *rootTile, GetRootName(), generator, *this);
         if (Status::Success != status)
             return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+
+        OutputStatistics(generator.GetStatistics());
         }
 
     return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
