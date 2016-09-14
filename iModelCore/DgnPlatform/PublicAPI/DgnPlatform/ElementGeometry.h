@@ -106,17 +106,19 @@ public:
 struct FacetCounter
 {
 private:
-    IFacetOptionsCR m_facetOptions;
-    int32_t         m_faceMultiplier;
+    IFacetOptionsPtr    m_facetOptions;
+    int32_t             m_faceMultiplier;
 
     static int32_t ComputeFaceMultiplier(int32_t maxPerFace)
         {
         // TO-DO: Come up with a general formula that works for faces with more than four faces
         return (maxPerFace == 3) ? 2 : 1;
         }
+
+    DGNPLATFORM_EXPORT static IFacetOptionsPtr CreateDefaultFacetOptions();
 public:
-    FacetCounter(IFacetOptionsCR options, int32_t maxPerFace) : m_facetOptions(options), m_faceMultiplier(ComputeFaceMultiplier(maxPerFace)) { }
-    explicit FacetCounter(IFacetOptionsCR options) : FacetCounter(options, options.GetMaxPerFace()) { }
+    explicit FacetCounter(IFacetOptionsR facetOptions) : m_facetOptions(&facetOptions), m_faceMultiplier(ComputeFaceMultiplier(facetOptions.GetMaxPerFace())) { }
+    FacetCounter() : FacetCounter(*CreateDefaultFacetOptions()) { }
 
     DGNPLATFORM_EXPORT size_t GetFacetCount(DgnTorusPipeDetailCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(DgnConeDetailCR) const;
@@ -549,7 +551,6 @@ private:
     Render::GeometryParams      m_elParams;
     GeometryStreamIO::Writer    m_writer;
     size_t                      m_facetCount;
-    IFacetOptionsPtr            m_facetOptions;
     FacetCounter                m_facetCounter;
 
     GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
