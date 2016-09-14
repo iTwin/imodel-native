@@ -718,31 +718,11 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
     return facetOptions;
     }
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/16
-//=======================================================================================
-struct ModelAndCategorySet : VirtualSet
-{
-private:
-    DgnModelIdSet const&    m_models;
-    DgnCategoryIdSet const& m_categories;
-
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
-        {
-        BeAssert(2 == nVals);
-        return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
-        }
-public:
-    ModelAndCategorySet(ViewControllerCR view) : m_models(view.GetViewedModels()), m_categories(view.GetViewedCategories()) { }
-
-    bool IsEmpty() const { return m_models.empty() || m_categories.empty(); }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgressMeter* progressMeter) 
-    : m_progressMeter(nullptr != progressMeter ? *progressMeter : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn)
+TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, TileGenerator::IProgressMeter* progressMeter) 
+    : m_progressMeter(nullptr != progressMeter ? *progressMeter : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb)
     {
     //
     }
@@ -752,7 +732,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector& collector)
     {
-    m_progressMeter._SetTaskName(TaskName::CreatingTiles);
+    m_progressMeter._SetTaskName(TaskName::CollectingTileMeshes);
 
     // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNodeP> tiles = root.GetTiles();
@@ -878,35 +858,46 @@ void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile)
     {
+    TileViewControllerFilter filter(view);
+    return GenerateTiles(root, filter, maxPointsPerTile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ITileGenerationFilterR filter, size_t maxPointsPerTile)
+    {
     root = TileNode::Create(GetTransformFromDgn());
 
-    // Filter elements by viewed models + categories
-    ModelAndCategorySet vset(view);
-    if (vset.IsEmpty())
-        return Status::NoGeometry;
+    m_progressMeter._SetTaskName(TaskName::GeneratingRangeTree);
+    m_progressMeter._IndicateProgress(0, 1);
+    StopWatch timer(true);
 
     // Compute union of ranges of all elements
     // ###TODO_FACET_COUNT: Assuming 3d spatial view for now...
-    // ###TODO_FACET_COUNT: Split the range query from the additional (customizable) element selection criteria
-    static const Utf8CP s_spatialSql =  "SELECT s.MinX,s.MinY,s.MinZ,s.MaxX,s.MaxY,s.MaxZ FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS s, "
-                                        BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
-                                        "WHERE g.ECInstanceId=e.ECInstanceId AND s.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+    static const Utf8CP s_spatialSql = "SELECT MinX,MinY,MinZ,MaxX,MaxY,MaxZ,ElementId FROM " DGN_VTABLE_SpatialIndex;
+    auto stmt = m_dgndb.GetCachedStatement(s_spatialSql);
 
     DRange3d viewRange = DRange3d::NullRange();
-    DgnDbR db = view.GetDgnDb();
-
-    auto stmt = db.GetPreparedECSqlStatement(s_spatialSql);
-    stmt->BindVirtualSet(1, vset);
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        auto elemId = stmt->GetValueId<DgnElementId>(6);
+        if (!filter.AcceptElement(elemId))
+            continue;
+
         DRange3d elemRange = DRange3d::From(stmt->GetValueDouble(0), stmt->GetValueDouble(1), stmt->GetValueDouble(2),
                                             stmt->GetValueDouble(3), stmt->GetValueDouble(4), stmt->GetValueDouble(5));
+
         viewRange.Extend(elemRange);
         }
 
     if (viewRange.IsNull())
+        {
+        m_statistics.m_collectionTime = timer.GetCurrentSeconds();
+        m_progressMeter._IndicateProgress(1, 1);
         return Status::NoGeometry;
+        }
 
     stmt->Reset();
     stmt = nullptr;
@@ -915,7 +906,10 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
     static const double s_leafTolerance = 0.01;
     double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
     root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
-    root->ComputeTiles(s_leafTolerance, maxPointsPerTile, vset, db);
+    root->ComputeTiles(s_leafTolerance, maxPointsPerTile, filter, m_dgndb);
+
+    m_statistics.m_collectionTime = timer.GetCurrentSeconds();
+    m_progressMeter._IndicateProgress(1, 1);
 
     return Status::Success;
     }
@@ -923,15 +917,12 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, size_t maxFacets)
+static size_t countFacets(DRange3dCR range, ITileGenerationFilterR filter, DgnDbR db, size_t maxFacets)
     {
     static const Utf8CP s_sql =
-        "SELECT g.FacetCount,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
+        "SELECT g.ECInstanceId,g.FacetCount,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
         "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId) "
-        "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " AS e ON g.ECInstanceId = e.ECInstanceId "
-        "WHERE NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
-        "AND InVirtualSet(?,e.ModelId,g.CategoryId) "
-        "ORDER BY g.FacetCount";
+        "WHERE MinX <= ? AND MinY <= ? AND MinZ <= ? AND MaxX >= ? AND MaxY >= ? AND MaxZ >= ?";
 
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
     stmt->BindDouble(1, range.high.x);
@@ -940,13 +931,17 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
     stmt->BindDouble(4, range.low.x);
     stmt->BindDouble(5, range.low.y);
     stmt->BindDouble(6, range.low.z);
-    stmt->BindVirtualSet(7, vset);
 
     size_t facetCount = 0;
     while (BE_SQLITE_ROW == stmt->Step() /*&& facetCount <= maxFacets*/) // NB: Caller wants the full facet count...can't halt when hit limit
         {
-        DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
-                                          stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
+        auto elemId = stmt->GetValueId<DgnElementId>(0);
+        if (!filter.AcceptElement(elemId))
+            continue;
+
+        DRange3d elRange = DRange3d::From(stmt->GetValueDouble(2), stmt->GetValueDouble(3), stmt->GetValueDouble(4),
+                                          stmt->GetValueDouble(5), stmt->GetValueDouble(6), stmt->GetValueDouble(7));
+
         double elVolume = elRange.Volume();
         if (0.0 == elVolume)
             continue;
@@ -955,13 +950,10 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
         intersection.IntersectionOf(elRange, range);
         if (!intersection.IsNull())
             {
-            double facetCountDensity = static_cast<double>(stmt->GetValueUInt64(0)) / elVolume;
+            double facetCountDensity = static_cast<double>(stmt->GetValueUInt64(1)) / elVolume;
             facetCount += static_cast<size_t>(facetCountDensity * intersection.Volume());
             }
         }
-
-    stmt->Reset();
-    stmt = nullptr;
 
     return facetCount;
     }
@@ -969,12 +961,12 @@ static size_t countFacets(DRange3dCR range, VirtualSet const& vset, DgnDbR db, s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, VirtualSet const& vset, DgnDbR db)
+void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, ITileGenerationFilterR filter, DgnDbR db)
     {
     static const size_t s_depthLimit = 0xffff;
     static const double s_targetChildCount = 5.0;
 
-    size_t facetCount = countFacets(m_dgnRange, vset, db, maxPointsPerTile);
+    size_t facetCount = countFacets(m_dgnRange, filter, db, maxPointsPerTile);
     if (facetCount < maxPointsPerTile)
         {
         m_tolerance = chordTolerance;
@@ -985,7 +977,7 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Virt
         size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
         size_t siblingIndex = 0;
 
-        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, vset, db);
+        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, filter, db);
         for (auto& subRange : subRanges)
             {
             double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
@@ -993,14 +985,14 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Virt
             }
 
         for (auto& child : m_children)
-            child->ComputeTiles(chordTolerance, maxPointsPerTile, vset, db);
+            child->ComputeTiles(chordTolerance, maxPointsPerTile, filter, db);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, VirtualSet const& vset, DgnDbR db)
+void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, ITileGenerationFilterR filter, DgnDbR db)
     {
     bvector<DRange3d> bisectRanges;
     DVec3d diagonal = range.DiagonalVector();
@@ -1029,7 +1021,7 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
 
     for (auto& bisectRange : bisectRanges)
         {
-        size_t facetCount = countFacets(bisectRange, vset, db, maxPointsPerSubTile);
+        size_t facetCount = countFacets(bisectRange, filter, db, maxPointsPerSubTile);
         if (facetCount < maxPointsPerSubTile)
             {
             if (facetCount != 0)
@@ -1037,7 +1029,7 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
             }
         else
             {
-            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, vset, db);
+            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, filter, db);
             }
         }
     }
@@ -1048,13 +1040,14 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
 struct TileGeometryProcessor : IGeometryProcessor
 {
 private:
-    IFacetOptionsR      m_facetOptions;
-    IFacetOptionsPtr    m_targetFacetOptions;
-    DgnElementId        m_curElemId;
-    ViewControllerCR    m_view;
-    TileGeometryList    m_geometries;
-    DRange3d            m_range;
-    Transform           m_transformFromDgn;
+    IFacetOptionsR          m_facetOptions;
+    IFacetOptionsPtr        m_targetFacetOptions;
+    DgnElementId            m_curElemId;
+    ITileGenerationFilterR  m_filter;
+    DgnDbR                  m_dgndb;
+    TileGeometryList        m_geometries;
+    DRange3d                m_range;
+    Transform               m_transformFromDgn;
 
     void AddGeometry(TileGeometryR geom);
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
@@ -1072,8 +1065,8 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
-    TileGeometryProcessor(ViewControllerCR view, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn)
-        : m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_view(view), m_range(range), m_transformFromDgn(transformFromDgn)
+    TileGeometryProcessor(ITileGenerationFilterR filter, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn)
+        : m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_filter(filter), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn)
         {
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         }
@@ -1106,9 +1099,9 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     tf.Multiply(range, range);
     
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+    TileTextureImage::ResolveTexture(*displayParams, m_dgndb);
 
-    AddGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_view.GetDgnDb()));
+    AddGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_dgndb));
     return true;
     }
 
@@ -1166,10 +1159,10 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     DRange3d range = clone->PointRange();
 
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+    TileTextureImage::ResolveTexture(*displayParams, m_dgndb);
 
     IGeometryPtr geom = IGeometry::Create(clone);
-    AddGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_view.GetDgnDb()));
+    AddGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_dgndb));
 
     return true;
     }
@@ -1188,9 +1181,9 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     solidTo3mx.Multiply(range, range);
 
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+    TileTextureImage::ResolveTexture(*displayParams, m_dgndb);
 
-    AddGeometry(*TileGeometry::Create(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()));
+    AddGeometry(*TileGeometry::Create(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_dgndb));
 
     return true;
     }
@@ -1200,42 +1193,31 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
-    // ###TODO_FACET_COUNT: Separate range query from add'l criteria; allow add'l criteria to be customized
-    ModelAndCategorySet vset(m_view);
-    if (vset.IsEmpty())
-        return;
-
     // ###TODO_FACET_COUNT: Support non-spatial views...
-    static const Utf8CP s_sql =
-        "SELECT r.ECInstanceId "
-        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId) "
-        "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " AS e ON g.ECInstanceId = e.ECInstanceId "
-        "WHERE NOT (r.MinX > ? OR r.MinY > ? OR r.MinZ > ? OR r.MaxX < ? OR r.MaxY < ? OR r.MaxZ < ?) "
-        "AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+    static const Utf8CP s_sql = "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex
+                                " WHERE MinX <= ? AND MinY <= ? AND MinZ <= ? AND MaxX >= ? AND MaxY >= ? AND MaxZ >= ?";
 
-    DgnDbR db = m_view.GetDgnDb();
-    context.SetDgnDb(db);
-
-    auto stmt = db.GetPreparedECSqlStatement(s_sql);
+    auto stmt = m_dgndb.GetCachedStatement(s_sql);
     stmt->BindDouble(1, m_range.high.x);
     stmt->BindDouble(2, m_range.high.y);
     stmt->BindDouble(3, m_range.high.z);
     stmt->BindDouble(4, m_range.low.x);
     stmt->BindDouble(5, m_range.low.y);
     stmt->BindDouble(6, m_range.low.z);
-    stmt->BindVirtualSet(7, vset);
 
+    context.SetDgnDb(m_dgndb);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         m_curElemId = stmt->GetValueId<DgnElementId>(0);
-        context.VisitElement(m_curElemId, true);
+        if (m_filter.AcceptElement(m_curElemId))
+            context.VisitElement(m_curElemId, true);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
     {
     static const double s_minRangeBoxSize = 0.5;
     static const double s_vertexToleranceRatio = 1.0;
@@ -1247,9 +1229,9 @@ TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::Norm
 
     // Collect geometry from elements in this node, sorted by facet count density
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor processor(view, GetDgnRange(), *facetOptions, m_transformFromDgn);
+    TileGeometryProcessor processor(filter, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
 
-    GeometryProcessor::Process(processor, view.GetDgnDb());
+    GeometryProcessor::Process(processor, db);
 
     // Convert to meshes
     MeshBuilderMap builderMap;
@@ -1327,5 +1309,27 @@ TileMeshList TileNode::_GenerateMeshes(ViewControllerCR view, TileGeometry::Norm
     // ###TODO: statistics: record empty node...
 
     return meshes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileViewControllerFilter::TileViewControllerFilter(ViewControllerCR view) : m_set(view)
+    {
+    static const Utf8CP s_sql = "SELECT g.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
+                                " WHERE g.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
+
+    m_stmt = view.GetDgnDb().GetPreparedECSqlStatement(s_sql);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileViewControllerFilter::_AcceptElement(DgnElementId elementId)
+    {
+    m_stmt->BindVirtualSet(1, m_set);
+    bool accepted = BE_SQLITE_ROW == m_stmt->Step();
+    m_stmt->Reset();
+    return accepted;
     }
 

@@ -92,7 +92,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetViewController(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile._GenerateMeshes(context.GetFilter(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -943,12 +943,6 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     DPoint3d        origin = m_viewController.GetCenter ();
 
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
-//#define APPLY_ZUP_TO_YUP
-#if defined(APPLY_ZUP_TO_YUP)
-    RotMatrix rotX = RotMatrix::FromAxisAndRotationAngle(0, msGeomConst_piOver2);
-    m_dbToTile = Transform::FromProduct(rotX, m_dbToTile);
-#endif
-    
     m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
@@ -1070,7 +1064,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
         return Status::NotImplemented;
 
     progressMeter._SetModel (&model);
-    progressMeter._SetTaskName (TileGenerator::TaskName::CollectingGeometry);       // Needs work -- meter progress in model publisher.
+    progressMeter._SetTaskName (TileGenerator::TaskName::GeneratingRangeTree);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
 
     if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))

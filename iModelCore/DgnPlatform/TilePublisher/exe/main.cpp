@@ -289,11 +289,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
 struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
 {
 private:
-    TileGeneratorP      m_generator = nullptr;
-    Status              m_acceptTileStatus = Status::Success;
+    TileGeneratorP              m_generator = nullptr;
+    TileViewControllerFilter    m_filter;
+    Status                      m_acceptTileStatus = Status::Success;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
+    virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
@@ -318,7 +320,7 @@ private:
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -353,10 +355,31 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value pointToJson(DPoint3dCR pt)
+    {
+    Json::Value json(Json::objectValue);
+    json["x"] = pt.x;
+    json["y"] = pt.y;
+    json["z"] = pt.z;
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
     {
+    // JSON description of the view...consumed by our html to customize Cesium behavior
+    Json::Value json(Json::objectValue);
+    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
+    Utf8String tilesetUrl = rootNameUtf8;
+    tilesetUrl.append(1, '/');
+    tilesetUrl.append(rootNameUtf8);
+    tilesetUrl.append(".json");
+    json["url"] = tilesetUrl;
+
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
@@ -379,23 +402,23 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
+    json["dest"] = pointToJson(viewDest);
+    json["dir"] = pointToJson(zVec);
+    json["up"] = pointToJson(yVec);
+
     bool geoLocated = !m_tileToEcef.IsIdentity();
-    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
-    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
-    Utf8String adjustHeightString;
-    
     if (geoLocated)
         {
         DPoint3d    groundEcefPoint;
-
         transform.Multiply (groundEcefPoint, groundPoint);
-        adjustHeightString = Utf8PrintfString (s_adjustTerrainString, groundEcefPoint.x, groundEcefPoint.y, groundEcefPoint.z);
+
+        json["geolocated"] = true;
+        json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
-    Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
-
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), adjustHeightString.c_str(), viewFrameString,  viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8String jsonStr = Json::FastWriter().write(json);
+    Utf8PrintfString html(s_viewerHtml, jsonStr.c_str());
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
@@ -404,13 +427,12 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     std::fwrite(html.data(), 1, html.size(), htmlFile);
     std::fclose(htmlFile);
 
-    // Symlink the Cesium dir, if not already present
-    BeFileName cesiumSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    cesiumSrcDir.AppendToPath(L"scripts");
-    cesiumSrcDir.AppendToPath(L"Cesium");
-    BeFileName cesiumDstDir(m_outputDir);
-    cesiumDstDir.AppendToPath(L"Cesium");
-    BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
+    // Symlink the scripts, if not already present
+    BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    scriptsSrcDir.AppendToPath(L"scripts");
+    BeFileName scriptsDstDir(m_outputDir);
+    scriptsDstDir.AppendToPath(L"scripts");
+    BeFileName::CloneDirectory(scriptsSrcDir.c_str(), scriptsDstDir.c_str());
 
     return Status::Success;
     }
@@ -460,7 +482,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Generating range tree";
+    Utf8String newTaskName = (TileGenerator::TaskName::CollectingTileMeshes == task) ? "Publishing tiles" : "Generating range tree";
     if (!m_taskName.Equals(newTaskName))
         {
         m_lastPercentCompleted = 0xffffffff;
@@ -478,7 +500,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return status;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), &progressMeter);
 
     DRange3d            range;
 
