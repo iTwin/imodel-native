@@ -18,7 +18,7 @@ struct UnmanagedCallback : Bentley::TerrainModel::TerrainImporter::ICallback
     {
     private: gcroot<IImporterCallback^> m_callback;
 
-    public: UnmanagedCallback (gcroot<IImporterCallback^> callback) : m_callback(callback)
+    public: UnmanagedCallback(gcroot<IImporterCallback^> callback) : m_callback(callback)
         {
         }
 
@@ -89,6 +89,7 @@ System::Collections::Generic::IEnumerable<TerrainInfo^>^ TerrainImporter::Terrai
         retList->Add (gcnew TerrainInfo (gcnew System::String (iter->GetName().GetWCharCP()), description, iter->HasDefinition()));
         }
 
+    System::GC::KeepAlive(this);
     return retList;
     }
 
@@ -100,7 +101,7 @@ IImporterCallback^ TerrainImporter::Callback::get()
 void TerrainImporter::Callback::set (IImporterCallback^ value)
     {
     m_callback = value;
-    
+
     if (m_unmanaged->m_unmanagedCallback)
         {
         m_unmanaged->m_importer->SetCallback (nullptr);
@@ -119,6 +120,7 @@ ImportedTerrain^ TerrainImporter::ImportTerrain (System::String^ name)
     pin_ptr<const wchar_t> p = PtrToStringChars (name);
     Bentley::TerrainModel::ImportedTerrain surface = m_unmanaged->m_importer->ImportTerrain (p);
     System::GC::KeepAlive(name);
+    System::GC::KeepAlive(this);
 
     Bentley::TerrainModelNET::DTM^ dtm = surface.GetTerrain() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)surface.GetTerrain()) : nullptr;
     System::String^ description = surface.GetDescription ().GetWCharCP () ? gcnew System::String (surface.GetDescription ().GetWCharCP ()) : nullptr;
@@ -137,6 +139,7 @@ System::Collections::Generic::IEnumerable<ImportedTerrain^>^ TerrainImporter::Im
         System::String^ description = iter->GetDescription ().GetWCharCP () ? gcnew System::String (iter->GetDescription ().GetWCharCP ()) : nullptr;
         retList->Add (gcnew ImportedTerrain (dtm, gcnew System::String (iter->GetName ().GetWCharCP ()), description, iter->HasDefinition ()));
         }
+    System::GC::KeepAlive(this);
     return retList;
     }
 
@@ -161,6 +164,7 @@ System::Collections::Generic::IEnumerable<ImportedTerrain^>^ TerrainImporter::Im
         System::String^ description = iter->GetDescription ().GetWCharCP () ? gcnew System::String (iter->GetDescription ().GetWCharCP ()) : nullptr;
         retList->Add (gcnew ImportedTerrain (dtm, gcnew System::String (iter->GetName ().GetWCharCP ()), description, iter->HasDefinition ()));
         }
+    System::GC::KeepAlive(this);
     return retList;
     }
 
