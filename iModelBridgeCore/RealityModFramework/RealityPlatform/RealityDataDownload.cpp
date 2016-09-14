@@ -13,11 +13,16 @@
 #include <RealityPlatform/RealityDataDownload.h>
 
 #include <curl/curl.h>
+//#include <zlib/zlib.h>
+#include <zlib/zip/unzip.h>
+
 
 //#define TRACE_DEBUG 1
 
 #define MAX_NB_CONNECTIONS          10
 #define DEFAULT_STEP_PROGRESSCALL   (64*1024)      // default step if filesize is absent.
+#define MAX_FILENAME                512
+#define READ_SIZE                   8192
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -374,7 +379,6 @@ bool RealityDataDownload::Perform()
                         {   
                         if(SetupMirror(pFileTrans->index, 56))
                             {
-                            pFileTrans->nbRetry = 0;
                             still_running++;
                             }
                         else
@@ -565,114 +569,82 @@ void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString&
 
     }
 
-
-#if defined (_WIN32)
-
-#include <Objbase.h>
-#include <Shldisp.h>
-#include <Shellapi.h>
-
 bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
-{
-    BSTR lpZipFile = ::SysAllocString(pi_strSrc.c_str());
-    BSTR lpFolder = ::SysAllocString(pi_strDest.c_str());
+    {
+    char src[MAX_FILENAME];
+    char dest[MAX_FILENAME];
 
-    IShellDispatch *pISD;
+    wcstombs (src, pi_strSrc.c_str(), pi_strSrc.size());
+    wcstombs (dest, pi_strDest.c_str(), pi_strDest.size());
 
-    Folder  *pZippedFile = 0L;
-    Folder  *pDestination = 0L;
+    src[pi_strSrc.size()] = 0;
+    dest[pi_strDest.size()] = 0;
 
-    long FilesCount = 0;
-    IDispatch* pItem = 0L;
-    FolderItems *pFilesInside = 0L;
-
-    VARIANT Options, OutFolder, InZipFile, Item;
-    HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-    if (res == S_OK || res == S_FALSE || res == RPC_E_CHANGED_MODE)
-        {
-        res = S_OK;
-        __try{
-            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **) &pISD) != S_OK)
-                {
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-                
-
-            InZipFile.vt = VT_BSTR;
-            InZipFile.bstrVal = lpZipFile;
-            pISD->NameSpace(InZipFile, &pZippedFile);
-            if (!pZippedFile)
-                {
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            OutFolder.vt = VT_BSTR;
-            OutFolder.bstrVal = lpFolder;
-            pISD->NameSpace(OutFolder, &pDestination);
-            if (!pDestination)
-                {
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pZippedFile->Items(&pFilesInside);
-            if (!pFilesInside)
-                {
-                pDestination->Release();
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pFilesInside->get_Count(&FilesCount);
-            if (FilesCount < 1)
-                {
-                pFilesInside->Release();
-                pDestination->Release();
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pFilesInside->QueryInterface(IID_IDispatch, (void**)&pItem);
-
-            Item.vt = VT_DISPATCH;
-            Item.pdispVal = pItem;
-
-            Options.vt = VT_I4;
-            Options.lVal = 1024 | 512 | 16 | 4;//http://msdn.microsoft.com/en-us/library/bb787866(VS.85).aspx
-
-            bool retval = pDestination->CopyHere(Item, Options) == S_OK;
-
-            pItem->Release(); pItem = 0L;
-            pFilesInside->Release(); pFilesInside = 0L;
-            pDestination->Release(); pDestination = 0L;
-            pZippedFile->Release(); pZippedFile = 0L;
-            pISD->Release(); pISD = 0L;
-
-            if (!retval)
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-
-            return retval;
-            }
-        __finally
-            {
-            if (res = S_OK)
-                CoUninitialize();
-            }
-        }
-    BeFileName::BeDeleteFile(pi_strSrc.c_str());
-    return false;
+    return UnZipFile(src, dest);
     }
 
-#else
-#error "Windows specific code function: void UnZipFile(CString strSrc, CString strDest)"
-#endif
+bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDest)
+    {
+    if(!strstr(pi_strSrc, ".zip"))
+        return false;
+    
+    unzFile uf = unzOpen(pi_strSrc);
+    if(nullptr == uf)
+        return false;
+
+    unz_global_info unzGlobalInfo;
+    if(unzGetGlobalInfo (uf, &unzGlobalInfo) != 0)
+        return false;
+
+    uLong i;
+    char read_buffer[ READ_SIZE ];
+    for( i = 0; i < unzGlobalInfo.number_entry; ++i )
+        {
+        unz_file_info file_info;
+        char filename[MAX_FILENAME];
+        if ( unzGetCurrentFileInfo(
+            uf,
+            &file_info,
+            filename,
+            MAX_FILENAME,
+            NULL, 0, NULL, 0 ) != UNZ_OK )
+            return false;
+        
+        char fullpath[MAX_FILENAME];
+        sprintf(fullpath, "%s%s", pi_strDest,filename);
+
+        const size_t fullpath_length = strlen(fullpath);
+        std::string fp = std::string(fullpath);
+        size_t lastOf = fp.find_last_of("//");
+        if( lastOf != fp.size() - 1 ) //skip folders
+            {
+            if(unzOpenCurrentFile( uf ) != UNZ_OK)
+                return false;
+
+            FILE *out = fopen( fullpath, "wb" );
+            if ( out == NULL)
+                return false;
+
+            int status = UNZ_OK;
+            do
+                {
+                status = unzReadCurrentFile( uf, read_buffer, READ_SIZE );
+                if(status < 0)
+                    return false;
+                if(status > 0)
+                    fwrite( read_buffer, status, 1, out );
+                } while (status > 0 );
+            fclose( out );
+            }
+        unzCloseCurrentFile( uf );
+    
+        if( ( i+1 ) < unzGlobalInfo.number_entry )
+            {
+            if ( unzGoToNextFile( uf ) != UNZ_OK)
+                return false;
+            }
+        }
+    
+    return (unzClose (uf) == 0);
+    }
+
