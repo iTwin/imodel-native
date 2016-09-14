@@ -32,7 +32,7 @@ BimTiles.fixupSandboxAttributes = function() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 BimTiles.adjustTilesetHeight = function(viewer, tileset, groundPoint) {
     var terrainProvider = viewer.terrainProvider;
-    if (!Cesium.isDefined(terrainProvider)) {
+    if (!Cesium.defined(terrainProvider)) {
         return;
     }
 
@@ -40,7 +40,7 @@ BimTiles.adjustTilesetHeight = function(viewer, tileset, groundPoint) {
     var positions = [ carto ];
     var currentHeight = carto.height;
 
-    Cesium.SampleTerrain(terrainProvider, 15, positions).then(function() {
+    Cesium.sampleTerrain(terrainProvider, 15, positions).then(function() {
         var targetHeight = positions[0].height;
         var heightDelta = targetHeight - currentHeight;
 
@@ -124,7 +124,7 @@ BimTiles.loadTileset = function(viewer, view, callback) {
             endTransform: tf
         });
 
-        if (Cesium.isDefined(view.groundPoint)) {
+        if (Cesium.defined(view.groundPoint)) {
             scene.globe.depthTestAgainstTerrain = false;
 
             var groundPoint = new Cesium.Cartesian3(view.groundPoint.x, view.groundPoint.y, view.groundPoint.z);
@@ -135,7 +135,7 @@ BimTiles.loadTileset = function(viewer, view, callback) {
             });
         }
 
-        if (Cesium.isDefined(callback)) {
+        if (Cesium.defined(callback)) {
             callback();
         }
     });
