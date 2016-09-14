@@ -13,6 +13,11 @@ baseDir             = $(_MakeFilePath)
     %error This makefile should be used only when TARGET_PLATFORM is iOS
 %endif
 
+%if !defined (BENTLEY_RUN_XCTEST_DEVICE_NAME)
+    %warn Not checking test log files because no device name was specified, and hence no tests should have run. See RunXCTestProject.mke for more details.
+    %return
+%endif
+
 %ifndef LogFilesDir
     %error Define LogFilesDir as the directory that contaings the logfiles to analyze
 %endif
