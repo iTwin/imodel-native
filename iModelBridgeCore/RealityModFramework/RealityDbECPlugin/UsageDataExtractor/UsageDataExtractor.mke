@@ -6,8 +6,14 @@
 #
 #--------------------------------------------------------------------------------------
 
+%include  mdl.mki
+
+appName     = UsageDataExtractor
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
 MsBuildPath=$(ProgramFiles)\MSBuild\12.0\Bin\msbuild.exe
 
 always:
 	|Calling msbuild from $(MsBuildPath)...
-	""$(MsBuildPath)" "$(_MakeFilePath)\$(_MakeFileName).csproj""
+	""$(MsBuildPath)" "$(_MakeFilePath)\$(_MakeFileName).csproj" \/p:OutDir="$(o)\" \/p:BaseIntermediateOutputPath="$(o)obj\"
