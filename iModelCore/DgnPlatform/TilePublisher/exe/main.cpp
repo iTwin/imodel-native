@@ -21,15 +21,26 @@ using namespace BentleyApi::Dgn::Render::Tile3d;
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
+enum class GroundMode
+{
+    Abosolute,
+    FixedHeight,        // Point at center of range and fixed (zero default) height is located at ground level.
+    FixedPoint,         // Specified point is located at ground level.
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
 enum class ParamId
 {
     Input = 0,
     View,
     Output,
     Name,
-    HtmlOnly,
     GroundHeight,
-    Invalid
+    GroundPoint,
+    Tolerance,
+    Invalid,
 };
 
 //=======================================================================================
@@ -53,8 +64,9 @@ static CommandParam s_paramTable[] =
         { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
         { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
         { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
-        { L"h", L"htmlonly", L"'Y' to generate only the html file.", false, true },
-        { L"g", L"groundheight",L"Ground height (in meters).", false},
+        { L"h", L"groundheight",L"Ground height (meters).", false},
+        { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
+        { L"t", L"tolerance",L"Tolerance (meters).", false},
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -119,19 +131,22 @@ private:
     Utf8String      m_viewName;         //!< Name of the view definition from which to publish
     BeFileName      m_outputDir;        //!< Directory in which to place the output
     WString         m_tilesetName;      //!< Root name of the output tileset files
-    bool            m_htmlOnly;         //!< Generate HTML only (not tileset).
     double          m_groundHeight;     //!< Height of ground plane.
-
+    DPoint3d        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
+    GroundMode      m_groundMode;
+    double          m_tolerance;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_htmlOnly (false), m_groundHeight (0.0) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
     Utf8StringCR GetViewName() const { return m_viewName; }
     double  GetGroundHeight() const { return m_groundHeight; }
-    bool GetHtmlOnly() const { return m_htmlOnly; }
+    GroundMode GetGroundMode() const { return m_groundMode; }
+    DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
+    double GetTolerance() const { return m_tolerance; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -230,24 +245,22 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Name:
                 m_tilesetName = arg.m_value.c_str();
                 break;
-            case ParamId::HtmlOnly:
-                m_htmlOnly = true;
-                break;
-            case ParamId::GroundHeight:
-                {
-                double groundHeight;
-
-                if (1 == swscanf (arg.m_value.c_str(), L"%lf", &groundHeight))
+            case ParamId::GroundPoint:
+               if (3 != swscanf (arg.m_value.c_str(), L"%lf,%lf,%lf", &m_groundPoint.x, &m_groundPoint.y, &m_groundPoint.z))
                     {
-                    m_groundHeight = groundHeight;
+                    printf ("Unrecognized ground point: %ls\n", av[i]);
+                    return false;
                     }
-                else
+                break;
+
+            case ParamId::GroundHeight:
+                if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_groundHeight))
                     {
                     printf ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
                 break;
-                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -293,7 +306,7 @@ private:
     private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
-        uint32_t            m_lastNumCompleted = 0xffffffff;
+        uint32_t            m_lastPercentCompleted = 0xffffffff;
         DgnModelCP          m_model;
         
         virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
@@ -311,7 +324,7 @@ public:
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
         }
 
-    Status Publish(bool appOnly, DPoint3dCR groundPoint);
+    Status Publish(PublisherParams const& params);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
 };
@@ -424,20 +437,21 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
     {
-    if (m_lastNumCompleted == completed)
+    uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
+
+    if (m_lastPercentCompleted == pctComplete)
         {
         printf("...");
         }
     else
         {
-        m_lastNumCompleted = completed;
-        uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
         Utf8String  modelNameString;   
 
         if (nullptr != m_model)
             modelNameString = " (" +  m_model->GetName() + ")";
 
         printf("\n%s%s: %u%% (%u/%u)%s", m_taskName.c_str(), modelNameString.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        m_lastPercentCompleted = pctComplete;
         }
     }
 
@@ -449,7 +463,7 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
     Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Generating range tree";
     if (!m_taskName.Equals(newTaskName))
         {
-        m_lastNumCompleted = 0xffffffff;
+        m_lastPercentCompleted = 0xffffffff;
         m_taskName = newTaskName;
         }
     }
@@ -457,28 +471,32 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::Publish(bool appOnly, DPoint3dCR groundPoint)
+PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    if (!appOnly)
-        {
-        auto status = Setup();
-        if (Status::Success != status)
-            return status;
+    auto status = Setup();
+    if (Status::Success != status)
+        return status;
 
-        ProgressMeter progressMeter(*this);
-        TileGenerator generator (m_dbToTile, &progressMeter);
+    ProgressMeter progressMeter(*this);
+    TileGenerator generator (m_dbToTile, &progressMeter);
 
-        static double       s_toleranceInMeters = 0.01;
+    DRange3d            range;
 
-        m_generator = &generator;
-        PublishViewModels(generator, *this, s_toleranceInMeters, progressMeter);
-        m_generator = nullptr;
+    m_generator = &generator;
+    PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    m_generator = nullptr;
 
-        if (Status::Success != status)
-            return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+    if (Status::Success != status)
+        return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-        OutputStatistics(generator.GetStatistics());
-        }
+    OutputStatistics(generator.GetStatistics());
+
+    DPoint3d        groundPoint;
+
+    if (GroundMode::FixedPoint == params.GetGroundMode())
+        groundPoint = params.GetGroundPoint();
+    else
+        groundPoint = DPoint3d::From ((range.low.x + range.high.x) / 2.0, (range.low.y + range.high.y) / 2.0, params.GetGroundHeight());
 
     return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
     }
@@ -583,9 +601,10 @@ int wmain(int ac, wchar_t const** av)
            "\tData: %ls\n",
             createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
-    auto status = publisher.Publish (createParams.GetHtmlOnly(), DPoint3d::From (0.0, 0.0, createParams.GetGroundHeight()));
+    auto status = publisher.Publish (createParams);
     printStatus(status);
 
     return static_cast<int>(status);
     }
+
 

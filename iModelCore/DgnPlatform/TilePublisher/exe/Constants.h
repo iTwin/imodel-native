@@ -104,7 +104,7 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
     });
 
    var fitViewButton = document.getElementById('fitViewButton');
-   fitViewButton.onclick = function() { viewer.camera.viewBoundingSphere(tileset.boundingSphere); }
+   fitViewButton.onclick = function() { viewer.camera.viewBoundingSphere(tileset.boundingSphere, new Cesium.HeadingPitchRange (viewer.camera.heading, viewer.camera.pitch, 0.0)); }
 });
 
 function adjustTilesetHeight()
@@ -123,9 +123,9 @@ function adjustTilesetHeight()
             var targetHeight = positions[0].height; 
             var heightDelta  = targetHeight - currentHeight;
 
-            var deltaMagnitude = heightDelta / Cesium.Cartesian3.magnitude(center);
+            var deltaMagnitude = heightDelta / Cesium.Cartesian3.magnitude(groundPoint);
             var delta = new Cesium.Cartesian3();
-            Cesium.Cartesian3.multiplyByScalar (center, deltaMagnitude, delta);
+            Cesium.Cartesian3.multiplyByScalar (groundPoint, deltaMagnitude, delta);
 
             tileset.modelMatrix[12] += delta.x;
             tileset.modelMatrix[13] += delta.y;
