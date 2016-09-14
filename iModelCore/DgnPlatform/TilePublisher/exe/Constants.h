@@ -19,6 +19,13 @@ Utf8CP s_3dOnlyViewingFrameJs =
 // For geolocated models, don't set the camera's viewing transform explicitly
 Utf8CP s_geoLocatedViewingFrameJs = "var tf = undefined;";
 
+// Adjust height to terrain depth.
+Utf8CP s_adjustTerrainString = 
+"var groundPoint = new Cesium.Cartesian3(%f,%f,%f);\n"
+"adjustTilesetHeight();\n"
+"viewer.scene.terrainProviderChanged.addEventListener(function() { adjustTilesetHeight() }, this);\n"
+"viewer.scene.globe.depthTestAgainstTerrain = false;\n";
+
 // printf (s_tilesetHtml, dataDirectory, rootName)
 Utf8CP s_tilesetHtml =
 "viewer.scene.primitives.add(new Cesium.Cesium3DTileset({\n"
@@ -82,12 +89,10 @@ var iframe = document.getElementsByClassName('cesium-infoBox-iframe')[0];
 iframe.removeAttribute('sandbox');
 
 var tileset=%s
-
-var curPickedObjects = null;
+%s  // Tileset height adjustment. 
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    %s  // View options.
-   %s  // Tileset height adjustment. 
 
    viewer.camera.setView({
         "destination": new Cesium.Cartesian3(%f,%f,%f),
@@ -98,58 +103,18 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
         "endTransform": tf
     });
 
-
-   var elementIdCheckbox = document.getElementById('elementIdCheckbox');
-   var pickingEnabled = elementIdCheckbox.checked;
-   elementIdCheckbox.onchange = function() {
-       pickingEnabled = elementIdCheckbox.checked;
-   };
-
-   var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-   handler.setInputAction(function(movement) {
-       var pickedObjects = pickingEnabled ? viewer.scene.pick(movement.endPosition) : null;
-       if (pickedObjects !== curPickedObjects) {
-           var elemId = null;
-           curPickedObjects = pickedObjects;
-           if (Cesium.defined(curPickedObjects)) {
-               elemId = pickedObjects.getProperty("element");
-               if (0 == elemId)
-                   elemId = null;
-           }
-
-           // Update field displaying ID of moused-over element
-           var field = document.getElementById("field_elementId");
-           field.firstChild.nodeValue = null != elemId ? elemId : "None";
-
-           // Update tileset style to hilite moused-over element
-           var style = undefined;
-           if (null !== elemId) {
-           style = new Cesium.Cesium3DTileStyle({
-               "color": "(${element} === '" + elemId + "') ? color('#808080') : color('#ffffff')"
-               });
-           }
-
-           tileset.style = style;
-       }
-   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+   var fitViewButton = document.getElementById('fitViewButton');
+   fitViewButton.onclick = function() { viewer.camera.viewBoundingSphere(tileset.boundingSphere); }
 });
 
 function adjustTilesetHeight()
     {
-	// Height adjustment. For now just try to move the mininum down to ground level (without terrain).
-	var terrainProvider = viewer.terrainProvider;
-    if (undefined != terrainProvider)
-		{
-        var root            = tileset._root;
-        var center          = root._boundingVolume._orientedBoundingBox.center;
-        var halfZ           = new Cesium.Cartesian3(), bottomCenter = new Cesium.Cartesian3();
-
-        Cesium.Matrix3.getColumn (root._boundingVolume._orientedBoundingBox.halfAxes, 2, halfZ);
-        Cesium.Cartesian3.multiplyByScalar (halfZ, .5, halfZ);      // Are these really half?? -- apparently not.
-        Cesium.Cartesian3.subtract (center, halfZ, bottomCenter);
-
-        var cartographic    = Cesium.Cartographic.fromCartesian (bottomCenter);
-
+    // Height adjustment. For now just try to move the mininum down to ground level (without terrain).
+    var terrainProvider = viewer.terrainProvider;
+    if (undefined != groundPoint &&
+        undefined != terrainProvider)
+        {
+        var cartographic    = Cesium.Cartographic.fromCartesian (groundPoint);
         var positions = [ cartographic ];
         var currentHeight = cartographic.height;
 
@@ -166,15 +131,14 @@ function adjustTilesetHeight()
             tileset.modelMatrix[13] += delta.y;
             tileset.modelMatrix[14] += delta.z;
             });
-		}
+        }
     }
 
 
 
 </script>
 <div style="z-index:10000; position:absolute;top:0;left:0;background-color:whitesmoke;opacity:0.5;padding:5px; margin:5px">
-    <input type="checkbox" checked="true" id="elementIdCheckbox" />
-    <span>ElementId: <b id="field_elementId">None</b></span>
+    <input type="button" id="fitViewButton" value="Fit View" />
 </div>
 </body>
 </html>)HTML";

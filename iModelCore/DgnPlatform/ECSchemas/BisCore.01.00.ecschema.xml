@@ -867,6 +867,18 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="FacetCount" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement3d" modifier="Abstract">
         <!-- 3D geometric element that is used to convey information within 3D graphical presentations. -->
@@ -936,6 +948,18 @@
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point2d">
             <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FacetCount" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1987,6 +2011,18 @@
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
                 <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FacetCount" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+                <CustomHandledProperty/>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>

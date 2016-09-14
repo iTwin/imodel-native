@@ -99,6 +99,49 @@ public:
 }; // GeometricPrimitive
 
 //=======================================================================================
+//! Provides helper methods to approximate the number of facets a geometric primitive
+//! will contain after facetting with specific facet options.
+// @bsistruct                                                   Diego.Pinate    07/16
+//=======================================================================================
+struct FacetCounter
+{
+private:
+    IFacetOptionsCR m_facetOptions;
+    int32_t         m_faceMultiplier;
+
+    static int32_t ComputeFaceMultiplier(int32_t maxPerFace)
+        {
+        // TO-DO: Come up with a general formula that works for faces with more than four faces
+        return (maxPerFace == 3) ? 2 : 1;
+        }
+public:
+    FacetCounter(IFacetOptionsCR options, int32_t maxPerFace) : m_facetOptions(options), m_faceMultiplier(ComputeFaceMultiplier(maxPerFace)) { }
+    explicit FacetCounter(IFacetOptionsCR options) : FacetCounter(options, options.GetMaxPerFace()) { }
+
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnTorusPipeDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnConeDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnBoxDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnSphereDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnExtrusionDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRotationalSweepDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRuledSweepDetailCR) const;
+
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidPrimitiveCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ICurvePrimitiveCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(CurveVectorCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(MSBsplineSurfaceCR, bool useMax=false) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(PolyfaceQueryCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(IGeometryCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(GeometricPrimitiveCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
+
+#ifdef BENTLEYCONFIG_OPENCASCADE
+    DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
+#endif
+};
+
+//=======================================================================================
 //! @private
 //! @note If adding a new "geometry" OpCode, update Operation::IsGeometryOp!
 //=======================================================================================
@@ -495,16 +538,19 @@ public:
 
 private:
 
-    bool                     m_appearanceChanged;
-    bool                     m_havePlacement;
-    bool                     m_isPartCreate;
-    bool                     m_is3d;
-    bool                     m_appendAsSubGraphics;
-    Placement3d              m_placement3d;
-    Placement2d              m_placement2d;
-    DgnDbR                   m_dgnDb;
-    Render::GeometryParams   m_elParams;
-    GeometryStreamIO::Writer m_writer;
+    bool                        m_appearanceChanged;
+    bool                        m_havePlacement;
+    bool                        m_isPartCreate;
+    bool                        m_is3d;
+    bool                        m_appendAsSubGraphics;
+    Placement3d                 m_placement3d;
+    Placement2d                 m_placement2d;
+    DgnDbR                      m_dgnDb;
+    Render::GeometryParams      m_elParams;
+    GeometryStreamIO::Writer    m_writer;
+    size_t                      m_facetCount;
+    IFacetOptionsPtr            m_facetOptions;
+    FacetCounter                m_facetCounter;
 
     GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
     GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
@@ -513,7 +559,7 @@ private:
     bool ConvertToLocal (GeometricPrimitiveR);
     bool AppendWorld (GeometricPrimitiveR);
     bool AppendLocal (GeometricPrimitiveCR);
-    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic);
+    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic, size_t facetCount);
 
 public:
 
@@ -522,6 +568,7 @@ public:
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private Current Placement2d as of last call to Append when creating a 2d GeometryStream
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
+    size_t GetFacetCount() const {return m_facetCount;} //!< @private Current approximation of number of facets in the GeometryStream
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private GeometryStream being constructed by this builder
     DGNPLATFORM_EXPORT bool MatchesGeometryPart (DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private Assumes already detected a range match...
 

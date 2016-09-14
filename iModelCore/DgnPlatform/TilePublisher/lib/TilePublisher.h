@@ -72,7 +72,6 @@ protected:
 
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
-    virtual TileGeometryCacheP _GetGeometryCache() = 0;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
 
     TILEPUBLISHER_EXPORT Status Setup();
@@ -80,7 +79,7 @@ protected:
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
     Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
     Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
-    Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodePtr& rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
+    TILEPUBLISHER_EXPORT Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
@@ -88,6 +87,7 @@ public:
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
+    ViewControllerCR GetViewController() const { return m_viewController; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
@@ -95,7 +95,6 @@ public:
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
-    TileGeometryCacheP GetGeometryCache() { return _GetGeometryCache(); }
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
 };
 
@@ -150,7 +149,6 @@ public:
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
-    TileGeometryCacheR GetGeometryCache() { BeAssert(nullptr != m_context.GetGeometryCache()); return *m_context.GetGeometryCache(); }
     static void WriteBoundingVolume(Json::Value&, DRange3dCR);
     static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
