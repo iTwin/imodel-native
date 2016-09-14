@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ImagePPInternal/gra/DownSampling.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -722,7 +722,8 @@ void AverageStretch_N(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, siz
             }
         }
 
-    // Process Y remainder
+    // Process Y remainder. In this loop we may not have enough pixels in the source 
+    // to generate the destination. In that case, we use the last pixels.
     for (; outY < outHeight; inY += n, ++outY)
         {
         pDestLine = (Data_T*)(pOutData + outY*outPitch);
@@ -734,7 +735,6 @@ void AverageStretch_N(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, siz
                 sum = 0;
                 for (uint64_t line = 0; line < n; ++line)
                     {
-                    BeAssert((inY + line) < inHeight);
                     Data_T const* pSrcLine = (Data_T*)(pInData + (min(inY + line, srcLastY))*inPitch);
                     for (uint64_t col = 0; col < n; ++col)
                         sum += pSrcLine[(min(inX + col, srcLastX))*ChannelCount_T + channel];
