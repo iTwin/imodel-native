@@ -167,6 +167,9 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, bool needTestDomain)
     {
+    wprintf(L"!!!!!!!!!!!!!!!!!! Test %ls is using a pre-published file. Change this test to create its own file\n", testProjFile); // *** WIP_TEST_DOCUMENTS
+
+
     //** Force to copy the file in Sub-Directory of TestCase
     BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
     testFileName.AppendToPath(testProjFile);
