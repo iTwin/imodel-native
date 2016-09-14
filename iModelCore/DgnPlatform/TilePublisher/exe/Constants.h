@@ -10,8 +10,7 @@
 
 USING_NAMESPACE_BENTLEY
 
-// printf(s_viewerHtml, viewJson);
-Utf8CP s_viewerHtml =
+Utf8Char s_viewerHtmlPrefix[] =
 R"HTML(<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,8 +28,8 @@ R"HTML(<!DOCTYPE html>
 @import url(Cesium/Widgets/widgets.css);
 
 html, body, #cesiumContainer {
-width: 100%%;
-height: 100%%;
+width: 100%;
+height: 100%;
 margin: 0;
 padding: 0;
 overflow: hidden;
@@ -42,8 +41,12 @@ overflow: hidden;
 
 <script>
 
-var view = %s;
-var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
+var view = )HTML";
+
+// ...Insert view JSON here...
+
+Utf8Char s_viewerHtmlSuffix[] =
+R"HTML(var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
 viewer.extend(Bim.viewerInspectorMixin);
 
 Bim.fixupSandboxAttributes();

@@ -417,14 +417,14 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
         }
 
     // Produce the html file contents
-    Utf8String jsonStr = Json::FastWriter().write(json);
-    Utf8PrintfString html(s_viewerHtml, jsonStr.c_str());
-
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
-
     std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
-    std::fwrite(html.data(), 1, html.size(), htmlFile);
+
+    Utf8String jsonStr = Json::FastWriter().write(json);
+    std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
+    std::fwrite(jsonStr.c_str(), 1, jsonStr.size(), htmlFile);
+    std::fwrite(s_viewerHtmlSuffix, 1, sizeof(s_viewerHtmlSuffix)-1, htmlFile);
     std::fclose(htmlFile);
 
     // Symlink the scripts, if not already present
