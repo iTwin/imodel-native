@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECTypedKey.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,7 +57,7 @@ public:
             && m_className.Equals(other.GetClassName()) 
             && m_instanceId.Equals(other.GetInstanceId());
         }
-    Utf8String ToString() {return Utf8PrintfString("(%s::%s:%s:%s)", m_typeSystem.c_str(), m_schemaName.c_str(), m_className.c_str(), m_instanceId.c_str());}
+    Utf8String ToString() const {return Utf8PrintfString("(%s::%s:%s:%s)", m_typeSystem.c_str(), m_schemaName.c_str(), m_className.c_str(), m_instanceId.c_str());}
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
