@@ -355,10 +355,31 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value pointToJson(DPoint3dCR pt)
+    {
+    Json::Value json(Json::objectValue);
+    json["x"] = pt.x;
+    json["y"] = pt.y;
+    json["z"] = pt.z;
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
     {
+    // JSON description of the view...consumed by our html to customize Cesium behavior
+    Json::Value json(Json::objectValue);
+    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
+    Utf8String tilesetUrl = rootNameUtf8;
+    tilesetUrl.append(1, '/');
+    tilesetUrl.append(rootNameUtf8);
+    tilesetUrl.append(".json");
+    json["url"] = tilesetUrl;
+
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
@@ -381,23 +402,23 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
+    json["dest"] = pointToJson(viewDest);
+    json["dir"] = pointToJson(zVec);
+    json["up"] = pointToJson(yVec);
+
     bool geoLocated = !m_tileToEcef.IsIdentity();
-    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
-    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
-    Utf8String adjustHeightString;
-    
     if (geoLocated)
         {
         DPoint3d    groundEcefPoint;
-
         transform.Multiply (groundEcefPoint, groundPoint);
-        adjustHeightString = Utf8PrintfString (s_adjustTerrainString, groundEcefPoint.x, groundEcefPoint.y, groundEcefPoint.z);
+
+        json["geolocated"] = true;
+        json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
-    Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
-
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), adjustHeightString.c_str(), viewFrameString,  viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8String jsonStr = Json::FastWriter().write(json);
+    Utf8PrintfString html(s_viewerHtml, jsonStr.c_str());
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
@@ -406,13 +427,21 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     std::fwrite(html.data(), 1, html.size(), htmlFile);
     std::fclose(htmlFile);
 
-    // Symlink the Cesium dir, if not already present
-    BeFileName cesiumSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    cesiumSrcDir.AppendToPath(L"scripts");
+    // Symlink the scripts, if not already present
+    BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    scriptsSrcDir.AppendToPath(L"scripts");
+
+    BeFileName cesiumSrcDir = scriptsSrcDir;
     cesiumSrcDir.AppendToPath(L"Cesium");
     BeFileName cesiumDstDir(m_outputDir);
     cesiumDstDir.AppendToPath(L"Cesium");
     BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
+
+    BeFileName bentleySrcDir = scriptsSrcDir;
+    bentleySrcDir.AppendToPath(L"Bentley");
+    BeFileName bentleyDstDir(m_outputDir);
+    bentleyDstDir.AppendToPath(L"Bentley");
+    BeFileName::CloneDirectory(bentleySrcDir.c_str(), bentleyDstDir.c_str());
 
     return Status::Success;
     }

@@ -711,6 +711,7 @@
     <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
         <Bindings>
             <Directory SourceName="Delivery/TilePublisher/Cesium" ProductDirectoryName="Assets" ProductSubDirectory="scripts/Cesium" />
+            <Directory SourceName="Delivery/TilePublisher/Bentley" ProductDirectoryName="Assets" ProductSubDirectory="scripts/Bentley" />
         </Bindings>
     </Part>
 
