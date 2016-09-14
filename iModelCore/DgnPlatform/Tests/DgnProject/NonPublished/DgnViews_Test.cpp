@@ -30,9 +30,6 @@ struct DgnViewElemTest : public DgnDbTestFixture
     void SetupTestProject()
         {
         SetupSeedProject();
-        WString testName(TEST_NAME, true);
-        testName.AppendUtf8(".ibim");
-        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         }
 
     PhysicalModelPtr AddModel(Utf8StringCR name)
@@ -99,7 +96,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(4, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
     static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
