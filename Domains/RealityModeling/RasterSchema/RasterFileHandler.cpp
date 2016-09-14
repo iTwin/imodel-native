@@ -27,16 +27,7 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 RasterFileProperties::RasterFileProperties()
     :m_fileId("")
     {
-    m_transform.InitIdentity();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
-    {
-    JsonUtils::DPoint2dFromJson (range.low, inValue["low"]);
-    JsonUtils::DPoint2dFromJson (range.high, inValue["high"]);
+    m_sourceToWorld.InitIdentity();
     }
 
 //----------------------------------------------------------------------------------------
@@ -62,20 +53,10 @@ static void DMatrix4dToJson (JsonValueR outValue, DMatrix4dCR matrix)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
-    {
-    JsonUtils::DPoint2dToJson (outValue["low"], range.low);
-    JsonUtils::DPoint2dToJson (outValue["high"], range.high);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
     v["fileId"] = m_fileId.c_str();
-    DRange2dToJson(v["bbox"], m_boundingBox);
-    DMatrix4dToJson(v["transform"], m_transform);
+    DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
     }
 
 //----------------------------------------------------------------------------------------
@@ -84,8 +65,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
     m_fileId = v["fileId"].asString();
-    DRange2dFromJson(m_boundingBox, v["bbox"]);
-    DMatrix4dFromJson(m_transform, v["transform"]);
+    DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
     }
 
 //----------------------------------------------------------------------------------------
@@ -93,11 +73,119 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
+    {
+    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // These are warnings
+        return REPROJECT_Success;
+
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceToWorld, RasterFileR raster, DgnDbR dgndb)
+    {
+    GeoCoordinates::BaseGCSPtr pSourceGcs = raster.GetBaseGcs();
+
+    DgnGCSP pDgnGcs = dgndb.Units().GetDgnGCS();
+
+    if (pSourceGcs.IsNull() || nullptr == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid() ||
+        pSourceGcs->IsEquivalent(*pDgnGcs))
+        {
+        // Assume raster to be coincident.
+        sourceToWorld = raster.GetGeoTransform();   // always in meters.
+        return SUCCESS;
+        }
+
+    DPoint3d physicalCorners[4];
+    physicalCorners[0].x = physicalCorners[2].x = 0.0;
+    physicalCorners[1].x = physicalCorners[3].x = raster.GetWidth();
+    physicalCorners[0].y = physicalCorners[1].y = 0.0;
+    physicalCorners[2].y = physicalCorners[3].y = raster.GetHeight();
+    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0.0;
+
+    double seed[] = {0.10, 0.5, 0.90};
+    //double seed[] = {0.0, 1.0}; // 4 corners only.
+    size_t seedCount = sizeof(seed) / sizeof(seed[0]);
+    std::vector<DPoint3d> tiePoints;
+
+    DMatrix4d sourceToMeter = raster.GetGeoTransform();     // always in meters.
+
+    for (size_t y = 0; y < seedCount; ++y)
+        {
+        for (size_t x = 0; x < seedCount; ++x)
+            {
+            ReprojectStatus status = REPROJECT_Success;
+
+            DPoint3d pointPixel = DPoint3d::FromInterpolateBilinear(physicalCorners[0], physicalCorners[1], physicalCorners[2], physicalCorners[3], seed[x], seed[y]);
+
+            DPoint3d srcCartesian;
+            sourceToMeter.MultiplyAndRenormalize(srcCartesian, pointPixel);
+
+            // Transform to GCS native units.
+            srcCartesian.Scale(pSourceGcs->UnitsFromMeters());
+
+            GeoPoint srcGeo;
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeo, srcCartesian))))
+                {
+                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
+                return ERROR;
+                }
+
+            // Source latlong to BIM latlong.
+            GeoPoint bimGeo;
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(bimGeo, srcGeo, *pDgnGcs))))
+                return ERROR;
+            
+            // Finally to UOR/BIM
+            DPoint3d bimPoint;
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(bimPoint, bimGeo))))
+                return ERROR;
+            
+            tiePoints.push_back(pointPixel);   // uncorrected
+            tiePoints.push_back(bimPoint);     // corrected
+            }
+        }
+
+    if (0 != ImagePP::HGF2DDCTransfoModel::GetAffineTransfoMatrixFromScaleAndTiePts(sourceToWorld.coff, (uint16_t) tiePoints.size() * 3, (double const*) tiePoints.data()))
+        return ERROR;
+
+    DMatrix4d worldToSource;
+    worldToSource.QrInverseOf(sourceToWorld);
+
+    bool isAffinePreciseEnough = true;
+    for (size_t i = 0; i < tiePoints.size(); i += 2)
+        {
+        DPoint3d sourcePixel;
+        worldToSource.MultiplyAndRenormalize(sourcePixel, tiePoints[i + 1]);
+        if (fabs(sourcePixel.x - tiePoints[i].x) > 0.4999999 ||
+            fabs(sourcePixel.y - tiePoints[i].y) > 0.4999999)
+            {
+            // Affine transform have an error greater than half a pixel use projective.
+            isAffinePreciseEnough = false;
+            break;
+            }
+        }
+
+    if (isAffinePreciseEnough)
+        return SUCCESS;
+
+    // Use projective when affine is not precise enough.
+    if (0 != ImagePP::HGF2DDCTransfoModel::GetProjectiveTransfoMatrixFromScaleAndTiePts(sourceToWorld.coff, (uint16_t) tiePoints.size() * 3, (double const*) tiePoints.data()))
+        return ERROR;
+    
+    return SUCCESS;
+    }
+
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
 RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
-    // unused - DgnClassId classId(params.m_dgndb.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     // Find resolved file name for the raster
     BeFileName fileName;
     BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
@@ -118,112 +206,21 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
         return nullptr;
         }
 
-    // Find raster range (in the DgnDb world)
-    DRange2d rasterRange;
-    if (REPROJECT_Success != GetRasterExtentInUors(rasterRange, *rasterFilePtr, params.m_dgndb))
-        {
-        // Can't get raster extent.
-        return nullptr;
-        }
-
     RasterFileProperties props;
     props.m_fileId = params.m_fileId;
-    props.m_boundingBox = rasterRange;
 
-    if (params.m_transformP != nullptr)
-        props.m_transform = *params.m_transformP;
+    if (params.m_sourceToWorldP != nullptr)
+        props.m_sourceToWorld = *params.m_sourceToWorldP;
     else
         {
-        props.m_transform = rasterFilePtr->GetGeoTransform();
+        if (SUCCESS != ComputeGeoLocationFromFile(props.m_sourceToWorld, *rasterFilePtr, params.m_dgndb))
+            return nullptr;
         }
-
-
+    
     // Create model in DgnDb
     RasterFileModelPtr model = new RasterFileModel(params, props);
 
     return model;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
-    {
-    if(REPROJECT_CSMAPERR_OutOfUsefulRange == status)   // This a warning
-        return REPROJECT_Success;
-
-    return status;   
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     7/2015
-//----------------------------------------------------------------------------------------
-ReprojectStatus RasterFileModelHandler::GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, DgnDbCR db) 
-    {
-    DPoint3d srcCornersCartesian[4];
-    rasterFile.GetCorners(srcCornersCartesian); //&&ep - don't use this GetCorners here
-
-    // Use raster GCS as source
-    GeoCoordinates::BaseGCSPtr sourceGcsPtr = rasterFile.GetBaseGcs();
-    DgnGCSP pDgnGcs = db.Units().GetDgnGCS();
-
-    ReprojectStatus status = REPROJECT_Success;
-    DPoint3d dgnCornersUors[4];
-    if(NULL == sourceGcsPtr.get() || NULL == pDgnGcs || !sourceGcsPtr->IsValid() || !pDgnGcs->IsValid())
-        {
-        // Assume raster to be coincident.
-        memcpy(dgnCornersUors, srcCornersCartesian, sizeof(DPoint3d)*4);
-        }
-    else
-        {
-        GeoPoint srcCornersLatLong[4];
-        for(size_t i=0; i < 4; ++i)
-            {
-            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(sourceGcsPtr->LatLongFromCartesian(srcCornersLatLong[i], srcCornersCartesian[i]))))
-                {
-                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-                return status;
-                }
-            }
-
-        // Source latlong to DgnDb latlong.
-        GeoPoint dgnCornersLatLong[4];
-        for(size_t i=0; i < 4; ++i)
-            {
-            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(sourceGcsPtr->LatLongFromLatLong(dgnCornersLatLong[i], srcCornersLatLong[i], *pDgnGcs))))
-                return status;
-            }
-
-        //Finally to UOR
-        for(uint32_t i=0; i < 4; ++i)
-            {
-            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(dgnCornersUors[i], dgnCornersLatLong[i]))))
-                return status;
-            }
-        }
-
-    // Extract extent
-    double minX = dgnCornersUors[0].x;
-    double minY = dgnCornersUors[0].y;
-    double maxX = dgnCornersUors[0].x;
-    double maxY = dgnCornersUors[0].y;
-    for(uint32_t i=1; i < 4; ++i)
-        {
-        if (dgnCornersUors[i].x < minX)
-            minX = dgnCornersUors[i].x;
-        if (dgnCornersUors[i].y < minY)
-            minY = dgnCornersUors[i].y;
-        if (dgnCornersUors[i].x > maxX)
-            maxX = dgnCornersUors[i].x;
-        if (dgnCornersUors[i].y > maxY)
-            maxY = dgnCornersUors[i].y;
-        }
-    range.low.x = minX;
-    range.low.y = minY;
-    range.high.x = maxX;
-    range.high.y = maxY;
-
-    return status;
     }
 
 //----------------------------------------------------------------------------------------
@@ -273,14 +270,6 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
         m_root = new RasterRoot(*pSource, const_cast<RasterFileModel&>(*this), renderSys);
         
     return m_root.IsValid() ? SUCCESS : ERROR;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-AxisAlignedBox3d RasterFileModel::_QueryModelRange() const
-    {
-    return AxisAlignedBox3d(m_fileProperties.m_boundingBox);
     }
 
 //----------------------------------------------------------------------------------------

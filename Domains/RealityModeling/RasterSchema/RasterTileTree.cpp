@@ -8,6 +8,8 @@
 #include "RasterSchemaInternal.h"
 #include "RasterTileTree.h"
 
+//static const uint32_t DRAW_FINER_DELTA = 2;
+static const uint32_t DRAW_COARSER_DELTA = 6;
 
 //=======================================================================================
 //! &&MM review the need for this class.
@@ -19,6 +21,9 @@ struct TileQuery
 
     RefCountedPtr<RasterTile> m_tile;
 
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  9/2016
+    //----------------------------------------------------------------------------------------
     BentleyStatus DoRead() const
         {
         if (m_tile.IsValid() && !m_tile->IsQueued())
@@ -160,13 +165,10 @@ RasterTile::RasterTile(RasterRootR root, TileId id, RasterTileCP parent)
     if (parent)
         parent->ExtendRange(m_range);
 
-    //&&MM I don't get what this _GetMaximumSize means.  To me it looks like the size in pixel for a tile radium.
-    // so that would mean half a tilesize?? Webmercator use a tile diagonal which is 2xRadius??? this is why I added the /2 below.
-    // It also doesn't work well for non square tiles(borders) that is why I use the minTileSize. to review.
+    // That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
     uint32_t tileSizeX = m_root.GetSource().GetTileSizeX(GetTileId());
     uint32_t tileSizeY = m_root.GetSource().GetTileSizeY(GetTileId());
-    uint32_t minTileSize = MIN(tileSizeX, tileSizeY);
-    m_maxSize = sqrt(minTileSize*minTileSize + minTileSize*minTileSize) / 2/*???*/;
+    m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
     }
 
 //----------------------------------------------------------------------------------------
@@ -272,7 +274,7 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        if (!TryLowerRes(args, 10))
+        if (!TryLowerRes(args, DRAW_COARSER_DELTA))
             TryHigherRes(args);
 
         return;

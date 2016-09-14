@@ -103,6 +103,7 @@ struct RasterSource : RefCountedBase
 protected:
     static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);
 
+    //&&MM review how we initialize a source georef.  We are taking the info from the model now. cleanup to avoid confusion.
     //! Must be called by child class after construction. BaseGCSP might be NULL
     BentleyStatus Initialize(bvector<Resolution>const& resolution, DMatrix4d physicalToCartesian, GeoCoordinates::BaseGCSP pGcs);
     BentleyStatus Initialize(bvector<Resolution>const& resolution, DPoint3dCP corners, GeoCoordinates::BaseGCSP pGcs);

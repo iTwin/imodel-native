@@ -302,11 +302,13 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
-    // Wait for tasks that we may have queued. 
-    //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
-    BeFolly::IOThreadPool::GetPool().WaitForIdle();
-
-    m_root = nullptr;
+    if (m_root.IsValid())
+        {
+        // Wait for tasks that we may have queued. 
+        //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
+        BeFolly::IOThreadPool::GetPool().WaitForIdle();
+        m_root = nullptr;
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -322,6 +324,31 @@ void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
     //&&MM todo
 //     if (m_rasterTreeP.IsValid())
 //         m_rasterTreeP->DropGraphicsForViewport(viewport);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d RasterModel::_QueryModelRange() const
+    {
+    _Load(nullptr);
+    if (!m_root.IsValid())
+        {
+        BeAssert(false);
+        return AxisAlignedBox3d();
+        }
+
+    ElementAlignedBox3d range = m_root->ComputeRange();
+    if (!range.IsValid())
+        return AxisAlignedBox3d();
+
+    Frustum box(range);
+    box.Multiply(m_root->GetLocation());
+
+    AxisAlignedBox3d aaRange;
+    aaRange.Extend(box.m_pts, 8);
+
+    return aaRange;
     }
 
 //----------------------------------------------------------------------------------------
