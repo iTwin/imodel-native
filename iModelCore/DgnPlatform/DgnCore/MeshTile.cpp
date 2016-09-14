@@ -752,7 +752,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector& collector)
     {
-    m_progressMeter._SetTaskName(TaskName::CreatingTiles);
+    m_progressMeter._SetTaskName(TaskName::CollectingTileMeshes);
 
     // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNodeP> tiles = root.GetTiles();
@@ -885,6 +885,10 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
     if (vset.IsEmpty())
         return Status::NoGeometry;
 
+    m_progressMeter._SetTaskName(TaskName::GeneratingRangeTree);
+    m_progressMeter._IndicateProgress(0, 1);
+    StopWatch timer(true);
+
     // Compute union of ranges of all elements
     // ###TODO_FACET_COUNT: Assuming 3d spatial view for now...
     // ###TODO_FACET_COUNT: Split the range query from the additional (customizable) element selection criteria
@@ -906,7 +910,11 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
         }
 
     if (viewRange.IsNull())
+        {
+        m_statistics.m_collectionTime = timer.GetCurrentSeconds();
+        m_progressMeter._IndicateProgress(1, 1);
         return Status::NoGeometry;
+        }
 
     stmt->Reset();
     stmt = nullptr;
@@ -916,6 +924,9 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, ViewContro
     double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
     root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
     root->ComputeTiles(s_leafTolerance, maxPointsPerTile, vset, db);
+
+    m_statistics.m_collectionTime = timer.GetCurrentSeconds();
+    m_progressMeter._IndicateProgress(1, 1);
 
     return Status::Success;
     }

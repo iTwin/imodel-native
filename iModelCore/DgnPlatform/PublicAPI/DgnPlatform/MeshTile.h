@@ -363,8 +363,8 @@ struct TileGenerator
 
     enum class TaskName
     {
-        CollectingGeometry,
-        CreatingTiles,
+        GeneratingRangeTree,
+        CollectingTileMeshes,
     };
 
     //! Interface adopted by an object which collects generated tiles

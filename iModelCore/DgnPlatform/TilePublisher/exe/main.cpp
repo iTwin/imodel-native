@@ -446,7 +446,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Generating range tree";
+    Utf8String newTaskName = (TileGenerator::TaskName::CollectingTileMeshes == task) ? "Publishing tiles" : "Generating range tree";
     if (!m_taskName.Equals(newTaskName))
         {
         m_lastNumCompleted = 0xffffffff;
