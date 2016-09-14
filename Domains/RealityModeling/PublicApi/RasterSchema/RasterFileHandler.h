@@ -60,7 +60,7 @@ public:
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileId File Id of the raster file.
-            //! @param[in] transformP Transform of the raster file. This parameter can be null.
+            //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
             CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4dCP sourceToWorld) :
                 T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId), m_sourceToWorldP(sourceToWorld)
                 {}
