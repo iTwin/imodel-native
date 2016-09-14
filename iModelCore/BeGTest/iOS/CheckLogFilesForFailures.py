@@ -23,6 +23,11 @@ def checkLogFileForFailures(logfilename):
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
 
+            if lineNo == 0:
+               if line.lower().find('ios xctests were not run') != -1:
+                   report = report + line
+                   return 0,report
+
             lastLine = line
 
             lineNo = lineNo + 1

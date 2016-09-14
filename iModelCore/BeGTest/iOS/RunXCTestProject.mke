@@ -37,7 +37,9 @@ logFile = ${XCTEST_OUTPUT_DIR}/XCTest.log
     # Link a fake log file to satisfy partfile bindings.
     always:
         ~@mkdir ${XCTEST_OUTPUT_DIR}
-        touch $(logFile)
+        >$(logFile)
+	iOS XCTests were not run
+	<
         ~linkfile "$(BuildContext)Delivery/XCTest/Logs/$(XCTEST_LOGFILE_NAME)=$(logFile)"
 
     %return
