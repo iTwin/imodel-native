@@ -37,7 +37,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 #define PRINT_MSG(...) 
 #endif
 
-#define SM_ACTIVATE_UPLOADER 0
+#define SM_ACTIVATE_UPLOADER 1
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -924,9 +924,28 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     assert(m_smPtr != 0);
 
 #if SM_ACTIVATE_UPLOADER == 1
-    if (WString(L"upload_to_cloud").Equals(dgnProject.GetFileName().GetFileNameWithoutExtension()))
+    WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
+    if (projectName.Contains(WString(L"upload_to_cloud")))
         {
-        m_smPtr->ConvertToCloud(L"scalablemesh", smFilename.GetFileNameWithoutExtension(), true);
+        if (projectName.Equals(WString(L"upload_to_cloud_wsg")))
+            {
+            WString container(L"scalablemesh"); // WSG container
+            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::WSG);
+            }
+        else if (projectName.Equals(WString(L"upload_to_cloud_azure")))
+            {
+            WString container(L"scalablemeshtest"); // Azure container
+            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::Azure);
+            }
+        else if (projectName.Equals(WString(L"upload_to_cloud_local")))
+            {
+            WString container(L"scalablemeshtest"); // local disk container
+            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDisk);
+            }
+        else
+            {
+            assert(false); // unknown service
+            }
         }
 #endif
     if (m_smPtr->IsTerrain())
