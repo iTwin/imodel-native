@@ -363,13 +363,13 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     stmt->BindBlob(14, (void*)neighbors, (int)nOfNeighbors*sizeof(int) + 26 * sizeof(int), MAKE_COPY_NO);
     int64_t idx = newNodeHeader.m_ptsIndiceID.size() > 0 ? newNodeHeader.m_ptsIndiceID[0] : -1;
     stmt->BindInt64(15, idx);
-    if (newNodeHeader.m_textureID.size() > 0)
-        stmt->BindInt64(16, newNodeHeader.m_textureID[0]);
-    else
-        {
-        size_t texID = SQLiteNodeHeader::NO_NODEID;
-        stmt->BindInt64(16, texID);
-        }
+   // if (newNodeHeader.m_textureID.size() > 0)
+        stmt->BindInt64(16, newNodeHeader.m_textureID);
+   // else
+  //      {
+  //      size_t texID = SQLiteNodeHeader::NO_NODEID;
+   //     stmt->BindInt64(16, texID);
+   //     }
 
     stmt->BindInt(17, newNodeHeader.m_isTextured ? 1 : 0); 
     stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
@@ -467,8 +467,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_isTextured = stmt->GetValueInt(15) ? true : false;
     if (/*texIdx != SQLiteNodeHeader::NO_NODEID &&*/ nodeHeader.m_isTextured)
         {
-        nodeHeader.m_textureID.resize(1);
-        nodeHeader.m_textureID[0] = texIdx;
+        nodeHeader.m_textureID = texIdx;
         nodeHeader.m_ptsIndiceID.resize(2);
         nodeHeader.m_ptsIndiceID[1] = (int)idx;
         nodeHeader.m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;

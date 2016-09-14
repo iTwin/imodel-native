@@ -1386,7 +1386,8 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     if (m_scmIndexPtr != 0)
         {
-        return m_scmIndexPtr->IsTerrain();
+        return true;
+        //return m_scmIndexPtr->IsTerrain();
         }
     return false;
 
@@ -1828,6 +1829,7 @@ template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
+    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;
     if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
     }
 

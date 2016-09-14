@@ -640,10 +640,14 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
 
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
-    if(m_scmPtr->IsTerrain()) params->SetLevel(m_scmPtr->GetTerrainDepth());
+    if (m_type == DTMAnalysisType::Fast)
+        {
+        params->SetLevel(std::min((size_t)5, m_scmPtr->GetTerrainDepth()));
+        m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
+        }
+    else if (m_scmPtr->IsTerrain()) params->SetLevel(m_scmPtr->GetTerrainDepth());
     bvector<IScalableMeshNodePtr> nodes;
     params->SetDirection(direction);
-    m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
     QueryNodesBasedOnParams(nodes, startPt, params);
     m_nodeSelection.clear();
     bvector<bool> clips;

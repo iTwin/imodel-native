@@ -121,7 +121,7 @@ public:
     size_t        m_nbUvIndexes;
     size_t        m_nbTextures;
     HPMBlockID  m_graphID;
-    std::vector<HPMBlockID>  m_textureID;
+    HPMBlockID  m_textureID;
     HPMBlockID  m_uvID;
 
     //NEEDS_WORK_SM - should not be a vector.
@@ -170,8 +170,7 @@ public:
         m_SplitTreshold = nodeHeader.m_SplitTreshold;
         m_clipSetsID.resize(nodeHeader.m_clipSetsID.size());
         for (auto& id : m_clipSetsID) if (nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()]);
-        m_textureID.resize(nodeHeader.m_textureID.size());
-        for (auto& id : m_textureID) if (nodeHeader.m_textureID[&id - &m_textureID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_textureID[&id - &m_textureID.front()]);
+        m_textureID = HPMBlockID(nodeHeader.m_textureID);
         m_ptsIndiceID.resize(nodeHeader.m_ptsIndiceID.size());
         for (auto& id : m_ptsIndiceID) if (nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()]);
         m_uvsIndicesID.resize(nodeHeader.m_uvsIndicesID.size());
@@ -216,8 +215,7 @@ public:
         header.m_clipSetsID.resize(m_clipSetsID.size());
         header.m_nodeCount = m_nodeCount;
         for (auto& id : m_clipSetsID) header.m_clipSetsID[&id - &m_clipSetsID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
-        header.m_textureID.resize(m_textureID.size());
-        for (auto& id : m_textureID) header.m_textureID[&id - &m_textureID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
+        header.m_textureID = m_textureID.IsValid() && m_textureID != ISMStore::GetNullNodeID() ? m_textureID.m_integerID : -1;
         header.m_ptsIndiceID.resize(m_ptsIndiceID.size());
         for (auto& id : m_ptsIndiceID) header.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         header.m_uvsIndicesID.resize(m_uvsIndicesID.size());

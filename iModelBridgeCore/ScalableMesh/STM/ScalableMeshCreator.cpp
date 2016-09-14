@@ -377,8 +377,7 @@ template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
     {
     WString filterTypeStr;
-
-    //NEEDS_WORK_SM : Document all environments variable like this one somewhere (e.g. : pw:\\Alpo.bentley.com:alpo-bentleygeospatial\Documents\Raster Products\General\environment variables.doc)
+    
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
         {
         ScalableMeshFilterType filterTypeOverwrite = (ScalableMeshFilterType)_wtoi(filterTypeStr.c_str());
@@ -452,9 +451,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
     }
 
 ScalableMeshFilterType scm_getFilterType ()
-    {
-    //NEEDS_WORK_SM - No progressive for mesh
-    //return SCM_FILTER_PROGRESSIVE_DUMB;    
+    {    
     //return SCM_FILTER_CGAL_SIMPLIFIER;
     return SCM_FILTER_DUMB_MESH;
     }
@@ -531,10 +528,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
-        
-
-    // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
-
+            
     if (!isSingleFile)
         {
         // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?

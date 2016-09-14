@@ -40,7 +40,7 @@ struct SQLiteNodeHeader
     size_t        m_nbUvIndexes;
     size_t        m_nbTextures;
     int  m_graphID;
-    std::vector<int>  m_textureID;
+    int  m_textureID;
     int  m_uvID;
     std::vector<int>  m_ptsIndiceID;
     std::vector<int>  m_uvsIndicesID;

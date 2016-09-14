@@ -15,7 +15,7 @@
 bool s_stream_from_disk = false;
 bool s_stream_from_file_server = false;
 bool s_stream_from_grouped_store = false;
-bool s_stream_from_wsg = true;
+bool s_stream_from_wsg = false;
 bool s_stream_enable_caching = false;
 bool s_is_virtual_grouping = true;
 

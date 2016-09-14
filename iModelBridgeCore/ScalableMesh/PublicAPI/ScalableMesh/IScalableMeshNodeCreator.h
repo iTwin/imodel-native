@@ -49,6 +49,8 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
 
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(StatusInt&                  status);
 
+        BENTLEY_SM_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
+
         BENTLEY_SM_EXPORT void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
                                                                           StatusInt&                  status);
 
