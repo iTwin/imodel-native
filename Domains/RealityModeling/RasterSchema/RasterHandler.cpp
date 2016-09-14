@@ -401,6 +401,8 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     auto now = std::chrono::steady_clock::now();
     TileTree::DrawArgs args(context, m_root->GetLocation(), now, now - m_root->GetExpirationTime());
+    args.SetClip(GetClip().GetClipVector());
+
     m_root->Draw(args);
 
     DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
