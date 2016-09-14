@@ -92,7 +92,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetViewController(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile._GenerateMeshes(context.GetFilter(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

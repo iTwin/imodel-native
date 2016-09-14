@@ -276,11 +276,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
 struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
 {
 private:
-    TileGeneratorP      m_generator = nullptr;
-    Status              m_acceptTileStatus = Status::Success;
+    TileGeneratorP              m_generator = nullptr;
+    TileViewControllerFilter    m_filter;
+    Status                      m_acceptTileStatus = Status::Success;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
+    virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
@@ -305,7 +307,7 @@ private:
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -466,7 +468,7 @@ PublisherContext::Status TilesetPublisher::Publish(bool appOnly, DPoint3dCR grou
             return status;
 
         ProgressMeter progressMeter(*this);
-        TileGenerator generator (m_dbToTile, &progressMeter);
+        TileGenerator generator (m_dbToTile, GetDgnDb(), &progressMeter);
 
         static double       s_toleranceInMeters = 0.01;
 
