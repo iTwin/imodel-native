@@ -94,10 +94,10 @@ void RealityDataPackageNet::Create(String^  location,
                 pWmsDataSource->SetProvider(provider.c_str());
                 }
 
-            if (0 != wmsSourceNet->GetFilesize())
+            if (0 != wmsSourceNet->GetFileSize())
                 {
-                uint64_t filesize = wmsSourceNet->GetFilesize();
-                pWmsDataSource->SetFilesize(filesize);
+                uint64_t filesize = wmsSourceNet->GetFileSize();
+                pWmsDataSource->SetFileSize(filesize);
                 }
 
             if (!String::IsNullOrEmpty(wmsSourceNet->GetMetadata()))
@@ -155,10 +155,10 @@ void RealityDataPackageNet::Create(String^  location,
                 pDataSource->SetProvider(provider.c_str());
                 }
 
-            if (0 != source->GetFilesize())
+            if (0 != source->GetFileSize())
                 {
-                uint64_t filesize = source->GetFilesize();
-                pDataSource->SetFilesize(filesize);
+                uint64_t filesize = source->GetFileSize();
+                pDataSource->SetFileSize(filesize);
                 }
 
             if (!String::IsNullOrEmpty(source->GetMetadata()))
@@ -240,10 +240,10 @@ void RealityDataPackageNet::Create(String^  location,
                 pOsmDataSource->SetProvider(provider.c_str());
                 }
 
-            if (0 != osmSourceNet->GetFilesize())
+            if (0 != osmSourceNet->GetFileSize())
                 {
-                uint64_t filesize = osmSourceNet->GetFilesize();
-                pOsmDataSource->SetFilesize(filesize);
+                uint64_t filesize = osmSourceNet->GetFileSize();
+                pOsmDataSource->SetFileSize(filesize);
                 }
 
             if (!String::IsNullOrEmpty(osmSourceNet->GetMetadata()))
@@ -302,10 +302,10 @@ void RealityDataPackageNet::Create(String^  location,
                 pDataSource->SetProvider(provider.c_str());
                 }
 
-            if (0 != source->GetFilesize())
+            if (0 != source->GetFileSize())
                 {
-                uint64_t filesize = source->GetFilesize();
-                pDataSource->SetFilesize(filesize);
+                uint64_t filesize = source->GetFileSize();
+                pDataSource->SetFileSize(filesize);
                 }
 
             if (!String::IsNullOrEmpty(source->GetMetadata()))
@@ -362,10 +362,10 @@ void RealityDataPackageNet::Create(String^  location,
             pDataSource->SetProvider(provider.c_str());
             }
 
-        if (0 != source->GetFilesize())
+        if (0 != source->GetFileSize())
             {
-            uint64_t filesize = source->GetFilesize();
-            pDataSource->SetFilesize(filesize);
+            uint64_t filesize = source->GetFileSize();
+            pDataSource->SetFileSize(filesize);
             }
 
         if (!String::IsNullOrEmpty(source->GetMetadata()))
@@ -422,10 +422,10 @@ void RealityDataPackageNet::Create(String^  location,
             pDataSource->SetProvider(provider.c_str());
             }
 
-        if (0 != source->GetFilesize())
+        if (0 != source->GetFileSize())
             {
-            uint64_t filesize = source->GetFilesize();
-            pDataSource->SetFilesize(filesize);
+            uint64_t filesize = source->GetFileSize();
+            pDataSource->SetFileSize(filesize);
             }
 
         if (!String::IsNullOrEmpty(source->GetMetadata()))

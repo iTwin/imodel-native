@@ -276,6 +276,8 @@
     </Product>
 
     <Part Name ="IncludeApi">
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
         <Bindings>
             <Directory SourceName="PublicAPI" ProductDirectoryName="RealityModFrameworkIncludeDirectory" Required="false"/>
         </Bindings>
