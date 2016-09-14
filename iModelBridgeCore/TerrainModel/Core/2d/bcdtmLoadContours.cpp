@@ -25,129 +25,18 @@ typedef int (*DtmCallBack) ();
 BcDTMAppData::Key const DTMPondAppData::AppDataID;
 // Prototype Functions
 
-class DtmContourIndexArraySort : public ArraySort<DTMContourIndex, DTMContourIndexArray>
+static bool contourIndexCompare(const DTMContourIndex& index1P, const  DTMContourIndex& index2P)
     {
-     private:
-#ifdef _WIN32_WCE
-        class CompareClass : public ICompareClass<DTMContourIndex>
-            {
-            private:
-                BC_DTM_OBJ* m_dtmP;
-            public:
-                CompareClass(BC_DTM_OBJ *dtmP)
-                    {
-                    m_dtmP = dtmP;
-                    }
-                virtual int Compare(DTMContourIndex* index1P, DTMContourIndex* index2P)
-                    {
-                     // access to dtp via m_dtmP
-                     double p1Z,p2Z,zMinLine1,zMaxLine1,zMinLine2,zMaxLine2 ;
+    // access to dtp via m_dtmP
+    const double zMinLine1 = index1P.z1;
+    const double zMinLine2 = index2P.z1;
+    if (zMinLine1 < zMinLine2) return true;
 
-                     p1Z = pointAddrP(m_dtmP,index1P->p1)->z ;
-                     p2Z = pointAddrP(m_dtmP,index1P->p2)->z ;
-                     if( p1Z <= p2Z ) { zMinLine1 = p1Z ; zMaxLine1 = p2Z ; }
-                     else             { zMinLine1 = p2Z ; zMaxLine1 = p1Z ; }
-
-                     p1Z = pointAddrP(m_dtmP,index2P->p1)->z ;
-                     p2Z = pointAddrP(m_dtmP,index2P->p2)->z ;
-                     if( p1Z <= p2Z ) { zMinLine2 = p1Z ; zMaxLine2 = p2Z ; }
-                     else             { zMinLine2 = p2Z ; zMaxLine2 = p1Z ; }
-
-                     if     (  zMinLine1 < zMinLine2 ) return(-1) ;
-                     else if(  zMinLine1 > zMinLine2 ) return( 1) ;
-                     else if(  zMaxLine1 < zMaxLine2 ) return(-1) ;
-                     else if(  zMaxLine1 > zMaxLine2 ) return( 1) ;
-                     return(0) ;
-                    }
-
-//JGA Changed this to below ... was not compiling this may be wrong ... need to debug
-//JGA Changed this to below ... was not compiling this may be wrong ... need to debug
-//JGA Changed this to below ... was not compiling this may be wrong ... need to debug
-//JGA Changed this to below ... was not compiling this may be wrong ... need to debug
- /*
-                virtual bool LessThan(TYPE* p1P, TYPE* p2P)
-                    {
-                     return Compare(p1P, p2P) < 0;
-                    }
-                virtual bool GreaterThan(TYPE* p1P, TYPE* p2P)
-                    {
-                     return Compare(p1P, p2P) > 0;
-                    }
-*/
-
-                virtual bool LessThan(DTMContourIndex* index1P, DTMContourIndex* index2P)
-                    {
-                     return Compare(index1P, index2P) < 0;
-                    }
-                virtual bool GreaterThan(DTMContourIndex* index1P, DTMContourIndex* index2P)
-                    {
-                     return Compare(index1P, index2P) > 0;
-                    }
-
-            };
-
-#else
-        class CompareClass
-            {
-            private:
-                BC_DTM_OBJ* m_dtmP;
-            public:
-                CompareClass(BC_DTM_OBJ *dtmP)
-                    {
-                    m_dtmP = dtmP;
-                    }
-                 __forceinline int Compare(DTMContourIndex* index1P, DTMContourIndex* index2P)
-                    {
-                     // access to dtp via m_dtmP
-                     double p1Z,p2Z,zMinLine1,zMaxLine1,zMinLine2,zMaxLine2 ;
-
-                     p1Z = pointAddrP(m_dtmP,index1P->p1)->z ;
-                     p2Z = pointAddrP(m_dtmP,index1P->p2)->z ;
-                     if( p1Z <= p2Z ) { zMinLine1 = p1Z ; zMaxLine1 = p2Z ; }
-                     else             { zMinLine1 = p2Z ; zMaxLine1 = p1Z ; }
-
-                     p1Z = pointAddrP(m_dtmP,index2P->p1)->z ;
-                     p2Z = pointAddrP(m_dtmP,index2P->p2)->z ;
-                     if( p1Z <= p2Z ) { zMinLine2 = p1Z ; zMaxLine2 = p2Z ; }
-                     else             { zMinLine2 = p2Z ; zMaxLine2 = p1Z ; }
-
-                     if     (  zMinLine1 < zMinLine2 ) return(-1) ;
-                     else if(  zMinLine1 > zMinLine2 ) return( 1) ;
-                     else if(  zMaxLine1 < zMaxLine2 ) return(-1) ;
-                     else if(  zMaxLine1 > zMaxLine2 ) return( 1) ;
-                     return(0) ;
-                    }
-                __forceinline bool LessThan(DTMContourIndex* p1P, DTMContourIndex* p2P)
-                    {
-                     return(Compare(p1P, p2P) < 0) ;
-                    }
-
-                __forceinline bool GreaterThan(DTMContourIndex* p1P, DTMContourIndex* p2P)
-                    {
-                     return(Compare(p1P, p2P) > 0) ;
-                    }
-            };
-#endif
-    public:
-        int doSort(DTMContourIndexArray& theArray, BC_DTM_OBJ *dtmP)
-            {
-            CompareClass compare(dtmP);
-#ifdef _WIN32_WCE
-            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort(theArray, &compare, 0, theArray.getSize());
-#else
-            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort<CompareClass>(theArray, &compare, 0, theArray.getSize());
-#endif
-            }
-        int doResort(DTMContourIndexArray& theArray, int start, int length, BC_DTM_OBJ *dtmP)
-            {
-            CompareClass compare(dtmP);
-#ifdef _WIN32_WCE
-            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort(theArray, &compare, start, length);
-#else
-            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort<CompareClass>(theArray, &compare, start, length);
-#endif
-            }
-    };
+    const double zMaxLine1 = index1P.z2;
+    const double zMaxLine2 = index2P.z2;
+    if (zMaxLine1 < zMaxLine2) return true;
+    return false;
+    }
 
 
 /*==============================================================================*//**
@@ -425,7 +314,6 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 
  double zMin,zMax,firstContour,lastContour;
  unsigned char   *cp ;
- DtmContourIndexArraySort sort;
  DTMContourIndexArray::iterator index;
 /*
 ** Write Entry Message
@@ -480,7 +368,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 // RobC 24Apr2008 - Allocate memory For One Partition Only
  memContourIndex = memContourIndexInc ;
  contourIndexPP.resize(memContourIndex);
- index = contourIndexPP.start();
+ index = contourIndexPP.data();
 /*
 ** Populate Contour Index
 */
@@ -499,8 +387,8 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 /*
 **       Ignore Boundary Lines
 */
-          if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) &&
-              ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1)    )
+          if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) /*&&
+              ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1) */   )
             {
 /*
 **           Ignore Zero Slope Lines
@@ -530,13 +418,9 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
                      {
                       if( dbg ) bcdtmWrite_message(0,0,0,"00 *numContourIndexP = %8ld ** memContourIndex = %8ld",*numContourIndexP,memContourIndex) ;
                       memContourIndex = memContourIndex + memContourIndexInc ;
-                      if( contourIndexPP.resize(memContourIndex))
-                        {
-                         bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
-                         goto errexit ;
-                        }
+                      contourIndexPP.resize(memContourIndex);
                       if( dbg ) bcdtmWrite_message(0,0,0,"01 *numContourIndexP = %8ld ** memContourIndex = %8ld",*numContourIndexP,memContourIndex) ;
-                      index = contourIndexPP.start() + *numContourIndexP ;
+                      index = contourIndexPP.data() + *numContourIndexP ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"Index Reset") ;
                      }
 /*
@@ -544,6 +428,16 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 */
                    index->p1 = p1 ;
                    index->p2 = p2 ;
+                   if (p1Z < p2Z)
+                       {
+                       index->z1 = p1Z;
+                       index->z2 = p2Z;
+                       }
+                   else
+                       {
+                       index->z1 = p2Z;
+                       index->z2 = p1Z;
+                       }
                    ++index;
                    ++*numContourIndexP ;
                   }
@@ -557,7 +451,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"numIndexes = %8ld ** indexSize = %8ld",*numContourIndexP,contourIndexPP.getSize()) ;
+    bcdtmWrite_message(0,0,0,"numIndexes = %8ld ** indexSize = %8ld",*numContourIndexP,contourIndexPP.size()) ;
     bcdtmWrite_message(0,0,0,"Number Of Tin Lines = %8ld",dtmP->numLines) ;
    }
  if( *numContourIndexP < memContourIndex )  contourIndexPP.resize(*numContourIndexP);
@@ -572,7 +466,8 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
    {
     startTime = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Contour Index") ;
-    sort.doSort(contourIndexPP,dtmP);
+
+    std::sort(std::begin(contourIndexPP), std::end(contourIndexPP), contourIndexCompare);
    }
 /*
 ** Write Statistics On Sort And Build Times
@@ -612,7 +507,6 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
  int  ret=DTM_SUCCESS ;
  long ofs,process=1 ;
  double zMin,zMax ;
- DPoint3d *p1P,*p2P ;
 /*
 ** Initialise
 */
@@ -625,14 +519,12 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
 /*
 **  Set Start Index Position
 */
-    DTMContourIndexArray::iterator index = contourIndexP.start() + ofs;
+    DTMContourIndexArray::iterator index = contourIndexP.data() + ofs;
 /*
 **  Scan Index To First Entry For Contour Value
 */
-    p1P = pointAddrP(dtmP,index->p1) ;
-    p2P = pointAddrP(dtmP,index->p2) ;
-    if( p1P->z <= p2P->z ) { zMin = p1P->z ; zMax = p2P->z ; }
-    else                   { zMax = p1P->z ; zMin = p2P->z ; }
+    zMin = index->z1;
+    zMax = index->z2;
 
     while( ofs < numContourIndex && contourValue >= zMin && process )
       {
@@ -647,10 +539,8 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
           if( ofs < numContourIndex )
             {
              ++index;
-             p1P = pointAddrP(dtmP,index->p1) ;
-             p2P = pointAddrP(dtmP,index->p2) ;
-             if( p1P->z <= p2P->z ) { zMin = p1P->z ; zMax = p2P->z ; }
-             else                   { zMax = p1P->z ; zMin = p2P->z ; }
+             zMin = index->z1;
+             zMax = index->z2;
             }
          }
       }
@@ -913,7 +803,7 @@ void    *userP                  /* ==> User Pointer Passed Back To User         
  long numMarked = 0, count;
  long    numContourIndex=0,contourStartIndex=0,startTime,testTime ;
  double  *dblP,firstContour,lastContour,contourValue,zClipMin,zClipMax ;
- unsigned char    *cP,*tinLine1P=nullptr,*tinLine2P=nullptr ;
+ unsigned char    *cP, *tinLine1P = nullptr, *tinLine2P = nullptr;
  bool useFence = (DTMFenceType::None != fenceParams.fenceType);
  DPoint3dCP     p3dP ;
  DPoint3d *pntP ;
@@ -1065,6 +955,8 @@ if( dbg )
    bcdtmLoad_contoursCreateDepressionDtmObject (dtmP, loadFunctionP, userP);
 
  DTMPondAppData* pondAppData = contourParams.depressionOption ? reinterpret_cast <DTMPondAppData*>(dtmP->FindAppData (DTMPondAppData::AppDataID)) : nullptr;
+
+
 /*
 ** Validate Max Slope Option
 */
@@ -1125,134 +1017,134 @@ if( dbg )
 /*
 **  Set First And Last Points For Fence
 */
-    if( useFence)
-      {
-       testTime = bcdtmClock() ;
-/*
-**     Initialise
-*/
-       minPnt = lastPnt ;
-       maxPnt = startPnt  ;
-       if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Fence Point Extent") ;
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMin,&startPnt) ;
-       while( startPnt > 0 && pointAddrP(dtmP,startPnt)->x >= clipDtmP->xMin ) --startPnt ;
-       if( pointAddrP(dtmP,startPnt)->x < clipDtmP->xMin ) ++startPnt ;
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMax,&lastPnt) ;
-       while( lastPnt < dtmP->numPoints  - 1 && pointAddrP(dtmP,lastPnt)->x <= clipDtmP->xMin ) ++lastPnt ;
-       if( dbg ) bcdtmWrite_message(0,0,0,"Initial ** startPnt = %8ld lastPnt = %8ld",startPnt,lastPnt) ;
-/*
-**     Mark Points Within Fence Block
-*/
-       testTime = bcdtmClock() ;
-       if (fenceParams.fenceType == DTMFenceType::Block)
-         {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Marking Points Within Fence Block") ;
-          for( p1 = startPnt ; p1 <= lastPnt ; ++p1 )
+    if (useFence)
+        {
+        testTime = bcdtmClock();
+        /*
+        **     Initialise
+        */
+        minPnt = lastPnt;
+        maxPnt = startPnt;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Scanning For Fence Point Extent");
+        bcdtmFind_binaryScanDtmObject(dtmP, clipDtmP->xMin, &startPnt);
+        while (startPnt > 0 && pointAddrP(dtmP, startPnt)->x >= clipDtmP->xMin) --startPnt;
+        if (pointAddrP(dtmP, startPnt)->x < clipDtmP->xMin) ++startPnt;
+        bcdtmFind_binaryScanDtmObject(dtmP, clipDtmP->xMax, &lastPnt);
+        while (lastPnt < dtmP->numPoints - 1 && pointAddrP(dtmP, lastPnt)->x <= clipDtmP->xMin) ++lastPnt;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Initial ** startPnt = %8ld lastPnt = %8ld", startPnt, lastPnt);
+        /*
+        **     Mark Points Within Fence Block
+        */
+        testTime = bcdtmClock();
+        if (fenceParams.fenceType == DTMFenceType::Block)
             {
-             pntP = pointAddrP(dtmP,p1) ;
-             if( pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax )
-               {
-                nodeAddrP(dtmP,p1)->sPtr = 1 ;
-                cPtr = nodeAddrP(dtmP,p1)->cPtr ;
-                while( cPtr != dtmP->nullPtr )
-                  {
-                   ++numMarked ;
-                   clistP = clistAddrP(dtmP,cPtr) ;
-                   nodeAddrP(dtmP,clistP->pntNum)->sPtr = 1 ;
-                   cPtr = clistP->nextPtr ;
-                   if( clistP->pntNum < minPnt ) minPnt = clistP->pntNum ;
-                   if( clistP->pntNum > maxPnt ) maxPnt = clistP->pntNum ;
-                  }
-               }
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Marking Points Within Fence Block");
+            for (p1 = startPnt; p1 <= lastPnt; ++p1)
+                {
+                pntP = pointAddrP(dtmP, p1);
+                if (pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax)
+                    {
+                    nodeAddrP(dtmP, p1)->sPtr = 1;
+                    cPtr = nodeAddrP(dtmP, p1)->cPtr;
+                    while (cPtr != dtmP->nullPtr)
+                        {
+                        ++numMarked;
+                        clistP = clistAddrP(dtmP, cPtr);
+                        nodeAddrP(dtmP, clistP->pntNum)->sPtr = 1;
+                        cPtr = clistP->nextPtr;
+                        if (clistP->pntNum < minPnt) minPnt = clistP->pntNum;
+                        if (clistP->pntNum > maxPnt) maxPnt = clistP->pntNum;
+                        }
+                    }
+                }
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Num Marked Within Fence Block = %8ld", numMarked);
             }
-          if( dbg ) bcdtmWrite_message(0,0,0,"Num Marked Within Fence Block = %8ld",numMarked) ;
-         }
-/*
-**     Mark Points Within Shape Fence
-*/
-       else if (fenceParams.fenceType == DTMFenceType::Shape)
-         {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Marking Points Within Fence Shape") ;
-          for( p1 = startPnt ; p1 <= lastPnt ; ++p1 )
+        /*
+        **     Mark Points Within Shape Fence
+        */
+        else if (fenceParams.fenceType == DTMFenceType::Shape)
             {
-             pntP = pointAddrP(dtmP,p1) ;
-             findType = 0 ;
-             if( pntP->x >= clipDtmP->xMin && pntP->x <= clipDtmP->xMax &&pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax )
-               {
-                if( bcdtmFind_triangleDtmObject(clipDtmP,pntP->x,pntP->y,&findType,&trgPnt1,&trgPnt2,&trgPnt3)) goto errexit ;
-                if( findType  )
-                  {
-                   nodeAddrP(dtmP,p1)->sPtr = 1 ;
-                   cPtr = nodeAddrP(dtmP,p1)->cPtr ;
-                   while( cPtr != dtmP->nullPtr )
-                     {
-                      ++numMarked ;
-                      clistP = clistAddrP(dtmP,cPtr) ;
-                      nodeAddrP(dtmP,clistP->pntNum)->sPtr = 1 ;
-                      cPtr = clistP->nextPtr ;
-                      if( clistP->pntNum < minPnt ) minPnt = clistP->pntNum ;
-                      if( clistP->pntNum > maxPnt ) maxPnt = clistP->pntNum ;
-                     }
-                  }
-               }
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Marking Points Within Fence Shape");
+            for (p1 = startPnt; p1 <= lastPnt; ++p1)
+                {
+                pntP = pointAddrP(dtmP, p1);
+                findType = 0;
+                if (pntP->x >= clipDtmP->xMin && pntP->x <= clipDtmP->xMax &&pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax)
+                    {
+                    if (bcdtmFind_triangleDtmObject(clipDtmP, pntP->x, pntP->y, &findType, &trgPnt1, &trgPnt2, &trgPnt3)) goto errexit;
+                    if (findType)
+                        {
+                        nodeAddrP(dtmP, p1)->sPtr = 1;
+                        cPtr = nodeAddrP(dtmP, p1)->cPtr;
+                        while (cPtr != dtmP->nullPtr)
+                            {
+                            ++numMarked;
+                            clistP = clistAddrP(dtmP, cPtr);
+                            nodeAddrP(dtmP, clistP->pntNum)->sPtr = 1;
+                            cPtr = clistP->nextPtr;
+                            if (clistP->pntNum < minPnt) minPnt = clistP->pntNum;
+                            if (clistP->pntNum > maxPnt) maxPnt = clistP->pntNum;
+                            }
+                        }
+                    }
+                }
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Num Marked Within Fence Shape = %8ld", numMarked);
             }
-          if( dbg ) bcdtmWrite_message(0,0,0,"Num Marked Within Fence Shape = %8ld",numMarked) ;
-         }
-/*
-**    Mark Triangle Edges That Span The Fence
-*/
-      if( bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject(dtmP,clipDtmP,&minPnt,&maxPnt,&numMarked)) goto errexit ;
-      if( dbg ) bcdtmWrite_message(0,0,0,"Num Marked After Intersection With Fence Edge = %8ld",numMarked) ;
-/*
-**     Reset First And Last Point
-*/
-      startPnt = minPnt ;
-      lastPnt  = maxPnt ;
-      if( dbg ) bcdtmWrite_message(0,0,0,"Reset ** startPnt = %8ld lastPnt = %8ld",startPnt,lastPnt) ;
-      if( tdbg ) bcdtmWrite_message(0,0,0,"** Time To Mark Fence Points  = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),testTime)) ;
+        /*
+        **    Mark Triangle Edges That Span The Fence
+        */
+        if (bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject(dtmP, clipDtmP, &minPnt, &maxPnt, &numMarked)) goto errexit;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Num Marked After Intersection With Fence Edge = %8ld", numMarked);
+        /*
+        **     Reset First And Last Point
+        */
+        startPnt = minPnt;
+        lastPnt = maxPnt;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Reset ** startPnt = %8ld lastPnt = %8ld", startPnt, lastPnt);
+        if (tdbg) bcdtmWrite_message(0, 0, 0, "** Time To Mark Fence Points  = %8.3lf Seconds", bcdtmClock_elapsedTime(bcdtmClock(), testTime));
       }
-/*
-** Mark Dtm Lines
-*/
-    testTime = bcdtmClock() ;
-    zClipMin = zClipMax = pointAddrP(dtmP,startPnt)->z ;
-    for( p1 = startPnt ; p1 <= lastPnt ; ++p1 )
-      {
-       listPtr = nodeAddrP(dtmP,p1)->cPtr ;
-       while ( listPtr != dtmP->nullPtr )
-         {
-          p2  = clistAddrP(dtmP,listPtr)->pntNum ;
-          listPtr = clistAddrP(dtmP,listPtr)->nextPtr ;
-          if( p2 > p1 )
+        /*
+        ** Mark Dtm Lines
+        */
+        testTime = bcdtmClock();
+        zClipMin = zClipMax = pointAddrP(dtmP, startPnt)->z;
+        for (p1 = startPnt; p1 <= lastPnt; ++p1)
             {
-             bool clipFlag = false ;
-/*
-**           Determine Tin Line Extents In Relation To Fence Option And Fence Extent
-*/
-             if( useFence && ( nodeAddrP(dtmP,p1)->sPtr != 1 || nodeAddrP(dtmP,p2)->sPtr != 1 )) clipFlag = true ;
-/*
-**           Clip Lines Internal To Voids
-*/
+            listPtr = nodeAddrP(dtmP, p1)->cPtr;
+            while (listPtr != dtmP->nullPtr)
+                {
+                p2 = clistAddrP(dtmP, listPtr)->pntNum;
+                listPtr = clistAddrP(dtmP, listPtr)->nextPtr;
+                if (p2 > p1)
+                    {
+                    bool clipFlag = false;
+                    /*
+                    **           Determine Tin Line Extents In Relation To Fence Option And Fence Extent
+                    */
+                    if (useFence && (nodeAddrP(dtmP, p1)->sPtr != 1 || nodeAddrP(dtmP, p2)->sPtr != 1)) clipFlag = true;
+                    ///*
+                    //**           Clip Lines Internal To Voids
+                    //*/
              if( voidsInDtm == true && clipFlag == false )
                {
                 bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine) ;
                 if( voidLine ) clipFlag = true ;
                }
-/*
-**           Mark Clip Line And Set Contour Ranges
-*/
+                    /*
+                    **           Mark Clip Line And Set Contour Ranges
+                    */
              if( clipFlag == false )
-               {
-                bcdtmLoad_clearLineDtmObject(dtmP,p1,p2,tinLine2P) ;
-                if(pointAddrP(dtmP,p1)->z < zClipMin ) zClipMin = pointAddrP(dtmP,p1)->z ;
-                if(pointAddrP(dtmP,p1)->z > zClipMax ) zClipMax = pointAddrP(dtmP,p1)->z ;
-                if(pointAddrP(dtmP,p2)->z < zClipMin ) zClipMin = pointAddrP(dtmP,p2)->z ;
-                if(pointAddrP(dtmP,p2)->z > zClipMax ) zClipMax = pointAddrP(dtmP,p2)->z ;
-               }
+                        {
+                        bcdtmLoad_clearLineDtmObject(dtmP, p1, p2, tinLine2P);
+                        if (pointAddrP(dtmP, p1)->z < zClipMin) zClipMin = pointAddrP(dtmP, p1)->z;
+                        if (pointAddrP(dtmP, p1)->z > zClipMax) zClipMax = pointAddrP(dtmP, p1)->z;
+                        if (pointAddrP(dtmP, p2)->z < zClipMin) zClipMin = pointAddrP(dtmP, p2)->z;
+                        if (pointAddrP(dtmP, p2)->z > zClipMax) zClipMax = pointAddrP(dtmP, p2)->z;
+                    }
+                }
             }
-         }
-      }
-    if( tdbg ) bcdtmWrite_message(0,0,0,"** Time To Mark Fence Lines   = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),testTime)) ;
+        }
+      if( tdbg ) bcdtmWrite_message(0,0,0,"** Time To Mark Fence Lines   = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),testTime)) ;
 /*
 **  Reset SPTR Values
 */
@@ -1333,7 +1225,6 @@ if( dbg )
 */
  cleanup :
  if( useFence ) for( node = startPnt ; node <= lastPnt ; ++node ) nodeAddrP(dtmP,node)->sPtr = dtmP->nullPnt ;
- contourIndex.empty() ;
  if( tinLine1P      != nullptr ) { free(tinLine1P) ; tinLine1P = nullptr ; }
  if( tinLine2P      != nullptr ) { free(tinLine2P) ; tinLine2P = nullptr ; }
  if( clipDtmP       != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
@@ -1392,8 +1283,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  long   p1,p2,ap,cl,listPtr,spnt,feature,contourStartOffset  ;
  long   startTime=0 ;
  double zMin,zMax ;
- BC_DTM_FEATURE  *fP ;
- DPoint3d *p1P,*p2P ;
+ const BC_DTM_FEATURE  *fP ;
  long zsp1 = DTM_NULL_PNT, zsp2;
 /*
 ** Initialise
@@ -1411,43 +1301,39 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  do
    {
     p2 = nodeAddrP(dtmP,p1)->hPtr ;
-    if(  ! bcdtmLoad_testLineDtmObject(dtmP,p1,p2,tinLineP) )
-      {
-       if( ! bcdtmList_testForVoidOrHoleHullLineDtmObject(dtmP,p1,p2) )
-         {
-/*
-**        Check For Zero Slope Triangle On Hull
-*/
-          if( contourValue == pointAddrP(dtmP,p1)->z && contourValue  == pointAddrP(dtmP,p2)->z )
+    if (!bcdtmLoad_testLineDtmObject(dtmP, p1, p2, tinLineP))
+        {
+        if (!bcdtmList_testForVoidOrHoleHullLineDtmObject(dtmP, p1, p2))
             {
-             if( ( ap = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
-             if( contourValue == pointAddrP(dtmP,ap)->z )
-               {
-                if( ! bcdtmLoad_testLineDtmObject(dtmP,p1,p2,tinLineP) )
-                  {
-                  zsp1 = p1;
-                  zsp2 = p2;
-                  }
-               }
+            const auto p1z = pointAddrP(dtmP, p1)->z;
+            const auto p2z = pointAddrP(dtmP, p2)->z;
+            /*
+            **        Check For Zero Slope Triangle On Hull
+            */
+            if (contourValue == p1z && contourValue == p2z)
+                {
+                if ((ap = bcdtmList_nextAntDtmObject(dtmP, p1, p2)) < 0) goto errexit;
+                if (contourValue == pointAddrP(dtmP, ap)->z)
+                    {
+                    zsp1 = p1;
+                    zsp2 = p2;
+                    }
+                }
+            /*
+            **        Check For Contour Start On Hull Line
+            */
+            else if (zsp1 != DTM_NULL_PNT)
+                {
+                if (bcdtmLoad_traceZeroSlopeContourDtmObject(dtmP, contourParams, fenceParams, pondExtendedAppData, clipDtmP, zsp1, zsp2, DTMDirection::AntiClockwise, 1, contourValue, tinLineP, loadFunctionP, userP)) goto errexit;
+                zsp1 = DTM_NULL_PNT;
+                }
+            if (contourValue >= p1z && contourValue < p2z ||
+                contourValue <= p1z && contourValue > p2z)
+                {
+                if (bcdtmLoad_traceContourDtmObject(dtmP, contourParams, fenceParams, pondExtendedAppData, clipDtmP, contourValue, p1, p2, DTMDirection::AntiClockwise, tinLineP, loadFunctionP, userP) != DTM_SUCCESS) goto errexit;
+                }
             }
-/*
-**        Check For Contour Start On Hull Line
-*/
-          else if (zsp1 != DTM_NULL_PNT)
-              {
-              if (bcdtmLoad_traceZeroSlopeContourDtmObject (dtmP, contourParams, fenceParams, pondExtendedAppData, clipDtmP, zsp1, zsp2, DTMDirection::AntiClockwise, 1, contourValue, tinLineP, loadFunctionP, userP)) goto errexit;
-               zsp1 = DTM_NULL_PNT;
-              }
-          if( contourValue >= pointAddrP(dtmP,p1)->z && contourValue < pointAddrP(dtmP,p2)->z ||
-              contourValue <= pointAddrP(dtmP,p1)->z && contourValue > pointAddrP(dtmP,p2)->z    )
-            {
-             if( ! bcdtmLoad_testLineDtmObject(dtmP,p1,p2,tinLineP) )
-               {
-                if( bcdtmLoad_traceContourDtmObject(dtmP,contourParams,fenceParams,pondExtendedAppData,clipDtmP,contourValue,p1,p2,DTMDirection::AntiClockwise,tinLineP,loadFunctionP, userP) != DTM_SUCCESS ) goto errexit  ;
-               }
-            }
-         }
-      }
+        }
     p1 = p2 ;
    } while ( p1 != dtmP->hullPoint ) ;
    if (zsp1 != DTM_NULL_PNT)
@@ -1506,7 +1392,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  if( numContourIndex > 0 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Index For Contours") ;
-    if( bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(dtmP,contourIndexP,numContourIndex,contourValue,contourStartLineP)) goto errexit ;
+    if( bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(dtmP, contourIndexP,numContourIndex,contourValue,contourStartLineP)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"*contourStartLineP = %8ld",*contourStartLineP) ;
 /*
 **  Check Index Range
@@ -1517,14 +1403,12 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 **     Set Contour Index Start
 */
        contourStartOffset = *contourStartLineP ;
-       DTMContourIndexArray::iterator index = contourIndexP.start() + *contourStartLineP ;
+       DTMContourIndexArray::iterator index = contourIndexP.data() + *contourStartLineP ;
 /*
 **     Set Zmin And Zmax For Start Contour Index
 */
-       p1P = pointAddrP(dtmP,index->p1) ;
-       p2P = pointAddrP(dtmP,index->p2) ;
-       if( p1P->z <= p2P->z ) { zMin = p1P->z ; zMax = p2P->z ; }
-       else                   { zMax = p1P->z ; zMin = p2P->z ; }
+       zMin = index->z1;
+       zMax = index->z2;
 /*
 **     Write Debug Information
 */
@@ -1537,12 +1421,12 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
           if( contourValue <= zMax )
             {
              p2 = index->p2 ;
-             double p2Z = pointAddrP(dtmP,p2)->z;
+             const double p2Z = pointAddrP(dtmP, p2)->z;
              if( contourValue != p2Z )
                {
                 p1 = index->p1 ;
-                if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) &&
-                    ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1)    )
+                if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) /*&&
+                    ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1) */   )
                   {
                    if( ! bcdtmLoad_testLineDtmObject(dtmP,p1,p2,tinLineP) )
                      {
@@ -1569,10 +1453,8 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 /*
 **           Set Zmin And Zmax For Next Contour Index
 */
-             p1P = pointAddrP(dtmP,index->p1) ;
-             p2P = pointAddrP(dtmP,index->p2) ;
-             if( p1P->z <= p2P->z ) { zMin = p1P->z ; zMax = p2P->z ; }
-             else                   { zMax = p1P->z ; zMin = p2P->z ; }
+             zMin = index->z1;
+             zMax = index->z2;
              if( dbg ) bcdtmWrite_message(0,0,0,"**** Next Line Offset For %10.4lf ** %10.4lf %10.4lf",contourValue,zMin,zMax) ;
             }
          }
@@ -1590,8 +1472,8 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
        while ( cl != dtmP->nullPtr )
          {
           p2 = clistAddrP(dtmP,cl)->pntNum ;
-          if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) &&
-              ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1)    )
+          if( ! bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) /*&&
+              ! bcdtmList_testForHullLineDtmObject(dtmP,p2,p1) */   )
             {
              if( p2 > p1 )
                {
@@ -1898,7 +1780,7 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
 /*
 **           Check For Temination On Hull Line
 */
-             else if( bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) || bcdtmList_testForHullLineDtmObject(dtmP,p2,p1) )
+             else if( bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) /*|| bcdtmList_testForHullLineDtmObject(dtmP,p2,p1)*/ )
                {
                 contourScanned = TRUE ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"Contour Terminated On Hull Line") ;
@@ -5439,7 +5321,7 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourFromTriangleEdgeDtmObject
 /*
 **           Check For Temination On Hull Line
 */
-             else if( bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) || bcdtmList_testForHullLineDtmObject(dtmP,p2,p1) )
+             else if( bcdtmList_testForHullLineDtmObject(dtmP,p1,p2) /*|| bcdtmList_testForHullLineDtmObject(dtmP,p2,p1)*/ )
                {
                 contourScanned = TRUE ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"Contour Terminated On Hull Line") ;

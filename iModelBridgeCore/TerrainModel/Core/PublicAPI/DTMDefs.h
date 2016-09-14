@@ -462,9 +462,16 @@ struct DTMTinPointFeatures { long dtmFeature; DTMFeatureType dtmFeatureType; lon
 |  Contour Index                                                     |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct DTMContourIndex { long p1,p2 ; } ;       // Athens Version
+struct DTMContourIndex
+    {
+    long p1, p2; double z1, z2;
+    };       // Athens Version
 #include <TerrainModel\Core\partitionarray.h>
-typedef PartitionArray<DTMContourIndex, 15, MAllocAllocator> DTMContourIndexArray;
+//typedef PartitionArray<DTMContourIndex, 15, MAllocAllocator> DTMContourIndexArray;
+
+struct DTMContourIndexArray : bvector<DTMContourIndex>
+    {
+    };
 typedef DTMContourIndexArray& DtmContourIndexArrayR;
 /*-------------------------------------------------------------------+
 |                                                                    |
