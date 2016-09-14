@@ -65,7 +65,7 @@
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
         #define BENTLEYCONFIG_OS_WINRT
         #define BENTLEYCONFIG_DISPLAY_METRO
-        // WIP_PORT #define BENTLEYCONFIG_OPENCASCADE
+        #define BENTLEYCONFIG_OPENCASCADE
     #else
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
