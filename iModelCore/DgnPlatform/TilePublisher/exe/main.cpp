@@ -410,8 +410,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     if (geoLocated)
         {
         DPoint3d    groundEcefPoint;
-        transform.Multiply (groundEcefPoint, groundPoint);
 
+        transform.Multiply (groundEcefPoint, groundPoint);
         json["geolocated"] = true;
         json["groundPoint"] = pointToJson(groundEcefPoint);
         }
@@ -516,9 +516,19 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DPoint3d        groundPoint;
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
+        {
         groundPoint = params.GetGroundPoint();
+        }
     else
-        groundPoint = DPoint3d::From ((range.low.x + range.high.x) / 2.0, (range.low.y + range.high.y) / 2.0, params.GetGroundHeight());
+        {
+        Transform   tileToDb;
+
+        tileToDb.InverseOf (m_dbToTile);
+        
+        groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
+        tileToDb.Multiply (groundPoint);
+        groundPoint.z = params.GetGroundHeight();
+        }
 
     return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
     }
