@@ -7516,9 +7516,14 @@ This method saves the points for streaming.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
-    if (pi_pGroupMode == SMNodeGroup::NORMAL && 0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    BeFileName path(pi_pOutputDirPath.c_str());
+    if (pi_pGroupMode == SMNodeGroup::NORMAL)
         {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
+            {
+            return ERROR;
+            }
         }
 
     HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::Mode( pi_pGroupMode ));
@@ -7557,9 +7562,11 @@ This method saves the points for streaming.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    BeFileName path(pi_pOutputDirPath.c_str());
+    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
         {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
+        return ERROR;
         }
 
     ISMDataStoreTypePtr<Extent3dType> dataStore(

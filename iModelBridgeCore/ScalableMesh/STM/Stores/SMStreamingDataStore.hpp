@@ -51,17 +51,10 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
-        if (0 == CreateDirectoryW(path.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
-        path.append(DataSourceURL(m_pathToHeaders.c_str()));
-        if (0 == CreateDirectoryW(path.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
+        BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_pathToHeaders.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
 
@@ -1053,18 +1046,15 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
-        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
-        path.append(DataSourceURL(m_pathToNodeData.c_str()));
-        if (0 == CreateDirectoryW(path.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
+        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_pathToNodeData.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
-    else
-        {
-        // stream from azure
-        }
+    //else
+    //    {
+    //    // stream from azure
+    //    }
     }
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
@@ -1400,13 +1390,10 @@ template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTE
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
-        path.append(DataSourceURL(m_path.c_str()));
-        if (0 == CreateDirectoryW(path.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }
+        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_path.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
 

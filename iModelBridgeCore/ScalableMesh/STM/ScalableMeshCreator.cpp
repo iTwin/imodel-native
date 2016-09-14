@@ -537,11 +537,14 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
     if (!isSingleFile)
         {
+        // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?
         auto position = m_scmFileName.find_last_of(L".stm");
         WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
-        if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
+        BeFileName path(streamingFilePath.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
             {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
+            return ERROR;
             }
 
         // Pip ToDo: Create manager?
