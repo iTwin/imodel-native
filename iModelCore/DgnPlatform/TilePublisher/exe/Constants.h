@@ -23,7 +23,8 @@ R"HTML(<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
-<script src="scripts/Bentley/BimTiles.js"></script>
+<script src="scripts/Bentley/Bim.js"></script>
+<script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <style>
 @import url(Cesium/Widgets/widgets.css);
 
@@ -42,22 +43,14 @@ overflow: hidden;
 <script>
 
 var view = %s;
-var viewer = new Cesium.Viewer('cesiumContainer', BimTiles.createCesiumViewerOptions(view));
-viewer.extend(Cesium.viewerCesiumInspectorMixin);
+var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
+viewer.extend(Bim.viewerInspectorMixin);
 
-BimTiles.fixupSandboxAttributes();
+Bim.fixupSandboxAttributes();
 
-var tileset = BimTiles.loadTileset(viewer, view, function() {
-   var fitViewButton = document.getElementById('fitViewButton');
-   fitViewButton.onclick = function() {
-       viewer.camera.viewBoundingSphere(tileset.boundingSphere, new Cesium.HeadingPitchRange (viewer.camera.heading, viewer.camera.pitch, 0.0));
-   }
-});
+Bim.loadTileset(viewer, view);
 
 </script>
-<div style="z-index:10000; position:absolute;top:0;left:0;padding:5px; margin:5px">
-    <input type="button" id="fitViewButton" value="Fit View" />
-</div>
 </body>
 </html>)HTML";
 
