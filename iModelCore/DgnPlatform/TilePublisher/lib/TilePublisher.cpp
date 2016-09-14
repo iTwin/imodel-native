@@ -1092,11 +1092,11 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
+PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
     {
     Json::Value         realityModelTilesets, elementTileSet;
-    DRange3d            rootRange = DRange3d::NullRange();
 
+    rootRange = DRange3d::NullRange();
     // First go through and collect tilesets for any (reality) models.   These will produce tileset from the HLOD trees directly and therefore don't
     // won't be included by collecting through their elements.
     for (auto& modelId : m_viewController.GetViewedModels())

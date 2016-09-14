@@ -49,7 +49,7 @@ public:
 struct PublisherContext
 {
     enum class Status
-    {
+        {
         Success = SUCCESS,
         NoGeometry,
         Aborted,
@@ -58,7 +58,9 @@ struct PublisherContext
         ErrorWritingScene,
         ErrorWritingNode,
         NotImplemented,
-    };
+        };
+
+
 protected:
     ViewControllerR     m_viewController;
     BeFileName          m_outputDir;
@@ -77,7 +79,7 @@ protected:
 
     TILEPUBLISHER_EXPORT Status Setup();
 
-    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
     Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
     Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
     TILEPUBLISHER_EXPORT Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
