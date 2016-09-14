@@ -25,6 +25,7 @@ def checkLogFileForFailures(logfilename):
     colon = ''
     anyFailures = False
     lineNo = 0
+    summaryLineNo = 0
     summarystr = logfilename + '\n'
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
@@ -41,6 +42,7 @@ def checkLogFileForFailures(logfilename):
                 if summarypat.search(line) != None:
                     summarystr = summarystr + line
                     foundSummary = True
+                    summaryLineNo = 0
                 else:
                     # We do keep track of the last test run, in case we need to report a crash or early exit
                     run = runpat.search(line)
@@ -51,7 +53,13 @@ def checkLogFileForFailures(logfilename):
 
             else:
                 # The summary has the results, either the count of tests run or a list of failing tests.
-                if line.find('FAILED TESTS') != -1:
+                summaryLineNo = summaryLineNo + 1
+
+                if summaryLineNo < 3:
+                    summarystr = summarystr + line
+                    continue
+
+                if line.find('FAILED TEST') != -1:
                     anyFailures = True
 
                 failed = failedpat.search(line)
@@ -63,7 +71,8 @@ def checkLogFileForFailures(logfilename):
     if not anyFailures and foundSummary:
         return '',summarystr
 
-    advicestr = '************ Failures from: ' + logfilename + ' ******************'
+    #advicestr = '************ Failures from: ' + logfilename + ' ******************'
+    advicestr = ''
 
     # If we never got to the summary, that means that the last test to run was interrupted by a crash
     if not foundSummary:
