@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,16 +40,19 @@ struct WSChangeset
 
         struct Instance;
         struct Relationship;
+        struct Options;
 
         typedef std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)> IdHandler;
 
     private:
         Format m_format;
         bvector<std::shared_ptr<Instance>> m_instances;
+        std::shared_ptr<Options> m_options;
 
     private:
         void ToSingleInstanceRequestJson(JsonValueR json) const;
         void ToMultipleInstancesRequestJson(JsonValueR json) const;
+        void ToOptionsRequestJson(JsonValueR json) const;
 
         BentleyStatus ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const IdHandler& handler) const;
         BentleyStatus ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const IdHandler& handler) const;
@@ -78,6 +81,17 @@ struct WSChangeset
         WSCLIENT_EXPORT size_t GetInstanceCount() const;
         //! Get total relationship count used in changeset.
         WSCLIENT_EXPORT size_t GetRelationshipCount() const;
+
+        //! Request options allows to change default behaviour of WSG request
+        //! Current WSChangeset implementation allows these options: Response Content, Refresh Instances, Custom Options.
+        //! If request options are not initialised, this method initialise them.
+        //! @return request options
+        WSCLIENT_EXPORT Options& GetRequestOptions();
+
+        //! If request options are initialised (by calling GetRequestOptions)
+        //! but are not needed for this WSChangeset, request options can be removed from request.
+        WSCLIENT_EXPORT void RemoveRequestOptions();
+
         //! Get total size of serialized changeset in bytes
         WSCLIENT_EXPORT size_t CalculateSize() const;
 
@@ -155,6 +169,52 @@ struct WSChangeset::Relationship
         ECRelatedInstanceDirection m_direction;
         mutable size_t m_baseSize = 0;
         Instance m_instance;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct WSChangeset::Options
+    {
+    friend struct WSChangeset;
+
+    //! better enum comments
+    public:
+        enum ResponseContent
+            {
+            FullInstance, //full instances are returned (default behaviuor).
+            Empty, //response body is empty, only HTTP status is returned.
+            InstanceId  //only class info and instance id's are returned. All properties are removed from response. 
+            };
+
+    private:
+        ResponseContent* m_responseContent;
+        bool* m_refreshInstances;
+        std::map<Utf8String, Utf8String> m_customOptions;
+        mutable size_t m_baseSize = 0;
+
+    private:
+        static Utf8CP GetResponseContentStr(ResponseContent option);
+        size_t CalculateSize() const;
+        void ToJson(JsonValueR jsonOut) const;
+
+    public:
+        //! Set ResponseContent option.
+        WSCLIENT_EXPORT void SetResponseContent(ResponseContent value);
+
+        //! Set RefreshInstances option.
+        //! If RefreshInstances is set to true, newly created or modified instances will be returned refreshed. 
+        //! If plugin does not support refresh operation WSG core will refresh instances itself. 
+        //! If refresh operation fails, instance will have property "refreshed" set to false. 
+        WSCLIENT_EXPORT void SetRefreshInstances(bool value);
+        
+        //! Set custom option.
+        //! CustomOptions can be used to pass any user data for ec plugin via extended parameters
+        //! Will overwrite values with same name.
+        WSCLIENT_EXPORT void SetCustomOption(Utf8StringCR name, Utf8StringCR value);
+
+        //! Remove custom option.
+        WSCLIENT_EXPORT void RemoveCustomOption(Utf8StringCR name);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
