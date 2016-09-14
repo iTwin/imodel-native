@@ -367,7 +367,7 @@ struct  PublishTileNode : TileNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const override
+virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const override
     {
     TileMeshList        tileMeshes;
     Transform           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
