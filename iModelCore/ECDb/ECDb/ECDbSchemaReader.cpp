@@ -48,7 +48,7 @@ ECSchemaId ECDbSchemaReader::GetECSchemaId(ECSchemaCR ecSchema) const
     {
     if (ecSchema.HasId())
         {
-        BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecSchema.GetName().c_str()).IsValid());
+        BeAssert(ecSchema.GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecSchema.GetName().c_str()));
         return ecSchema.GetId();
         }
 
@@ -86,7 +86,7 @@ ECEnumerationId ECDbSchemaReader::GetECEnumerationId(ECEnumerationCR ecEnum) con
     {
     if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
         {
-        BeAssert(ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()).IsValid());
+        BeAssert(ecEnum.GetId() == ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()));
         return ecEnum.GetId();
         }
 
@@ -125,7 +125,7 @@ KindOfQuantityId ECDbSchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) con
     {
     if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()).IsValid());
+        BeAssert(koq.GetId() == ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()));
         return koq.GetId();
         }
 
@@ -147,7 +147,7 @@ ECPropertyId ECDbSchemaReader::GetECPropertyId(ECPropertyCR prop) const
     {
     if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()).IsValid());
+        BeAssert(prop.GetId() == ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()));
         return prop.GetId();
         }
 
@@ -1249,7 +1249,7 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
     {
     if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
         {
-        BeAssert(GetECClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName).IsValid());
+        BeAssert(ecClass.GetId() == GetECClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName));
         return ecClass.GetId();
         }
 
