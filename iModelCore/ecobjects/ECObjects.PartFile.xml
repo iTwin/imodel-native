@@ -7,7 +7,7 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
+    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*,WinRT*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
         <SubPart PartName="LoggingNative"   PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
     </Part>
 
@@ -19,15 +19,15 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
         <SubPart PartName="UnitsNative"        PartFile="Units"        Repository="Units" />
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
@@ -231,6 +231,38 @@
         <SubProduct ProductName="ECObjects-iOSXCTest"/>
     </Part>
 
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="G06"
+        >
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECObjectsUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECObjects-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="ECObjects-UwpTest"/>
+    </Part>
+
     <!-- Define a gtest program to run the PerformanceTests. -->
     <Product Name="ECObjects-PerformanceTests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
@@ -296,36 +328,10 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
     <ProductDirectoryList ListName="ECObjects">
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="mergemodules"                       Deliver="false"/>
-        <ProductDirectory Name="libs"                               Deliver="false"/>
-
-        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="unitssnativeassemblies"       LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
-
-        <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
-        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
-        <ProductDirectory Name="GeomNativeAssemblies"               Path="Runtime"/>
-        <ProductDirectory Name="ecobjectsnativeassemblies"          Path="Runtime"/>
-        <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
-        <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
-        <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets"   RelativeTo="Assemblies" Path="Assets"/>
+        <ProductDirectory Name="Assets"   RelativeTo="Assemblies" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  Path="Notices"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
@@ -335,11 +341,11 @@
     </Product>
 
     <ProductDirectoryList ListName="SchemaConverter">
-        <ProductDirectory Name="SchemaConverterExe"     Path="Runtime"/>
+        <ProductDirectory Name="SchemaConverterExe"     Path=""/>
     </ProductDirectoryList>
     
     <ProductDirectoryList ListName="SchemaResourceGenerator">
-        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path="Runtime"/>
+        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path=""/>
     </ProductDirectoryList>
     <Product Name="ECObjectsTools">
         <SubPart    PartName="SchemaConverter" />

@@ -81,10 +81,10 @@ protected:
     ECOBJECTS_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
+    ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) override;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const;
+    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const override;
 
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.

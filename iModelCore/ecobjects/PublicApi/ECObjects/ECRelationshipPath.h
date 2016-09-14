@@ -53,6 +53,7 @@ struct ECRelatedClassSpecifier
         //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
         //! in relationship path are guaranteed to be fully qualified by the schema name.
         //! @see ToString()
+        //! @return SUCCESS if a path was initialized by resolving the classes specified in the string. ERROR otherwise. 
         BentleyStatus InitFromString(Utf8StringCR relatedClassString, IECClassLocaterR classLocater, ECN::ECSchemaCP defaultSchema);
 
         //! Convert the relationship path to its string equivalent
@@ -146,6 +147,7 @@ public:
     //!      string needs to include the root class at the beginning of the path. 
     //! </ul>
     //! @see ToString()
+    //! @return SUCCESS if a path was initialized by resolving the classes specified in the string. ERROR otherwise. 
     ECOBJECTS_EXPORT BentleyStatus InitFromString(Utf8StringCR relationshipPathString, IECClassLocaterR classLocater, ECN::ECSchemaCP defaultSchema);
 
     //! Checks if the relationship path is empty

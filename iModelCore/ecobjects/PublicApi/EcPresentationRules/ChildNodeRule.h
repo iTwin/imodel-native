@@ -89,7 +89,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         ECOBJECTS_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
 
         //! Destructor.
-        ECOBJECTS_EXPORT                                ~ChildNodeRule (void);
+        ECOBJECTS_EXPORT virtual ~ChildNodeRule (void);
 
         //! Returns target tree for which rule should be applied.
         ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void) const;
