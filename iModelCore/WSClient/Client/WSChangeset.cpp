@@ -70,6 +70,12 @@ size_t WSChangeset::CalculateSize() const
         size -= 2; // size of "{}"
         }
 
+    if (nullptr != m_options)
+        {
+        size += Utf8String(R"(",requestOptions":)").size();
+        size += m_options->CalculateSize();
+        }
+
     return size;
     }
 
@@ -89,6 +95,8 @@ Utf8String WSChangeset::ToRequestString() const
 void WSChangeset::ToRequestJson(JsonValueR changesetJson) const
     {
     changesetJson = Json::objectValue;
+
+    ToOptionsRequestJson(changesetJson);
 
     if (Format::SingeInstance == m_format)
         {
@@ -133,6 +141,18 @@ void WSChangeset::ToMultipleInstancesRequestJson(JsonValueR changesetJson) const
         instance->ToJson(instancesJson[index]);
         ++index;
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::ToOptionsRequestJson(JsonValueR changesetJson) const
+    {
+    if (m_options == nullptr)
+        return;
+
+    Json::Value& optionsJson = changesetJson["requestOptions"];
+    m_options->ToJson(optionsJson);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -192,6 +212,25 @@ BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonV
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  julius.cepukenas  08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Options& WSChangeset::GetRequestOptions()
+    {
+    if (nullptr == m_options)
+        m_options = std::make_shared<Options>();
+
+    return *m_options;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  julius.cepukenas  08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::RemoveRequestOptions()
+    {
+    m_options = nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -602,4 +641,101 @@ ObjectIdCR WSChangeset::Instance::GetId() const
 WSChangeset::ChangeState WSChangeset::Instance::GetState() const
     {
     return m_state;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::SetResponseContent(ResponseContent content)
+    {
+    m_baseSize = 0;
+    m_responseContent = new ResponseContent;
+    *m_responseContent = content;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Utf8StringCR value)
+    {
+    m_baseSize = 0;
+    m_customOptions[name] = value;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::RemoveCustomOption(Utf8StringCR name)
+    {
+    m_baseSize = 0;
+    m_customOptions.erase(name);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::SetRefreshInstances(bool toRefreshInstance)
+    {
+    m_baseSize = 0;
+    m_refreshInstances = &toRefreshInstance;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas    08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WSChangeset::Options::GetResponseContentStr(ResponseContent response)
+    {  
+    switch (response)
+        {
+        case ResponseContent::FullInstance:
+            return "FullInstance";
+        case ResponseContent::Empty:
+            return "Empty";
+        case ResponseContent::InstanceId:
+            return "InstanceId";
+        default:
+            BeAssert(false);
+            break;
+        }
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
+    {
+    if (nullptr == m_responseContent && nullptr == m_refreshInstances && m_customOptions.empty())
+        {
+        jsonOut = Json::objectValue;
+        return;
+        }
+
+    if (nullptr != m_responseContent)
+        jsonOut["ResponseContent"] = GetResponseContentStr(*m_responseContent);
+
+    if (nullptr != m_refreshInstances)
+        jsonOut["RefreshInstances"] = *m_refreshInstances;
+
+    if (!m_customOptions.empty())
+        {
+        JsonValueR customOptions = jsonOut["CustomOptions"];
+        for (auto pair : m_customOptions)
+            customOptions[pair.first] = pair.second;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t WSChangeset::Options::CalculateSize() const
+    {
+    if (0 != m_baseSize)
+        return m_baseSize;
+
+    Json::Value requestOptions;
+    ToJson(requestOptions);
+    m_baseSize += Json::FastWriter::ToString(requestOptions).size();
+
+    return m_baseSize;
     }

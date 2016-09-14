@@ -529,6 +529,170 @@ TEST_F(WSChangesetTests, ToRequestString_ThreeInstances_ReturnsChangesetAndCalcu
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+TEST_F(WSChangesetTests, ToRequestString_GetRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions();
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":{}
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions();
+    changeset.RemoveRequestOptions();
+
+    auto expectedJson = ToJson(R"({
+        "instances":[]
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsResponseContentSet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::InstanceId);
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "ResponseContent":"InstanceId"
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsRefreshInstanceSet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetRefreshInstances(true);
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "RefreshInstances":true
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsTwoCustomOptionsSet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetCustomOption("A", "1");
+    changeset.GetRequestOptions().SetCustomOption("B", "2");
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "CustomOptions":{"A":"1","B":"2"}
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsOwerwriten_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetCustomOption("A", "1");
+    changeset.GetRequestOptions().SetCustomOption("A", "2");
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "CustomOptions":{"A":"2"}
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetCustomOption("A", "1");
+    changeset.GetRequestOptions().RemoveCustomOption("A");
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],"requestOptions":{}})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsManyOptionsSet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetRefreshInstances(true);  
+    changeset.GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::InstanceId);
+    changeset.GetRequestOptions().SetCustomOption("A", "1");
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "ResponseContent":"InstanceId",
+            "CustomOptions":{"A":"1"},
+            "RefreshInstances":true
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OptionsSetAndInstanceAdded_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetRefreshInstances(true);
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
+
+    auto expectedJson = ToJson(R"({
+        "instances":[
+            {
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "instanceId":"Foo"
+            }],
+        "requestOptions":
+            {
+            "RefreshInstances":true
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    }
+
 TEST_F(WSChangesetTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAndLeavesChangesetEmpty)
     {
     WSChangeset changeset;
