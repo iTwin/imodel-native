@@ -11,6 +11,7 @@
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
 #include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTileIterator)
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTexture)

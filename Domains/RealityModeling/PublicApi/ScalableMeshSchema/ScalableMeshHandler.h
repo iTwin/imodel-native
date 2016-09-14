@@ -10,6 +10,7 @@
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
 #include <TerrainModel/TerrainModel.h>
