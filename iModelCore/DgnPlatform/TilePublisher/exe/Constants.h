@@ -22,8 +22,8 @@ R"HTML(<!DOCTYPE html>
 <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
-<script src="Cesium/Cesium.js"></script>
-<script src="Bentley/BimTiles.js"></script>
+<script src="scripts/Cesium/Cesium.js"></script>
+<script src="scripts/Bentley/BimTiles.js"></script>
 <style>
 @import url(Cesium/Widgets/widgets.css);
 

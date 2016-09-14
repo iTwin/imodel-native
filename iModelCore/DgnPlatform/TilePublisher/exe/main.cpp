@@ -430,18 +430,9 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     // Symlink the scripts, if not already present
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");
-
-    BeFileName cesiumSrcDir = scriptsSrcDir;
-    cesiumSrcDir.AppendToPath(L"Cesium");
-    BeFileName cesiumDstDir(m_outputDir);
-    cesiumDstDir.AppendToPath(L"Cesium");
-    BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
-
-    BeFileName bentleySrcDir = scriptsSrcDir;
-    bentleySrcDir.AppendToPath(L"Bentley");
-    BeFileName bentleyDstDir(m_outputDir);
-    bentleyDstDir.AppendToPath(L"Bentley");
-    BeFileName::CloneDirectory(bentleySrcDir.c_str(), bentleyDstDir.c_str());
+    BeFileName scriptsDstDir(m_outputDir);
+    scriptsDstDir.AppendToPath(L"scripts");
+    BeFileName::CloneDirectory(scriptsSrcDir.c_str(), scriptsDstDir.c_str());
 
     return Status::Success;
     }

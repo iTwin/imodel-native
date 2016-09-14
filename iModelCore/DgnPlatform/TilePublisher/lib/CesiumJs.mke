@@ -10,9 +10,6 @@
 
 baseDir = $(_MakeFilePath)
 
-$(BuildContext)Delivery/TilePublisher/Cesium : $(baseDir)Cesium
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)Delivery/TilePublisher/Bentley : $(baseDir)Bentley
+$(BuildContext)Delivery/TilePublisher/scripts : $(baseDir)scripts
     $(LinkFirstDepToFirstTargetAsDirectory)
 
