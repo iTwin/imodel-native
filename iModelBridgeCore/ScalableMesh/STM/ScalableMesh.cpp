@@ -364,9 +364,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, bool uploadToAzure) const
+int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const
     {
-    return _ConvertToCloud(outContainerName, outDatasetName, uploadToAzure);
+    return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -761,33 +761,27 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Check existence of the following directories
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    WString streamingSourcePath(L"scalablemesh");
+                    WString streamingSourcePath;
                     WString cloudIndicator(L"_cloud");
-                    //= (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : path.GetFileNameWithoutExtension());
-                    BeFileName path(m_path);
-                    WString datasetName = path.GetFileNameWithoutExtension();
-                    WString separator = s_stream_from_wsg ? L"~2F" : L"/";
-                    bool isCloud = path.Contains(cloudIndicator);
-                    if (isCloud)
+                    WString datasetName = BeFileName(m_path).GetFileNameWithoutExtension();
+                    if (datasetName.Contains(cloudIndicator))
                         {
                         datasetName.resize(datasetName.length() - cloudIndicator.length());
                         }
-                    if (isCloud && !s_stream_from_disk)
+
+                    if (s_stream_from_disk)
                         {
-                        if (s_stream_from_wsg)
-                            {
-                            streamingSourcePath += separator + datasetName;
-                            }
-                        else 
-                            {
-                            streamingSourcePath = L"scalablemeshtest/" + datasetName;
-                            }
+                        streamingSourcePath = BeFileName(m_path).GetDirectoryName();
+                        streamingSourcePath += L"cloud\\";
+                        streamingSourcePath += datasetName;
+                        }
+                    else if (s_stream_from_wsg)
+                        {
+                        streamingSourcePath = L"scalablemesh" + (L"~2F" + datasetName);
                         }
                     else
                         {
-                        streamingSourcePath = path.GetDirectoryName();
-                        streamingSourcePath += L"cloud\\";
-                        streamingSourcePath += datasetName;
+                        streamingSourcePath = L"scalablemeshtest" + (L"/" + datasetName);
                         }
 
 #ifndef VANCOUVER_API                                       
@@ -2020,22 +2014,31 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ConvertToCloud
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
     WString path;
-    if (uploadToAzure)
+    if (server == SMCloudServerType::Azure)
         {
-        // Setup streaming stores to use server (Azure or WSG)
-        s_stream_from_disk = false;
+        // Setup streaming stores to use Azure
+        s_stream_from_disk = false; 
+        s_stream_from_wsg = false;
 
-        path += outContainerName;
-        path += s_stream_from_wsg ? L"~2F" : L"/";
-        path += outDatasetName;
+        path += outContainerName + L"/" + outDatasetName;
+        }
+    else if (server == SMCloudServerType::WSG)
+        {
+        // Setup streaming stores to use WSG
+        s_stream_from_disk = false;
+        s_stream_from_wsg = true;
+
+        path += outContainerName + L"~2F" + outDatasetName;
         }
     else
         {
+        assert(server == SMCloudServerType::LocalDisk);
+
         // Setup streaming stores to use local disk (relative to attached stm file location)
         s_stream_from_disk = true;
 
