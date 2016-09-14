@@ -1235,8 +1235,9 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_Initialize()
     {
-    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
+    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT,ECClassId INTEGER NOT NULL");
     m_txnMgr.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Midx ON " TXN_TABLE_Elements "(ModelId)");
+    m_txnMgr.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Cidx ON " TXN_TABLE_Elements "(ECClassId)");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1248,7 +1249,7 @@ void dgn_TxnTable::Element::_OnValidate()
     if (m_stmt.IsPrepared())
         return;
 
-    m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType) VALUES(?,?,?)");
+    m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,ECClassId) VALUES(?,?,?,?)");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1461,9 +1462,9 @@ void dgn_TxnTable::ModelDep::_OnValidateUpdate(Changes::Change const& change)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType)
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId)
     {
-    enum Column : int {ElementId=1,ModelId=2,ChangeType=3};
+    enum Column : int {ElementId=1,ModelId=2,ChangeType=3,ECClass=4};
 
     BeAssert(modelId.IsValid());
     BeAssert(elementId.IsValid());
@@ -1472,6 +1473,7 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.BindId(Column::ElementId, elementId);
     m_stmt.BindId(Column::ModelId, modelId);
     m_stmt.BindInt(Column::ChangeType, (int) changeType);
+    m_stmt.BindId(Column::ECClass, elementClassId);
 
     auto rc = m_stmt.Step();
     BeAssert(rc==BE_SQLITE_DONE);
@@ -1504,15 +1506,27 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
     DgnModelId modelId;
+    DgnClassId classId;
 
     if (ChangeType::Update == changeType)
         {
         // for updates, the element table must be queried for ModelId since the change set will only contain changed columns
-        modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
+        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ModelId,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+        stmt->BindId(1, elementId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            {
+            BeAssert(false);
+            }
+        else
+            {
+            modelId = stmt->GetValueId<DgnModelId>(0);
+            classId = stmt->GetValueId<DgnClassId>(1);
+            }
         }
     else
         {
         static int s_modelIdColIdx = -1;
+        static int s_ecclassIdColIdx = -1;
         if (s_modelIdColIdx == -1)
             {
             bvector<Utf8String> columnNames;
@@ -1520,11 +1534,13 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
             auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
             BeAssert(i != columnNames.end());
             s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
+            s_ecclassIdColIdx = (int)std::distance(columnNames.begin(), std::find(columnNames.begin(), columnNames.end(), "ECClassId"));
             }
         modelId = DgnModelId(change.GetValue(s_modelIdColIdx, stage).GetValueUInt64());
+        classId = DgnClassId(change.GetValue(s_ecclassIdColIdx, stage).GetValueUInt64());
         }
 
-    AddElement(elementId, modelId, changeType);
+    AddElement(elementId, modelId, changeType, classId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1533,7 +1549,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
 dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
-        m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Elements));
+        m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType,ECClassId FROM " TEMP_TABLE(TXN_TABLE_Elements));
     else
         m_stmt->Reset();
 
@@ -1541,8 +1557,9 @@ dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() 
     }
 
 DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
-DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
+DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const { return m_sql->GetValueId<DgnModelId>(1); }
 TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(2);}
+DgnClassId dgn_TxnTable::Element::Iterator::Entry::GetECClassId() const { return m_sql->GetValueId<DgnClassId>(3); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

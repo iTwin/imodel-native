@@ -51,6 +51,11 @@ enum class TxnAction
 //=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
+//!
+//! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass_Includes.sampleCode
+//! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass.sampleCode
+//! 
+//!
 //! @ingroup GROUP_TxnManager
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
@@ -560,7 +565,7 @@ namespace dgn_TxnTable
         void _OnReversed() override {_OnValidated();}
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
-        void AddElement(DgnElementId, DgnModelId, ChangeType changeType);
+        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId);
 
         //! iterator for elements that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
@@ -577,6 +582,7 @@ namespace dgn_TxnTable
                 DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
                 DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
                 DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+                DGNPLATFORM_EXPORT DgnClassId GetECClassId() const;
                 Entry const& operator*() const {return *this;}
             };
 
