@@ -2138,6 +2138,10 @@ private:
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
+    
+    // Used to search base classes for RoleLabel
+    ECObjectsStatus             _SetRoleLabel(Utf8StringCR value);
+    ECObjectsStatus             ValidateRoleLabel();
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
@@ -2262,8 +2266,11 @@ private:
 
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+    
+    bool                                IsValid() const;
     bool                                ValidateMultiplicityConstraint() const;
     bool                                ValidateClassConstraint() const;
+    bool                                ValidateRoleLabels() const;
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;

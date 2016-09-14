@@ -334,7 +334,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         if (ecClass->IsRelationshipClass())
             {
             ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-            if (!relClass->ValidateMultiplicityConstraint() || !relClass->ValidateClassConstraint())
+            if (!relClass->IsValid())
                 return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -882,9 +882,6 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, alias, versionMajor, versionWrite, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    if(schemaOut->SetVersionWrite(versionWrite) != ECObjectsStatus::Success)
         return SchemaReadStatus::InvalidECSchemaXml;
 
     schemaOut->m_key.m_checkSum = checkSum;

@@ -1578,18 +1578,18 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseCl
         "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
         "   <ECRelationshipClass typeName='ARelC' modifer='sealed'>"
         "       <BaseClass>ARelB</BaseClass>"
-        "       <Source multiplicity='(1..1)' polymorphic='True'>"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource' >"
         "           <Class class='A' />"
         "       </Source>"
-        "       <Target multiplicity='(1..*)' polymorphic='True'>"
+        "       <Target multiplicity='(1..*)' polymorphic='True' roleLabel='testTarget' >"
         "           <Class class='C' />"
         "       </Target>"
         "   </ECRelationshipClass>"
         "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(1..1)' polymorphic='True'>"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource' >"
         "           <Class class='A' />"
         "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True'>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
         "           <Class class='B' />"
         "       </Target>"
         "   </ECRelationshipClass>"
@@ -1750,6 +1750,92 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenPolymorphicNotFoundOrEmpty)
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty polymorphic attribute is supposed to fail to deserialize.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenRoleLabelNotFoundOrEmpty)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint without a roleLabel attribute is supposed to fail to deserialize.";
+
+    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema2' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema2;
+    status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelC' modifier='sealed'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' >"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECRelationshipConstraint that inherits a roleLabel attribute should succeed.";
+    ASSERT_TRUE(schema.IsValid());
+    
+    ASSERT_STREQ("testSource", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
+    ASSERT_STREQ("testTarget", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

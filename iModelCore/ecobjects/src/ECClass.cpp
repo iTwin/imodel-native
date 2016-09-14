@@ -2467,10 +2467,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     
-    Utf8String value;  // needed for macros.
-    ECObjectsStatus setterStatus;
-    READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
+    Utf8String roleLabel;
+    constraintNode.GetAttributeStringValue(roleLabel, ROLELABEL_ATTRIBUTE);
+    _SetRoleLabel(roleLabel);
 
+    Utf8String value;  // needed for macros.
     if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() >= 1)
         {
         READ_REQUIRED_XML_ATTRIBUTE(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic, constraintNode.GetName());
@@ -2486,7 +2487,8 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         }
     else
         {
-        READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
+        ECObjectsStatus setterStatus; // need for macros
+        READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
         READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
         }
     
@@ -2830,19 +2832,62 @@ Utf8String const ECRelationshipConstraint::GetRoleLabel () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     {
-    if (m_roleLabel.length() != 0)
-        return m_roleLabel;
-        
-    if (&(m_relClass->GetTarget()) == this)
-        return m_relClass->GetInvariantDisplayLabel() + " (Reversed)";
-    return m_relClass->GetInvariantDisplayLabel();
+    return m_roleLabel;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel()
+    {
+    if (!Utf8String::IsNullOrEmpty(m_roleLabel.c_str()))
+        return ECObjectsStatus::Success;
+
+    ECObjectsStatus status = ECObjectsStatus::Error;
+    for (auto const& relBaseClass : m_relClass->GetBaseClasses())
+        {
+        if (!relBaseClass->IsRelationshipClass())
+            continue;
+
+        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
+                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+        if (ECObjectsStatus::Success == (status = SetRoleLabel(baseClassConstraint->GetRoleLabel())))
+            return status;
+        }
+
+    uint32_t majorVersion = m_relClass->GetSchema().GetOriginalECXmlVersionMajor();
+    uint32_t minorVersion = m_relClass->GetSchema().GetOriginalECXmlVersionMinor();
+    if (Utf8String::IsNullOrEmpty(m_roleLabel.c_str()) && (majorVersion <= 3 && minorVersion == 0))
+        {
+        if (m_isSource)
+            return SetRoleLabel(m_relClass->GetDisplayLabel());
+        else
+            return SetRoleLabel(m_relClass->GetDisplayLabel() + " (Reversed)");
+        }
     
+    if (status != ECObjectsStatus::Success)
+        LOG.errorv("Invalid ECSchemaXML: The %s of the ECRelationshipClass, %s, must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+                    m_relClass->GetDisplayLabel().c_str(), ROLELABEL_ATTRIBUTE);
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::_SetRoleLabel(Utf8StringCR value)
+    {
+    m_roleLabel = value;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8StringCR value)
     {
+    if (Utf8String::IsNullOrEmpty(value.c_str()))
+        return ECObjectsStatus::Error;
+
     m_roleLabel = value;
     return ECObjectsStatus::Success;
     }
@@ -3185,6 +3230,14 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipClass::IsValid () const
+    {
+    return ValidateMultiplicityConstraint() && ValidateClassConstraint() && ValidateRoleLabels();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3248,6 +3301,18 @@ bool ECRelationshipClass::ValidateClassConstraint() const
     {
     if (ECObjectsStatus::Success != GetSource().ValidateClassConstraint() || 
         ECObjectsStatus::Success != GetTarget().ValidateClassConstraint())
+        return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipClass::ValidateRoleLabels() const
+    {
+    if (ECObjectsStatus::Success != GetSource().ValidateRoleLabel() ||
+        ECObjectsStatus::Success != GetTarget().ValidateRoleLabel())
         return false;
 
     return true;

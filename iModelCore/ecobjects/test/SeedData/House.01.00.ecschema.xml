@@ -143,10 +143,10 @@
     </ECRelationshipClass>
     <ECClass typeName="Window" isDomainClass="True" />
     <ECRelationshipClass typeName="RoomHasWindow" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="True">
+        <Source cardinality="(0,1)" polymorphic="True" roleLabel="Window to room" >
             <Class class="Room" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
+        <Target cardinality="(0,1)" polymorphic="True" roleLabel="Window for Room" >
             <Class class="Window" />
         </Target>
     </ECRelationshipClass>
