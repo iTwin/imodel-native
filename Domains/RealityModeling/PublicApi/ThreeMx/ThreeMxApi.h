@@ -99,7 +99,9 @@ struct Node : Dgn::TileTree::Tile
     typedef std::forward_list<GeometryPtr> GeometryList;
 
 private:
-    double m_maxSize;
+    double m_maxDiameter; // maximum diameter
+    double m_factor=0.5;  // by default, 1/2 of diameter
+
     GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
@@ -113,11 +115,11 @@ private:
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxSize (0.0) {}
+    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
-    double _GetMaximumSize() const override {return m_maxSize;}
+    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
     void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
@@ -141,6 +143,7 @@ private:
 
 public:
     using Root::Root;
+    ~Scene() {ClearAllTiles();}
 
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     BentleyStatus LoadNodeSynchronous(NodeR);
