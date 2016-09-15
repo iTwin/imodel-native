@@ -1524,6 +1524,16 @@ void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& impor
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
+    {
+    m_categoryId = src.GetCategoryId();
+    m_geom = src.GetGeometryStream();
+    m_facetCount = src._GetFacetCount();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_CopyFrom(DgnElementCR el)
@@ -1532,9 +1542,8 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource2d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1547,9 +1556,8 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource3d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -2340,17 +2348,31 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus GeometricElement::GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const
     {
     if (0 == strcmp(name, "GeometryStream"))
         {
         return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
         }
+    if (0 == strcmp(name, GEOM_FacetCount))
+        {
+        value.SetLong(m_facetCount);
+        return DgnDbStatus::Success;
+        }
+    return DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+    {
     if (0 == strcmp(name, "CategoryId"))
         {
         value.SetLong(GetCategoryId().GetValueUnchecked());
         return DgnDbStatus::Success;
         }
+
     if (0 == strcmp(name, "InSpatialIndex"))
         {
         auto gmodel = GetModel()->ToGeometricModel();
@@ -2360,9 +2382,13 @@ DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP na
             value.SetBoolean(CoordinateSpace::World == gmodel->GetCoordinateSpace());
         return DgnDbStatus::Success;
         }
-    DgnDbStatus res = GetPlacementProperty(value, name);
-    if (DgnDbStatus::NotFound != res)
-        return res;
+    
+    DgnDbStatus status;
+    if (DgnDbStatus::NotFound != (status = GetPlacementProperty(value, name)))
+        return status;
+
+    if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
+        return status;
 
     return T_Super::_GetPropertyValue(value, name);
     }
@@ -2370,17 +2396,37 @@ DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus GeometricElement::SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value)
     {
     if (0 == strcmp(name, "GeometryStream"))
         return DgnDbStatus::BadRequest;//  => Use ElementGeometryBuilder
+
+    return DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+    {
+    if (0 == strcmp(name, GEOM_FacetCount))
+        {
+        _RecordFacetCount((size_t)value.GetLong());
+        return DgnDbStatus::Success;
+        }
+    
     if (0 == strcmp(name, "CategoryId"))
         return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+
     if (0 == strcmp(name, "InSpatialIndex"))
         return DgnDbStatus::ReadOnly;
-    DgnDbStatus res = SetPlacementProperty(name, value);
-    if (DgnDbStatus::NotFound != res)
-        return res;
+    
+    DgnDbStatus status;
+    if (DgnDbStatus::NotFound != (status = SetPlacementProperty(name, value)))
+        return status;
+
+    if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
+        return status;
 
     return T_Super::_SetPropertyValue(name, value);
     }
@@ -2850,6 +2896,93 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
 
     m_placement = placement;
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const
+    {
+    bool isplcprop;
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        value.SetPoint2D(GetPlacement().GetOrigin());
+    else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
+        value.SetDouble(GetPlacement().GetAngle().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        value.SetPoint2D(GetPlacement().GetElementBox().low);
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        value.SetPoint2D(GetPlacement().GetElementBox().high);
+        
+    return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    Placement2d plc;
+    bool isplcprop;
+
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint2D();
+    else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
+        (plc = GetPlacement()).GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble());
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2D();
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2D();
+        
+   if (!isplcprop)
+       return DgnDbStatus::NotFound;
+   
+   SetPlacement(plc);
+   return DgnDbStatus::Success;
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+    {
+    if (0 == strcmp(name, "CategoryId"))
+        {
+        value.SetLong(GetCategoryId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+
+    DgnDbStatus status;
+    if (DgnDbStatus::NotFound != (status = GetPlacementProperty(value, name)))
+        return status;
+
+    if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
+        return status;
+
+    return T_Super::_GetPropertyValue(value, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+    {
+    if (0 == strcmp(name, GEOM_FacetCount))
+        {
+        _RecordFacetCount((size_t)value.GetLong());
+        return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp(name, "CategoryId"))
+        return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+
+    DgnDbStatus status;
+    if (DgnDbStatus::NotFound != (status = SetPlacementProperty(name, value)))
+        return status;
+
+    if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
+        return status;
+
+    return T_Super::_SetPropertyValue(name, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3501,6 +3634,10 @@ bool GeometricElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other
 
     if (ignore.find(GEOM_GeometryStream) != ignore.end())
         return true;
+
+    // We need custom logic to compare GeometryStreams because the base class implementation of _EqualProperty cannot get this property's value as an ECN::ECValue.
+    // We DON'T need custom logic to compare any of the other common GeometricElement properties, such as FacetCount or CategoryId,
+    // because the base class implementation CAN get those property values as ECN::ECValues and can therefore compare them using generic logic.
 
     GeometricElement const* othergeom = static_cast<GeometricElement const*>(&other);
 

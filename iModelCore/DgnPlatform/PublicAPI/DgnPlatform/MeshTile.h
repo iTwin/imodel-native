@@ -21,6 +21,7 @@ BENTLEY_RENDER_TYPEDEFS(TileGenerator);
 BENTLEY_RENDER_TYPEDEFS(TileGeometry);
 BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
 BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
+BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
@@ -291,6 +292,65 @@ public:
 };
 
 //=======================================================================================
+//! Filters elements during TileNode generation. Elements are selected according to their
+//! intersection with a TileNode's range, then tested against the supplied ITileGenerationFilter
+//! to apply additional selection criteria.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct ITileGenerationFilter
+{
+protected:
+    virtual bool _AcceptElement(DgnElementId elementId) = 0;
+public:
+    //! Invoked for each element in the tile's range. Returns false to exclude the element from the tile geometry, or true to include it.
+    bool AcceptElement(DgnElementId elementId) { return _AcceptElement(elementId); }
+};
+
+//=======================================================================================
+//! Accepts all elements.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct UnconditionalTileGenerationFilter : ITileGenerationFilter
+{
+protected:
+    virtual bool _AcceptElement(DgnElementId) override { return true; }
+};
+
+//=======================================================================================
+//! Filters elements according to the viewed models and categories associated with a
+//! ViewController.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileViewControllerFilter : ITileGenerationFilter
+{
+protected:
+    struct ModelAndCategorySet : BeSQLite::VirtualSet
+        {
+    private:
+        DgnModelIdSet       m_models;
+        DgnCategoryIdSet    m_categories;
+
+        virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const override
+            {
+            return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
+            }
+    public:
+        ModelAndCategorySet(ViewControllerCR view) : m_models(view.GetViewedModels()), m_categories(view.GetViewedCategories()) { }
+
+        bool IsEmpty() const { return m_models.empty() && m_categories.empty(); }
+        };
+
+    ModelAndCategorySet                     m_set;
+    BeSQLite::EC::CachedECSqlStatementPtr   m_stmt;
+
+    DGNPLATFORM_EXPORT virtual bool _AcceptElement(DgnElementId elementId) override;
+public:
+    DGNPLATFORM_EXPORT TileViewControllerFilter(ViewControllerCR view);
+
+    bool IsEmpty() const { return m_set.IsEmpty(); }
+};
+
+//=======================================================================================
 //! Represents one tile in a HLOD tree occupying a given range and containing higher-LOD
 //! child tiles within the same range.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -342,9 +402,9 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
-    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
-    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, BeSQLite::VirtualSet const& vset, DgnDbR db);
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ViewControllerCR view, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
+    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, ITileGenerationFilterR filter, DgnDbR db);
+    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, ITileGenerationFilterR filter, DgnDbR db);
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
 };
 
 //=======================================================================================
@@ -363,8 +423,8 @@ struct TileGenerator
 
     enum class TaskName
     {
-        CollectingGeometry,
-        CreatingTiles,
+        GeneratingRangeTree,
+        CollectingTileMeshes,
     };
 
     //! Interface adopted by an object which collects generated tiles
@@ -395,18 +455,21 @@ private:
     Statistics          m_statistics;
     IProgressMeter&     m_progressMeter;
     Transform           m_transformFromDgn;
+    DgnDbR              m_dgndb;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, IProgressMeter* progressMeter=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, IProgressMeter* progressMeter=nullptr);
 
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
 
+    DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
 
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileGenerationFilterR filter, size_t maxPointsPerTile);
 };
 
 //=======================================================================================

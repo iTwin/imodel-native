@@ -21,15 +21,26 @@ using namespace BentleyApi::Dgn::Render::Tile3d;
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
+enum class GroundMode
+{
+    Abosolute,
+    FixedHeight,        // Point at center of range and fixed (zero default) height is located at ground level.
+    FixedPoint,         // Specified point is located at ground level.
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
 enum class ParamId
 {
     Input = 0,
     View,
     Output,
     Name,
-    HtmlOnly,
     GroundHeight,
-    Invalid
+    GroundPoint,
+    Tolerance,
+    Invalid,
 };
 
 //=======================================================================================
@@ -53,8 +64,9 @@ static CommandParam s_paramTable[] =
         { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
         { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
         { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
-        { L"h", L"htmlonly", L"'Y' to generate only the html file.", false, true },
-        { L"g", L"groundheight",L"Ground height (in meters).", false},
+        { L"h", L"groundheight",L"Ground height (meters).", false},
+        { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
+        { L"t", L"tolerance",L"Tolerance (meters).", false},
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -119,19 +131,22 @@ private:
     Utf8String      m_viewName;         //!< Name of the view definition from which to publish
     BeFileName      m_outputDir;        //!< Directory in which to place the output
     WString         m_tilesetName;      //!< Root name of the output tileset files
-    bool            m_htmlOnly;         //!< Generate HTML only (not tileset).
     double          m_groundHeight;     //!< Height of ground plane.
-
+    DPoint3d        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
+    GroundMode      m_groundMode;
+    double          m_tolerance;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_htmlOnly (false), m_groundHeight (0.0) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
     Utf8StringCR GetViewName() const { return m_viewName; }
     double  GetGroundHeight() const { return m_groundHeight; }
-    bool GetHtmlOnly() const { return m_htmlOnly; }
+    GroundMode GetGroundMode() const { return m_groundMode; }
+    DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
+    double GetTolerance() const { return m_tolerance; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -230,24 +245,22 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Name:
                 m_tilesetName = arg.m_value.c_str();
                 break;
-            case ParamId::HtmlOnly:
-                m_htmlOnly = true;
-                break;
-            case ParamId::GroundHeight:
-                {
-                double groundHeight;
-
-                if (1 == swscanf (arg.m_value.c_str(), L"%lf", &groundHeight))
+            case ParamId::GroundPoint:
+               if (3 != swscanf (arg.m_value.c_str(), L"%lf,%lf,%lf", &m_groundPoint.x, &m_groundPoint.y, &m_groundPoint.z))
                     {
-                    m_groundHeight = groundHeight;
+                    printf ("Unrecognized ground point: %ls\n", av[i]);
+                    return false;
                     }
-                else
+                break;
+
+            case ParamId::GroundHeight:
+                if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_groundHeight))
                     {
                     printf ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
                 break;
-                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -276,11 +289,18 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
 struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
 {
 private:
-    TileGeneratorP      m_generator = nullptr;
-    Status              m_acceptTileStatus = Status::Success;
+    TileGeneratorP              m_generator = nullptr;
+    TileViewControllerFilter    m_filter;
+    Status                      m_acceptTileStatus = Status::Success;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
+    virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
+
+    Json::Value GetViewJson(TransformCR transform, DPoint3dCR groundPoint);
+    Json::Value GetCategoriesJson();
+    Json::Value GetModelsJson();
+    template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
@@ -293,7 +313,7 @@ private:
     private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
-        uint32_t            m_lastNumCompleted = 0xffffffff;
+        uint32_t            m_lastPercentCompleted = 0xffffffff;
         DgnModelCP          m_model;
         
         virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
@@ -305,13 +325,13 @@ private:
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
         }
 
-    Status Publish(bool appOnly, DPoint3dCR groundPoint);
+    Status Publish(PublisherParams const& params);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
 };
@@ -340,10 +360,70 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
+static Json::Value pointToJson(DPoint3dCR pt)
     {
+    Json::Value json(Json::objectValue);
+    json["x"] = pt.x;
+    json["y"] = pt.y;
+    json["z"] = pt.z;
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> Json::Value TilesetPublisher::GetIdsJson(Utf8CP tableName, T const& ids)
+    {
+    Utf8PrintfString sql("SELECT Id,CodeValue FROM %s WHERE InVirtualSet(@vset,Id)", tableName);
+    BeSQLite::Statement stmt;
+    stmt.Prepare(GetDgnDb(), sql.c_str());
+    stmt.BindVirtualSet(1, ids);
+
+    Json::Value json(Json::arrayValue);
+    while (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value entry(Json::objectValue);
+        entry["id"] = stmt.GetValueId<BeInt64Id>(0).ToString();
+        entry["name"] = stmt.GetValueText(1);
+        json.append(entry);
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetModelsJson()
+    {
+    return GetIdsJson(BIS_TABLE(BIS_CLASS_Model), m_viewController.GetViewedModels());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetCategoriesJson()
+    {
+    return GetIdsJson(BIS_TABLE(BIS_CLASS_Element), m_viewController.GetViewedCategories());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR groundPoint)
+    {
+    Json::Value json(Json::objectValue);
+
+    // URL of tileset .json
+    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
+    Utf8String tilesetUrl = rootNameUtf8;
+    tilesetUrl.append(1, '/');
+    tilesetUrl.append(rootNameUtf8);
+    tilesetUrl.append(".json");
+    json["url"] = tilesetUrl;
+
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
@@ -366,38 +446,69 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
+    // View orientation
+    json["dest"] = pointToJson(viewDest);
+    json["dir"] = pointToJson(zVec);
+    json["up"] = pointToJson(yVec);
+
+    // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
-    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
-    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
-    Utf8String adjustHeightString;
-    
     if (geoLocated)
         {
         DPoint3d    groundEcefPoint;
 
         transform.Multiply (groundEcefPoint, groundPoint);
-        adjustHeightString = Utf8PrintfString (s_adjustTerrainString, groundEcefPoint.x, groundEcefPoint.y, groundEcefPoint.z);
+        json["geolocated"] = true;
+        json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
-    Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
+    // Lists of viewed models/categories
+    json["models"] = GetModelsJson();
+    json["categories"] = GetCategoriesJson();
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
+    {
+    // Generate a JSON representation of the view
+    Json::Value json = GetViewJson(transform, groundPoint);
+
+    BeFileName jsonFileName = m_outputDir;
+    jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
+
+    Utf8String jsonFileNameUtf8(jsonFileName.c_str());
+    jsonFileNameUtf8.ReplaceAll("\\", "//");
+
+    std::FILE* jsonFile = std::fopen(jsonFileNameUtf8.c_str(), "w");
+    if (NULL == jsonFile)
+        return Status::CantWriteToBaseDirectory;
+
+    Utf8String jsonStr = Json::FastWriter().write(json);
+    std::fwrite(jsonStr.c_str(), 1, jsonStr.size(), jsonFile);
+    std::fclose(jsonFile);
 
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), adjustHeightString.c_str(), viewFrameString,  viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
-
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
-
     std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
-    std::fwrite(html.data(), 1, html.size(), htmlFile);
+    if (NULL == htmlFile)
+        return Status::CantWriteToBaseDirectory;
+
+    std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
+    std::fwrite(jsonFileNameUtf8.c_str(), 1, jsonFileNameUtf8.size(), htmlFile);
+    std::fwrite(s_viewerHtmlSuffix, 1, sizeof(s_viewerHtmlSuffix)-1, htmlFile);
     std::fclose(htmlFile);
 
-    // Symlink the Cesium dir, if not already present
-    BeFileName cesiumSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    cesiumSrcDir.AppendToPath(L"scripts");
-    cesiumSrcDir.AppendToPath(L"Cesium");
-    BeFileName cesiumDstDir(m_outputDir);
-    cesiumDstDir.AppendToPath(L"Cesium");
-    BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
+    // Symlink the scripts, if not already present
+    BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    scriptsSrcDir.AppendToPath(L"scripts");
+    BeFileName scriptsDstDir(m_outputDir);
+    scriptsDstDir.AppendToPath(L"scripts");
+    BeFileName::CloneDirectory(scriptsSrcDir.c_str(), scriptsDstDir.c_str());
 
     return Status::Success;
     }
@@ -424,20 +535,21 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
     {
-    if (m_lastNumCompleted == completed)
+    uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
+
+    if (m_lastPercentCompleted == pctComplete)
         {
         printf("...");
         }
     else
         {
-        m_lastNumCompleted = completed;
-        uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
         Utf8String  modelNameString;   
 
         if (nullptr != m_model)
             modelNameString = " (" +  m_model->GetName() + ")";
 
         printf("\n%s%s: %u%% (%u/%u)%s", m_taskName.c_str(), modelNameString.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        m_lastPercentCompleted = pctComplete;
         }
     }
 
@@ -446,10 +558,10 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Generating range tree";
+    Utf8String newTaskName = (TileGenerator::TaskName::CollectingTileMeshes == task) ? "Publishing tiles" : "Generating range tree";
     if (!m_taskName.Equals(newTaskName))
         {
-        m_lastNumCompleted = 0xffffffff;
+        m_lastPercentCompleted = 0xffffffff;
         m_taskName = newTaskName;
         }
     }
@@ -457,27 +569,41 @@ void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::Publish(bool appOnly, DPoint3dCR groundPoint)
+PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
-    if (!appOnly)
+    auto status = Setup();
+    if (Status::Success != status)
+        return status;
+
+    ProgressMeter progressMeter(*this);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), &progressMeter);
+
+    DRange3d            range;
+
+    m_generator = &generator;
+    PublishViewModels(generator, *this, range, params.GetTolerance(), progressMeter);
+    m_generator = nullptr;
+
+    if (Status::Success != status)
+        return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+
+    OutputStatistics(generator.GetStatistics());
+
+    DPoint3d        groundPoint;
+
+    if (GroundMode::FixedPoint == params.GetGroundMode())
         {
-        auto status = Setup();
-        if (Status::Success != status)
-            return status;
+        groundPoint = params.GetGroundPoint();
+        }
+    else
+        {
+        Transform   tileToDb;
 
-        ProgressMeter progressMeter(*this);
-        TileGenerator generator (m_dbToTile, &progressMeter);
-
-        static double       s_toleranceInMeters = 0.01;
-
-        m_generator = &generator;
-        PublishViewModels(generator, *this, s_toleranceInMeters, progressMeter);
-        m_generator = nullptr;
-
-        if (Status::Success != status)
-            return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
-
-        OutputStatistics(generator.GetStatistics());
+        tileToDb.InverseOf (m_dbToTile);
+        
+        groundPoint = DPoint3d::FromInterpolate (range.low, .5, range.high);
+        tileToDb.Multiply (groundPoint);
+        groundPoint.z = params.GetGroundHeight();
         }
 
     return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
@@ -583,9 +709,10 @@ int wmain(int ac, wchar_t const** av)
            "\tData: %ls\n",
             createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
-    auto status = publisher.Publish (createParams.GetHtmlOnly(), DPoint3d::From (0.0, 0.0, createParams.GetGroundHeight()));
+    auto status = publisher.Publish (createParams);
     printStatus(status);
 
     return static_cast<int>(status);
     }
+
 

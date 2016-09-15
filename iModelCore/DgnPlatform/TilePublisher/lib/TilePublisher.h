@@ -49,7 +49,7 @@ public:
 struct PublisherContext
 {
     enum class Status
-    {
+        {
         Success = SUCCESS,
         NoGeometry,
         Aborted,
@@ -58,7 +58,9 @@ struct PublisherContext
         ErrorWritingScene,
         ErrorWritingNode,
         NotImplemented,
-    };
+        };
+
+
 protected:
     ViewControllerR     m_viewController;
     BeFileName          m_outputDir;
@@ -73,10 +75,11 @@ protected:
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
+    virtual ITileGenerationFilterR _GetFilter() = 0;
 
     TILEPUBLISHER_EXPORT Status Setup();
 
-    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
     Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
     Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
     TILEPUBLISHER_EXPORT Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
@@ -96,6 +99,7 @@ public:
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
+    ITileGenerationFilterR GetFilter() { return _GetFilter(); }
 };
 
 //=======================================================================================
