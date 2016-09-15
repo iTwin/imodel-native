@@ -32,6 +32,7 @@ void IOThreadPool::Worker::Work()
             }
 
         task();
+        m_pool.m_cv.notify_one();
         }
     }
 
@@ -101,7 +102,11 @@ void IOThreadPool::WaitForIdle()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IOThreadPool::~IOThreadPool()
     {
-    m_stop = true;
+    if (true)
+        {
+        BeMutexHolder holder(m_cv.GetMutex());
+        m_stop = true;
+        }
     m_cv.notify_all();
 
     WaitForIdle();
