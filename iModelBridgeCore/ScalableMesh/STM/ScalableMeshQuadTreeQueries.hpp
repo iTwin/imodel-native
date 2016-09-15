@@ -471,14 +471,26 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
         }
 
 
-    bool isVisible = GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
+    bool isVisible = m_extent3d != nullptr || GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
 
+    if (m_extent3d != nullptr)
+        {
+        double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
+        double tolerance = maxDimension / cos(PI / 4);
+
+        DPoint3d center;
+
+        center.Init(ExtentOp<EXTENT>::GetXMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()) / 2,
+                    ExtentOp<EXTENT>::GetYMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetHeight(node->GetContentExtent()) / 2,
+                    ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2);
+        isVisible = m_extent3d->PointInside(center, tolerance);
+        }
 
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {
         // If this is the appropriate level or it is a higher level and progressive is set.
         if (
-            m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
+            m_useAllRes || m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
             if (node->m_nodeHeader.m_nbFaceIndexes > 0)
@@ -885,7 +897,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
             //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
             double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
-            double tolerance = maxDimension / cos(PI / 4);
+            double tolerance =  sqrt(2)* maxDimension / cos(PI / 4);
 
             DPoint3d center;
 
@@ -905,12 +917,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             }
 
         bool finalNode = false;
-
+        bool shouldAddNode = true;
         // Check if coordinate falls inside node extent
         //NEEDS_WORK_SM : The incorrect one is use, probably need to change the UI accordingly or use the parent data with limited region.
         if (s_useNew3dLODQuery /*&& (m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0)*/)
             {
-            finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix);
+            finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix, shouldAddNode);
             }
         else
             {
@@ -928,7 +940,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 {         
                 //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
                 static bool s_clipMesh = true;
-                                
+                if (shouldAddNode)
                 meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 /*
                 if (s_clipMesh == true)
@@ -1035,7 +1047,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
         //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
         double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
-        double tolerance = maxDimension / cos(PI / 4);
+        double tolerance =  maxDimension / cos(PI / 4);
 
         DPoint3d center;
 
@@ -1055,12 +1067,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         }
 
     bool finalNode = false;
-
+    bool shouldAddNode = true;
     // Check if coordinate falls inside node extent
     //NEEDS_WORK_SM : The incorrect one is use, probably need to change the UI accordingly or use the parent data with limited region.
     if (s_useNew3dLODQuery /*&& (m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0)*/)
         {
-        finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix);
+        finalNode = !IsCorrectForCurrentViewSphere(node, visibleExtent, m_rootToViewMatrix, shouldAddNode);
         }
     else
         {
@@ -1078,7 +1090,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             {         
             //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
             static bool s_clipMesh = true;                                
-            foundNodes.AddNode(node);
+            if (shouldAddNode) foundNodes.AddNode(node);
             /*
             if (s_clipMesh == true)
                 { 
@@ -1349,7 +1361,8 @@ static bool s_useSplit = false;
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                                                   const EXTENT&                           pi_visibleExtent,                                                                                                                                  
-                                                                                                                                  double                                  pi_RootToViewMatrix[][4]) const
+                                                                                                                                  double                                  pi_RootToViewMatrix[][4],
+                                                                                                                                  bool& shouldAddNode ) const
     {    
     bool IsCorrect = false;
     if (!node->IsLoaded())

@@ -478,8 +478,10 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
                          int   numberOfPoints,
                          bool  isClipMask)
     {
+#ifdef VANCOUVER_API
     if(HRFGeoCoordinateProvider::GetServices() == NULL)
         return ERROR;
+#endif
 
     // We first validate the clip shape being provided
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());       HArrayAutoPtr<double> tempBuffer(new double[numberOfPoints * 2]);
@@ -521,13 +523,16 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
     assert(m_sourceGCS.HasGeoRef());
     assert(m_targetGCS.HasGeoRef());
 
+#ifdef VANCOUVER_API
     IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
     IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget,*pSource);
-
+#else
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*m_targetGCS.GetGeoRef().GetBasePtr(), *m_sourceGCS.GetGeoRef().GetBasePtr());
+#endif
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, pSourceCS);
@@ -1484,7 +1489,11 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
         {
+#ifdef VANCOUVER_API
         bcdtm = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
+        bcdtm = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         }
     else return DTM_ERROR;
 
@@ -1579,6 +1588,10 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
         pts[0] = m_points[m_faceIndexes[i] - 1];
         pts[1] = m_points[m_faceIndexes[i + 1] - 1];
         pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
 
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
             && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param < minParam;
@@ -2096,6 +2109,11 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     return _GetLevel();
     }
 
+bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
+    {
+    return _GetUseAllResolutions();
+    }
+
 void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
@@ -2105,6 +2123,11 @@ void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates
 void IScalableMeshMeshQueryParams::SetLevel(size_t depth)
     {
     _SetLevel(depth);
+    }
+
+void IScalableMeshMeshQueryParams::SetUseAllResolutions(bool useAllResolutions)
+    {
+    _SetUseAllResolutions(useAllResolutions);
     }
 
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
@@ -2202,6 +2225,12 @@ int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                
     return _Query(meshNodes, pQueryExtentPts, nbQueryExtentPts, scmQueryParamsPtr);
     }
 
+int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                      meshNodes,
+                                  ClipVectorCP                                       queryExtent3d,
+                                  const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const
+    {
+    return _Query(meshNodes, queryExtent3d, scmQueryParamsPtr);
+    }
 
 static bool s_passNormal = false;
 
@@ -2311,6 +2340,16 @@ BcDTMPtr IScalableMeshNode::GetBcDTM() const
 bool IScalableMeshNode::ArePointsFullResolution() const
     {
     return _ArePointsFullResolution();
+    }
+
+bool IScalableMeshNode::IsDataUpToDate() const
+    {
+    return _IsDataUpToDate();
+    }
+
+void IScalableMeshNode::UpdateData() 
+    {
+    return _UpdateData();
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
@@ -2498,6 +2537,11 @@ StatusInt IScalableMeshCachedDisplayNode::GetCachedMesh(SmCachedDisplayMesh*& ca
 StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const
     {
     return _GetCachedTexture(cachedTexture);
+    }
+
+StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const
+    {
+    return _GetDisplayClipVectors(clipVectors);
     }
     
 /*==================================================================*/

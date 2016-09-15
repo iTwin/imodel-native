@@ -27,6 +27,8 @@
 #include "Edits\Skirts.h"
 #include <map>
 
+#include "ScalableMeshQuadTreeQueries.h"
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #define SM_OUTPUT_MESHES_GRAPH 0
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -334,7 +336,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     {
     HINVARIANTS;
     bool returnValue = true;
-    
+    if (!m_remainingUnappliedEdits.empty())
+        {
+        UpdateData();
+        }
     if (!m_destroyed)
         {
              
@@ -757,6 +762,100 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     }
 
 #endif
+
+
+//=======================================================================================
+// @bsimethod                                                  Elenie.Godzaridis 08/16
+//=======================================================================================
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveWithin(ClipVectorCP boundariesToRemoveWithin)
+    {
+    DRange3d range;
+    boundariesToRemoveWithin->GetRange(range, nullptr);
+    if (m_nodeHeader.m_contentExtentDefined && !range.IntersectsWith(m_nodeHeader.m_contentExtent)) return;
+    if (m_nodeHeader.m_nodeCount < 3) return;
+
+    bset<int32_t> removedPts;
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr = GetPointsPtr();
+
+    for (size_t i = 0; i < ptsPtr->size(); ++i)
+        {
+        if (boundariesToRemoveWithin->PointInside((*ptsPtr)[i], 1e-8))
+            removedPts.insert((int)i);
+        }
+    bvector<DPoint3d> clearedPts;
+    bvector<int32_t> clearedIndices;
+    bmap<int32_t, int32_t> oldToNewIndices;
+
+    bvector<int32_t> newUvsIndices;
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvsIndicePtr = GetUVsIndicesPtr();
+
+    for (size_t i = 0; i < ptsIndicePtr->size(); i += 3)
+        {
+        if (removedPts.count((*ptsIndicePtr)[i]-1) == 0 && removedPts.count((*ptsIndicePtr)[i + 1]-1) == 0 && removedPts.count((*ptsIndicePtr)[i + 2]-1) == 0)
+            {
+            for (size_t j = 0; j < 3; ++j)
+                {
+                if (oldToNewIndices.count((*ptsIndicePtr)[i + j]) == 0)
+                    {
+                    oldToNewIndices[(*ptsIndicePtr)[i + j]] = (int)clearedPts.size()+1;
+                    clearedPts.push_back((*ptsPtr)[(*ptsIndicePtr)[i + j] - 1]);
+                    }
+                clearedIndices.push_back(oldToNewIndices[(*ptsIndicePtr)[i + j]]);
+
+                if (uvsIndicePtr.IsValid() && uvsIndicePtr->size() > 0)
+                    newUvsIndices.push_back((*uvsIndicePtr)[i + j]);
+                }
+            }
+        }
+    ptsPtr->clear();
+    ptsIndicePtr->clear();
+    if (uvsIndicePtr.IsValid())
+        uvsIndicePtr->clear();
+    if (!clearedPts.empty())
+        {
+        ptsPtr->push_back(&clearedPts[0], clearedPts.size());
+        if (!clearedIndices.empty())
+            ptsIndicePtr->push_back(&clearedIndices[0], clearedIndices.size());
+        if (!newUvsIndices.empty())
+            uvsIndicePtr->push_back(&newUvsIndices[0], newUvsIndices.size());
+        }
+
+    //mark data not up to date
+    SetDirty(true);
+    }
+
+
+//=======================================================================================
+// @bsimethod                                                  Elenie.Godzaridis 08/16
+//=======================================================================================
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::UpdateData()
+    {
+    if (!m_remainingUnappliedEdits.empty())
+        {
+        for (auto& edit : m_remainingUnappliedEdits)
+            {
+            if (edit->m_opType == EditOperation::Op::REMOVE)
+                RemoveWithin(edit->m_toRemoveVector.get());
+            }
+        m_remainingUnappliedEdits.clear();
+        }
+
+    GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID()); //we need to do that now since we set it not dirty afterward
+    //mark data up to date
+    SetDirty(false);
+    }
+
+
+//=======================================================================================
+// @bsimethod                                                  Elenie.Godzaridis 08/16
+//=======================================================================================
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::AddEdit(RefCountedPtr<EditOperation>& editDef)
+    {
+    m_remainingUnappliedEdits.push_back(editDef);
+    SetDirty(true);
+    }
+
 //=======================================================================================
 // @bsimethod                                                  Elenie.Godzaridis 03/15
 //=======================================================================================
@@ -4046,6 +4145,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
 
 template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
     {
+
     if (m_mesher2_5d != NULL)
         delete m_mesher2_5d;
 
@@ -4281,6 +4381,34 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMe
     this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
     return SUCCESS;
+    }
+
+template<class POINT, class EXTENT>  int     SMMeshIndex<POINT, EXTENT>::RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes)
+    {
+    for (auto& node : priorityNodes)
+        {
+        HFCPtr<SMPointIndexNode<POINT,EXTENT>> nodeP = dynamic_cast<ScalableMeshNode<POINT>*>(node.get())->GetNodePtr();
+        ((SMMeshIndexNode<POINT,EXTENT>*)nodeP.GetPtr())->RemoveWithin(boundariesToRemoveWithin);
+        }
+
+    DRange3d range;
+    boundariesToRemoveWithin->GetRange(range, nullptr);
+    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(
+        range, GetDepth(), boundariesToRemoveWithin, true));
+
+    vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
+
+    if (Query(meshQueryP, returnedMeshNodes))
+        {
+        RefCountedPtr<EditOperation> editDef = EditOperation::Create(EditOperation::Op::REMOVE, boundariesToRemoveWithin);
+        for (auto& node : returnedMeshNodes)
+            {
+            ((SMMeshIndexNode<POINT,EXTENT>*)(&*node.m_indexNode))->AddEdit(editDef);
+            }
+        m_edits.push_back(editDef);
+        }
+
+    return SMStatus::S_SUCCESS;
     }
 
 /**----------------------------------------------------------------------------

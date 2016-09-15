@@ -3631,12 +3631,12 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     HINVARIANTS;
     bool returnValue = true;
 
-    if (!m_destroyed && IsLoaded())
+    if (!m_destroyed)
         {        
         // Save the current blockID        
         bool needStoreHeader = m_isDirty;
         
-        if (needStoreHeader) 
+        if (needStoreHeader && IsLoaded())
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             

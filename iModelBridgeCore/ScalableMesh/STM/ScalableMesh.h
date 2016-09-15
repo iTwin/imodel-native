@@ -272,6 +272,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
                                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                               const DRange3d&                      extentInTargetGCS) const override;
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
+
+        virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override;
+
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override;        
         virtual ScalableMeshState             _GetState() const override;     
@@ -380,6 +383,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
                                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                               const DRange3d&                      extentInTargetGCS) const override;
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
+
+        virtual IScalableMeshEditPtr    _GetMeshEditInterface() const override { return nullptr; };
+
         const GeoCoords::GCS&          _GetGCS() const override;
         StatusInt                      _SetGCS(const GeoCoords::GCS& sourceGCS) override;
         virtual ScalableMeshState             _GetState() const override;   
