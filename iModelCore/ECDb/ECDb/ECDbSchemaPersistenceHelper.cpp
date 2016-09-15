@@ -183,8 +183,10 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, ECClassId e
     if (stmt == nullptr)
         return ECPropertyId();
 
-    if (BE_SQLITE_OK != stmt->BindId(1, ecClassId) ||
-        BE_SQLITE_OK != stmt->BindText(1, propertyName, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
+        return ECPropertyId();
+    
+    if (BE_SQLITE_OK != stmt->BindText(2, propertyName, Statement::MakeCopy::No))
         return ECPropertyId();
 
     if (BE_SQLITE_ROW != stmt->Step())
