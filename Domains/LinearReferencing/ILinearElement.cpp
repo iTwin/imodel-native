@@ -10,14 +10,21 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocated::ILinearlyLocated(Dgn::DgnElementId linearElementId)
+ILinearlyLocated::ILinearlyLocated()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearlyLocated::_SetLinearElementId(DgnElementId linearElementId)
     {
     if (linearElementId.IsValid())
-        ToElementP()->SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
+        ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
     else
         {
         ECValue val; val.SetToNull();
-        ToElementP()->SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
+        ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
         }
     }
 
@@ -26,7 +33,7 @@ ILinearlyLocated::ILinearlyLocated(Dgn::DgnElementId linearElementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ILinearlyLocated::GetLinearElementId() const 
     {
-    ECN::ECValue val; 
+    ECValue val; 
     ToElement().GetPropertyValue(val, BLR_PROP_ILinearlyLocated_ILinearElement);
     return DgnElementId((uint64_t)val.GetLong());
     }
@@ -70,7 +77,7 @@ LinearlyReferencedLocationCP ILinearlyLocated::GetLinearlyReferencedLocation(Lin
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(LinearlyReferencedLocationId id)
     {
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedLocation>(*ToElementP(), *QueryClass(ToElement().GetDgnDb()), id);
+    return DgnElement::MultiAspect::GetP<LinearlyReferencedLocation>(ToElementR(), *QueryClass(ToElement().GetDgnDb()), id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,21 +85,19 @@ LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(Lin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ILinearlyLocated::_AddLinearlyReferencedLocation(LinearlyReferencedLocationR location)
     {
-    DgnElement::MultiAspect::AddAspect(*ToElementP(), location);
+    DgnElement::MultiAspect::AddAspect(ToElementR(), location);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocatedAttribution::ILinearlyLocatedAttribution(Dgn::DgnElementId linearElementId):
-    T_Super(linearElementId)
+ILinearlyLocatedAttribution::ILinearlyLocatedAttribution()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocatedElement::ILinearlyLocatedElement(Dgn::DgnElementId linearElementId):
-    T_Super(linearElementId)
+ILinearlyLocatedElement::ILinearlyLocatedElement()
     {
     }

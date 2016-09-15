@@ -47,7 +47,7 @@ DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
-        "SET AtPosition.DistanceAlongFromStart = ?, AtPosition.LateralOffsetFromILinear = ?, AtPosition.VerticalOffsetFromILinear = ?, "
+        "SET AtPosition.DistanceAlongFromStart = ?, AtPosition.LateralOffsetFromILinearElement = ?, AtPosition.VerticalOffsetFromILinearElement = ?, "
         "   AtPosition.DistanceAlongFromReferent = ?, FromReferent = ? "
         "WHERE ECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
@@ -88,7 +88,7 @@ DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el)
 DgnDbStatus LinearlyReferencedAtLocation::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT AtPosition.DistanceAlongFromStart, AtPosition.LateralOffsetFromILinear, AtPosition.VerticalOffsetFromILinear,"
+        "SELECT AtPosition.DistanceAlongFromStart, AtPosition.LateralOffsetFromILinearElement, AtPosition.VerticalOffsetFromILinearElement,"
         "   AtPosition.DistanceAlongFromReferent, FromReferent " 
         "FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
         "WHERE ECInstanceId = ?;");
@@ -139,9 +139,9 @@ DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
-        "SET FromPosition.DistanceAlongFromStart = ?, FromPosition.LateralOffsetFromILinear = ?, FromPosition.VerticalOffsetFromILinear = ?, "
+        "SET FromPosition.DistanceAlongFromStart = ?, FromPosition.LateralOffsetFromILinearElement = ?, FromPosition.VerticalOffsetFromILinearElement = ?, "
         "   FromPosition.DistanceAlongFromReferent = ?, FromPositionFromReferent = ?, "
-        "   ToPosition.DistanceAlongFromStart = ?, ToPosition.LateralOffsetFromILinear = ?, ToPosition.VerticalOffsetFromILinear = ?, "
+        "   ToPosition.DistanceAlongFromStart = ?, ToPosition.LateralOffsetFromILinearElement = ?, ToPosition.VerticalOffsetFromILinearElement = ?, "
         "   ToPosition.DistanceAlongFromReferent = ?, ToPositionFromReferent = ? "
         "WHERE ECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());

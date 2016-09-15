@@ -13,12 +13,12 @@
 bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const
     {
     Utf8String ecSql(
-        "SELECT LinearlyLocated.ElementId, AtLocation.AtPosition.DistanceAlongFromStart, "
+        "SELECT LinearlyLocated.ECInstanceId, AtLocation.AtPosition.DistanceAlongFromStart, "
             "FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart FROM "
-        "(SELECT ElementId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ?) LinearlyLocated, "
+        "(SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ?) LinearlyLocated, "
         BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation, "
-        BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " FromToLocation "
-        "WHERE (LinearlyLocated.ElementId = AtLocation.ElementId ");
+        BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation "
+        "WHERE (LinearlyLocated.ECInstanceId = AtLocation.ElementId ");
 
     bvector<NullableDouble> bindVals;
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
@@ -35,13 +35,13 @@ bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(NullableDouble 
         }
     else if (fromDistanceAlong.IsNull() && toDistanceAlong.IsNull())
         {
-        ecSql.append(") OR (LinearlyLocated.ElementId = FromToLocation.ElementId) ");
+        ecSql.append(") OR (LinearlyLocated.ECInstanceId = FromToLocation.ElementId) ");
         }
     else if (fromDistanceAlong.IsValid())
         {
         ecSql.append(
             "AND AtLocation.AtPosition.DistanceAlongFromStart >= ?) "
-            "OR (LinearlyLocated.ElementId = FromToLocation.ElementId AND "
+            "OR (LinearlyLocated.ECInstanceId = FromToLocation.ElementId AND "
                 "(FromToLocation.FromPosition.DistanceAlongFromStart >= ? OR FromToLocation.ToPosition.DistanceAlongFromStart >= ?)) ");
 
         bindVals.push_back(fromDistanceAlong);
@@ -52,7 +52,7 @@ bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(NullableDouble 
         {
         ecSql.append(
             "AND AtLocation.AtPosition.DistanceAlongFromStart <= ? ) "
-            "OR (LinearlyLocated.ElementId = FromToLocation.ElementId AND "
+            "OR (LinearlyLocated.ECInstanceId = FromToLocation.ElementId AND "
                 "(FromToLocation.FromPosition.DistanceAlongFromStart <= ? OR FromToLocation.ToPosition.DistanceAlongFromStart <= ?)) ");
 
         bindVals.push_back(toDistanceAlong);
