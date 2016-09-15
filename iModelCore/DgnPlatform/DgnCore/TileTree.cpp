@@ -31,7 +31,7 @@ struct TileCache : RealityData::Cache
 // This object is created to load a single tile asynchronously. 
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
-struct TileData
+struct TileData 
 {
 protected:
     Root& m_root;               // save this separate from tile, since that can be null
@@ -40,9 +40,17 @@ protected:
     Utf8String m_shortName;     // for loading or saving to tile cache
     mutable StreamBuffer m_tileBytes; // when available, bytes are saved here
     StreamBuffer* m_output;     // for "non tile" requests
+    mutable TileLoadsPtr m_loads;
 
 public:
-    TileData(Utf8StringCR filename, TileP tile, Root& root, StreamBuffer* output) : m_fileName(filename), m_root(root), m_tile(tile), m_output(output) 
+    struct TileLoader
+    {
+        Root& m_root;
+        TileLoader(Root& root) : m_root(root) {root.StartTileLoad();}
+        ~TileLoader() {m_root.DoneTileLoad();}
+    };
+
+    TileData(Utf8StringCR filename, TileP tile, Root& root, StreamBuffer* output, TileLoadsPtr loads) : m_fileName(filename), m_root(root), m_tile(tile), m_output(output), m_loads(loads)
         {
         if (tile)
             m_shortName = tile->_GetTileName(); // Note: we must save this in the ctor, since it is not safe to call this on other threads.
@@ -50,9 +58,18 @@ public:
 
     BentleyStatus DoRead() const 
         {
+        if (m_loads!=nullptr && m_loads->IsCanceled())
+            {
+            if (m_tile.IsValid()) 
+                m_tile->SetNotLoaded();
+
+            return ERROR;
+            }
+
         if (m_tile.IsValid() && !m_tile->IsQueued())
             return SUCCESS; // this node was abandoned.
 
+        TileLoader loadFlag(m_root);
         return m_root.IsHttp() ? LoadFromHttp() : ReadFromFile();
         }
 
@@ -97,6 +114,9 @@ BentleyStatus TileData::ReadFromFile() const
         return ERROR;
         }
 
+    if (m_loads!=nullptr)
+        m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
+
     return SUCCESS;
     }
 
@@ -112,8 +132,10 @@ BentleyStatus TileData::LoadFromDb() const
 
     if (true)
         {
+        RealityData::Cache::CacheReader readFlag(*cache);
+
         CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
             return ERROR;
 
         Utf8StringCR name = m_shortName.empty() ? m_fileName : m_shortName;
@@ -124,12 +146,30 @@ BentleyStatus TileData::LoadFromDb() const
 
         m_tileBytes.SaveData((Byte*)stmt->GetValueBlob(0), stmt->GetValueInt(1));
         m_tileBytes.SetPos(0);
+
+        uint64_t rowId = stmt->GetValueInt64(2);
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
+            {
+            stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+            stmt->BindInt64(2, rowId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false);
+                }
+            }
+
         }
 
     if (nullptr != m_output) // is this is the scene file?
         {
         *m_output = std::move(m_tileBytes); // yes, just save its data. We're going to load it synchronously
         return SUCCESS;
+        }
+
+    if (m_loads!=nullptr)
+        {
+        m_loads->m_fromDb.IncrementAtomicPre(std::memory_order_relaxed);
+        m_loads=nullptr; 
         }
 
     BeAssert(m_tile->IsQueued());
@@ -149,10 +189,19 @@ BentleyStatus TileData::LoadFromHttp() const
     Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
     Http::Request request(m_fileName);
     request.SetResponseBody(responseBody);
+    if (nullptr != m_loads)
+        request.SetCancellationToken(m_loads);
+
     Http::Response response = request.Perform();
 
     if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
         {
+        if (response.GetConnectionStatus() == Http::ConnectionStatus::Canceled)
+            {
+            m_tile->SetNotLoaded();
+            return ERROR;
+            }
+
         DEBUG_PRINTF("Tile Not Found %s", m_shortName.c_str());
         m_tile->SetNotFound();
         return ERROR;
@@ -166,9 +215,18 @@ BentleyStatus TileData::LoadFromHttp() const
 
     m_tileBytes = std::move(responseBody->GetByteStream());
 
+    if (m_tile->IsAbandoned())
+        return ERROR;
+
     BeAssert(m_tile->IsQueued());
     if (SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
         return ERROR;
+
+    if (m_loads!=nullptr)
+        {
+        m_loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
+        m_loads=nullptr; // for debugging, mostly
+        }
 
     SaveToDb();
     return SUCCESS;
@@ -182,15 +240,18 @@ BentleyStatus TileData::SaveToDb() const
     {
     auto cache = m_root.GetCache();
     if (!cache.IsValid())
-        {
         return ERROR;
-        }
 
     BeAssert(m_tileBytes.HasData());
 
+    RealityData::Cache::CacheReader readFlag(*cache);
+
     Utf8StringCR name = m_shortName.empty() ? m_fileName : m_shortName;
     CachedStatementPtr stmt;
-    cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
+
+    BeAssert(rc==BE_SQLITE_OK);
+    BeAssert(stmt.IsValid());
 
     stmt->ClearBindings();
     stmt->BindText(1, name, Statement::MakeCopy::No);
@@ -200,14 +261,13 @@ BentleyStatus TileData::SaveToDb() const
     if (m_tile.IsValid()) // for the root, store NULL for time. That way it will never get purged.
         stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
-    auto rc = stmt->Step();
+    rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    cache->ScheduleSave();
     return SUCCESS;
     }
 
@@ -232,6 +292,8 @@ BentleyStatus TileCache::_Prepare() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Cleanup() const 
     {
+    RealityData::Cache::CacheReader readFlag(const_cast<TileCache&>(*this));
+
     CachedStatementPtr sumStatement;
     m_db.GetCachedStatement(sumStatement, "SELECT SUM(DataSize) FROM " TABLE_NAME_TileTree);
 
@@ -245,7 +307,7 @@ BentleyStatus TileCache::_Cleanup() const
     if (sum <= m_allowedSize)
         return SUCCESS;
 
-    uint64_t garbageSize = sum - m_allowedSize;
+    uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
     m_db.GetCachedStatement(selectStatement, "SELECT DataSize,Created FROM " TABLE_NAME_TileTree " ORDER BY Created ASC");
@@ -274,11 +336,26 @@ BentleyStatus TileCache::_Cleanup() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::ClearAllTiles()
+    {
+    if (!m_rootTile.IsValid())
+        return;
+
+    m_rootTile->SetAbandoned();
+    m_rootTile = nullptr;
+    WaitForAllLoads();
+
+    m_cache = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Root::DeleteCacheFile()
     {
-    m_cache = nullptr;
+    ClearAllTiles();
     return BeFileNameStatus::Success == m_localCacheName.BeDeleteFile() ? SUCCESS : ERROR;
     }
 
@@ -302,14 +379,14 @@ folly::Future<BentleyStatus> Root::_RequestFile(Utf8StringCR fileName, StreamBuf
     {
     DgnDb::VerifyClientThread();
 
-    TileData data(fileName, nullptr, *this, &buffer);
+    TileData data(fileName, nullptr, *this, &buffer, nullptr);
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.DoRead();});
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile)
+folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile, TileLoadsPtr loads)
     {
     DgnDb::VerifyClientThread();
 
@@ -319,8 +396,11 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile)
         return ERROR;
         }
 
+    if (loads)
+        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
+
     tile.SetIsQueued(); // mark as queued so we don't request it again.
-    TileData data(_ConstructTileName(tile), (TileP) &tile, *this, nullptr);
+    TileData data(_ConstructTileName(tile), (TileP) &tile, *this, nullptr, loads);
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.DoRead();}); // add to download queue
     }
 
@@ -501,6 +581,14 @@ int Tile::CountTiles() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileLoads::~TileLoads()
+    {
+    DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled, m_requested, m_fromFile, m_fromHttp, m_fromDb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -544,12 +632,12 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 * Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root)
+void DrawArgs::RequestMissingTiles(RootR root, TileLoadsPtr loads)
     {
     // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
     for (auto const& tile : m_missing)
         {
         if (tile.second->IsNotLoaded())
-            root._RequestTile(*tile.second);
+            root._RequestTile(*tile.second, loads);
         }
     }

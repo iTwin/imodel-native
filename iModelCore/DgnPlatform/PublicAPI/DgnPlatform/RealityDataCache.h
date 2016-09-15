@@ -43,7 +43,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase
 protected:
     typedef RefCountedPtr<Worker> WorkerPtr;
     bool m_isStopped=false;
-    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(2);
+    int m_readers = 0;
+    int m_writers = 0;
+    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(5);
     WorkerPtr m_worker;
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
@@ -55,6 +57,30 @@ protected:
     virtual BentleyStatus _Cleanup() const = 0;
 
 public:
+    friend struct CacheReader;
+    friend struct CacheWriter;
+    //=======================================================================================
+    // On construction block until no writers. Then hold read lock until destruction.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct CacheReader
+    {
+        CacheR m_cache;
+        CacheReader(CacheR cache) : m_cache(cache) {BeMutexHolder holder(cache.m_cv.GetMutex()); while (cache.m_writers>0) cache.m_cv.InfiniteWait(holder); ++cache.m_readers;}
+        ~CacheReader() {{BeMutexHolder holder(m_cache.m_cv.GetMutex()); --m_cache.m_readers; m_cache.ScheduleSave(); BeAssert(m_cache.m_readers>=0);} m_cache.m_cv.notify_all();}
+    };
+
+    //=======================================================================================
+    // On construction block until no readers. Then hold write lock until destruction.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct CacheWriter
+    {
+        CacheR m_cache;
+        CacheWriter(CacheR cache) : m_cache(cache) {BeMutexHolder holder(cache.m_cv.GetMutex()); while (cache.m_readers>0) cache.m_cv.InfiniteWait(holder); ++cache.m_writers;}
+        ~CacheWriter() {{BeMutexHolder holder(m_cache.m_cv.GetMutex()); --m_cache.m_writers; BeAssert(m_cache.m_writers>=0);} m_cache.m_cv.notify_all();}
+    };
+
     Cache() = default;
     DGNPLATFORM_EXPORT ~Cache();
 
