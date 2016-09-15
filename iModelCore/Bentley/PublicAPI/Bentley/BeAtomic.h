@@ -20,7 +20,7 @@
 //=======================================================================================
 template<class T> struct BeAtomic : std::atomic<T>
 {
-    explicit BeAtomic(T val=0) : std::atomic<T>(val){}
+    explicit BeAtomic(T val=T(0)) : std::atomic<T>(val){}
     T IncrementAtomicPre(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_add(1, order)+1;}
     T DecrementAtomicPost(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_sub(1, order);}
 };
