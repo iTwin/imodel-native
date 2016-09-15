@@ -10,9 +10,6 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/TxnManager.h>
 
-// helper macro for using the BeSQLite namespace
-USING_NAMESPACE_BENTLEY_SQLITE
-
 // helper macro for using the DgnPlatform namespace
 USING_NAMESPACE_BENTLEY_DGN
 //__PUBLISH_EXTRACT_END__
@@ -30,8 +27,8 @@ struct TestTxnMonitor : TxnMonitor
     };
 
 //---------------------------------------------------------------------------------------
-// Detect deletions of elements of one or more particular classes. 
-// This query is very fast, as the element changes table is indexed on ECClassId
+// The _OnCommit virtual function is invoked by TxnManager at each transaction boundary.
+// In this example, we show two ways to detect deleted elements by class.
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
 void TestTxnMonitor::_OnCommit(TxnManager& txnMgr)

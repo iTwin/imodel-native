@@ -51,10 +51,11 @@ enum class TxnAction
 //=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
-//!
+//!<p>
+//! Here is an example of how to implement a TxnMonitor that checks for deleted elements by their ECClass.
+//!<p>
 //! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass_Includes.sampleCode
 //! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass.sampleCode
-//! 
 //!
 //! @ingroup GROUP_TxnManager
 // @bsiclass                                                      Keith.Bentley   10/07
