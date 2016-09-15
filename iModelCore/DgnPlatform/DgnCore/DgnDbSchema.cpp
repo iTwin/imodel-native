@@ -200,17 +200,6 @@ DbResult DgnDb::CreateDictionaryModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateGroupInformationModel()
-    {
-    DgnModelId modelId = DgnModel::GroupInformationId();
-    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::GroupInformation::GetHandler());
-    DgnCode modelCode = DgnModel::CreateModelCode("GroupInformation", BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRepositoryModel()
@@ -312,14 +301,13 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
 
-    // Every DgnDb has a RepositoryModel, a DictionaryModel, and a default GroupInformationModel
+    // Every DgnDb has a RepositoryModel and a DictionaryModel
     ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and primary Subject have foreign keys to each other
     CreateRepositoryModel();
     CreateRootSubject(params);
     ExecuteSql("PRAGMA defer_foreign_keys = false;");
     CreateRepositoryLink(params);
     CreateDictionaryModel();
-    CreateGroupInformationModel();
 
     // The Generic domain is used when a conversion process doesn't have enough information to pick something better
     if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))

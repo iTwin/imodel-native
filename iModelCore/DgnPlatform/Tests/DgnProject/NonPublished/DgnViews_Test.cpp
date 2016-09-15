@@ -30,9 +30,6 @@ struct DgnViewElemTest : public DgnDbTestFixture
     void SetupTestProject()
         {
         SetupSeedProject();
-        WString testName(TEST_NAME, true);
-        testName.AppendUtf8(".ibim");
-        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         }
 
     PhysicalModelPtr AddModel(Utf8StringCR name)
@@ -99,7 +96,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    ASSERT_EQ(4, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
     static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
@@ -172,8 +169,8 @@ TEST_F(DgnViewElemTest, CRUD)
     // Create a new view
     CameraViewDefinition tempView(*m_db, "TestView");
     tempView.SetDescr("Test Description");
-    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModelId((uint64_t)2)));
-    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1));
+    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
+    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1)); // FIXME: Need to point at a DrawingModel!
     tempView.SetDescr("TestDrawingView Description");
 
     // Insert 

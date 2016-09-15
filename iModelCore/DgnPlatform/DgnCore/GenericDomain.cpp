@@ -15,14 +15,18 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DOMAIN_DEFINE_MEMBERS(GenericDomain)
 
+namespace generic_ModelHandler
+    {
+    HANDLER_DEFINE_MEMBERS(GenericGroupModelHandler)
+    };
+
 namespace generic_ElementHandler
     {
-    HANDLER_DEFINE_MEMBERS(GenericSpatialGroupHandler)
-    HANDLER_DEFINE_MEMBERS(GenericGraphicGroup2dHandler)
+    HANDLER_DEFINE_MEMBERS(GenericGroupHandler)
     HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
     HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericGraphic3dHandler)
-    }
+    };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -31,8 +35,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain", 1) 
     {
-    RegisterHandler(generic_ElementHandler::GenericSpatialGroupHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericGraphicGroup2dHandler::GetHandler());
+    RegisterHandler(generic_ModelHandler::GenericGroupModelHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericGroupHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericGraphic3dHandler::GetHandler());
@@ -77,15 +81,67 @@ GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, Dgn
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    05/2016
+// @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-GenericSpatialGroupPtr GenericSpatialGroup::Create(DgnDbR db, DgnCode const& code)
+GenericGroupPtr GenericGroup::Create(GenericGroupModelCR model, DgnCodeCR code)
     {
-    DgnModelId modelId = DgnModel::GroupInformationId();
-    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericSpatialGroupHandler::GetHandler());
+    DgnDbR db = model.GetDgnDb();
+    DgnModelId modelId = model.GetModelId();
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericGroupHandler::GetHandler());
 
     if (!classId.IsValid())
         return nullptr;
 
-    return new GenericSpatialGroup(CreateParams(db, modelId, classId, code));
+    return new GenericGroup(CreateParams(db, modelId, classId, code));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    ModelHandlerR handler = generic_ModelHandler::GenericGroupModelHandler::GetHandler();
+    DgnDbR db = modeledElement.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<GenericGroupModelP>(model.get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    GenericGroupModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
+    {
+    if (nullptr != dynamic_cast<GenericGroupP>(&element))
+        return T_Super::_OnInsertElement(element);
+
+    BeAssert(false);
+    return DgnDbStatus::WrongModel;
     }

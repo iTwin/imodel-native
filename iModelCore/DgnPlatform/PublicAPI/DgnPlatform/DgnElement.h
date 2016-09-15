@@ -1574,6 +1574,7 @@ protected:
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
     virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    virtual void _RecordFacetCount(size_t facetCount) {;} // Only GeometryBuilder has write access to the facet count...only GeometricElements care about it...
 
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
@@ -1675,8 +1676,9 @@ protected:
     GeometryStream              m_geom;
     mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream;
+    size_t                      m_facetCount;
 
-    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false), m_facetCount(0) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnTableName() const = 0;
@@ -1694,7 +1696,9 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&) const;
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&) const; // Handles GeometryStream
+    DGNPLATFORM_EXPORT DgnDbStatus GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value);
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -1715,9 +1719,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
-
-    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
 
 public:
     //! Parameters for constructing a 3d geometric element
@@ -1762,18 +1763,20 @@ protected:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
+    virtual void _RecordFacetCount(size_t facetCount) override final {m_facetCount = facetCount;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
-public:
-
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
+
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
     };
 
 //=======================================================================================
@@ -1829,6 +1832,7 @@ protected:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
+    virtual void _RecordFacetCount(size_t facetCount) override final {m_facetCount = facetCount;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
@@ -1836,6 +1840,11 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 };
@@ -2223,18 +2232,6 @@ public:
 
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
     void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
-};
-
-//=======================================================================================
-//! Abstract base class for group-related information elements.
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    04/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceElement
-{
-    DEFINE_T_SUPER(InformationReferenceElement);
-protected:
-    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
