@@ -169,6 +169,30 @@ TEST_F(WSErrorTests, Ctor_InstanceNotFoundError_SetsErrorReceivedStatusAndIdWith
     EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
     }
 
+TEST_F(WSErrorTests, Ctor_BadRequestError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto body = R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
+    auto httpResponse = StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::BadRequest, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto body = R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
+    auto httpResponse = StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
 TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));

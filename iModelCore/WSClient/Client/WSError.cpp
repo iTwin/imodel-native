@@ -288,30 +288,33 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         m_id = WSError::Id::Unknown;
         }
 
-    // Set description
-    m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
-
-    // Set message 
-    if (WSError::Id::ClassNotFound == m_id)
+    if (WSError::Id::BadRequest == m_id || WSError::Id::Conflict == m_id)
         {
-        m_message = WSErrorLocalizedString(MESSAGE_ClassNotFound);
-        }
-    else if (WSError::Id::FileNotFound == m_id)
-        {
-        m_message = WSErrorLocalizedString(MESSAGE_FileNotFound);
-        }
-    else if (WSError::Id::InstanceNotFound == m_id)
-        {
-        m_message = WSErrorLocalizedString(MESSAGE_InstanceNotFound);
-        }
-    else if (WSError::Id::BadRequest == m_id)
-        {
+        // Pass message & description to user
         m_message = errorMessage;
         m_description = errorDescription;
         }
     else
         {
-        m_message = httpError.GetMessage();
+        // Format description and pass custom message for user
+        m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
+
+        if (WSError::Id::ClassNotFound == m_id)
+            {
+            m_message = WSErrorLocalizedString(MESSAGE_ClassNotFound);
+            }
+        else if (WSError::Id::FileNotFound == m_id)
+            {
+            m_message = WSErrorLocalizedString(MESSAGE_FileNotFound);
+            }
+        else if (WSError::Id::InstanceNotFound == m_id)
+            {
+            m_message = WSErrorLocalizedString(MESSAGE_InstanceNotFound);
+            }
+        else
+            {
+            m_message = httpError.GetMessage();
+            }
         }
 
     // Fallback to default messages if not enough information received
