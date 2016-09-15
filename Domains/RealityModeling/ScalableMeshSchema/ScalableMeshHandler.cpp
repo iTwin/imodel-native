@@ -37,8 +37,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 #define PRINT_MSG(...) 
 #endif
 
-#define SM_ACTIVATE_UPLOADER 1
-
+#define SM_ACTIVATE_UPLOADER 0
+#define SM_ACTIVATE_LOAD_TEST 0
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -969,6 +969,16 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             }
         }
 #endif
+
+#if SM_ACTIVATE_LOAD_TEST == 1
+    WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
+    if (projectName.Contains(WString(L"load_test")))
+        {
+        size_t nbLoadedNodes = 0;
+        m_smPtr->LoadAllNodeHeaders(nbLoadedNodes, 6);
+        }
+#endif
+
     if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
