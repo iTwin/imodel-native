@@ -836,7 +836,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
 //NEEDS_WORK_SM Cleanup
 static bool s_useNew3dLODQuery = true;
-static bool s_useXrowForCamOn = true;
+static bool s_useXrowForCamOn = false;
 static bool s_useClipVectorForVisibility = true;
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
@@ -1198,7 +1198,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     if (!node->IsLoaded())
         node->Load();
  
-    size_t nbOfPointsInTile = node->GetNbObjects();                    
+    size_t nbOfPointsInTile = node->GetNbObjects();     
+		
 
     //Return always true for the root node so that something is displayed at the screen.
     /*NEEDS_WORK_SM : Not required? 
@@ -1209,7 +1210,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     else
     */
     if (nbOfPointsInTile > 0)
-        {        
+        {        		
+
         double                  rootToViewScale;
         int                     nbPoints = 8;
         HArrayAutoPtr<DPoint3d> facePts(new DPoint3d[nbPoints]);                
@@ -1343,6 +1345,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return IsCorrect;    
     }
 
+static bool s_useSplit = false;
+
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                                                   const EXTENT&                           pi_visibleExtent,                                                                                                                                  
                                                                                                                                   double                                  pi_RootToViewMatrix[][4]) const
@@ -1363,7 +1367,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     else
     */
     if (nbOfPointsInTile > 0)
-        {        
+        {      
+
+		if (s_useSplit)
+			{
+			nbOfPointsInTile = node->GetSplitTreshold();
+			}
+
         //double                  rootToViewScale;
         int                     nbPoints = 8;
         HArrayAutoPtr<DPoint3d> facePts(new DPoint3d[nbPoints]);                
@@ -1408,10 +1418,17 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         double distance = centerInView.DistanceXY(edgeInView) * 2;
         double area = distance * distance;
 
-        double screenPixelsPerPoint = area / nbOfPointsInTile; 
-        IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;                                                       
-
-       
+		
+		if ((m_rootToViewMatrix[3][0] != 0 || m_rootToViewMatrix[3][1] != 0 || m_rootToViewMatrix[3][2] != 0) && (centerInView.z > 0 || edgeInView.z > 0))
+			{
+			IsCorrect = true;
+			}
+		else
+			{
+			double screenPixelsPerPoint = area / nbOfPointsInTile;
+			IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+			}
+						       
     #ifdef ACTIVATE_NODE_QUERY_TRACING
 
         if (m_pTracingXMLFile != 0)
