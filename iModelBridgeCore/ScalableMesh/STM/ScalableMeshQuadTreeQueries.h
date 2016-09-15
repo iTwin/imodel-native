@@ -499,7 +499,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
 
         virtual bool        IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                           const EXTENT&                           i_visibleExtent,                                                          
-                                                          double                                  i_RootToViewMatrix[][4]) const;
+                                                          double                                  i_RootToViewMatrix[][4],
+                                                          bool& shouldAddNode) const;
         
 };
 
