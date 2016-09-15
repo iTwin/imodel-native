@@ -743,6 +743,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     BeAtomic<uint32_t> numCompletedTiles;
 
 // ###TODO_FACET_COUNT: Make geometry processing thread-safe...
+// Known issues:
+//  GeomLibs flatbuffers - LoadPrefix() uses a static bvector
+//  ECDb LightweightCache.cpp - cache not thread-safe
+// These issues are not specific to mesh tile generation...need to be fixed.
 #define MESHTILE_SINGLE_THREADED
 #if !defined(MESHTILE_SINGLE_THREADED)
     auto threadPool = &BeFolly::IOThreadPool::GetPool();
