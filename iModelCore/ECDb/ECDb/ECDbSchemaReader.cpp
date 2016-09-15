@@ -151,15 +151,25 @@ ECPropertyId ECDbSchemaReader::GetECPropertyId(ECPropertyCR prop) const
         return prop.GetId();
         }
 
-    const ECPropertyId id = ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
-    if (id.IsValid())
+    ECPropertyId propId;
+    if (prop.GetClass().HasId())
+        {
+        //If the ECClass already has an id, we can run a faster SQL to get the property id
+        BeAssert(prop.GetClass().GetId() == ECDbSchemaPersistenceHelper::GetECClassId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), ResolveSchema::BySchemaName));
+
+        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetId(), prop.GetName().c_str());
+        }
+    else
+        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
+
+    if (propId.IsValid())
         {
         //it is possible that the property was already imported before, but the given C++ object comes from another source.
         //in that case we assign it here on the fly.
-        const_cast<ECPropertyR>(prop).SetId(id);
+        const_cast<ECPropertyR>(prop).SetId(propId);
         }
 
-    return id;
+    return propId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1245,7 +1255,16 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
         return ecClass.GetId();
         }
 
-    const ECClassId classId = GetECClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
+    ECClassId classId;
+    if (ecClass.GetSchema().HasId())
+        {
+        //If the ECSchema already has an id, we can run a faster SQL to get the class id
+        BeAssert(ecClass.GetSchema().GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecClass.GetSchema().GetName().c_str()));
+        classId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
+        }
+    else
+        classId = GetECClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
+
     if (classId.IsValid())
         {
         //it is possible that the ECClass was already imported before, but the given C++ object comes from another source.

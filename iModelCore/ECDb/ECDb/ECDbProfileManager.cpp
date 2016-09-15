@@ -269,7 +269,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX uix_ec_Class_SchemaId ON ec_Class(SchemaId);"
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_SchemaId_Name ON ec_Class(SchemaId,Name);"
                            "CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);");
     if (BE_SQLITE_OK != stat)
         return stat;

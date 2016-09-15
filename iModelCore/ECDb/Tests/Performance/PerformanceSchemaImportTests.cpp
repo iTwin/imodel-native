@@ -357,4 +357,6 @@ TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
     timer.Stop();
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Creating empty ECDb files", opCount);
     }
+
+
 END_ECDBUNITTESTS_NAMESPACE

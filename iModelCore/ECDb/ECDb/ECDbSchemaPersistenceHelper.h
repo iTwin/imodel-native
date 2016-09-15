@@ -53,9 +53,11 @@ private:
 
 public:
     static ECN::ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
+    static ECN::ECClassId GetECClassId(ECDbCR, ECN::ECSchemaId, Utf8CP className);
     static ECN::ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema);
     static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
     static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, Utf8CP schemaName, Utf8CP koqName);
+    static ECN::ECPropertyId GetECPropertyId(ECDbCR, ECN::ECClassId, Utf8CP propertyName);
     static ECN::ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static bool TryGetECSchemaKey(ECN::SchemaKey&, ECDbCR, Utf8CP schemaName);

@@ -82,6 +82,28 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP al
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/2016
+//---------------------------------------------------------------------------------------
+//static
+ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECSchemaId schemaId, Utf8CP className)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?");
+    if (stmt == nullptr)
+        return ECClassId();
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaId))
+        return ECClassId();
+
+    if (BE_SQLITE_OK != stmt->BindText(2, className, Statement::MakeCopy::No))
+        return ECClassId();
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ECClassId();
+
+    return stmt->GetValueId<ECClassId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
@@ -151,6 +173,26 @@ KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, U
 
     return stmt->GetValueId<KindOfQuantityId>(0);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      05/2013
+//---------------------------------------------------------------------------------------
+ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Property WHERE ClassId=? AND Name=?");
+    if (stmt == nullptr)
+        return ECPropertyId();
+
+    if (BE_SQLITE_OK != stmt->BindId(1, ecClassId) ||
+        BE_SQLITE_OK != stmt->BindText(1, propertyName, Statement::MakeCopy::No))
+        return ECPropertyId();
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ECPropertyId();
+
+    return stmt->GetValueId<ECPropertyId>(0);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013

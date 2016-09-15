@@ -182,4 +182,71 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
     }
 
+//---------------------------------------------------------------------------------------
+// This test compares two different SQLite SQL to retrieve the ECClassId from the ec_ tables
+// @bsimethod                                      Krischan.Eberle       09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
+    {
+    ECDbCR ecdb = SetupECDb("ecclassidsqlscenarios.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSchemaCP expectedSchema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
+    ASSERT_TRUE(expectedSchema != nullptr);
+    Utf8CP testClassName1 = "ABounded";
+    Utf8CP testClassName2 = "PSA";
+    ECClassId expectedClassId1 = ecdb.Schemas().GetECClassId("ECSqlTest", testClassName1);
+    ASSERT_TRUE(expectedClassId1.IsValid());
+    ECClassId expectedClassId2 = ecdb.Schemas().GetECClassId("ECSqlTest", testClassName2);
+    ASSERT_TRUE(expectedClassId2.IsValid());
+
+    const int opCount = 100000;
+
+    //Scenario 1: By schema and class name (via join)
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? AND c.Name=?"));
+    StopWatch timer(true);
+    for (int i = 0; i < opCount; i++)
+        {
+        const bool useTestClass1 = i % 2 == 0;
+        Utf8CP className = useTestClass1 ? testClassName1 : testClassName2;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, "ECSqlTest", Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(2, className, Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        if (useTestClass1)
+            ASSERT_EQ(expectedClassId1.GetValue(), stmt.GetValueUInt64(0));
+        else
+            ASSERT_EQ(expectedClassId2.GetValue(), stmt.GetValueUInt64(0));
+
+        stmt.ClearBindings();
+        stmt.Reset();
+        }
+    timer.Stop();
+    stmt.Finalize();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "ECClassId by schema and class name (via join)", opCount);
+
+    //Scenario 2: By schema id and no join
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?"));
+    timer.Start();
+    for (int i = 0; i < opCount; i++)
+        {
+        const bool useTestClass1 = i % 2 == 0;
+        Utf8CP className = useTestClass1 ? testClassName1 : testClassName2;
+
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, expectedSchema->GetId()));
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(2, className, Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        if (useTestClass1)
+            ASSERT_EQ(expectedClassId1.GetValue(), stmt.GetValueUInt64(0));
+        else
+            ASSERT_EQ(expectedClassId2.GetValue(), stmt.GetValueUInt64(0));
+
+        stmt.ClearBindings();
+        stmt.Reset();
+        }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "ECClassId by schema id and class name (no join)", opCount);
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
