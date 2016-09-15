@@ -175,8 +175,9 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
-#if !defined (DOCUMENTATION_GENERATOR)    
+#if !defined (DOCUMENTATION_GENERATOR)
         void ClearCache() const;
+        ECDbSchemaReader const& GetReader() const;
         ECDbCR GetECDb() const;
 #endif
     };

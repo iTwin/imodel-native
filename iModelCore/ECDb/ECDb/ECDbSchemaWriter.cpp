@@ -48,7 +48,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
             }
         }
 
-    if (ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecSchema.GetName().c_str()).IsValid())
+    if (m_ecdb.Schemas().ContainsECSchema(ecSchema.GetName().c_str()))
         return SUCCESS;
 
     // GenerateId
@@ -172,7 +172,7 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaReferenceEntries(ECSchemaCR schema
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     {
-    if (ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
+    if (m_ecdb.Schemas().GetReader().GetECClassId(ecClass).IsValid())
         return SUCCESS;
 
     // GenerateId
@@ -183,7 +183,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     ECClassId ecClassId(nextId.GetValue());
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
 
-    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecClass.GetSchema()).IsValid());
+    BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(ecClass.GetSchema()).IsValid());
 
     //now import actual ECClass
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -289,7 +289,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     {
-    if (ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, ecEnum).IsValid())
+    if (m_ecdb.Schemas().GetReader().GetECEnumerationId(ecEnum).IsValid())
         return SUCCESS;
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)");
@@ -303,7 +303,7 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     ECEnumerationId enumId(nextId.GetValue());
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
 
-    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecEnum.GetSchema()).IsValid());
+    BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(ecEnum.GetSchema()).IsValid());
 
     if (BE_SQLITE_OK != stmt->BindId(1, enumId))
         return ERROR;
@@ -363,7 +363,7 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     {
-    if (ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq).IsValid())
+    if (m_ecdb.Schemas().GetReader().GetKindOfQuantityId(koq).IsValid())
         return SUCCESS;
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits) VALUES(?,?,?,?,?,?,?,?,?)");
@@ -377,7 +377,7 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     KindOfQuantityId koqId(nextId.GetValue());
     const_cast<KindOfQuantityR>(koq).SetId(koqId);
 
-    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, koq.GetSchema()).IsValid());
+    BeAssert(m_ecdb.Schemas().GetReader().GetECSchemaId(koq.GetSchema()).IsValid());
 
     if (BE_SQLITE_OK != stmt->BindId(1, koqId))
         return ERROR;
@@ -490,7 +490,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, int32_t ordinal)
     {
     //Local properties are expected to not be imported at this point as they get imported along with their class.
-    BeAssert(!ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, ecProperty).IsValid());
+    BeAssert(!m_ecdb.Schemas().GetReader().GetECPropertyId(ecProperty).IsValid());
 
     // GenerateId
     BeBriefcaseBasedId nextId;
@@ -671,39 +671,31 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, Utf8CP onlyImportCAWithClassName)
+BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
+    bmap<ECClassCP, bvector<IECInstanceP> > customAttributeMap;
+
     //import CA classes first
     for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
         {
-        if (SUCCESS != ImportECClass(ca->GetClass()))
+        ECClassCR caClass = ca->GetClass();
+        if (SUCCESS != ImportECClass(caClass))
             return ERROR;
+
+        customAttributeMap[&caClass].push_back(ca.get());
         }
 
-    bmap<ECClassCP, bvector<IECInstanceP> > customAttributeMap;
-    for (auto& customAttribute : sourceContainer.GetCustomAttributes(false))
-        {
-        if (onlyImportCAWithClassName == nullptr)
-            customAttributeMap[&(customAttribute->GetClass())].push_back(customAttribute.get());
-        else
-            {
-            if (customAttribute->GetClass().GetName().Equals(onlyImportCAWithClassName))
-                customAttributeMap[&(customAttribute->GetClass())].push_back(customAttribute.get());
-            }
-        }
     int index = 0; // Its useless if we enumerate map since it doesn't ensure order in which we added it
-
     bmap<ECClassCP, bvector<IECInstanceP> >::const_iterator itor = customAttributeMap.begin();
 
     //Here we consider consolidated attribute a primary. This is lossy operation some overridden primary custom attributes would be lost
     for (; itor != customAttributeMap.end(); ++itor)
         {
         bvector<IECInstanceP> const& customAttributes = itor->second;
-        IECInstanceP customAttribute = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
-        ECClassCP ecClass = itor->first;
-        ECClassId customAttributeClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, *ecClass);
-        BeAssert(customAttributeClassId.IsValid());
-        if (SUCCESS != InsertCAEntry(customAttribute, customAttributeClassId, sourceContainerId, containerType, index++))
+        IECInstanceP ca = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
+        ECClassCP caClass = itor->first;
+        BeAssert(caClass->HasId());
+        if (SUCCESS != InsertCAEntry(ca, caClass->GetId(), sourceContainerId, containerType, index++))
             return ERROR;
         }
 
@@ -1018,7 +1010,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
     if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    ECPropertyId propertyId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, newProperty);
+    ECPropertyId propertyId = m_ecdb.Schemas().GetReader().GetECPropertyId(newProperty);
     if (!propertyId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecclass id");
@@ -1140,7 +1132,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
                 }
 
             ECEnumerationCP enumCP = newPrimitiveProperty->GetEnumeration();
-            ECEnumerationId id = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, *enumCP);
+            ECEnumerationId id = m_ecdb.Schemas().GetReader().GetECEnumerationId(*enumCP);
             if (!id.IsValid())
                 return ERROR;
 
@@ -1173,7 +1165,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
                 return ERROR;
                 }
 
-            KindOfQuantityId id = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, *koqCP);
+            KindOfQuantityId id = m_ecdb.Schemas().GetReader().GetKindOfQuantityId(*koqCP);
             if (!id.IsValid())
                 return ERROR;
 
@@ -1302,13 +1294,13 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
         else if (change.GetState() == ChangeState::Deleted)
             {
             IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
-            BeAssert(ca.IsValid());
-            if (ca.IsNull())
+            if (ca == nullptr)
+                {
+                BeAssert(false);
                 return ERROR;
+                }
 
-            ECClassId caClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ca->GetClass());
-            BeAssert(caClassId.IsValid());
-
+            BeAssert(ca->GetClass().HasId());
             if (DeleteCAEntry(ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
                 return ERROR;
             }
@@ -1341,7 +1333,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
     if (classChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    ECClassId classId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, newClass);
+    ECClassId classId = m_ecdb.Schemas().GetReader().GetECClassId(newClass);
     if (!classId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecclass id");
@@ -2074,7 +2066,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
    
-    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, newSchema);
+    ECSchemaId schemaId = m_ecdb.Schemas().GetReader().GetECSchemaId(newSchema);
     if (!schemaId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecschema id");

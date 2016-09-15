@@ -80,11 +80,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECDbSchemaReader
     {
-    typedef std::map<ECN::ECSchemaId, std::unique_ptr<DbECSchemaEntry>> DbECSchemaMap;
-    typedef std::map<ECN::ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
-    typedef std::map<ECN::ECEnumerationId, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
-    typedef std::map<ECN::KindOfQuantityId, std::unique_ptr<DbKindOfQuantityEntry>> DbKindOfQuantityEntryMap;
-
     private:
         struct Context : NonCopyableClass
             {
@@ -101,10 +96,11 @@ struct ECDbSchemaReader
 
         ECDbCR m_db;
         mutable ECN::ECSchemaCache m_cache;
-        mutable DbECSchemaMap m_ecSchemaCache;
-        mutable DbECClassEntryMap m_ecClassCache;
-        mutable DbECEnumEntryMap m_ecEnumCache;
-        mutable DbKindOfQuantityEntryMap m_koqCache;
+        mutable std::map<ECN::ECSchemaId, std::unique_ptr<DbECSchemaEntry>> m_ecSchemaCache;
+        mutable std::map<ECN::ECClassId, std::unique_ptr<DbECClassEntry>> m_ecClassCache;
+        mutable std::map<ECN::ECEnumerationId, std::unique_ptr<DbECEnumEntry>> m_ecEnumCache;
+        mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<DbKindOfQuantityEntry>> m_koqCache;
+        mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
         mutable BeMutex m_criticalSection;
 
         ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
@@ -133,13 +129,23 @@ struct ECDbSchemaReader
         ~ECDbSchemaReader() {}
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
+        ECN::ECSchemaId GetECSchemaId(ECN::ECSchemaCR) const;
+
         ECN::ECClassCP GetECClass(ECN::ECClassId) const;
+        ECN::ECClassId GetECClassId(ECN::ECClassCR) const;
+        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema) const;
+
         ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
+        ECN::ECEnumerationId GetECEnumerationId(ECN::ECEnumerationCR) const;
+
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+        ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR) const;
+
+        ECN::ECPropertyId GetECPropertyId(ECN::ECPropertyCR) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
         bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema) const;
-        void ClearCache();
+        void ClearCache() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
