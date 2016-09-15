@@ -236,7 +236,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (fileType == SessionFile::Type::Bim)
         {
-        CreateDgnDbParams createParams;
+        CreateDgnDbParams createParams(Utf8String(filePath.GetFileNameWithoutExtension()).c_str());
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;
