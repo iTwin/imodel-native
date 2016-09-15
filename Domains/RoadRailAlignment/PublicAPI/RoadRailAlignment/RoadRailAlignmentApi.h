@@ -71,6 +71,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Relationships
 #define BRRA_REL_AlignmentOwnsVerticals                             "AlignmentOwnsVerticals"
+#define BRRA_REL_AlignmentRefersToMainVertical                      "AlignmentRefersToMainVertical"
 
 
 // Properties

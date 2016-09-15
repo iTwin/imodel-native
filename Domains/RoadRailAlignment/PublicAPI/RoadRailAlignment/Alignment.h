@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Main Linear-Element used in Road & Rail applications.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ILinearElement
+struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
     friend struct AlignmentHandler;
@@ -39,7 +39,7 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentVerticalIds() const;
 
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus SetMainVertical(AlignmentVerticalCR vertical);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, AlignmentVerticalCR vertical);
 }; // Alignment
 
 //=======================================================================================
@@ -93,7 +93,10 @@ public:
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentVertical)
     ROADRAILALIGNMENT_EXPORT static AlignmentVerticalPtr Create(AlignmentCR alignment, CurveVectorCR verticalGeometry);
 
+    ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
+
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const { return *m_geometry; }
+    ROADRAILALIGNMENT_EXPORT AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetParentId()); }
 }; // AlignmentVertical
 
 

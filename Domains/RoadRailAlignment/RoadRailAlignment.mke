@@ -73,7 +73,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGe
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BaseGeoCoord$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)LinearReferencing$(libext)
 
 %include $(sharedMki)linkLibrary.mki

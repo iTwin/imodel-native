@@ -8,7 +8,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="MainVerticalAlignment" relationshipName="AlignmentRefersToMainVertical" direction="forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentHorizontal">
         <BaseClass>bis:SpatialLocationElement</BaseClass>

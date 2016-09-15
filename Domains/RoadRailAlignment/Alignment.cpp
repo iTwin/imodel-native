@@ -52,15 +52,39 @@ AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentVerticalCPtr Alignment::QueryMainVertical() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT MainVerticalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
 
+    DgnElementId verticalId;
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
         return nullptr;
 
     return AlignmentVertical::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, AlignmentVerticalCR vertical)
+    {
+    auto stmtDelPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtDelPtr.IsValid());
+
+    auto stmtInsPtr = alignment.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " (SourceECInstanceId, TargetECInstanceId) VALUES (?,?);");
+    BeAssert(stmtInsPtr.IsValid());
+
+    stmtDelPtr->BindId(1, alignment.GetElementId());
+    if (DbResult::BE_SQLITE_DONE != stmtDelPtr->Step())
+        return DgnDbStatus::WriteError;
+
+    stmtInsPtr->BindId(1, alignment.GetElementId());
+    stmtInsPtr->BindId(2, vertical.GetElementId());
+    if (DbResult::BE_SQLITE_DONE != stmtInsPtr->Step())
+        return DgnDbStatus::WriteError;    
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +93,7 @@ AlignmentVerticalCPtr Alignment::QueryMainVertical() const
 DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentOwnsVerticals) " WHERE SourceECInstanceId = ?");
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " WHERE ParentId = ?");
     BeAssert(stmt.IsPrepared());
 
     stmt.BindId(1, GetElementId());
@@ -79,23 +103,6 @@ DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
         retVal.insert(stmt.GetValueId<DgnElementId>(0));
 
     return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Alignment::SetMainVertical(AlignmentVerticalCR vertical)
-    {
-    if (!vertical.GetElementId().IsValid())
-        return DgnDbStatus::BadElement;
-
-    if (vertical.GetParentId() != GetElementId())
-        return DgnDbStatus::WrongElement;
-
-    ECValue ecVal(vertical.GetElementId().GetValue());
-    SetPropertyValue(BRRA_PROP_Alignment_MainVerticalAlignment, ecVal);
-
-    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,4 +133,16 @@ AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVecto
     createParams.SetParentId(alignment.GetElementId());
 
     return new AlignmentVertical(createParams, verticalGeometry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentVerticalCPtr AlignmentVertical::InsertAsMainVertical(Dgn::DgnDbStatus* stat)
+    {
+    auto retValPtr = Insert(stat);
+    DgnDbStatus status = Alignment::SetMainVertical(GetAlignment(), *retValPtr);
+    BeAssert(DgnDbStatus::Success == status);
+
+    return retValPtr;
     }
