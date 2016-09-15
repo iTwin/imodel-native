@@ -508,6 +508,41 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, H
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
+DgnDbServerBriefcaseTaskPtr OpenBriefcaseInternal(DgnDbRepositoryConnectionPtr connection, Dgn::DgnDbPtr db,
+                                                  bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+    {
+    const Utf8String methodName = "DgnDbClient::OpenBriefcaseInternal";
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connection);
+    if (doSync)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
+        return briefcase->PullAndMerge(callback, cancellationToken)->Then<DgnDbServerBriefcaseResult>([=] (const DgnDbServerRevisionsResult& result)
+            {
+            if (result.IsSuccess())
+                {
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                return DgnDbServerBriefcaseResult::Success(briefcase);
+                }
+            else
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return DgnDbServerBriefcaseResult::Error(result.GetError());
+                }
+            });
+        }
+    else
+        {
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Success(briefcase));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
@@ -526,49 +561,173 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     RepositoryInfo repositoryInfo;
+    FileInfo fileInfo(*db, "");
     auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, *db);
-    if (!readResult.IsSuccess() || db->GetBriefcaseId().IsMasterId())
+    BeBriefcaseId briefcaseId = db->GetBriefcaseId();
+    if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
     std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
-    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
         {
-        if (connectionResult.IsSuccess())
-            {
-            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
-            if (doSync)
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
-                briefcase->PullAndMerge(callback, cancellationToken)->Then([=](const DgnDbServerRevisionsResult& result)
-                    {
-                    if (result.IsSuccess())
-                        {
-                        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                        finalResult->SetSuccess(briefcase);
-                        }
-                    else
-                        {
-                        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                        finalResult->SetError(result.GetError());
-                        }
-                    });
-                }
-            else
-                {
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                    finalResult->SetSuccess(briefcase);
-                }
-            }
-        else
+        if (!connectionResult.IsSuccess())
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
             finalResult->SetError(connectionResult.GetError());
+            return;
             }
+
+        auto connection = connectionResult.GetValue();
+        connection->ValidateBriefcase(fileInfo.GetFileId(), briefcaseId, cancellationToken)
+            ->Then([=] (DgnDbServerStatusResultCR validationResult)
+            {
+            if (!validationResult.IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, validationResult.GetError().GetMessage().c_str());
+                finalResult->SetError(validationResult.GetError());
+                return;
+                }
+            OpenBriefcaseInternal(connection, db, doSync, callback, cancellationToken)
+                ->Then([=] (DgnDbServerBriefcaseResultCR briefcaseResult)
+                {
+                if (briefcaseResult.IsSuccess())
+                    {
+                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                    finalResult->SetSuccess(briefcaseResult.GetValue());
+                    }
+                else
+                    {
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
+                    finalResult->SetError(briefcaseResult.GetError());
+                    }
+                });
+            });
+        })->Then<DgnDbServerBriefcaseResult>([=] ()
+            {
+            return *finalResult;
+            });
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+DgnDbServerBriefcaseTaskPtr DgnDbClient::RefreshBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,
+                                                       ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbClient::RefreshBriefcase";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!db.IsValid() || !db->GetFileName().DoesPathExist())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileNotFound));
+        }
+    if (!m_credentials.IsValid() && !m_authenticationHandler)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        }
+    RepositoryInfo repositoryInfo;
+    bool isReadOnly = db->IsReadonly();
+    auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, *db);
+    FileInfo fileInfo(*db, "");
+    BeBriefcaseId briefcaseId = db->GetBriefcaseId();
+    if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
+        }
+    BeFileName originalFilePath = db->GetFileName();
+
+    std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
+    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+        {
+        if (!connectionResult.IsSuccess())
+            {
+            finalResult->SetError(connectionResult.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+            return;
+            }
+
+        auto connection = connectionResult.GetValue();
+        
+        connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileResult)
+            {
+            if (!fileResult.IsSuccess())
+                {
+                finalResult->SetError(fileResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+                return;
+                }
+
+            auto newFileInfo = fileResult.GetValue();
+            BeFileName downloadPath = originalFilePath.GetDirectoryName();
+            downloadPath = downloadPath.AppendToPath(BeFileName(newFileInfo->GetFileId().ToString()));
+            downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
+
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
+            connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
+                {
+                if (!downloadResult.IsSuccess())
+                    {
+                    finalResult->SetError(downloadResult.GetError());
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                    return;
+                    }
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
+
+
+                std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
+                DgnDbServerHost::Adopt(host);
+                db->CloseDb();
+                BeFileNameStatus status = originalFilePath.BeDeleteFile();
+                if (BeFileNameStatus::Success != status)
+                    {
+                    finalResult->SetError(DgnDbServerError::Id::Unknown);
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                    return;
+                    }
+                status = BeFileName::BeMoveFile(downloadPath, originalFilePath);
+                if (BeFileNameStatus::Success != status)
+                    {
+                    finalResult->SetError(DgnDbServerError::Id::Unknown);
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                    return;
+                    }
+                DbResult openStatus;
+                db->OpenDgnDb(&openStatus, originalFilePath, DgnDb::OpenParams(isReadOnly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite));
+                if (DbResult::BE_SQLITE_OK != openStatus)
+                    {
+                    finalResult->SetError(DgnDbServerError(*db, openStatus));
+                    DgnDbServerHost::Forget(host);
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+                    return;
+                    }
+                DgnDbServerHost::Forget(host);
+                OpenBriefcaseInternal(connection, db, doSync, callback, cancellationToken)->Then([=] (DgnDbServerBriefcaseResultCR openResult)
+                    {
+                    if (openResult.IsSuccess())
+                        {
+                        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                        finalResult->SetSuccess(openResult.GetValue());
+                        }
+                    else
+                        {
+                        finalResult->SetError(openResult.GetError());
+                        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, openResult.GetError().GetMessage().c_str());
+                        }
+                    });
+                });
+            });
         })->Then<DgnDbServerBriefcaseResult>([=] ()
             {
             return *finalResult;
