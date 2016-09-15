@@ -58,6 +58,7 @@ public:
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
+    bvector<FPoint3d> const& GetPoints() const { return m_points; }
     bool IsEmpty() const {return m_points.empty();}
 };
 
@@ -177,6 +178,7 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
 private:
     Utf8String m_sceneFile;
     Transform m_location;
+    mutable Dgn::ClipVectorPtr m_clip;
     mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
@@ -197,6 +199,9 @@ public:
 
     //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
+
+    //! Set clipping
+    void SetClip (Dgn::ClipVectorCR clip);
 };
 
 //=======================================================================================
@@ -205,7 +210,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
