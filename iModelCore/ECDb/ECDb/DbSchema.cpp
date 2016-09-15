@@ -785,7 +785,8 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
             }
         }
 
-    int columnOrdinal = 0;
+    int existingColumnOrdinal = 0;
+    int newColumnOrdinal = (int) persistedColumnMap.size();
     for (DbColumn const* column : table.GetColumns())
         {
         auto it = primaryKeys.find(column);
@@ -793,16 +794,18 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         auto itor = persistedColumnMap.find(column->GetName());
         if (itor == persistedColumnMap.end())
             {
-            if (InsertColumn(*column, columnOrdinal, primaryKeyOrdinal) == ERROR)
+            if (InsertColumn(*column, newColumnOrdinal, primaryKeyOrdinal) != SUCCESS)
                 return ERROR;
+
+            newColumnOrdinal++;
             }
         else
             {
-            if (UpdateColumn(*column, columnOrdinal, primaryKeyOrdinal) == ERROR)
+            if (UpdateColumn(*column, existingColumnOrdinal, primaryKeyOrdinal) != SUCCESS)
                 return ERROR;
 
+            existingColumnOrdinal++;
             }
-        columnOrdinal++;
         }
 
     return SUCCESS;
