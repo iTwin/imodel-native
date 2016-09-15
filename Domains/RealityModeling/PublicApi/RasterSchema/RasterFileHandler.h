@@ -15,15 +15,16 @@
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 struct RasterFileModelHandler;
+struct RasterRoot;
 
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     06/2015
 //=======================================================================================
 struct RasterFileProperties
     {
-    Utf8String                  m_fileId;           //! File id provided by the application. Used to resolve the local file name.
-    DRange2d                    m_boundingBox;      //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
-    DMatrix4d                   m_transform;        //! Raster transform
+    Utf8String  m_fileId;           //! File id provided by the application. Used to resolve the local file name.  
+    DMatrix4d   m_sourceToWorld;    //! Transformation from source(lower-left origin) to BIM coordinate. 
+                                    //! This transform may contains a reprojection approximation(source Gcs to BIM Gcs) if one was required.
 
                                 RasterFileProperties();
     void                        ToJson(Json::Value&) const;
@@ -31,6 +32,12 @@ struct RasterFileProperties
     };
 
 //=======================================================================================
+// A DgnModel to reference a raster file. This holds the name of the file and a transform 
+// to position the raster in the BIM.
+// Note that the a rasterfile may also have a its own geo-reference(matrix, GCS or both) stored in it,
+// so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all raster files are geo-referenced,
+// and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that. If reprojection
+// is required it is approximated and include in the source to world transformation.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
@@ -43,7 +50,7 @@ public:
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
         Utf8String m_fileId;
-        DMatrix4dCP m_transformP;
+        DMatrix4dCP m_sourceToWorldP;   //! Optional transformation from source(lower-left origin) to BIM coordinate. If not provide we use source georeference.
 
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
@@ -53,9 +60,9 @@ public:
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileId File Id of the raster file.
-            //! @param[in] transformP Transform of the raster file. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4dCP transformP) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId), m_transformP(transformP)
+            //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4dCP sourceToWorld) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId), m_sourceToWorldP(sourceToWorld)
                 {}
         };
 
@@ -77,10 +84,9 @@ protected:
 
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
-    virtual BentleyStatus   _LoadQuadTree() const override;
-    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-
-    virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_transform;}
+    virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
+    
+    virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_sourceToWorld;}
 
 public:
 
@@ -97,9 +103,9 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
 {
     RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
-
 private:
-                        static  ReprojectStatus GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, Dgn::DgnDbCR db);
+
+    static StatusInt ComputeGeoLocationFromFile(DMatrix4dR sourceToWorld, RasterFileR raster, Dgn::DgnDbR dgndb);
 
 public:
     RASTERSCHEMA_EXPORT static  RasterFileModelPtr CreateRasterFileModel(RasterFileModel::CreateParams const& params);

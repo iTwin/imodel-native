@@ -23,6 +23,7 @@ private:
             ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         m_pPhysicalCoordSys;
 
                                                             RasterFile(Utf8StringCR resolvedName);
+            virtual                                         ~RasterFile();
             int                                             ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
     
             StatusInt                                       GetSampleStatistics(double& minValue, double& maxValue);
