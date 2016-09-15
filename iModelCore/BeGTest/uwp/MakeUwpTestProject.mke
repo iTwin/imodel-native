@@ -78,7 +78,6 @@ always:
 #--------------------------------------------------------------------------------------
 $(tmp)GenerateCppUnitSource.mki : $[@wildcard $(collectionTestObjectsDir)*UnitTests.list.h] $(baseDir)CppUnit.cpp.template $(_MakeFileSpec)
     $(msg)
-    | $(baseDir)GenerateCppUnitSource.py $(collectionTestObjectsDir) $(baseDir)CppUnit.cpp.template
     !@$(baseDir)GenerateCppUnitSource.py $(collectionTestObjectsDir) $(baseDir)CppUnit.cpp.template > $@
     ~time
 
@@ -107,9 +106,6 @@ always:
 # Deliver a single DLL that contains the unit tests themselves
 #--------------------------------------------------------------------------------------
 unitTestObjs = $[@wildcard $(collectionTestObjectsDir)*$(oext)]
-
-%warn $(collectionTestObjectsDir)
-%warn $[@wildcard $(collectionTestObjectsDir)*$(oext)]
 
 DLM_NAME            = UnitTests
 DLM_DEST            = $(projectDir)
