@@ -10,8 +10,7 @@
 
 USING_NAMESPACE_BENTLEY
 
-// printf(s_viewerHtml, viewJson);
-Utf8CP s_viewerHtml =
+Utf8Char s_viewerHtmlPrefix[] =
 R"HTML(<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,13 +22,14 @@ R"HTML(<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
-<script src="scripts/Bentley/BimTiles.js"></script>
+<script src="scripts/Bentley/Bim.js"></script>
+<script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <style>
 @import url(Cesium/Widgets/widgets.css);
 
 html, body, #cesiumContainer {
-width: 100%%;
-height: 100%%;
+width: 100%;
+height: 100%;
 margin: 0;
 padding: 0;
 overflow: hidden;
@@ -41,23 +41,19 @@ overflow: hidden;
 
 <script>
 
-var view = %s;
-var viewer = new Cesium.Viewer('cesiumContainer', BimTiles.createCesiumViewerOptions(view));
-viewer.extend(Cesium.viewerCesiumInspectorMixin);
+var view = )HTML";
 
-BimTiles.fixupSandboxAttributes();
+// ...Insert view JSON here...
 
-var tileset = BimTiles.loadTileset(viewer, view, function() {
-   var fitViewButton = document.getElementById('fitViewButton');
-   fitViewButton.onclick = function() {
-       viewer.camera.viewBoundingSphere(tileset.boundingSphere, new Cesium.HeadingPitchRange (viewer.camera.heading, viewer.camera.pitch, 0.0));
-   }
-});
+Utf8Char s_viewerHtmlSuffix[] =
+R"HTML(var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
+viewer.extend(Bim.viewerInspectorMixin);
+
+Bim.fixupSandboxAttributes();
+
+Bim.loadTileset(viewer, view);
 
 </script>
-<div style="z-index:10000; position:absolute;top:0;left:0;padding:5px; margin:5px">
-    <input type="button" id="fitViewButton" value="Fit View" />
-</div>
 </body>
 </html>)HTML";
 

@@ -4439,16 +4439,9 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d)
   : m_appearanceChanged(false), m_havePlacement(false), m_isPartCreate(!categoryId.IsValid()), m_is3d(is3d), m_appendAsSubGraphics(false),
-    m_dgnDb(dgnDb), m_writer(dgnDb), m_facetCount(0), m_facetOptions(IFacetOptions::Create()), m_facetCounter(*m_facetOptions, 3)
+    m_dgnDb(dgnDb), m_writer(dgnDb), m_facetCount(0) 
     {
     m_elParams.SetCategoryId(categoryId);
-
-    static const double s_chordTolerance = 0.01;
-    m_facetOptions->SetChordTolerance(s_chordTolerance);
-    m_facetOptions->SetMaxPerFace(3);
-    m_facetOptions->SetCurvedSurfaceMaxPerFace(3);
-    m_facetOptions->SetNormalsRequired(false);
-    m_facetOptions->SetParamsRequired(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
