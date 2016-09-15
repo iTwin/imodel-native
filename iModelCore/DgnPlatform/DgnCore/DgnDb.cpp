@@ -440,30 +440,7 @@ void DgnImportContext::ComputeGcsAndGOadjustment()
         m_areCompatibleDbs = false;
         return;
         }
-
-    //  Check that source and destination GCSs are at the same elevation
-    GeoPoint sourceOrgLatLng;
-    if (REPROJECT_Success != sourceGcs->LatLongFromUors(sourceOrgLatLng, DPoint3d::FromZero()))
-        {
-        m_areCompatibleDbs = false;
-        return;
-        }
-    DPoint3d destCoordinates;
-    if (REPROJECT_Success != destGcs->UorsFromLatLong(destCoordinates, sourceOrgLatLng))
-        {
-        m_areCompatibleDbs = false;
-        return;
-        }
     
-    if (0 != BeNumerical::Compare(0.0, destCoordinates.z))
-        {
-        BeDataAssert(false && "different elevations??");
-        m_areCompatibleDbs = false;
-        return;
-        }
-
-    //  We should be able to transform using a simple offset and rotation.
-    m_xyzOffset = DPoint3d::From(destCoordinates.x, destCoordinates.y, 0);
     m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }
 
