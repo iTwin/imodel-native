@@ -667,8 +667,8 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     db1_text->GetStyleR().SetFont(*db1_font);
     db1_text->GetStyleR().SetHeight(1.0);
 
-    GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
-    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWithAutoPlacement(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
+    GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, DgnDbTestUtils::QueryFirstGeometricModelId(*db1), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
+    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWithAutoPlacement(*db1->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db1)), DgnCategory::QueryFirstCategoryId(*db1));
     db1_builder->Append(*db1_text, GeometryBuilder::CoordSystem::World);
     db1_builder->Finish(*db1_element->ToGeometrySourceP());
 
@@ -686,7 +686,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     ASSERT_TRUE(nullptr == db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
 
-    DgnModelPtr db2_destModel = db2->Models().GetModel(db2->Models().QueryFirstModelId());
+    DgnModelPtr db2_destModel = db2->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db2));
     ASSERT_TRUE(db2_destModel.IsValid());
 
     DgnImportContext import1to2(*db1, *db2);
@@ -718,7 +718,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     EXPECT_TRUE(db3_numFonts > 0);
 
-    DgnModelPtr db3_destModel = db3->Models().GetModel(db3->Models().QueryFirstModelId());
+    DgnModelPtr db3_destModel = db3->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db3));
     ASSERT_TRUE(db3_destModel.IsValid());
 
     DgnImportContext import1to3(*db1, *db3);

@@ -37,7 +37,7 @@ public:
     DgnDbPtr                    m_db;
     DgnModelId                  m_defaultModelId;
     DgnCategoryId               m_defaultCategoryId;
-    DgnModelPtr                 m_defaultModelP;
+
 public:
     explicit DgnDbTestFixture()
     {
@@ -66,12 +66,21 @@ public:
 
     static DgnDbStatus GetSeedDbCopy(BeFileNameR actualName, WCharCP newName);
 
-    void SaveDb() {
+    void SaveDb() 
+        {
         if (m_db.IsValid() && m_db->IsDbOpen() && !m_db->IsReadonly())
             m_db->SaveChanges();
-    }
+        }
 
-    DgnModelR GetDefaultModel() { return *m_defaultModelP; }
+    //! Get the default PhysicalModel created by SetupSeedProject or SetupWithPrePublishedFile
+    //! @note will fail if a 2d model is the default
+    PhysicalModelPtr GetDefaultPhysicalModel();
+
+    //! Insert a new PhysicalModel using the specified name
+    PhysicalModelPtr InsertPhysicalModel(Utf8CP modelName) {return DgnDbTestUtils::InsertPhysicalModel(GetDgnDb(), DgnModel::CreateModelCode(modelName));}
+
+    //! Get the DgnCategoryId of the default category created by SetupSeedProject
+    DgnCategoryId GetDefaultCategoryId() {return m_defaultCategoryId;}
 
     DgnElementCPtr InsertElement(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr, DgnCode elementCode = DgnCode());
     DgnElementCPtr InsertElement(Render::GeometryParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
@@ -81,4 +90,3 @@ public:
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 };
-

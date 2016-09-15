@@ -723,26 +723,18 @@ TEST_F(DirectionParserTest, Clone)
 TEST_F(DirectionParserTest, FromModel)
 {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
-    seedModel->FillModel();
-    EXPECT_TRUE(seedModel != nullptr);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
     //Set direction Anti-Clockwise and set a Base Direction
-    GeometricModelP geomModelP = seedModel->ToGeometricModelP();
-    geomModelP->GetDisplayInfoR().SetDirectionClockwise(true);
-    geomModelP->GetDisplayInfoR().SetDirectionBaseDir(270.0);
+    model->GetDisplayInfoR().SetDirectionClockwise(true);
+    model->GetDisplayInfoR().SetDirectionBaseDir(270.0);
 
-    DirectionParserPtr dirPar = DirectionParser::Create(*geomModelP);
+    DirectionParserPtr dirPar = DirectionParser::Create(*model);
 
     ASSERT_TRUE(dirPar->GetClockwise());
     ASSERT_EQ(270.0, dirPar->GetBaseDirection());
     ASSERT_EQ(0.0, dirPar->GetTrueNorthValue());
-    
 }
-
-
 
 //=======================================================================================
 // @bsiclass                                                    Umar.Hayat     11/2015
@@ -751,6 +743,7 @@ struct DistanceParserTest : public ::testing::Test
 {
     ScopedDgnHost autoDgnHost;
 };
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1000,16 +993,9 @@ struct AreaVolumeParserTest : public DgnDbTestFixture {};
 TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 {
     SetupSeedProject();
-    DgnDbR db = *m_db;
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
-    seedModel->FillModel();
-    EXPECT_TRUE(seedModel != nullptr);
-
-    GeometricModelP geomModelP = seedModel->ToGeometricModelP();
-
-    AreaParserPtr areaPar = AreaParser::Create(*geomModelP);
-    
+    AreaParserPtr areaPar = AreaParser::Create(*model);
     ASSERT_EQ (1.0, areaPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ (1.0, areaPar->GetScale()); //The scale is 1.0
 
@@ -1026,16 +1012,9 @@ TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 TEST_F(AreaVolumeParserTest, VolumeParserCreateFromModel)
 {
     SetupSeedProject();
-    DgnDbR db = *m_db;
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
-    seedModel->FillModel();
-    EXPECT_TRUE(seedModel != nullptr);
-
-    GeometricModelP geomModelP = seedModel->ToGeometricModelP();
-
-    VolumeParserPtr volPar = VolumeParser::Create(*geomModelP);
-
+    VolumeParserPtr volPar = VolumeParser::Create(*model);
     ASSERT_EQ(1.0, volPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ(1.0, volPar->GetScale()); //The scale is 1.0
 

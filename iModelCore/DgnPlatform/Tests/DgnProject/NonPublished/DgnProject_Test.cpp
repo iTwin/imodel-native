@@ -121,10 +121,10 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "dgn_Proj"      )) );
 
     //  Use the model API to access model properties and check their values
-    DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    GeometricModel::DisplayInfo const& displayInfo = defaultModel->ToGeometricModel()->GetDisplayInfo();
+    GeometricModel::DisplayInfo const& displayInfo = defaultModel->GetDisplayInfo();
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }

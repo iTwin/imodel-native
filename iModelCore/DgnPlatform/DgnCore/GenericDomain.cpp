@@ -83,6 +83,22 @@ GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, Dgn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
+GenericSpatialLocationPtr GenericSpatialLocation::Create(PhysicalModelR model, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new GenericSpatialLocation(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
 GenericGroupPtr GenericGroup::Create(GenericGroupModelCR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();

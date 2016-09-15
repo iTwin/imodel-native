@@ -199,7 +199,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_db));
     //m_db->SaveChanges(); need this?
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
@@ -242,7 +242,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(m_db.IsValid());
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();

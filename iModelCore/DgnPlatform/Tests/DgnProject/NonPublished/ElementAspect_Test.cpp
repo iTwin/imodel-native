@@ -455,7 +455,7 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         ASSERT_EQ(DgnDbStatus::Success, stat);
         ASSERT_EQ(DbResult::BE_SQLITE_OK , db2->SaveChanges());
 
-        DgnElementCPtr el1Dest = el1->Import(&stat, *db2->Models().GetModel(db2->Models().QueryFirstModelId()), importContext);
+        DgnElementCPtr el1Dest = el1->Import(&stat, *db2->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db2)), importContext);
         ASSERT_TRUE(el1Dest.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
         ASSERT_EQ(DbResult::BE_SQLITE_OK, db2->SaveChanges());

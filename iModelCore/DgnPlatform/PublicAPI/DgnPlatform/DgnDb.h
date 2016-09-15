@@ -188,10 +188,11 @@ public:
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.
     //! @param[in] filename The name of the file for the new DgnDb. Must be a valid filename on the local
     //! filesystem. It is not legal to create a DgnDb over a network share.
-    //! @param[in] params Parameters that control aspects of the newly created DgnDb
+    //! @param[in] params Parameters that control aspects of the newly created DgnDb. Must include a valid root Subject label.
     //! @return a reference counted pointer to the newly created DgnDb. Its IsValid() method will return false if the open failed for any reason.
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The DgnDb will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
+    //! @see CreateDgnDbParams::SetRootSubjectLabel
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
