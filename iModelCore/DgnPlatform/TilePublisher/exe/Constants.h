@@ -11,7 +11,8 @@
 USING_NAMESPACE_BENTLEY
 
 Utf8Char s_viewerHtmlPrefix[] =
-R"HTML(<!DOCTYPE html>
+R"HTML(
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <!-- Use correct character set. -->
@@ -25,7 +26,7 @@ R"HTML(<!DOCTYPE html>
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <style>
-@import url(Cesium/Widgets/widgets.css);
+@import url(scripts/Cesium/Widgets/widgets.css);
 
 html, body, #cesiumContainer {
 width: 100%;
@@ -41,19 +42,25 @@ overflow: hidden;
 
 <script>
 
-var view = )HTML";
+var viewJsonUrl = ')HTML";
 
-// ...Insert view JSON here...
+// ...Insert URL to view JSON here...
 
 Utf8Char s_viewerHtmlSuffix[] =
-R"HTML(var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
-viewer.extend(Bim.viewerInspectorMixin);
-
-Bim.fixupSandboxAttributes();
-
-Bim.loadTileset(viewer, view);
-
+R"HTML(';
+var view = Bim.requestView(viewJsonUrl, function(err, view) {
+    if (Cesium.defined(err)) {
+        console.log("Failed to load " + viewJsonUrl); 
+        return;
+    } else {
+        var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
+        viewer.extend(Bim.viewerInspectorMixin);
+        Bim.fixupSandboxAttributes();
+        Bim.loadTileset(viewer, view);
+    }
+});
 </script>
 </body>
-</html>)HTML";
+</html>
+)HTML";
 
