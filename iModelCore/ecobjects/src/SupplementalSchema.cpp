@@ -520,7 +520,9 @@ ECSchemaP schema2
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SupplementedSchemaStatus::Success;
-    for(ECClassP supplementalClass: schema2->GetClasses())
+    bvector<ECClassP> orderedClasses;
+    GetOrderedClasses(orderedClasses, schema2);
+    for(ECClassP supplementalClass: orderedClasses)
         {
         status = MergeClassesWithEqualPrecedence(mergedSchema.get(), supplementalClass, supplementalSchemaFullName, mergedSchemaFullName);
         if (SupplementedSchemaStatus::Success != status)
@@ -530,6 +532,47 @@ ECSchemaP schema2
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void SupplementedSchemaBuilder::GetOrderedClasses(bvector<ECClassP>& orderedClasses, ECSchemaP schema)
+    {
+    for (ECClassP ecClass : schema->GetClasses())
+        {
+        for (IECInstancePtr container : ecClass->GetCustomAttributes(false))
+            {
+            ECClassP caClass = const_cast<ECClassP>(&(container->GetClass()));
+            if (caClass->GetSchemaR().IsSupplementalSchema())
+                {
+                if (std::find(orderedClasses.begin(), orderedClasses.end(), caClass) == orderedClasses.end())
+                    {
+                    orderedClasses.push_back(caClass);
+                    }
+                }
+            }
+        PropertyList props;
+        ecClass->GetProperties(false, &props);
+        for (ECPropertyP prop : props)
+            {
+            for (IECInstancePtr container : prop->GetCustomAttributes(false))
+                {
+                ECClassP caClass = const_cast<ECClassP>(&(container->GetClass()));
+                if (caClass->GetSchemaR().IsSupplementalSchema())
+                    {
+                    if (std::find(orderedClasses.begin(), orderedClasses.end(), caClass) == orderedClasses.end())
+                        {
+                        orderedClasses.push_back(caClass);
+                        }
+                    }
+                }
+            }
+        if (std::find(orderedClasses.begin(), orderedClasses.end(), ecClass) == orderedClasses.end())
+            {
+            orderedClasses.push_back(ecClass);
+            }
+
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -635,7 +678,9 @@ SchemaPrecedence precedence
         return status;
         }
 
-    for (ECClassP ecClass: supplementalSchema->GetClasses())
+    bvector<ECClassP> orderedClasses;
+    GetOrderedClasses(orderedClasses, supplementalSchema);
+    for (ECClassP ecClass: orderedClasses)
         {
         status = SupplementClass(primarySchema, supplementalSchema, ecClass, precedence, &supplementalSchemaFullName);
         if (SupplementedSchemaStatus::Success != status)
@@ -672,9 +717,13 @@ Utf8StringCP consolidatedSchemaFullName
         IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
         IECInstancePtr consolidatedCustomAttribute;
         
+        if (customAttribute->GetClass().GetSchema().IsSupplementalSchema() && 
+            nullptr != consolidatedCustomAttributeContainer.GetContainerSchema()->GetClassCP(customAttribute->GetClass().GetName().c_str()))
+            supplementalCustomAttribute = customAttribute->CreateCopyThroughSerialization(*consolidatedCustomAttributeContainer.GetContainerSchema());
+
         if (localCustomAttribute.IsNull())
             {
-            if (SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *customAttribute, precedence) != ECN::ECObjectsStatus::Success)
+            if (SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence) != ECN::ECObjectsStatus::Success)
                 return SupplementedSchemaStatus::SchemaMergeException;
 
             continue;
@@ -760,16 +809,21 @@ Utf8StringCP supplementalSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SupplementedSchemaStatus::Success;
-    ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalECClass->GetName().c_str());
-    if (NULL == consolidatedECClass)
-        return SupplementedSchemaStatus::Success;
-
     if (supplementalECClass->HasBaseClasses())
         {
         LOG.errorv("The class '%s' from the Supplemental Schema '%s' has one or more base classes.  This is not allowed.",
-            supplementalECClass->GetName().c_str(), supplementalSchemaFullName->c_str());
+                   supplementalECClass->GetName().c_str(), supplementalSchemaFullName->c_str());
         return SupplementedSchemaStatus::SupplementalClassHasBaseClass;
         }
+
+    ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalECClass->GetName().c_str());
+    if (NULL == consolidatedECClass)
+        {
+        if (consolidatedECClass->IsCustomAttributeClass())
+            primarySchema.CopyClass(consolidatedECClass, *supplementalECClass);
+        return SupplementedSchemaStatus::Success;
+        }
+
 
     ECRelationshipClassP relationship = supplementalECClass->GetRelationshipClassP();
     // If this is a relationship class merge custom attributes on the source and target constraints

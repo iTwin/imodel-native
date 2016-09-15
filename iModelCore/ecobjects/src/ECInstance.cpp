@@ -155,10 +155,18 @@ bool IsExcluded(Utf8String& className, bvector<Utf8String>& classNamesToExclude)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECInstance::CreateCopyThroughSerialization()
     {
+    return CreateCopyThroughSerialization(GetClass().GetSchema());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+IECInstancePtr IECInstance::CreateCopyThroughSerialization(ECSchemaCR targetSchema)
+    {
     Utf8String ecInstanceXml;
     this->WriteToXmlString(ecInstanceXml, true, false);
 
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (GetClass().GetSchema());
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(targetSchema);
 
     IECInstancePtr deserializedInstance;
     IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
