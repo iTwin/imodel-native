@@ -274,6 +274,7 @@ struct DrawArgs
     typedef bmultimap<int, TileCPtr> MissingNodes;
     RenderContextR m_context;
     Transform m_location;
+    ClipVectorPtr m_clip;
     double m_scale;
     Render::GraphicBranch m_graphics;
     Render::GraphicBranch m_substitutes;
@@ -284,10 +285,10 @@ struct DrawArgs
 
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(m_location, tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
-    void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan) {m_scale = location.ColumnXMagnitude();}
+    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip (clip
+    ) {m_scale = location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadsPtr);
+    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
 };
 
 END_TILETREE_NAMESPACE

@@ -328,6 +328,15 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnElementId elementId, bool twoSidedTriangles)
+    {
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
+        AddTriangle(*visitor, elementId, false, twoSidedTriangles);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(TriangleCR triangle)
