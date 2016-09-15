@@ -58,7 +58,7 @@ void TestTxnMonitor::CheckClass(TxnManager& txnMgr, DgnClassId classOfInterest)
         {
         if (TxnTable::ChangeType::Delete == element.GetChangeType())
             {
-            DgnElementId eid = element.GetElementId();
+            /* unused - DgnElementId eid = element.GetElementId();*/
 
             // TODO: do something here
             }
@@ -81,7 +81,7 @@ void TestTxnMonitor::CheckClassOrSubClasses(TxnManager& txnMgr, DgnClassId class
         {
         if (TxnTable::ChangeType::Delete == element.GetChangeType())
             {
-            DgnElementId eid = element.GetElementId();
+            /* unused - DgnElementId eid = element.GetElementId();*/
             DgnClassId ecclsid = element.GetECClassId();
 
             ECN::ECClassCP ecclass = txnMgr.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(ecclsid.GetValue()));
