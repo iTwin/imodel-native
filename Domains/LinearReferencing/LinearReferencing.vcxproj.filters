@@ -41,6 +41,9 @@
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingDomain.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\LinearReferencing\Segmentation.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="LinearReferencing.mke">
@@ -67,6 +70,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LinearReferencingDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Segmentation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

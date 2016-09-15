@@ -43,6 +43,8 @@ protected:
     LinearlyReferencedAtLocation();
     LinearlyReferencedAtLocation(DistanceExpressionCR atPosition);
 
+    virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedAtLocation; }
+
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
@@ -67,6 +69,8 @@ private:
 protected:
     LinearlyReferencedFromToLocation();
     LinearlyReferencedFromToLocation(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);
+
+    virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedFromToLocation; }
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;

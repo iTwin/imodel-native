@@ -51,6 +51,8 @@ $(o)LinearlyReferencedLocation$(oext) : $(_MakeFilePath)LinearlyReferencedLocati
 
 $(o)LinearReferencingDomain$(oext) : $(_MakeFilePath)LinearReferencingDomain.cpp ${MultiCompileDepends} $(appPublicApi)LinearReferencingDomain.h
 
+$(o)Segmentation$(oext) : $(_MakeFilePath)Segmentation.cpp ${MultiCompileDepends} $(appPublicApi)Segmentation.h
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -73,7 +75,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGe
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BaseGeoCoord$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

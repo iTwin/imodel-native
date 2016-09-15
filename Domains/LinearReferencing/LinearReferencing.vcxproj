@@ -126,6 +126,7 @@
     <ClInclude Include="PublicAPI\LinearReferencing\LinearlyReferencedLocation.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingApi.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingDomain.h" />
+    <ClInclude Include="PublicAPI\LinearReferencing\Segmentation.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LinearReferencing.mke" />
@@ -138,6 +139,7 @@
     <ClCompile Include="LinearlyReferencedLocation.cpp" />
     <ClCompile Include="LinearReferencingDomain.cpp" />
     <ClCompile Include="LinearReferencingInternal.cpp" />
+    <ClCompile Include="Segmentation.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

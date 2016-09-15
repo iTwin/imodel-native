@@ -53,9 +53,6 @@ typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocated
 {
-private:
-    Dgn::DgnElementId m_linearElementId;
-
 protected:
     LINEARREFERENCING_EXPORT ILinearlyLocated(Dgn::DgnElementId linearElementId);
 
@@ -67,7 +64,7 @@ public:
     Dgn::DgnElementCR ToElement() const { return _ToElementLRImpl(); } 
     Dgn::DgnElementP ToElementP() { return const_cast<Dgn::DgnElementP>(&_ToElementLRImpl()); }
 
-    LINEARREFERENCING_EXPORT Dgn::DgnElementId GetLinearElementId() const { return m_linearElementId; }
+    LINEARREFERENCING_EXPORT Dgn::DgnElementId GetLinearElementId() const;
     LINEARREFERENCING_EXPORT ILinearElementCP GetLinearElement() const;
     LINEARREFERENCING_EXPORT bvector<LinearlyReferencedLocationId> QueryLinearlyReferencedLocationIds() const;
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationCP GetLinearlyReferencedLocation(LinearlyReferencedLocationId) const;
@@ -111,8 +108,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IReferent
 protected:
     virtual double _GetRestartValue() const { return 0.0; }
     virtual ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return nullptr; }
+    virtual Dgn::DgnElementCR _ToElementLRImpl() const = 0;
 
 public:
+    Dgn::DgnElementCR ToElement() const { return _ToElementLRImpl(); }
+    Dgn::DgnElementP ToElementP() { return const_cast<Dgn::DgnElementP>(&_ToElementLRImpl()); }
+
     LINEARREFERENCING_EXPORT double GetRestartValue() const { return _GetRestartValue(); }
     LINEARREFERENCING_EXPORT ILinearlyLocatedElementCP ToLinearlyLocatedElement() const { return _ToLinearlyLocatedElement(); }
 }; // IReferent

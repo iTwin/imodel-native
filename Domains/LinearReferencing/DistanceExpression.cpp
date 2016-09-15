@@ -18,7 +18,20 @@ DistanceExpression::DistanceExpression():
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceExpression::DistanceExpression(double distanceAlong, NullableDouble lateralOffset, NullableDouble verticalOffset, NullableDouble distanceAlongFromReferent):
-    m_distanceAlong(distanceAlong), m_lateralOffset(lateralOffset), m_verticalOffset(verticalOffset), m_distanceAlongFromReferent(distanceAlongFromReferent)
+DistanceExpression::DistanceExpression(double distanceAlong, NullableDouble lateralOffset, NullableDouble verticalOffset, 
+    DgnElementId fromReferentId, NullableDouble distanceAlongFromReferent):
+    m_distanceAlong(distanceAlong), m_lateralOffset(lateralOffset), m_verticalOffset(verticalOffset), 
+    m_fromReferentId(fromReferentId), m_distanceAlongFromReferent(distanceAlongFromReferent)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DistanceExpression::DistanceExpression(double distanceAlong, NullableDouble lateralOffset, NullableDouble verticalOffset, 
+    IReferentCP fromReferentCP, NullableDouble distanceAlongFromReferent):
+    m_distanceAlong(distanceAlong), m_lateralOffset(lateralOffset), m_verticalOffset(verticalOffset), 
+    m_fromReferentId(fromReferentCP == nullptr ? DgnElementId() : fromReferentCP->ToElement().GetElementId()), 
+    m_distanceAlongFromReferent(distanceAlongFromReferent)
     {
     }

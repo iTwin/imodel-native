@@ -15,20 +15,40 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 
 typedef Nullable<double> NullableDouble;
 
+//=======================================================================================
+//! Data structure used as a data-holder of a measured value which defines 
+//! the location along the linear element, and optionally offset from it.
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
 struct DistanceExpression
 {
+    friend struct LinearlyReferencedAtLocation;
+    friend struct LinearlyReferencedFromToLocation;
+
 private:
     double m_distanceAlong;
     NullableDouble m_lateralOffset, m_verticalOffset, m_distanceAlongFromReferent;
+    Dgn::DgnElementId m_fromReferentId;
+
+    DistanceExpression(double distanceAlong, NullableDouble lateralOffset, NullableDouble verticalOffset,
+        Dgn::DgnElementId fromReferentId, NullableDouble distanceAlongFromReferent);
 
 public:
     LINEARREFERENCING_EXPORT DistanceExpression();
-    LINEARREFERENCING_EXPORT DistanceExpression(double distanceAlong, NullableDouble lateralOffset = NullableDouble(), NullableDouble verticalOffset = NullableDouble(), NullableDouble distanceAlongFromReferent = NullableDouble());
+    LINEARREFERENCING_EXPORT DistanceExpression(double distanceAlong, NullableDouble lateralOffset = NullableDouble(), NullableDouble verticalOffset = NullableDouble(), 
+        IReferentCP fromReferentId = nullptr, NullableDouble distanceAlongFromReferent = NullableDouble());
 
-    LINEARREFERENCING_EXPORT double GetDistanceAlongFromStart() const { return m_distanceAlong; }
-    LINEARREFERENCING_EXPORT NullableDouble GetLateralOffsetFromILinearElement() const { return m_lateralOffset; }
-    LINEARREFERENCING_EXPORT NullableDouble GetVerticalOffsetFromILinearElement() const { return m_verticalOffset; }
-    LINEARREFERENCING_EXPORT NullableDouble GetDistanceAlongFromReferent() const { return m_distanceAlongFromReferent; }
+    double GetDistanceAlongFromStart() const { return m_distanceAlong; }    
+    NullableDouble GetLateralOffsetFromILinearElement() const { return m_lateralOffset; }    
+    NullableDouble GetVerticalOffsetFromILinearElement() const { return m_verticalOffset; }
+    NullableDouble GetDistanceAlongFromReferent() const { return m_distanceAlongFromReferent; }
+    Dgn::DgnElementId GetFromReferentId() const { return m_fromReferentId; }
+
+    void SetDistanceAlongFromStart(double newVal) { m_distanceAlong = newVal; }
+    void SetLateralOffsetFromILinearElement(NullableDouble newVal) { m_lateralOffset = newVal; }
+    void SetVerticalOffsetFromILinearElement(NullableDouble newVal) { m_verticalOffset = newVal; }
+    void SetDistanceAlongFromReferent(NullableDouble newVal) { m_distanceAlongFromReferent = newVal; }
+    //void SetFromReferent(IReferentCP fromReferent) { m_fromReferentId = (fromReferent) ? fromReferent->ToElement().GetElementId() : Dgn::DgnElementId(); }
 }; // DistanceExpression
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

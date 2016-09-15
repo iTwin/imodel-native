@@ -10,9 +10,25 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocated::ILinearlyLocated(Dgn::DgnElementId linearElementId):
-    m_linearElementId(linearElementId)
+ILinearlyLocated::ILinearlyLocated(Dgn::DgnElementId linearElementId)
     {
+    if (linearElementId.IsValid())
+        ToElementP()->SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
+    else
+        {
+        ECValue val; val.SetToNull();
+        ToElementP()->SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ILinearlyLocated::GetLinearElementId() const 
+    {
+    ECN::ECValue val; 
+    ToElement().GetPropertyValue(val, BLR_PROP_ILinearlyLocated_ILinearElement);
+    return DgnElementId((uint64_t)val.GetLong());
     }
 
 /*---------------------------------------------------------------------------------**//**

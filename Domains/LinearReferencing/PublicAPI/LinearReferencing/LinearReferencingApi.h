@@ -10,6 +10,7 @@
 
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
+#include <Bentley/BeAssert.h>
 #include <Bentley/Nullable.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
@@ -76,6 +77,18 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
+// ECRelationship names
+//-----------------------------------------------------------------------------------------
+//#define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
+
+
+//-----------------------------------------------------------------------------------------
+// ECClass names
+//-----------------------------------------------------------------------------------------
+#define BLR_PROP_ILinearlyLocated_ILinearElement                    "ILinearElement"
+
+
+//-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(__name__) \
@@ -104,13 +117,13 @@ LINEARREFERENCING_TYPEDEFS(DistanceExpression)
 LINEARREFERENCING_TYPEDEFS(ILinearElement)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocated)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocatedElement)
+LINEARREFERENCING_TYPEDEFS(IReferent)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedAtLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedFromToLocation)
 
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedAtLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
-
 
 //-----------------------------------------------------------------------------------------
 // Includes
@@ -119,3 +132,4 @@ LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
 #include "LinearlyReferencedLocation.h"
 #include "ILinearElement.h"
 #include "LinearReferencingDomain.h"
+#include "Segmentation.h"

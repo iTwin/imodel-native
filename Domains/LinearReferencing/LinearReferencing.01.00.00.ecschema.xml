@@ -31,7 +31,17 @@
             <Class class="ILinearlyLocatedAttribution"/>
         </Target>
     </ECRelationshipClass-->
-    <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract"/>
+    <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract">
+        <!--ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward">
+            <ECCustomAttributes>
+                <AutoHandledProperty>
+                    <- 3 translates to "ReadOnly = Select|Insert" ->
+                    <StatementTypes>3</StatementTypes>
+                </AutoHandledProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty-->
+        <ECProperty propertyName="ILinearElement" typeName="long" />
+    </ECEntityClass>
     <!--ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing">
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="ILinearlyLocated"/>
@@ -82,6 +92,7 @@
         </ECCustomAttributes>
         <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
         <!--ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
+        <ECProperty propertyName="FromReferent" typeName="long" />
     </ECEntityClass>
     <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
@@ -90,8 +101,10 @@
         </ECCustomAttributes>
         <ECStructProperty propertyName="FromPosition" typeName="DistanceExpression"/>
         <!--ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
+        <ECProperty propertyName="FromPositionFromReferent" typeName="long" />
         <ECStructProperty propertyName="ToPosition" typeName="DistanceExpression"/>
         <!--ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
+        <ECProperty propertyName="ToPositionFromReferent" typeName="long" />
     </ECEntityClass>
     <!--ECRelationshipClass typeName="LinearlyReferencedLocationRefersToReferent" strength="referencing">
         <Source multiplicity="(0..*)" polymorphic="true">
