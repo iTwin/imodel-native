@@ -1524,6 +1524,16 @@ void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& impor
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
+    {
+    m_categoryId = src.GetCategoryId();
+    m_geom = src.GetGeometryStream();
+    m_facetCount = src._GetFacetCount();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_CopyFrom(DgnElementCR el)
@@ -1532,9 +1542,8 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource2d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1547,9 +1556,8 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource3d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 
