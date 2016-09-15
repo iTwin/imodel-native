@@ -65,7 +65,15 @@ void ViewFlags::From3dJson(JsonValueCR val)
     m_noClipVolume = val[ViewFlagsJson::NoClipVolume()].asBool();
     m_ignoreLighting = val[ViewFlagsJson::IgnoreLighting()].asBool();
 
-    m_renderMode = RenderMode(val[ViewFlagsJson::RenderMode()].asUInt());
+    // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
+    uint32_t renderModeValue = val[ViewFlagsJson::RenderMode()].asUInt();
+
+    if (renderModeValue < (uint32_t)RenderMode::HiddenLine)
+        m_renderMode = RenderMode::Wireframe;
+    else if (renderModeValue > (uint32_t)RenderMode::SolidFill)
+        m_renderMode = RenderMode::SmoothShade;
+    else
+        m_renderMode = RenderMode(renderModeValue);
 
 #if defined (TEST_FORCE_VIEW_SMOOTH_SHADE)
     static bool s_forceSmooth=true;

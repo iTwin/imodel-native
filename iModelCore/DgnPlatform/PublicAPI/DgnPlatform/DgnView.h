@@ -246,7 +246,7 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) { return QueryView(QueryViewId(name, db), db); }
 
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode renderModeOverride) const;
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode modeOverride=Render::RenderMode::Wireframe, bool useOverride=false) const;
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry

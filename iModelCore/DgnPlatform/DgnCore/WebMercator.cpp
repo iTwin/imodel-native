@@ -101,9 +101,11 @@ struct WebMercatorProgressive : ProgressiveTask
     MapRootR m_root;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
+    TileLoadsPtr m_loads;
 
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes) : m_root(root), m_missing(std::move(nodes)){}
+    WebMercatorProgressive(MapRootR root, DrawArgs::MissingNodes& nodes, TileLoadsPtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
+    ~WebMercatorProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
 
 END_UNNAMED_NAMESPACE
@@ -394,8 +396,9 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     if (!args.m_missing.empty())
         {
         // yes, request them and schedule a progressive task to draw them as they arrive.
-        args.RequestMissingTiles(*m_root);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing));
+        TileLoadsPtr loads = std::make_shared<TileLoads>();
+        args.RequestMissingTiles(*m_root, loads);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing, loads));
         }
     }
 
@@ -419,7 +422,7 @@ ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveCo
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    args.RequestMissingTiles(m_root);
+    args.RequestMissingTiles(m_root, m_loads);
     args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
@@ -427,6 +430,7 @@ ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveCo
     DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
+        m_loads = nullptr; // for debugging
         context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
         return Completion::Finished;
         }

@@ -60,6 +60,7 @@ struct MapRoot : TileTree::Root
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
+    ~MapRoot() {ClearAllTiles();}
 };
 
 //=======================================================================================
