@@ -27,13 +27,14 @@ private:
 
 protected:
     //! @private
-    explicit AlignmentReferent(CreateParams const& params) : T_Super(params), LinearReferencing::ILinearlyLocatedElement(Dgn::DgnElementId()) {}
+    explicit AlignmentReferent(CreateParams const& params) : T_Super(params), LinearReferencing::ILinearlyLocatedElement() {}
 
     //! @private
-    explicit AlignmentReferent(CreateParams const& params, AlignmentCR alignment, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue);
+    explicit AlignmentReferent(CreateParams const& params, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue);
 
     virtual double _GetRestartValue() const override { return m_restartValue; }
-    virtual Dgn::DgnElementCR _ToElementLRImpl() const override { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override final { return *this; }
+    virtual Dgn::DgnElementCR _IReferentToDgnElement() const override final { return *this; }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentReferent)

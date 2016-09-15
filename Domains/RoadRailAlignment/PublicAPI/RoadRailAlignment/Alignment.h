@@ -28,7 +28,7 @@ protected:
 
     virtual double _GetLength() const override;
     virtual double _GetStartValue() const override { return 0.0; }
-    virtual Dgn::DgnElementCR _ToElementLRImpl() const { return *this; }
+    virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
