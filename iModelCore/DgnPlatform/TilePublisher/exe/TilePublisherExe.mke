@@ -23,7 +23,7 @@ always:
 #   Include TilePublisher.h
 #----------------------------------------------------------------------------------------
 libInclude = $(OutputRootDir)build/TilePublisher/
-cIncs += -I$(libInclude)
+cIncs + -I$(libInclude)
 
 $(libInclude)DgnPlatform/TilePublisher/TilePublisher.h : $(BuildContext)Delivery/TilePublisher/TilePublisher.h
     $(msg)

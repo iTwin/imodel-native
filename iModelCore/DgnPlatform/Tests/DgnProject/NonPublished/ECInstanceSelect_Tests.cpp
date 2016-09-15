@@ -237,6 +237,25 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     ASSERT_EQ (5235.62402, stmt.GetValueDouble (1));
     ASSERT_EQ (353.99803, stmt.GetValueDouble (2));
     stmt.Finalize ();
+
+    //now verify ECClass views by running SQLite SQL against some of them (this should never be done in production code though
+    //as the views are only there for debugging/tracing purposes)
+    ASSERT_EQ(SUCCESS, m_db->Schemas().CreateECClassViewsInDb());
+    bvector<Utf8CP> sqlList;
+    sqlList.push_back("SELECT * FROM [bis.Element]");
+    sqlList.push_back("SELECT * FROM [bis.DefinitionElement]");
+    sqlList.push_back("SELECT * FROM [bis.GeometricElement2d]");
+    sqlList.push_back("SELECT * FROM [bis.GeometricElement3d]");
+    sqlList.push_back("SELECT * FROM [bis.PhysicalElement]");
+
+    sqlList.push_back("SELECT * FROM [appdw.Nozzle]");
+    sqlList.push_back("SELECT * FROM [appdw.Equipment]");
+
+    for (Utf8CP sql : sqlList)
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, sql)) << sql;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,6 +352,25 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_STREQ ("N3", stmt.GetValueText (0));
     stmt.Finalize ();
+
+    //now verify ECClass views by running SQLite SQL against some of them (this should never be done in production code though
+    //as the views are only there for debugging/tracing purposes)
+    ASSERT_EQ(SUCCESS, m_db->Schemas().CreateECClassViewsInDb());
+    bvector<Utf8CP> sqlList;
+    sqlList.push_back("SELECT * FROM [bis.Element]");
+    sqlList.push_back("SELECT * FROM [bis.DefinitionElement]");
+    sqlList.push_back("SELECT * FROM [bis.GeometricElement2d]");
+    sqlList.push_back("SELECT * FROM [bis.GeometricElement3d]");
+    sqlList.push_back("SELECT * FROM [bis.PhysicalElement]");
+
+    sqlList.push_back("SELECT * FROM [ams.EQUIP_PNOZ]");
+    sqlList.push_back("SELECT * FROM [ams.PIPE_PFLR]");
+
+    for (Utf8CP sql : sqlList)
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, sql)) << sql;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

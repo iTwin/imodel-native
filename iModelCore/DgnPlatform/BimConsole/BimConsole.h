@@ -40,6 +40,7 @@ struct SessionFile
         BeSQLite::EC::ECDb const& GetHandle() const { return _GetHandle(); }
         BeSQLite::EC::ECDb& GetHandleR() const { return _GetHandle(); }
         Utf8CP GetPath() const { return IsOpen() ? GetHandle().GetDbFileName() : nullptr; }
+        Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
         static Utf8CP TypeToString(Type type) { return type == Type::Bim ? "BIM" : "ECDb"; }
     };
@@ -57,6 +58,7 @@ struct BimFile : SessionFile
 
     public:
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
+        Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
         ~BimFile() {}
     };
 

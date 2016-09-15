@@ -23,7 +23,7 @@ size_t FacetCounter::GetFacetCount(DgnTorusPipeDetailCR data) const
     // as we only care for the radius and its stroke count based on the facet options
     DEllipse3d pipeSection;
     pipeSection.InitFromCenterNormalRadius(data.m_center, data.m_vectorY, data.m_minorRadius);
-    size_t pipeStrokes = m_facetOptions.FullEllipseStrokeCount(pipeSection);
+    size_t pipeStrokes = m_facetOptions->FullEllipseStrokeCount(pipeSection);
 
     // Initialize the primary circle as an ellipse (might not be a closed loop), again, the center, orientation
     // and theta (parametric angle of start point) doesn't matter as we only care for the stroke count
@@ -31,7 +31,7 @@ size_t FacetCounter::GetFacetCount(DgnTorusPipeDetailCR data) const
     DEllipse3d primaryCircle;
     primaryCircle.InitFromCenterNormalRadius(data.m_center, data.m_vectorX, data.m_majorRadius + data.m_minorRadius);
     primaryCircle.SetSweep(0, data.m_sweepAngle);
-    size_t primaryStrokes = m_facetOptions.EllipseStrokeCount(primaryCircle);
+    size_t primaryStrokes = m_facetOptions->EllipseStrokeCount(primaryCircle);
 
     // Assume that each stroke of the pipe section will be connected to each stroke of the primary circle
     // Also, if the torus does not do a full sweep, add the faces if it's capped
@@ -54,7 +54,7 @@ size_t FacetCounter::GetFacetCount(DgnConeDetailCR data) const
     // as we only care for the radius and its stroke count based on the facet options
     DEllipse3d ellipse;
     ellipse.InitFromCenterNormalRadius(data.m_centerA, data.m_vector90, radius);
-    size_t strokes = m_facetOptions.FullEllipseStrokeCount(ellipse);
+    size_t strokes = m_facetOptions->FullEllipseStrokeCount(ellipse);
 
     // The cylinder base and top circles have the amount of "strokes", so assume each stroke is a triangle that goes from the cylinder's center to the stroke
     // That gives 2 * strokes facets for only the base and top, now add strokes amount of facets for the quads that connect the strokes from base to top
@@ -72,7 +72,7 @@ size_t FacetCounter::GetFacetCount(DgnBoxDetailCR data) const
     double biggestX = std::max(data.m_baseX, data.m_topX);
     double biggestY = std::max(data.m_baseY, data.m_topY);
     // Use the sizes to get an approximate facet count for a face of the box
-    size_t faceFacets = m_facetOptions.DistanceStrokeCount(biggestX) * m_facetOptions.DistanceStrokeCount(biggestY);
+    size_t faceFacets = m_facetOptions->DistanceStrokeCount(biggestX) * m_facetOptions->DistanceStrokeCount(biggestY);
     // 6 faces in a box, 2 triangles each
     return (m_faceMultiplier * 6 * faceFacets);
     }
@@ -93,13 +93,13 @@ size_t FacetCounter::GetFacetCount(DgnSphereDetailCR data) const
     perimeter.InitFromCenterNormalRadius(center, unitY, radius1);
     perimeter.SetSweep(0, msGeomConst_pi);
     // Get count of facets in the perimeter
-    size_t perimeterFacetCount = m_facetOptions.EllipseStrokeCount(perimeter);
+    size_t perimeterFacetCount = m_facetOptions->EllipseStrokeCount(perimeter);
 
     // Get the "equator" of the ellipsoid/sphere and use the stroke count
     // to multiply the perimeter strokes and get an approximation of the facets
     DEllipse3d equator;
     equator.InitFromCenterNormalRadius(center, unitX, radius2);
-    size_t equatorFacetCount = m_facetOptions.FullEllipseStrokeCount(equator);
+    size_t equatorFacetCount = m_facetOptions->FullEllipseStrokeCount(equator);
 
     return equatorFacetCount * m_faceMultiplier * perimeterFacetCount;
     }
@@ -111,7 +111,7 @@ size_t FacetCounter::GetFacetCount(DgnExtrusionDetailCR data) const
     {
     // Swept profile facet count approximation
     size_t curveStrokes = GetFacetCount(*data.m_baseCurve);
-    size_t extrusionStrokes = m_facetOptions.DistanceStrokeCount(data.m_extrusionVector.Magnitude());
+    size_t extrusionStrokes = m_facetOptions->DistanceStrokeCount(data.m_extrusionVector.Magnitude());
 
     // To overstimate the amount of facets in each of the extrusion faces, add 2 times the strokes of the profile
     //  when the extrusion profile is concave, there is no way of telling exactly the amount of facets, so only count the strokes
@@ -135,7 +135,7 @@ size_t FacetCounter::GetFacetCount(DgnRotationalSweepDetailCR data) const
     DEllipse3d rotationEllipse;
     rotationEllipse.InitFromCenterNormalRadius(data.m_axisOfRotation.origin, data.m_axisOfRotation.direction, radius);
     rotationEllipse.SetSweep(0, data.m_sweepAngle);
-    size_t rotationStrokes = m_facetOptions.EllipseStrokeCount(rotationEllipse);
+    size_t rotationStrokes = m_facetOptions->EllipseStrokeCount(rotationEllipse);
 
     size_t sweepFacets = curveStrokes * rotationStrokes;
 
@@ -223,7 +223,17 @@ size_t FacetCounter::GetFacetCount (ISolidPrimitiveCR solidPrimitive) const
 size_t FacetCounter::GetFacetCount (CurveVectorCR curveVector) const
     {
     bvector<DPoint3d> strokePoints;
-    curveVector.AddStrokePoints(strokePoints, const_cast<IFacetOptionsR>(m_facetOptions)); // NEEDSWORK_EARLIN_CONST
+    curveVector.AddStrokePoints(strokePoints, *m_facetOptions);
+    return strokePoints.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(ICurvePrimitiveCR primitive) const
+    {
+    bvector<DPoint3d> strokePoints;
+    primitive.AddStrokes(strokePoints, *m_facetOptions, true, 0.0, 1.0);
     return strokePoints.size();
     }
 
@@ -247,8 +257,8 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
             MSBsplineCurvePtr curveU = surface.GetIsoUCurve(i);
             MSBsplineCurvePtr curveV = surface.GetIsoVCurve(i);
 
-            maxU = std::max(m_facetOptions.BsplineCurveStrokeCount(*curveU), maxU);
-            maxV = std::max(m_facetOptions.BsplineCurveStrokeCount(*curveV), maxV);
+            maxU = std::max(m_facetOptions->BsplineCurveStrokeCount(*curveU), maxU);
+            maxV = std::max(m_facetOptions->BsplineCurveStrokeCount(*curveV), maxV);
             }
 
         facetCount = static_cast<size_t>(m_faceMultiplier) * maxU * maxV;
@@ -263,8 +273,8 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
             MSBsplineCurvePtr curveU = surface.GetIsoUCurve(i);
             MSBsplineCurvePtr curveV = surface.GetIsoVCurve(i);
 
-            sumU += m_facetOptions.BsplineCurveStrokeCount(*curveU);
-            sumV += m_facetOptions.BsplineCurveStrokeCount(*curveV);
+            sumU += m_facetOptions->BsplineCurveStrokeCount(*curveU);
+            sumV += m_facetOptions->BsplineCurveStrokeCount(*curveV);
             }
 
         double avgU = ((double)sumU / s_numSteps);
@@ -277,6 +287,14 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(PolyfaceQueryCR geom) const
+    {
+    return geom.GetNumFacet();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
@@ -285,6 +303,7 @@ size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
     ISolidPrimitivePtr      solidPrimitive;
     MSBsplineSurfacePtr     bsplineSurface;
     PolyfaceHeaderPtr       polyface;
+    ICurvePrimitivePtr      curvePrimitive;
     
     if ((curveVector = geometry.GetAsCurveVector()).IsValid())
         return GetFacetCount (*curveVector);
@@ -296,10 +315,56 @@ size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
         return GetFacetCount (*bsplineSurface);
 
     if ((polyface = geometry.GetAsPolyfaceHeader()).IsValid())
-        return polyface->GetNumFacet();
+        return GetFacetCount(*polyface);
+
+    if ((curvePrimitive = geometry.GetAsICurvePrimitive()).IsValid())
+        return GetFacetCount(*curvePrimitive);
 
     BeAssert (false);
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(TextStringCR geom) const
+    {
+    return 0; // ###TODO_FACET_COUNT: TextStrings...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
+    {
+    switch (geom.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:      return GetFacetCount(*geom.GetAsICurvePrimitive());
+        case GeometricPrimitive::GeometryType::CurveVector:         return GetFacetCount(*geom.GetAsCurveVector());
+        case GeometricPrimitive::GeometryType::SolidPrimitive:      return GetFacetCount(*geom.GetAsISolidPrimitive());
+        case GeometricPrimitive::GeometryType::BsplineSurface:      return GetFacetCount(*geom.GetAsMSBsplineSurface());
+        case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
+        case GeometricPrimitive::GeometryType::SolidKernelEntity:   return GetFacetCount(*geom.GetAsISolidKernelEntity());
+        case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
+        default:                                                    BeAssert(false); return 0;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
+    {
+    auto options = IFacetOptions::Create();
+
+    static const double s_chordTolerance = 0.01;
+    options->SetChordTolerance(s_chordTolerance);
+    options->SetMaxPerFace(3);
+    options->SetCurvedSurfaceMaxPerFace(3);
+    options->SetNormalsRequired(false);
+    options->SetParamsRequired(false);
+
+    return options;
     }
 
 #ifdef BENTLEYCONFIG_OPENCASCADE
@@ -342,22 +407,19 @@ size_t FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     {
+#ifdef BENTLEYCONFIG_OPENCASCADE
     auto shape = SolidKernelUtil::GetShape(entity);
     BeAssert(nullptr != shape);
-    if (nullptr == shape)
-        return 0;
-
-    IFacetOptionsPtr scaledFacetOptions = m_facetOptions.Clone();
-    scaledFacetOptions->SetChordTolerance(m_facetOptions.GetChordTolerance() / entity.GetEntityTransform().MatrixColumnMagnitude(0));
-
-    FacetCounter counter(*scaledFacetOptions);
-    return counter.GetFacetCount(*shape);
-    }
+    return nullptr != shape ? GetFacetCount(*shape) : 0;
+#else
+    return 0;
 #endif
+    }
 

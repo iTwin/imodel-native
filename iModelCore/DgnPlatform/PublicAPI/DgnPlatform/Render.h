@@ -29,16 +29,9 @@ struct GraphicBuilderPtr;
 enum class RenderMode
     {
     Wireframe      = 0,
-    CrossSection   = 1,
-    Wiremesh       = 2,
     HiddenLine     = 3,
     SolidFill      = 4,
-    ConstantShade  = 5,
     SmoothShade    = 6,
-    Phong          = 7,
-    RayTrace       = 8,
-    Radiosity      = 10,
-    Invalid        = 15,
     };
 
 /*=================================================================================**//**

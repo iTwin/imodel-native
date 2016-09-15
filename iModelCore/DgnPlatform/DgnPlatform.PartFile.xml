@@ -35,7 +35,7 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*,MacOS*,Linux*">
+    <Part Name="OpenCASCADEShim" ExcludePlatforms="MacOS*,Linux*">
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
@@ -710,7 +710,7 @@
 
     <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
         <Bindings>
-            <Directory SourceName="Delivery/TilePublisher/Cesium" ProductDirectoryName="Assets" ProductSubDirectory="scripts/Cesium" />
+            <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
         </Bindings>
     </Part>
 
