@@ -407,15 +407,19 @@ size_t FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     {
+#ifdef BENTLEYCONFIG_OPENCASCADE
     auto shape = SolidKernelUtil::GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
-    }
+#else
+    return 0;
 #endif
+    }
 

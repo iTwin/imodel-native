@@ -137,9 +137,9 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(GeometricPrimitiveCR) const;
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
 
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
 #ifdef BENTLEYCONFIG_OPENCASCADE
     DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
 #endif
 };
 
