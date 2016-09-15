@@ -213,8 +213,7 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
     {
     ECDbR ecdb = SetupECDb("ecprimitivevaluefromjson.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "        <ECProperty propertyName='s' typeName='string' />"
