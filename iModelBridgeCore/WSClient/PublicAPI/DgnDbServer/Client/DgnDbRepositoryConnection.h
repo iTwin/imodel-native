@@ -198,6 +198,9 @@ private:
     //! Internal master files query.
     DgnDbServerFilesTaskPtr MasterFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Queries briefcase file instance from this repository.
+    DgnDbServerFileTaskPtr GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
+
     //! Download a copy of the master file from the repository and initialize it as briefcase
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;

@@ -1751,6 +1751,32 @@ AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::CreateBriefcaseIns
     return m_wsRepositoryClient->SendCreateObjectRequest(briefcaseIdJson, BeFileName(), nullptr, cancellationToken);
     }
 
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetBriefcaseFileInfo";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    Utf8String briefcaseIdString;
+    briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
+    ObjectId briefcaseObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, briefcaseIdString);
+    return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
+        ->Then<DgnDbServerFileResult>([=] (WSObjectsResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerFileResult::Error(result.GetError());
+            }
+
+        JsonValueCR instance = result.GetValue().GetJsonValue()[ServerSchema::Instances][0];
+        auto fileInfo = FileInfo::FromJson(instance);
+        return DgnDbServerFileResult::Success(fileInfo);
+        });
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             09/2016
 //---------------------------------------------------------------------------------------
