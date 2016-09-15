@@ -1015,6 +1015,10 @@ struct CIVdtmsrf *srf,
                                 if ( fread ( &ftrV8, CIVdtmftrV8Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
 
+                                ftrV8.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV8.p[0];
+                                ftrV8.s1 = (CIVdtmsty*) (unsigned __int64) ftrV8.p[1];
+                                ftrV8.pay = (CIVdtmpay*) (unsigned __int64) ftrV8.p[2];
+
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV8.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV8.nam, CIV_C_NAMSIZ );
                                 mbstowcs ( f[blk->use].des, ftrV8.des, CIV_C_DESSIZ );
@@ -1035,6 +1039,9 @@ struct CIVdtmsrf *srf,
 
                                 if ( fread ( &ftrV7, CIVdtmftrV7Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
+
+                                ftrV7.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV7.p[0];
+                                ftrV7.s1 = (CIVdtmsty*) (unsigned __int64) ftrV7.p[1];
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV7.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV7.nam, CIV_C_NAMSIZ );
