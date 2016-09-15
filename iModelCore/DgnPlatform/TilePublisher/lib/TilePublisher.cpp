@@ -85,16 +85,16 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(tile.GetCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile._GenerateMeshes(context.GetFilter(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -102,7 +102,6 @@ void TilePublisher::AppendUInt32(uint32_t value)
     {
     std::fwrite(&value, 1, sizeof(value), m_outputFile);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/16
@@ -144,7 +143,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
     {
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
-    WriteBoundingVolume(root, tile.GetRange());
+    WriteBoundingVolume(root, tile.GetTileRange());
 
     root[JSON_Content]["url"] = Utf8String(m_context.GetTileUrl(tile, s_binaryDataExtension));
     if (!tile.GetChildren().empty())
@@ -171,7 +170,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
 
                 child["refine"] = "replace";
                 child[JSON_GeometricError] = childTile->GetTolerance();
-                WriteBoundingVolume(child, childTile->GetRange());
+                WriteBoundingVolume(child, childTile->GetTileRange());
 
                 child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
                 root[JSON_Children].append(child);
@@ -1030,24 +1029,24 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodePtr& rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
+PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
     {
     Status                      status;
     AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
 
     if (0 != m_maxTilesPerDirectory)
-        rootTile->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+        rootTile.GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
 
-    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (*rootTile, collector))))
+    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (rootTile, collector))))
         {
         Json::Value         child;
 
-        rootRange.Extend (rootTile->GetRange());
+        rootRange.Extend (rootTile.GetTileRange());
         rootJson["refine"] = "replace";
-        rootJson[JSON_GeometricError] = rootTile->GetTolerance();
-        TilePublisher::WriteBoundingVolume(rootJson, rootTile->GetRange());
+        rootJson[JSON_GeometricError] = rootTile.GetTolerance();
+        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 
-        rootJson[JSON_Content]["url"] = Utf8String (rootTile->GetRelativePath (name.c_str(), s_metadataExtension).c_str());
+        rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
         }
     return status;
     }
@@ -1058,20 +1057,20 @@ PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& ro
 PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
     {
     IGenerateMeshTiles*         generateMeshTiles;
-    TileNodePtr                 rootTile = new TileNode();
+    TileNodePtr                 rootTile;
     Status                      status;
 
     if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
         return Status::NotImplemented;
 
     progressMeter._SetModel (&model);
-    progressMeter._SetTaskName (TileGenerator::TaskName::CollectingGeometry);       // Needs work -- meter progress in model publisher.
+    progressMeter._SetTaskName (TileGenerator::TaskName::GeneratingRangeTree);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
 
     if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
         return status;
 
-    return CollectOutputTiles (rootJson, rootRange, rootTile, name, generator, collector); 
+    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1080,25 +1079,24 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
 PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters)
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
-    TileNodePtr             rootTile = new TileNode();
+    TileNodePtr             rootTile;
     Status                  status;
     static size_t           s_maxPointsPerTile = 20000;
 
-    if (Status::Success != (status = ConvertStatus(generator.LoadGeometry(m_viewController, toleranceInMeters))) ||
-        Status::Success != (status = ConvertStatus(generator.GenerateTiles (*rootTile, toleranceInMeters, s_maxPointsPerTile))))
+    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, m_viewController, s_maxPointsPerTile))))
         return status;
         
-    return CollectOutputTiles (rootJson, rootRange, rootTile, name, generator, collector); 
+    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
+PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
     {
     Json::Value         realityModelTilesets, elementTileSet;
-    DRange3d            rootRange = DRange3d::NullRange();
 
+    rootRange = DRange3d::NullRange();
     // First go through and collect tilesets for any (reality) models.   These will produce tileset from the HLOD trees directly and therefore don't
     // won't be included by collecting through their elements.
     for (auto& modelId : m_viewController.GetViewedModels())
