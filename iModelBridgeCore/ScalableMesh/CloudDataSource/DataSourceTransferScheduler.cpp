@@ -229,8 +229,12 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             DataSourceURL    url;
             locator.getURL(url);
                                                             // Segment name is blob name with index
-            DataSourceURL segmentName = url + DataSourceURL(L"-" + std::to_wstring(segmentIndex));
-
+            DataSourceURL segmentName(url);
+            
+            if (buffer->isSegmented())
+                {
+                segmentName += DataSourceURL(L"-" + std::to_wstring(segmentIndex));
+                }
                                                             // Get the Account
             if ((account = locator.getAccount()) == nullptr)
                 {
@@ -247,6 +251,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                     assert(false);
                     return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
                     }
+                buffer->updateReadSize(readSize);
                 }
             else
                 if (locator.getMode() == DataSourceMode_Write_Segmented)
