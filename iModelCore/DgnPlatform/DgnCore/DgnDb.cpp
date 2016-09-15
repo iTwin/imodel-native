@@ -439,9 +439,7 @@ void DgnImportContext::ComputeGcsAndGOadjustment()
         {
         m_areCompatibleDbs = false;
         return;
-        }
-    
-    m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
+        }        
     }
 
 /*---------------------------------------------------------------------------------**//**
