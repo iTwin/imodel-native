@@ -1486,12 +1486,14 @@ BENTLEYDTM_Public int bcdtmList_testForVoidOrHoleHullLineDtmObject(BC_DTM_OBJ *d
  clPtr = nodeAddrP(dtmP,P1)->fPtr ;
  while ( clPtr != dtmP->nullPtr )
    {
-    if(flistAddrP(dtmP,clPtr)->nextPnt == P2 )
+    const auto flistAddr = flistAddrP(dtmP, clPtr);
+    if(flistAddr->nextPnt == P2 )
       {
-       if( ftableAddrP(dtmP,flistAddrP(dtmP,clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
-           ftableAddrP(dtmP,flistAddrP(dtmP,clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    )  return(1) ;
+       const auto featureType = ftableAddrP(dtmP, flistAddr->dtmFeature)->dtmFeatureType;
+       if( featureType == DTMFeatureType::Void ||
+           featureType == DTMFeatureType::Hole    )  return(1) ;
       }
-    clPtr = flistAddrP(dtmP,clPtr)->nextPtr ;
+    clPtr = flistAddr->nextPtr ;
    }
 /*
 ** Job Completed
@@ -1805,9 +1807,10 @@ BENTLEYDTM_Public int bcdtmList_testForPointOnIslandVoidOrHoleHullDtmObject(BC_D
  clc = nodeAddrP(dtmP,P1)->fPtr ;
  while ( clc != dtmP->nullPtr )
    {
-    if( ftableAddrP(dtmP,flistAddrP(dtmP,clc)->dtmFeature)->dtmFeatureType == DTMFeatureType::Island ||
-        ftableAddrP(dtmP,flistAddrP(dtmP,clc)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void   ||
-        ftableAddrP(dtmP,flistAddrP(dtmP,clc)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole      ) return(1) ;
+     const auto featureType = ftableAddrP(dtmP, flistAddrP(dtmP, clc)->dtmFeature)->dtmFeatureType;
+    if( featureType == DTMFeatureType::Island ||
+        featureType == DTMFeatureType::Void   ||
+        featureType == DTMFeatureType::Hole      ) return(1) ;
     clc = flistAddrP(dtmP,clc)->nextPtr ;
    }
 /*
