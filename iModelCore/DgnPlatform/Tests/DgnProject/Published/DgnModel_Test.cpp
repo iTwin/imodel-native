@@ -300,48 +300,12 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Getting the list of Dgn Models in a project and see if they work
-* @bsimethod                                    Majd.Uddin                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, WorkWithDgnModelTable)
-    {
-    SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", L"WorkWithDgnModelTable.ibim", Db::OpenMode::ReadWrite);
-
-    //Iterating through the models
-    DgnModels& modelTable = m_db->Models();
-    DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(5, iter.QueryCount()); // including RepositoryModel, DictionaryModel, and Converter's GroupModel
-
-    //Set up testmodel properties as we know what the models in this file contain
-    TestModelProperties models[3], testModel;
-    models[0].SetTestModelProperties(L"Default");
-    models[1].SetTestModelProperties(L"Model2d");
-
-    //Iterate through the model and verify it's contents. TODO: Add more checks
-    int i = 0;
-    for (DgnModels::Iterator::Entry const& entry : iter)
-        {
-        ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        DgnModelPtr model = modelTable.GetModel(entry.GetModelId());
-        ASSERT_TRUE(model.IsValid());
-
-        if (!model->IsGeometricModel())
-            continue;
-
-        WString entryNameW(entry.GetCodeValue(), true); // string conversion
-        testModel.SetTestModelProperties(entryNameW.c_str());
-        testModel.IsEqual(models[i]);
-        i++;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, DictionaryModel)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
+    DgnDbR db = GetDgnDb();
 
     DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
     EXPECT_TRUE(model.IsValid());
@@ -369,28 +333,21 @@ TEST_F(DgnModelTests, DictionaryModel)
     DgnImportContext importer(db, *db2);
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
-    seedModel->FillModel ();
-    EXPECT_TRUE (seedModel != nullptr);
+    DgnDbR db = GetDgnDb();
 
     //Inserts models
-    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->Insert();
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
     db.SaveChanges ("changeSet1");
 
-    DgnModelPtr m2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
-    m2->Insert ();
-
-    DgnModelPtr m3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
-    m3->Insert();
+    PhysicalModelPtr m2 = InsertPhysicalModel("Model2");
+    PhysicalModelPtr m3 = InsertPhysicalModel("Model3");
     db.SaveChanges ("changeSet1");
 
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -447,24 +404,18 @@ TEST_F (DgnModelTests, ModelsIterator)
 TEST_F (DgnModelTests, AbandonChanges)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
-    seedModel->FillModel ();
-    EXPECT_TRUE (seedModel != nullptr);
+    DgnDbR db = GetDgnDb();
 
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->Insert ();
-    EXPECT_TRUE (m1 != nullptr);
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    EXPECT_TRUE(m1.IsValid());
     db.SaveChanges ("changeSet1");
 
-    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE (db.Models().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid());
     m1->Delete ();
-    EXPECT_FALSE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_FALSE (db.Models().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid());
 
-    DgnModelPtr model2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
-    model2->Insert ();
+    PhysicalModelPtr model2 = InsertPhysicalModel("Model2");
 
     //Model 1 should be back. Model 2 shouldnt be in the db anymore.
     DbResult rzlt = db.AbandonChanges ();
@@ -493,14 +444,10 @@ struct TestAppData : DgnModel::AppData
 TEST_F (DgnModelTests, AddAppData)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
-    seedModel->FillModel ();
-    EXPECT_TRUE (seedModel != nullptr);
+    DgnDbR db = GetDgnDb();
 
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
     m1->Insert ();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -526,14 +473,10 @@ TEST_F (DgnModelTests, AddAppData)
 TEST_F (DgnModelTests, DropAppData)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
-    seedModel->FillModel ();
-    EXPECT_TRUE (seedModel != nullptr);
+    DgnDbR db = GetDgnDb();
 
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -573,15 +516,11 @@ TEST_F (DgnModelTests, ReplaceInvalidCharacter)
 TEST_F(DgnModelTests, UnitDefinitionLabel)
     {
     SetupSeedProject();
-    DgnDbR db = *m_db;
-
-    DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
-    seedModel->FillModel();
-    EXPECT_TRUE(seedModel != nullptr);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
     // For TFS 473760: The returned label was truncated before the fix i.e. 'm' instead of 'mm'
     // Adding the test so that this doesn't happen again
-    GeometricModel::DisplayInfo const& displayInfo = seedModel->ToGeometricModel()->GetDisplayInfo();
+    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
     EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
     }

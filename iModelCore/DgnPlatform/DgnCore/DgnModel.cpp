@@ -1327,36 +1327,6 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
     return uniqueModelName;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* DEPRECATED: Remove this method when QueryFirstModelId is removed!
-* @bsimethod                                                    Shaun.Sewall    09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isGeometricModel(DgnDbR db, DgnModelId modelId)
-    {
-    DgnModelPtr model = db.Models().GetModel(modelId);
-    return model.IsValid() && model->IsGeometricModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* DEPRECATED: Do not add any new callers to this method as it will be removed!
-* @bsimethod                                    Keith.Bentley                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnModels::QueryFirstModelId() const
-    {
-    for (auto const& modelEntry : MakeIterator())
-        {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
-
-        if (!isGeometricModel(m_dgndb, modelEntry.GetModelId()))
-            continue;
-
-        return modelEntry.GetModelId();
-        }
-
-    return DgnModelId();
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------

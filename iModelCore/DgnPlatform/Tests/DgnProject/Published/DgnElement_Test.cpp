@@ -27,15 +27,9 @@ TEST_F (DgnElementTests, ResetStatistics)
     {
     SetupSeedProject();
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
-    seedModel->FillModel();
-    EXPECT_TRUE (seedModel != nullptr);
-
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->Insert();
-    EXPECT_TRUE (m1 != nullptr);
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    EXPECT_TRUE(m1.IsValid());
     m_db->SaveChanges("changeSet1");
 
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
@@ -103,15 +97,9 @@ TEST_F (DgnElementTests, UpdateElement)
     {
     SetupSeedProject();
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
-    seedModel->FillModel();
-    EXPECT_TRUE (seedModel != nullptr);
-
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->Insert();
-    EXPECT_TRUE(m1 != nullptr);
+    PhysicalModelPtr m1 = InsertPhysicalModel("Model1");
+    EXPECT_TRUE(m1.IsValid());
     m_db->SaveChanges("changeSet1");
 
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
@@ -128,7 +116,7 @@ TEST_F (DgnElementTests, UpdateElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
     {
-    TestElementPtr child = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+    TestElementPtr child = TestElement::Create(*m_db, parent.GetModelId(), m_defaultCategoryId);
     child->SetParentId(parent.GetElementId());
     auto el = child->Insert();
     if (!el.IsValid())
@@ -142,10 +130,12 @@ TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
 TEST_F(DgnElementTests, DgnElementTransformer)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnModelId modelId = model->GetModelId();
 
     if (true)
         {
-        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, modelId, m_defaultCategoryId)->Insert();
         TestElementCPtr c11 = AddChild(*parent1);
         TestElementCPtr c12 = AddChild(*parent1);
 
@@ -174,7 +164,7 @@ TEST_F(DgnElementTests, DgnElementTransformer)
 
     if (true)
         {
-        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, modelId, m_defaultCategoryId)->Insert();
         TestElementCPtr c11 = AddChild(*parent1);
         TestElementCPtr c12 = AddChild(*parent1);
 
@@ -202,7 +192,7 @@ TEST_F(DgnElementTests, DgnElementTransformer)
     //  Now try a more interesting assembly
     if (true)
         {
-        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, modelId, m_defaultCategoryId)->Insert();
         TestElementCPtr c11 = AddChild(*parent1);
             {
             DgnElementPtr ec11 = c11->CopyForEdit();
@@ -247,8 +237,10 @@ TEST_F(DgnElementTests, DgnElementTransformer)
 TEST_F(DgnElementTests, DgnEditElementCollector)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnModelId modelId = model->GetModelId();
 
-    DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
+    DgnElementCPtr parent1 = TestElement::Create(*m_db, modelId, m_defaultCategoryId)->Insert();
     ASSERT_TRUE(parent1.IsValid());
 
     // single element
@@ -384,7 +376,7 @@ TEST_F(DgnElementTests, DgnEditElementCollector)
 
     // mixture of persistent and non-persistent elements
         {
-        DgnElementPtr nonPersistent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+        DgnElementPtr nonPersistent = TestElement::Create(*m_db, modelId, m_defaultCategoryId);
 
         DgnEditElementCollector coll;
         DgnElementPtr eparent1 = coll.EditElement(*parent1);
@@ -407,8 +399,9 @@ TEST_F(DgnElementTests, DgnEditElementCollector)
 TEST_F(DgnElementTests, ElementCopierTests)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    DgnElementCPtr parent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    DgnElementCPtr parent = TestElement::Create(*m_db, model->GetModelId(), m_defaultCategoryId)->Insert();
     TestElementCPtr c1 = AddChild(*parent);
     TestElementCPtr c2 = AddChild(*parent);
 
@@ -464,10 +457,11 @@ TEST_F(DgnElementTests, ElementCopierTests)
 TEST_F(DgnElementTests, ElementCopierTests_Group)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
-    DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
-    DgnElementCPtr m2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    DgnElementCPtr group = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId)->Insert();
+    DgnElementCPtr m1 = TestElement::Create(*m_db, model->GetModelId(), m_defaultCategoryId)->Insert();
+    DgnElementCPtr m2 = TestElement::Create(*m_db, model->GetModelId(), m_defaultCategoryId)->Insert();
     ElementGroupsMembers::Insert(*group, *m1, 0);
     ElementGroupsMembers::Insert(*group, *m2, 0);
     ASSERT_TRUE(group->ToIElementGroup()->QueryMembers().size() == 2);
@@ -521,14 +515,15 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
 TEST_F(DgnElementTests, ForceElementIdForInsert)
     {
     SetupSeedProject();
-
-    DgnModelId modelId = m_db->Models().QueryFirstModelId();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnModelId modelId = model->GetModelId();
+    DgnCategoryId categoryId = GetDefaultCategoryId();
     DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
     DgnElementId elementId;
 
     // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
         {
-        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, categoryId));
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         ASSERT_TRUE(element->GetElementId().IsValid());
@@ -540,7 +535,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
 
     // Confirm that supplying a DgnElementId in CreateParams for Insert does not work (not intended to work)
         {
-        GenericPhysicalObject::CreateParams createParams(*m_db, modelId, classId, m_defaultCategoryId);
+        GenericPhysicalObject::CreateParams createParams(*m_db, modelId, classId, categoryId);
         createParams.SetElementId(DgnElementId(elementId.GetValue() + 100));
     
         GenericPhysicalObjectPtr element = new GenericPhysicalObject(createParams);
@@ -550,7 +545,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
 
     // Test PKPM's synchronization workflow where they must force a DgnElementId on Insert.
         {
-        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, categoryId));
         ASSERT_TRUE(element.IsValid());
         element->ForceElementIdForInsert(forcedElementId);
         ASSERT_EQ(element->GetElementId(), forcedElementId);
@@ -565,12 +560,12 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
 TEST_F(DgnElementTests, GenericDomainElements)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnCategoryId categoryId = GetDefaultCategoryId();
 
     // GenericSpatialLocation
         {
-        DgnModelId modelId = m_db->Models().QueryFirstModelId();
-        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
-        GenericSpatialLocationPtr element = new GenericSpatialLocation(GenericSpatialLocation::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        GenericSpatialLocationPtr element = GenericSpatialLocation::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         ASSERT_TRUE(element->GetElementId().IsValid());
@@ -578,9 +573,7 @@ TEST_F(DgnElementTests, GenericDomainElements)
 
     // GenericPhysicalObject
         {
-        DgnModelId modelId = m_db->Models().QueryFirstModelId();
-        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
-        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         ASSERT_TRUE(element->GetElementId().IsValid());
@@ -664,7 +657,6 @@ void ElementGeomAndPlacementTests::TestLoadElem(DgnElementId id, Placement3d con
 TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
     {
     SetupSeedProject();
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
 
     DgnElementId noPlacementNoGeomId, placementAndGeomId, placementAndNoGeomId;
     Placement3d placement;
@@ -967,7 +959,6 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
     {
     SetupSeedProject();
 
-
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 4560000);
     DateTime dateTimeUtc = DateTime::GetCurrentTimeUtc();
     DPoint2d point2d = {123.456, 456.789};
@@ -1069,8 +1060,6 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         }
 
     m_db->SaveChanges("");
-
-    m_defaultModelP->EmptyModel();
     m_db->Memory().PurgeUntil(0);
 
     ASSERT_TRUE(persistentId.IsValid());
@@ -1150,8 +1139,6 @@ TEST_F(DgnElementTests, TestUserProperties)
         }
     
     m_db->SaveChanges("");
-
-    m_defaultModelP->EmptyModel();
     m_db->Memory().PurgeUntil(0);
 
     ASSERT_TRUE(persistentId.IsValid());
@@ -1193,7 +1180,6 @@ TEST_F(DgnElementTests, TestUserProperties)
         persistentEl = editEl->Update();
         }
 
-    m_defaultModelP->EmptyModel();
     m_db->Memory().PurgeUntil(0);
 
     if (true)

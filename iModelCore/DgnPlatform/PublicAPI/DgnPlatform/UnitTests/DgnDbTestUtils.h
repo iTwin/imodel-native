@@ -167,6 +167,10 @@ public:
         return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
         }
 
+    //! Query for the first GeometricModel in the specified DgnDb
+    //! @note Only to be used when the DgnCode of the model is not known
+    static DgnModelId QueryFirstGeometricModelId(DgnDbR);
+
     //! @}
 
     //! @name Working with files and directories in the test Output directory

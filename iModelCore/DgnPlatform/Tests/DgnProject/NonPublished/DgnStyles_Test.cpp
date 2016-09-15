@@ -64,7 +64,7 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
     LsCacheP cache = LsCache::GetDgnDbCache(*project);
     LsCacheStyleIterator iterLineStyles = cache->begin();
     LsCacheStyleIterator iterLineStyles_end   = cache->end();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
     //Iterate through each line style and make sure they have correct information
     TestStyleProperties testStyles[4], testStyle;
@@ -105,7 +105,6 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     static Utf8CP STYLE_NAME = "ATestLineStyle";
 
     // Add new line style
@@ -115,6 +114,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
     ASSERT_TRUE(newStyleId.IsValid());
     ASSERT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Test new style insert and query without reloading the cache
 * @bsimethod                                    Umar.Hayat                          03/16
@@ -128,7 +128,7 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     static Utf8CP STYLE_NAME = "ATestLineStyle";
 
     // Add new line style
@@ -189,7 +189,6 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     static Utf8CP STYLE_NAME = "ATestLineStyle";
 
     // Add new line style
@@ -267,7 +266,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     static Utf8CP STYLE_NAME = "RidhaTestLineStyle";
     DgnStyleId newStyleId;
 
@@ -341,7 +340,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     static Utf8CP STYLE_NAME = "TestLineStyle";
     DgnStyleId newStyleId;
     LsComponentId componentId(LsComponentType::LineCode, 10);
@@ -445,7 +444,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     static Utf8CP STYLE_NAME = "TestLineStyle";
     DgnStyleId newStyleId;
     BeFileName outFileName = (BeFileName)cache->GetFileName();

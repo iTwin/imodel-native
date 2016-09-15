@@ -592,9 +592,10 @@ TEST_F (CategoryTests, QueryByElementId)
     DgnCategoryId categoryId = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE(categoryId.IsValid());
 
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
     GeometrySourceP geomElem = el->ToGeometrySourceP();
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
         0, 0, 2,
         0, 3, 0,
@@ -606,6 +607,7 @@ TEST_F (CategoryTests, QueryByElementId)
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
     }
+
 ////=======================================================================================
 //// @betest                                                     Umar.Hayat      02/16
 ////=======================================================================================
