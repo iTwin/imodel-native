@@ -195,7 +195,9 @@ void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 Utf8String CreateCommand::_GetUsage() const
     {
-    return  " .create [bim|ecdb] <file path> Creates a new BIM (default) or ECDb file.";
+    return  " .create [bim|ecdb] [<BIM root subject label>] <file path>\r\n"
+        COMMAND_USAGE_IDENT "Creates a new BIM (default) or ECDb file.\r\n"
+        COMMAND_USAGE_IDENT "When creating a BIM file, passing a root subject label is mandatory.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -217,17 +219,53 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     BeFileName filePath;
     SessionFile::Type fileType = SessionFile::Type::Bim;
-    if (args.size() == 3)
+    if (args[1].EqualsIAscii("ecdb"))
         {
-        if (args[1].EqualsIAscii("ecdb"))
-            fileType = SessionFile::Type::ECDb;
+        if (args.size() == 2)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
 
+        if (args.size() > 3)
+            {
+            Console::WriteErrorLine("You can only specify a root subject label for BIM files. Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        fileType = SessionFile::Type::ECDb;
         filePath.AssignUtf8(args[2].c_str());
         }
-    else
-        filePath.AssignUtf8(args[1].c_str());
 
+    size_t rootSubjectLabelIndex = 0;
+    size_t filePathIndex = 0;
+    if (args[1].EqualsIAscii("bim"))
+        {
+        if (args.size() != 4)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        rootSubjectLabelIndex = 2;
+        filePathIndex = 3;
+        }
+    else
+        {
+        if (args.size() != 3)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        rootSubjectLabelIndex = 1;
+        filePathIndex = 2;
+        }
+
+    Utf8CP rootSubjectLabel = args[rootSubjectLabelIndex].c_str();
+    filePath.AssignUtf8(args[filePathIndex].c_str());
     filePath.Trim(L"\"");
+
     if (filePath.DoesPathExist())
         {
         Console::WriteErrorLine("Cannot create %s file %s as it already exists.", SessionFile::TypeToString(fileType), filePath.GetNameUtf8().c_str());
@@ -236,7 +274,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (fileType == SessionFile::Type::Bim)
         {
-        CreateDgnDbParams createParams(Utf8String(filePath.GetFileNameWithoutExtension()).c_str());
+        CreateDgnDbParams createParams(rootSubjectLabel);
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;
@@ -279,6 +317,12 @@ void FileInfoCommand::_Run(Session& session, vector<Utf8String> const& args) con
     Console::WriteLine("Current file: ");
     Console::WriteLine("  %s", session.GetFile().GetPath());
     Console::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetHandle().GetBriefcaseId().GetValue());
+
+    if (session.GetFile().GetType() == SessionFile::Type::Bim)
+        {
+        DgnDbCR bimFile = static_cast<BimFile const&>(session.GetFile()).GetDgnDbHandle();
+        Console::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
+        }
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT StrData FROM be_Prop WHERE Namespace='ec_Db' AND Name='InitialSchemaVersion'"))
@@ -345,13 +389,23 @@ void FileInfoCommand::_Run(Session& session, vector<Utf8String> const& args) con
         }
 
     Console::WriteLine("  Profiles:");
-    Console::WriteLine(knownProfileInfos[KnownProfile::BeSQLite].c_str());
-    Console::WriteLine(knownProfileInfos[KnownProfile::ECDb].c_str());
-    Console::WriteLine(knownProfileInfos[KnownProfile::DgnDb].c_str());
+    auto it = knownProfileInfos.find(KnownProfile::BeSQLite);
+    if (it != knownProfileInfos.end())
+        Console::WriteLine(it->second.c_str());
+
+    it = knownProfileInfos.find(KnownProfile::ECDb);
+    if (it != knownProfileInfos.end())
+        Console::WriteLine(it->second.c_str());
+
+    it = knownProfileInfos.find(KnownProfile::DgnDb);
+    if (it != knownProfileInfos.end())
+        Console::WriteLine(it->second.c_str());
+
     for (Utf8StringCR otherProfileInfo : otherProfileInfos)
         {
         Console::WriteLine(otherProfileInfo.c_str());
         }
+
     }
 
 //******************************* CommitCommand ******************
