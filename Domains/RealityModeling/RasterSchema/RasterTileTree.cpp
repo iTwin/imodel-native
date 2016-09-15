@@ -8,6 +8,8 @@
 #include "RasterSchemaInternal.h"
 #include "RasterTileTree.h"
 
+USING_NAMESPACE_TILETREE
+
 //static const uint32_t DRAW_FINER_DELTA = 2;
 static const uint32_t DRAW_COARSER_DELTA = 6;
 
@@ -119,7 +121,7 @@ folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, Til
 
     tile.SetIsQueued();
 
-    TileQuery query((RasterTile&) tile);
+    TileQuery query((RasterTile&) tile, nullptr/*&&MM todo*/);
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return query.DoRead(); });
     }
 
