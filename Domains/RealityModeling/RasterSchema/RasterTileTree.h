@@ -26,11 +26,11 @@ private:
     RasterSourcePtr m_source;
     RasterModel& m_model;
 
-    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile) override;
+    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr) override;
 
 public:
     RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::SystemP system);
-    virtual ~RasterRoot();
+    ~RasterRoot() {ClearAllTiles();}
 
     RasterSourceR GetSource() { return *m_source; }
 
@@ -96,9 +96,11 @@ struct RasterProgressive : Dgn::ProgressiveTask
     RasterRootR m_root;
     Dgn::TileTree::DrawArgs::MissingNodes m_missing;
     Dgn::TileTree::TimePoint m_nextShow;
+    Dgn::TileTree::TileLoadsPtr m_loads;
 
     Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
-    RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes) : m_root(root), m_missing(std::move(nodes)) {}
+    RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes, Dgn::TileTree::TileLoadsPtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
+    ~RasterProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
     };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

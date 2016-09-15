@@ -17,20 +17,30 @@ static const uint32_t DRAW_COARSER_DELTA = 6;
 //=======================================================================================
 struct TileQuery
     {
-    TileQuery(RasterTile& tile) : m_tile(&tile) {}
+    TileQuery(RasterTile& tile, TileLoadsPtr loads) : m_tile(&tile), m_loads(loads) {}
 
     RefCountedPtr<RasterTile> m_tile;
+    mutable TileLoadsPtr m_loads;
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  9/2016
     //----------------------------------------------------------------------------------------
     BentleyStatus DoRead() const
         {
+        if (m_loads!=nullptr && m_loads->IsCanceled())
+            {
+            if (m_tile.IsValid()) 
+                m_tile->SetNotLoaded();
+
+            return ERROR;
+            }
+
         if (m_tile.IsValid() && !m_tile->IsQueued())
             return SUCCESS; // this node was abandoned.
 
         bool enableAlphaBlend = false;
         Render::Image image = m_tile->GetRoot().GetSource().QueryTile(m_tile->GetTileId(), enableAlphaBlend);
+
 #ifndef NDEBUG  // debug build only.
         static bool s_missingTilesInRed = false;
         if (s_missingTilesInRed && !image.IsValid())
@@ -94,19 +104,10 @@ RasterRoot::RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::Sy
     m_rootTile = new RasterTile(*this, TileId(m_source->GetResolutionCount() - 1, 0, 0), nullptr);
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-RasterRoot::~RasterRoot()
-    {
-    m_rootTile = nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile)
+folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr load)
     {
     DgnDb::VerifyClientThread();
 
@@ -319,7 +320,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    args.RequestMissingTiles(m_root);
+    args.RequestMissingTiles(m_root, m_loads);
     args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
