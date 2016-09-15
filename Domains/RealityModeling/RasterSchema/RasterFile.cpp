@@ -36,6 +36,21 @@ RasterFilePtr RasterFile::Create(Utf8StringCR resolvedName)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  8/2016
+//----------------------------------------------------------------------------------------
+RasterFile::~RasterFile()
+    {
+    m_pPhysicalCoordSys = nullptr;
+    m_pageFilePtr = nullptr;
+
+    BeAssert(m_rasterPtr != nullptr ? m_rasterPtr->GetRefCount() == 1 : true);
+    m_rasterPtr = nullptr;
+
+    BeAssert(m_HRFRasterFilePtr != nullptr ? m_HRFRasterFilePtr->GetRefCount() == 1 : true);
+    m_HRFRasterFilePtr = nullptr;
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 HRFRasterFile&   RasterFile::GetHRFRasterFile() const

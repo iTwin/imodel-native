@@ -15,9 +15,6 @@
 //-----------------------------------------------------------------------------------------
 // Define standard typedefs (P, CP, R, CR) and RefCountedPtr
 //-----------------------------------------------------------------------------------------
-RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
-RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
-
 RASTERSCHEMA_TYPEDEFS(RasterFile)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterFile)
 
@@ -30,4 +27,9 @@ RASTERSCHEMA_REF_COUNTED_PTR(RasterFileModel)
 
 RASTERSCHEMA_TYPEDEFS(RasterClip)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterClip)
+
+RASTERSCHEMA_TYPEDEFS(RasterTile)
+RASTERSCHEMA_TYPEDEFS(RasterRoot)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterTile)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterRoot)
 

@@ -86,7 +86,7 @@ protected:
     virtual void _ReadJsonProperties(Json::Value const&) override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
-    virtual BentleyStatus _LoadQuadTree() const override;
+    virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const override;
 
     //! Create a WmsModel object, in preparation for loading it from the DgnDb. Called by MODELHANDLER_DECLARE_MEMBERS. 
     WmsModel(CreateParams const& params);
