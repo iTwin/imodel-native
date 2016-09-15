@@ -154,7 +154,8 @@ inline uint32_t twang_32from64(uint64_t key) {
   key = key ^ (key >> 11);
   key = key + (key << 6);
   key = key ^ (key >> 22);
-  return (uint32_t) key;
+  // BENTLEY_CHANGE: avoid RTC error in purposeful truncation - return (uint32_t) key;
+  return (uint32_t)(key & 0xffffffff);
 }
 
 /*
