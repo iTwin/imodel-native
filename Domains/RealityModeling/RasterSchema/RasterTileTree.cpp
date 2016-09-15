@@ -306,6 +306,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     {
     auto now = std::chrono::steady_clock::now();
     TileTree::DrawArgs args(context, m_root.GetLocation(), now, now - m_root.GetExpirationTime());
+    args.SetClip(m_root.GetModel().GetClip().GetClipVector());
 
     DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
 
