@@ -94,7 +94,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
 
     m_db.NotifyOnSchemaChangedListeners();
 
-    if (SUCCESS != m_db.Schemas().ImportECSchemas(*schemaCache))
+    if (SUCCESS != m_db.Schemas().ImportECSchemas(schemaCache->GetSchemas()))
         {
         LOG.errorv("Failed to import one or more schemas: %s", ToFullNameListString(schemas).c_str());
         return ERROR;

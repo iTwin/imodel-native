@@ -85,7 +85,7 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
     });
 
@@ -116,7 +116,7 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
     auto db = GetEmptyTestDb();
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(cache->GetSchemas()));
     return db;
     }
 

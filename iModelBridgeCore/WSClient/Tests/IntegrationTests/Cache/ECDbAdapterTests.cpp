@@ -68,7 +68,7 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(cache->GetSchemas()));
 
     return db;
     }
@@ -317,7 +317,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
     auto holdingRelClass = seed.Schemas().GetECClass("TestSchema", "HoldingRel")->GetRelationshipClassCP();
@@ -400,7 +400,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
 

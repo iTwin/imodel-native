@@ -58,7 +58,7 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
     });
 
