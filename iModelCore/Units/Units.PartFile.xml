@@ -198,6 +198,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="Units-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Units-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
   <!-- *** WinRT CTest - TBD ... *** -->
