@@ -548,10 +548,11 @@ namespace dgn_TxnTable
     {
         BeSQLite::Statement m_stmt;
         bool m_changes;
+        bool m_haveIndexOnECClassId;
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
-        Element(TxnManager& mgr) : TxnTable(mgr) {}
+        Element(TxnManager& mgr) : TxnTable(mgr), m_changes(false), m_haveIndexOnECClassId(false) {}
 
         void _Initialize() override;
         void _OnValidate() override;
@@ -595,6 +596,8 @@ namespace dgn_TxnTable
 
     bool HasChanges() const {return m_changes;}
     Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
+    //! Make sure that the Elements table is index on the ECClaassId column. Call this if you plan to query for changes by ECClassId repeatedly.
+    void CreateIndexOnECClassId();
     };
 
     struct Model : TxnTable
@@ -602,7 +605,7 @@ namespace dgn_TxnTable
         BeSQLite::Statement m_stmt;
         bool m_changes;
 
-        Model(TxnManager& mgr) : TxnTable(mgr) {}
+        Model(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
@@ -632,6 +635,7 @@ namespace dgn_TxnTable
             public:
                 DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
                 DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+                DGNPLATFORM_EXPORT DgnClassId GetECClassId() const;
                 Entry const& operator*() const {return *this;}
             };
 
