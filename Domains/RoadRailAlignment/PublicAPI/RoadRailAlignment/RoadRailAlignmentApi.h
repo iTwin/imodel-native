@@ -76,6 +76,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Properties
 #define BRRA_PROP_Alignment_MainVerticalAlignment                   "MainVerticalAlignment"
+#define BRRA_PROP_AlignmentHorizontal_HorizontalGeometry            "HorizontalGeometry"
+#define BRRA_PROP_AlignmentVertical_VerticalGeometry                "VerticalGeometry"
 
 
 //-----------------------------------------------------------------------------------------
@@ -125,22 +127,41 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentHorizontal)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentIntersectionInfo)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentPair)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferent)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentVertical)
+ROADRAILALIGNMENT_TYPEDEFS(DividedRoadAlignmentPairEditor)
+ROADRAILALIGNMENT_TYPEDEFS(StationRange)
+ROADRAILALIGNMENT_TYPEDEFS(StationRangeEdit)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentHorizontal)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentReferent)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadIntersection)
 
 
 //-----------------------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------------------
+#include "RoadRailAlignment.h"
+#include "AlignmentPair.h"
+#include "AlignmentPairEditor.h"
+#include "RoadIntersection.h"
+#include "RoadAlignmentPairEditor.h"
 #include "AlignmentModel.h"
 #include "Alignment.h"
 #include "AlignmentReferent.h"
 #include "RoadRailAlignmentDomain.h"
+#include "GeometryDebug.h"
+#include "GeometryHelper.h"

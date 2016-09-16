@@ -11,6 +11,8 @@
 
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 
+#include <GeomSerialization/GeomSerializationApi.h>
+
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC

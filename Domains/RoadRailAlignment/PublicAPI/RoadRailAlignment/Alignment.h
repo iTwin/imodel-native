@@ -38,6 +38,9 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentHorizontalCPtr QueryHorizontal() const;
     ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentVerticalIds() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, AlignmentVerticalCR vertical);
 }; // Alignment
@@ -51,22 +54,20 @@ struct AlignmentHorizontal : Dgn::SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentHorizontal, Dgn::SpatialLocationElement);
     friend struct AlignmentHorizontalHandler;
 
-private:
-    CurveVectorCPtr m_geometry;
-
 protected:
     //! @private
     explicit AlignmentHorizontal(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentHorizontal(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(&geometry) {}
+    explicit AlignmentHorizontal(CreateParams const& params, CurveVectorR geometry);
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentHorizontal)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentHorizontal)
-    ROADRAILALIGNMENT_EXPORT static AlignmentHorizontalPtr Create(AlignmentCR alignment, CurveVectorCR horizontalGeometry);
+    ROADRAILALIGNMENT_EXPORT static AlignmentHorizontalPtr Create(AlignmentCR alignment, CurveVectorR horizontalGeometry);
 
-    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const { return *m_geometry; }
+    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
+    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
 }; // AlignmentHorizontal
 
 //=======================================================================================
@@ -78,25 +79,24 @@ struct AlignmentVertical : Dgn::SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentVertical, Dgn::SpatialLocationElement);
     friend struct AlignmentVerticalHandler;
 
-private:
-    CurveVectorCPtr m_geometry;
-
 protected:
     //! @private
     explicit AlignmentVertical(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentVertical(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(&geometry) {}
+    explicit AlignmentVertical(CreateParams const& params, CurveVectorR geometry);
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentVertical)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentVertical)
-    ROADRAILALIGNMENT_EXPORT static AlignmentVerticalPtr Create(AlignmentCR alignment, CurveVectorCR verticalGeometry);
+    ROADRAILALIGNMENT_EXPORT static AlignmentVerticalPtr Create(AlignmentCR alignment, CurveVectorR verticalGeometry);
 
     ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
 
-    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const { return *m_geometry; }
-    ROADRAILALIGNMENT_EXPORT AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetParentId()); }
+    ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
+    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
+
+    AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetParentId()); }
 }; // AlignmentVertical
 
 

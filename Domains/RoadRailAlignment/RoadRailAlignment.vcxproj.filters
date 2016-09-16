@@ -46,6 +46,27 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryDebug.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryHelper.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadIntersection.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml" />
@@ -67,6 +88,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AlignmentReferent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlignmentPair.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeometryDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlignmentPairEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeometryHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RoadIntersection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RoadAlignmentPairEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

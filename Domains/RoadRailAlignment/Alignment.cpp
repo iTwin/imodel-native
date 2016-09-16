@@ -106,9 +106,123 @@ DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentPairPtr Alignment::QueryMainPair() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT horiz.HorizontalGeometry FROM "
+            BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " horiz "
+        "WHERE ParentId = ? UNION "
+        "SELECT vert.VerticalGeometry FROM "
+            BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " vert, " 
+            BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " mainVert "
+        "WHERE vert.ParentId = ? AND mainVert.SourceECInstanceId = vert.ParentId AND vert.ECInstanceId = mainVert.TargetECInstanceId;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+    stmtPtr->BindId(2, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    auto horizVectorPtr = stmtPtr->GetValueGeometry(0)->GetAsCurveVector();
+
+    CurveVectorPtr vertVectorPtr;
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        vertVectorPtr = stmtPtr->GetValueGeometry(0)->GetAsCurveVector();
+
+    return AlignmentPair::Create(*horizVectorPtr, vertVectorPtr.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDbStatus* stat)
+    {
+    if (alignmentPair.HorizontalCurveVector().IsNull())
+        return nullptr;
+
+    auto retVal = Insert(stat);
+    if (retVal.IsValid())
+        {        
+        auto horizAlignmPtr = AlignmentHorizontal::Create(*retVal, *alignmentPair.HorizontalCurveVector());
+        if (horizAlignmPtr->Insert(stat).IsNull())
+            return nullptr;
+
+        if (alignmentPair.VerticalCurveVector().IsValid())
+            {
+            auto verticalAlignmPtr = AlignmentVertical::Create(*retVal, *alignmentPair.VerticalCurveVector());
+            if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
+                return nullptr;
+            }
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDbStatus* stat)
+    {
+    if (alignmentPair.HorizontalCurveVector().IsNull())
+        return nullptr;
+
+    auto retVal = Update(stat);
+    if (retVal.IsValid())
+        {
+        AlignmentHorizontalPtr horizAlignmPtr = dynamic_cast<AlignmentHorizontalP>(QueryHorizontal()->CopyForEdit().get());
+        horizAlignmPtr->SetGeometry(*alignmentPair.HorizontalCurveVector());
+        if (horizAlignmPtr->Update(stat).IsNull())
+            return nullptr;
+
+        auto vertAlignmCPtr = QueryMainVertical();
+
+        // Updated geometry has a vertical
+        if (alignmentPair.VerticalCurveVector().IsValid())
+            {
+            // Main vertical exists... update it
+            if (vertAlignmCPtr.IsValid())
+                {
+                AlignmentVerticalPtr vertAlignmPtr = dynamic_cast<AlignmentVerticalP>(vertAlignmCPtr->CopyForEdit().get());
+                vertAlignmPtr->SetGeometry(*alignmentPair.VerticalCurveVector());
+                if (vertAlignmPtr->Update(stat).IsNull())
+                    return nullptr;
+                }
+            // Main vertical doesn't exist... add it
+            else
+                {
+                auto verticalAlignmPtr = AlignmentVertical::Create(*retVal, *alignmentPair.VerticalCurveVector());
+                if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
+                    return nullptr;
+                }
+            }
+        // Updated geometry doesn't have a vertical
+        else
+            {
+            // Main vertical exists... delete it
+            if (vertAlignmCPtr.IsValid())
+                *stat = vertAlignmCPtr->Delete();
+            }
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentHorizontal::AlignmentHorizontal(CreateParams const& params, CurveVectorR geometry):
+    T_Super(params)
+    {
+    SetGeometry(geometry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveVectorCR horizontalGeometry)
+AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveVectorR horizontalGeometry)
     {
     if (!alignment.GetElementId().IsValid())
         return nullptr;
@@ -121,9 +235,35 @@ AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveV
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorCR AlignmentHorizontal::GetGeometry() const
+    {
+    ECValue val;
+    _GetPropertyValue(val, BRRA_PROP_AlignmentHorizontal_HorizontalGeometry);
+
+    BeAssert(val.IsIGeometry());
+
+    return *val.GetIGeometry()->GetAsCurveVector();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void AlignmentHorizontal::SetGeometry(CurveVectorR geometry)
+    {
+    CurveVectorPtr cvPtr = &geometry;
+
+    ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
+    val.SetIGeometry(*IGeometry::Create(cvPtr));
+
+    _SetPropertyValue(BRRA_PROP_AlignmentHorizontal_HorizontalGeometry, val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVectorCR verticalGeometry)
+AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVectorR verticalGeometry)
     {
     if (!alignment.GetElementId().IsValid())
         return nullptr;
@@ -138,6 +278,15 @@ AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVecto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentVertical::AlignmentVertical(CreateParams const& params, CurveVectorR geometry):
+    T_Super(params)
+    {
+    SetGeometry(geometry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentVerticalCPtr AlignmentVertical::InsertAsMainVertical(Dgn::DgnDbStatus* stat)
     {
     auto retValPtr = Insert(stat);
@@ -145,4 +294,30 @@ AlignmentVerticalCPtr AlignmentVertical::InsertAsMainVertical(Dgn::DgnDbStatus* 
     BeAssert(DgnDbStatus::Success == status);
 
     return retValPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorCR AlignmentVertical::GetGeometry() const
+    {
+    ECValue val;
+    _GetPropertyValue(val, BRRA_PROP_AlignmentVertical_VerticalGeometry);
+
+    BeAssert(val.IsIGeometry());
+
+    return *val.GetIGeometry()->GetAsCurveVector();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void AlignmentVertical::SetGeometry(CurveVectorR geometry)
+    {
+    CurveVectorPtr cvPtr = &geometry;
+
+    ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
+    val.SetIGeometry(*IGeometry::Create(cvPtr));
+
+    _SetPropertyValue(BRRA_PROP_AlignmentVertical_VerticalGeometry, val);
     }
