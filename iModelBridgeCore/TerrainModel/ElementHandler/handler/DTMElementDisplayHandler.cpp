@@ -719,6 +719,9 @@ void SetColourMap (ViewContextR context, DgnModelRefP modelRef)
     // Need to set the colourMap of the Viewport back to the original element.
     ViewportP viewport = context.GetViewport();
 
+    if (nullptr == viewport->GetIViewOutput())
+        return;
+
     if (viewport)
         {
         DgnColorMapP   colorMap = DgnColorMap::GetForDisplay (modelRef);
