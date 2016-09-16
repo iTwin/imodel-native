@@ -6,7 +6,6 @@ GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-ImportTests.simpleSchemaImport                          # Notified Krischan and Affan
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
