@@ -323,6 +323,41 @@ BentleyStatus ClipVector::MultiplyPlanesTimesMatrix (DMatrix4dCR matrix)
     return numErrors == 0 ? SUCCESS : ERROR;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipPlaneContainment    ClipVector::ClassifyPointContainment (DPoint3dCP points, size_t nPoints, bool ignoreMasks) const
+    {
+    ClipPlaneContainment        currentContainment = ClipPlaneContainment_Ambiguous;
+
+    for (ClipPrimitivePtr const& primitive: *this)
+        {
+        ClipPlaneContainment    thisContainment = primitive->ClassifyPointContainment (points, nPoints, ignoreMasks);
+
+        if (ClipPlaneContainment_Ambiguous == thisContainment)
+            return ClipPlaneContainment_Ambiguous;
+
+        if (ClipPlaneContainment_Ambiguous == currentContainment)
+            currentContainment = thisContainment;
+        else if (currentContainment != thisContainment)
+            return ClipPlaneContainment_Ambiguous;
+        }
+    return currentContainment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipPlaneContainment ClipVector::ClassifyRangeContainment (DRange3dCR range, bool ignoreMasks) const
+    {
+    DPoint3d    corners[8];
+
+    range.Get8Corners (corners);
+
+    return ClassifyPointContainment (corners, 8, ignoreMasks);
+    }
+
+
 bool ClipVector::IsAnyLineStringPointInside (DPoint3dCP points, size_t n, bool closed)
     {
     DSegment3d segment;

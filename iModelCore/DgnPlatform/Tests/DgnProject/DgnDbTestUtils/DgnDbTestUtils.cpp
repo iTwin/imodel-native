@@ -298,6 +298,25 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
     return OpenDgnDb(ccRelPathUnique.c_str(), DgnDb::OpenMode::ReadWrite);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
+    {
+    for (auto const& modelEntry : db.Models().MakeIterator())
+        {
+        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+        
+        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
+        if (model->IsGeometricModel())
+            return modelEntry.GetModelId();
+        }
+
+    BeAssert(false && "No PhysicalModel found");
+    return DgnModelId();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

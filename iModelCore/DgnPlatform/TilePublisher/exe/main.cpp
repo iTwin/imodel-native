@@ -251,6 +251,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized ground point: %ls\n", av[i]);
                     return false;
                     }
+                m_groundMode = GroundMode::FixedPoint;
                 break;
 
             case ParamId::GroundHeight:
@@ -259,6 +260,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
+                m_groundMode = GroundMode::FixedHeight;
                 break;
 
             default:
@@ -593,7 +595,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
         {
-        groundPoint = params.GetGroundPoint();
+        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().Units().GetGlobalOrigin());
         }
     else
         {

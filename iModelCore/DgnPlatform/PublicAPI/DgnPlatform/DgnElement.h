@@ -1576,8 +1576,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
 
     friend struct GeometricElement;
-    virtual void _RecordFacetCount(size_t facetCount) = 0; // Only GeometryBuilder has write access to the facet count...only GeometricElements care about it...
-    virtual size_t _GetFacetCount() const = 0;
+    virtual void _RecordFacetCount(size_t facetCount) {;} // Only GeometryBuilder has write access to the facet count...only GeometricElements care about it...
+    virtual size_t _GetFacetCount() const {return 0;}
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}

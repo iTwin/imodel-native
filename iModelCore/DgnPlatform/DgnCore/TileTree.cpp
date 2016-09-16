@@ -608,7 +608,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
         {
         DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
         m_graphics.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_graphics, &m_location, m_clip.get());
+        auto branch = m_context.CreateBranch(m_graphics, &m_location, m_clip);
         BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
         m_context.OutputGraphic(*branch, nullptr);
         }
@@ -622,7 +622,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
         Transform location = Transform::FromProduct(m_location, moveBack);
 
         m_substitutes.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip.get());
+        auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip);
         BeAssert(m_substitutes.m_entries.empty()); // CreateBranch should have moved them
         m_context.OutputGraphic(*branch, nullptr);
         }

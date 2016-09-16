@@ -91,7 +91,7 @@ void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode 
         m_db = DgnDbTestUtils::OpenSeedDbCopy(L"SqlFunctionsTest/seed.bim", newFileName);
     ASSERT_TRUE (m_db.IsValid());
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
 
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());

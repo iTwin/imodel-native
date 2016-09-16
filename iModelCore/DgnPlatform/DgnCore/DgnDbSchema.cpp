@@ -175,7 +175,7 @@ static void importBisCoreSchema(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCodeCR modelCode)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Visibility) VALUES(?,?,?,?,?,?,'',0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,Visibility) VALUES(?,?,?,?,?,?,0)");
     stmt.BindId(1, modelId);
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);

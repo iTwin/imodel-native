@@ -34,9 +34,7 @@ struct GeometricPrimitiveTests : public DgnDbTestFixture
 TEST_F(GeometricPrimitiveTests, Create)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
     // CurvePrimitive

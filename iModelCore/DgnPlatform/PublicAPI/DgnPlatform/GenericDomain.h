@@ -34,7 +34,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace generic_ModelHandler {struct GenericGroupModelHandler;};
-namespace generic_ElementHandler {struct GenericGroupHandler;};
+namespace generic_ElementHandler {struct GenericGroupHandler; struct GenericSpatialLocationHandler;};
 
 //=======================================================================================
 //! The Generic DgnDomain
@@ -83,7 +83,7 @@ public:
     //! Create an instance of a GenericPhysicalObject from CreateParams.
     static GenericPhysicalObjectPtr Create(CreateParams const& params) {return new GenericPhysicalObject(params);}
 
-    //! Create an instance of a GenericPhysicalObject from a model and DgnCategoryId, using the default values for all other parameters.
+    //! Create an instance of a GenericPhysicalObject
     //! @param[in] model The PhysicalModel for the new GenericPhysicalObject.
     //! @param[in] categoryId The category for the new GenericPhysicalObject.
     DGNPLATFORM_EXPORT static GenericPhysicalObjectPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
@@ -98,9 +98,16 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocation : SpatialLocationElement
 {
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, SpatialLocationElement);
+    friend struct generic_ElementHandler::GenericSpatialLocationHandler;
+
+protected:
+    explicit GenericSpatialLocation(CreateParams const& params) : T_Super(params) {} 
 
 public:
-    explicit GenericSpatialLocation(CreateParams const& params) : T_Super(params) {} 
+    //! Create an instance of a GenericSpatialLocation
+    //! @param[in] model The PhysicalModel for the new GenericPhysicalObject.
+    //! @param[in] categoryId The category for the new GenericPhysicalObject.
+    DGNPLATFORM_EXPORT static GenericSpatialLocationPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
