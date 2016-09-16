@@ -755,8 +755,12 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 // Known issues:
 //  ECDb LightweightCache.cpp - cache not thread-safe
 // These issues are not specific to mesh tile generation...need to be fixed.
-#define MESHTILE_SINGLE_THREADED
+//#define MESHTILE_SINGLE_THREADED
 #if !defined(MESHTILE_SINGLE_THREADED)
+    // Worker threads will adopt host. Ensure no race conditions in FontAdmin when processing TextString geometry.
+    auto& host = T_HOST;
+    host.GetFontAdmin().EnsureInitialized();
+
     if (!tiles.empty())
         {
         // For now, we can cross our fingers and hope that processing one tile before entering multi-threaded context
@@ -770,9 +774,14 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     for (auto& tile : tiles)
         folly::via(threadPool, [&]()
             {
+            DgnPlatformLib::AdoptHost(host);
+
             // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
             auto status = m_progressMeter._WasAborted() ? TileGenerator::Status::Aborted : collector._AcceptTile(*tile);
             ++numCompletedTiles;
+
+            DgnPlatformLib::ForgetHost();
+
             return status;
             });
 
