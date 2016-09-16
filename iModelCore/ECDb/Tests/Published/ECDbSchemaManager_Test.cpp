@@ -895,7 +895,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas()) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
     schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);

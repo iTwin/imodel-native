@@ -670,7 +670,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 
     ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache- GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     AssertImportedSchema(ecdb, "test", "Foo", "Name");

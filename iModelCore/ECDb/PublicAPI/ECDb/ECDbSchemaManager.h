@@ -100,6 +100,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
 
         //! @deprecated Instead use overload that takes bvector of ECSchemas.
+        //!
         //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache (which must
         //! include all referenced ECSChemas) into the @ref ECDbFile "ECDb file".
         //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
