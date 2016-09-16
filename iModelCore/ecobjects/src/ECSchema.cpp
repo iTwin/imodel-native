@@ -2483,14 +2483,32 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
     return new ECSchemaCache;
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<ECSchemaCP> ECSchemaCache::GetSchemas() const
+    {
+    bvector<ECSchemaCP> schemas;
+    for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : m_schemas)
+        {
+        schemas.push_back(kvPair.second.get());
+        }
+
+    return schemas;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
     {
     schemas.clear();
-    for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)
-        schemas.push_back (it->second.get());
+
+    for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : m_schemas)
+        {
+        schemas.push_back(kvPair.second.get());
+        }
+
     return schemas.size();
     }
 
