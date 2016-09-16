@@ -26,6 +26,7 @@ R"HTML(
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <script src="scripts/Bentley/BimStyler.js"></script>
+<script src="scripts/Bentley/BimToolbar.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -59,7 +60,13 @@ var view = Bim.requestView(viewJsonUrl, function(err, view) {
         viewer.extend(Bim.viewerInspectorMixin);
         Bim.fixupSandboxAttributes();
         var tileset = Bim.loadTileset(viewer, view);
-        Bim.addModelCategoryWidget(viewer, view, tileset);
+
+        var toolbar = new Bim.Toolbar(viewer);
+        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models');
+        modelsButton.setContent(Bim.createModelToggleWidget(tileset, view.models));
+
+        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories');
+        categoriesButton.setContent(Bim.createCategoryToggleWidget(tileset, view.categories));
     }
 });
 </script>
