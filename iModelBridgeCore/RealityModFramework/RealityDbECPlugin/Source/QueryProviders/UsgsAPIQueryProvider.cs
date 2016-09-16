@@ -592,30 +592,10 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Name"].StringValue = json.TryToGetString("title");
 
 
-            instance["Footprint"].SetToNull();
+            instance["Footprint"].NativeValue = instanceSEB["Footprint"].NativeValue;
 
-            var spatialObject = json["spatial"] as JObject;
+            instance["DataSourceType"].StringValue = instanceSDS["DataSourceType"].StringValue;
 
-            if ( spatialObject != null )
-                {
-                var bbox = spatialObject["boundingBox"] as JObject;
-
-                if ( bbox != null )
-                    {
-                    instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
-                    }
-                }
-
-            string type = ExtractDataSourceType(json);
-
-            if ( type == null )
-                {
-                instance["DataSourceType"].SetToNull();
-                }
-            else
-                {
-                instance["DataSourceType"].StringValue = type;
-                }
 
             instance["ThumbnailURL"].SetToNull();
 
@@ -642,14 +622,14 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
-            instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
+            instance["Legal"].StringValue = instanceMetadata["Legal"].StringValue;
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
             instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
             instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
             instance["SubAPI"].StringValue = subAPIString;
 
-            instance["DataProvider"].StringValue = dataProviderString;
-            instance["DataProviderName"].StringValue = dataProviderNameString;
+            instance["DataProvider"].StringValue = instanceSEB["DataProvider"].StringValue;
+            instance["DataProviderName"].StringValue = instanceSEB["DataProviderName"].StringValue;
 
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
             return instance;
@@ -848,7 +828,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //LocationInCompound
 
-            instance["LocationInCompound"].StringValue = "Unknown";
+            //instance["LocationInCompound"].StringValue = null;
 
             //DataSourceType
 
@@ -1074,7 +1054,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 case "jp2":
                     return extension;
                 default:
-                    return "Unknown";
+                    return null;
                 }
             //return splitURI[splitURI.Length - 1];
             }
@@ -1138,6 +1118,20 @@ namespace IndexECPlugin.Source.QueryProviders
                             if ( cat != null )
                                 {
                                 instance["Classification"].StringValue = cat.Classification;
+                                IUSGSDataExtractor dataExtractor = ReturnDataExtractor(cat.SbDatasetTag);
+                                DateTime? date;
+                                string res;
+                                string resMeter;
+                                dataExtractor.ExtractDateAndResolutionSB(json, out date, out res, out resMeter);
+
+                                if ( date.HasValue )
+                                    {
+                                    instance["Date"].NativeValue = date.Value;
+                                    }
+
+                                instance["AccuracyResolutionDensity"].StringValue = res;
+                                instance["ResolutionInMeters"].StringValue = resMeter;
+
                                 }
                             }
                         }
@@ -1170,11 +1164,6 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["DataSourceTypesAvailable"].StringValue = type;
                 }
-
-            //AccuracyResolutionDensity
-
-            instance["AccuracyResolutionDensity"].StringValue = "Unknown";
-            instance["ResolutionInMeters"].StringValue = "Unknown";
 
             instance["DataProvider"].StringValue = dataProviderString;
             instance["DataProviderName"].StringValue = dataProviderNameString;
@@ -1483,7 +1472,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             SDSInstance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
-            SDSInstance["LocationInCompound"].StringValue = "Unknown";
+            //SDSInstance["LocationInCompound"].StringValue = null;
             var urls = jtoken["urls"];
             if ( urls != null)
                 {
@@ -1567,47 +1556,30 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
-            //if(minDate.HasValue && maxDate.HasValue && minDate.Value > maxDate.Value)
-            //{
-            //    throw new UserFriendlyException("The date criteria is invalid.");
-            //}
+            IUSGSDataExtractor dataExtractor = ReturnDataExtractor(dataset);
 
-            //if(m_query.ExtendedData.ContainsKey("minDate"))
-            //{
-            //    string minDateString = m_query.ExtendedData["minDate"].ToString();
-            //    minDate = DateTime.ParseExact(minDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-            //}
-            //if(m_query.ExtendedData.ContainsKey("maxDate"))
-            //{
-            //    string maxDateString = m_query.ExtendedData["maxDate"].ToString();
-            //    maxDate = DateTime.ParseExact(maxDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-            //}
+            return DatasetFilter(tokenList, minDate, maxDate, dataExtractor);
 
-            //bool takeMostRecentOnly = false;
+            }
 
-            //if (m_query.ExtendedData.ContainsKey("mostRecent"))
-            //{
-            //    string mostRecentString = m_query.ExtendedData["mostRecent"].ToString();
-            //    if (mostRecentString.ToLower() == "true")
-            //    {
-            //        takeMostRecentOnly = true;
-            //    }
-
-
-            //}
-
+        private IUSGSDataExtractor ReturnDataExtractor(string dataset)
+            {
             switch ( dataset )
                 {
                 case "High Resolution Orthoimagery":
-                    return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new HRODataExtractor());
+                    return new HRODataExtractor();
                 case "USDA National Agriculture Imagery Program (NAIP)":
-                    return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new NAIPDataExtractor());
+                    return new NAIPDataExtractor();
                 case "Digital Elevation Model (DEM) 1 meter":
                 //return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
                 case "National Elevation Dataset (NED) 1/9 arc-second":
                 case "National Elevation Dataset (NED) 1/3 arc-second":
                 case "National Elevation Dataset (NED) 1 arc-second":
-                    return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
+                    return new NEDDataExtractor(dataset);
+                case "National Land Cover Database (NLCD) - 2001":
+                case "National Land Cover Database (NLCD) - 2006":
+                case "National Land Cover Database (NLCD) - 2011":
+                    return new NLCDDataExtractor(dataset);
                 case "National Elevation Dataset (NED) 1/3 arc-second - Contours":
                 case "National Hydrography Dataset (NHD) Medium Resolution":
                 case "National Hydrography Dataset (NHD) Best Resolution":
@@ -1615,19 +1587,11 @@ namespace IndexECPlugin.Source.QueryProviders
                 case "National Structures Dataset (NSD)":
                 case "National Transportation Dataset (NTD)":
                 case "Lidar Point Cloud (LPC)":
-                    return DatasetFilter(tokenList, minDate, maxDate, new DefaultDataExtractor());
-                case "National Land Cover Database (NLCD) - 2001":
-                case "National Land Cover Database (NLCD) - 2006":
-                case "National Land Cover Database (NLCD) - 2011":
-                    return DatasetFilter(tokenList, minDate, maxDate, new NLCDDataExtractor(dataset));
                 default:
-                    return tokenList.Select(token => new USGSExtractedResult
-                    {
-                        jToken = token, Date = null, Resolution = null
-                    });
+                    return new DefaultDataExtractor();
                 }
-
             }
+
 
         /// <summary>
         /// Dataset special filtering. We eliminate duplicate
@@ -1640,13 +1604,7 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <returns>The list of entries, exempt from superfluous data</returns>
         private IEnumerable<USGSExtractedResult> DatasetFilter (IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, /*bool takeMostRecentOnly,*/ IUSGSDataExtractor extractor)
             {
-            //Filter by bounding box
-            //Dictionary<string, USGSExtractedResult> bboxDictionary = new Dictionary<string, USGSExtractedResult>();
             List<USGSExtractedResult> results = new List<USGSExtractedResult>();
-            //if(!takeMostRecentOnly)
-            //{
-            //    results = new List<USGSExtractedResult>();
-            //}
 
             foreach ( JToken newToken in tokenList )
                 {
@@ -1670,49 +1628,12 @@ namespace IndexECPlugin.Source.QueryProviders
                     continue;
                     }
 
-                var bboxString = newToken["boundingBox"].ToString();
-                //if (bboxDictionary.ContainsKey(bboxString))
-                //{
-
-                //    //var firstTokenObject = bboxDictionary[bboxString];
-
-                //    string firstTokenName = firstTokenObject.jToken.TryToGetString("title");
-                //    string newTokenName = newToken.TryToGetString("title");
-
-                //    if (firstTokenName == newTokenName)
-                //    {
-                //        //The title of the two entries is the same. It is a duplicate entry, so we skip
-                //        continue;
-                //    }
-                //    //if (takeMostRecentOnly)
-                //    //{
-                //    //    string[] firstTitleSplit = firstTokenName.Split(' ');
-
-                //    //    if (newTokenDate > firstTokenObject.Date)
-                //    //    {
-                //    //        bboxDictionary[bboxString] = new USGSExtractedResult{jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution};
-                //    //    }
-                //    //}
-                //    //else
-                //    //{
-                //        //If we do not take only the most recent, we can add it to the results directly
-                //        results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution });
-                //    //}
-                //}
                 if ( (title != null) && (!results.Any(r => r.Title == title)) )
                     {
-                    //There is no result having the same title
-
-
-                    //bboxDictionary[bboxString] = new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution };
-                    //if (!takeMostRecentOnly)
-                    //{
-                    //    //If we do not take only the most recent, we can add it to the results directly
                     results.Add(new USGSExtractedResult
-                    {
+                        {
                         jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution, ResolutionInMeters = newTokenResolutionInMeters
-                    });
-                    //}
+                        });
                     }
                 }
             //if(takeMostRecentOnly)

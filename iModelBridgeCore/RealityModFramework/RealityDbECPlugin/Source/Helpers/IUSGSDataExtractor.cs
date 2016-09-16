@@ -31,6 +31,15 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="resolution">The resolution of the data, if applicable</param>
         /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         void ExtractTitleDateAndResolution (JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters);
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters);
         }
 
     /// <summary>
@@ -74,11 +83,6 @@ namespace IndexECPlugin.Source.Helpers
             resolutionInMeters = resolution.TrimEnd('m');
             resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
 
-            //if (newDateString.Length != 6)
-            //{
-            //    Log.Logger.error("Error while filtering High Resolution Orthoimagery results.");
-            //    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering High Resolution Orthoimagery results.");
-            //}
             try
                 {
                 date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
@@ -87,6 +91,60 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 Log.Logger.error(String.Format("Error while filtering USGS High Resolution Orthoimagery entry {0}.", title));
                 throw new OperationFailedException("Error while filtering USGS High Resolution Orthoimagery results.");
+                }
+
+            }
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
+            {
+            string title = token.TryToGetString("title");
+
+            JArray weblinks = token["webLinks"] as JArray;
+            string newTokenZipURL = null;
+
+            if ( weblinks != null )
+                {
+                foreach ( JObject weblink in weblinks )
+                    {
+
+                    string[] acceptedFormats = { "JPEG2000", "TIFF", "IMG", "Shapefile", "LAS" };
+                    if ( (weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())) )
+                        {
+                        newTokenZipURL = weblink.TryToGetString("uri");
+                        break;
+                        }
+                    }
+                }
+
+            string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
+
+            //The zip name is the last string in the array
+            string zipName = newTokenZipURLSplit[newTokenZipURLSplit.Length - 1];
+
+            string[] zipNameSplit = zipName.Split('_');
+
+            //According to the convention, the date of acquisition is located after the first underscore character
+            string newDateString = zipNameSplit[1];
+
+            resolution = zipNameSplit[2].Replace('x', '.');
+
+            resolutionInMeters = resolution.TrimEnd('m');
+            resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
+
+            try
+                {
+                date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                }
+            catch ( System.FormatException )
+                {
+                date = null;
                 }
 
             }
@@ -140,20 +198,12 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 else
                     {
-                    Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
-                    throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+                    resolution = null;
+                    resolutionInMeters = null;
                     }
                 }
 
-
-
-            ////The last acquisition date is located at the end
-            //string dateString = fileNameSplit[fileNameSplit.Count() - 1];
             string dateString = token.TryToGetString("publicationDate");
-            //if (dateString.Length != 10)
-            //{
-            //    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
-            //}
             try
                 {
                 date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
@@ -166,6 +216,93 @@ namespace IndexECPlugin.Source.Helpers
 
 
             }
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
+            {
+            string title = token.TryToGetString("title");
+            date = null;
+
+            JToken datesToken = token["dates"];
+            if ( datesToken != null )
+                {
+                JToken pubDateToken = datesToken.FirstOrDefault(d => d.TryToGetString("type") == "Publication");
+                string pubDateString = pubDateToken.TryToGetString("dateString");
+                if ( pubDateString != null )
+                    {
+                    try
+                        {
+                        if ( pubDateString.Length == 4 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else if ( pubDateString.Length == 7 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        }
+                    catch ( FormatException )
+                        {
+                        date = null;
+                        }
+                    }
+                }
+
+            JArray weblinks = token["webLinks"] as JArray;
+            string newTokenZipURL = null;
+
+            if ( weblinks != null )
+                {
+                foreach ( JObject weblink in weblinks )
+                    {
+
+                    string[] acceptedFormats = { "JPEG2000", "TIFF", "IMG", "Shapefile", "LAS" };
+                    if ( (weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())) )
+                        {
+                        newTokenZipURL = weblink.TryToGetString("uri");
+                        break;
+                        }
+                    }
+                }
+
+            string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
+
+            //The zip name is the last string in the array
+            string fileName = newTokenZipURLSplit[newTokenZipURLSplit.Length - 1];
+
+            string[] fileNameSplit = fileName.Split('_');
+
+            string newTokenResolutionChar = fileNameSplit[4];
+            if ( newTokenResolutionChar == "1" )
+                {
+                resolution = "1.0m";
+                resolutionInMeters = "1.0x1.0";
+                }
+            else
+                {
+                if ( newTokenResolutionChar == "h" )
+                    {
+                    resolution = "0.5m";
+                    resolutionInMeters = "0.5x0.5";
+                    }
+                else
+                    {
+                    resolution = null;
+                    resolutionInMeters = null;
+                    }
+                }
+            }
+
         }
 
     /// <summary>
@@ -234,11 +371,93 @@ namespace IndexECPlugin.Source.Helpers
                     resolution = "1\"";
                     resolutionInMeters = String.Format("{0:0.####}", DbGeometryHelpers.ConvertArcsecLatToMeter((1.0), lat));
                     resolutionInMeters = resolutionInMeters != "0" ? resolutionInMeters + "x" + "30.87" : "0.001x30.87";
-
                     break;
                 default:
-                    Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+                    resolution = null;
+                    resolutionInMeters = null;
+                    break;
+                }
+            }
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
+            {
+            string title = token.TryToGetString("title");
+
+            date = null;
+
+            JToken datesToken = token["dates"];
+            if ( datesToken != null )
+                {
+                JToken pubDateToken = datesToken.FirstOrDefault(d => d.TryToGetString("type") == "Publication");
+                string pubDateString = pubDateToken.TryToGetString("dateString");
+                if ( pubDateString != null )
+                    {
+                    try
+                        {
+                        if ( pubDateString.Length == 4 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else if ( pubDateString.Length == 7 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        }
+                    catch ( FormatException )
+                        {
+                        date = null;
+                        }
+                    }
+                }
+
+            double lat;
+            resolution = null;
+            resolutionInMeters = null;
+            JToken bbox = token["spatial"] != null ? token["spatial"]["boundingBox"] : null;
+            if ( bbox != null )
+                {
+                switch ( m_dataset )
+                    {
+                    case "Digital Elevation Model (DEM) 1 meter":
+                        resolution = "1.0m";
+                        resolutionInMeters = "1.0x1.0";
+                        break;
+                    case "National Elevation Dataset (NED) 1/9 arc-second":
+                        lat = (Convert.ToDouble(bbox.TryToGetString("minY")) + Convert.ToDouble(bbox.TryToGetString("maxY"))) / 2.0;
+                        resolution = "1/9\"";
+                        resolutionInMeters = String.Format("{0:0.####}", DbGeometryHelpers.ConvertArcsecLatToMeter((1.0 / 9.0), lat));
+                        //It should never be as small as 0.001, so i've put this to prevent errors in case of bad input... 
+                        //Anyway 0.001 is way smaller than the error of the ConvertArcsecLatToMeter function.
+                        resolutionInMeters = resolutionInMeters != "0" ? resolutionInMeters + "x" + "3.43" : "0.001x3.43";
+                        break;
+                    case "National Elevation Dataset (NED) 1/3 arc-second":
+                        lat = (Convert.ToDouble(bbox.TryToGetString("minY")) + Convert.ToDouble(bbox.TryToGetString("maxY"))) / 2.0;
+                        resolution = "1/3\"";
+                        resolutionInMeters = String.Format("{0:0.####}", DbGeometryHelpers.ConvertArcsecLatToMeter((1.0 / 3.0), lat));
+                        resolutionInMeters = resolutionInMeters != "0" ? resolutionInMeters + "x" + "10.29" : "0.001x10.29";
+                        break;
+                    case "National Elevation Dataset (NED) 1 arc-second":
+                        lat = (Convert.ToDouble(bbox.TryToGetString("minY")) + Convert.ToDouble(bbox.TryToGetString("maxY"))) / 2.0;
+                        resolution = "1\"";
+                        resolutionInMeters = String.Format("{0:0.####}", DbGeometryHelpers.ConvertArcsecLatToMeter((1.0), lat));
+                        resolutionInMeters = resolutionInMeters != "0" ? resolutionInMeters + "x" + "30.87" : "0.001x30.87";
+                        break;
+                    default:
+                        resolution = null;
+                        resolutionInMeters = null;
+                        break;
+                    }
                 }
             }
         }
@@ -284,8 +503,54 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 date = null;
                 }
-            resolution = "Unknown";
-            resolutionInMeters = "Unknown";
+            resolution = null;
+            resolutionInMeters = null;
+            }
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
+            {
+            string title = token.TryToGetString("title");
+
+            date = null;
+
+            JToken datesToken = token["dates"];
+            if ( datesToken != null )
+                {
+                JToken pubDateToken = datesToken.FirstOrDefault(d => d.TryToGetString("type") == "Publication");
+                string pubDateString = pubDateToken.TryToGetString("dateString");
+                if ( pubDateString != null )
+                    {
+                    try
+                        {
+                        if ( pubDateString.Length == 4 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else if ( pubDateString.Length == 7 )
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        else
+                            {
+                            date = DateTime.ParseExact(pubDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                        }
+                    catch ( FormatException )
+                        {
+                        date = null;
+                        }
+                    }
+                }
+
+            resolution = null;
+            resolutionInMeters = null;
             }
         }
 
@@ -336,6 +601,38 @@ namespace IndexECPlugin.Source.Helpers
                 }
 
             }
+
+        /// <summary>
+        /// Extract data from the USGS ScienceBase Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from ScienceBase</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+        public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
+            {
+            string title = token.TryToGetString("title");
+            resolution = "30.0m";
+            resolutionInMeters = "30.0x30.0";
+
+            switch ( m_dataset )
+                {
+
+                case "National Land Cover Database (NLCD) - 2001":
+                    date = new DateTime(2001, 1, 1);
+                    break;
+                case "National Land Cover Database (NLCD) - 2006":
+                    date = new DateTime(2006, 1, 1);
+                    break;
+                case "National Land Cover Database (NLCD) - 2011":
+                    date = new DateTime(2011, 1, 1);
+                    break;
+                default:
+                    date = null;
+                    break;
+                }
+
+            }
         }
 
     ///// <summary>
@@ -381,8 +678,8 @@ namespace IndexECPlugin.Source.Helpers
     //        {
     //            date = null;
     //        }
-    //        resolution = "Unknown";
-    //        resolutionInMeters = "Unknown";
+    //        resolution = null;
+    //        resolutionInMeters = null;
     //    }
     //}
 
