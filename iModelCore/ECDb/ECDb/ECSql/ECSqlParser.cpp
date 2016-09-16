@@ -2723,7 +2723,7 @@ BentleyStatus ECSqlParser::ParseValueExp(unique_ptr<ValueExp>& valueExp, OSQLPar
                     return ParseValueExpPrimary(valueExp, parseNode);
 
                 default:
-                    BeAssert(false && "Grammar rule not handled.");
+                    LOG.errorv("ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };

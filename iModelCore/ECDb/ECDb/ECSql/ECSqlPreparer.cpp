@@ -428,7 +428,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         NativeSqlBuilder classViewSql;
         if (classMap.GenerateSelectViewSql(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
             {
-            BeAssert(false && "Class view generation failed during preparation of class name expression.");
+            BeAssert(false && "SELECT view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
             }
 
