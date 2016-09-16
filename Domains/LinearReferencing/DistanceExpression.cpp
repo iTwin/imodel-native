@@ -35,3 +35,11 @@ DistanceExpression::DistanceExpression(double distanceAlong, NullableDouble late
     m_distanceAlongFromReferent(distanceAlongFromReferent)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void DistanceExpression::SetFromReferent(IReferentCP fromReferent)
+    {
+    m_fromReferentId = (fromReferent) ? fromReferent->ToElement().GetElementId() : Dgn::DgnElementId();
+    }

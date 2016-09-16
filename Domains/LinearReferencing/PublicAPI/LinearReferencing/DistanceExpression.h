@@ -43,12 +43,12 @@ public:
     NullableDouble GetVerticalOffsetFromILinearElement() const { return m_verticalOffset; }
     NullableDouble GetDistanceAlongFromReferent() const { return m_distanceAlongFromReferent; }
     Dgn::DgnElementId GetFromReferentId() const { return m_fromReferentId; }
-
+    
     void SetDistanceAlongFromStart(double newVal) { m_distanceAlong = newVal; }
     void SetLateralOffsetFromILinearElement(NullableDouble newVal) { m_lateralOffset = newVal; }
     void SetVerticalOffsetFromILinearElement(NullableDouble newVal) { m_verticalOffset = newVal; }
-    void SetDistanceAlongFromReferent(NullableDouble newVal) { m_distanceAlongFromReferent = newVal; }
-    //void SetFromReferent(IReferentCP fromReferent) { m_fromReferentId = (fromReferent) ? fromReferent->ToElement().GetElementId() : Dgn::DgnElementId(); }
+    void SetDistanceAlongFromReferent(NullableDouble newVal) { m_distanceAlongFromReferent = newVal; }    
+    LINEARREFERENCING_EXPORT void SetFromReferent(IReferentCP fromReferent);
 }; // DistanceExpression
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE
