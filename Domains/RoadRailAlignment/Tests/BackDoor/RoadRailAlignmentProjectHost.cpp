@@ -140,7 +140,7 @@ BeFileName RoadRailAlignmentProjectHost::BuildProjectFileName(WCharCP baseName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
-DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelId& modelId)
+DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
@@ -175,12 +175,10 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelI
 
     auto& modelHandlerR = AlignmentModelHandler::GetHandler();
     auto modelPtr = modelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr), 
-        projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Alignment Model")));
+        projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
 
     if (DgnDbStatus::Success != modelPtr->Insert())
         return nullptr;
-
-    modelId = modelPtr->GetModelId();
 
     return projectPtr;
     }
@@ -226,7 +224,7 @@ RoadRailAlignmentProjectHostImpl::~RoadRailAlignmentProjectHostImpl()
 
 
 RoadRailAlignmentProjectHost* RoadRailAlignmentTestsFixture::m_host = nullptr;
-DgnDbPtr RoadRailAlignmentTestsFixture::m_currentProject = DgnDbPtr(nullptr);
+DgnDbPtr RoadRailAlignmentTestsFixture::s_currentProject = DgnDbPtr(nullptr);
 //---------------------------------------------------------------------------------------
 // Automatically called by gTest framework before running every test
 //---------------------------------------------------------------------------------------
@@ -239,19 +237,38 @@ void RoadRailAlignmentTestsFixture::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 void RoadRailAlignmentTestsFixture::TearDownTestCase()
     {
-    if (m_currentProject.IsValid())
-        m_currentProject->SaveChanges();
+    if (s_currentProject.IsValid())
+        s_currentProject->SaveChanges();
 
-    m_currentProject = nullptr;
+    s_currentProject = nullptr;
 
     delete m_host;
     m_host = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DgnModelId RoadRailAlignmentTestsFixture::QueryFirstAlignmentModelId(DgnDbR db)
+    {
+    for (auto const& modelEntry : db.Models().MakeIterator())
+        {
+        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+
+        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
+        if (model->IsGeometricModel() && dynamic_cast<AlignmentModelP>(model.get()))
+            return modelEntry.GetModelId();
+        }
+
+    BeAssert(false && "No AlignmentModel found");
+    return DgnModelId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModelId& modelId, bool needsSetBriefcase)
+DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, bool needsSetBriefcase)
     {
     BeAssert(nullptr != m_host);
 
@@ -262,8 +279,7 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModel
     //! Create seed
     if (!testSeedPath.DoesPathExist())
         {
-        DgnModelId seedModelId;
-        DgnDbPtr seedProject = m_host->CreateProject(testSeedName, seedModelId);
+        DgnDbPtr seedProject = m_host->CreateProject(testSeedName);
 
         //! Error
         if (seedProject.IsNull())
@@ -272,31 +288,28 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModel
         seedProject->CloseDb();
         }
 
-
-    if (m_currentProject.IsValid())
+    if (s_currentProject.IsValid())
         {
-        m_currentProject->SaveChanges();
-        m_currentProject->CloseDb();
-        m_currentProject = nullptr;
+        s_currentProject->SaveChanges();
+        s_currentProject->CloseDb();
+        s_currentProject = nullptr;
         }
 
     if (BeFileNameStatus::Success != BeFileName::BeCopyFile(testSeedPath.c_str(), projectName.c_str(), false))
         return nullptr;
 
-    m_currentProject = m_host->OpenProject(baseName);
-    if (m_currentProject.IsNull())
+    s_currentProject = m_host->OpenProject(baseName);
+    if (s_currentProject.IsNull())
         return nullptr;
-
-    modelId = m_currentProject->Models().QueryFirstModelId();
 
     if (needsSetBriefcase)
         {
-        m_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
-        m_currentProject->CloseDb();
-        m_currentProject = m_host->OpenProject(baseName);
+        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->CloseDb();
+        s_currentProject = m_host->OpenProject(baseName);
         }
 
-    return m_currentProject;
+    return s_currentProject;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -309,23 +322,23 @@ Dgn::DgnDbPtr RoadRailAlignmentTestsFixture::OpenProject(WCharCP baseName, bool 
 
     bool wantsCurrentProject = false;
 
-    if (m_currentProject.IsValid())
+    if (s_currentProject.IsValid())
         {
         Utf8String projectNameUtf(projectName.c_str());
-        if (0 == projectNameUtf.CompareTo(m_currentProject->GetDbFileName()))
+        if (0 == projectNameUtf.CompareTo(s_currentProject->GetDbFileName()))
             wantsCurrentProject = true;
         }
 
     if (!wantsCurrentProject)
-        m_currentProject = m_host->OpenProject(baseName);
+        s_currentProject = m_host->OpenProject(baseName);
 
-    if (needsSetBriefcase && m_currentProject.IsValid())
+    if (needsSetBriefcase && s_currentProject.IsValid())
         {
-        m_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
-        m_currentProject->SaveChanges();
-        m_currentProject->CloseDb();
-        m_currentProject = m_host->OpenProject(baseName);
+        s_currentProject->ChangeBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->SaveChanges();
+        s_currentProject->CloseDb();
+        s_currentProject = m_host->OpenProject(baseName);
         }
 
-    return m_currentProject;
+    return s_currentProject;
     }

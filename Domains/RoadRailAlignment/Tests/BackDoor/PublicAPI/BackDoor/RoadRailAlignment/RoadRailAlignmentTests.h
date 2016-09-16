@@ -23,7 +23,7 @@ private:
 
     void CleanOutputDirectory();
 
-    Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&);
+    Dgn::DgnDbPtr CreateProject(WCharCP);
     Dgn::DgnDbPtr OpenProject(WCharCP);
 
 public:
@@ -43,7 +43,7 @@ struct RoadRailAlignmentTestsFixture : ::testing::Test
 private:
     static RoadRailAlignmentProjectHost* m_host;
     //! This variable is used internally. Do not expose.
-    static Dgn::DgnDbPtr m_currentProject;
+    static Dgn::DgnDbPtr s_currentProject;
 
 protected:
     //! Called before running all tests
@@ -59,8 +59,10 @@ protected:
 public:
     static RoadRailAlignmentProjectHost& GetHost() { return *m_host; }
 
+    static Dgn::DgnModelId QueryFirstAlignmentModelId(Dgn::DgnDbR db);
+
     //! Creates and caches a fresh "created" file to make the whole process faster
-    static Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&, bool needsSetBriefcase = false);
+    static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
 };

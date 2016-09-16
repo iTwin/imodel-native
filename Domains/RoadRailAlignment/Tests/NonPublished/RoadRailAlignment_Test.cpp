@@ -5,10 +5,10 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     {
-    DgnModelId modelId;
-    DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim", modelId);
+    DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
+    DgnModelId modelId = QueryFirstAlignmentModelId(*projectPtr);
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
 
     // Create Alignment
