@@ -792,6 +792,25 @@ ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeN
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP ExtendedTypeECProperty::GetKindOfQuantity() const
+    {
+    if (m_kindOfQuantity == nullptr)
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            {
+            ExtendedTypeECPropertyCP baseExtended = baseProperty->GetAsExtendedTypeProperty();
+            if (nullptr != baseExtended)
+                return baseExtended->GetKindOfQuantity();
+            }
+        }
+
+    return m_kindOfQuantity;
+    }
+
 ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
     {
     // typeName may potentially be qualified so we must parse into an alias and short class name

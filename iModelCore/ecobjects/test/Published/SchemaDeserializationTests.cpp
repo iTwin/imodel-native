@@ -1838,4 +1838,46 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
     ASSERT_STREQ("testTarget", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
     }
 
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'>"
+        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' kindOfQuantity='MyKindOfQuantity' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifer='abstract'>"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifer='sealed'>"
+        "       <BaseClass>B</BaseClass>"
+        "       <ECProperty propertyName='KindOfQuantityProperty' typeName='double' />"
+        "   </ECEntityClass>"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
+        "       displayLabel='best quantity of all times' persistenceUnit='CENTIMETRE' precision='10' "
+        "       defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;MILLIINCH'/>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    ASSERT_TRUE(schema.IsValid());
+
+    for (auto const& pClass : schema->GetClasses())
+        {
+        ECPropertyP p = pClass->GetPropertyP("KindOfQuantityProperty");
+        ASSERT_TRUE(p != nullptr);
+
+        PrimitiveECPropertyCP prim = p->GetAsPrimitiveProperty();
+        ASSERT_TRUE(prim != nullptr);
+
+        KindOfQuantityCP kindOfQuantity = prim->GetKindOfQuantity();
+        ASSERT_TRUE(kindOfQuantity != nullptr);
+
+        EXPECT_STREQ(kindOfQuantity->GetName().c_str(), "MyKindOfQuantity");
+        }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

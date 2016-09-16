@@ -906,10 +906,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
+    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
     //! Sets the KindOfQuantity of this property, provide nullptr to unset.
     void SetKindOfQuantity(KindOfQuantityCP value) { m_kindOfQuantity = value; }
-    //! Gets the KindOfQuantity of this property or nullptr, if none has been set
-    KindOfQuantityCP GetKindOfQuantity() const { return m_kindOfQuantity; }
 };
 
 //=======================================================================================
