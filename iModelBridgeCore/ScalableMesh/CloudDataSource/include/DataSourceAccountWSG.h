@@ -5,13 +5,10 @@
 #include <curl/curl.h>
 
 #include "DataSource.h"
-#include "DataSourceAccount.h"
-#include "DataSourceAccountCached.h"
+#include "DataSourceAccountCURL.h"
 #include "DataSourceBuffer.h"
 #include "DataSourceMode.h"
 #include "Manager.h"
-
-unsigned int const DATA_SOURCE_SERVICE_WSG_DEFAULT_TRANSFER_TASKS = 16;
 
 namespace WSGServer
     {
@@ -32,49 +29,12 @@ namespace WSGServer
     typedef   std::wstring     parameters;
     }
 
-class OpenSSLMutexes
-    {
-    private:
-        static OpenSSLMutexes *s_instance;
-        /* This array will store all of the mutexes available to OpenSSL. */
-        std::mutex* m_mutexes;
-        
-        OpenSSLMutexes() = delete;
-        OpenSSLMutexes(size_t numMutexes);
-
-    public:
-        ~OpenSSLMutexes();
-        std::mutex* GetMutexes();
-
-        static OpenSSLMutexes *CreateInstance(const size_t& numMutexes);
-        static OpenSSLMutexes *Instance();
-    };
-
-class DataSourceAccountWSG : public DataSourceAccountCached
+class DataSourceAccountWSG : public DataSourceAccountCURL
 {
 
-private:
-
-    class CURLHandleManager : public Manager<CURL*>
-        {
-        public:
-            typedef std::wstring                            HandleName;
-
-        public:
-
-            CURL *     getOrCreateCURLHandle(const HandleName &name, bool *created = nullptr);
-            CURL *     getOrCreateThreadCURLHandle(bool *created = nullptr);
-
-        private:
-
-            CURL *  createCURLHandle(const HandleName &name);
-
-
-        };
-
-    CURLHandleManager m_CURLManager;
-
 protected:
+
+    typedef DataSourceAccountCURL           Super;
 
     WSGServer::Request::protocol            wsgProtocol         = L"https:";
     WSGServer::Request::port                wsgPort             = L"443";
@@ -85,25 +45,12 @@ protected:
     WSGServer::class_name                   wsgClassName        = L"Document";
     WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544";
 
-    DataSourceBuffer::BufferSize            defaultSegmentSize;
-    DataSourceBuffer::Timeout               defaultTimeout;
-
     typedef std::string WSGEtag;
-
-protected:
-
-    unsigned int                            getDefaultNumTransferTasks          (void);
-
+    typedef std::string WSGToken;
 
 public:
                                             DataSourceAccountWSG                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountWSG                (void);
-
-        void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
-        DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);
-
-        void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
-        DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key);
 
@@ -119,20 +66,6 @@ public:
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
 private :
+       WSGToken                             getWSGToken                         ();
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
-
-       struct CURLDataMemoryBuffer {
-           DataSourceBuffer::BufferData* data;
-           size_t                        size;
-           };
-       struct CURLDataResponseHeader {
-           std::map<std::string, std::string> data;
-           };
-    
-       static size_t CURLWriteHeaderCallback        (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLWriteDataCallback          (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLDummyWriteDataCallback     (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLReadDataCallback           (char *bufptr,   size_t size, size_t nitems, void *userp);
-
-       static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
     };

@@ -96,6 +96,15 @@
     <ClCompile Include="DataSourceServiceWSG.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DataSourceAccountCURL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSourceCURL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSourceServiceCURL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ActivitySemaphore.h">
@@ -195,6 +204,15 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\DataSourceServiceWSG.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceCURL.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceAccountCURL.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceServiceCURL.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>
