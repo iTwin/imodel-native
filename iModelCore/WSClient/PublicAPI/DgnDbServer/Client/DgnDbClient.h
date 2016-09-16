@@ -188,14 +188,13 @@ public:
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Redownload briefcase file and open a briefcase instance
+    //! Redownload briefcase file
     //! @param[in] db Previously downloaded briefcase file. See DgnDbClient::AcquireBriefcase.
-    //! @param[in] doSync If set to true, it will download all of the incomming revisions and merge locally.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has briefcase instance as result. See DgnDbBriefcase.
+    //! @return Asynchronous task that returns error if download has failed. See DgnDbBriefcase.
     //! @note Should be used if briefcase file has became invalid.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr RefreshBriefcase(DgnDbPtr db, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a repository from server
     //! @param[in] repositoryInfo Information of repository to be deleted. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
