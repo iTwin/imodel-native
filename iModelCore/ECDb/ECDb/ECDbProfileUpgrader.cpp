@@ -307,7 +307,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache());
+    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
     timer.Stop();
     if (importStat != SUCCESS)
         {

@@ -86,7 +86,7 @@ BentleyStatus SetupTestECDb(BeFileNameR ecdbPath, Utf8CP testECDbName)
 
     ECDbTestProject testProject;
     ECDbR ecdb = testProject.Create(testECDbName);
-    if (ecdb.Schemas().ImportECSchemas(*schemaCache) != SUCCESS)
+    if (ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()) != SUCCESS)
         return ERROR;
 
     ecdbPath = BeFileName(testProject.GetECDbPath());

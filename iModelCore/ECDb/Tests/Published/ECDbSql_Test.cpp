@@ -21,7 +21,7 @@ BentleyStatus ImportSchema(ECDbR ecdb, Utf8CP schemaXml)
     if (schemaCache == nullptr)
         return ERROR;
 
-    return ecdb.Schemas().ImportECSchemas(*schemaCache);
+    return ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas());
     }
 
 /*---------------------------------------------------------------------------------**//**

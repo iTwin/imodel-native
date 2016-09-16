@@ -286,11 +286,11 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         ASSERT_EQ(stat, BE_SQLITE_OK);
         ecSchema = PerformanceSchemaImportTests::CreateTestSchema(5000, 100, true, true, true, i);
         ASSERT_TRUE(ecSchema.IsValid());
-        ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-        ASSERT_EQ(ECObjectsStatus::Success, schemaCache->AddSchema(*ecSchema));
+        bvector<ECSchemaCP> schemas;
+        schemas.push_back(ecSchema.get());
 
         StopWatch timer(true);
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas));
         timer.Stop();
         importTime = timer.GetElapsedSeconds();
         ecdb.SaveChanges();
@@ -327,14 +327,12 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     ASSERT_TRUE(BE_SQLITE_OK == ECDbTestUtility::CreateECDb(testecdb, nullptr, L"ImportSimpleSchema.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
-    schemaCache->AddSchema(*schemaptr);
 
     StopWatch timer(true);
-    auto stat = testecdb.Schemas().ImportECSchemas(*schemaCache);
+    auto stat = testecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
     timer.Stop();
     ASSERT_EQ(SUCCESS, stat);
 

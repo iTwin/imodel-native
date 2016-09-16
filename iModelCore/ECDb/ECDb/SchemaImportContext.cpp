@@ -18,14 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaImportContext::Initialize(DbSchema& dbSchema, ECDbCR ecdb)
-    {
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
 ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
     {
     return GetClassMappingCACacheP(ecclass);
@@ -162,7 +154,7 @@ bool ECSchemaCompareContext::RequiresUpdate() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas)
+BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
     {
     if (m_prepared)
         {
@@ -198,12 +190,6 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList, options) != SUCCESS)
             return ERROR;
         
-#if 0
-        Utf8String str;
-        m_changes.WriteToString(str);
-        printf("%s", str.c_str());
-#endif
-
         std::set<Utf8CP, CompareIUtf8Ascii> schemaOfInterest;
         if (m_changes.IsValid())
             {

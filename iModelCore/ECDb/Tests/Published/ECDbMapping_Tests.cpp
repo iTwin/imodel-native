@@ -8757,10 +8757,10 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         }
 
     if (schemaImportExpectedToSucceed)
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
     else
         {
-        ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+        ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
         return;
         }
 

@@ -202,7 +202,7 @@ bool CreateSimpleCompany (ECDbR ecDb)
         return false;
 
     /* Import schema into Db */
-    auto importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache());
+    auto importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache().GetSchemas());
     return (importSchemaStatus == SUCCESS);
     }
 

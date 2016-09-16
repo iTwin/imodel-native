@@ -110,12 +110,12 @@ bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InsertSchemaInDependencyOrderedList(bvector<ECSchemaP>& schemas, ECSchemaP insertSchema)
+void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
     {
     if (std::find(schemas.begin(), schemas.end(), insertSchema) != schemas.end())
         return; // This (and its referenced ECSchemas) are already in the list
 
-    bvector<ECSchemaP>::reverse_iterator rit;
+    bvector<ECSchemaCP>::reverse_iterator rit;
     for (rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
         {
         if (DependsOn(insertSchema, *rit))
@@ -131,7 +131,7 @@ void InsertSchemaInDependencyOrderedList(bvector<ECSchemaP>& schemas, ECSchemaP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BuildDependencyOrderedSchemaList(bvector<ECSchemaP>& schemas, ECSchemaP insertSchema)
+void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
     {
     InsertSchemaInDependencyOrderedList(schemas, insertSchema);
     ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
@@ -144,7 +144,7 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaP>& schemas, ECSchemaP ins
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
+BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas) const
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
@@ -154,7 +154,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
         return ERROR;
         }
 
-    if (cache.GetCount() == 0)
+    if (schemas.empty())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
@@ -164,17 +164,14 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
 
     BeMutexHolder lock(m_criticalSection);
 
-    SchemaImportContext context;
-    if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
-        return ERROR;
-
     if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
         return ERROR;
 
     if (ViewGenerator::DropUpdatableViews(GetECDb()) != SUCCESS)
         return ERROR;
 
-    if (SUCCESS != BatchImportECSchemas(context, cache))
+    SchemaImportContext context;
+    if (SUCCESS != PersistECSchemas(context, schemas))
         return ERROR;
 
     ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
@@ -202,13 +199,10 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& context, ECSchemaCacheR schemaCache) const
+BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, bvector<ECSchemaCP> const& schemas) const
     {
-    bvector<ECSchemaP> schemas;
-    schemaCache.GetSchemas(schemas);
-
-    bvector<ECSchemaP> schemasToImport;
-    for (ECSchemaP schema : schemas)
+    bvector<ECSchemaCP> schemasToImport;
+    for (ECSchemaCP schema : schemas)
         {
         BeAssert(schema != nullptr);
         if (schema == nullptr) 
@@ -227,25 +221,26 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
         BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
-    bvector<ECSchemaP> primarySchemas;
+    bvector<ECSchemaCP> primarySchemas;
     bvector<ECSchemaP> suppSchemas;
-    for (ECSchemaP schema : schemasToImport)
+    for (ECSchemaCP schema : schemasToImport)
         {
         if (schema->IsSupplementalSchema())
-            suppSchemas.push_back(schema);
+            suppSchemas.push_back(const_cast<ECSchemaP> (schema));
         else
             primarySchemas.push_back(schema);
         }
 
     if (!suppSchemas.empty())
         {
-        for (ECSchemaP primarySchema : primarySchemas)
+        for (ECSchemaCP primarySchema : primarySchemas)
             {
             if (primarySchema->IsSupplemented())
                 continue;
 
+            ECSchemaP primarySchemaP = const_cast<ECSchemaP> (primarySchema);
             SupplementedSchemaBuilder builder;
-            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchema, suppSchemas, false /*dont create ca copy while supplementing*/);
+            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
@@ -262,7 +257,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
                     auto& bsca = provenance->GetClass().GetSchema();
                     if (!ECSchema::IsSchemaReferenced(*primarySchema, bsca))
                         {
-                        primarySchema->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                        primarySchemaP->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
                         }
                     }
                 }
@@ -270,8 +265,8 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
         }
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaP> dependencyOrderedPrimarySchemas;
-    for (ECSchemaP schema : primarySchemas)
+    bvector<ECSchemaCP> dependencyOrderedPrimarySchemas;
+    for (ECSchemaCP schema : primarySchemas)
         BuildDependencyOrderedSchemaList(dependencyOrderedPrimarySchemas, schema);
 
     primarySchemas.clear(); // Just make sure no one tries to use it anymore

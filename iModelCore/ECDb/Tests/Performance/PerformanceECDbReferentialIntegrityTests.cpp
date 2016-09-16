@@ -101,14 +101,11 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
         "</ECSchema>";
 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
 
-    // Create DB
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    schemaCache->AddSchema(*schema);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()));
     }
 
 void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)

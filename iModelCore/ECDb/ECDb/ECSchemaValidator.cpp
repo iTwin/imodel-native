@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas)
+bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaCP> const& schemas)
     {
     bool valid = true;
     for (ECSchemaCP schema : schemas)

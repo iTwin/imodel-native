@@ -69,7 +69,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDbSchemaReader* m_schemaReader;
         mutable BeMutex m_criticalSection;
 
-        BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR) const;
+        BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
         //! Implementation of IECSchemaLocater
@@ -84,8 +84,24 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ~ECDbSchemaManager();
 #endif
 
-        //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache and all
-        //! their referenced @ref ECN::ECSchema "ECSchemas" into the @ref ECDbFile "ECDb file".
+        //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
+        //! into the @ref ECDbFile "ECDb file".
+        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
+        //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
+        //! they should be obtained as needed through the ECDbSchemaManager API.
+        //!
+        //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
+        //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
+        //!                     (the method detects that they are already imported, and simply skips them)
+        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
+        //!                     If any duplicates are found in @p schemas an error will returned.
+        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        //! @see @ref ECDbECSchemaImportAndUpdate
+        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
+
+        //! @deprecated Instead use overload that takes bvector of ECSchemas.
+        //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache (which must
+        //! include all referenced ECSChemas) into the @ref ECDbFile "ECDb file".
         //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
         //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
         //! they should be obtained as needed through the ECDbECSchemaManager API.
@@ -97,7 +113,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //!                     If any duplicates are found in @p schemaCache an error will returned.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpdate
-        ECDB_EXPORT BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache) const;
+        BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache) const { return ImportECSchemas(schemaCache.GetSchemas()); }
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for

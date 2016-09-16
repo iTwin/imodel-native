@@ -14,264 +14,264 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindNull (int Parameterindex)
-{
-return m_parent.stmt.BindNull (Parameterindex);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindNull(int Parameterindex)
+    {
+    return m_parent.stmt.BindNull(Parameterindex);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindInt (int Parameterindex, int intVal)
-{
-return m_parent.stmt.BindInt (Parameterindex, intVal);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindInt(int Parameterindex, int intVal)
+    {
+    return m_parent.stmt.BindInt(Parameterindex, intVal);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindLong (int Parameterindex, int int64Val)
-{
-return m_parent.stmt.BindInt64 (Parameterindex, int64Val);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindLong(int Parameterindex, int int64Val)
+    {
+    return m_parent.stmt.BindInt64(Parameterindex, int64Val);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindText (int Parameterindex, Utf8CP stringVal, IECSqlBinder::MakeCopy makeCopy)
-{
-return m_parent.stmt.BindText (Parameterindex, stringVal, makeCopy);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindText(int Parameterindex, Utf8CP stringVal, IECSqlBinder::MakeCopy makeCopy)
+    {
+    return m_parent.stmt.BindText(Parameterindex, stringVal, makeCopy);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindDouble (int Parameterindex, double doubleVal)
-{
-return m_parent.stmt.BindDouble (Parameterindex, doubleVal);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindDouble(int Parameterindex, double doubleVal)
+    {
+    return m_parent.stmt.BindDouble(Parameterindex, doubleVal);
+    }
 
-ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean (int Parameterindex, bool boolVal)
-{
-return m_parent.stmt.BindBoolean (Parameterindex, boolVal);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary (int Parameterindex, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
-{
-return m_parent.stmt.BindBinary (Parameterindex, binaryVal, binarySize, makeCopy);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean(int Parameterindex, bool boolVal)
+    {
+    return m_parent.stmt.BindBoolean(Parameterindex, boolVal);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindDateTime (int Parameterindex, DateTimeCR dateTime)
-{
-return m_parent.stmt.BindDateTime (Parameterindex, dateTime);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary(int Parameterindex, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+    {
+    return m_parent.stmt.BindBinary(Parameterindex, binaryVal, binarySize, makeCopy);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry (int Parameterindex, IGeometryCR geomVal)
-{
-return m_parent.stmt.BindGeometry (Parameterindex, geomVal);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindDateTime(int Parameterindex, DateTimeCR dateTime)
+    {
+    return m_parent.stmt.BindDateTime(Parameterindex, dateTime);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D (int Parameterindex, DPoint2dCR value)
-{
-return m_parent.stmt.BindPoint2D (Parameterindex, value);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry(int Parameterindex, IGeometryCR geomVal)
+    {
+    return m_parent.stmt.BindGeometry(Parameterindex, geomVal);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D (int Parameterindex, DPoint3dCR value)
-{
-return m_parent.stmt.BindPoint3D (Parameterindex, value);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(int Parameterindex, DPoint2dCR value)
+    {
+    return m_parent.stmt.BindPoint2D(Parameterindex, value);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindId (int Parameterindex, BeInt64Id id)
-{
-return m_parent.stmt.BindId (Parameterindex, id);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D(int Parameterindex, DPoint3dCR value)
+    {
+    return m_parent.stmt.BindPoint3D(Parameterindex, value);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct (int Parameterindex)
-{
-return m_parent.stmt.BindStruct (Parameterindex);
-}
+ECSqlStatus ECSqlStatementHelper::Bindings::bindId(int Parameterindex, BeInt64Id id)
+    {
+    return m_parent.stmt.BindId(Parameterindex, id);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray (int Parameterindex, uint32_t initialArrayCapacity)
-{
-return m_parent.stmt.BindArray (Parameterindex, initialArrayCapacity);
-}
+IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct(int Parameterindex)
+    {
+    return m_parent.stmt.BindStruct(Parameterindex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray(int Parameterindex, uint32_t initialArrayCapacity)
+    {
+    return m_parent.stmt.BindArray(Parameterindex, initialArrayCapacity);
+    }
 
 //*************** For Named Parameter Binding ***************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindNull (Utf8CP ParameterName)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindNull(Utf8CP ParameterName)
     {
-    int index=m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindNull (index);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindNull(index);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindInt (Utf8CP ParameterName, int intVal)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindInt(Utf8CP ParameterName, int intVal)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindInt (index, intVal);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindInt(index, intVal);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindLong (Utf8CP ParameterName, int int64Val)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindLong(Utf8CP ParameterName, int int64Val)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindInt64 (index, int64Val);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindInt64(index, int64Val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindText (Utf8CP ParameterName, Utf8CP stringVal, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindText(Utf8CP ParameterName, Utf8CP stringVal, IECSqlBinder::MakeCopy makeCopy)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindText (index, stringVal, makeCopy);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindText(index, stringVal, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindDouble (Utf8CP ParameterName, double doubleVal)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindDouble(Utf8CP ParameterName, double doubleVal)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindDouble (index, doubleVal);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindDouble(index, doubleVal);
     }
 
-ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean (Utf8CP ParameterName, bool boolVal)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean(Utf8CP ParameterName, bool boolVal)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindBoolean (index, boolVal);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary (Utf8CP ParameterName, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindBinary (index, binaryVal, binarySize, makeCopy);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindBoolean(index, boolVal);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindDateTime (Utf8CP ParameterName, DateTimeCR dateTime)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary(Utf8CP ParameterName, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindDateTime (index, dateTime);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindBinary(index, binaryVal, binarySize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry (Utf8CP ParameterName, IGeometryCR geomVal)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindDateTime(Utf8CP ParameterName, DateTimeCR dateTime)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindGeometry (index, geomVal);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindDateTime(index, dateTime);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D (Utf8CP ParameterName, DPoint2dCR value)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry(Utf8CP ParameterName, IGeometryCR geomVal)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindPoint2D (index, value);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindGeometry(index, geomVal);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D (Utf8CP ParameterName, DPoint3dCR value)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(Utf8CP ParameterName, DPoint2dCR value)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindPoint3D (index, value);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindPoint2D(index, value);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementHelper::Bindings::bindId (Utf8CP ParameterName, BeInt64Id id)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D(Utf8CP ParameterName, DPoint3dCR value)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindId (index, id);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindPoint3D(index, value);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct (Utf8CP ParameterName)
+ECSqlStatus ECSqlStatementHelper::Bindings::bindId(Utf8CP ParameterName, BeInt64Id id)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindStruct (index);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindId(index, id);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray (Utf8CP ParameterName, uint32_t initialArrayCapacity)
+IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct(Utf8CP ParameterName)
     {
-    int index = m_parent.stmt.GetParameterIndex (ParameterName);
-    return m_parent.stmt.BindArray (index, initialArrayCapacity);
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindStruct(index);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray(Utf8CP ParameterName, uint32_t initialArrayCapacity)
+    {
+    int index = m_parent.stmt.GetParameterIndex(ParameterName);
+    return m_parent.stmt.BindArray(index, initialArrayCapacity);
     }
 //---------------------------------------------------------------------------------------
 //! Searches the referenced schema on the default/absolute Path.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-BeFileName ECSqlStatementHelper::SearchPath (BeFileName schemaName)
-{
-if (schemaName.IsAbsolutePath ())
+BeFileName ECSqlStatementHelper::SearchPath(BeFileName schemaName)
     {
-    return schemaName;
+    if (schemaName.IsAbsolutePath())
+        {
+        return schemaName;
+        }
+    else
+        {
+        BeTest::GetHost().GetDocumentsRoot(schemaDir);
+        schemaDir.AppendToPath(L"ECDb");
+        schemaDir.AppendToPath(L"Schemas");
+        schemaDir.AppendToPath((WCharCP) schemaName);
+        return schemaDir;
+        }
     }
-else
-    {
-    BeTest::GetHost ().GetDocumentsRoot (schemaDir);
-    schemaDir.AppendToPath (L"ECDb");
-    schemaDir.AppendToPath (L"Schemas");
-    schemaDir.AppendToPath ((WCharCP)schemaName);
-    return schemaDir;
-    }
-}
 
 //---------------------------------------------------------------------------------------
 //! Reads the schema from the path.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaReadStatus ECSqlStatementHelper::ReadXml (BeFileName SchemaDir)
+SchemaReadStatus ECSqlStatementHelper::ReadXml(BeFileName SchemaDir)
     {
     ECSchemaPtr schemaPtr;
-    context = ECSchemaReadContext::CreateContext ();
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schemaPtr, SchemaDir, *context);
+    context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schemaPtr, SchemaDir, *context);
     return status;
     }
 
@@ -279,198 +279,198 @@ SchemaReadStatus ECSqlStatementHelper::ReadXml (BeFileName SchemaDir)
 //! Creates a test project,reads the schema from the specified path and imports it.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementHelper::SetUpTest (Utf8String TestName, Utf8CP schema, WCharCP ecdbFileName)
+void ECSqlStatementHelper::SetUpTest(Utf8String TestName, Utf8CP schema, WCharCP ecdbFileName)
     {
     m_item = testItem[TestName];
     m_item.path = schema;
-    schemaDir = (BeFileName)m_item.path;
+    schemaDir = (BeFileName) m_item.path;
 
     //Get the Schema Path
-    SearchPath (schemaDir);
-    ASSERT_EQ (true, schemaDir.DoesPathExist ()) << "Invalid schema name/search path.";
+    SearchPath(schemaDir);
+    ASSERT_EQ(true, schemaDir.DoesPathExist()) << "Invalid schema name/search path.";
 
     //Read Schema
-    EXPECT_EQ (SchemaReadStatus::Success, ReadXml (schemaDir));
+    EXPECT_EQ(SchemaReadStatus::Success, ReadXml(schemaDir));
 
     //Creates a project
-    EXPECT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, ecdbFileName));
-    EXPECT_TRUE (ecdb.IsDbOpen ());
+    EXPECT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, ecdbFileName));
+    EXPECT_TRUE(ecdb.IsDbOpen());
 
     //Imports schemas and cross checks.
-    EXPECT_EQ(SUCCESS, ecdb.Schemas ().ImportECSchemas (context->GetCache ()));
+    EXPECT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()));
     }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 //! Prepares the statement with the specified ECSQL and compares the status returned by Prepare method and the status specified by the user.
 // @bsimethod                                            Maha Nasir                                     12/15
 //+---------------+---------------+---------------+---------------+---------------+----------------------------------------------------------
-ECSqlStatus ECSqlStatementHelper::PrepareStatement (Utf8String query, ECSqlStatus expectedStatus)
+ECSqlStatus ECSqlStatementHelper::PrepareStatement(Utf8String query, ECSqlStatus expectedStatus)
     {
-    if (stmt.IsPrepared ())
+    if (stmt.IsPrepared())
         {
-        stmt.Reset ();
-        stmt.ClearBindings ();
-        stmt.Finalize ();
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.Finalize();
         }
-    if (!query.empty ())
+    if (!query.empty())
         {
         m_item.query = query;
         }
-    return stmt.Prepare (ecdb, m_item.query.c_str ());
+    return stmt.Prepare(ecdb, m_item.query.c_str());
     }
 
 //----------------------------------------------------------------------------------------------------------------------------------
 //! Perform a single step on the ECSQL statement.Checks whether the status returned by Step() equals the status specified by user.
 // @bsimethod                                            Maha Nasir                                     12/15
 //+---------------+---------------+---------------+---------------+---------------+--------------------------------------------------
-DbResult ECSqlStatementHelper::ExecuteStatement (DbResult expectedResult)
+DbResult ECSqlStatementHelper::ExecuteStatement(DbResult expectedResult)
     {
-    EXPECT_TRUE (stmt.IsPrepared ()) << "\nStatement is unprepared.Can't call Step on an unprepared statement.\n";
-    return stmt.Step ();
+    EXPECT_TRUE(stmt.IsPrepared()) << "\nStatement is unprepared.Can't call Step on an unprepared statement.\n";
+    return stmt.Step();
     }
 
 //---------------------------------------------------------------------------------------
 //! Verify values for the given column in the result set
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlStatementHelper::assertNull (int columnIndex, bool expectedVal)
+bool ECSqlStatementHelper::assertNull(int columnIndex, bool expectedVal)
     {
-    return stmt.IsValueNull (columnIndex);
+    return stmt.IsValueNull(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlStatementHelper::assertInt (int columnIndex, int expectedVal)
+int ECSqlStatementHelper::assertInt(int columnIndex, int expectedVal)
     {
-    return stmt.GetValueInt (columnIndex);
+    return stmt.GetValueInt(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlStatementHelper::assertText (int columnIndex, Utf8CP expectedVal)
+Utf8CP ECSqlStatementHelper::assertText(int columnIndex, Utf8CP expectedVal)
     {
-    return stmt.GetValueText (columnIndex);
+    return stmt.GetValueText(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlStatementHelper::assertBoolean (int columnIndex, bool expectedVal)
+bool ECSqlStatementHelper::assertBoolean(int columnIndex, bool expectedVal)
     {
-    return stmt.GetValueBoolean (columnIndex);
+    return stmt.GetValueBoolean(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-DateTime ECSqlStatementHelper::assertDateTime (int columnIndex, DateTime expectedVal)
+DateTime ECSqlStatementHelper::assertDateTime(int columnIndex, DateTime expectedVal)
     {
-    return stmt.GetValueDateTime (columnIndex);
+    return stmt.GetValueDateTime(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-double ECSqlStatementHelper::assertDouble (int columnIndex, double expectedVal)
+double ECSqlStatementHelper::assertDouble(int columnIndex, double expectedVal)
     {
-    return stmt.GetValueDouble (columnIndex);
+    return stmt.GetValueDouble(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr ECSqlStatementHelper::assertGeometry (int columnIndex, IGeometryPtr expectedVal)
+IGeometryPtr ECSqlStatementHelper::assertGeometry(int columnIndex, IGeometryPtr expectedVal)
     {
-    return stmt.GetValueGeometry (columnIndex);
+    return stmt.GetValueGeometry(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-int64_t ECSqlStatementHelper::assertInt64 (int columnIndex, int64_t expectedVal)
+int64_t ECSqlStatementHelper::assertInt64(int columnIndex, int64_t expectedVal)
     {
-    return stmt.GetValueInt64 (columnIndex);
+    return stmt.GetValueInt64(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t ECSqlStatementHelper::assertUInt64 (int columnIndex, int64_t expectedVal)
+uint64_t ECSqlStatementHelper::assertUInt64(int columnIndex, int64_t expectedVal)
     {
-    return stmt.GetValueUInt64 (columnIndex);
+    return stmt.GetValueUInt64(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-template <class TBeInt64Id> TBeInt64Id ECSqlStatementHelper::assertId (int columnIndex, int64_t expectedVal)
+template <class TBeInt64Id> TBeInt64Id ECSqlStatementHelper::assertId(int columnIndex, int64_t expectedVal)
     {
-    return stmt.GetValueId<TBeInt64Id> (columnIndex);
+    return stmt.GetValueId<TBeInt64Id>(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d ECSqlStatementHelper::assertPoint2D (int columnIndex, double X, double Y)
+DPoint2d ECSqlStatementHelper::assertPoint2D(int columnIndex, double X, double Y)
     {
-    return stmt.GetValuePoint2D (columnIndex);
+    return stmt.GetValuePoint2D(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d ECSqlStatementHelper::assertPoint3D (int columnIndex, double X, double Y, double Z)
+DPoint3d ECSqlStatementHelper::assertPoint3D(int columnIndex, double X, double Y, double Z)
     {
-    return stmt.GetValuePoint3D (columnIndex);
+    return stmt.GetValuePoint3D(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* ECSqlStatementHelper::assertBinary (int columnIndex, int* binarySize)
+void const* ECSqlStatementHelper::assertBinary(int columnIndex, int* binarySize)
     {
-    return stmt.GetValueBinary (columnIndex, binarySize);
+    return stmt.GetValueBinary(columnIndex, binarySize);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementHelper::AddQuery (Utf8CP query)
+void ECSqlStatementHelper::AddQuery(Utf8CP query)
     {
-    queryList.push_back (query);
+    queryList.push_back(query);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementHelper::ExecuteQueries ()
+void ECSqlStatementHelper::ExecuteQueries()
     {
-    if (stmt.IsPrepared ())
+    if (stmt.IsPrepared())
         {
-        stmt.Reset ();
-        stmt.ClearBindings ();
-        stmt.Finalize ();
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.Finalize();
         }
 
     for (Utf8CP query : queryList)
         {
-        ASSERT_EQ (ECSqlStatus::Success, PrepareStatement (query)) << "Prepare failed for statement " << query;
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, ExecuteStatement ());
-        stmt.Finalize ();
+        ASSERT_EQ(ECSqlStatus::Success, PrepareStatement(query)) << "Prepare failed for statement " << query;
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, ExecuteStatement());
+        stmt.Finalize();
         }
-    queryList.clear ();
+    queryList.clear();
     }
 
 //---------------------------------------------------------------------------------------
 //! Finalize the last statement and closes the database.
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementHelper::CloseDataBase ()
+void ECSqlStatementHelper::CloseDataBase()
     {
-    stmt.Finalize ();
-    ecdb.CloseDb ();
+    stmt.Finalize();
+    ecdb.CloseDb();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

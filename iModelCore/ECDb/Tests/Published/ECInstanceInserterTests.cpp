@@ -466,7 +466,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     auto readContext = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(testSchema, schema, *readContext);
     ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas());
     ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
 
     ECSqlStatement stmt;
@@ -534,7 +534,7 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ASSERT_EQ(ECObjectsStatus::Success, schemaCache->AddSchema(*testSchema));
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()));
     ecdb.SaveChanges();
 
     StandaloneECEnablerPtr enabler = testClass->GetDefaultStandaloneEnabler();
@@ -621,7 +621,7 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
     auto readContext = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(testSchema, schema, *readContext);
     ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas());
     ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
 
     ECSqlStatement stmt;

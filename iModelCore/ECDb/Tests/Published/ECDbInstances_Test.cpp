@@ -344,9 +344,9 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     StructArrayECPropertyP nestedArrayProperty;
     testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", struct2);
 
-    auto schemaCache = ECSchemaCache::Create();
-    schemaCache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*schemaCache));
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemas));
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler();

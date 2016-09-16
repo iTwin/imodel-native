@@ -3450,7 +3450,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
         ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
         ASSERT_EQ(ECN::ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
 
-        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache()));
+        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
         db.Schemas().CreateECClassViewsInDb();
         };
 

@@ -905,7 +905,7 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
         ASSERT_EQ(ECObjectsStatus::Success, imported->SetAlias(schemaIn.GetAlias()));
         ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
         ASSERT_EQ(ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
-        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache()));
+        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
         db.Schemas().CreateECClassViewsInDb();
         };
 
@@ -1019,116 +1019,5 @@ void MetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecClass
         ASSERT_EQ(propertyStatement.GetValueId<ECPropertyId>(0), prop->GetId());
         }
     }
-
-#ifdef WIP_NONPORT
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                              Arturas.Januska     08/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (MetaSchemaECSqlTestFixture, ECClassHasBaseClasses)
-    {
-    SetupECDb ("metaschematests.ecdb", BeFileName (L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE (GetECDb ().IsDbOpen ());
-
-    // Import DiamondInheritance.01.00.ecschema.xml
-    ECSchemaPtr s1;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
-    ctx->AddSchemaLocater (GetECDb ().GetSchemaLocater ());
-    ECDbTestUtility::ReadECSchemaFromDisk (s1, ctx, L"DiamondInheritance.01.00.ecschema.xml");
-    ASSERT_EQ (SUCCESS, GetECDb ().Schemas ().ImportECSchemas (ctx->GetCache ())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
-    
-    // Acquire ECSqlTest and DiamondInheritance schemas
-    ECSchemaCP eCSqlTetSchema = GetECDb ().Schemas ().GetECSchema ("ECSqlTest");
-    ECSchemaCP diamondInheritanceSchema = GetECDb ().Schemas ().GetECSchema ("DiamondInheritance");
-
-    auto testSchmaClasses = eCSqlTetSchema->GetClasses ();
-    auto diamondSchemaClasses = diamondInheritanceSchema->GetClasses ();
-
-    AssertClassHasBaseClasses (testSchmaClasses);
-    AssertClassHasBaseClasses (diamondSchemaClasses);
-    }
-
-void MetaSchemaECSqlTestFixture::AssertClassHasBaseClasses (ECClassContainer& ecClasses)
-    {
-    for each (ECClassP ecClass in ecClasses)
-        {
-        if (!ecClass->HasBaseClasses ())
-            continue;
-
-        // class names used for testing because schemas used in test does not have classes that inherit from classes in other schemas, and class name must be unique per schema
-        std::vector<Utf8String> classNames;
-        classNames.push_back (ecClass->GetName ());
-        int expectedClassCount = 1;
-        int* expectedClassCountP = &expectedClassCount;
-        GetAllBaseClassNames (ecClass, classNames, expectedClassCountP);
-
-        ECSqlStatement classStatement;
-        ASSERT_EQ (ECSqlStatus::Success, classStatement.Prepare (GetECDb (), "SELECT c2.Name, c2.* FROM ec.ECClassDef c1 "
-                                                                 "JOIN ec.ClassHasAllBaseClasses h ON h.SourceECInstanceId = c1.ECInstanceId "
-                                                                 "JOIN ec.ECClassDef c2 ON c2.ECInstanceId = h.TargetECInstanceId "
-                                                                 "WHERE c1.Name=?"));
-
-        ASSERT_EQ (ECSqlStatus::Success, classStatement.BindText (1, ecClass->GetName ().c_str (), IECSqlBinder::MakeCopy::No));
-
-        int actualClassCount = 0;
-
-        while (BE_SQLITE_ROW == classStatement.Step ())
-            {
-            Utf8String className = Utf8String (classStatement.GetValueText (0));
-
-            if (!ContainsClassName (className, classNames))
-                {
-                Utf8String errorData = "";
-                errorData = "ECClass: \"" + className + "\" Was not found in expected classes:\n";
-
-                for each (auto expectedClassName in classNames)
-                    errorData += expectedClassName + "\n";
-
-                ASSERT_TRUE (false) << errorData;
-                }
-
-            actualClassCount++;
-            }
-
-        ASSERT_EQ (actualClassCount, expectedClassCount);
-        }
-    }
-
-void MetaSchemaECSqlTestFixture::GetAllBaseClassNames (ECClassP ecClass, std::vector<Utf8String>& classNames, int* classCount)
-    {
-    if (!ecClass->HasBaseClasses ())
-        return;
-
-    auto baseClasses = ecClass->GetBaseClasses ();
-
-    for each (auto baseClass in baseClasses)
-        {
-        bool ecClassAlreadyAdded = false;
-
-        for each (auto className in classNames)
-            {
-            if (className == baseClass->GetName ())
-                ecClassAlreadyAdded = true;
-            }
-
-        if (ecClassAlreadyAdded)
-            continue;
-
-        (*classCount)++;
-        classNames.push_back (baseClass->GetName ());
-        GetAllBaseClassNames (baseClass, classNames, classCount);
-        }
-    }
-
-bool MetaSchemaECSqlTestFixture::ContainsClassName (Utf8String searchedClassName, std::vector<Utf8String>& classNames)
-    {
-    for each (Utf8String className in classNames)
-        if (searchedClassName == className)
-            return true;
-
-    return false;
-    }
-
-#endif
 
 END_ECDBUNITTESTS_NAMESPACE

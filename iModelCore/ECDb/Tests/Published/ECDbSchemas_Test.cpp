@@ -135,7 +135,7 @@ TEST_F (ECDbSchemaTests, ImportDiamondInheritanceECSchema)
 	ASSERT_TRUE (s1.IsValid ());
 
 	//now import test schema where the table already exists for the ECClass
-	ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (ctx->GetCache ())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+	ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (ctx->GetCache ().GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 	ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
     }
 
@@ -494,7 +494,7 @@ TEST_F(ECDbSchemaTests, ImportECSchemaWithSameVersionAndSameContentTwice)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
+    auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
     }
 
@@ -510,11 +510,11 @@ TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"SchoolSchema.01.00.ecschema.xml");
-    auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
+    auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"TestSchema.01.00.ecschema.xml");
-    schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
+    schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
     }
 
@@ -568,7 +568,7 @@ TEST_F(ECDbSchemaTests, CreateCloseOpenImport)
     ECSchemaReadContextPtr schemaContext = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemaContext->GetCache())) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas())) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -648,7 +648,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithoutECInstanceIdColum
     //now import test schema where the table already exists for the ECClass. This is expected to fail.
     BeTest::SetFailOnAssert(false);
     {
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(*testSchemaCache)) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
     }
     BeTest::SetFailOnAssert(true);
 
@@ -670,7 +670,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 
     ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*testSchemaCache)) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache- GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     AssertImportedSchema(ecdb, "test", "Foo", "Name");
@@ -695,7 +695,7 @@ TEST_F(ECDbSchemaTests, DiegoRelationshipTest)
     ASSERT_TRUE(s2.IsValid());
 
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(ctx->GetCache())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(ctx->GetCache().GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     ECClassCP civilModelClass = ecdb.Schemas().GetECClass("DiegoSchema1", "CivilModel");
     ASSERT_TRUE(civilModelClass != nullptr);
@@ -746,7 +746,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaWithRelationshipAgainstExistingTable)
     ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
     //now import test schema where the table already exists for the ECClass
     //missing link tables are created if true is passed for createTables
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*testSchemaCache)) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
@@ -873,7 +873,7 @@ TEST_F(ECDbSchemaTests, ReadCustomAttributesTest)
     {
     ECDbTestProject testProject;
     ECDbR db = testProject.Create("customattributestest.ecdb");
-    auto importStat = db.Schemas().ImportECSchemas(*testSchemaCache);
+    auto importStat = db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas());
     ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
 
     dbPath = testProject.GetECDbPath();
@@ -928,7 +928,7 @@ TEST_F(ECDbSchemaTests, CheckCustomAttributesXmlFormatTest)
 
     ECDbTestProject testProject;
     ECDbR db = testProject.Create("customattributestest.ecdb");
-    auto importStat = db.Schemas().ImportECSchemas(*testSchemaCache);
+    auto importStat = db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas());
     ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
 
     //now retrieve the persisted CA XML from ECDb directly
@@ -978,7 +978,7 @@ TEST_F(ECDbSchemaTests, ImportSupplementalSchemas)
     supplementalSchemas.push_back(supple.get());
     SupplementedSchemaBuilder builder;
 
-    BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache());
+    BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
 
     ecdb.SaveChanges();

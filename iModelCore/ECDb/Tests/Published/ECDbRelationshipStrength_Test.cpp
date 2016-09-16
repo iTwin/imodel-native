@@ -428,11 +428,11 @@ void ECDbRelationshipsIntegrityTests::AssertSchemaImport(bool isSchemaImportExpe
     EXPECT_EQ(ECObjectsStatus::Success, readContext->AddSchema(*testSchema));
     if (isSchemaImportExpectedToSucceed)
         {
-        EXPECT_EQ(SUCCESS, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+        EXPECT_EQ(SUCCESS, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
         }
     else
         {
-        EXPECT_EQ(ERROR, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+        EXPECT_EQ(ERROR, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
         }
     m_ecdb.SaveChanges();
     }

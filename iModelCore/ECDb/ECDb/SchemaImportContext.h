@@ -30,7 +30,7 @@ public:
     ECSchemaCompareContext() : m_prepared(false) {}
     ~ECSchemaCompareContext() {}
 
-    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas);
+    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
     bvector<ECN::ECSchemaCP>  const& GetImportingSchemas() const { return m_importedSchemaList; }
     ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
     bool IsPrepared() const { return m_prepared; }
@@ -71,7 +71,6 @@ private:
 
 public:
     SchemaImportContext() {}
-    BentleyStatus Initialize(DbSchema& dbSchema, ECDbCR ecdb);
 
     ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
     ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;

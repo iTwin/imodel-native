@@ -26,7 +26,7 @@ struct ECSchemaValidator
         static bool ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR);
 
     public:
-        static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaP> const&);
+        static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaCP> const&);
     };
 
 

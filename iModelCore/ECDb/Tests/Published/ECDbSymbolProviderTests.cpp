@@ -50,7 +50,7 @@ TEST_F(ECDbSymbolProviderTests, Path)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -86,7 +86,7 @@ TEST_F(ECDbSymbolProviderTests, Name)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -124,7 +124,7 @@ TEST_F(ECDbSymbolProviderTests, GetECClassId)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -177,7 +177,7 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
         ECSchemaPtr schema;
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         ECSchema::ReadFromXmlString(schema, GetTestSchemaXMLString().c_str(), *context);
-        GetECDb().Schemas().ImportECSchemas(context->GetCache());
+        GetECDb().Schemas().ImportECSchemas(context->GetCache().GetSchemas());
         }
     
     /*---------------------------------------------------------------------------------**//**
@@ -454,7 +454,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlString(schema, differentSchemaXml, *ctx);
     ASSERT_TRUE(schema.IsValid());
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -516,7 +516,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenImportingSchemas)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(differentSchema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -574,7 +574,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
 
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();

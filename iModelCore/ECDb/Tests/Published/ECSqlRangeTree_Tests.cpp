@@ -64,7 +64,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
         return ERROR;
 
     auto schemaCache = ECDbTestUtility::ReadECSchemaFromString(testSchemaXml);
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(*schemaCache))
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()))
         return ERROR;
 
     ecdb.SaveChanges();

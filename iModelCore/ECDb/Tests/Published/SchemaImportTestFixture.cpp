@@ -66,7 +66,7 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     if (!deserializationFailed)
         {
         Savepoint sp(const_cast<ECDbR>(ecdb), "ECSChema Import");
-        BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache());
+        BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
         if (schemaImportStatus == SUCCESS)
             sp.Commit();
         else

@@ -97,7 +97,8 @@ BentleyStatus ECDbImportSchemaFromECSchemaXml()
 
     // 2) Import ECSchema (and its references) into ECDb file. The schema and its references are available in the cache
     //    of the schema context from the XML deserialization step.
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaContext->GetCache()))
+    bvector<ECSchemaCP> schemasToImport = schemaContext->GetCache().GetSchemas();
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemasToImport))
         {
         // Schema(s) could not be imported into the ECDb file. Do error handling here
         ecdb.AbandonChanges();

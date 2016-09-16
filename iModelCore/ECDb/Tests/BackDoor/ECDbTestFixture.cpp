@@ -125,7 +125,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (schema == nullptr)
         return ERROR;
 
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache()))
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache().GetSchemas()))
         return ERROR;
 
     Populate(ecdb, instanceCountPerClass);
@@ -154,7 +154,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
             return ERROR;
         }
 
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache()))
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
         return ERROR;
 
     ecdb.ClearECDbCache();

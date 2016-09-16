@@ -2345,7 +2345,7 @@ void JoinedTableECSqlStatementsTests::ImportSchemaWithCA(ECSchemaPtr& ecSchema, 
     EXPECT_TRUE(customAttribute != nullptr);
     ASSERT_TRUE(personClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
-    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportECSchemas(readContext->GetCache()));
+    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
     }
 
 //---------------------------------------------------------------------------------------
