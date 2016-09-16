@@ -557,7 +557,7 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
     if (ECN::SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()))
         return DgnDbStatus::BadSchema;
 
     return DgnDbStatus::Success;

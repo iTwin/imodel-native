@@ -755,6 +755,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 // Known issues:
 //  ECDb LightweightCache.cpp - cache not thread-safe
 // These issues are not specific to mesh tile generation...need to be fixed.
+#define MESHTILE_SINGLE_THREADED
 #if !defined(MESHTILE_SINGLE_THREADED)
     if (!tiles.empty())
         {

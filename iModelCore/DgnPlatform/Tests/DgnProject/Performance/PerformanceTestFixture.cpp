@@ -29,7 +29,7 @@ DgnDbR project
 )
     {
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    auto stat = project.Schemas ().ImportECSchemas (schemaContext.GetCache ());
+    auto stat = project.Schemas ().ImportECSchemas (schemaContext.GetCache ().GetSchemas());
     stopwatch.Stop();
     ASSERT_EQ (SUCCESS, stat);
 
