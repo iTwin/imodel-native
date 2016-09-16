@@ -21,15 +21,6 @@
 #       Reference: http://stackoverflow.com/questions/33771590/running-universal-windows-unit-tests-from-the-command-line
 # (b) Define RUN_UWP_TESTS in your environment before you build.
 
-%if !defined (RUN_UWP_TESTS)
-    %return
-%endif
-
-# Don't attempt to run anything on clean...
-%if defined (BMAKE_DELETE_ALL_TARGETS)
-    %return
-%endif
-
 %include mdl.mki
 
 %if ("WinRT" != $(TARGET_PLATFORM))
@@ -38,6 +29,36 @@
 
 %if !defined(UWPTEST_PRODUCT)
     %error Must define UWPTEST_PRODUCT as the name of the Product that contains the solution for the test suite.
+%endif
+
+%ifndef UWPTEST_LOGFILE_NAME
+    UWPTEST_LOGFILE_NAME=$(UWPTEST_PRODUCT).log
+%endif
+
+%ifndef UWPTEST_OUTPUT_DIR
+    UWPTEST_OUTPUT_DIR=$(OutputRootDir)build/RunCppUnit/$(UWPTEST_PRODUCT)/
+%endif
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+always:
+    $(rmdirRecursiveCmd) ${UWPTEST_OUTPUT_DIR}
+    %return
+%endif
+
+logFile = ${UWPTEST_OUTPUT_DIR}/test.log
+
+always:
+    !~@mkdir ${UWPTEST_OUTPUT_DIR}
+
+%if !defined (RUN_UWP_TESTS)
+    %warn To run Uwp CppUnitTests, define RUN_UWP_TESTS
+    always:
+        >$(logFile)
+        CppUnitTests were not run
+        <
+        ~linkfile "$(BuildContext)Delivery/UwpTest/Logs/$(UWPTEST_LOGFILE_NAME)=$(logFile)"
+    
+    %return
 %endif
 
 %if !defined (NDEBUG)
@@ -59,4 +80,17 @@ TestBundle = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/
 %endif
 
 always:
-    vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
+    -   vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle) > $(logFile) 2>&1
+
+%message See $(logFile)
+
+BreakOnFailure = 0
+%if defined (BEGTEST_BREAK_ON_FAILURE)
+    BreakOnFailure = 1
+%endif
+
+always:
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
+
+always:
+    ~linkfile "$(BuildContext)Delivery/UwpTest/Logs/$(UWPTEST_LOGFILE_NAME)=$(logFile)"
