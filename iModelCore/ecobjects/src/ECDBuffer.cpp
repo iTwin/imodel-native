@@ -3009,7 +3009,10 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             uint32_t bytesNeeded = (uint32_t)totalSize;
 
             if (!isOriginalValueNull && currentSize>=totalSize && 0 == memcmp (GetPropertyData() + offset, dataBuffer, bytesNeeded))
+                {
+                free (dataBuffer);
                 return ECObjectsStatus::PropertyValueMatchesNoChange;
+                }
 
             ECObjectsStatus status;
             if (useIndex)
@@ -3017,14 +3020,14 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             else
                 status = EnsureSpaceIsAvailable (offset, propertyLayout, bytesNeeded);
 
-            if (ECObjectsStatus::Success != status)
-                return status;
-                
             // WIP_FUSION We need to figure out the story for value size.  It is legitamate to have a non-null binary value that is
             // 0 bytes in length.  Currently, we do not track that length anywhere.  How do we capture this in the case that the binary value was previously set to some
             // value > 0 in length and we are not auto compressing property values.
-            if (bytesNeeded == 0)
-                return ECObjectsStatus::Success;
+            if (ECObjectsStatus::Success != status || bytesNeeded == 0)
+                {
+                free(dataBuffer);
+                return status;
+                }
             
             result = ModifyData (GetPropertyData() + offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
