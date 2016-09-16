@@ -26,7 +26,7 @@ private:
     RasterSourcePtr m_source;
     RasterModel& m_model;
 
-    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr) override;
+    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads) override;
 
 public:
     RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::SystemP system);

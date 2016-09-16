@@ -24,6 +24,14 @@ struct TileQuery
     RefCountedPtr<RasterTile> m_tile;
     mutable TileLoadsPtr m_loads;
 
+    struct TileLoader
+        {
+        Root& m_root;
+        TileLoader(Root& root) : m_root(root) { root.StartTileLoad(); }
+        ~TileLoader() { m_root.DoneTileLoad(); }
+        };
+
+
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  9/2016
     //----------------------------------------------------------------------------------------
@@ -40,6 +48,7 @@ struct TileQuery
         if (m_tile.IsValid() && !m_tile->IsQueued())
             return SUCCESS; // this node was abandoned.
 
+        TileLoader loadFlag(m_tile->GetRoot());
         bool enableAlphaBlend = false;
         Render::Image image = m_tile->GetRoot().GetSource().QueryTile(m_tile->GetTileId(), enableAlphaBlend);
 
@@ -63,6 +72,9 @@ struct TileQuery
             return ERROR;
             }
 
+        if (m_tile->IsAbandoned())
+            return ERROR;
+
         auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
 
         Render::Texture::CreateParams params;
@@ -72,12 +84,15 @@ struct TileQuery
         graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
         graphic->AddTile(*texture, m_tile->GetCorners());
 
-        auto stat = graphic->Close();
+        auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
         BeAssert(SUCCESS == stat);
         UNUSED_VARIABLE(stat);
 
         m_tile->m_graphic = graphic;
-        m_tile->SetIsReady();
+        m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+
+        if (m_loads != nullptr)
+            m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
 
         return SUCCESS;
         }
@@ -109,7 +124,7 @@ RasterRoot::RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::Sy
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr load)
+folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads)
     {
     DgnDb::VerifyClientThread();
 
@@ -119,9 +134,12 @@ folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, Til
         return ERROR;
         }
 
-    tile.SetIsQueued();
+    if (loads)
+        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
 
-    TileQuery query((RasterTile&) tile, nullptr/*&&MM todo*/);
+    tile.SetIsQueued(); // mark as queued so we don't request it again.
+
+    TileQuery query(const_cast<RasterTileR>(static_cast<RasterTileCR>(tile)), loads);
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return query.DoRead(); });
     }
 
@@ -330,6 +348,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
+        //m_loads = nullptr; // for debugging
         context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
         return Completion::Finished;
         }
