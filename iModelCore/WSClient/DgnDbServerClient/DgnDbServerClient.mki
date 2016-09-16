@@ -30,9 +30,9 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerLockEvent.h     \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionEvent.h \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
-                                $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
+                                $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                          \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h	            \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcaseInfo.h
 
 #----------------------------------------------------------------------------------------

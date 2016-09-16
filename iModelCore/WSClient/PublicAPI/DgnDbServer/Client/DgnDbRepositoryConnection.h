@@ -210,7 +210,7 @@ private:
                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this revision file to server.
-    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, Http::Request::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query.
@@ -244,7 +244,7 @@ private:
     DgnDbServerStatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Initializes the revision.
-    DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId,
+    DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId, bool relinquishCodesLocks,
                                               Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
 public:
@@ -286,7 +286,9 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeGuidCR masterFileId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Release certain locks.
+//__PUBLISH_SECTION_START__
+public:
+    //! Release certain codes and locks.
     //! @param[in] locks Set of locks to release
     //! @param[in] codes Set of codes to release
     //! @param[in] briefcaseId
@@ -295,13 +297,11 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeGuidCR masterFileId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Delete all currently held locks by specific briefcase.
+    //! Delete all currently held codes abd locks by specific briefcase.
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RelinquishCodesLocks (BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-//__PUBLISH_SECTION_START__
-public:
     //! Lock repository for master file replacement.
     //! @param[in] fileId The db guid for the file that will be created.
     //! @param[in] cancellationToken
