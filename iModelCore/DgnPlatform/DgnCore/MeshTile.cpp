@@ -753,11 +753,19 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
 // ###TODO_FACET_COUNT: Make geometry processing thread-safe...
 // Known issues:
-//  GeomLibs flatbuffers - LoadPrefix() uses a static bvector
 //  ECDb LightweightCache.cpp - cache not thread-safe
 // These issues are not specific to mesh tile generation...need to be fixed.
 #define MESHTILE_SINGLE_THREADED
 #if !defined(MESHTILE_SINGLE_THREADED)
+    if (!tiles.empty())
+        {
+        // For now, we can cross our fingers and hope that processing one tile before entering multi-threaded context
+        // will allow ECDb to do it's non-thread-safe stuff and avoid the race condition on its cache.
+        collector._AcceptTile(*tiles.back());
+        ++numCompletedTiles;
+        tiles.pop_back();
+        }
+
     auto threadPool = &BeFolly::IOThreadPool::GetPool();
     for (auto& tile : tiles)
         folly::via(threadPool, [&]()
