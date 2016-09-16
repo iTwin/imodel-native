@@ -107,24 +107,24 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
-                                                                 ICancellationTokenPtr cancellationToken, int attemptsCount) const
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, 
+                                                                 Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPush";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return PullMergeAndPushRepeated(description, downloadCallback, uploadCallback, cancellationToken, attemptsCount);
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
                                                                      ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushRepeated";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
     DgnDbServerRevisionMergeResultPtr finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
-    return PullMergeAndPushInternal(description, downloadCallback, uploadCallback, cancellationToken)
+    return PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken)
         ->Then([=] (DgnDbServerRevisionMergeResultCR result)
         {
         if (result.IsSuccess())
@@ -169,7 +169,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
 
         // Sleep.
         std::this_thread::sleep_for (std::chrono::milliseconds(currentDelay));
-        PullMergeAndPushRepeated(description, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)->Then([=] (DgnDbServerRevisionMergeResultCR result)
+        PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)->Then([=] (DgnDbServerRevisionMergeResultCR result)
             {
             if (result.IsSuccess())
                 finalResult->SetSuccess(result.GetValue());
@@ -188,7 +188,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback,
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
     Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushInternal";
@@ -236,7 +236,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Created revision with ID %s.", revision->GetId().c_str());
         Utf8String revisionId = revision->GetId();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting push.");
-        m_repositoryConnection->Push(revision, m_db->GetBriefcaseId(), uploadCallback, cancellationToken)->Then
+        m_repositoryConnection->Push(revision, m_db->GetBriefcaseId(), relinquishCodesLocks, uploadCallback, cancellationToken)->Then
             ([=] (DgnDbServerStatusResultCR pushResult)
             {
             if (pushResult.IsSuccess())
