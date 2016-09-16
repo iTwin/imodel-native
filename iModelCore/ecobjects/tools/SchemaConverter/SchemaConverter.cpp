@@ -152,13 +152,12 @@ static int ConvertSchema(ConversionOptions& options, BeFileName& inputFile, ECSc
     {
     s_logger->infov(L"Reading schema '%ls'", inputFile.GetName());
     ECSchemaPtr schema;
-    if (SchemaReadStatus::DuplicateSchema == ECSchema::ReadFromXmlFile(schema, inputFile.GetName(), context))
-        {
-        Utf8String fullName(inputFile.GetFileNameAndExtension());
-        SchemaKey key;
-        SchemaKey::ParseSchemaFullName(key, fullName.c_str());
-        schema = context.LocateSchema(key, SchemaMatchType::Exact);
-        }
+
+    Utf8String fullName(inputFile.GetFileNameAndExtension());
+    SchemaKey key;
+    SchemaKey::ParseSchemaFullName(key, fullName.c_str());
+    schema = context.LocateSchema(key, SchemaMatchType::Exact);
+
     if (!schema.IsValid())
         {
         s_logger->errorv(L"Failed to read schema '%ls'", inputFile.GetName());

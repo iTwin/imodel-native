@@ -1255,6 +1255,7 @@ friend struct SchemaXmlWriter;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
+friend struct ECSchemaConverter;
 
 //__PUBLISH_SECTION_START__
 
@@ -1474,6 +1475,8 @@ public:
     
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;
+    //! Returns whether there are any derived classes for this class
+    bool                             HasDerivedClasses() const { return m_derivedClasses.size() > 0; }
 
     //! Removes a base class.
     ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);

@@ -345,6 +345,8 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
         SetOrAppendValue(str, "ArrayProperty");
     if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
         SetOrAppendValue(str, "StructArrayProperty");
+    if (TestValue(CustomAttributeContainerType::NavigationProperty, containerType))
+        SetOrAppendValue(str, "NavigationProperty");
     if (TestValue(CustomAttributeContainerType::AnyProperty, containerType))
         SetOrAppendValue(str, "AnyProperty");
     if (TestValue(CustomAttributeContainerType::SourceRelationshipConstraint, containerType))
@@ -400,6 +402,8 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
             containerType = containerType | CustomAttributeContainerType::ArrayProperty;
         else if (typeToken.EqualsI("StructArrayProperty"))
             containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
+        else if (typeToken.EqualsI("NavigationProperty"))
+            containerType = containerType | CustomAttributeContainerType::NavigationProperty;
         else if (typeToken.EqualsI("AnyProperty"))
             containerType = containerType | CustomAttributeContainerType::AnyProperty;
         else if (typeToken.EqualsI("SourceRelationshipConstraint"))

@@ -54,22 +54,23 @@ private:
     //               if reverse is set it will reverse after sorting name and hierarchy in order
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //---------------+---------------+---------------+---------------+---------------+------
-    template <typename T>
+    template<typename T>
     static void SortClassesByNameAndHierarchy(bvector<T>& ecClasses, bool reverse = false);
 
     //---------------------------------------------------------------------------------------
     // @remarks      sorts the classes by className (ignoring case), default order is ascending
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //+---------------+---------------+---------------+---------------+---------------+------/
-    template <typename T> 
+    template<typename T>
     static void SortClassesByName(bvector<T>& ecClasses, bool ascending = true);
 
     //---------------------------------------------------------------------------------
     // @remarks      sorts classes based on inheritance where base class comes before child class
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //---------------+---------------+---------------+---------------+---------------+------/
-    template <typename T>
-    static void SortClassesByHierarchy(bvector<T>& ecClasses);        
+    template<typename T>
+    static void SortClassesByHierarchy(bvector<T>& ecClasses);
+
     static bvector<ECClassP> GetDerivedAndBaseClasses(ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/
@@ -123,19 +124,12 @@ public:
     //! @remarks It also calls the propertyProcessor for the ecProperty passed in
     ECOBJECTS_EXPORT static ECObjectsStatus TraverseProperty(ECPropertyP ecProperty, ECSchemaR ecSchema, ECPropertyProcessor propertyProcessor);
 
-    //! Finds the root base class for the property
+    //! Finds the root base classes for the property
     //! @param[in] ecProperty The ecProperty 
-    //! @param[in] ecSchema             The schema the ecProperty belongs to
-    //! @returns ECClassCP    the root base class having the property
-    //! @remarks If the property has multiple inheritance, it will return the first
-    //!          from the list sorted by className(case insensitive) in ascending order
-    ECOBJECTS_EXPORT static ECClassP FindRootBaseClass(ECPropertyP ecProperty, ECSchemaR ecSchema);
-
-    //! checks if second parameter is base class of first parameter
-    //! @param[in] ecClass   The ecClass that is supposed to be inherited from baseClass
-    //! @param[in] baseClass The class that is supposed to be a base class
-    //! @returns bool        True if baseClass is infact baseClass of ecClass
-    ECOBJECTS_EXPORT static bool IsBaseClass(ECClassCP ecClass, ECClassCP baseClass);
+    //! @param[in] rootClasses The rootClasses of the ecclass found for the ecProperty 
+    //! @remarks If the property has multiple inheritance, the first class in the rootClasses vector will be the root class
+    //! that would be found if you traversed the base property of the input ecProperty.
+    ECOBJECTS_EXPORT static void FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses);
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
