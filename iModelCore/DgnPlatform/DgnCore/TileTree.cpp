@@ -585,7 +585,7 @@ int Tile::CountTiles() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileLoads::~TileLoads()
     {
-    DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled, m_requested, m_fromFile, m_fromHttp, m_fromDb);
+    DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
     }
 
 /*---------------------------------------------------------------------------------**//**
