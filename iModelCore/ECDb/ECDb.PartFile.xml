@@ -207,6 +207,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="ECDb-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECDb-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- *********************************************************** -->
@@ -239,6 +242,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="ECDb-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECDb-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- Performance tests -->
