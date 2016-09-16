@@ -61,6 +61,7 @@
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <ECObjects/ECSchema.h>
+#include <Units\Units.h>
 #include <Logging/bentleylogging.h>
 
 #define ___DGNPLATFORM_SERIALIZED___ BeSystemMutexHolder ___holdBeSystemMutexInScope___
