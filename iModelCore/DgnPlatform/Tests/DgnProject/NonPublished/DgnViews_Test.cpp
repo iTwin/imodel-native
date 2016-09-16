@@ -26,17 +26,6 @@ struct DgnViewElemTest : public DgnDbTestFixture
 {
     typedef ViewDefinition::Iterator Iter;
     typedef Iter::Options IterOpts;
-
-    void SetupTestProject()
-        {
-        SetupSeedProject();
-        }
-
-    PhysicalModelPtr AddModel(Utf8StringCR name)
-        {
-        return DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(name));
-        }
-
     template<typename T> ViewDefinitionCPtr AddView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
         T view(*m_db, name);
@@ -72,10 +61,10 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void Make4Views()
         {
-        auto m1 = AddModel("m1");
-        auto m2 = AddModel("m2");
-        auto m3 = AddModel("m3");
-        auto m4 = AddModel("m4");
+        PhysicalModelPtr m1 = InsertPhysicalModel("m1");
+        PhysicalModelPtr m2 = InsertPhysicalModel("m2");
+        PhysicalModelPtr m3 = InsertPhysicalModel("m3");
+        PhysicalModelPtr m4 = InsertPhysicalModel("m4");
 
         ASSERT_TRUE(m1.IsValid() && m2.IsValid() && m3.IsValid() && m4.IsValid());
         ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m1, "View 1").IsValid());
@@ -91,12 +80,12 @@ struct DgnViewElemTest : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, WorkWithViewTable)
     {
-    SetupTestProject();
+    SetupSeedProject();
     Make4Views();
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*m_db);
-    ASSERT_EQ(4, ViewDefinition::QueryCount(*m_db));
+    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
     static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
@@ -117,7 +106,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, DeleteView)
     {
-    SetupTestProject();
+    SetupSeedProject();
     Make4Views();
 
     //Get views
@@ -137,7 +126,7 @@ TEST_F(DgnViewElemTest, DeleteView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, SetViewName)
     {
-    SetupTestProject();
+    SetupSeedProject();
     Make4Views();
 
     //Get views
@@ -164,7 +153,7 @@ TEST_F(DgnViewElemTest, SetViewName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, CRUD)
     {
-    SetupTestProject();
+    SetupSeedProject();
 
     // Create a new view
     CameraViewDefinition tempView(*m_db, "TestView");
@@ -228,9 +217,9 @@ TEST_F(DgnViewElemTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, Iterate)
     {
-    SetupTestProject();
+    SetupSeedProject();
 
-    PhysicalModelPtr models[] = { AddModel("A"), AddModel("B") };
+    PhysicalModelPtr models[] = { InsertPhysicalModel("A"), InsertPhysicalModel("B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };
     static const Utf8CP s_viewSourceNames[] = { "-U", "-G", "-P" };
     static const Utf8CP s_viewDescriptions[] = { "", "generated", "hidden" };

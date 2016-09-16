@@ -43,6 +43,10 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     DGNPLATFORM_EXPORT static BentleyStatus AppendShape(ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
     DGNPLATFORM_EXPORT static BentleyStatus AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible = false);
     DGNPLATFORM_EXPORT void ParseClipPlanes();
+    DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyPointContainment (DPoint3dCP points, size_t nPoints, bool ignoreMasks = false) const;
+    DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyRangeContainment (DRange3dCR, bool ignoreMasks = false) const;
+
+
     // Treat each plane as a homogeneous row vector ax,ay,az,aw.
     // Multiply [ax,ay,az,aw]*matrix
     DGNPLATFORM_EXPORT BentleyStatus MultiplyPlanesTimesMatrix (DMatrix4dCR matrix);

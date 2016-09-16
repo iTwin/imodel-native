@@ -151,6 +151,7 @@ void MissingHandlerTest::SetUpTestCase()
     ScopedDgnHost tempHost;
     MissingHandlerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -185,10 +186,10 @@ template<typename T> void MissingHandlerTest::CreateElement(ElemInfo& info, DgnD
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingHandlerTest::InitDb(DgnDbR db)
     {
-    m_defaultModelId = db.Models().QueryFirstModelId();
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(db);
     DgnModelPtr defaultModel = db.Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
-    ASSERT_TRUE(nullptr != defaultModel->ToSpatialModel());
+    ASSERT_TRUE(defaultModel->IsPhysicalModel());
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(db);
     DgnCategory altCat(DgnCategory::CreateParams(db, "AltCategory", DgnCategory::Scope::Any));
