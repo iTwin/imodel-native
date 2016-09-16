@@ -25,8 +25,10 @@ R"HTML(
 <script src="scripts/Cesium/Cesium.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
+<script src="scripts/Bentley/BimStyler.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
+@import url(scripts/Bentley/Bim.css);
 
 html, body, #cesiumContainer {
 width: 100%;
@@ -56,7 +58,8 @@ var view = Bim.requestView(viewJsonUrl, function(err, view) {
         var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
         viewer.extend(Bim.viewerInspectorMixin);
         Bim.fixupSandboxAttributes();
-        Bim.loadTileset(viewer, view);
+        var tileset = Bim.loadTileset(viewer, view);
+        Bim.addModelCategoryWidget(viewer, view, tileset);
     }
 });
 </script>
