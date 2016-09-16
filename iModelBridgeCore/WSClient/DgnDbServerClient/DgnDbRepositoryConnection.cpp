@@ -1056,10 +1056,11 @@ void SetCodeTemplatesJsonRequestToChangeSet
         changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
         }
     }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId)
+void LockDeleteAllJsonRequest (std::shared_ptr<WSChangeset> changeSet, const BeBriefcaseId& briefcaseId)
     {
     Utf8String id;
     id.Sprintf ("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue ());
@@ -1067,10 +1068,7 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& brie
     ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
 
     Json::Value properties;
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    changeset->AddInstance(lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
-
-    return changeset;
+    changeSet->AddInstance(lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1230,7 +1228,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::RelinquishCodesLocks";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    auto changeset = LockDeleteAllJsonRequest (briefcaseId);
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    LockDeleteAllJsonRequest (changeset, briefcaseId);
     CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
     return SendChangesetRequest(changeset, cancellationToken);
@@ -1878,7 +1877,7 @@ ICancellationTokenPtr cancellationToken
 EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
     {
@@ -1900,7 +1899,7 @@ Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::D
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
     {
@@ -1940,7 +1939,7 @@ DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Json::Value GenerateEventSASJson()
     {
@@ -1957,7 +1956,7 @@ Json::Value GenerateEventSASJson()
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR responseJson)
     {
@@ -2107,7 +2106,7 @@ AzureServiceBusSASDTOTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran		     07/2016
+//@bsimethod                                     Arvind.Venkateswaran           07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::SendEventChangesetRequest
 (
@@ -2142,14 +2141,14 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Caleb.Shafer					06/2016
+//@bsimethod                                     Caleb.Shafer                   06/2016
 //---------------------------------------------------------------------------------------
 void SetEventSubscriptionJsonRequestToChangeSet
 (
 bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
-Utf8String										 eventSubscriptionId,
-WSChangeset&									 changeset,
-const WSChangeset::ChangeState&					 changeState
+Utf8String                                       eventSubscriptionId,
+WSChangeset&                                     changeset,
+const WSChangeset::ChangeState&                  changeState
 )
     {
     ObjectId eventSubscriptionObject
@@ -2182,7 +2181,7 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    Caleb.Shafer					06/2016
+//@bsimethod                                    Caleb.Shafer                    06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::UpdateEventServiceSubscriptionId
 (
@@ -2247,7 +2246,7 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
 /* Public methods start */
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            07/2016
+//@bsimethod                                     Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent
 (
@@ -2287,7 +2286,7 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Caleb.Shafer		             06/2016
+//@bsimethod                                     Caleb.Shafer                    06/2016
 //                                               Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeToEvents
@@ -2304,7 +2303,7 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
+//@bsimethod                                     Arvind.Venkateswaran            06/2016
 //Todo: Add another method to only cancel GetEvent Operation and not the entire connection
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
@@ -2536,6 +2535,7 @@ Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
 JsonValueR                      pushJson,
 ObjectId                        revisionObjectId,
+bool                            relinquishCodesLocks,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
@@ -2573,8 +2573,67 @@ ICancellationTokenPtr           cancellationToken
         SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
         }
 
+    if (relinquishCodesLocks)
+        {
+        LockDeleteAllJsonRequest (changeset, briefcaseId);
+        CodeDiscardReservedJsonRequest(changeset, briefcaseId);
+        }
+
     //Push Revision initialization request and Locks update in a single batch
-    return SendChangesetRequest(changeset, cancellationToken);
+    const Utf8String methodName = "DgnDbRepositoryConnection::InitializeRevision";
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+
+    std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)
+        ->Then([=] (const WSChangesetResult& initializeRevisionResult)
+        {
+        if (initializeRevisionResult.IsSuccess())
+            {
+            finalResult->SetSuccess();
+            return;
+            }
+
+        auto errorId = DgnDbServerError(initializeRevisionResult.GetError()).GetId();
+        if (DgnDbServerError::Id::LockDoesNotExist != errorId && DgnDbServerError::Id::CodeDoesNotExist != errorId)
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializeRevisionResult.GetError().GetMessage().c_str());
+            finalResult->SetError(initializeRevisionResult.GetError());
+            return;
+            }
+
+        //Try to acquire all required locks and codes.
+        DgnCodeSet codesToReserve = usedCodes;
+        codesToReserve.insert(discardedCodes.begin(), discardedCodes.end());
+        BeGuid masterFileId;
+        masterFileId.FromString(revision->GetDbGuid().c_str());
+
+        AcquireCodesLocks(usedLocks, codesToReserve, briefcaseId, masterFileId, revision->GetParentId(), cancellationToken)
+            ->Then([=] (DgnDbServerStatusResultCR acquireCodesLocksResult)
+            {
+            if (!acquireCodesLocksResult.IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, acquireCodesLocksResult.GetError().GetMessage().c_str());
+                finalResult->SetError(acquireCodesLocksResult.GetError());
+                return;
+                }
+
+            //Push Revision initialization request again.
+            m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)
+                ->Then([=] (const WSChangesetResult& repeatInitializeRevisionResult)
+                {
+                if (repeatInitializeRevisionResult.IsSuccess())
+                    finalResult->SetSuccess();
+                else
+                    {
+                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, repeatInitializeRevisionResult.GetError().GetMessage().c_str());
+                    finalResult->SetError(repeatInitializeRevisionResult.GetError());
+                    }
+                });
+            });
+        })->Then<DgnDbServerStatusResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -2584,6 +2643,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
 Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
+bool                            relinquishCodesLocks,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
@@ -2621,7 +2681,7 @@ ICancellationTokenPtr           cancellationToken
                     }
 
                 // Stage 3. Initialize revision.
-                InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, callback, cancellationToken)
+                InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
                     ->Then([=] (DgnDbServerStatusResultCR result)
                     {
                     if (result.IsSuccess())
@@ -2647,7 +2707,7 @@ ICancellationTokenPtr           cancellationToken
                     }
 
                 // Stage 3. Initialize revision.
-                InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, callback, cancellationToken)
+                InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
                     ->Then([=] (DgnDbServerStatusResultCR result)
                     {
                     if (result.IsSuccess())

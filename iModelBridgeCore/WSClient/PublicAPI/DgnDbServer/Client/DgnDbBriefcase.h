@@ -35,9 +35,9 @@ private:
 
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
 
 public:
@@ -58,12 +58,13 @@ public:
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
     //! @param[in] description Revision description.
+    //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
     //! @param[in] downloadCallback Download progress callback.
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr PullMergeAndPush(Utf8CP description = nullptr, Http::Request::ProgressCallbackCR downloadCallback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false, Http::Request::ProgressCallbackCR downloadCallback = nullptr,
                                                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                                               ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
 
