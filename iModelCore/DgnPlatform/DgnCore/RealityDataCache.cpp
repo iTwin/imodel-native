@@ -25,7 +25,7 @@ void Cache::Worker::SaveChanges()
 
     m_cache._Cleanup();
 
-    CacheWriter writeFlag(m_cache); // wait for readers, block while saving changes
+    SaveLock lock(m_cache); // wait for readers, block while saving changes
     m_cache.m_db.SaveChanges();
     m_hasChanges = false;
     }
@@ -44,7 +44,7 @@ void Cache::Worker::Work()
             if (!m_hasChanges)
                 m_cache.m_cv.InfiniteWait(lock);
 
-            while (m_saveTime > std::chrono::steady_clock::now())
+            while (m_saveTime > std::chrono::steady_clock::now() && !m_cache.IsStopped())
                 m_cache.m_cv.RelativeWait(lock, 1000);
             }
 
@@ -60,7 +60,7 @@ void Cache::Worker::Work()
 +---------------+---------------+---------------+---------------+---------------+------*/
 THREAD_MAIN_IMPL Cache::Worker::Main(void* arg)
     {
-    BeThreadUtilities::SetCurrentThreadName("CacheSave");
+    BeThreadUtilities::SetCurrentThreadName("TileCacheSave");
     ((Worker*)arg)->Work();
     return 0;
     }
@@ -74,6 +74,7 @@ void Cache::Worker::Start()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* must be called with m_cv.mutex held.
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Cache::ScheduleSave()
@@ -91,7 +92,7 @@ Cache::~Cache()
     m_cv.notify_all();
 
     BeMutexHolder holder(m_cv.GetMutex()); 
-    while (m_writers>0 || m_readers>0) 
+    while (m_accessors>0 || m_saveActive) 
         m_cv.InfiniteWait(holder);
     }
 

@@ -132,7 +132,7 @@ BentleyStatus TileData::LoadFromDb() const
 
     if (true)
         {
-        RealityData::Cache::CacheReader readFlag(*cache);
+        RealityData::Cache::AccessLock lock(*cache);
 
         CachedStatementPtr stmt;
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
@@ -157,7 +157,6 @@ BentleyStatus TileData::LoadFromDb() const
                 BeAssert(false);
                 }
             }
-
         }
 
     if (nullptr != m_output) // is this is the scene file?
@@ -233,7 +232,7 @@ BentleyStatus TileData::LoadFromHttp() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save the data for a 3mx file into the tile cache. Note that this is also called for the scene file.
+* Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::SaveToDb() const
@@ -244,7 +243,7 @@ BentleyStatus TileData::SaveToDb() const
 
     BeAssert(m_tileBytes.HasData());
 
-    RealityData::Cache::CacheReader readFlag(*cache);
+    RealityData::Cache::AccessLock lock(*cache);
 
     Utf8StringCR name = m_shortName.empty() ? m_fileName : m_shortName;
     CachedStatementPtr stmt;
@@ -292,7 +291,7 @@ BentleyStatus TileCache::_Prepare() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Cleanup() const 
     {
-    RealityData::Cache::CacheReader readFlag(const_cast<TileCache&>(*this));
+    AccessLock lock(const_cast<TileCache&>(*this));
 
     CachedStatementPtr sumStatement;
     m_db.GetCachedStatement(sumStatement, "SELECT SUM(DataSize) FROM " TABLE_NAME_TileTree);
