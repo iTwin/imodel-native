@@ -500,8 +500,10 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     if (NULL == htmlFile)
         return Status::CantWriteToBaseDirectory;
 
+    Utf8String jsonFileUrl(m_rootName.c_str());
+    jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
-    std::fwrite(jsonFileNameUtf8.c_str(), 1, jsonFileNameUtf8.size(), htmlFile);
+    std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);
     std::fwrite(s_viewerHtmlSuffix, 1, sizeof(s_viewerHtmlSuffix)-1, htmlFile);
     std::fclose(htmlFile);
 
