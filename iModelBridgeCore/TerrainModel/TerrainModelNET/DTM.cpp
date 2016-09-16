@@ -2204,7 +2204,7 @@ void  DTM::BrowseContours (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
     DTMContoursBrowsingCallbackForwarder forwarder(this, hdl, oArg);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2253,7 +2253,7 @@ void  DTM::ContourAtPoint (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
     DTMContoursBrowsingCallbackForwarder forwarder(this, hdl, oArg);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2286,7 +2286,7 @@ void DTM::BrowseDynamicFeatures (DynamicFeaturesBrowsingCriteria^ criteria, DTMD
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2312,7 +2312,7 @@ void DTM::BrowseDynamicFeatures (BrowsingCriteria^ criteria, DTMDynamicFeatureTy
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2406,7 +2406,7 @@ void DTM::BrowseLinearFeatures (LinearFeaturesBrowsingCriteria^ criteria, DTMFea
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint = nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2430,7 +2430,7 @@ void  DTM::CalculateCatchments (CatchmentsCalculationCriteria^ criteria, Dynamic
     CheckIsTriangulated();
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2455,7 +2455,7 @@ void  DTM::BrowseCatchments (CatchmentsBrowsingCriteria^ criteria, double minDep
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::Catchment);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2481,7 +2481,7 @@ void  DTM::BrowseLowPoints (LowPointsBrowsingCriteria^ criteria, double minDepth
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::LowPoint);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2508,7 +2508,7 @@ void  DTM::BrowseHighPoints (HighPointsBrowsingCriteria^ criteria,  SinglePointF
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::HighPoint);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2564,7 +2564,7 @@ void  DTM::BrowseSumpLines (SumpLinesBrowsingCriteria^ criteria, DynamicFeatures
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::SumpLine);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2639,7 +2639,7 @@ void DTM::AnalyzeElevation (ElevationAnalyzingBrowsingCriteria^ criteria, Dynami
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2669,7 +2669,7 @@ void  DTM::AnalyzeSlope (SlopeAnalyzingBrowsingCriteria^ criteria, DynamicFeatur
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2700,7 +2700,7 @@ void  DTM::AnalyzeAspect (AspectAnalyzingBrowsingCriteria^ criteria, DynamicFeat
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint = nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
