@@ -584,7 +584,7 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         return;
         }
 
-    if (SUCCESS == session.GetFile().GetHandle().Schemas().ImportECSchemas(context->GetCache()))
+    if (SUCCESS == session.GetFile().GetHandle().Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
         {
         session.GetFile().GetHandleR().SaveChanges();
         Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());

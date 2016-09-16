@@ -269,7 +269,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     if (SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();
@@ -282,7 +282,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
     {
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache))
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache.GetSchemas()))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();
