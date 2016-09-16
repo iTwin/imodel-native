@@ -250,13 +250,6 @@ void RasterSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) cons
     physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
 
     m_physicalToCartesian.MultiplyAndRenormalize(pCorners, physicalCorners, 4);
-
-//&&MM not now.
-//     for(uint32_t i=0; i < 4; ++i)
-//         {
-//         BeAssert(IN_RANGE(pCorners[i].x, m_corners[0].x-EPSILON, m_corners[3].x+EPSILON));
-//         BeAssert(IN_RANGE(pCorners[i].y, m_corners[0].y-EPSILON, m_corners[3].y+EPSILON));
-//         }
     }
 
     

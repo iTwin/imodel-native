@@ -83,14 +83,6 @@ static HFCPtr<HRPPixelType> s_GetTileQueryPixelType(HRARaster const& raster, Ren
         return new HRPPixelTypeV32R8G8B8A8();
         }
 
-#if defined (NEEDS_WORK_READ_IMAGE)
-    if (raster.GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID))
-        {
-        format = Render::Image::Format::Gray;
-        return new HRPPixelTypeV8Gray8();
-        }
-#endif
-
     format = Render::Image::Format::Rgb;
     return new HRPPixelTypeV24R8G8B8();
     }

@@ -311,16 +311,6 @@ RasterModel::~RasterModel()
 DMatrix4dCR  RasterModel::GetSourceToWorld() const { return _GetSourceToWorld(); }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    //&&MM todo
-//     if (m_rasterTreeP.IsValid())
-//         m_rasterTreeP->DropGraphicsForViewport(viewport);
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d RasterModel::_QueryModelRange() const

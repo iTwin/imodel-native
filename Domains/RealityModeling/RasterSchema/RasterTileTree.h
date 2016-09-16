@@ -11,7 +11,7 @@
 #include "RasterSource.h"
 #include <DgnPlatform/TileTree.h>
 
-struct TileQuery; //&&MM keep that struct?
+struct TileQuery;
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 

@@ -246,7 +246,7 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 //----------------------------------------------------------------------------------------
 RasterFileModel::~RasterFileModel()
     {
-    DEBUG_PRINTF("RasterFileModel Destroyed");
+    //DEBUG_PRINTF("RasterFileModel Destroyed");
     }
 
 //----------------------------------------------------------------------------------------

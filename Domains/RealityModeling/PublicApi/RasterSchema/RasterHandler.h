@@ -102,8 +102,6 @@ protected:
     //This how we make our raster pick-able
 //    virtual void _DrawModel(Dgn::ViewContextR) override;
     
-    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
-
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParamsCR params) override;
     Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
