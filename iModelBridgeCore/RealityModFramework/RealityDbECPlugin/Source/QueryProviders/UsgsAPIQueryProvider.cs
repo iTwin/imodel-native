@@ -591,11 +591,15 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance["Name"].StringValue = json.TryToGetString("title");
 
+            if ( instanceSEB["Footprint"] != null && !instanceSEB["Footprint"].IsNull )
+                {
+                instance["Footprint"].NativeValue = instanceSEB["Footprint"].NativeValue;
+                }
 
-            instance["Footprint"].NativeValue = instanceSEB["Footprint"].NativeValue;
-
-            instance["DataSourceType"].StringValue = instanceSDS["DataSourceType"].StringValue;
-
+            if ( instanceSDS["DataSourceType"] != null && !instanceSDS["DataSourceType"].IsNull )
+                {
+                instance["DataSourceType"].StringValue = instanceSDS["DataSourceType"].StringValue;
+                }
 
             instance["ThumbnailURL"].SetToNull();
 
@@ -622,14 +626,25 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
-            instance["Legal"].StringValue = instanceMetadata["Legal"].StringValue;
+            if ( instanceMetadata["Legal"] != null && !instanceMetadata["Legal"].IsNull)
+                {
+                instance["Legal"].StringValue = instanceMetadata["Legal"].StringValue;
+                }
+
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
             instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
             instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
             instance["SubAPI"].StringValue = subAPIString;
 
-            instance["DataProvider"].StringValue = instanceSEB["DataProvider"].StringValue;
-            instance["DataProviderName"].StringValue = instanceSEB["DataProviderName"].StringValue;
+            if ( instanceSEB["DataProvider"] != null && !instanceSEB["DataProvider"].IsNull )
+                {
+                instance["DataProvider"].StringValue = instanceSEB["DataProvider"].StringValue;
+                }
+
+            if ( instanceSEB["DataProviderName"] != null && !instanceSEB["DataProviderName"].IsNull )
+                {
+                instance["DataProviderName"].StringValue = instanceSEB["DataProviderName"].StringValue;
+                }
 
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
             return instance;
