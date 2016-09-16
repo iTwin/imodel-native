@@ -117,6 +117,7 @@ public:
     //! @param[in] pi_Url            Url link string.
     REALITYDATAPLATFORM_EXPORT static void ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
     REALITYDATAPLATFORM_EXPORT static bool UnZipFile(WString& pi_strSrc, WString& pi_strDest);
+    REALITYDATAPLATFORM_EXPORT static bool UnZipFile(const char* pi_srtSrc, const char* pi_strDest);
 
     //! Set proxy informations
     REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };

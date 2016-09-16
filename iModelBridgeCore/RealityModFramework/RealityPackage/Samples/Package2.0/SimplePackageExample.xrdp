@@ -197,9 +197,7 @@
                 <Metadata type="text">http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_MTL.txt</Metadata>
                 <!-- The coordinate system is fixed -->
                 <GeoCS>EPSG:4326</GeoCS>
-                <!-- Percentage of occlusion of data. For landsat images this is the cloud coverage -->
-                <CloudCoverage>13.4</CloudCoverage>
-                <!-- The no data value is the -->
+                <!-- The no data value is the padding color of raster file -->
                 <NoDataValue>0</NoDataValue>
                 <Red>
                     <Source uri="http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B4.TIF" type="tif">
@@ -207,9 +205,10 @@
                         <Copyright>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</Copyright>
                         <Provider>Landsat8</Provider>
                         <!-- Here the size will be the one of the band only but this info will not have much use -->
-                        <Size>253831</Size>
-                        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
+                        <Size>93831</Size>
                         <GeoCS>EPSG:4326</GeoCS>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
                         <!-- A band may have sister files -->
                         <SisterFiles>
                             <File>http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B4.TFW</File>
@@ -221,8 +220,9 @@
                         <Id>55098634e4b02e76d757f5c6</Id>
                         <Copyright>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</Copyright>
                         <Provider>Landsat8</Provider>
-                        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
                         <GeoCS>EPSG:4326</GeoCS>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
                         <!-- A band may have sister files -->
                         <SisterFiles>
                             <File>http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B3.TFW</File>
@@ -234,8 +234,9 @@
                         <Id>55098634e4b02e76d757f5c6</Id>
                         <Copyright>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</Copyright>
                         <Provider>Landsat8</Provider>
-                        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
                         <GeoCS>EPSG:4326</GeoCS>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
                         <!-- A band may have sister files -->
                         <SisterFiles>
                             <File>http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B2.TFW</File>
@@ -247,7 +248,6 @@
                         <Id>55098634e4b02e76d757f5c6</Id>
                         <Copyright>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</Copyright>
                         <Provider>Landsat8</Provider>
-                        <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
                         <GeoCS>EPSG:4326</GeoCS>
                         <!-- A band may have sister files -->
                         <SisterFiles>

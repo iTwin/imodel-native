@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/PointCloudVortex.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -74,7 +74,7 @@ public:
     static bool     PointCloudNeedsWhiteBackground(PtHandle cloudHandle);
 
     static void GetPointCloudBounds(PtHandle cloudHandle, double* lower, double* upper);
-    static PtHandle GetMetaDataHandle(PtHandle cloudHandle);
+    static PtHandle GetMetadataHandle(PtHandle cloudHandle);
     static bool GetMetaTag(PtHandle metaHandle, WCharCP tagName, WCharP value);
     
 };

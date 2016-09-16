@@ -169,7 +169,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             if (NULL == pSource)
                 continue;
 
-            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFilesize());
+            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFileSize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
             wMirrors = bvector<std::pair<AString, WString>>();
             wMirrors.push_back(std::make_pair(pSource->GetUri(), filename));

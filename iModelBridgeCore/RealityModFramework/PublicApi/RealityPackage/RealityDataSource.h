@@ -28,6 +28,9 @@ public:
 
     REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(Utf8CP uri, Utf8CP type);
 
+    REALITYPACKAGE_EXPORT bool         IsMultiBand() const;
+
+
     //! Get/Set the source uri. It could be a full URL or a path relative to the package file.
     //! ex: "http://www.Bentley.com/logo.jpg"
     //!     "./imagery/road.jpg"
@@ -37,6 +40,8 @@ public:
     //! Get/Set the source type.
     REALITYPACKAGE_EXPORT Utf8StringCR GetType() const;
     REALITYPACKAGE_EXPORT void         SetType(Utf8CP type);
+
+
 
     //! Get/Set the copyright. Might be empty.
     REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
@@ -51,8 +56,8 @@ public:
     REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
 
     //! Get/Set the filesize in kilobytes. Default to 0.
-    REALITYPACKAGE_EXPORT uint64_t     GetFilesize() const;
-    REALITYPACKAGE_EXPORT void         SetFilesize(uint64_t filesizeInKB);
+    REALITYPACKAGE_EXPORT uint64_t     GetFileSize() const;
+    REALITYPACKAGE_EXPORT void         SetFileSize(uint64_t filesizeInKB);
 
     //! Get/Set the full path for the main file in a compound type. Might be empty.
     REALITYPACKAGE_EXPORT Utf8StringCR GetFileInCompound() const;
@@ -62,6 +67,7 @@ public:
     REALITYPACKAGE_EXPORT Utf8StringCR GetMetadata() const;
     REALITYPACKAGE_EXPORT void         SetMetadata(Utf8CP metadata);
 
+#if (0)
     //! Indicates the type of metadata. This is a string.
     REALITYPACKAGE_EXPORT Utf8StringCR GetMetadataType() const;
     REALITYPACKAGE_EXPORT void         SetMetadataType(Utf8CP metadataType);
@@ -69,6 +75,7 @@ public:
     //! Indicates the default geographic coordinate system keyname. May be empty.
     REALITYPACKAGE_EXPORT Utf8StringCR GetGeoCS() const;
     REALITYPACKAGE_EXPORT void         SetGeoCS(Utf8CP geoCS);    
+#endif
 
     //! Get/Set the sister files. Might be empty.
     REALITYPACKAGE_EXPORT const bvector<Utf8String>& GetSisterFiles() const;
@@ -87,6 +94,7 @@ protected:
     virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
     virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
 
+    virtual bool                 _IsMultiBand() const;
 private:
     Utf8String m_uri;
     Utf8String m_type;
