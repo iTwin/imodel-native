@@ -1838,6 +1838,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
     ASSERT_STREQ("testTarget", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();

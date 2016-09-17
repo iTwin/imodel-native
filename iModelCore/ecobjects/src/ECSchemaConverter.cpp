@@ -809,7 +809,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
         }
 
     // Attempt to convert all other root classes to the Enum
-    for (int i = 1; i < rootClasses.size(); ++i)
+    for (size_t i = 1; i < rootClasses.size(); ++i)
         {
         status = ConvertToEnum(rootClasses[i], rootClasses[i], prop->GetName().c_str(), enumeration, sdInfo);
         if (ECObjectsStatus::Success != status)
