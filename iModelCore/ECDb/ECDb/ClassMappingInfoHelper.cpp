@@ -149,7 +149,7 @@ BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Ut
     if (ecClass == nullptr)
         return ERROR;
 
-    ClassMap const* classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(ecClass->GetId());
+    ClassMap const* classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
     if (classMap == nullptr)
         return ERROR;
 
