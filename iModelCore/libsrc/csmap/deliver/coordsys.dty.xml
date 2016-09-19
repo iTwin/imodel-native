@@ -488,22 +488,13 @@
                     <KeyName>GHANA-NG</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2136</KeyName>
+                    <KeyName>Leigon_1.GhanaMetreGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2137</KeyName>
+                    <KeyName>Accra1929.GhanaNational</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Accra.GhanaNational</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Accra.TM-1NW</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Leigon.GhanaMetreGrid</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:25000</KeyName>
+                    <KeyName>Accra1929.TM-1NW</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -27963,6 +27954,29 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Ghana</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:2136</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2137</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Accra.GhanaNational</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Accra.TM-1NW</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Leigon.GhanaMetreGrid</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:25000</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Ireland</Name>
                 <Members>
                   <Member>
@@ -30145,16 +30159,10 @@
                     <KeyName>GHANA-WO.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Accra.LL</KeyName>
+                    <KeyName>Accra1929.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4168</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Leigon.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4250</KeyName>
+                    <KeyName>Leigon_1.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -33568,6 +33576,18 @@
               </Member>
               <Member>
                 <KeyName>CH1903Plus.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Accra.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Leigon.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4250</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4168</KeyName>
               </Member>
             </Members>
           </Group>
