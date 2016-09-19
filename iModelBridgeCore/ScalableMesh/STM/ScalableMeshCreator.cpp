@@ -484,13 +484,13 @@ bool scm_isCompressed ()
 
 
 bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
-            {
-            BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
-            //stmFilename
-            size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
-            assert(size==1);
-            return true;
-            }
+    {
+    BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
+    //stmFilename
+    size_t size = stmFilename.ReplaceAll(L".3sm", L".dgndb");
+    assert(size==1);
+    return true;
+    }
 
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
@@ -531,7 +531,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             
     if (!isSingleFile)
         {
-        auto position = m_scmFileName.find_last_of(L".stm");
+        auto position = m_scmFileName.find_last_of(L".3sm");
         WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
         if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
             {
