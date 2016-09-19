@@ -15,16 +15,16 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGroupTests : public DgnDbTestFixture
 {
-    PhysicalElementPtr CreateAndInsertElement(DgnModelP model);
+    PhysicalElementPtr CreateAndInsertElement(PhysicalModelR model);
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
+PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(PhysicalModelR model)
     {
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
-    GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*(model->ToPhysicalModelP()), m_defaultCategoryId);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, m_defaultCategoryId);
 
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
     ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
@@ -47,17 +47,17 @@ PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
 TEST_F(ElementGroupTests, CRUD)
     {
     SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
 
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(model);
+    auto member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(model);
+    auto member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
-    TestGroupPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group.IsValid());
     ASSERT_TRUE(group->Insert().IsValid());
 
@@ -114,21 +114,21 @@ TEST_F(ElementGroupTests, CRUD)
 TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(model);
+    auto member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(model);
+    auto member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
-    TestGroupPtr group1 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group1 = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group1.IsValid());
     ASSERT_TRUE(group1->Insert().IsValid());
 
-    TestGroupPtr group2 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group2 = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group2.IsValid());
     ASSERT_TRUE(group2->Insert().IsValid());
 
@@ -174,21 +174,21 @@ TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
 TEST_F(ElementGroupTests, NestedGroups)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(model);
+    auto member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
-    auto member3 = CreateAndInsertElement(model);
+    auto member3 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member3.IsValid());
 
     // Create Element Group
-    TestGroupPtr group1 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group1 = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group1.IsValid());
     ASSERT_TRUE(group1->Insert().IsValid());
 
-    TestGroupPtr group2 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group2 = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group2.IsValid());
     ASSERT_TRUE(group2->Insert().IsValid());
 
@@ -225,13 +225,13 @@ TEST_F(ElementGroupTests, NestedGroups)
 TEST_F(ElementGroupTests, DeleteMemberElement)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
 
     // Create Element Group
-    TestGroupPtr group1 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group1 = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group1.IsValid());
     ASSERT_TRUE(group1->Insert().IsValid());
 
@@ -258,13 +258,13 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
 TEST_F(ElementGroupTests, DeleteElementGroup)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
 
     // Create Element Group
-    TestGroupPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group.IsValid());
     ASSERT_TRUE(group->Insert().IsValid());
 
@@ -294,15 +294,15 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
 TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     {
     SetupSeedProject();
-
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    auto member1 = CreateAndInsertElement(model);
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    
+    auto member1 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member1.IsValid());
-    auto member2 = CreateAndInsertElement(model);
+    auto member2 = CreateAndInsertElement(*model);
     ASSERT_TRUE(member2.IsValid());
 
     // Create Element Group
-    TestGroupPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    TestGroupPtr group = TestGroup::Create(*m_db, model->GetModelId(), m_defaultCategoryId);
     ASSERT_TRUE(group.IsValid());
     ASSERT_TRUE(group->Insert().IsValid());
     DgnElementCR groupElement = *(m_db->Elements().GetElement(group->GetElementId()));

@@ -434,7 +434,7 @@ bool ImportECSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    BentleyStatus importSchemaStatus = project.Schemas().ImportECSchemas(*schemaList);
+    BentleyStatus importSchemaStatus = project.Schemas().ImportECSchemas(schemaList->GetSchemas());
     project.SaveChanges();
     return (SUCCESS == importSchemaStatus);
     }
@@ -794,7 +794,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(*testSchema);
-    project.GetEC().Schemas().ImportECSchemas(*schemaList);
+    project.GetEC().Schemas().ImportECSchemas(schemaList->GetSchemas());
 
     bvector<IECInstancePtr> orphanedWidgets;
     bvector<IECInstancePtr> orphanedBars;
@@ -957,7 +957,7 @@ TEST(ECDbInstances3, BGRJoinedTable)
     ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     schemaContext->RemoveSchemaLocater(dgnDb->GetSchemaLocater());
 
-    dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache());
+    dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     dgnDb->ClearECDbCache();
     dgnDb->SaveChanges();
 

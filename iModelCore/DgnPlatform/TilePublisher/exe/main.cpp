@@ -251,6 +251,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized ground point: %ls\n", av[i]);
                     return false;
                     }
+                m_groundMode = GroundMode::FixedPoint;
                 break;
 
             case ParamId::GroundHeight:
@@ -259,6 +260,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
+                m_groundMode = GroundMode::FixedHeight;
                 break;
 
             default:
@@ -296,6 +298,11 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
     virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
+
+    Json::Value GetViewJson(TransformCR transform, DPoint3dCR groundPoint);
+    Json::Value GetCategoriesJson();
+    Json::Value GetModelsJson();
+    template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
@@ -367,12 +374,51 @@ static Json::Value pointToJson(DPoint3dCR pt)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
+template<typename T> Json::Value TilesetPublisher::GetIdsJson(Utf8CP tableName, T const& ids)
     {
-    // JSON description of the view...consumed by our html to customize Cesium behavior
+    Utf8PrintfString sql("SELECT Id,CodeValue FROM %s WHERE InVirtualSet(@vset,Id)", tableName);
+    BeSQLite::Statement stmt;
+    stmt.Prepare(GetDgnDb(), sql.c_str());
+    stmt.BindVirtualSet(1, ids);
+
+    Json::Value json(Json::arrayValue);
+    while (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value entry(Json::objectValue);
+        entry["id"] = stmt.GetValueId<BeInt64Id>(0).ToString();
+        entry["name"] = stmt.GetValueText(1);
+        json.append(entry);
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetModelsJson()
+    {
+    return GetIdsJson(BIS_TABLE(BIS_CLASS_Model), m_viewController.GetViewedModels());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetCategoriesJson()
+    {
+    return GetIdsJson(BIS_TABLE(BIS_CLASS_Element), m_viewController.GetViewedCategories());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR groundPoint)
+    {
     Json::Value json(Json::objectValue);
+
+    // URL of tileset .json
     Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
     Utf8String tilesetUrl = rootNameUtf8;
     tilesetUrl.append(1, '/');
@@ -402,10 +448,12 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
+    // View orientation
     json["dest"] = pointToJson(viewDest);
     json["dir"] = pointToJson(zVec);
     json["up"] = pointToJson(yVec);
 
+    // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
     if (geoLocated)
         {
@@ -416,14 +464,46 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, D
         json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
+    // Lists of viewed models/categories
+    json["models"] = GetModelsJson();
+    json["categories"] = GetCategoriesJson();
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
+    {
+    // Generate a JSON representation of the view
+    Json::Value json = GetViewJson(transform, groundPoint);
+
+    BeFileName jsonFileName = m_outputDir;
+    jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
+
+    Utf8String jsonFileNameUtf8(jsonFileName.c_str());
+    jsonFileNameUtf8.ReplaceAll("\\", "//");
+
+    std::FILE* jsonFile = std::fopen(jsonFileNameUtf8.c_str(), "w");
+    if (NULL == jsonFile)
+        return Status::CantWriteToBaseDirectory;
+
+    Utf8String jsonStr = Json::FastWriter().write(json);
+    std::fwrite(jsonStr.c_str(), 1, jsonStr.size(), jsonFile);
+    std::fclose(jsonFile);
+
     // Produce the html file contents
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
     std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
+    if (NULL == htmlFile)
+        return Status::CantWriteToBaseDirectory;
 
-    Utf8String jsonStr = Json::FastWriter().write(json);
+    Utf8String jsonFileUrl(m_rootName.c_str());
+    jsonFileUrl.append(".json");
     std::fwrite(s_viewerHtmlPrefix, 1, sizeof(s_viewerHtmlPrefix)-1, htmlFile);
-    std::fwrite(jsonStr.c_str(), 1, jsonStr.size(), htmlFile);
+    std::fwrite(jsonFileUrl.c_str(), 1, jsonFileUrl.size(), htmlFile);
     std::fwrite(s_viewerHtmlSuffix, 1, sizeof(s_viewerHtmlSuffix)-1, htmlFile);
     std::fclose(htmlFile);
 
@@ -517,7 +597,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     if (GroundMode::FixedPoint == params.GetGroundMode())
         {
-        groundPoint = params.GetGroundPoint();
+        groundPoint.SumOf (params.GetGroundPoint(), GetDgnDb().Units().GetGlobalOrigin());
         }
     else
         {

@@ -1075,5 +1075,11 @@
     <ClCompile Include="DgnHandlers\DgnECPersistence.cpp">
       <Filter>DgnHandlers</Filter>
     </ClCompile>
+    <ClCompile Include="DgnHandlers\DgnECTypes.cpp">
+      <Filter>DgnHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnHandlers\DgnECTypeAdapters.cpp">
+      <Filter>DgnHandlers</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

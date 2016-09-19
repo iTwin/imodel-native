@@ -356,6 +356,8 @@
     <ClCompile Include="DgnHandlers\DgnChangeSummary.cpp" />
     <ClCompile Include="DgnHandlers\DgnECPersistence.cpp" />
     <ClCompile Include="DgnHandlers\DgnECSymbolProvider.cpp" />
+    <ClCompile Include="DgnHandlers\DgnECTypeAdapters.cpp" />
+    <ClCompile Include="DgnHandlers\DgnECTypes.cpp" />
     <ClCompile Include="DgnHandlers\DgnHandlers.cpp" />
     <ClCompile Include="DgnHandlers\HitDetail.cpp" />
     <ClCompile Include="DgnHandlers\PickContext.cpp" />

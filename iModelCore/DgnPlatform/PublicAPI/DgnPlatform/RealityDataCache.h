@@ -43,7 +43,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase
 protected:
     typedef RefCountedPtr<Worker> WorkerPtr;
     bool m_isStopped=false;
-    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(2);
+    bool m_saveActive = false;
+    int m_accessors = 0;
+    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(5);
     WorkerPtr m_worker;
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
@@ -55,6 +57,32 @@ protected:
     virtual BentleyStatus _Cleanup() const = 0;
 
 public:
+    friend struct AccessLock;
+    friend struct SaveLock;
+
+    //=======================================================================================
+    // On construction block until no save active. Then hold access lock until destruction. 
+    // Note that there can be more than one simultaneous accessors.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct AccessLock
+    {
+        CacheR m_cache;
+        AccessLock(CacheR cache) : m_cache(cache) {BeMutexHolder holder(cache.m_cv.GetMutex()); while (cache.m_saveActive) cache.m_cv.InfiniteWait(holder); ++cache.m_accessors;}
+        ~AccessLock() {{BeMutexHolder holder(m_cache.m_cv.GetMutex()); --m_cache.m_accessors; m_cache.ScheduleSave(); BeAssert(m_cache.m_accessors>=0);} m_cache.m_cv.notify_all();}
+    };
+
+    //=======================================================================================
+    // On construction block until no accessors. Then hold save lock until destruction.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct SaveLock
+    {
+        CacheR m_cache;
+        SaveLock(CacheR cache) : m_cache(cache) {BeMutexHolder holder(cache.m_cv.GetMutex()); while (cache.m_accessors>0) cache.m_cv.InfiniteWait(holder); BeAssert(!cache.m_saveActive); cache.m_saveActive=true;}
+        ~SaveLock() {{BeMutexHolder holder(m_cache.m_cv.GetMutex()); BeAssert(m_cache.m_saveActive); m_cache.m_saveActive=false; } m_cache.m_cv.notify_all();}
+    };
+
     Cache() = default;
     DGNPLATFORM_EXPORT ~Cache();
 

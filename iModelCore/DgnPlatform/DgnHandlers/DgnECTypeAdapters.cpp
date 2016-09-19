@@ -3130,13 +3130,38 @@ bool ECUnitsTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR cont
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Colin.Kerr      09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP kindOfQuantity)
+    {
+    kindOfQuantity = ecProp->GetIsPrimitive() ? ecProp->GetAsPrimitiveProperty()->GetKindOfQuantity() : ecProp->GetAsArrayProperty()->GetKindOfQuantity();
+    return nullptr != kindOfQuantity;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Colin.Kerr      09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TryGetOldUnitFromNewName(Utf8CP newUnitName, UnitR oldUnit)
+    {
+    Utf8String oldUnitName;
+    return Units::UnitRegistry::Instance().TryGetOldName(newUnitName, oldUnitName) && Unit::GetUnitByName(oldUnit, oldUnitName.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECUnitsTypeAdapter::_GetUnits (UnitSpecR spec, IDgnECTypeAdapterContextCR context) const
     {
     Unit ecunit;
     ECPropertyCP ecprop = context.GetProperty();
-    if (nullptr == ecprop || !Unit::GetUnitForECProperty (ecunit, *ecprop))
+    if (nullptr == ecprop || !(ecprop->GetIsPrimitive() || ecprop->GetIsPrimitiveArray()))
+        return false;
+
+    KindOfQuantityCP koq = nullptr;
+    if (!TryGetKindOfQuantity(ecprop, koq))
+        return false;
+
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), ecunit))
         return false;
 
     spec = ecunit;
@@ -3151,24 +3176,23 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     ECValue v (inputVal);
     Unit storedUnit, displayUnit;
     ECPropertyCP ecprop = context.GetProperty();
-    IECClassLocaterR unitsECClassLocater = context.GetUnitsECClassLocater();
+    
+    KindOfQuantityCP koq = nullptr;
+    if (!TryGetKindOfQuantity(ecprop, koq))
+        return false;
 
-    if (v.IsNull() || NULL == ecprop)
-        {
-        valueAsString = "";
-        return true;
-        }
-
-    if(!Unit::GetUnitForECProperty (storedUnit, *ecprop, unitsECClassLocater))
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit))
         return false;
 
     if (context.GetDgnModel())
         ApplyUnitLabelCustomization (storedUnit, *context.GetDgnModel());
 
+    // TODO: start supporting format string again
     Utf8String fmt;
     Utf8CP label = storedUnit.GetShortLabel();
 
-    if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, *ecprop, unitsECClassLocater))
+    Utf8String displayUnitName = koq->GetDefaultPresentationUnit();
+    if (TryGetOldUnitFromNewName(displayUnitName.c_str(), displayUnit))
         {
         if (!v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
             return false;
@@ -3213,7 +3237,10 @@ bool ECUnitsTypeAdapter::_ConvertToDisplayType (ECValueR v, IDgnECTypeAdapterCon
     Unit storedUnit, displayUnit;
     ECPropertyCP ecprop = context.GetProperty();
     Utf8String unusedFmt;
-    if (!v.IsNull() && NULL != ecprop && Unit::GetUnitForECProperty (storedUnit, *ecprop) && Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, unusedFmt, storedUnit, *ecprop))
+    KindOfQuantityCP koq = nullptr;
+    if (!v.IsNull() && NULL != ecprop && TryGetKindOfQuantity(ecprop, koq) 
+                                        && TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit) 
+                                        && TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().c_str(), displayUnit))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
@@ -3233,16 +3260,19 @@ bool ECUnitsTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP stringValue, IDg
     {
     // Note managed implementation expects input value will be in display units - does not check if user provided a different suffix to indicate different units
     ECPropertyCP ecprop = context.GetProperty();
-    IECClassLocaterR unitsECClassLocater = context.GetUnitsECClassLocater();
     if (NULL != ecprop && InteropStringFormatter::GetInstance().Parse (v, stringValue, PRIMITIVETYPE_Double))
         {
+        KindOfQuantityCP koq = nullptr;
+        if (!TryGetKindOfQuantity(ecprop, koq))
+            return false;
+
         Unit storedUnit;
-        if (!Unit::GetUnitForECProperty(storedUnit, *ecprop, unitsECClassLocater))
+        if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().c_str(), storedUnit))
             return false;
         
         Utf8String fmt;
         Unit displayUnit;
-        if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, *ecprop, unitsECClassLocater))
+        if (TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().c_str(), displayUnit))
             {
             // Convert to storage units
             double value = v.GetDouble();

@@ -230,6 +230,7 @@ public:
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnElementId elementId, bool duplicateTwoSidedTriangles);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);

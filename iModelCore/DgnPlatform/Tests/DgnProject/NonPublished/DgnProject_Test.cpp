@@ -121,10 +121,10 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "dgn_Proj"      )) );
 
     //  Use the model API to access model properties and check their values
-    DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    GeometricModel::DisplayInfo const& displayInfo = defaultModel->ToGeometricModel()->GetDisplayInfo();
+    GeometricModel::DisplayInfo const& displayInfo = defaultModel->GetDisplayInfo();
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }
@@ -559,7 +559,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    return project.Schemas().ImportECSchemas(*schemaList);
+    return project.Schemas().ImportECSchemas(schemaList->GetSchemas());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -938,12 +938,11 @@ struct ImportTests : DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ImportTests, simpleSchemaImport)
+TEST_F(ImportTests, SimpleSchemaImport)
     {
-    Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
-        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "  <ECClass typeName='Element1' >"
+    Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" alias=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+        "  <ECSchemaReference name = 'BisCore' version = '01.00' alias = 'bis' />"
+        "  <ECEntityClass typeName='Element1' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
@@ -951,8 +950,8 @@ TEST_F(ImportTests, simpleSchemaImport)
         "    <ECProperty propertyName='Prop1_1' typeName='string' />"
         "    <ECProperty propertyName='Prop1_2' typeName='long' />"
         "    <ECProperty propertyName='Prop1_3' typeName='double' />"
-        "  </ECClass>"
-        "  <ECClass typeName='Element2' >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element2' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
@@ -960,8 +959,8 @@ TEST_F(ImportTests, simpleSchemaImport)
         "    <ECProperty propertyName='Prop2_1' typeName='string' />"
         "    <ECProperty propertyName='Prop2_2' typeName='long' />"
         "    <ECProperty propertyName='Prop2_3' typeName='double' />"
-        "  </ECClass>"
-        "  <ECClass typeName='Element3' >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element3' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
@@ -969,8 +968,8 @@ TEST_F(ImportTests, simpleSchemaImport)
         "    <ECProperty propertyName='Prop3_1' typeName='string' />"
         "    <ECProperty propertyName='Prop3_2' typeName='long' />"
         "    <ECProperty propertyName='Prop3_3' typeName='double' />"
-        "  </ECClass>"
-        "  <ECClass typeName='Element4' >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element4' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
@@ -978,8 +977,8 @@ TEST_F(ImportTests, simpleSchemaImport)
         "    <ECProperty propertyName='Prop4_1' typeName='string' />"
         "    <ECProperty propertyName='Prop4_2' typeName='long' />"
         "    <ECProperty propertyName='Prop4_3' typeName='double' />"
-        "  </ECClass>"
-        "  <ECClass typeName='Element4b' >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element4b' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
@@ -988,12 +987,13 @@ TEST_F(ImportTests, simpleSchemaImport)
         "    <ECProperty propertyName='Prop4b_2' typeName='long' />"
         "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
-        "  </ECClass>"
+        "  </ECEntityClass>"
         "</ECSchema>";
 
     SetupSeedProject();
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
     m_db->SaveChanges();
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
 
     BeFileName searchDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
@@ -1004,7 +1004,6 @@ TEST_F(ImportTests, simpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    schemaContext->AddSchema(*schema);
     ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }

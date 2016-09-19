@@ -73,12 +73,11 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(m_defaultModelP.IsValid());
-    m_defaultModelP->FillModel();
+    m_defaultModelId = m_db->Models().QueryModelId(s_seedFileInfo.modelCode);
+    ASSERT_TRUE(m_defaultModelId.IsValid());
 
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, GetDgnDb());
+    ASSERT_TRUE(m_defaultCategoryId.IsValid());
 
     m_db->SaveChanges();
     }
@@ -86,15 +85,15 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId categoryId, DgnDbStatus* result, DgnCode elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId modelId, DgnCategoryId categoryId, DgnDbStatus* result, DgnCode elementCode)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    TestElementPtr el = TestElement::Create(*m_db, modelId, categoryId, elementCode);
     return m_db->Elements().Insert(*el, result);
     }
 
@@ -102,30 +101,30 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId cat
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(Render::GeometryParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Render::GeometryParamsCR ep, DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    TestElementPtr el = TestElement::Create(*m_db, ep, mid, categoryId, elementCode,100);
+    TestElementPtr el = TestElement::Create(*m_db, ep, modelId, categoryId, elementCode,100);
     return m_db->Elements().Insert(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId modelId, DgnCategoryId categoryId)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    TestElementPtr el = TestElement::Create(*m_db, modelId, categoryId, elementCode);
     return m_db->Elements().Insert(*el);
      }
 
@@ -147,6 +146,7 @@ BeFileName DgnDbTestFixture::CopyDb(WCharCP inputFileName, WCharCP outputFileNam
 
     return fullOutputFileName;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -187,48 +187,46 @@ void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP t
 
     if (BeSQLite::Db::OpenMode::ReadWrite == mode && needTestDomain)
         {
-        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
+        DgnDbStatus status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
         ASSERT_TRUE(DgnDbStatus::Success == status);
         }
 
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(m_defaultModelP.IsValid());
-    m_defaultModelP->FillModel();
+    m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);
+    ASSERT_TRUE(m_defaultModelId.IsValid());
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    ASSERT_TRUE(m_defaultCategoryId.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode, 100);
-
+    DgnElementPtr el = TestElement2d::Create(*m_db, modelId, categoryId, elementCode, 100);
     return m_db->Elements().Insert(*el)->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode, 100);
+    TestElement2dPtr el = TestElement2d::Create(*m_db, modelId, categoryId, elementCode, 100);
 
-    DgnModelP model = m_db->Models().GetModel(mid).get();
+    DgnModelPtr model = m_db->Models().GetModel(modelId);
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
@@ -248,17 +246,17 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode)
     {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
+    if (!modelId.IsValid())
+        modelId = m_defaultModelId;
 
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    DgnElementPtr el = TestElement::Create(*m_db, modelId, categoryId, elementCode);
 
-    DgnModelP model = m_db->Models().GetModel(mid).get();
+    DgnModelP model = m_db->Models().GetModel(modelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
@@ -272,3 +270,12 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
     return m_db->Elements().Insert(*el)->GetElementId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr DgnDbTestFixture::GetDefaultPhysicalModel()
+    {
+    PhysicalModelPtr model = GetDgnDb().Models().Get<PhysicalModel>(m_defaultModelId);
+    BeAssert(model.IsValid());
+    return model;
+    }

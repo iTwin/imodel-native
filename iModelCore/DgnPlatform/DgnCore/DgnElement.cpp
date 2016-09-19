@@ -54,10 +54,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::AddRef() const
     {
-    if (0 == m_refCount && IsPersistent())
+    if (1 == m_refCount.IncrementAtomicPre(std::memory_order_relaxed) && IsPersistent())
         GetDgnDb().Elements().OnReclaimed(*this); // someone just requested this previously unreferenced element
-
-    ++m_refCount;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,15 +63,16 @@ void DgnElement::AddRef() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::Release() const
     {
-    if (1 < m_refCount--)
-        return;
-
-    BeAssert(m_refCount==0);
-
-    if (IsPersistent())  // is this element in the pool?
-        GetDgnDb().Elements().OnUnreferenced(*this); // yes, the last reference was just released, add to the unreferenced element count
-    else
-        delete this;  // no, just delete it
+    uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_relaxed);
+    BeAssert(0 != countWas);
+    if (1 == countWas)
+        {
+        std::atomic_thread_fence(std::memory_order_acquire);
+        if (IsPersistent()) // is this element in the pool?
+            GetDgnDb().Elements().OnUnreferenced(*this); // yes, the last reference was just released, add to the unreferenced element count
+        else
+            delete this; // no, just delete it
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1524,6 +1523,16 @@ void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& impor
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
+    {
+    m_categoryId = src.GetCategoryId();
+    m_geom = src.GetGeometryStream();
+    m_facetCount = src._GetFacetCount();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_CopyFrom(DgnElementCR el)
@@ -1532,9 +1541,8 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource2d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1547,9 +1555,8 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
     auto src = el.ToGeometrySource3d();
     if (nullptr != src)
         {
+        CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
-        m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeometryStream();
         }
     }
 

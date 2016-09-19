@@ -106,7 +106,7 @@ TEST_F(DgnScriptTest, TestEga)
     DgnDbP project = m_db.get();// tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     model->FillModel();
 
     RefCountedPtr<DgnElement> el;
@@ -241,13 +241,10 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnDbP project = m_db.get();
     ASSERT_TRUE(project != NULL);
 
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
     model->FillModel();
 
-    SubjectCPtr rootSubject = project->Elements().GetRootSubject();
-    SubjectCPtr newModelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
-    EXPECT_TRUE(newModelSubject.IsValid());
-    PhysicalModelPtr newModel = PhysicalModel::CreateAndInsert(*newModelSubject, DgnModel::CreateModelCode(TEST_NAME));
+    PhysicalModelPtr newModel = InsertPhysicalModel("NewModel");
     ASSERT_TRUE(newModel.IsValid());
 
     Json::Value parms = Json::objectValue;

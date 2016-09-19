@@ -25,7 +25,7 @@ public:
     virtual void SetUp()
         {
         DgnDbPtr db = GetDgnDb(WString(TEST_NAME, true).c_str());
-        m_defaultModelP = db->Models().GetModel(db->Models().QueryFirstModelId());
+        m_defaultModelP = db->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db));
         ASSERT_TRUE(m_defaultModelP.IsValid());
         m_defaultModelP->FillModel();
         }

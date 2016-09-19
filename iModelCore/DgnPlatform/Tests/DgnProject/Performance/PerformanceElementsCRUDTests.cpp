@@ -160,9 +160,6 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    </Source>"
         "    <Target cardinality = '(0,N)' polymorphic = 'true'>"
         "      <Class class = 'TestMultiAspect'>"
-        "        <Key>"
-        "          <Property name = 'ElementId' />"
-        "        </Key>"
         "      </Class>"
         "    </Target>"
         "  </ECRelationshipClass>"
@@ -993,22 +990,19 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ModelId"), element->GetModelId()));
 
     // Bind Code
-    {
-        DgnCode elementCode = DgnCode::CreateEmpty();
-    IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
+    DgnCode elementCode = DgnCode::CreateEmpty();
 
     if (elementCode.IsEmpty())
         {
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Value").BindNull());
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("CodeValue")));
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Value").BindText(elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("CodeValue"), elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
         }
 
-    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
-    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
-    }
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("CodeAuthorityId"), elementCode.GetAuthority()));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("CodeNamespace"), elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
 
     if (element->HasUserLabel())
         {
