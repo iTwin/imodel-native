@@ -1331,7 +1331,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
     if (ChangeType::Update == changeType)
         {
         // for updates, the element table must be queried for ECClassId since the change set will only contain changed columns
-        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
         stmt->BindId(1, modelId);
         if (BE_SQLITE_ROW != stmt->Step())
             {
@@ -1348,7 +1348,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
         if (s_ecclassIdColIdx == -1)
             {
             bvector<Utf8String> columnNames;
-            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, BIS_TABLE(BIS_CLASS_Element));
             s_ecclassIdColIdx = (int)std::distance(columnNames.begin(), std::find(columnNames.begin(), columnNames.end(), "ECClassId"));
             }
         classId = DgnClassId(change.GetValue(s_ecclassIdColIdx, stage).GetValueUInt64());
@@ -1550,7 +1550,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
     if (ChangeType::Update == changeType)
         {
         // for updates, the element table must be queried for ModelId since the change set will only contain changed columns
-        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ModelId,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ModelId,ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
         stmt->BindId(1, elementId);
         if (BE_SQLITE_ROW != stmt->Step())
             {
