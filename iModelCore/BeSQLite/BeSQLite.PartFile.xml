@@ -171,6 +171,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="BeSQLite-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/BeSQLite-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
 </BuildContext>
