@@ -167,7 +167,7 @@ static bool CalcSha1(Utf8StringCR input, Utf8StringR hash)
 
 #else
     EVP_MD_CTX *mdctx;
-    if ((mdctx = EVP_MD_CTX_create()) == NULL)
+    if ((mdctx = EVP_MD_CTX_new()) == NULL)
         return false;
     if (!EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL))
         return false;
@@ -179,8 +179,7 @@ static bool CalcSha1(Utf8StringCR input, Utf8StringR hash)
     if (!EVP_DigestFinal_ex(mdctx, binaryHash, &hashLen))
         return false;
 
-    EVP_MD_CTX_cleanup(mdctx);
-    EVP_MD_CTX_destroy(mdctx);
+    EVP_MD_CTX_free(mdctx);
     hash = ToHexString(binaryHash, hashLen);
     return true;
 #endif
