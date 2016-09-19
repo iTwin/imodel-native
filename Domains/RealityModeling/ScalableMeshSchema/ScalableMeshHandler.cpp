@@ -273,11 +273,10 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {     
+            {             
             if (context.CheckStop())
                 break;                           
-            
-            
+                                        
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
             /*
@@ -827,7 +826,7 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
 
     smtFileName = dgnDbFileName.GetDirectoryName();
     smtFileName.AppendToPath(dgnDbFileName.GetFileNameWithoutExtension().c_str());
-    smtFileName.AppendString(L"\\terrain.stm");
+    smtFileName.AppendString(L"\\terrain.3sm");
     }
 
 
@@ -1075,7 +1074,7 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
     tmFileName.AppendToPath(dgnDb.GetFileName().GetFileNameWithoutExtension().c_str());
     if (!tmFileName.DoesPathExist())
         BeFileName::CreateNewDirectory(tmFileName.c_str());
-    tmFileName.AppendString(L"\\terrain.stm");
+    tmFileName.AppendString(L"\\terrain.3sm");
     return tmFileName;
     }
 
