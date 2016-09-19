@@ -40,10 +40,10 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing">
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="has 1 main vertical" polymorphic="false">
             <Class class="AlignmentVertical"/>
         </Target>
     </ECRelationshipClass>
@@ -56,12 +56,21 @@
             <Class class="AlignmentVertical"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="AlignmentReferent" modifier="Sealed">
+    <ECEntityClass typeName="AlignmentReferentElement" modifier="Abstract">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:IReferent</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="AlignmentStation" modifier="Sealed">
+        <BaseClass>AlignmentReferentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>1</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
 </ECSchema>

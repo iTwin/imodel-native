@@ -65,7 +65,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_CLASS_Alignment                                        "Alignment"
 #define BRRA_CLASS_AlignmentHorizontal                              "AlignmentHorizontal"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
-#define BRRA_CLASS_AlignmentReferent                                "AlignmentReferent"
+#define BRRA_CLASS_AlignmentReferentElement                         "AlignmentReferentElement"
+#define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
 #define BRRA_CLASS_AlignmentVertical                                "AlignmentVertical"
 
 
@@ -132,7 +133,8 @@ ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentPair)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentPairEditor)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferent)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferentElement)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentVertical)
 ROADRAILALIGNMENT_TYPEDEFS(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(StationRange)
@@ -144,7 +146,7 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairEditor)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentReferent)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)

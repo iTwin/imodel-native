@@ -39,7 +39,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     auto alignmentPairPtr = alignmentPtr->QueryMainPair();
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
-    ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());    
+    ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -98,14 +98,17 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
-    // Create Referents
-    auto referent1Ptr = AlignmentReferent::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
-    ASSERT_TRUE(referent1Ptr->Insert().IsValid());
+    // Create Stations
+    auto station1Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
+    ASSERT_TRUE(station1Ptr->Insert().IsValid());
 
-    auto referent2Ptr = AlignmentReferent::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
-    ASSERT_TRUE(referent2Ptr->Insert().IsValid());
+    auto station2Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
+    ASSERT_TRUE(station2Ptr->Insert().IsValid());
 
     // Segmentation
-    auto segments = alignmentPtr->QuerySegments();
+    bset<DgnClassId> classIds;
+    classIds.insert(AlignmentStation::QueryClassId(*projectPtr));
+
+    auto segments = alignmentPtr->QuerySegments(classIds);
     ASSERT_EQ(2, segments.size());
     }

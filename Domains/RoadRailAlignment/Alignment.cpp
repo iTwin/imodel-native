@@ -110,18 +110,14 @@ DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr Alignment::QueryMainPair() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT horiz.HorizontalGeometry FROM "
-            BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " horiz "
-        "WHERE ParentId = ? UNION "
-        "SELECT vert.VerticalGeometry FROM "
-            BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " vert, " 
-            BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " mainVert "
-        "WHERE vert.ParentId = ? AND mainVert.SourceECInstanceId = vert.ParentId AND vert.ECInstanceId = mainVert.TargetECInstanceId;");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT horiz.HorizontalGeometry, vert.VerticalGeometry FROM "
+        BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " horiz LEFT JOIN "
+        BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " mainVert ON horiz.ParentId = mainVert.SourceECInstanceId LEFT JOIN "
+        BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " vert ON mainVert.TargetECInstanceId = vert.ECInstanceId "
+        "WHERE horiz.ParentId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
-    stmtPtr->BindId(2, GetElementId());
 
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
         return nullptr;
@@ -129,8 +125,8 @@ AlignmentPairPtr Alignment::QueryMainPair() const
     auto horizVectorPtr = stmtPtr->GetValueGeometry(0)->GetAsCurveVector();
 
     CurveVectorPtr vertVectorPtr;
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        vertVectorPtr = stmtPtr->GetValueGeometry(0)->GetAsCurveVector();
+    if (!stmtPtr->IsValueNull(1))
+        vertVectorPtr = stmtPtr->GetValueGeometry(1)->GetAsCurveVector();
 
     return AlignmentPair::Create(*horizVectorPtr, vertVectorPtr.get());
     }
