@@ -1153,15 +1153,11 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
                                                                                                                size_t                                     numSubNodes) 
     {    
     assert(queryNodeOrder.size() == 0);
-
+	
     DMatrix4d rootToViewMatrix; 
 
-    bsiDMatrix4d_initAffineRows(&rootToViewMatrix, 
-                                (DPoint3d*)&m_rootToViewMatrix[0], 
-                                (DPoint3d*)&m_rootToViewMatrix[1], 
-                                (DPoint3d*)&m_rootToViewMatrix[2],
-                                (DPoint3d*)&m_rootToViewMatrix[3]);
-
+	memcpy(&rootToViewMatrix.coff, m_rootToViewMatrix, sizeof(double) * 16);                
+    
     struct OrderInfo
         {
         double m_zScreen;
@@ -1173,16 +1169,15 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
     for (size_t nodeInd = 0; nodeInd < numSubNodes; nodeInd++)
         {
         if (subNodes[nodeInd] == nullptr) continue;
-        DPoint4d center;
+        DPoint3d center;
         center.x = (ExtentOp<EXTENT>::GetXMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetXMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
         center.y = (ExtentOp<EXTENT>::GetYMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetYMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
-        center.z = (ExtentOp<EXTENT>::GetZMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetZMin(subNodes[nodeInd]->GetNodeExtent())) / 2;
-        center.w = 1;
+        center.z = (ExtentOp<EXTENT>::GetZMax(subNodes[nodeInd]->GetNodeExtent()) + ExtentOp<EXTENT>::GetZMin(subNodes[nodeInd]->GetNodeExtent())) / 2;        
                 
-        DPoint4d outPoint;
+        DPoint3d outPoint;
 
-        bsiDMatrix4d_multiply4dPoints(&rootToViewMatrix, &outPoint, &center, 1);
-
+		rootToViewMatrix.MultiplyAndRenormalize(outPoint, center);
+        
         OrderInfo orderInfo;
         orderInfo.m_zScreen = outPoint.z;
         orderInfo.m_nodeInd = nodeInd;
@@ -1357,7 +1352,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return IsCorrect;    
     }
 
-static bool s_useSplit = false;
+static bool s_useSplit = true;
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                                                   const EXTENT&                           pi_visibleExtent,                                                                                                                                  
