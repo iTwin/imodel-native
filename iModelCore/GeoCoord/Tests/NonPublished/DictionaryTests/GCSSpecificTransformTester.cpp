@@ -31,10 +31,12 @@ GCSSpecificTransformTester::GCSSpecificTransformTester()
 //==================================================================================
 TEST_F (GCSSpecificTransformTester, LatLongToFromXYZ)
     {
-    GeoCoordinates::BaseGCSPtr currentGCS;
+    GeoCoordinates::BaseGCSPtr currentGCSEllipsoid;
+    GeoCoordinates::BaseGCSPtr currentGCSGeoid;
 
    
-    currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+    // First test using WGS84 lat/long
+    currentGCSEllipsoid = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
 
     GeoPoint point1;
     point1.longitude = -71;
@@ -43,11 +45,104 @@ TEST_F (GCSSpecificTransformTester, LatLongToFromXYZ)
 
     DPoint3d xyz = {0.0, 0.0, 0.0};
 
-    EXPECT_TRUE(REPROJECT_Success == currentGCS->XYZFromLatLong(xyz, point1));
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, point1));
+   
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->LatLongFromXYZ(point1, xyz));
 
-    
-    EXPECT_TRUE(REPROJECT_Success == currentGCS->LatLongFromXYZ(point1, xyz));
+    EXPECT_NEAR(point1.longitude, -71, 0.00001);
+    EXPECT_NEAR(point1.latitude, 48, 0.00001);
+    EXPECT_NEAR(point1.elevation, 0.0, 0.001);
 
+    point1.longitude = -71;
+    point1.latitude = 48;
+    point1.elevation = 0.0;
+
+    // Same test but this time we use a geoid based GCS
+    currentGCSGeoid =  GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+    currentGCSGeoid->SetVerticalDatumCode(GeoCoordinates::vdcGeoid);
+
+    DPoint3d xyz2 = {0.0, 0.0, 0.0};
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, point1));
+   
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->LatLongFromXYZ(point1, xyz2));
+
+    // Round trip will yield the same result.
+    EXPECT_NEAR(point1.longitude, -71, 0.00001);
+    EXPECT_NEAR(point1.latitude, 48, 0.00001);
+    EXPECT_NEAR(point1.elevation, 0.0, 0.001);
+
+    // All we know is that XYZ values are different
+    EXPECT_TRUE(xyz2.x != xyz.x);
+    EXPECT_TRUE(xyz2.y != xyz.y);
+    EXPECT_TRUE(xyz2.z != xyz.z);
+
+    // Now we will make computation at precise locations on Earth
+
+    // Equator on Greenwhich
+    GeoPoint pointEquatorGreenwich;
+    pointEquatorGreenwich.longitude = 0;
+    pointEquatorGreenwich.latitude = 0;
+    pointEquatorGreenwich.elevation = 0.0;
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, pointEquatorGreenwich));
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, pointEquatorGreenwich));
+
+    EXPECT_NEAR(xyz.x - xyz2.x, -17.1630, 0.01); // The X value should represent the geoid separation
+    EXPECT_NEAR(xyz.y, xyz2.y, 0.001);
+    EXPECT_NEAR(xyz.z, xyz2.z, 0.001);
+
+    GeoPoint pointEquatorMinus90;
+    pointEquatorMinus90.longitude = -90;
+    pointEquatorMinus90.latitude = 0;
+    pointEquatorMinus90.elevation = 0.0;
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, pointEquatorMinus90));
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, pointEquatorMinus90));
+
+    EXPECT_NEAR(xyz.x, xyz2.x, 0.001); 
+    EXPECT_NEAR(xyz.y - xyz2.y, -4.2873, 0.01); // The Y value should represent the geoid separation
+    EXPECT_NEAR(xyz.z, xyz2.z, 0.001);
+
+    GeoPoint pointEquatorPlus90;
+    pointEquatorPlus90.longitude = 90;
+    pointEquatorPlus90.latitude = 0;
+    pointEquatorPlus90.elevation = 0.0;
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, pointEquatorPlus90));
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, pointEquatorPlus90));
+
+    EXPECT_NEAR(xyz.x, xyz2.x, 0.001); 
+    EXPECT_NEAR(xyz.y - xyz2.y, 63.2371, 0.01); // The Y value should represent the geoid separation
+    EXPECT_NEAR(xyz.z, xyz2.z, 0.001);
+
+    GeoPoint pointNorthPole;
+    pointNorthPole.longitude = 0.0;
+    pointNorthPole.latitude = 90;
+    pointNorthPole.elevation = 0.0;
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, pointNorthPole));
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, pointNorthPole));
+
+    EXPECT_NEAR(xyz.x, xyz2.x, 0.001); 
+    EXPECT_NEAR(xyz.y, xyz2.y, 0.001); 
+    EXPECT_NEAR(xyz.z - xyz2.z, -13.605, 0.001); // The Z value should represent the geoid separation
+
+    GeoPoint pointSouthPole;
+    pointSouthPole.longitude = 0.0;
+    pointSouthPole.latitude = -90;
+    pointSouthPole.elevation = 0.0;
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSEllipsoid->XYZFromLatLong(xyz, pointSouthPole));
+
+    EXPECT_TRUE(REPROJECT_Success == currentGCSGeoid->XYZFromLatLong(xyz2, pointSouthPole));
+
+    EXPECT_NEAR(xyz.x, xyz2.x, 0.001); 
+    EXPECT_NEAR(xyz.y, xyz2.y, 0.001); 
+    EXPECT_NEAR(xyz.z - xyz2.z, -29.5350, 0.001); // The Z value should represent the geoid separation
     }
 
 //==================================================================================
@@ -64,6 +159,25 @@ TEST_F (GCSSpecificTransformTester, KuwaitUtilityInstanciationFailureTest)
     }
 
     
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT1)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    WString wellKnownText = L"COMPD_CS[\"LKS92 / Latvia TM + EGM96 geoid height\",PROJCS[\"LKS92 / Latvia TM\",GEOGCS[\"LKS92\",DATUM[\"Latvia_1992\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6661\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4661\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",24],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",-6000000],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AUTHORITY[\"EPSG\",\"3059\"]],VERT_CS[\"EGM96 geoid height\",VERT_DATUM[\"EGM96 geoid\",2005,AUTHORITY[\"EPSG\",\"5171\"],EXTENSION[\"PROJ4_GRIDS\",\"egm96_15.gtx\"]],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Up\",UP],AUTHORITY[\"EPSG\",\"5773\"]]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    EXPECT_TRUE(currentGCS->GetVerticalDatumCode() == GeoCoordinates::vdcGeoid);
+    }
+
 //==================================================================================
 // Domain
 //==================================================================================

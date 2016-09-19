@@ -637,7 +637,8 @@ TEST_P (GCSUnaryTester, WKTGenerateThenParseTest)
     
         if (!recreatedGCS.IsNull())
             {
-            EXPECT_TRUE(SUCCESS == recreatedGCS->InitFromWellKnownText(NULL, NULL, currentFlavor, compoundWKT.c_str()));
+            if (SUCCESS != recreatedGCS->InitFromWellKnownText(NULL, NULL, currentFlavor, compoundWKT.c_str()))
+                EXPECT_TRUE(SUCCESS == recreatedGCS->InitFromWellKnownText(NULL, NULL, currentFlavor, compoundWKT.c_str()));
                 
             EXPECT_TRUE(recreatedGCS->IsEquivalent(*toto));
             }
