@@ -649,6 +649,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForProperty (ECPropertyCR ecProperty)
     else
         {
         PrimitiveType primitiveType = ecProperty.GetIsPrimitive() ? ecProperty.GetAsPrimitiveProperty()->GetType() : ecProperty.GetAsNavigationProperty()->GetType();
+        KindOfQuantityCP koq = ecProperty.GetIsPrimitive() ? ecProperty.GetAsPrimitiveProperty()->GetKindOfQuantity() : nullptr;
 
         // Check for special custom attributes
         if (ecProperty.IsDefined("Format"))
@@ -657,7 +658,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForProperty (ECPropertyCR ecProperty)
             basicType = DgnECTypeRegistry::BasicType_BooleanDisplay;
         else if (PRIMITIVETYPE_Integer == primitiveType && ecProperty.IsDefined("StandardValues"))
             basicType = DgnECTypeRegistry::BasicType_StandardValues;
-        else if (ecProperty.IsDefined("UnitSpecificationAttr"))
+        else if (nullptr != koq)
             basicType = DgnECTypeRegistry::BasicType_ECUnits;
         else
             {
@@ -689,7 +690,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForArrayMember (ECN::ArrayECPropertyCR 
     IDgnECTypeAdapterP adapter = NULL;
     if (NULL != extendType)
         adapter = extendType->GetTypeAdapter();
-    else if (arrayProperty.GetCustomAttribute ("UnitSpecificationAttr").IsValid())
+    else if (nullptr != arrayProperty.GetKindOfQuantity())
         adapter = &DgnECTypeRegistry::GetRegistry().GetBasicTypeAdapter (DgnECTypeRegistry::BasicType_ECUnits);
     
     if (NULL == adapter)
