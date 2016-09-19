@@ -275,3 +275,26 @@ DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, Dat
                                                             // Wait for specified timeout
     return buffer->waitForSegments(dataSource.getTimeout());
     }
+
+DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
+    {
+    DataSourceBuffered  *        dataSourceBuffered;
+    DataSourceBuffer    *        buffer;
+
+    (void)dest;
+    (void)readSize;
+    (void)destSize;
+                                                            // Only buffered datasources are supported, so downcast
+    if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Transfer ownership of the DataSource's buffer
+    if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Transfer the buffer to the upload scheduler, where it will eventually be deleted
+    getTransferScheduler().addBuffer(*buffer);
+                                                            // Wait for specified timeout
+    DataSourceStatus status =  buffer->waitForSegments(dataSource.getTimeout());
+    readSize = buffer->getReadSize();
+
+    return status;
+    }

@@ -17,6 +17,10 @@ public:
     typedef ActivitySemaphore::Timeout  Timeout;
     typedef ActivitySemaphore::Status   TimeoutStatus;
 
+private:
+    bool m_isSegmented = false;
+    BufferSize m_totalReadSize = 0;
+
 protected:
     typedef std::vector<BufferData>     Buffer;
 
@@ -65,6 +69,8 @@ public:
 
                                         ~DataSourceBuffer                   ();
 
+    bool                                isSegmented                         (void);
+
     void                                initializeSegments                  (void);
     void                                initializeSegments                  (BufferSize segmentSize);
 
@@ -78,7 +84,8 @@ public:
     DataSourceStatus                    append                              (const BufferData *source, BufferSize size);
     DataSourceStatus                    expand                              (BufferSize size);
 
-    BufferData                        * getSegment(SegmentIndex index);
+    void                                setSegmented                        (const bool& value);
+    BufferData                        * getSegment                          (SegmentIndex index);
 
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
@@ -87,6 +94,9 @@ public:
 
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);
+
+    void                                updateReadSize                      (DataSourceBuffer::BufferSize readSize);
+    DataSourceBuffer::BufferSize        getReadSize                         (void);
 
 };
 

@@ -4554,7 +4554,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, uploadToAzure);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }

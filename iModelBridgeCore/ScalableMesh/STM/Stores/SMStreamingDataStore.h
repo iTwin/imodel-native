@@ -12,6 +12,7 @@
 #include "ISMDataStore.h"
 #include "..\SMNodeGroup.h"
 #include "SMStoreUtils.h"
+#include "SMSQLiteSisterFile.h"
 #include <json/json.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
@@ -31,7 +32,7 @@ extern std::mutex s_consoleMutex;
 
 class DataSourceAccount; 
 
-template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
+template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {
     private : 
         

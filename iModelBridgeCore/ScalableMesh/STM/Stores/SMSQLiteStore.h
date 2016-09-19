@@ -1,26 +1,13 @@
 #pragma once
 
 #include "ISMDataStore.h"
-
-#include "..\SMSQLiteFile.h"
-
+#include "SMSQLiteSisterFile.h"
 #include "SMStoreUtils.h"
 
-template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
+template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
-    private : 
-
-        SMSQLiteFilePtr m_smSQLiteFile;        
-        SMSQLiteFilePtr m_smFeatureSQLiteFile;
-        SMSQLiteFilePtr m_smClipSQLiteFile;
-        SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
-        BeFileName      m_projectFilesPath;
-    
-        bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType);
-
-    protected : 
-
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType);        
+    private:
+        SMSQLiteFilePtr m_smSQLiteFile;
 
     public : 
     

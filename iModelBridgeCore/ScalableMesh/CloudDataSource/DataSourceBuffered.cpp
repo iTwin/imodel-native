@@ -2,6 +2,7 @@
 #include "DataSourceBuffered.h"
 #include "DataSourceAccount.h"
 #include <assert.h>
+#include "include\DataSourceBuffered.h"
 
 
 DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
@@ -83,7 +84,7 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     if(size > 0)
     {
                                                                 // Size the buffer ready to read segmented data into it
-        if ((status = initializeBuffer(size, dest)).isFailed())
+        if ((status = initializeBuffer(size, dest, true)).isFailed())
             return status;
 
                                                                 // Download segments to the buffer
@@ -97,7 +98,10 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     else
     {
                                                                 // Download unknown size
-        status = account->downloadBlobSync(*this, dest, destSize, readSize);
+        if ((status = initializeBuffer(destSize, dest, false)).isFailed())
+            return status;
+
+        status = account->download(*this, dest, destSize, readSize);
         assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
      }
 
@@ -123,7 +127,7 @@ DataSourceStatus DataSourceBuffered::write(const Buffer * source, DataSize size)
 
 
 
-DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSize size, DataSource::Buffer *existingBuffer)
+DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSize size, DataSource::Buffer *existingBuffer, bool sizeKnown)
 {
     if (getBuffer())
     {
@@ -134,8 +138,17 @@ DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSi
 
     if (getBuffer())
     {
-        getBuffer()->initializeSegments(getSegmentSize());
-
+        if (sizeKnown)
+            {
+            getBuffer()->setSegmented(true);
+            getBuffer()->initializeSegments(getSegmentSize());
+            }
+        else
+            {
+            getBuffer()->setSegmented(false);
+                                                    // this will likely create only one segment (if size if large enough)
+            getBuffer()->initializeSegments(size);
+            }
         return DataSourceStatus();
     }
 

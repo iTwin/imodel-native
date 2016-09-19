@@ -16,7 +16,7 @@ protected:
 
 protected:
 
-    DataSourceStatus            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr);
+    DataSourceStatus            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = true);
 
 public:
                                 DataSourceBuffered      (DataSourceAccount *sourceAccount);
@@ -35,12 +35,12 @@ public:
                     void                        setBuffer               (DataSourceBuffer *newBuffer);
     CLOUD_EXPORT    DataSourceBuffer        *   getBuffer               (void);
 
-    DataSourceBuffer        *   transferBuffer          (void);
+                    DataSourceBuffer        *   transferBuffer          (void);
 
     CLOUD_EXPORT    DataSourceStatus            setSegmentSize          (DataSource::DataSize size);
-    DataSource::DataSize        getSegmentSize          (void);
+                    DataSource::DataSize        getSegmentSize          (void);
 
-    DataSourceStatus            waitForSegments         (DataSourceBuffer::Timeout timeoutMilliseconds);
+                    DataSourceStatus            waitForSegments         (DataSourceBuffer::Timeout timeoutMilliseconds);
 };
 
 
