@@ -225,7 +225,6 @@ public:
     DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
-
 //=======================================================================================
 //! An uncompressed image in Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) format suitable for rendering.
 // @bsiclass                                                    Keith.Bentley   05/16
@@ -413,6 +412,7 @@ struct Material : RefCounted<NonCopyableClass>
         Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
         DGNPLATFORM_EXPORT Transform GetTransform() const;
     };
+
     struct TextureMapParams
     {
         TextureMapParams() {}
