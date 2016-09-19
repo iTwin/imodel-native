@@ -40,7 +40,7 @@ DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(ThreeMxModel)
 
 //=======================================================================================
-// A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
+//! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct Geometry : RefCountedBase, NonCopyableClass
@@ -63,15 +63,16 @@ public:
 };
 
 /*=================================================================================**//**
-* Data about the 3mx scene read from the "Scene" file. It holds the filename of the "root node" (relative to the location of the scene file.)
+* Data about the 3mx scene read from the scene (.3mx) file. It holds the filename of the "root node" (relative to the location of the scene file.)
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct SceneInfo
 {
     Utf8String m_sceneName;
+    Utf8String m_logo;
     Utf8String m_reprojectionSystem;
-    DPoint3d m_origin = DPoint3d::FromZero();
     Utf8String m_rootNodePath;
+    DPoint3d m_origin = DPoint3d::FromZero();
     BentleyStatus Read(Dgn::TileTree::StreamBuffer&);
 };
 
@@ -128,7 +129,7 @@ public:
 };
 
 /*=================================================================================**//**
-* A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
+//! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Scene : Dgn::TileTree::Root
@@ -138,7 +139,8 @@ struct Scene : Dgn::TileTree::Root
     friend struct ThreeMxModel;
 
 private:
-    BentleyStatus ReadGeoLocation(SceneInfo const&);
+    SceneInfo m_sceneInfo;
+    BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem->_CreateTexture(source, targetFormat, bottomUp);}
 
@@ -147,10 +149,11 @@ public:
     ~Scene() {ClearAllTiles();}
 
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
+    SceneInfo const& GetSceneInfo() const {return m_sceneInfo;}
     BentleyStatus LoadNodeSynchronous(NodeR);
     BentleyStatus LoadScene(); // synchronous
     
-    THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
+    THREEMX_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
 };
 
 //=======================================================================================
@@ -163,11 +166,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 };
 
 //=======================================================================================
-// A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
-// to position the scene relative to the BIM.
-// Note that the scenefile may also have a "Spatial Reference System" stored in it,
-// so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
-// and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
+//! A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
+//! to position the scene relative to the BIM.
+//! Note that the scenefile may also have a "Spatial Reference System" stored in it,
+//! so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
+//! and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
@@ -178,7 +181,7 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
 private:
     Utf8String m_sceneFile;
     Transform m_location;
-    mutable Dgn::ClipVectorPtr m_clip;
+    mutable Dgn::ClipVectorCPtr m_clip;
     mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
@@ -194,14 +197,26 @@ public:
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::Render::TileGenerator::Status _GenerateMeshTiles(Dgn::Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
-    //! Set the name of the scene file for this 3MX model
+
+    //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
+    //! @note New models are not valid until the have a scene file.
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
-    //! Set the location transform (from scene coordinates to BIM coordinates)
+    //! Set the location of this 3MS model in the BIM file. This is a transform from scene coordinates to BIM coordinates.
+    //! @note Use this method to manually position the 3mx scene in the BIM. Alternatively, use GeolocateFromSceneFile.
+    //! @note To save this value for future sessions, you must call this model's Update method.
     void SetLocation(TransformCR trans) {m_location = trans;}
 
-    //! Set clipping
-    void SetClip (Dgn::ClipVectorCR clip);
+    //! Set or clear a clipping volume for this model.
+    //! @note To save this value for future sessions, you must call this model's Update method.
+    void SetClip(Dgn::ClipVectorCP clip) {m_clip = clip;}
+
+    //! Set the location for this ThreeMxModel based in the Spatial Reference System (SRS) data in the scene (.3mx) file.
+    //! Generally, this should be called once when the model is first created. On success, the location transformation of the model
+    //! is established to position the scene's geolocation into the BIM's GCS. 
+    //! @return SUCCESS if the scene file was successfully read
+    //! @note To save this value for future sessions, you must call this model's Update method.
+    THREEMX_EXPORT BentleyStatus GeolocateFromSceneFile();
 };
 
 //=======================================================================================
