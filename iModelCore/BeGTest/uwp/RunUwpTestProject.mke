@@ -79,8 +79,8 @@ TestBundle = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/
     %error Indicated test library file '$(TestBundle)' does not exist. Please check the value of UWPTEST_PRODUCT ('$(UWPTEST_PRODUCT)').
 %endif
 
-always:
-    -   vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle) > $(logFile) 2>&1
+$(logFile) : $(TestBundle)
+    -vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle) > $(logFile) 2>&1
 
 %message See $(logFile)
 

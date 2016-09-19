@@ -46,7 +46,10 @@ def checkLogFileForFailures(logfilename):
 
             #Error: Installation of package 'C:\dgndb61-16q4\out\WinRTx64\Product\DgnClientFx-UwpTest\AppPackages\BeTestTest1\BeTestTest1_1.0.0.0_x64_Debug_Test\BeTestTest1_1.0.0.0_x64_Debug.appx' failed with Error: (0x5B4) Operation timed out. Unable to install Windows app package in 30 sec..
             #For more details look into Event Viewer under Applications and Services Logs -> Microsoft -> Windows -> AppXDeployment-Server -> Microsoft-Windows-AppXDeploymentServer/Operational.
-            # collectingErrorDetails = True
+            if lline.find('installation of package') != -1 and lline.find('failed') != -1:
+                advicestr = advicestr + '\n' + line
+                collectingErrorDetails = True
+                continue
 
             if lline.find('the test execution process crashed while running the tests.') != -1:
                 advicestr = advicestr + '\n' + line.rstrip() + '\nWhile attempting to run:'
@@ -59,6 +62,7 @@ def checkLogFileForFailures(logfilename):
             if failedTest != None:
                 failedTestsList = failedTestsList + comma + failedTest.group(1)
                 comma = ', '
+                continue
 
             if lline.startswith('total tests:'):
                 stats = summaryRe.search(line)
