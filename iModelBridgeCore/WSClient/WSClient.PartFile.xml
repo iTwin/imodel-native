@@ -491,6 +491,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="WSClient-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/WSClient-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
