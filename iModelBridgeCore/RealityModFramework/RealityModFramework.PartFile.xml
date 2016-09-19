@@ -101,6 +101,7 @@
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
+        <SubPart PartName="UsageDataExtractor"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
