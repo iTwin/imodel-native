@@ -367,24 +367,23 @@ Utf8String LoadValueUsingLocalStateAndOpenSSL(ILocalState& localState, Utf8Strin
 
     Utf8String encodedValue = Base64Utilities::Decode (localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()));
 
-    EVP_CIPHER_CTX ctx;
-    EVP_CIPHER_CTX_set_padding (&ctx, 0);
-    EVP_CIPHER_CTX_init (&ctx);
+    EVP_CIPHER_CTX * pCtx = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX_set_padding(pCtx, 0);
 
-    EVP_DecryptInit_ex (&ctx, EVP_aes_256_gcm (), nullptr, s_key, s_iv);
+    EVP_DecryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, s_key, s_iv);
 
     std::vector<unsigned char> outbuf;
     // See documentation for EVP_DecryptUpdate at the page below for explanation of
     // the required size for outbuf:
     // https://www.openssl.org/docs/crypto/EVP_EncryptInit.html
-    outbuf.resize (encodedValue.size () + EVP_CIPHER_CTX_block_size (&ctx));
+    outbuf.resize(encodedValue.size() + EVP_CIPHER_CTX_block_size(pCtx));
     int outlen;
-    if (!EVP_DecryptUpdate (&ctx, &outbuf[0], &outlen, (const unsigned char *)encodedValue.c_str (), (int)encodedValue.size ()))
+    if (!EVP_DecryptUpdate(pCtx, &outbuf[0], &outlen, (const unsigned char *) encodedValue.c_str(), (int) encodedValue.size()))
         {
         return nullptr;
         }
 
-    EVP_CIPHER_CTX_cleanup (&ctx);
+    EVP_CIPHER_CTX_free(pCtx);
 
     return Utf8String ((CharCP)&outbuf[0], (size_t)outlen);
     }
