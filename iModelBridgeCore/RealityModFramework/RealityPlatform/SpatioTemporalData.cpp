@@ -66,12 +66,14 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
             bvector<Utf8String> tokens;
             BeStringUtilities::Split(resolutionStr.c_str(), "x", tokens);
             BeAssert(2 == tokens.size());
+            if (2 == tokens.size()) 
+                {
+                // Convert to double.
+                double resX = strtod(tokens[0].c_str(), NULL);
+                double resY = strtod(tokens[1].c_str(), NULL);
 
-            // Convert to double.
-            double resX = strtod(tokens[0].c_str(), NULL);
-            double resY = strtod(tokens[1].c_str(), NULL);
-
-            resolution = sqrt(resX * resY);
+                resolution = sqrt(resX * resY);
+                }
             }
 
         // Footprint
