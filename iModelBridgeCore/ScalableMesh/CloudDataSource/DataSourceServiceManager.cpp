@@ -36,6 +36,12 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
     if ((status = addService(service)).isFailed())
         return status;
 
+    if ((service = new DataSourceServiceAzureCURL(manager, DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+
+    if ((status = addService(service)).isFailed())
+        return status;
+
     if ((service = new DataSourceServiceWSG(manager, DataSourceService::ServiceName(L"DataSourceServiceWSG"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 

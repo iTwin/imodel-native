@@ -12,8 +12,6 @@
 #include "DataSourceMode.h"
 #include "Manager.h"
 
-unsigned int const DATA_SOURCE_SERVICE_CURL_DEFAULT_TRANSFER_TASKS = 16;
-
 
 class OpenSSLMutexes
     {
@@ -59,10 +57,6 @@ protected:
 
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
-
-protected:
-
-    unsigned int                            getDefaultNumTransferTasks          (void);
 
 
 public:

@@ -121,7 +121,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         //  DataSourceAccount                       *   accountCaching;
 
         // Setup Azure account
-        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName((s_stream_from_azure_using_curl ? L"DataSourceServiceAzureCURL" : L"DataSourceServiceAzure")));
         if (serviceAzure == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 

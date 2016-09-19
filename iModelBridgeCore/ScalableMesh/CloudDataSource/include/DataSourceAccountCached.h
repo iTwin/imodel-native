@@ -4,6 +4,8 @@
 #include "DataSourceAccount.h"
 #include "DataSourceURL.h"
 
+unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
+
 
 class DataSourceAccountCached : public DataSourceAccount
 {
@@ -29,4 +31,6 @@ public:
         DataSourceAccount    *      getCacheAccount               (void);
 
         DataSourceStatus            getFormattedCacheURL          (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+        
+        unsigned int                getDefaultNumTransferTasks(void);
 };

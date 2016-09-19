@@ -59,12 +59,6 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
     }
 
 
-unsigned int DataSourceAccountCURL::getDefaultNumTransferTasks(void)
-{
-    return DATA_SOURCE_SERVICE_CURL_DEFAULT_TRANSFER_TASKS;
-}
-
-
 DataSource * DataSourceAccountCURL::createDataSource(void)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.

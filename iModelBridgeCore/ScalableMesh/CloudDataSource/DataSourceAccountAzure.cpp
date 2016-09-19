@@ -18,12 +18,6 @@ DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const A
 }
 
 
-unsigned int DataSourceAccountAzure::getDefaultNumTransferTasks(void)
-{
-    return DATA_SOURCE_SERVICE_AZURE_DEFAULT_TRANSFER_TASKS;
-}
-
-
 DataSourceAccountAzure::AzureConnectionString DataSourceAccountAzure::createConnectionString(AccountIdentifier identifier, AccountKey key)
 {
     AzureConnectionString    cs;
@@ -256,3 +250,35 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
 
     return DataSourceStatus();
 }
+
+DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
+    : SuperCURL(account, identifier, key)
+    {
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
+    {
+    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
+                                                                                        // Set details in base class
+    DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzureCURL"), account, identifier, key);
+                                                                                        // Calculate and store the Azure connection string
+    //setConnectionString(createConnectionString(identifier, key));
+    //
+    //if (getConnectionString().length() == 0)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error);
+    //                                                                                    // Create storage account reference
+    //setStorageAccount(AzureStorageAccount::parse(getConnectionString()));
+    //if (getStorageAccount().is_initialized() == false)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Initialize_Subsystem);
+    //
+    //setBlobClient(storageAccount.create_cloud_blob_client());
+
+    return DataSourceStatus();
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
+    {
+    DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
+    return SuperCURL::downloadBlobSync(url, source, readSize, size);
+    }

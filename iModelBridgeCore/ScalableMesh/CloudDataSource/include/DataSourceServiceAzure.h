@@ -34,3 +34,16 @@ public:
         DataSourceBuffer::Timeout       getDefaultTimeout               (void);
 };
 
+class DataSourceServiceAzureCURL : public DataSourceServiceAzure
+    {
+
+    public:
+
+        typedef DataSourceServiceAzure   Super;
+
+    public:
+
+                                        DataSourceServiceAzureCURL          (DataSourceManager &manager, const ServiceName &service);
+
+        DataSourceAccount *             createAccount                   (const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key);
+    };
