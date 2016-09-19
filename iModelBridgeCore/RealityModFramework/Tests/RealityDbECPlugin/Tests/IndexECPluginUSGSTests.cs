@@ -492,7 +492,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip", instanceList.First().GetPropertyValue("MainURL").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("CompoundType").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("Unknown", instanceList.First().GetPropertyValue("LocationInCompound").StringValue, "The content of the instance was not set properly.");
+                Assert.IsTrue(instanceList.First().GetPropertyValue("LocationInCompound").IsNull, "The content of the instance was not set properly.");
                 Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceType").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual(true, instanceList.First().GetPropertyValue("SisterFiles").IsNull, "The content of the instance was not set properly.");
                 Assert.AreEqual("256093", instanceList.First().GetPropertyValue("FileSize").StringValue, "The content of the instance was not set properly.");
