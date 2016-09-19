@@ -56,3 +56,7 @@ ChangeManagerTests.CreateRelationship_SyncSetToActive_Success
 ChangeGraphTests.BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Crash, no output or stack printed>
+
+ChangeManagerTests.GetLegacyParentRelationshipClass_SameParameters_CallsOnSchemaChangedListenerOnlyFirstTime
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <non-reproducible crash, no output or stack printed>
