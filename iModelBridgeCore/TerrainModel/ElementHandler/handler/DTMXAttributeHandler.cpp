@@ -861,7 +861,7 @@ void DTMXAttributeHandler::UpdateDTMPointers ()
         m_nextIndex++;
         if (headerData)
             bcdtmObject_updateDtmObjectForDtmElement (m_dtm->GetTinHandle(), (void*)headerData, &featureArrays[0], &pointArrays[0], &nodeArrays[0], &fListArrays[0], &cListArrays[0]);
-        m_dtm->CheckTriangulation();
+        //m_dtm->CheckTriangulation();
         }
     }
 
