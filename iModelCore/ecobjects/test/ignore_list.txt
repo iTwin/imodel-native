@@ -64,3 +64,12 @@ AdhocPropertyTest.VerifyReadOnlyAdhocProperty
 AdhocPropertyTest.AddPropertyWithOptionalMetadata
     # DgnDb0601, x64, NDEBUG, PRG
     # <build output no longer provides failure details, and cannot access log files in PRG>
+
+ECRelationshipTests.TestRelationshipMultiplicityConstraint
+    # Bim0200Dev, DEBUG, x86
+    # [ RUN      ] ECRelationshipTests.TestRelationshipMultiplicityConstraint
+    # 2016-09-19 15:29:34,889 ERROR [0x000036e0] ECObjectsNative - Multiplicity Violation: The Multiplicity (0..4294967295) of RelClass is larger than the Multiplicity of it's base class RelBaseClass (1..4294967295)
+    # F:\Bim0200Dev\src-staging\ecobjects\test\Published\ECRelationshipTests.cpp(588): error:       Expected: ECObjectsStatus::RelationshipConstraintsNotCompatible      Which is: 4-byte object <2D-00 00-00>
+    # To be equal to: relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany())
+    #       Which is: 4-byte object <00-00 00-00>
+    # [  FAILED  ] ECRelationshipTests.TestRelationshipMultiplicityConstraint (1 ms)
