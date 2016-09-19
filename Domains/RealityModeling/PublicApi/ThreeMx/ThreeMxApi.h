@@ -169,8 +169,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 //! A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
 //! to position the scene relative to the BIM.
 //! Note that the scenefile may also have a "Spatial Reference System" stored in it,
-//! so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
-//! and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
+//! so the location can be calculated by geo-referncing it to the one in the BIM (via #GeolocateFromSceneFile). 
+//! But, since not all 3mx files are geo-referenced, and sometimes users may want to "tweak" the location relative 
+//! to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
@@ -211,10 +212,10 @@ public:
     //! @note To save this value for future sessions, you must call this model's Update method.
     void SetClip(Dgn::ClipVectorCP clip) {m_clip = clip;}
 
-    //! Set the location for this ThreeMxModel based in the Spatial Reference System (SRS) data in the scene (.3mx) file.
+    //! Set the location for this ThreeMxModel from the Spatial Reference System (SRS) data in the scene (.3mx) file.
     //! Generally, this should be called once when the model is first created. On success, the location transformation of the model
     //! is established to position the scene's geolocation into the BIM's GCS. 
-    //! @return SUCCESS if the scene file was successfully read
+    //! @return SUCCESS if the scene file was successfully read, it has a SRS, the BIM has a GCS, and we were able to compute a transform between them.
     //! @note To save this value for future sessions, you must call this model's Update method.
     THREEMX_EXPORT BentleyStatus GeolocateFromSceneFile();
 };
