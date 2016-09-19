@@ -21,12 +21,12 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
         static const double s_doubleVal;
         Utf8CP const s_testSchemaXml =
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-            "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+            "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
             "  <ECClass typeName='Element1' >"
             "    <ECCustomAttributes>"
             "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
-            "    <BaseClass>dgn:PhysicalElement</BaseClass>"
+            "    <BaseClass>bis:PhysicalElement</BaseClass>"
             "    <ECProperty propertyName='Prop1_1' typeName='string' />"
             "    <ECProperty propertyName='Prop1_2' typeName='long' />"
             "    <ECProperty propertyName='Prop1_3' typeName='double' />"
@@ -72,7 +72,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "    <ECCustomAttributes>"
             "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
-            "    <BaseClass>dgn:Element</BaseClass>"
+            "    <BaseClass>bis:Element</BaseClass>"
             "  </ECClass>"
             "</ECSchema>";
 

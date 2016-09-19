@@ -18,6 +18,7 @@
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepLib.hxx>
+#include <BRepExtrema_DistShapeShape.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepTools.hxx>
 #include <BrepTools_WireExplorer.hxx>
@@ -52,6 +53,7 @@
 #include <Geom2d_TrimmedCurve.hxx>
 #include <Geom2d_Ellipse.hxx>
 #include <Geom2d_Circle.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Circle.hxx>
@@ -88,8 +90,9 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepBuilderAPI_GTransform.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeShell.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
@@ -186,6 +189,16 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true
 DGNPLATFORM_EXPORT static BentleyStatus ClipTopoShape(bvector<TopoDS_Shape>& output, bool& clipped, TopoDS_Shape const& shape, ClipVectorCR clip) {return ERROR;} // NEEDSWORK...
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP localToWorld) {return ERROR;} // NEEDSWORK...
+
+//! Support for topology exploration.
+struct Topology
+    {
+    //! Get faces of parent shape that share the supplied edge.
+    DGNPLATFORM_EXPORT static bool EdgeAskFaces(bvector<TopoDS_Face>& faces, TopoDS_Edge const& edge, TopoDS_Shape const& parent);
+
+    //! Get faces of parent shape that share the supplied vertex.
+    DGNPLATFORM_EXPORT static bool VertexAskFaces(bvector<TopoDS_Face>& faces, TopoDS_Vertex const& vertex, TopoDS_Shape const& parent);
+    };
 
 //! Support for locate of faces, edges, and vertices.
 struct Locate

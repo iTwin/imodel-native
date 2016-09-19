@@ -582,7 +582,6 @@ struct SolidKernelTileGeometry : TileGeometry
 {
 private:
     ISolidKernelEntityPtr   m_entity;
-    BeMutex                 m_mutex;
 
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
@@ -680,8 +679,6 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE)
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*m_entity);
     auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr;
     if (polyface.IsValid())
@@ -755,8 +752,12 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 // Known issues:
 //  ECDb LightweightCache.cpp - cache not thread-safe
 // These issues are not specific to mesh tile generation...need to be fixed.
-#define MESHTILE_SINGLE_THREADED
+//#define MESHTILE_SINGLE_THREADED
 #if !defined(MESHTILE_SINGLE_THREADED)
+    // Worker threads will adopt host. Ensure no race conditions in FontAdmin when processing TextString geometry.
+    auto& host = T_HOST;
+    host.GetFontAdmin().EnsureInitialized();
+
     if (!tiles.empty())
         {
         // For now, we can cross our fingers and hope that processing one tile before entering multi-threaded context
@@ -770,9 +771,14 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     for (auto& tile : tiles)
         folly::via(threadPool, [&]()
             {
+            DgnPlatformLib::AdoptHost(host);
+
             // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
             auto status = m_progressMeter._WasAborted() ? TileGenerator::Status::Aborted : collector._AcceptTile(*tile);
             ++numCompletedTiles;
+
+            DgnPlatformLib::ForgetHost();
+
             return status;
             });
 
@@ -1072,6 +1078,7 @@ private:
 
     void AddGeometry(TileGeometryR geom);
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
+    template<typename T> void ProcessElements(ViewContextR context, T func);
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
     virtual void _OutputGraphics(ViewContextR context) override;
@@ -1212,7 +1219,7 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+template<typename T> void TileGeometryProcessor::ProcessElements(ViewContextR context, T func)
     {
     // ###TODO_FACET_COUNT: Support non-spatial views...
     static const Utf8CP s_sql = "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex
@@ -1228,11 +1235,22 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 
     context.SetDgnDb(m_dgndb);
     while (BE_SQLITE_ROW == stmt->Step())
+        func(stmt->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+    {
+    ProcessElements(context, [&](DgnElementId elemId)
         {
-        m_curElemId = stmt->GetValueId<DgnElementId>(0);
         if (m_filter.AcceptElement(m_curElemId))
-            context.VisitElement(m_curElemId, true);
-        }
+            {
+            m_curElemId = elemId;
+            context.VisitElement(elemId, true);
+            }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
