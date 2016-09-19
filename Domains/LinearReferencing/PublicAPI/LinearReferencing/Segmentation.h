@@ -45,11 +45,11 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ISegmentableLinearElement : ILinearElement
 {
 protected:
-    LINEARREFERENCING_EXPORT virtual bvector<LinearSegment> _QuerySegments(NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const;
+    LINEARREFERENCING_EXPORT virtual bvector<LinearSegment> _QuerySegments(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds, NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const;
 
 public:
-    LINEARREFERENCING_EXPORT bvector<LinearSegment> QuerySegments(
-        NullableDouble fromDistanceAlong = NullableDouble(), NullableDouble toDistanceAlong = NullableDouble()) const { return _QuerySegments(fromDistanceAlong, toDistanceAlong); }
+    LINEARREFERENCING_EXPORT bvector<LinearSegment> QuerySegments(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds = bset<Dgn::DgnClassId>(),
+        NullableDouble fromDistanceAlong = NullableDouble(), NullableDouble toDistanceAlong = NullableDouble()) const { return _QuerySegments(iLinearlyLocatedClassIds, fromDistanceAlong, toDistanceAlong); }
 }; // ISegmentableLinearElement
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

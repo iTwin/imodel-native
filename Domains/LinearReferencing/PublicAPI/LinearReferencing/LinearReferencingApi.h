@@ -77,13 +77,19 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
+// ECCustomAttribute names
+//-----------------------------------------------------------------------------------------
+#define BLR_CA_ILinearlyLocatedSegmentationHints                    "ILinearlyLocatedSegmentationHints"
+#define BLR_CAPROP_SupportedLinearlyReferencedLocationTypes         "SupportedLinearlyReferencedLocationTypes"
+
+//-----------------------------------------------------------------------------------------
 // ECRelationship names
 //-----------------------------------------------------------------------------------------
 //#define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
 
 
 //-----------------------------------------------------------------------------------------
-// ECClass names
+// ECProperty names
 //-----------------------------------------------------------------------------------------
 #define BLR_PROP_ILinearlyLocated_ILinearElement                    "ILinearElement"
 
