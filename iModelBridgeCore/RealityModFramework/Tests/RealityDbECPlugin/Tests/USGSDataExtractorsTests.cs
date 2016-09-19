@@ -118,8 +118,8 @@ namespace IndexECPlugin.Tests
 
             Assert.AreEqual("USGS Lidar Point Cloud NY FEMA-R2-Seneca 2012 18tum405880 LAS 2015", title, "title invalid.");
             Assert.AreEqual("2015 06 04", String.Format("{0:yyyy MM dd}", date.Value), "date invalid.");
-            Assert.AreEqual("Unknown", resolution, "resolution invalid.");
-            Assert.AreEqual("Unknown", resolutionInMeters, "resolutionInMeters invalid.");
+            Assert.IsNull(resolution);
+            Assert.IsNull(resolutionInMeters);
             }
 
         [Test]
