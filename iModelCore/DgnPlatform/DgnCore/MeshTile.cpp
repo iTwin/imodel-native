@@ -582,7 +582,6 @@ struct SolidKernelTileGeometry : TileGeometry
 {
 private:
     ISolidKernelEntityPtr   m_entity;
-    BeMutex                 m_mutex;
 
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
@@ -680,8 +679,6 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE)
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*m_entity);
     auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr;
     if (polyface.IsValid())
