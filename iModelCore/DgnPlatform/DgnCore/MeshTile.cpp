@@ -1078,6 +1078,7 @@ private:
 
     void AddGeometry(TileGeometryR geom);
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
+    template<typename T> void ProcessElements(ViewContextR context, T func);
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
     virtual void _OutputGraphics(ViewContextR context) override;
@@ -1218,7 +1219,7 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+template<typename T> void TileGeometryProcessor::ProcessElements(ViewContextR context, T func)
     {
     // ###TODO_FACET_COUNT: Support non-spatial views...
     static const Utf8CP s_sql = "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex
@@ -1234,11 +1235,22 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 
     context.SetDgnDb(m_dgndb);
     while (BE_SQLITE_ROW == stmt->Step())
+        func(stmt->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+    {
+    ProcessElements(context, [&](DgnElementId elemId)
         {
-        m_curElemId = stmt->GetValueId<DgnElementId>(0);
         if (m_filter.AcceptElement(m_curElemId))
-            context.VisitElement(m_curElemId, true);
-        }
+            {
+            m_curElemId = elemId;
+            context.VisitElement(elemId, true);
+            }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
