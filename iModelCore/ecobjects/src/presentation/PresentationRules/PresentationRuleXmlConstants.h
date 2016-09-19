@@ -156,6 +156,8 @@
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME                           "ClassName"
 
 //ContentSpecifications
+#define CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES                                "ShowImages"
+
 #define RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                "RelatedProperties"
 
 #define CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME             "ContentInstancesOfSpecificClasses"
@@ -169,4 +171,4 @@
 
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                   "HiddenProperties"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                         "ClassName"
-#define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME                      "PropertyName"
+#define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES                     "PropertyNames"

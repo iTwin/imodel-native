@@ -568,6 +568,9 @@ public:
     //! Creates a copy of this instance by serializing and then deserializing
     ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization();
 
+    //! Creates a copy of this instance by serializing and then deserializing using the target schema (must contain the same class definition already)
+    ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization(ECSchemaCR targetSchema);
+
     //! Given an xml file and an instance read context, deserializes and constructs an IECInstance
     //! @param[out] ecInstance  The instance constructed from deserializing the xml file
     //! @param[in] fileName The name of the file contained the serialized Xml

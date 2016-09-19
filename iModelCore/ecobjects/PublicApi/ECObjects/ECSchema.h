@@ -3183,9 +3183,9 @@ public:
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMajor() const;
     //! Gets the minor version of the original ECXml.
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMinor() const;
-    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    //! Returns an iterable container of ECClasses sorted by name.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    //! Returns an iterable container of ECEnumerations sorted by name.
     ECEnumerationContainerCR GetEnumerations() const { return m_enumerationContainer; }
     //! Removes an enumeration from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);

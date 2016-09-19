@@ -268,6 +268,7 @@ private:
     static const int PRECEDENCE_THRESHOLD = 199;
 
     SupplementedSchemaStatus OrderSupplementalSchemas(bmap<uint32_t, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP>& localizationSchemas );
+    void GetOrderedClasses(bvector<ECClassP>& orderedClasses, ECSchemaP schema);
 
     void ApplyLocalizationSupplementals(ECSchemaR primarySchema, Utf8CP locale, bvector<ECSchemaP>& localizationSchemas);
 

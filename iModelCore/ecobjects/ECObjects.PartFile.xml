@@ -264,6 +264,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="ECObjects-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECObjects-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- Define a gtest program to run the PerformanceTests. -->
