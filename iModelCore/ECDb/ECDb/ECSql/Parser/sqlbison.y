@@ -148,7 +148,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_EVERY
 
 %token <pParseNode> SQL_TOKEN_WITHIN SQL_TOKEN_ARRAY_AGG
-%token <pParseNode> SQL_TOKEN_CASE SQL_TOKEN_THEN SQL_TOKEN_END SQL_TOKEN_NULLIF SQL_TOKEN_COALESCE SQL_TOKEN_WHEN SQL_TOKEN_ELSE
+%token <pParseNode> SQL_TOKEN_CASE SQL_TOKEN_THEN SQL_TOKEN_END SQL_TOKEN_WHEN SQL_TOKEN_ELSE
 %token <pParseNode> SQL_TOKEN_BEFORE SQL_TOKEN_AFTER SQL_TOKEN_INSTEAD SQL_TOKEN_EACH SQL_TOKEN_REFERENCING SQL_TOKEN_BEGIN SQL_TOKEN_ATOMIC SQL_TOKEN_TRIGGER SQL_TOKEN_ROW SQL_TOKEN_STATEMENT
 %token <pParseNode> SQL_TOKEN_NEW SQL_TOKEN_OLD
 %token <pParseNode> SQL_TOKEN_VALUE SQL_TOKEN_CURRENT_CATALOG SQL_TOKEN_CURRENT_DEFAULT_TRANSFORM_GROUP SQL_TOKEN_CURRENT_PATH SQL_TOKEN_CURRENT_ROLE SQL_TOKEN_CURRENT_SCHEMA
@@ -229,13 +229,13 @@ using namespace connectivity;
 %type <pParseNode> char_value_exp concatenation char_factor char_primary string_value_fct char_substring_fct fold
 %type <pParseNode> form_conversion char_translation bit_value_fct bit_substring_fct
 %type <pParseNode> /*bit_concatenation*/ bit_value_exp bit_factor bit_primary collate_clause char_value_fct unique_spec value_exp_commalist in_predicate_value unique_test update_source
-%type <pParseNode> date_function_0Argument  function_name12 function_name0 
+%type <pParseNode> date_function_0Argument function_name12 function_name0
 %type <pParseNode> all sql_not for_length upper_lower comparison /* column_val */  cross_union /*opt_schema_element_list*/
 %type <pParseNode> /*op_authorization op_schema*/ nil_fkt schema_element base_table_def base_table_element base_table_element_commalist
 %type <pParseNode> column_def select_statement
 %type <pParseNode> function_args_commalist function_arg
 %type <pParseNode> catalog_name schema_name table_node function_name table_primary_as_range_column opt_as
-%type <pParseNode> case_expression else_clause result_expression result case_abbreviation case_specification searched_when_clause simple_when_clause searched_case simple_case
+%type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
 %type <pParseNode> trigger_definition trigger_name trigger_action_time trigger_event transition_table_or_variable_list triggered_action trigger_column_list triggered_when_clause triggered_SQL_statement SQL_procedure_statement old_transition_variable_name new_transition_variable_name
 %type <pParseNode> op_referencing op_trigger_columnlist op_triggered_action_for opt_row trigger_for SQL_procedure_statement_list transition_table_or_variable old_transition_table_name new_transition_table_name transition_table_name
@@ -1800,6 +1800,7 @@ fct_spec:
             $$->append($4);
             $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
         };
+        
 
     ;
 function_name0:
@@ -3593,39 +3594,14 @@ column:
         } */
     ;
 case_expression:
-        case_abbreviation
-    |    case_specification
+        case_specification
     ;
-case_abbreviation:
-        SQL_TOKEN_NULLIF '(' value_exp_commalist ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    SQL_TOKEN_COALESCE '(' value_exp ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    SQL_TOKEN_COALESCE '(' value_exp_commalist ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    ;
+
 case_specification:
         simple_case
     |    searched_case
     ;
+
 simple_case:
     SQL_TOKEN_CASE case_operand simple_when_clause_list else_clause SQL_TOKEN_END
         {

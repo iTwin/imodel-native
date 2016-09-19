@@ -2045,6 +2045,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::OrderByTests (int rowCountPerClass)
     ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY PStruct_Array ASC";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "ORDER BY arrays is not supported by ECSQL.");
 
+    ecsql = "select I FROM ecsql.PSA ORDER BY NULLIF(I,123)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "select I FROM ecsql.PSA ORDER BY COALESCE(I,L)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     return dataset;
     }
 
@@ -2740,6 +2746,21 @@ ECSqlTestDataset ECSqlSelectTestDataset::SelectClauseTests(int rowCountPerClass)
 
     ecsql = "select GetECClassId() S, S FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "select NULLIF(I,123) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "select NULLIF(I) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "select COALESCE(I,123,L) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "select COALESCE(I) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "select CASE WHEN I > 123 THEN 'Hello' ELSE 'World' END,S FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     return dataset;
     }
