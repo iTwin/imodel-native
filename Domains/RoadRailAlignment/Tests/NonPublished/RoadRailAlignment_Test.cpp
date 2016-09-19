@@ -68,7 +68,6 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->InsertWithMainPair(*alignPairPtr).IsValid());
 
-
     ASSERT_TRUE(alignmentPtr->QueryHorizontal()->GetElementId().IsValid());
     ASSERT_TRUE(alignmentPtr->QueryMainVertical()->GetElementId().IsValid());
 
@@ -111,4 +110,13 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
 
     auto segments = alignmentPtr->QuerySegments(classIds);
     ASSERT_EQ(2, segments.size());
+
+    segments = alignmentPtr->QuerySegments(classIds, 75.0, 125.0);
+    ASSERT_EQ(1, segments.size());
+
+    segments = alignmentPtr->QuerySegments(classIds, NullableDouble(), 75.0);
+    ASSERT_EQ(1, segments.size());
+
+    segments = alignmentPtr->QuerySegments(classIds, 125.0);
+    ASSERT_EQ(0, segments.size());
     }

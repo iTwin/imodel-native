@@ -13,8 +13,8 @@ HANDLER_DEFINE_MEMBERS(AlignmentStationHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentReferentElement::AlignmentReferentElement(CreateParams const& params, DistanceExpressionCR distanceExpression, double restartValue) :
-    T_Super(params), m_restartValue(restartValue), ILinearlyLocatedElement() 
+AlignmentStation::AlignmentStation(CreateParams const& params, DistanceExpressionCR distanceExpression, double restartValue) :
+    T_Super(params, restartValue)
     {
     _AddLinearlyReferencedLocation(*LinearlyReferencedAtLocation::Create(distanceExpression));
     }
@@ -24,13 +24,14 @@ AlignmentReferentElement::AlignmentReferentElement(CreateParams const& params, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, DistanceExpressionCR distanceExpression, double restartValue)
     {
-    if (!alignment.GetModelId().IsValid())
+    if (!alignment.GetModelId().IsValid() || !alignment.GetElementId().IsValid())
         return nullptr;
 
-    AlignmentStationPtr retVal(new AlignmentStation(CreateParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()),
-        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb())), distanceExpression, restartValue));
+    CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()),
+        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
+    params.SetParentId(alignment.GetElementId());
 
+    AlignmentStationPtr retVal(new AlignmentStation(params, distanceExpression, restartValue));
     retVal->_SetLinearElementId(alignment.GetElementId());
-
     return retVal;
     }

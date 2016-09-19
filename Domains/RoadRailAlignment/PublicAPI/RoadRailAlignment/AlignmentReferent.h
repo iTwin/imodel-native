@@ -30,7 +30,8 @@ protected:
     explicit AlignmentReferentElement(CreateParams const& params) : T_Super(params), LinearReferencing::ILinearlyLocatedElement() {}
 
     //! @private
-    explicit AlignmentReferentElement(CreateParams const& params, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue);
+    explicit AlignmentReferentElement(CreateParams const& params, double restartValue) :
+        T_Super(params), m_restartValue(restartValue), ILinearlyLocatedElement() {}
 
     virtual double _GetRestartValue() const override { return m_restartValue; }
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override final { return *this; }
@@ -55,8 +56,7 @@ protected:
     explicit AlignmentStation(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentStation(CreateParams const& params, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue) : 
-        T_Super(params, distanceExpression, restartValue) {}
+    explicit AlignmentStation(CreateParams const& params, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue);
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentStation)
