@@ -197,6 +197,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="Bentley-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Bentley-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
 </BuildContext>

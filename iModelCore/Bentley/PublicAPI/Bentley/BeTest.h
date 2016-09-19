@@ -183,7 +183,7 @@ typedef void(*T_TearDownFunc)(void);
 
 struct TestCaseInfo
     {
-    bool m_isSetUp;
+    int m_count;
     T_SetUpFunc m_setUp;
     T_TearDownFunc m_tearDown;
     };

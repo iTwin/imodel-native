@@ -1079,7 +1079,7 @@ BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_T
         tci = new TestCaseInfo;
         tci->m_setUp = s;
         tci->m_tearDown = t;
-        tci->m_isSetUp = false;
+        tci->m_count = 0;
         }
 
     return tci;
@@ -1090,6 +1090,8 @@ BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_T
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::SetUpTestCase(Utf8CP tcname)
     {
+    if (0 == strcmp("Bspline", tcname))
+        printf ("got here\n");
     if (nullptr == s_testCases)
         {
         BeAssert(false && "loading logic should have automatically registered all test cases");
@@ -1104,9 +1106,8 @@ void BeTest::SetUpTestCase(Utf8CP tcname)
         }
 
     auto tci = itci->second;
-    if (!tci->m_isSetUp)
+    if (0 == tci->m_count++)
         {
-        tci->m_isSetUp = true;
         tci->m_setUp();
         }
     }
@@ -1130,13 +1131,8 @@ void BeTest::TearDownTestCase(Utf8CP tcname)
         }
 
     auto tci = itci->second;
-    if (!tci->m_isSetUp)
+    if (1 == tci->m_count--)
         {
-        BeAssert(false && "attempt to tear down test case that was not set up");
-        }
-    else
-        {
-        tci->m_isSetUp = false;
         itci->second->m_tearDown();
         }
     }
