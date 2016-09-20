@@ -111,6 +111,11 @@ namespace ServerSchema
         static Utf8CP FileInitialized = "FileInitialized";
         static Utf8CP RepositoryInitialized = "RepositoryInitialized";
         }
+    namespace ExtendedParameters
+        {
+        static Utf8CP DetailedError_Locks = "DetailedError_Locks";
+        static Utf8CP DetailedError_Codes = "DetailedError_Codes";
+        }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
     }

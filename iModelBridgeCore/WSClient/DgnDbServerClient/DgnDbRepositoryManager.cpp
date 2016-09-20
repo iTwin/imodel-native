@@ -135,10 +135,10 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 
     DgnDbServerStatusResult result;
     if (queryOnly)
-        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastRevisionId, m_cancellationToken)->GetResult();
+        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastRevisionId, req.Options(), m_cancellationToken)->GetResult();
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastRevisionId, m_cancellationToken)->GetResult ();
+        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastRevisionId, req.Options(), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
@@ -159,7 +159,7 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), m_cancellationToken)->GetResult ();
+    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -181,7 +181,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
+    auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), ResponseOptions::None, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
