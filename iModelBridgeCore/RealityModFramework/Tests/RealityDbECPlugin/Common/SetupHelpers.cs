@@ -145,7 +145,6 @@ namespace IndexECPlugin.Tests.Common
             instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
             instance["MainURL"].StringValue = "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip";
             instance["CompoundType"].StringValue = "USGS";
-            instance["LocationInCompound"].StringValue = "Unknown";
             instance["DataSourceType"].StringValue = "IMG";
             instance["FileSize"].StringValue = "256093";
             //instance["NoDataValue"].StringValue = "0";

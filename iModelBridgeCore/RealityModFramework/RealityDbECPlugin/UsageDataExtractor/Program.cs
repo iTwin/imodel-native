@@ -191,9 +191,7 @@ namespace UsageDataExtractor
                                 CountryCounter[country] = 1;
                                 }
 
-                            fileToWrite.WriteLine(line.Split(' ').First() + ", " + date + ", " + email + ", " + country + ", " + poly);
-
-
+                            fileToWrite.WriteLine(line.Split(' ').First() + ", " + date.Substring(0, 10) + ", " + email + ", " + country + ", " + poly);
 
                             }
                         }
