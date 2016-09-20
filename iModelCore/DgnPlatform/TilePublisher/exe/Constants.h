@@ -27,6 +27,7 @@ R"HTML(
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <script src="scripts/Bentley/BimStyler.js"></script>
 <script src="scripts/Bentley/BimToolbar.js"></script>
+<script src="scripts/Bentley/BimViews.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -51,24 +52,23 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-var view = Bim.requestView(viewJsonUrl, function(err, view) {
-    if (Cesium.defined(err)) {
+var json = Bim.requestJson(viewJsonUrl, function(err, json)
+    {
+    if (Cesium.defined(err)) 
+        {
         console.log("Failed to load " + viewJsonUrl); 
         return;
-    } else {
-        var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(view));
+        } 
+    else
+        {
+        var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(json.geolocated));
         viewer.extend(Bim.viewerInspectorMixin);
         Bim.fixupSandboxAttributes();
-        var tileset = Bim.loadTileset(viewer, view);
+        var tileset = Bim.loadTileset(viewer, json);
 
-        var toolbar = new Bim.Toolbar(viewer);
-        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models');
-        modelsButton.setContent(Bim.createModelToggleWidget(tileset, view.models));
-
-        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories');
-        categoriesButton.setContent(Bim.createCategoryToggleWidget(tileset, view.categories));
-    }
-});
+        Bim.CreateViewCategoryAndModelWidgets(viewer, tileset, json);
+        }
+    });
 </script>
 </body>
 </html>

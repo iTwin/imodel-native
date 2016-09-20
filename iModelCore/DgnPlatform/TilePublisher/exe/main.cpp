@@ -310,9 +310,11 @@ private:
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
     virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
 
-    Json::Value GetViewJson(TransformCR transform, DPoint3dCR groundPoint);
-    Json::Value GetCategoriesJson();
-    Json::Value GetModelsJson();
+    Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
+    Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
+    Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
+    void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint);
+
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
@@ -385,74 +387,91 @@ static Json::Value pointToJson(DPoint3dCR pt)
     return json;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Json::Value TilesetPublisher::GetIdsJson(Utf8CP tableName, T const& ids)
-    {
-    Utf8PrintfString sql("SELECT Id,CodeValue FROM %s WHERE InVirtualSet(@vset,Id)", tableName);
-    BeSQLite::Statement stmt;
-    stmt.Prepare(GetDgnDb(), sql.c_str());
-    stmt.BindVirtualSet(1, ids);
 
-    Json::Value json(Json::arrayValue);
-    while (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetModelsJson (DgnModelIdSet const& modelIds)
+    {
+    Json::Value     modelJson (Json::arrayValue);
+    
+    for (auto& modelId : modelIds)
         {
-        Json::Value entry(Json::objectValue);
-        entry["id"] = stmt.GetValueId<BeInt64Id>(0).ToString();
-        entry["name"] = stmt.GetValueText(1);
-        json.append(entry);
+        auto const&  model = GetDgnDb().Models().GetModel (modelId);
+
+        if (model.IsValid())
+            {
+            Json::Value     entry (Json::objectValue);
+
+            entry["id"] = modelId.ToString();
+            entry["name"] = model->GetName();
+            modelJson.append (entry);
+            }
+        }
+    return modelJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TilesetPublisher::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
+    {
+    Json::Value categoryJson (Json::arrayValue); 
+    
+    for (auto& categoryId : categoryIds)
+        {
+        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
+
+        if (category.IsValid())
+            {
+            Json::Value     entry (Json::objectValue);
+
+            entry["id"] = categoryId.ToString();
+            entry["name"] = category->GetCategoryName();
+            categoryJson.append (entry);
+            }
+        }
+    return categoryJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint)
+    {
+    OrthographicViewDefinitionCP    orthographicView;
+    CameraViewDefinitionCP          cameraView;
+    DVec3d                          xVec, yVec, zVec;
+    RotMatrix                       rotation;
+    DPoint3d                        eyePoint;
+
+    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
+        {
+        eyePoint = cameraView->GetEyePoint();
+        rotation =  cameraView->GetViewDirection().ToRotMatrix();
+        }
+    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
+        {
+        static const    double s_zRatio = 1.5;
+        DPoint3d        viewDelta = orthographicView->GetExtents();
+
+        rotation = orthographicView->GetViewDirection().ToRotMatrix();
+
+        eyePoint = DPoint3d::FromScale (viewDelta, .5);
+        eyePoint.z += s_zRatio * std::max(viewDelta.x, viewDelta.y);        // Back up from view center.
+        
+        rotation.MultiplyTranspose (eyePoint);
+        eyePoint.Add (orthographicView->GetOrigin());
+        }
+    else
+        {
+        BeAssert (false && "unsuppored view type");
         }
 
-    return json;
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetModelsJson()
-    {
-    return GetIdsJson(BIS_TABLE(BIS_CLASS_Model), m_viewController.GetViewedModels());
-    }
+    rotation.GetRows(xVec, yVec, zVec);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetCategoriesJson()
-    {
-    return GetIdsJson(BIS_TABLE(BIS_CLASS_Element), m_viewController.GetViewedCategories());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR groundPoint)
-    {
-    Json::Value json(Json::objectValue);
-
-    // URL of tileset .json
-    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
-    Utf8String tilesetUrl = rootNameUtf8;
-    tilesetUrl.append(1, '/');
-    tilesetUrl.append(rootNameUtf8);
-    tilesetUrl.append(".json");
-    json["url"] = tilesetUrl;
-
-    // Set up initial view based on view controller settings
-    DVec3d xVec, yVec, zVec;
-    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
-
-    auto cameraView = m_viewController._ToCameraView();
-    bool useCamera = nullptr != cameraView /* ###TODO? Apparently no longer possible to turn camera off && cameraView->IsCameraOn() */;
-    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
-    if (!useCamera)
-        {
-        static const double s_zRatio = 1.5;
-        DVec3d viewDelta = m_viewController.GetDelta();
-        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
-        }
-
-    transform.Multiply(viewDest);
+    transform.Multiply(eyePoint);
     transform.MultiplyMatrixOnly(yVec);
     transform.MultiplyMatrixOnly(zVec);
 
@@ -461,9 +480,26 @@ Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR grou
     zVec.Negate();      // Towards target.
 
     // View orientation
-    json["dest"] = pointToJson(viewDest);
+    json["dest"] = pointToJson(eyePoint);
     json["dir"] = pointToJson(zVec);
     json["up"] = pointToJson(yVec);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+    {
+    DgnModelIdSet       modelIds;
+    DgnCategoryIdSet    categoryIds;
+
+    // URL of tileset .json
+    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
+    Utf8String tilesetUrl = rootNameUtf8;
+    tilesetUrl.append(1, '/');
+    tilesetUrl.append(rootNameUtf8);
+    tilesetUrl.append(".json");
+    json["url"] = tilesetUrl;
 
     // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
@@ -476,11 +512,51 @@ Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR grou
         json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
-    // Lists of viewed models/categories
-    json["models"] = GetModelsJson();
-    json["categories"] = GetCategoriesJson();
+    auto& viewsJson =  json["views"] = Json::Value (Json::arrayValue); 
 
-    return json;
+    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
+        {
+        auto    viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
+
+        SpatialViewDefinitionCP spatialView;
+
+        if (!viewDefinition.IsValid() || nullptr == (spatialView = viewDefinition->ToSpatialView()))
+            continue;
+
+        Json::Value     entry (Json::objectValue);
+
+        if (nullptr != view.GetName())
+            entry["name"] = view.GetName();
+
+        GetSpatialViewJson (entry, *spatialView, transform, groundPoint);
+        auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
+
+        if (modelSelector.IsValid())
+            {
+            auto const& viewModelIds = modelSelector->GetModelIds();
+
+            entry["models"] = GetModelsJson (viewModelIds);
+            modelIds.insert (viewModelIds.begin(), viewModelIds.end());
+            }
+
+        auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
+
+        if (categorySelector.IsValid())
+            {
+            auto const& viewCategoryIds = categorySelector->GetCategoryIds();
+
+            entry["categories"] = GetCategoriesJson (viewCategoryIds);
+            categoryIds.insert (viewCategoryIds.begin(), viewCategoryIds.end());
+            }
+        viewsJson.append (entry);
+        }
+    if (modelIds.empty())
+        return Status::NoGeometry;
+
+    json["models"] = GetModelsJson (modelIds);
+    json["categories"] = GetCategoriesJson (categoryIds);
+    
+    return Status::Success; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,8 +564,11 @@ Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR grou
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
     {
-    // Generate a JSON representation of the view
-    Json::Value json = GetViewJson(transform, groundPoint);
+    Json::Value json;
+    Status      status;
+
+    if (Status::Success != (status = GetViewsJson (json, transform, groundPoint)))
+        return status;
 
     BeFileName jsonFileName = m_outputDir;
     jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
