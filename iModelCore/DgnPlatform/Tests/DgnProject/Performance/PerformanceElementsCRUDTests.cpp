@@ -44,6 +44,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         {
         SetupSeedProject(seedFileName.c_str());
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+        schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
         searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
