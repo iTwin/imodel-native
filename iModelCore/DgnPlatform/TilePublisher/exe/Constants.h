@@ -66,15 +66,7 @@ var json = Bim.requestJson(viewJsonUrl, function(err, json)
         Bim.fixupSandboxAttributes();
         var tileset = Bim.loadTileset(viewer, json);
 
-        var toolbar = new Bim.Toolbar(viewer);
-        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models');
-        modelsButton.setContent(Bim.createModelToggleWidget(tileset, json.models));
-
-        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories');
-        categoriesButton.setContent(Bim.createCategoryToggleWidget(tileset, json.categories));
-
-        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views');
-        viewsButton.setContent(Bim.createViewSelectionWidget(viewer, tileset, json.views, json.geolocated));
+        Bim.CreateViewCategoryAndModelWidgets(viewer, tileset, json);
         }
     });
 </script>
