@@ -2,7 +2,7 @@
 #
 #     $Source: RealityPlatform/RealityPlatform.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -96,6 +96,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
 

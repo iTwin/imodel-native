@@ -13,11 +13,16 @@
 #include <RealityPlatform/RealityDataDownload.h>
 
 #include <curl/curl.h>
+//#include <zlib/zlib.h>
+#include <zlib/zip/unzip.h>
+
 
 //#define TRACE_DEBUG 1
 
 #define MAX_NB_CONNECTIONS          10
 #define DEFAULT_STEP_PROGRESSCALL   (64*1024)      // default step if filesize is absent.
+#define MAX_FILENAME                512
+#define READ_SIZE                   8192
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -119,6 +124,28 @@ RealityDataDownloadPtr RealityDataDownload::Create(const UrlLink_UrlFile& pi_Lin
         return NULL;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Spencer.Mason      9/2015
+//----------------------------------------------------------------------------------------
+RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    if (pi_Link_File_wMirrors.size() > 0)
+        return new RealityDataDownload(pi_Link_File_wMirrors);
+    else
+        return NULL;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Spencer.Mason      9/2015
+//----------------------------------------------------------------------------------------
+RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters)
+{
+    if (pi_Link_File_wMirrors_wSisters.size() > 0)
+        return new RealityDataDownload(pi_Link_File_wMirrors_wSisters);
+    else
+        return NULL;
+}
+
 RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -133,15 +160,118 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i=0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].url = pi_Link_FileName[i].first;
-        m_pEntries[i].filename = pi_Link_FileName[i].second;
+        m_pEntries[i].InsertMirror(pi_Link_FileName[i], 0);
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
 
         m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
         m_pEntries[i].fromCache = true;                                 // from cache if possible by default
         m_pEntries[i].progressStep = 0.01;
+        }
+    }
+
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
+    m_certPath = WString();
+
+    m_curEntry = 0;
+    m_nbEntry = pi_Link_File_wMirrors.size();
+    m_pEntries = new FileTransfer[m_nbEntry];
+    for (size_t i = 0; i<m_nbEntry; ++i)
+        {
+        size_t mirrorCount = pi_Link_File_wMirrors[i].size();
+        for(size_t j = 0; j < mirrorCount; ++j)
+            m_pEntries[i].InsertMirror(pi_Link_File_wMirrors[i][j], j);
+        m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
+
+        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+        m_pEntries[i].filesize = 0;
+        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+        m_pEntries[i].progressStep = 0.01;
+        }
+    }
+
+void RealityDataDownload::AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index)
+    {
+    FileTransfer* sisFT = new FileTransfer(ft);
+    Mirror_struct ms;
+    ms.url = sisters[index].first;
+    sisFT->filename = ms.filename = sisters[index].second;
+    ms.nextSister = nullptr;
+    sisFT->mirrors.clear();
+    sisFT->mirrors.push_back(ms);
+
+    ft->mirrors.back().nextSister = sisFT;
+    index++;
+    if (index >= sisters.size())
+        return;
+    else
+        AddSisterFiles(sisFT, sisters, index);
+    }
+
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters)
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
+    m_certPath = WString();
+
+    m_curEntry = 0;
+    m_nbEntry = pi_Link_File_wMirrors_wSisters.size();
+    m_pEntries = new FileTransfer[m_nbEntry];
+    size_t sisterCount, mirrorCount;
+    for (size_t i = 0; i<m_nbEntry; ++i)
+        {
+        m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
+        m_pEntries[i].index = i;
+
+        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+        m_pEntries[i].filesize = 0;
+        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+        m_pEntries[i].progressStep = 0.01;
+
+        mirrorCount = pi_Link_File_wMirrors_wSisters[i].size();
+        
+        for (size_t j = 0; j < mirrorCount; ++j)
+            {
+            sisterCount = pi_Link_File_wMirrors_wSisters[i][j].size();
+            m_pEntries[i].InsertMirror(pi_Link_File_wMirrors_wSisters[i][j][0], j);
+            if(pi_Link_File_wMirrors_wSisters[i][j].size() > 1)
+                AddSisterFiles(&m_pEntries[i], pi_Link_File_wMirrors_wSisters[i][j], 1);
+            /*for (size_t k = 1; k < sisterCount; ++k)
+                {
+                sister = FileTransfer();
+                sister.InsertMirror(pi_Link_File_wMirrors_wSisters[i][j][k], 0);
+                sister.iAppend = 0;
+                sister.nbRetry = 0;
+                sister.familyId = i;
+
+                sister.downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+                sister.filesize = 0;
+                sister.fromCache = true;                                 // from cache if possible by default
+                sister.progressStep = 0.01;
+                sister.filename = sister.mirrors[0].filename;
+
+                m_pEntries[i].mirrors[j].sisterFiles.pushback(sister);
+                }*/
+            }
+
+        m_pEntries[i].filename = m_pEntries[i].mirrors[0].filename;
+
         }
     }
 
@@ -233,7 +363,7 @@ bool RealityDataDownload::Perform()
                 // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
                     {
-                        if (pFileTrans->nbRetry < s_MaxRetryTentative)
+                    if (pFileTrans->nbRetry < s_MaxRetryTentative)
                         { 
                         ++pFileTrans->nbRetry;
                         pFileTrans->iAppend = 0;
@@ -242,13 +372,38 @@ bool RealityDataDownload::Perform()
 #ifdef TRACE_DEBUG
                         fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
 #endif
-                        SetupCurlandFile(pFileTrans->index);
+                        SetupCurlandFile(&m_pEntries[pFileTrans->index]);
                         still_running++;
                         }
                     else
-                        {   // Maximun retry done, return error.
-                        if (m_pStatusFunc)
-                            m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        {   
+                        if(SetupMirror(pFileTrans->index, 56))
+                            {
+                            still_running++;
+                            }
+                        else
+                            {
+                                // Maximun retry done, return error.
+                            if (m_pStatusFunc)
+                                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            }
+                        }
+                    }
+                else if ((msg->data.result != CURLE_OK) && SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
+                    {
+                    still_running++;
+                    }
+                else if (msg->data.result == CURLE_OK)
+                    {
+                    if (m_pStatusFunc)
+                        m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+#ifdef TRACE_DEBUG
+                    fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#endif
+                    if(pFileTrans->mirrors[0].nextSister != nullptr)
+                        {
+                        SetupCurlandFile(pFileTrans->mirrors[0].nextSister);
+                        still_running++;
                         }
                     }
                 else
@@ -289,21 +444,21 @@ bool RealityDataDownload::Perform()
 //
 // false --> Curl error or file already there, skip download.
 //
-bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
-{
+bool RealityDataDownload::SetupCurlandFile(FileTransfer* ft)
+    {
     // If file already there, consider the download completed.
-    if (m_pEntries[pi_index].fromCache && BeFileName::DoesPathExist(m_pEntries[pi_index].filename.c_str()))
+    if (ft->fromCache && BeFileName::DoesPathExist(ft->filename.c_str()))
         return true;
 
     // File not in the cache, we will download it
-    m_pEntries[pi_index].fromCache = false;
+    ft->fromCache = false;
 
     CURL *pCurl = NULL;
 
     pCurl = curl_easy_init();
     if (pCurl)
         {
-        curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
+        curl_easy_setopt(pCurl, CURLOPT_URL, ft->mirrors.front().url); 
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -327,24 +482,51 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         /* Define our callback to get called when there's data to be written */
         curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, callback_fwrite_func);
         /* Set a pointer to our struct to pass to the callback */
-        curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, ft);
         /* Switch on full protocol/debug output set 1L*/
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
 
         curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
         curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, ft);
 
-        curl_easy_setopt(pCurl, CURLOPT_PRIVATE, &(m_pEntries[pi_index]));
+        curl_easy_setopt(pCurl, CURLOPT_PRIVATE, ft);
 
-        m_pEntries[pi_index].index = pi_index;
-        m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
-        m_pEntries[pi_index].progressStep = m_progressStep;
+        ft->pProgressFunc = m_pProgressFunc;
+        ft->progressStep = m_progressStep;
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         }
-
+        
     return (pCurl != NULL);
+    }
+
+bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
+{
+    if(m_pEntries[index].mirrors.size() <= 1)
+        return false;
+
+    if(m_pStatusFunc)
+        {
+        char errorMsg[512];
+        sprintf(errorMsg, "could not download %ls, error code %d. Attempting to retrieve mirror file %ls",
+            m_pEntries[index].mirrors[0].filename.c_str(),
+            errorCode,
+            m_pEntries[index].mirrors[1].filename.c_str());
+        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_RETRY_TENTATIVE, errorMsg);
+        }
+
+    m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
+    m_pEntries[index].filename = m_pEntries[index].mirrors.front().filename;
+    m_pEntries[index].iAppend = 0;
+    m_pEntries[index].nbRetry = 0;
+
+    m_pEntries[index].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+    m_pEntries[index].filesize = 0;
+    m_pEntries[index].fromCache = true;                                 // from cache if possible by default
+    m_pEntries[index].progressStep = 0.01;
+    SetupCurlandFile(&m_pEntries[index]);
+    return true;
 }
 
 bool RealityDataDownload::SetupNextEntry()
@@ -353,7 +535,7 @@ bool RealityDataDownload::SetupNextEntry()
         {
         if (m_curEntry < m_nbEntry)
             {
-            SetupCurlandFile(m_curEntry);
+            SetupCurlandFile(&m_pEntries[m_curEntry]);
             if (m_pEntries[m_curEntry].fromCache)
                 {
                 if (m_pStatusFunc)
@@ -387,114 +569,82 @@ void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString&
 
     }
 
-
-#if defined (_WIN32)
-
-#include <Objbase.h>
-#include <Shldisp.h>
-#include <Shellapi.h>
-
 bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
-{
-    BSTR lpZipFile = ::SysAllocString(pi_strSrc.c_str());
-    BSTR lpFolder = ::SysAllocString(pi_strDest.c_str());
+    {
+    char src[MAX_FILENAME];
+    char dest[MAX_FILENAME];
 
-    IShellDispatch *pISD;
+    wcstombs (src, pi_strSrc.c_str(), pi_strSrc.size());
+    wcstombs (dest, pi_strDest.c_str(), pi_strDest.size());
 
-    Folder  *pZippedFile = 0L;
-    Folder  *pDestination = 0L;
+    src[pi_strSrc.size()] = 0;
+    dest[pi_strDest.size()] = 0;
 
-    long FilesCount = 0;
-    IDispatch* pItem = 0L;
-    FolderItems *pFilesInside = 0L;
-
-    VARIANT Options, OutFolder, InZipFile, Item;
-    HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-    if (res == S_OK || res == S_FALSE || res == RPC_E_CHANGED_MODE)
-        {
-        res = S_OK;
-        __try{
-            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **) &pISD) != S_OK)
-                {
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-                
-
-            InZipFile.vt = VT_BSTR;
-            InZipFile.bstrVal = lpZipFile;
-            pISD->NameSpace(InZipFile, &pZippedFile);
-            if (!pZippedFile)
-                {
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            OutFolder.vt = VT_BSTR;
-            OutFolder.bstrVal = lpFolder;
-            pISD->NameSpace(OutFolder, &pDestination);
-            if (!pDestination)
-                {
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pZippedFile->Items(&pFilesInside);
-            if (!pFilesInside)
-                {
-                pDestination->Release();
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pFilesInside->get_Count(&FilesCount);
-            if (FilesCount < 1)
-                {
-                pFilesInside->Release();
-                pDestination->Release();
-                pZippedFile->Release();
-                pISD->Release();
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-                return false;
-                }
-
-            pFilesInside->QueryInterface(IID_IDispatch, (void**)&pItem);
-
-            Item.vt = VT_DISPATCH;
-            Item.pdispVal = pItem;
-
-            Options.vt = VT_I4;
-            Options.lVal = 1024 | 512 | 16 | 4;//http://msdn.microsoft.com/en-us/library/bb787866(VS.85).aspx
-
-            bool retval = pDestination->CopyHere(Item, Options) == S_OK;
-
-            pItem->Release(); pItem = 0L;
-            pFilesInside->Release(); pFilesInside = 0L;
-            pDestination->Release(); pDestination = 0L;
-            pZippedFile->Release(); pZippedFile = 0L;
-            pISD->Release(); pISD = 0L;
-
-            if (!retval)
-                BeFileName::BeDeleteFile(pi_strSrc.c_str());
-
-            return retval;
-            }
-        __finally
-            {
-            if (res = S_OK)
-                CoUninitialize();
-            }
-        }
-    BeFileName::BeDeleteFile(pi_strSrc.c_str());
-    return false;
+    return UnZipFile(src, dest);
     }
 
-#else
-#error "Windows specific code function: void UnZipFile(CString strSrc, CString strDest)"
-#endif
+bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDest)
+    {
+    if(!strstr(pi_strSrc, ".zip"))
+        return false;
+    
+    unzFile uf = unzOpen(pi_strSrc);
+    if(nullptr == uf)
+        return false;
+
+    unz_global_info unzGlobalInfo;
+    if(unzGetGlobalInfo (uf, &unzGlobalInfo) != 0)
+        return false;
+
+    uLong i;
+    char read_buffer[ READ_SIZE ];
+    for( i = 0; i < unzGlobalInfo.number_entry; ++i )
+        {
+        unz_file_info file_info;
+        char filename[MAX_FILENAME];
+        if ( unzGetCurrentFileInfo(
+            uf,
+            &file_info,
+            filename,
+            MAX_FILENAME,
+            NULL, 0, NULL, 0 ) != UNZ_OK )
+            return false;
+        
+        char fullpath[MAX_FILENAME];
+        sprintf(fullpath, "%s%s", pi_strDest,filename);
+
+        const size_t fullpath_length = strlen(fullpath);
+        std::string fp = std::string(fullpath);
+        size_t lastOf = fp.find_last_of("//");
+        if( lastOf != fp.size() - 1 ) //skip folders
+            {
+            if(unzOpenCurrentFile( uf ) != UNZ_OK)
+                return false;
+
+            FILE *out = fopen( fullpath, "wb" );
+            if ( out == NULL)
+                return false;
+
+            int status = UNZ_OK;
+            do
+                {
+                status = unzReadCurrentFile( uf, read_buffer, READ_SIZE );
+                if(status < 0)
+                    return false;
+                if(status > 0)
+                    fwrite( read_buffer, status, 1, out );
+                } while (status > 0 );
+            fclose( out );
+            }
+        unzCloseCurrentFile( uf );
+    
+        if( ( i+1 ) < unzGlobalInfo.number_entry )
+            {
+            if ( unzGoToNextFile( uf ) != UNZ_OK)
+                return false;
+            }
+        }
+    
+    return (unzClose (uf) == 0);
+    }
+
