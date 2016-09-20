@@ -168,7 +168,12 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     BeFileName alignSchemaFileName = schemaRootDir;
     alignSchemaFileName.AppendToPath(BRRA_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
+    if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
+        return nullptr;
+
+    BeFileName roadRailSchemaFileName = schemaRootDir;
+    roadRailSchemaFileName.AppendToPath(BRRP_SCHEMA_FILE);
+    if (DgnDbStatus::Success != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr, roadRailSchemaFileName)))
         return nullptr;
 
     projectPtr->Schemas().CreateECClassViewsInDb();

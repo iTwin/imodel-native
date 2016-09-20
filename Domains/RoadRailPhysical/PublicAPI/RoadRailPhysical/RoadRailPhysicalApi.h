@@ -66,12 +66,16 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
 
 
+// Aspects
+#define BRRP_CLASS_StatusAspect                                     "StatusAspect"
+
+
 // Relationships
 #define BRRP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
 
 
 // Properties
-#define BRRP_PROP_Alignment_MainVerticalAlignment                   "MainVerticalAlignment"
+#define BRRP_PROP_StatusAspect_Status                               "Status"
 
 
 //-----------------------------------------------------------------------------------------
@@ -120,9 +124,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailPhysical namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILPHYSICAL_TYPEDEFS(SegmentRange)
+ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
 
 
-//ROADRAILPHYSICAL_REFCOUNTED_PTR(Alignment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
 
 
 
@@ -130,4 +135,5 @@ ROADRAILPHYSICAL_TYPEDEFS(SegmentRange)
 // Includes
 //-----------------------------------------------------------------------------------------
 #include "RoadRailPhysicalDomain.h"
+#include "ElementAspects.h"
 #include "SegmentRange.h"

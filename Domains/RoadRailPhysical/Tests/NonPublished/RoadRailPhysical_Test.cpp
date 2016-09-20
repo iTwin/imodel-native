@@ -5,5 +5,6 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RoadRailPhysicalTests, BasicSegmentRangeTest)
     {
-    
+    DgnDbPtr projectPtr = CreateProject(L"BasicSegmentRangeTest.bim");
+    ASSERT_TRUE(projectPtr.IsValid());
     }

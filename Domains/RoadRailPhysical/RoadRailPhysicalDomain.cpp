@@ -15,4 +15,5 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
     {
     RegisterHandler(SegmentRangeElementHandler::GetHandler());
+    RegisterHandler(StatusAspectHandler::GetHandler());
     }

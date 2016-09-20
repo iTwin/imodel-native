@@ -43,6 +43,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
+$(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
+
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
 
 $(o)SegmentRange$(oext) : $(_MakeFilePath)SegmentRange.cpp ${MultiCompileDepends} $(appPublicApi)SegmentRange.h

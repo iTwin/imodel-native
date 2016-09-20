@@ -41,9 +41,12 @@
     <ECEntityClass typeName="SegmentRangeElement" modifier="Abstract" description="Base class for Linear-Element-Sources in the Road and Rail domain that can be segmented." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="Alignment" relationshipName="SegmentRangeElementOwnsAlignment" direction="forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeOwnsAlignment" strength="embedding">
+    <ECRelationshipClass typeName="SegmentRangeElementOwnsAlignment" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <!--BaseClass>lr:ILinearElementSourceOwnsILinearElements</BaseClass-->
         <Source multiplicity="(0..1)" polymorphic="true">
@@ -86,11 +89,12 @@
         <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
-            <Class class="IntersectionSegment"/>
+            <Class class="IntersectionSegmentElement"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true">
-            <Class class="Intersection"/>
+            <Class class="IntersectionElement"/>
         </Target>
     </ECRelationshipClass>
     <!-- END SegmentElement Class Hierarchy -->
@@ -103,13 +107,13 @@
 
     <!-- BEGIN Tunnel-related Classes -->
     <ECEntityClass typeName="IElementThruTunnel" modifier="Abstract" description="Interface to be mixed-in by Physical element-subclasses going through a tunnel.">
-        <ECNavigationProperty propertyName="TunnelId" relationshipName="ElementOwnsTunnel" direction="forward"/>
+        <!--ECNavigationProperty propertyName="TunnelId" relationshipName="ElementOwnsTunnel" direction="forward"/-->
     </ECEntityClass>
     <ECEntityClass typeName="Tunnel" modifier="Sealed" description="Physical tunnel which a segment of a road or rail go through." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsTunnel" strength="embedding">
+    <!--ECRelationshipClass typeName="ElementOwnsTunnel" strength="embedding">
         <BaseClass>bis:PhysicalElementAssemblesPhysicalElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true">
             <Class class="IElementThruTunnel"/>
@@ -117,7 +121,7 @@
         <Target multiplicity="(0..1)" polymorphic="false">
             <Class class="Tunnel"/>
         </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass-->
     <!-- END Tunnel-related Classes -->
     
     <!-- BEGIN FurnitureElement Class Hierarchy -->
@@ -139,7 +143,7 @@
         <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="GenericLinearlyLocatedDiscreteFurniture" modifier="Sealed" description="Generic Furniture Element with a single linearly located point.">
-        <BaseClass>LinearlyLocatedDiscreteFurniture</BaseClass>
+        <BaseClass>LinearlyLocatedDiscreteFurnitureElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="LinearFurnitureElement" modifier="Abstract" description="Base class for Linear Furniture Elements placed along a Linear-Element.">
         <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>        
@@ -159,7 +163,7 @@
         <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing">
-        <BaseClass>bis:ElementsReferToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="FurnitureElement"/>
         </Source>
@@ -174,7 +178,7 @@
         <BaseClass>FurnitureDefinitionElement</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing">
-        <BaseClass>bis:ElementsReferToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="FurnitureDefinitionElement"/>
         </Source>
@@ -212,10 +216,10 @@
     <ECEntityClass typeName="RepetitiveTemplateGeometryDefinitionElement" modifier="Abstract">
         <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
         <ECProperty propertyName="DefaultSpacing" typeName="double" kindOfQuantity="LENGTH"/>
-        <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="GeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="GeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="GeometryDefinitionEncapsulatesPart" direction="forward" />
-        <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="GeometryDefinitionEncapsulatesPart" direction="forward" />                
+        <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
+        <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
+        <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />
+        <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="TemplateGeometryDefinitionEncapsulatesPart" direction="forward" />                
     </ECEntityClass>
     <ECEntityClass typeName="GenericRepetitiveTemplateGeometryDefinition" modifier="Sealed">
         <BaseClass>RepetitiveTemplateGeometryDefinitionElement</BaseClass>
@@ -248,8 +252,11 @@
     <ECEntityClass typeName="UsableMultiAspect" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalElementStatus" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">
+    <ECEntityClass typeName="StatusAspect" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
@@ -260,7 +267,7 @@
 
     <!-- BEGIN Construction classes -->
     <ECEntityClass typeName="ConstructionComponentQuantity">
-        <BaseClass>ConceptualMultiAspect</BaseClass>
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="Quantity" typeName="double"/>
         <ECNavigationProperty propertyName="ConstructionComponent" relationshipName="ConstructionComponentQuantityRefersToComponent" direction="forward"/>
     </ECEntityClass>
@@ -274,7 +281,7 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="ConstructionAllowance" displayLabel="Allowance">
-        <BaseClass>ConceptualDefinitionElement</BaseClass>
+        <BaseClass>bis:DefinitionElement</BaseClass>
         <ECProperty propertyName="CostRatio" typeName="double" kindOfQuantity="PERCENT" />
         <ECProperty propertyName="UseCostRatioInCalcs" typeName="boolean" />
     </ECEntityClass>
@@ -289,14 +296,15 @@
         <ECNavigationProperty propertyName="ConstructionAllowance" relationshipName="ConstructionComponentRefersToAllowance" direction="forward" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ConstructionComponentQuantityRefersToComponent" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 construction component">
             <Class class="ConstructionComponentQuantity"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by zero or more quantities">
             <Class class="ConstructionComponent"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ConstructionComponentRefersToAllowance" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="ConstructionComponent"/>
         </Source>
@@ -308,6 +316,7 @@
         <BaseClass>bis:DefinitionElement</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="ConstructionComponentRefersToUnitCostGroup" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="ConstructionComponent"/>
         </Source>
