@@ -819,7 +819,7 @@ Utf8StringCP supplementalSchemaFullName
     ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalECClass->GetName().c_str());
     if (NULL == consolidatedECClass)
         {
-        if (consolidatedECClass->IsCustomAttributeClass())
+        if (supplementalECClass->IsCustomAttributeClass())
             primarySchema.CopyClass(consolidatedECClass, *supplementalECClass);
         return SupplementedSchemaStatus::Success;
         }
