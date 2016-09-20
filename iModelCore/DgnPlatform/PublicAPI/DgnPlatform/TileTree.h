@@ -174,7 +174,7 @@ struct Root : RefCountedBase, NonCopyableClass
 {
 protected:
     bool m_isHttp = false;
-    bool m_locatable = false;
+    bool m_pickable = false;
     int m_activeLoads = 0;
     DgnDbR m_db;
     BeFileName m_localCacheName;
@@ -201,8 +201,8 @@ public:
     void DoneTileLoad() {{BeMutexHolder holder(m_cv.GetMutex()); --m_activeLoads; BeAssert(m_activeLoads>=0);} m_cv.notify_all();}
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads>0) m_cv.InfiniteWait(holder);}
     bool IsHttp() const {return m_isHttp;}
-    bool IsLocatable() const {return m_locatable;}
-    void SetLocatable(bool locatable) {m_locatable = locatable;}
+    bool IsPickable() const {return m_pickable;}
+    void SetPickable(bool pickable) {m_pickable = pickable;}
     TransformCR GetLocation() const {return m_location;}
     RealityData::CachePtr GetCache() const {return m_cache;}
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
@@ -285,7 +285,7 @@ struct DrawArgs
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(m_location, tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip (clip) {m_scale = location.ColumnXMagnitude();}
+    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadsPtr);
 };
