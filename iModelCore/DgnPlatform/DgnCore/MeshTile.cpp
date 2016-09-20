@@ -1069,6 +1069,7 @@ private:
     TileGeometryList        m_geometries;
     DRange3d                m_range;
     Transform               m_transformFromDgn;
+    bool                    m_processPolylines;
 
     void AddGeometry(TileGeometryR geom);
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
@@ -1086,8 +1087,8 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
 public:
-    TileGeometryProcessor(ITileGenerationFilterR filter, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn)
-        : m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_filter(filter), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn)
+    TileGeometryProcessor(ITileGenerationFilterR filter, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool processPolylines)
+        : m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_filter(filter), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_processPolylines (processPolylines)
         {
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         }
@@ -1129,10 +1130,13 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
+bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)                                                                               
     {
     if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
         return false;   // process as facets.
+
+    if (!m_processPolylines)
+        return true;
 
     CurveVectorPtr clone = curves.Clone();
     IGeometryPtr geom = IGeometry::Create(clone);
@@ -1238,7 +1242,7 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::_GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool generatePolylines) const
     {
     static const double s_minRangeBoxSize = 0.5;
     static const double s_vertexToleranceRatio = 1.0;
@@ -1250,7 +1254,7 @@ TileMeshList TileNode::_GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db,
 
     // Collect geometry from elements in this node, sorted by facet count density
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor processor(filter, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
+    TileGeometryProcessor processor(filter, db, GetDgnRange(), *facetOptions, m_transformFromDgn, generatePolylines);
 
     GeometryProcessor::Process(processor, db);
 

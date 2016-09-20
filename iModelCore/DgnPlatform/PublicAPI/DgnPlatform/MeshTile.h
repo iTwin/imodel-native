@@ -405,7 +405,7 @@ public:
 
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, ITileGenerationFilterR filter, DgnDbR db);
     DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, ITileGenerationFilterR filter, DgnDbR db);
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool generatePolylines = false) const;
 };
 
 //=======================================================================================

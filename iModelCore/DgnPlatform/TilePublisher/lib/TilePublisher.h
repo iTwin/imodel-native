@@ -71,8 +71,9 @@ protected:
     Transform           m_tilesetTransform;
     size_t              m_maxTilesetDepth;
     size_t              m_maxTilesPerDirectory;
+    bool                m_publishPolylines;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines = false, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual ITileGenerationFilterR _GetFilter() = 0;
