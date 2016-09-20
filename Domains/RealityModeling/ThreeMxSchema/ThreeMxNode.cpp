@@ -75,7 +75,7 @@ Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
-    if (scene.IsLocatable())
+    if (scene.IsPickable())
         {
         m_indices.resize(args.m_numIndices);
         memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));

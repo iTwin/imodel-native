@@ -308,7 +308,7 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------                                                                                     +---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------- 
 BentleyStatus RasterTile::_LoadTile(TileTree::StreamBuffer& data, TileTree::RootR root)
     {
     BeAssert(!"not expected we load from _RequestTile");
