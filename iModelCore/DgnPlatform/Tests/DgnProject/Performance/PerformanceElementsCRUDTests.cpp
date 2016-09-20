@@ -44,6 +44,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         {
         SetupSeedProject(seedFileName.c_str());
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+        schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
         searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
@@ -51,9 +53,11 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
         ECN::ECSchemaPtr schema = nullptr;
         ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
+        ASSERT_TRUE(schema != nullptr);
 
         schemaContext->AddSchema(*schema);
         ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+        m_db->SaveChanges();
         ASSERT_TRUE (m_db->IsDbOpen());
 
         bvector<DgnElementPtr> testElements;

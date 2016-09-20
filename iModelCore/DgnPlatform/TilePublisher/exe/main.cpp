@@ -40,6 +40,7 @@ enum class ParamId
     GroundHeight,
     GroundPoint,
     Tolerance,
+    Depth,
     Invalid,
 };
 
@@ -67,6 +68,7 @@ static CommandParam s_paramTable[] =
         { L"h", L"groundheight",L"Ground height (meters).", false},
         { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t", L"tolerance",L"Tolerance (meters).", false},
+        { L"d", L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -135,6 +137,7 @@ private:
     DPoint3d        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
     GroundMode      m_groundMode;
     double          m_tolerance;
+    uint32_t        m_depth = 0xffffffff;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -147,6 +150,7 @@ public:
     GroundMode GetGroundMode() const { return m_groundMode; }
     DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
     double GetTolerance() const { return m_tolerance; }
+    uint32_t GetDepth() const { return m_depth; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -262,7 +266,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 m_groundMode = GroundMode::FixedHeight;
                 break;
-
+            case ParamId::Depth:
+                if (1 != swscanf (arg.m_value.c_str(), L"%u", &m_depth))
+                    {
+                    printf ("Expected unsigned integer for depth parameter");
+                    return false;
+                    }
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -294,10 +304,11 @@ private:
     TileGeneratorP              m_generator = nullptr;
     TileViewControllerFilter    m_filter;
     Status                      m_acceptTileStatus = Status::Success;
+    uint32_t                    m_publishedTileDepth;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
-    virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
+    virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
 
     Json::Value GetViewJson(TransformCR transform, DPoint3dCR groundPoint);
     Json::Value GetCategoriesJson();
@@ -310,7 +321,7 @@ private:
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
     //=======================================================================================
-    struct ProgressMeter : TileGenerator::IProgressMeter
+    struct ProgressMeter : ITileGenerationProgressMonitor
     {
     private:
         Utf8String          m_taskName;
@@ -322,12 +333,13 @@ private:
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher), m_model (nullptr) { }
         virtual void _SetModel (DgnModelCP model) { m_model = model; }
-        virtual void _SetTaskName(TileGenerator::TaskName task) override;
+        virtual void _SetTaskName(ITileGenerationProgressMonitor::TaskName task) override;
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController),
+        m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -343,7 +355,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     {
-    if (Status::Success != m_acceptTileStatus)
+    if (Status::Success != m_acceptTileStatus || tile.GetDepth() > m_publishedTileDepth)
         return TileGenerator::Status::Aborted;
 
     TilePublisher publisher(tile, *this);
@@ -525,10 +537,12 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
     printf("Statistics:\n"
            "Tile count: %u\n"
            "Tile depth: %u\n"
-           "Range tree generation time: %.4f seconds\n"
-           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           "Cache population time: %.4f seconds\n"
+           "Tile node generation time: %.4f seconds\n"
+           "Tile publishing: %.4f seconds Average per-tile: %.4f seconds\n",
            static_cast<uint32_t>(stats.m_tileCount),
            static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_cachePopulationTime,
            stats.m_collectionTime,
            stats.m_tileCreationTime,
            0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
@@ -541,7 +555,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
     {
     uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
 
-    if (m_lastPercentCompleted == pctComplete)
+    if (m_lastPercentCompleted == pctComplete && 99 != m_lastPercentCompleted)
         {
         printf("...");
         }
@@ -560,9 +574,17 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonitor::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CollectingTileMeshes == task) ? "Publishing tiles" : "Generating range tree";
+    Utf8String newTaskName;
+    switch (task)
+        {
+        case ITileGenerationProgressMonitor::TaskName::PopulatingCache:         newTaskName = "Populating cache"; break;
+        case ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes:     newTaskName = "Generating tile tree"; break;
+        case ITileGenerationProgressMonitor::TaskName::CollectingTileMeshes:    newTaskName = "Publishing tiles"; break;
+        default:                                                                BeAssert(false); newTaskName = "Unknown task"; break;
+        }
+
     if (!m_taskName.Equals(newTaskName))
         {
         m_lastPercentCompleted = 0xffffffff;
@@ -579,8 +601,11 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
+    static size_t           s_maxPointsPerTile = 20000;
+
+    TileViewControllerFilter filter(m_viewController);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), s_maxPointsPerTile, &filter, &progressMeter);
 
     DRange3d            range;
 
@@ -705,7 +730,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory);
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth());
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"
