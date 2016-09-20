@@ -52,6 +52,9 @@ $(o)OsmSource$(oext) : $(baseDir)OsmSource.cpp $(PublicApiDir)OsmSource.h ${Mult
 
 $(o)RealitySerialization$(oext) : $(baseDir)RealitySerialization.cpp $(baseDir)RealitySerialization.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
 
+$(o)RealitySerializationV1$(oext) : $(baseDir)RealitySerializationV1.cpp ${MultiCompileDepends}
+
+$(o)RealitySerializationV2$(oext) : $(baseDir)RealitySerializationV2.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

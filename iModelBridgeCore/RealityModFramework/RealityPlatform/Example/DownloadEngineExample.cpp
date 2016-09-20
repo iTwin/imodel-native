@@ -169,10 +169,10 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             if (NULL == pSource)
                 continue;
 
-            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFileSize());
-            RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
+            WString filename = createDirWithHash(pSource->GetUri().GetSource(), sOutputFolder, realityData->GetSource(0).GetSize());
+            RealityDataDownload::ExtractFileName(filename, pSource->GetUri().GetSource());
             wMirrors = bvector<std::pair<AString, WString>>();
-            wMirrors.push_back(std::make_pair(pSource->GetUri(), filename));
+            wMirrors.push_back(std::make_pair(pSource->GetUri().GetSource(), filename));
             wSisters = bvector<bvector<std::pair<AString, WString>>>();
             wSisters.push_back(wMirrors);
             urlList.push_back(wSisters); //insert each entry as completely independant from the others

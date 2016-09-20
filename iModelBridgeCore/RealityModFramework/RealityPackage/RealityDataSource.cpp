@@ -11,53 +11,138 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
+
+//=======================================================================================
+//                                    Uri
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UriPtr Uri::Create(Utf8CP resourceIdentifier)
+    {
+    Utf8String resIdStr(resourceIdentifier);
+    size_t pos = resIdStr.find("#");
+    if (pos == Utf8String::npos)
+        return new Uri(resourceIdentifier, NULL);
+
+    Utf8String source = resIdStr.substr(0, pos);
+    Utf8String fileInCompound = resIdStr.substr(pos+1);
+    return new Uri(source.c_str(), fileInCompound.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UriPtr Uri::Create(Utf8CP source, Utf8CP fileInCompound)
+    {
+    return new Uri(source, fileInCompound);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR Uri::GetSource() const { return m_source; }
+Utf8StringCR Uri::GetFileInCompound() const { return m_fileInCompound; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8String Uri::ToString() const
+    {
+    if (m_fileInCompound.empty())
+        return m_source;
+
+    return (m_source + "#" + m_fileInCompound);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Uri::Uri(Utf8CP source, Utf8CP fileInCompound)
+    :m_source(source), m_fileInCompound(fileInCompound) 
+    {}
+
+
 //=======================================================================================
 //                              RealityDataSource
 //=======================================================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   
-//----------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourcePtr RealityDataSource::Create(UriR uri, Utf8CP type)
+{
+    if (uri.ToString().empty())
+        return NULL;
 
-bool RealityDataSource::IsMultiBand() const {return _IsMultiBand();}
-
-Utf8StringCR RealityDataSource::GetUri() const { return m_uri; }
-void RealityDataSource::SetUri(Utf8CP uri) { m_uri = uri; }
-
-Utf8StringCR RealityDataSource::GetType() const { return m_type; }
-void RealityDataSource::SetType(Utf8CP type) { m_type = type; }
-
-Utf8StringCR RealityDataSource::GetCopyright() const { return m_copyright; }
-void RealityDataSource::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
-
-Utf8StringCR RealityDataSource::GetId() const { return m_id; }
-void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
-
-Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
-void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
-
-uint64_t RealityDataSource::GetFileSize() const { return m_filesize; }
-void RealityDataSource::SetFileSize(uint64_t filesize) { m_filesize = filesize; }
-
-Utf8StringCR RealityDataSource::GetFileInCompound() const { return m_fileInCompound; }
-void RealityDataSource::SetFileInCompound(Utf8CP filename) { m_fileInCompound = filename; }
-
-Utf8StringCR RealityDataSource::GetMetadata() const { return m_metadata; }
-void RealityDataSource::SetMetadata(Utf8CP metadata) { m_metadata = metadata; }
-
-const bvector<Utf8String>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
-void RealityDataSource::SetSisterFiles(const bvector<Utf8String>& sisterFiles) { m_sisterFiles = sisterFiles; }
-
-
-// Default _IsMultiBand() implementation to be overriden by multiband class.
-bool RealityDataSource::_IsMultiBand() const {return false;}
+    return new RealityDataSource(uri, type);
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-Utf8CP RealityDataSource::_GetElementName() const 
+RealityDataSourcePtr RealityDataSource::Create(Utf8CP uri, Utf8CP type)
     {
-    BeAssert("Child class must override _GetElementName()" && typeid(*this) == typeid(RealityDataSource));  
-    return PACKAGE_ELEMENT_Source;
+    if (Utf8String::IsNullOrEmpty(uri))
+        return NULL;
+
+    return new RealityDataSource(uri, type);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   
+//----------------------------------------------------------------------------------------
+UriCR RealityDataSource::GetUri() const { return *m_pUri; }
+void RealityDataSource::SetUri(UriR uri) { m_pUri = &uri; }
+
+Utf8StringCR RealityDataSource::GetType() const { return m_type; }
+void RealityDataSource::SetType(Utf8CP type) { m_type = type; }
+
+Utf8StringCR RealityDataSource::GetId() const { return m_id; }
+void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
+
+Utf8StringCR RealityDataSource::GetCopyright() const { return m_copyright; }
+void RealityDataSource::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
+
+Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
+void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+uint64_t RealityDataSource::GetSize() const { return m_size; }
+void RealityDataSource::SetSize(uint64_t size) { m_size = size; }
+
+Utf8StringCR RealityDataSource::GetMetadata() const { return m_metadata; }
+void RealityDataSource::SetMetadata(Utf8CP metadata) { m_metadata = metadata; }
+
+Utf8StringCR RealityDataSource::GetMetadataType() const { return m_metadataType; }
+void RealityDataSource::SetMetadataType(Utf8CP type) { m_metadataType = type; }
+
+Utf8StringCR RealityDataSource::GetGeoCS() const { return m_geocs; }
+void RealityDataSource::SetGeoCS(Utf8CP geocs) { m_geocs = geocs; }
+
+Utf8StringCR RealityDataSource::GetNoDataValue() const { return m_nodatavalue; }
+void RealityDataSource::SetNoDataValue(Utf8CP nodatavalue) { m_nodatavalue = nodatavalue; }
+
+const bvector<Utf8String>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
+void RealityDataSource::SetSisterFiles(const bvector<Utf8String>& sisterFiles) { m_sisterFiles = sisterFiles; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8CP RealityDataSource::GetElementName() const
+    {
+    return _GetElementName();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+RealityDataSource::RealityDataSource(UriR uri, Utf8CP type)
+    {
+    BeAssert(!uri.ToString().empty());
+    m_pUri = &uri;
+    m_type = type;
+
+    m_size = 0;     // Default.
+    m_sisterFiles = bvector<Utf8String>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------
@@ -65,114 +150,55 @@ Utf8CP RealityDataSource::_GetElementName() const
 //----------------------------------------------------------------------------------------
 RealityDataSource::RealityDataSource(Utf8CP uri, Utf8CP type)
     {
-    BeAssert(!Utf8String::IsNullOrEmpty(uri) && !Utf8String::IsNullOrEmpty(type));
-    m_uri = uri;
+    BeAssert(!Utf8String::IsNullOrEmpty(uri));
+    m_pUri = Uri::Create(uri);
     m_type = type;
 
-    m_filesize = 0;     // Default.
+    m_size = 0;     // Default.
     m_sisterFiles = bvector<Utf8String>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSource::~RealityDataSource(){}
+RealityDataSource::~RealityDataSource() {}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSource::Create(Utf8CP uri, Utf8CP type)
+Utf8CP RealityDataSource::_GetElementName() const
     {
-    if (Utf8String::IsNullOrEmpty(uri) || Utf8String::IsNullOrEmpty(type))
-        return NULL;
-        
-    return new RealityDataSource(uri, type);
+    BeAssert("Child class must override _GetElementName()" && typeid(*this) == typeid(RealityDataSource));
+    return PACKAGE_ELEMENT_Source;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
-    {
-    if(BEXML_Success != dataSourceNode.GetAttributeStringValue (m_uri, PACKAGE_SOURCE_ATTRIBUTE_Uri) ||
-       BEXML_Success != dataSourceNode.GetAttributeStringValue (m_type, PACKAGE_SOURCE_ATTRIBUTE_Type))
-        return RealityPackageStatus::MissingSourceAttribute;
-
-    // &&JFC TODO: Create an object for url.
-    // Split full uri if it is a compound type (uri#fileInCompound).
-    m_fileInCompound = "";
-    if (Utf8String::npos != m_uri.find("#"))
-        {
-        size_t delimPos = m_uri.find("#");
-        m_fileInCompound = m_uri.substr(delimPos + 1);
-        m_uri = m_uri.substr(0, delimPos - 1);
-        }
-
-    // Optional fields.
-    dataSourceNode.GetContent(m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
-    dataSourceNode.GetContent(m_id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
-    dataSourceNode.GetContent(m_provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
-    dataSourceNode.GetContentUInt64Value(m_filesize, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize);
-    dataSourceNode.GetContent(m_metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-
-    // &&JFC TODO: Create bvector from comma-separated list.
-    Utf8String sisterFilesAsString;
-    dataSourceNode.GetContent(sisterFilesAsString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
-
-
-    return RealityPackageStatus::Success;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
-    {
-    if(m_uri.empty() || m_type.empty())
-        return RealityPackageStatus::MissingSourceAttribute;
-
-    // Construct full uri if compound type (uri#fileInCompound).
-    if (m_fileInCompound.empty())
-        dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, m_uri.c_str());
-    else
-        {
-        Utf8String compoundUri = m_uri + "#" + m_fileInCompound;
-        dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, compoundUri.c_str());
-        }
-    
-
-    
-    dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, m_type.c_str());
-
-    // Optional fields.
-    if (!m_copyright.empty())
-        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
-
-    if (!m_id.empty())
-        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Id, m_id.c_str());
-
-    if (!m_provider.empty())
-        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Provider, m_provider.c_str());
-
-    if (0 != m_filesize)
-        dataSourceNode.AddElementUInt64Value(PACKAGE_ELEMENT_Filesize, m_filesize);
-
-    if (!m_metadata.empty())
-        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Metadata, m_metadata.c_str());
-
-    // Create comma-separated list from bvector.
-    Utf8String sisterFilesAsString;
-    if (!sisterFilesAsString.empty())
-        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_SisterFiles, sisterFilesAsString.c_str());
-
-
-    return RealityPackageStatus::Success;
-    }
-
 
 //=======================================================================================
 //                              WmsDataSource
 //=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+WmsDataSourcePtr WmsDataSource::Create(UriR uri)
+{
+    if (uri.ToString().empty())
+        return NULL;
+
+    return new WmsDataSource(uri);
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+WmsDataSourcePtr WmsDataSource::Create(Utf8CP uri)
+    {
+    if (Utf8String::IsNullOrEmpty(uri))
+        return NULL;
+
+    UriPtr pUri = Uri::Create(uri);
+
+    return new WmsDataSource(*pUri);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  
 //----------------------------------------------------------------------------------------
@@ -182,35 +208,26 @@ void WmsDataSource::SetMapSettings(Utf8CP mapSettings) { m_mapSettings = mapSett
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WmsDataSource::WmsDataSource(Utf8CP uri)
+WmsDataSource::WmsDataSource(UriR uri)
     :RealityDataSource(uri, WMS_SOURCE_TYPE)
-    {
-    }
+    {}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WmsDataSource::~WmsDataSource(){}
+WmsDataSource::~WmsDataSource() {}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 Utf8CP WmsDataSource::_GetElementName() const {return PACKAGE_ELEMENT_WmsSource;}
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-WmsDataSourcePtr WmsDataSource::Create(Utf8CP uri)
-    {
-    if (Utf8String::IsNullOrEmpty(uri))
-        return NULL;
-        
-    return new WmsDataSource(uri);
-    }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
+/*
 RealityPackageStatus WmsDataSource::_Read(BeXmlNodeR dataSourceNode)
     {
     // Always read base first.
@@ -226,10 +243,12 @@ RealityPackageStatus WmsDataSource::_Read(BeXmlNodeR dataSourceNode)
 
     return status;
     }
+*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
+/*
 RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
     {
     // Always write base first.
@@ -251,33 +270,11 @@ RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
 
     return status;
     }
+*/
 
 //=======================================================================================
 //                              OsmDataSource
 //=======================================================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                  
-//----------------------------------------------------------------------------------------
-Utf8StringCR OsmDataSource::GetOsmResource() const { return m_osmResource; }
-void OsmDataSource::SetOsmResource(Utf8CP osmResource) { m_osmResource = osmResource; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-OsmDataSource::OsmDataSource(Utf8CP uri)
-    :RealityDataSource(uri, OSM_SOURCE_TYPE)
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-OsmDataSource::~OsmDataSource() {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-Utf8CP OsmDataSource::_GetElementName() const { return PACKAGE_ELEMENT_OsmSource; }
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
@@ -306,9 +303,33 @@ OsmDataSourcePtr OsmDataSource::Create(Utf8CP uri, DRange2dCP bbox)
     return new OsmDataSource(fullUri.c_str());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+Utf8StringCR OsmDataSource::GetOsmResource() const { return m_osmResource; }
+void OsmDataSource::SetOsmResource(Utf8CP osmResource) { m_osmResource = osmResource; }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
+OsmDataSource::OsmDataSource(Utf8CP uri)
+    :RealityDataSource(uri, OSM_SOURCE_TYPE)
+    {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+OsmDataSource::~OsmDataSource() {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+Utf8CP OsmDataSource::_GetElementName() const { return PACKAGE_ELEMENT_OsmSource; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+/*
 RealityPackageStatus OsmDataSource::_Read(BeXmlNodeR dataSourceNode)
     {
     // Always read base first.
@@ -324,10 +345,12 @@ RealityPackageStatus OsmDataSource::_Read(BeXmlNodeR dataSourceNode)
 
     return status;
     }
+*/
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
+/*
 RealityPackageStatus OsmDataSource::_Write(BeXmlNodeR dataSourceNode) const
     {
     // Always write base first.
@@ -349,3 +372,52 @@ RealityPackageStatus OsmDataSource::_Write(BeXmlNodeR dataSourceNode) const
 
     return status;
     }
+*/
+
+
+//=======================================================================================
+//                              MultiBandSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourcePtr MultiBandSource::Create(UriR uri, Utf8CP type)
+    {
+    if (uri.ToString().empty())
+        return NULL;
+
+    return new MultiBandSource(uri, type);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceCP MultiBandSource::GetRedBand() const { return m_pRedBand.get(); }
+void MultiBandSource::SetRedBand(RealityDataSourceR band) { m_pRedBand = &band; }
+
+RealityDataSourceCP MultiBandSource::GetGreenBand() const { return m_pGreenBand.get(); }
+void MultiBandSource::SetGreenBand(RealityDataSourceR band) { m_pGreenBand = &band; }
+
+RealityDataSourceCP MultiBandSource::GetBlueBand() const { return m_pBlueBand.get(); }
+void MultiBandSource::SetBlueBand(RealityDataSourceR band) { m_pBlueBand = &band; }
+
+RealityDataSourceCP MultiBandSource::GetPanchromaticBand() const { return m_pPanchromaticBand.get(); }
+void MultiBandSource::SetPanchromaticBand(RealityDataSourceR band) { m_pPanchromaticBand = &band; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+MultiBandSource::MultiBandSource(UriR uri, Utf8CP type)
+    :RealityDataSource(uri, type)
+    {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+MultiBandSource::~MultiBandSource() {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8CP MultiBandSource::_GetElementName() const { return PACKAGE_ELEMENT_MultiBandSource; }
+

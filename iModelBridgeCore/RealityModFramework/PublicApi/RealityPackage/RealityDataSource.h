@@ -17,128 +17,153 @@ BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
 struct RealityDataSourceSerializer;
 
+//=====================================================================================
+//! Resource identifier. The uri can be separated in two parts by the presence of a 
+//! hash sign (#). The first part indicates the location and the name of a compound 
+//! document and the later part identify the file(s) within the compound.
+//! @bsiclass                                   Jean-Francois.Cote              9/2016
+//=====================================================================================
+struct Uri : public RefCountedBase
+    {
+    public:
+        friend struct RealityDataSource;
+
+        //! Get/Set the source type.
+        REALITYPACKAGE_EXPORT static UriPtr Create(Utf8CP resourceIdentifier);
+        REALITYPACKAGE_EXPORT static UriPtr Create(Utf8CP source, Utf8CP fileInCompound);
+
+        //! Get the first part of the identifier e.g. the full path of the document.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetSource() const;
+
+        //! Get the later part of the identifier e.g. the file in the compound document. Null if the source is not a compound document.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetFileInCompound() const;
+
+        //! Get the complete identifier as a string.
+        REALITYPACKAGE_EXPORT Utf8String ToString() const;
+
+    protected:
+        Uri() {}
+        Uri(Utf8CP source, Utf8CP fileInCompound);
+
+    private:
+        Utf8String m_source;
+        Utf8String m_fileInCompound;
+    };
+
 //=======================================================================================
 //! Base class for all reality data source.
 //! @bsiclass
 //=======================================================================================
 struct RealityDataSource : public RefCountedBase
-{
-public:
-    friend struct RealityDataSourceSerializer; 
+    {
+    public:
+        friend struct RealityDataSourceSerializer; 
 
-    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(Utf8CP uri, Utf8CP type);
+        REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(Utf8CP uri, Utf8CP type);
+        REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(UriR uri, Utf8CP type);
 
-    REALITYPACKAGE_EXPORT bool         IsMultiBand() const;
+        //! Get/Set the source uri. It could be a full URL or a path relative to the package file.
+        //! ex: "http://www.Bentley.com/logo.jpg"
+        //!     "./imagery/road.jpg"
+        REALITYPACKAGE_EXPORT UriCR        GetUri() const;
+        REALITYPACKAGE_EXPORT void         SetUri(UriR uri);
 
+        //! Get/Set the source type.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetType() const;
+        REALITYPACKAGE_EXPORT void         SetType(Utf8CP type);
 
-    //! Get/Set the source uri. It could be a full URL or a path relative to the package file.
-    //! ex: "http://www.Bentley.com/logo.jpg"
-    //!     "./imagery/road.jpg"
-    REALITYPACKAGE_EXPORT Utf8StringCR GetUri() const;
-    REALITYPACKAGE_EXPORT void         SetUri(Utf8CP uri);
+        //! Get/Set the id. Might be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetId() const;
+        REALITYPACKAGE_EXPORT void         SetId(Utf8CP id);
 
-    //! Get/Set the source type.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetType() const;
-    REALITYPACKAGE_EXPORT void         SetType(Utf8CP type);
+        //! Get/Set the copyright. Might be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
+        REALITYPACKAGE_EXPORT void         SetCopyright(Utf8CP copyright);       
 
+        //! Get/Set the provider. Might be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetProvider() const;
+        REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
 
+        //! Get/Set the size in kilobytes. Default to 0.
+        REALITYPACKAGE_EXPORT uint64_t     GetSize() const;
+        REALITYPACKAGE_EXPORT void         SetSize(uint64_t sizeInKB);
 
-    //! Get/Set the copyright. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
-    REALITYPACKAGE_EXPORT void         SetCopyright(Utf8CP copyright);
+        //! Get/Set the metadata. Might be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetMetadata() const;
+        REALITYPACKAGE_EXPORT void         SetMetadata(Utf8CP metadata);
 
-    //! Get/Set the id. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetId() const;
-    REALITYPACKAGE_EXPORT void         SetId(Utf8CP id);
+        //! Indicates the type of metadata. This is a string.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetMetadataType() const;
+        REALITYPACKAGE_EXPORT void         SetMetadataType(Utf8CP metadataType);
 
-    //! Get/Set the provider. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetProvider() const;
-    REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
+        //! Indicates the default geographic coordinate system keyname. May be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetGeoCS() const;
+        REALITYPACKAGE_EXPORT void         SetGeoCS(Utf8CP geoCS);
 
-    //! Get/Set the filesize in kilobytes. Default to 0.
-    REALITYPACKAGE_EXPORT uint64_t     GetFileSize() const;
-    REALITYPACKAGE_EXPORT void         SetFileSize(uint64_t filesizeInKB);
+        //! Specifies the no data value if it is not integrally part of the format. May be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetNoDataValue() const;
+        REALITYPACKAGE_EXPORT void         SetNoDataValue(Utf8CP nodatavalue);
 
-    //! Get/Set the full path for the main file in a compound type. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetFileInCompound() const;
-    REALITYPACKAGE_EXPORT void         SetFileInCompound(Utf8CP filename);
+        //! Get/Set the sister files. Might be empty.
+        REALITYPACKAGE_EXPORT const bvector<Utf8String>& GetSisterFiles() const;
+        REALITYPACKAGE_EXPORT void                       SetSisterFiles(const bvector<Utf8String>& sisterFiles);   
 
-    //! Get/Set the metadata. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetMetadata() const;
-    REALITYPACKAGE_EXPORT void         SetMetadata(Utf8CP metadata);
-
-#if (0)
-    //! Indicates the type of metadata. This is a string.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetMetadataType() const;
-    REALITYPACKAGE_EXPORT void         SetMetadataType(Utf8CP metadataType);
-
-    //! Indicates the default geographic coordinate system keyname. May be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetGeoCS() const;
-    REALITYPACKAGE_EXPORT void         SetGeoCS(Utf8CP geoCS);    
-#endif
-
-    //! Get/Set the sister files. Might be empty.
-    REALITYPACKAGE_EXPORT const bvector<Utf8String>& GetSisterFiles() const;
-    REALITYPACKAGE_EXPORT void                       SetSisterFiles(const bvector<Utf8String>& sisterFiles);
+        //! Get the element name.
+        REALITYPACKAGE_EXPORT Utf8CP GetElementName() const;
    
+    protected:
+        RealityDataSource(){}
+        RealityDataSource(Utf8CP uri, Utf8CP type);
+        RealityDataSource(UriR uri, Utf8CP type);
+        virtual ~RealityDataSource();
 
+        // Must be re-implemented by each child class.  Used by serialization.
+        virtual Utf8CP _GetElementName() const;
 
-protected:
-    RealityDataSource(){}
-    RealityDataSource(Utf8CP uri, Utf8CP type);
-    virtual ~RealityDataSource();
-
-    // Must be re-implemented by each child class.  Used by serialization.
-    virtual Utf8CP _GetElementName() const;
-
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
-
-    virtual bool                 _IsMultiBand() const;
-private:
-    Utf8String m_uri;
-    Utf8String m_type;
-    Utf8String m_copyright;
-    Utf8String m_id;
-    Utf8String m_provider;
-    uint64_t m_filesize;
-    Utf8String m_fileInCompound;
-    Utf8String m_metadata;
-    bvector<Utf8String> m_sisterFiles;
-};
+    private:
+        UriPtr m_pUri;
+        Utf8String m_type;
+        Utf8String m_copyright;
+        Utf8String m_id;
+        Utf8String m_provider;
+        uint64_t m_size;
+        Utf8String m_metadata;
+        Utf8String m_metadataType;
+        Utf8String m_geocs;
+        Utf8String m_nodatavalue;
+        bvector<Utf8String> m_sisterFiles;
+    };
 
 //=======================================================================================
 //! Base class for data source.
 //! @bsiclass
 //=======================================================================================
 struct WmsDataSource : public RealityDataSource
-{
+    {
     DEFINE_T_SUPER(RealityDataSource)
 
-public:
-    friend struct RealityDataSourceSerializer; 
+    public:
+        friend struct RealityDataSourceSerializer; 
 
-    REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(Utf8CP uri);
+        REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(Utf8CP uri);
+        REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(UriR uri);
 
-    //! Get/Set The source data.
-    //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
-    //! You can take a look at PublicApi/RealityPlatform/WmsSource.h for more details on the structure of a WmsMapSettings object.
-    REALITYPACKAGE_EXPORT Utf8StringCR  GetMapSettings() const;
-    REALITYPACKAGE_EXPORT void          SetMapSettings(Utf8CP mapSettings);
+        //! Get/Set The source data.
+        //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
+        //! You can take a look at PublicApi/RealityPlatform/WmsSource.h for more details on the structure of a WmsMapSettings object.
+        REALITYPACKAGE_EXPORT Utf8StringCR  GetMapSettings() const;
+        REALITYPACKAGE_EXPORT void          SetMapSettings(Utf8CP mapSettings);
 
-protected:
-    WmsDataSource(){}
-    WmsDataSource(Utf8CP uri);
-    virtual ~WmsDataSource();
+    protected:
+        WmsDataSource(){}
+        WmsDataSource(UriR uri);
+        virtual ~WmsDataSource();
 
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
+        virtual Utf8CP _GetElementName() const;
 
-    virtual Utf8CP _GetElementName() const;
-
-private:
-    Utf8String m_mapSettings;
-};
+    private:
+        Utf8String m_mapSettings;
+    };
 
 //=======================================================================================
 //! Class for OSM data source. This class is deprecated and is only used to deserialized
@@ -165,14 +190,56 @@ struct OsmDataSource : public RealityDataSource
         OsmDataSource(Utf8CP uri);
         virtual ~OsmDataSource();
 
-        virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
-        virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
-
         virtual Utf8CP _GetElementName() const;
 
     private:
         Utf8String m_osmResource;
     };
+
+//=======================================================================================
+//! Class for a multiband raster data. Normally it does not apply to any other type. 
+//! When the source is of this type, the attribute 'uri' of the source should contain 
+//! either one of the bands, ideally the panchromatic if present.
+//! @bsiclass
+//=======================================================================================
+struct MultiBandSource : public RealityDataSource
+{
+    DEFINE_T_SUPER(RealityDataSource)
+
+public:
+    friend struct RealityDataSourceSerializer;
+
+    REALITYPACKAGE_EXPORT static MultiBandSourcePtr Create(UriR uri, Utf8CP type);
+
+    //! Get/Set the red band. 
+    REALITYPACKAGE_EXPORT RealityDataSourceCP GetRedBand() const;
+    REALITYPACKAGE_EXPORT void SetRedBand(RealityDataSourceR band);
+
+    //! Get/Set the green band.
+    REALITYPACKAGE_EXPORT RealityDataSourceCP GetGreenBand() const;
+    REALITYPACKAGE_EXPORT void SetGreenBand(RealityDataSourceR band);
+
+    //! Get/Set the green band.
+    REALITYPACKAGE_EXPORT RealityDataSourceCP GetBlueBand() const;
+    REALITYPACKAGE_EXPORT void SetBlueBand(RealityDataSourceR band);
+
+    //! Get/Set the panchromatic band.
+    REALITYPACKAGE_EXPORT RealityDataSourceCP GetPanchromaticBand() const;
+    REALITYPACKAGE_EXPORT void SetPanchromaticBand(RealityDataSourceR band);
+
+protected:
+    MultiBandSource() {}
+    MultiBandSource(UriR uri, Utf8CP type);
+    virtual ~MultiBandSource();
+
+    virtual Utf8CP _GetElementName() const;
+
+private:
+    RealityDataSourcePtr m_pRedBand;
+    RealityDataSourcePtr m_pGreenBand;
+    RealityDataSourcePtr m_pBlueBand;
+    RealityDataSourcePtr m_pPanchromaticBand;
+};
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE
 

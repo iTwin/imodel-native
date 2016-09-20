@@ -21,7 +21,8 @@ namespace RealityDataPackageWrapper { ref class ImageryGroupNet; }
 namespace RealityDataPackageWrapper { ref class ModelGroupNet; }
 namespace RealityDataPackageWrapper { ref class PinnedGroupNet; }
 namespace RealityDataPackageWrapper { ref class TerrainGroupNet; }
-namespace RealityDataPackageWrapper { ref class RealityDataSourceNet; }
+namespace RealityDataPackageWrapper { ref class DataGroupNet; }
+namespace RealityDataPackageWrapper { ref class DataSourceNet; }
 
 namespace RealityDataPackageWrapper
     {   
@@ -31,21 +32,38 @@ namespace RealityDataPackageWrapper
     public ref class RealityDataPackageNet
         {
         public:
-            //! Create package.
-            static void Create(System::String^ location, 
-                               System::String^ name,
-                               System::String^ description,
-                               System::String^ copyright,
-                               System::String^ packageId,
-                               List<double>^ regionOfInterest,
-                               ImageryGroupNet^ imageryData,
-                               ModelGroupNet^ modelData,
-                               PinnedGroupNet^ pinnedData,
-                               TerrainGroupNet^ terrainData);
+            //! Create version 1 package.
+            static void CreateV1(System::String^ location,
+                                 System::String^ name,
+                                 System::String^ description,
+                                 System::String^ copyright,
+                                 System::String^ id,
+                                 List<double>^ regionOfInterest,
+                                 ImageryGroupNet^ imageryGroup,
+                                 ModelGroupNet^ modelGroup,
+                                 PinnedGroupNet^ pinnedGroup,
+                                 TerrainGroupNet^ terrainGroup);
+
+            //! Create version 2 package.
+            static void CreateV2(System::String^ location, 
+                                 System::String^ origin,
+                                 System::String^ name,
+                                 System::String^ description,
+                                 System::String^ copyright,
+                                 System::String^ id,
+                                 List<double>^ regionOfInterest,
+                                 ImageryGroupNet^ imageryGroup,
+                                 ModelGroupNet^ modelGroup,
+                                 PinnedGroupNet^ pinnedGroup,
+                                 TerrainGroupNet^ terrainGroup);
         
         private:
             RealityDataPackageNet();
             ~RealityDataPackageNet();
+
+            static RealityPackage::RealityDataSourcePtr CreateDataSource(DataSourceNet^ source);
+            static RealityPackage::WmsDataSourcePtr CreateWmsDataSource(DataSourceNet^ source);
+            static RealityPackage::OsmDataSourcePtr CreateOsmDataSource(DataSourceNet^ source, RealityPackage::BoundingPolygonPtr boundingPolygon);
         };
 
     //=====================================================================================
@@ -57,15 +75,15 @@ namespace RealityDataPackageWrapper
             //! Create imagery group.
             static ImageryGroupNet^ Create();
 
-            void AddData(RealityDataSourceNet^ imageryData);
+            void AddData(DataGroupNet^ imageryData);
 
-            List<RealityDataSourceNet^>^ GetData() { return m_imageryDataList; }
+            List<DataGroupNet^>^ GetData() { return m_imageryDataList; }
 
         private:
             ImageryGroupNet();
             ~ImageryGroupNet();
 
-            List<RealityDataSourceNet^>^ m_imageryDataList;
+            List<DataGroupNet^>^ m_imageryDataList;
         };
 
     //=====================================================================================
@@ -77,15 +95,15 @@ namespace RealityDataPackageWrapper
             //! Create model group.
             static ModelGroupNet^ Create();
 
-            void AddData(RealityDataSourceNet^ modelData);
+            void AddData(DataGroupNet^ modelData);
 
-            List<RealityDataSourceNet^>^ GetData() { return m_modelDataList; }
+            List<DataGroupNet^>^ GetData() { return m_modelDataList; }
 
         private:
             ModelGroupNet();
             ~ModelGroupNet();
 
-            List<RealityDataSourceNet^>^ m_modelDataList;
+            List<DataGroupNet^>^ m_modelDataList;
         };
 
     //=====================================================================================
@@ -97,15 +115,15 @@ namespace RealityDataPackageWrapper
             //! Create pinned group.
             static PinnedGroupNet^ Create();
 
-            void AddData(RealityDataSourceNet^ pinnedData);
+            void AddData(DataGroupNet^ pinnedData);
 
-            List<RealityDataSourceNet^>^ GetData() { return m_pinnedDataList; }
+            List<DataGroupNet^>^ GetData() { return m_pinnedDataList; }
 
         private:
             PinnedGroupNet();
             ~PinnedGroupNet();
 
-            List<RealityDataSourceNet^>^ m_pinnedDataList;
+            List<DataGroupNet^>^ m_pinnedDataList;
         };
 
     //=====================================================================================
@@ -117,33 +135,73 @@ namespace RealityDataPackageWrapper
             //! Create terrain group.
             static TerrainGroupNet^ Create();
 
-            void AddData(RealityDataSourceNet^ terrainData);
+            void AddData(DataGroupNet^ terrainData);
 
-            List<RealityDataSourceNet^>^ GetData() { return m_terrainDataList; }
+            List<DataGroupNet^>^ GetData() { return m_terrainDataList; }
 
         private:
             TerrainGroupNet();
             ~TerrainGroupNet();
 
-            List<RealityDataSourceNet^>^ m_terrainDataList;
+            List<DataGroupNet^>^ m_terrainDataList;
+        };
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              7/2016
+    //=====================================================================================
+    public ref class DataGroupNet
+        {
+        public:
+            //! Create data group with main source.
+            static DataGroupNet^ Create(System::String^ id,
+                                        System::String^ name,
+                                        DataSourceNet^ source);
+
+            //! Get id.
+            System::String^ GetId() { return m_id; };
+
+            //! Get name.
+            System::String^ GetName() { return m_name; }
+
+            //! Get the number of sources.
+            int GetNumSources() { return m_sources->Count; }
+
+            //! Get the sources.
+            List<DataSourceNet^>^ GetSources() { return m_sources; }
+
+            //! Adds an alternate source to the data.
+            void AddSource(DataSourceNet^ dataSource);
+
+        protected:
+            DataGroupNet(System::String^ id,
+                           System::String^ name,
+                           DataSourceNet^ source);
+
+            ~DataGroupNet();
+
+        private:
+            System::String^ m_id;
+            System::String^ m_name;
+            List<DataSourceNet^>^ m_sources;
         };
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote               9/2015
     //=====================================================================================
-    public ref class RealityDataSourceNet
+    public ref class DataSourceNet
         {
         public:
             //! Create generic data source.
-            static RealityDataSourceNet^ Create(System::String^ uri,
-                                                System::String^ type,
-                                                System::String^ copyright,
-                                                System::String^ id,
-                                                System::String^ provider,
-                                                uint64_t filesize,
-                                                System::String^ fileInCompound,
-                                                System::String^ metadata, 
-                                                List<System::String^>^ sisterFiles);
+            static DataSourceNet^ Create(System::String^ uri,
+                                         System::String^ type,
+                                         System::String^ copyright,
+                                         System::String^ id,
+                                         System::String^ provider,
+                                         uint64_t size,
+                                         System::String^ fileInCompound,
+                                         System::String^ metadata,
+                                         System::String^ geocs,
+                                         List<System::String^>^ sisterFiles);
 
             //! Get the source uri. It could be a full URL or a path relative to the package file.
             System::String^ GetUri() { return m_uri; };
@@ -161,7 +219,7 @@ namespace RealityDataPackageWrapper
             System::String^ GetProvider() { return m_provider; }
 
             //! Get the size in kilobytes. Default is 0. 
-            uint64_t GetFileSize() { return m_filesize; }
+            uint64_t GetSize() { return m_size; }
 
             //! Get main file in compound. Might be empty.
             System::String^ GetFileInCompound() { return m_fileInCompound; }
@@ -169,21 +227,25 @@ namespace RealityDataPackageWrapper
             //! Get the metadata. Might be empty.
             System::String^ GetMetadata() { return m_metadata; }
 
+            //! Get the geocs. Might be empty.
+            System::String^ GetGeoCS() { return m_geocs; }
+
             //! Get the sister files. Might be empty.
             List<System::String^>^ GetSisterFiles() { return m_sisterFiles; }
 
         protected:
-            RealityDataSourceNet(System::String^ uri,
-                                 System::String^ type,
-                                 System::String^ copyright,
-                                 System::String^ id,
-                                 System::String^ provider,
-                                 uint64_t filesize,
-                                 System::String^ fileInCompound,
-                                 System::String^ metadata,
-                                 List<System::String^>^ sisterFiles);
+            DataSourceNet(System::String^ uri,
+                          System::String^ type,
+                          System::String^ copyright,
+                          System::String^ id,
+                          System::String^ provider,
+                          uint64_t size,
+                          System::String^ fileInCompound,
+                          System::String^ metadata,
+                          System::String^ geocs,
+                          List<System::String^>^ sisterFiles);
 
-            ~RealityDataSourceNet();
+            ~DataSourceNet();
 
         private:
             System::String^ m_uri;
@@ -191,16 +253,17 @@ namespace RealityDataPackageWrapper
             System::String^ m_copyright;
             System::String^ m_id;
             System::String^ m_provider;
-            uint64_t m_filesize;
+            uint64_t m_size;
             System::String^ m_fileInCompound;
             System::String^ m_metadata;
+            System::String^ m_geocs;
             List<System::String^>^ m_sisterFiles;
         };
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote               5/2015
     //=====================================================================================
-    public ref class WmsSourceNet : public RealityDataSourceNet
+    public ref class WmsSourceNet : public DataSourceNet
         {
         public:
             //! Create WMS data source.
@@ -210,6 +273,7 @@ namespace RealityDataPackageWrapper
                                         System::String^ provider,
                                         uint64_t filesize,
                                         System::String^ metadata,
+                                        System::String^ geocs,
                                         List<System::String^>^ sisterFiles,
                                         System::String^ mapUri,
                                         double bboxMinX,
@@ -237,6 +301,7 @@ namespace RealityDataPackageWrapper
                          System::String^ provider,
                          uint64_t filesize,
                          System::String^ metadata,
+                         System::String^ geocs,
                          List<System::String^>^ sisterFiles,
                          System::String^ mapUri,
                          double bboxMinX,
@@ -262,7 +327,7 @@ namespace RealityDataPackageWrapper
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              11/2015
     //=====================================================================================
-    public ref class OsmSourceNet : public RealityDataSourceNet
+    public ref class OsmSourceNet : public DataSourceNet
         {
         public:
             //! Create OSM data source.
@@ -272,6 +337,7 @@ namespace RealityDataPackageWrapper
                                         System::String^ provider,
                                         uint64_t filesize,
                                         System::String^ metadata,
+                                        System::String^ geocs,
                                         List<System::String^>^ sisterFiles,
                                         List<double>^ regionOfInterest,
                                         List<System::String^>^ urls);
@@ -286,6 +352,7 @@ namespace RealityDataPackageWrapper
                          System::String^ provider,
                          uint64_t filesize,
                          System::String^ metadata,
+                         System::String^ geocs,
                          List<System::String^>^ sisterFiles,
                          List<double>^ regionOfInterest,
                          List<System::String^>^ urls);

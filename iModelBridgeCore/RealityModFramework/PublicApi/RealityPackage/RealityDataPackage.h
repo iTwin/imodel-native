@@ -46,6 +46,10 @@ public:
 
     //! Return NULL is a parsing error occurs
     static BoundingPolygonPtr FromString(WStringCR);
+
+    //! Return NULL is a parsing error occurs
+    static BoundingPolygonPtr FromString(Utf8StringCR);
+
 private:
     BoundingPolygon(){};
     BoundingPolygon(bvector<DPoint2d>& pts):m_points(std::move(pts)){};
@@ -90,8 +94,8 @@ public:
     REALITYPACKAGE_EXPORT RealityPackageStatus Write(BeFileNameCR filename);
 
     //! The origin of this package file. Specified the Context service or GeoCoordinate Service server.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetPackageOrigin() const;
-    REALITYPACKAGE_EXPORT void SetPackageOrigin(Utf8CP packageOrigin);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetOrigin() const;
+    REALITYPACKAGE_EXPORT void SetOrigin(Utf8CP origin);
 
     //! The name of this package file.
     REALITYPACKAGE_EXPORT Utf8StringCR GetName() const;
@@ -106,8 +110,8 @@ public:
     REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP copyright);
 
     //! Package tracking Id. Might be empty.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetPackageId() const;
-    REALITYPACKAGE_EXPORT void SetPackageId(Utf8CP packageId);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetId() const;
+    REALITYPACKAGE_EXPORT void SetId(Utf8CP id);
 
     //! Package creation date. DateTime object might be invalid during creation. 
     REALITYPACKAGE_EXPORT DateTimeCR GetCreationDate() const;
@@ -135,10 +139,14 @@ public:
     //! Return true if during parsing unknown element(s) were found. That may indicate that new elements were added in future version of the package
     //! and these elements were ignored. Package is valid but only known elements were loaded.
     REALITYPACKAGE_EXPORT bool HasUnknownElements() const;
+    REALITYPACKAGE_EXPORT void SetUnknownElements(bool hasUnknownElements);
+
 
     //! Get package version.
     REALITYPACKAGE_EXPORT uint32_t GetMajorVersion() const;
+    REALITYPACKAGE_EXPORT void SetMajorVersion(uint32_t major);
     REALITYPACKAGE_EXPORT uint32_t GetMinorVersion() const;
+    REALITYPACKAGE_EXPORT void SetMinorVersion(uint32_t minor);
 
     REALITYPACKAGE_EXPORT static RealityDataPackagePtr CreateFromString(RealityPackageStatus& status, Utf8CP pSource, WStringP pParseError = NULL);
     
@@ -151,21 +159,14 @@ private:
 
     WString BuildCreationDateUTC();   // May update m_creationDate.
 
-    template<class Group_T>
-    RealityPackageStatus ReadDataGroup_T(Group_T& group, Utf8CP nodePath, BeXmlNodeR parent);
-
-    template<class Group_T>
-    RealityPackageStatus WriteDataGroup_T(Group_T const& group, Utf8CP nodeName, BeXmlNodeR parent);
-
-    RealityPackageStatus ReadVersion(BeXmlNodeR node);
 
     uint32_t m_majorVersion;
     uint32_t m_minorVersion;
-    Utf8String m_packageOrigin;
+    Utf8String m_origin;
     Utf8String m_name;
     Utf8String m_description;
     Utf8String m_copyright;
-    Utf8String m_packageId;
+    Utf8String m_id;
     DateTime m_creationDate;
     BoundingPolygonPtr m_pBoundingPolygon;
     bool m_hasUnknownElements;
@@ -202,10 +203,6 @@ protected:
     explicit RealityData(){}; // for persistence.
     RealityData(RealityDataSourceR dataSource);
     virtual ~RealityData();
-
-    // read/write from a dataNode.
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode);
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const;
       
 private:
     bvector<RealityDataSourcePtr> m_Sources;
@@ -250,9 +247,6 @@ private:
     ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     virtual ~ImageryData();
 
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
-
     static bool HasValidCorners(DPoint2dCP pCorners);
     void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
 
@@ -278,9 +272,6 @@ private:
     explicit ModelData(){}; // for persistence
     ModelData(RealityDataSourceR dataSource);
     virtual ~ModelData();
-
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
 };
 
 
@@ -325,9 +316,6 @@ private:
     PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
     virtual ~PinnedData();
 
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
-
     DPoint2d            m_location;        //!spatial location in long/lat
     BoundingPolygonPtr  m_area;
 };
@@ -351,9 +339,6 @@ private:
     explicit TerrainData(){}; // for persistence
     TerrainData(RealityDataSourceR dataSource);
     virtual ~TerrainData();
-
-    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
-    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
 };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE
