@@ -147,277 +147,284 @@ static Standard_Integer numIsoFromCurve(Handle(Geom_Curve) const& curve)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face, bool evaluateNurbsCurvature)
     {
-    // NOTE: Adapted from DBRep_IsoBuilder...
-    TopLoc_Location location;
-    Handle(Geom_Surface) const& surface = BRep_Tool::Surface(face, location);
-
-    if (surface.IsNull() || surface->IsKind(STANDARD_TYPE(Geom_Plane)))
-        return;
-
-    Standard_Integer numUIsos = 0, numVIsos = 0;
-    Standard_Real stepU = 0.0, stepV = 0.0, uParamStart = 0.0, vParamStart = 0.0;
-    Standard_Real faceUMin = 0.0, faceUMax = 0.0, faceVMin = 0.0, faceVMax = 0.0; 
-
-    BRepTools::UVBounds(face, faceUMin, faceUMax, faceVMin, faceVMax);
-
-    Standard_Real deltaU = Abs(faceUMax - faceUMin);
-    Standard_Real deltaV = Abs(faceVMax - faceVMin);
-    Standard_Real confusion = Min(deltaU, deltaV) * 1.e-8;
-
-    Handle(Standard_Type) kindOfSurface = surface->DynamicType();
-
-    if (STANDARD_TYPE(Geom_RectangularTrimmedSurface) == kindOfSurface)
-        kindOfSurface = Handle(Geom_RectangularTrimmedSurface)::DownCast(surface)->BasisSurface()->DynamicType();
-
-    if (STANDARD_TYPE(Geom_CylindricalSurface) == kindOfSurface || STANDARD_TYPE(Geom_ConicalSurface) == kindOfSurface)
+    try
         {
-        numUIsos = 4; // Trim will exclude iso if outside face bounds...
-        stepU = msGeomConst_piOver2;
-        uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
-        }
-    else if (STANDARD_TYPE(Geom_ToroidalSurface) == kindOfSurface || STANDARD_TYPE(Geom_SphericalSurface) == kindOfSurface)
-        {
-        numUIsos = numVIsos = 4; // Trim will exclude iso if outside face bounds...
-        stepU = stepV = msGeomConst_piOver2;
-        uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
-        vParamStart = getAdjustedRadialStartParam(faceVMin, stepV);
-        }
-    else if (STANDARD_TYPE(Geom_SurfaceOfRevolution) == kindOfSurface)
-        {
-        numUIsos = 4; // Trim will exclude iso if outside face bounds...
-        stepU = msGeomConst_piOver2;
-        uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+        // NOTE: Adapted from DBRep_IsoBuilder...
+        TopLoc_Location location;
+        Handle(Geom_Surface) const& surface = BRep_Tool::Surface(face, location);
 
-        Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
+        if (surface.IsNull() || surface->IsKind(STANDARD_TYPE(Geom_Plane)))
+            return;
 
-        if (!uCurve.IsNull())
+        Standard_Integer numUIsos = 0, numVIsos = 0;
+        Standard_Real stepU = 0.0, stepV = 0.0, uParamStart = 0.0, vParamStart = 0.0;
+        Standard_Real faceUMin = 0.0, faceUMax = 0.0, faceVMin = 0.0, faceVMax = 0.0; 
+
+        BRepTools::UVBounds(face, faceUMin, faceUMax, faceVMin, faceVMax);
+
+        Standard_Real deltaU = Abs(faceUMax - faceUMin);
+        Standard_Real deltaV = Abs(faceVMax - faceVMin);
+        Standard_Real confusion = Min(deltaU, deltaV) * 1.e-8;
+
+        Handle(Standard_Type) kindOfSurface = surface->DynamicType();
+
+        if (STANDARD_TYPE(Geom_RectangularTrimmedSurface) == kindOfSurface)
+            kindOfSurface = Handle(Geom_RectangularTrimmedSurface)::DownCast(surface)->BasisSurface()->DynamicType();
+
+        if (STANDARD_TYPE(Geom_CylindricalSurface) == kindOfSurface || STANDARD_TYPE(Geom_ConicalSurface) == kindOfSurface)
             {
-            numVIsos = numIsoFromCurve(uCurve);
-            stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
-            vParamStart = faceVMin + stepV;
+            numUIsos = 4; // Trim will exclude iso if outside face bounds...
+            stepU = msGeomConst_piOver2;
+            uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
             }
-        }
-    else
-        {
-        bool useCurvature = (evaluateNurbsCurvature || (STANDARD_TYPE(Geom_BSplineSurface) != kindOfSurface));
-
-        if (useCurvature)
+        else if (STANDARD_TYPE(Geom_ToroidalSurface) == kindOfSurface || STANDARD_TYPE(Geom_SphericalSurface) == kindOfSurface)
             {
+            numUIsos = numVIsos = 4; // Trim will exclude iso if outside face bounds...
+            stepU = stepV = msGeomConst_piOver2;
+            uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+            vParamStart = getAdjustedRadialStartParam(faceVMin, stepV);
+            }
+        else if (STANDARD_TYPE(Geom_SurfaceOfRevolution) == kindOfSurface)
+            {
+            numUIsos = 4; // Trim will exclude iso if outside face bounds...
+            stepU = msGeomConst_piOver2;
+            uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+
             Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
 
-            numVIsos = (!uCurve.IsNull() ? numIsoFromCurve(uCurve) : 0);
-            }
-        else
-            {
-            numVIsos = 9; // Produces 10 V rules...
-            }
-
-        stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
-        vParamStart = faceVMin + stepV;
-
-        if (useCurvature)
-            {
-            Handle(Geom_Curve) vCurve = surface->VIso(faceVMin);
-
-            numUIsos = (!vCurve.IsNull() ? numIsoFromCurve(vCurve) : 0);
-            }
-        else
-            {
-            numUIsos = 9; // Produces 10 U rules...
-            }
-
-        stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
-        uParamStart = faceUMin + stepU;
-        }
-
-    if (0 == numUIsos && 0 == numVIsos)
-        return;
-
-    Handle(GeomAdaptor_HSurface) hSurfAdaptor = new GeomAdaptor_HSurface(surface);
-    Adaptor3d_CurveOnSurface curveOnSurf(hSurfAdaptor);
-
-    hatcher.Clear();
-    hatcher.Confusion3d(confusion);
-
-    // Retrieving the edges and loading them into the hatcher.
-    TopExp_Explorer expEdges;
-
-    for (expEdges.Init(face.Oriented(TopAbs_FORWARD), TopAbs_EDGE); expEdges.More(); expEdges.Next())
-        {
-        Standard_Real u1, u2;
-        TopoDS_Edge const& edge = TopoDS::Edge(expEdges.Current());
-        const Handle(Geom2d_Curve) pcurve = BRep_Tool::CurveOnSurface(edge, face, u1, u2);
-
-        if (pcurve.IsNull() || Abs(u1 - u2) <= Precision::PConfusion())
-            continue;
-
-        // Check if a TrimmedCurve is necessary.
-        if (Abs(pcurve->FirstParameter()-u1) <= Precision::PConfusion() && Abs(pcurve->LastParameter()-u2) <= Precision::PConfusion())
-            {
-            hatcher.AddElement(pcurve, edge.Orientation());
-            }
-        else
-            {
-            if (!pcurve->IsPeriodic())
+            if (!uCurve.IsNull())
                 {
-                Handle(Geom2d_TrimmedCurve) trimPCurve = Handle(Geom2d_TrimmedCurve)::DownCast(pcurve);
+                numVIsos = numIsoFromCurve(uCurve);
+                stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+                vParamStart = faceVMin + stepV;
+                }
+            }
+        else
+            {
+            bool useCurvature = (evaluateNurbsCurvature || (STANDARD_TYPE(Geom_BSplineSurface) != kindOfSurface));
 
-                if (!trimPCurve.IsNull())
-                    {
-                    if (trimPCurve->BasisCurve()->FirstParameter() - u1 > Precision::PConfusion() ||
-                        trimPCurve->BasisCurve()->FirstParameter() - u2 > Precision::PConfusion() ||
-                        u1 - trimPCurve->BasisCurve()->LastParameter()  > Precision::PConfusion() ||
-                        u2 - trimPCurve->BasisCurve()->LastParameter()  > Precision::PConfusion())
-                        {
-                        hatcher.AddElement(pcurve, edge.Orientation());
-                        continue;
-                        }
-                    }
+            if (useCurvature)
+                {
+                Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
+
+                numVIsos = (!uCurve.IsNull() ? numIsoFromCurve(uCurve) : 0);
                 }
             else
                 {
-                if (pcurve->FirstParameter() - u1 > Precision::PConfusion())
-                    u1 = pcurve->FirstParameter();
-
-                if (pcurve->FirstParameter() - u2 > Precision::PConfusion())
-                    u2 = pcurve->FirstParameter();
-
-                if (u1 - pcurve->LastParameter() > Precision::PConfusion())
-                    u1 = pcurve->LastParameter();
-
-                if (u2 - pcurve->LastParameter() > Precision::PConfusion())
-                    u2 = pcurve->LastParameter();
+                numVIsos = 9; // Produces 10 V rules...
                 }
 
-            // if U1 and U2 coincide-->do nothing
-            if (Abs(u1 - u2) <= Precision::PConfusion())
+            stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+            vParamStart = faceVMin + stepV;
+
+            if (useCurvature)
+                {
+                Handle(Geom_Curve) vCurve = surface->VIso(faceVMin);
+
+                numUIsos = (!vCurve.IsNull() ? numIsoFromCurve(vCurve) : 0);
+                }
+            else
+                {
+                numUIsos = 9; // Produces 10 U rules...
+                }
+
+            stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
+            uParamStart = faceUMin + stepU;
+            }
+
+        if (0 == numUIsos && 0 == numVIsos)
+            return;
+
+        Handle(GeomAdaptor_HSurface) hSurfAdaptor = new GeomAdaptor_HSurface(surface);
+        Adaptor3d_CurveOnSurface curveOnSurf(hSurfAdaptor);
+
+        hatcher.Clear();
+        hatcher.Confusion3d(confusion);
+
+        // Retrieving the edges and loading them into the hatcher.
+        TopExp_Explorer expEdges;
+
+        for (expEdges.Init(face.Oriented(TopAbs_FORWARD), TopAbs_EDGE); expEdges.More(); expEdges.Next())
+            {
+            Standard_Real u1, u2;
+            TopoDS_Edge const& edge = TopoDS::Edge(expEdges.Current());
+            const Handle(Geom2d_Curve) pcurve = BRep_Tool::CurveOnSurface(edge, face, u1, u2);
+
+            if (pcurve.IsNull() || Abs(u1 - u2) <= Precision::PConfusion())
                 continue;
 
-            Handle(Geom2d_TrimmedCurve) trimPCurve = new Geom2d_TrimmedCurve(pcurve, u1, u2);
-            Geom2dAdaptor_Curve trimCurve(trimPCurve);
-            hatcher.AddElement(trimCurve, edge.Orientation());
-            }
-        }
-
-    // Loading and trimming the hatchings.
-    TColStd_Array1OfReal faceUParam(numUIsos > 0 ? 1 : 0, numUIsos);
-    TColStd_Array1OfReal faceVParam(numVIsos > 0 ? 1 : 0, numVIsos);
-    TColStd_Array1OfInteger faceUInd(numUIsos > 0 ? 1 : 0, numUIsos);
-    TColStd_Array1OfInteger faceVInd(numVIsos > 0 ? 1 : 0, numVIsos);
-
-    faceUInd.Init(0);
-    faceVInd.Init(0);
-            
-    if (stepU > confusion)
-        {
-        Standard_Real uParam = uParamStart;
-        gp_Dir2d dir(0.0, 1.0);
-
-        for (Standard_Integer iIso = 1; iIso <= numUIsos; iIso++)
-            {
-            faceUParam(iIso) = uParam;
-
-            if (!((fabs(uParam - faceUMin) < confusion) || (fabs(uParam - faceUMax) < confusion)))
+            // Check if a TrimmedCurve is necessary.
+            if (Abs(pcurve->FirstParameter()-u1) <= Precision::PConfusion() && Abs(pcurve->LastParameter()-u2) <= Precision::PConfusion())
                 {
-                gp_Pnt2d origin(uParam, 0.0);
-                Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
-                faceUInd(iIso) = hatcher.AddHatching(hCurve);
+                hatcher.AddElement(pcurve, edge.Orientation());
                 }
+            else
+                {
+                if (!pcurve->IsPeriodic())
+                    {
+                    Handle(Geom2d_TrimmedCurve) trimPCurve = Handle(Geom2d_TrimmedCurve)::DownCast(pcurve);
 
-            uParam += stepU;
+                    if (!trimPCurve.IsNull())
+                        {
+                        if (trimPCurve->BasisCurve()->FirstParameter() - u1 > Precision::PConfusion() ||
+                            trimPCurve->BasisCurve()->FirstParameter() - u2 > Precision::PConfusion() ||
+                            u1 - trimPCurve->BasisCurve()->LastParameter()  > Precision::PConfusion() ||
+                            u2 - trimPCurve->BasisCurve()->LastParameter()  > Precision::PConfusion())
+                            {
+                            hatcher.AddElement(pcurve, edge.Orientation());
+                            continue;
+                            }
+                        }
+                    }
+                else
+                    {
+                    if (pcurve->FirstParameter() - u1 > Precision::PConfusion())
+                        u1 = pcurve->FirstParameter();
+
+                    if (pcurve->FirstParameter() - u2 > Precision::PConfusion())
+                        u2 = pcurve->FirstParameter();
+
+                    if (u1 - pcurve->LastParameter() > Precision::PConfusion())
+                        u1 = pcurve->LastParameter();
+
+                    if (u2 - pcurve->LastParameter() > Precision::PConfusion())
+                        u2 = pcurve->LastParameter();
+                    }
+
+                // if U1 and U2 coincide-->do nothing
+                if (Abs(u1 - u2) <= Precision::PConfusion())
+                    continue;
+
+                Handle(Geom2d_TrimmedCurve) trimPCurve = new Geom2d_TrimmedCurve(pcurve, u1, u2);
+                Geom2dAdaptor_Curve trimCurve(trimPCurve);
+                hatcher.AddElement(trimCurve, edge.Orientation());
+                }
             }
-        }
 
-    if (stepV > confusion)
-        {
-        Standard_Real vParam = vParamStart;
-        gp_Dir2d dir(1.0, 0.0);
+        // Loading and trimming the hatchings.
+        TColStd_Array1OfReal faceUParam(numUIsos > 0 ? 1 : 0, numUIsos);
+        TColStd_Array1OfReal faceVParam(numVIsos > 0 ? 1 : 0, numVIsos);
+        TColStd_Array1OfInteger faceUInd(numUIsos > 0 ? 1 : 0, numUIsos);
+        TColStd_Array1OfInteger faceVInd(numVIsos > 0 ? 1 : 0, numVIsos);
+
+        faceUInd.Init(0);
+        faceVInd.Init(0);
+            
+        if (stepU > confusion)
+            {
+            Standard_Real uParam = uParamStart;
+            gp_Dir2d dir(0.0, 1.0);
+
+            for (Standard_Integer iIso = 1; iIso <= numUIsos; iIso++)
+                {
+                faceUParam(iIso) = uParam;
+
+                if (!((fabs(uParam - faceUMin) < confusion) || (fabs(uParam - faceUMax) < confusion)))
+                    {
+                    gp_Pnt2d origin(uParam, 0.0);
+                    Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
+                    faceUInd(iIso) = hatcher.AddHatching(hCurve);
+                    }
+
+                uParam += stepU;
+                }
+            }
+
+        if (stepV > confusion)
+            {
+            Standard_Real vParam = vParamStart;
+            gp_Dir2d dir(1.0, 0.0);
+
+            for (Standard_Integer iIso = 1; iIso <= numVIsos ; iIso++)
+                {
+                faceVParam(iIso) = vParam;
+
+                if (!((fabs(vParam - faceVMin) < confusion) || (fabs(vParam - faceVMax) < confusion)))
+                    {
+                    gp_Pnt2d origin(0.0, vParam);
+                    Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
+                    faceVInd(iIso) = hatcher.AddHatching(hCurve);
+                    }
+
+                vParam += stepV;
+                }
+            }
+
+        // Computation.
+        hatcher.Trim();
+
+        for (Standard_Integer iIso = 1; iIso <= numUIsos ; iIso++)
+            {
+            Standard_Integer index = faceUInd(iIso);
+
+            if (0 != index && hatcher.TrimDone(index) && !hatcher.TrimFailed(index))
+                hatcher.ComputeDomains(index);
+            }
 
         for (Standard_Integer iIso = 1; iIso <= numVIsos ; iIso++)
             {
-            faceVParam(iIso) = vParam;
+            Standard_Integer index = faceVInd(iIso);
 
-            if (!((fabs(vParam - faceVMin) < confusion) || (fabs(vParam - faceVMax) < confusion)))
+            if (0 != index && hatcher.TrimDone(index) && !hatcher.TrimFailed(index))
+                hatcher.ComputeDomains(index);
+            }
+
+        // Iso curve output...
+        for (Standard_Integer uIso = faceUParam.Lower(); uIso <= faceUParam.Upper(); uIso++)
+            {
+            Standard_Integer uInd = faceUInd.Value(uIso);
+
+            if (0 == uInd || !hatcher.IsDone(uInd))
+                continue;
+
+	        Standard_Integer nbDom = hatcher.NbDomains(uInd);
+
+	        for (Standard_Integer iDom = 1; iDom <= nbDom; iDom++)
                 {
-                gp_Pnt2d origin(0.0, vParam);
-                Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
-                faceVInd(iIso) = hatcher.AddHatching(hCurve);
+	            HatchGen_Domain const& dom = hatcher.Domain(uInd, iDom);
+	            Standard_Real v1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceVMin;
+	            Standard_Real v2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceVMax;
+
+                if (v2 == v1 && v1 == faceVMin)
+                    v2 = faceVMax; // physical closure in v...
+
+                Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(uInd);
+                Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), v1, v2);
+                curveOnSurf.Load(hCurve2dAdaptor);
+
+                addIsoCurve(graphic, curveOnSurf);
                 }
-
-            vParam += stepV;
             }
-        }
 
-    // Computation.
-    hatcher.Trim();
-
-    for (Standard_Integer iIso = 1; iIso <= numUIsos ; iIso++)
-        {
-        Standard_Integer index = faceUInd(iIso);
-
-        if (0 != index && hatcher.TrimDone(index) && !hatcher.TrimFailed(index))
-            hatcher.ComputeDomains(index);
-        }
-
-    for (Standard_Integer iIso = 1; iIso <= numVIsos ; iIso++)
-        {
-        Standard_Integer index = faceVInd(iIso);
-
-        if (0 != index && hatcher.TrimDone(index) && !hatcher.TrimFailed(index))
-            hatcher.ComputeDomains(index);
-        }
-
-    // Iso curve output...
-    for (Standard_Integer uIso = faceUParam.Lower(); uIso <= faceUParam.Upper(); uIso++)
-        {
-        Standard_Integer uInd = faceUInd.Value(uIso);
-
-        if (0 == uInd || !hatcher.IsDone(uInd))
-            continue;
-
-	    Standard_Integer nbDom = hatcher.NbDomains(uInd);
-
-	    for (Standard_Integer iDom = 1; iDom <= nbDom; iDom++)
+        for (Standard_Integer vIso = faceVParam.Lower(); vIso <= faceVParam.Upper(); vIso++)
             {
-	        HatchGen_Domain const& dom = hatcher.Domain(uInd, iDom);
-	        Standard_Real v1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceVMin;
-	        Standard_Real v2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceVMax;
+            Standard_Integer vInd = faceVInd.Value(vIso);
 
-            if (v2 == v1 && v1 == faceVMin)
-                v2 = faceVMax; // physical closure in v...
-
-            Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(uInd);
-            Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), v1, v2);
-            curveOnSurf.Load(hCurve2dAdaptor);
-
-            addIsoCurve(graphic, curveOnSurf);
-            }
-        }
-
-    for (Standard_Integer vIso = faceVParam.Lower(); vIso <= faceVParam.Upper(); vIso++)
-        {
-        Standard_Integer vInd = faceVInd.Value(vIso);
-
-        if (0 == vInd || !hatcher.IsDone(vInd))
-            continue;
+            if (0 == vInd || !hatcher.IsDone(vInd))
+                continue;
     
-        Standard_Integer nbDom = hatcher.NbDomains(vInd);
+            Standard_Integer nbDom = hatcher.NbDomains(vInd);
 
-        for (Standard_Integer iDom = 1; iDom <= nbDom ; iDom++)
-            {
-	        HatchGen_Domain const& dom = hatcher.Domain(vInd, iDom);
-	        Standard_Real u1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceUMin;
-	        Standard_Real u2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceUMax;
+            for (Standard_Integer iDom = 1; iDom <= nbDom ; iDom++)
+                {
+	            HatchGen_Domain const& dom = hatcher.Domain(vInd, iDom);
+	            Standard_Real u1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceUMin;
+	            Standard_Real u2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceUMax;
 
-            if (u2 == u1 && u1 == faceUMin)
-                u2 = faceUMax; // physical closure in u (ex. full sweep surface of revolution)...
+                if (u2 == u1 && u1 == faceUMin)
+                    u2 = faceUMax; // physical closure in u (ex. full sweep surface of revolution)...
 
-            Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(vInd);
-            Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), u1, u2);
-            curveOnSurf.Load(hCurve2dAdaptor);
+                Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(vInd);
+                Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), u1, u2);
+                curveOnSurf.Load(hCurve2dAdaptor);
 
-            addIsoCurve(graphic, curveOnSurf);
+                addIsoCurve(graphic, curveOnSurf);
+                }
             }
+        }
+    catch (Standard_Failure)
+        {
+        // Just skip hatch lines for this problem face...
         }
     }
     
