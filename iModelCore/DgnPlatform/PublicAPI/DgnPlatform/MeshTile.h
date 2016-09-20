@@ -12,6 +12,10 @@
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+class XYZRangeTreeRoot;
+END_BENTLEY_GEOMETRY_NAMESPACE
+
 BENTLEY_RENDER_TYPEDEFS(Triangle);
 BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
@@ -22,6 +26,8 @@ BENTLEY_RENDER_TYPEDEFS(TileGeometry);
 BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
 BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
+BENTLEY_RENDER_TYPEDEFS(TileGenerationCache);
+BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
@@ -352,6 +358,35 @@ public:
 };
 
 //=======================================================================================
+//! Caches information used during tile generation.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileGenerationCache
+{
+    enum class CacheGeometry { Yes, No };
+private:
+    typedef bmap<DgnElementId, TileGeometryList>    GeometryMap;
+
+    XYZRangeTreeRoot*       m_tree;
+    mutable GeometryMap     m_geometry;
+    mutable BeMutex         m_mutex;
+    bool                    m_wantCacheGeometry;
+
+    friend struct TileGenerator; // Invokes Populate() from ctor
+    TileGenerationCache(CacheGeometry cacheGeometry=CacheGeometry::Yes);
+    void Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter);
+public:
+    DGNPLATFORM_EXPORT ~TileGenerationCache();
+
+    XYZRangeTreeRoot& GetTree() const { return *m_tree; }
+    DGNPLATFORM_EXPORT DRange3d GetRange() const;
+
+    bool WantCacheGeometry() const { return m_wantCacheGeometry; }
+    bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
+    void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
+};
+
+//=======================================================================================
 //! Represents one tile in a HLOD tree occupying a given range and containing higher-LOD
 //! child tiles within the same range.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -403,9 +438,28 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
-    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, ITileGenerationFilterR filter, DgnDbR db);
-    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, ITileGenerationFilterR filter, DgnDbR db);
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR filter, DgnDbR db, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool generatePolylines = false) const;
+    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
+    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache);
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
+};
+
+//=======================================================================================
+//! Interface adopted by an object which tracks progress of the tile generation process
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ITileGenerationProgressMonitor
+{
+    enum class TaskName
+    {
+        PopulatingCache,
+        GeneratingTileNodes,
+        CollectingTileMeshes,
+    };
+
+    virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
+    virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
+    virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
+    virtual void _SetModel (DgnModelCP dgnModel) { }
 };
 
 //=======================================================================================
@@ -422,26 +476,11 @@ struct TileGenerator
         Aborted,
     };
 
-    enum class TaskName
-    {
-        GeneratingRangeTree,
-        CollectingTileMeshes,
-    };
-
     //! Interface adopted by an object which collects generated tiles
     struct EXPORT_VTABLE_ATTRIBUTE ITileCollector
     {
         //! Invoked from one of several worker threads for each generated tile.
         virtual Status _AcceptTile(TileNodeCR tileNode) = 0;
-    };
-
-    //! Interface adopted by an object which tracks progress of the tile generation process
-    struct EXPORT_VTABLE_ATTRIBUTE IProgressMeter
-    {
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
-        virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
-        virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
-        virtual void _SetModel (DgnModelCP dgnModel) { }
     };
 
     //! Accumulates statistics during tile generation
@@ -451,16 +490,19 @@ struct TileGenerator
         size_t      m_tileDepth = 0;
         double      m_collectionTime = 0.0;
         double      m_tileCreationTime = 0.0;
+        double      m_cachePopulationTime = 0.0;
     };
 private:
-    Statistics          m_statistics;
-    IProgressMeter&     m_progressMeter;
-    Transform           m_transformFromDgn;
-    DgnDbR              m_dgndb;
+    Statistics                      m_statistics;
+    ITileGenerationProgressMonitorR m_progressMeter;
+    Transform                       m_transformFromDgn;
+    DgnDbR                          m_dgndb;
+    TileGenerationCache             m_cache;
+    size_t                          m_maxPointsPerTile;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, IProgressMeter* progressMeter=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
@@ -468,9 +510,9 @@ public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
+    TileGenerationCacheCR GetCache() const { return m_cache; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ViewControllerR view, size_t maxPointsPerTile);
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileGenerationFilterR filter, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, size_t maxPointsPerTile);
 };
 
 //=======================================================================================

@@ -40,6 +40,7 @@ enum class ParamId
     GroundHeight,
     GroundPoint,
     Tolerance,
+    Depth,
     Invalid,
 };
 
@@ -67,6 +68,7 @@ static CommandParam s_paramTable[] =
         { L"h", L"groundheight",L"Ground height (meters).", false},
         { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t", L"tolerance",L"Tolerance (meters).", false},
+        { L"d", L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -135,11 +137,11 @@ private:
     DPoint3d        m_groundPoint;      //!< Ground point. (if m_groundMode == GroundMode::FixedOrigin
     GroundMode      m_groundMode;
     double          m_tolerance;
-    bool            m_publishPolylines;
+    uint32_t        m_depth = 0xffffffff;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01), m_publishPolylines (false) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -148,7 +150,7 @@ public:
     GroundMode GetGroundMode() const { return m_groundMode; }
     DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
     double GetTolerance() const { return m_tolerance; }
-    bool GetPublishPolylines () const { return m_publishPolylines; }
+    uint32_t GetDepth() const { return m_depth; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -264,7 +266,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 m_groundMode = GroundMode::FixedHeight;
                 break;
-
+            case ParamId::Depth:
+                if (1 != swscanf (arg.m_value.c_str(), L"%u", &m_depth))
+                    {
+                    printf ("Expected unsigned integer for depth parameter");
+                    return false;
+                    }
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -296,19 +304,17 @@ private:
     TileGeneratorP              m_generator = nullptr;
     TileViewControllerFilter    m_filter;
     Status                      m_acceptTileStatus = Status::Success;
+    uint32_t                    m_publishedTileDepth;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
-    virtual ITileGenerationFilterR _GetFilter() override { return m_filter; }
+    virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
     Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint);
 
-    Json::Value GetViewJson(TransformCR transform, DPoint3dCR groundPoint);
-    Json::Value GetCategoriesJson();
-    Json::Value GetModelsJson();
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
     Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
@@ -317,7 +323,7 @@ private:
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
     //=======================================================================================
-    struct ProgressMeter : TileGenerator::IProgressMeter
+    struct ProgressMeter : ITileGenerationProgressMonitor
     {
     private:
         Utf8String          m_taskName;
@@ -329,12 +335,13 @@ private:
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher), m_model (nullptr) { }
         virtual void _SetModel (DgnModelCP model) { m_model = model; }
-        virtual void _SetTaskName(TileGenerator::TaskName task) override;
+        virtual void _SetTaskName(ITileGenerationProgressMonitor::TaskName task) override;
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, bool publishPolylines)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory, publishPolylines), m_filter(viewController)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController),
+        m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -350,7 +357,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     {
-    if (Status::Success != m_acceptTileStatus)
+    if (Status::Success != m_acceptTileStatus || tile.GetDepth() > m_publishedTileDepth)
         return TileGenerator::Status::Aborted;
 
     TilePublisher publisher(tile, *this);
@@ -377,105 +384,6 @@ static Json::Value pointToJson(DPoint3dCR pt)
     json["x"] = pt.x;
     json["y"] = pt.y;
     json["z"] = pt.z;
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Json::Value TilesetPublisher::GetIdsJson(Utf8CP tableName, T const& ids)
-    {
-    Utf8PrintfString sql("SELECT Id,CodeValue FROM %s WHERE InVirtualSet(@vset,Id)", tableName);
-    BeSQLite::Statement stmt;
-    stmt.Prepare(GetDgnDb(), sql.c_str());
-    stmt.BindVirtualSet(1, ids);
-
-    Json::Value json(Json::arrayValue);
-    while (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-        {
-        Json::Value entry(Json::objectValue);
-        entry["id"] = stmt.GetValueId<BeInt64Id>(0).ToString();
-        entry["name"] = stmt.GetValueText(1);
-        json.append(entry);
-        }
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetModelsJson()
-    {
-    return GetIdsJson(BIS_TABLE(BIS_CLASS_Model), m_viewController.GetViewedModels());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetCategoriesJson()
-    {
-    return GetIdsJson(BIS_TABLE(BIS_CLASS_Element), m_viewController.GetViewedCategories());
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetViewJson(TransformCR transform, DPoint3dCR groundPoint)
-    {
-    Json::Value json(Json::objectValue);
-
-    // URL of tileset .json
-    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
-    Utf8String tilesetUrl = rootNameUtf8;
-    tilesetUrl.append(1, '/');
-    tilesetUrl.append(rootNameUtf8);
-    tilesetUrl.append(".json");
-    json["url"] = tilesetUrl;
-
-    // Set up initial view based on view controller settings
-    DVec3d xVec, yVec, zVec;
-    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
-
-    auto cameraView = m_viewController._ToCameraView();
-    bool useCamera = nullptr != cameraView /* ###TODO? Apparently no longer possible to turn camera off && cameraView->IsCameraOn() */;
-    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
-    if (!useCamera)
-        {
-        static const double s_zRatio = 1.5;
-        DVec3d viewDelta = m_viewController.GetDelta();
-        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
-        }
-
-    transform.Multiply(viewDest);
-    transform.MultiplyMatrixOnly(yVec);
-    transform.MultiplyMatrixOnly(zVec);
-
-    yVec.Normalize();
-    zVec.Normalize();
-    zVec.Negate();      // Towards target.
-
-    // View orientation
-    json["dest"] = pointToJson(viewDest);
-    json["dir"] = pointToJson(zVec);
-    json["up"] = pointToJson(yVec);
-
-    // Geolocation
-    bool geoLocated = !m_tileToEcef.IsIdentity();
-    if (geoLocated)
-        {
-        DPoint3d    groundEcefPoint;
-
-        transform.Multiply (groundEcefPoint, groundPoint);
-        json["geolocated"] = true;
-        json["groundPoint"] = pointToJson(groundEcefPoint);
-        }
-
-    // Lists of viewed models/categories
-    json["models"] = GetModelsJson();
-    json["categories"] = GetCategoriesJson();
-
     return json;
     }
 
@@ -708,10 +616,12 @@ void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) 
     printf("Statistics:\n"
            "Tile count: %u\n"
            "Tile depth: %u\n"
-           "Range tree generation time: %.4f seconds\n"
-           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           "Cache population time: %.4f seconds\n"
+           "Tile node generation time: %.4f seconds\n"
+           "Tile publishing: %.4f seconds Average per-tile: %.4f seconds\n",
            static_cast<uint32_t>(stats.m_tileCount),
            static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_cachePopulationTime,
            stats.m_collectionTime,
            stats.m_tileCreationTime,
            0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
@@ -724,7 +634,7 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
     {
     uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
 
-    if (m_lastPercentCompleted == pctComplete)
+    if (m_lastPercentCompleted == pctComplete && 99 != m_lastPercentCompleted)
         {
         printf("...");
         }
@@ -743,9 +653,17 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+void TilesetPublisher::ProgressMeter::_SetTaskName(ITileGenerationProgressMonitor::TaskName task)
     {
-    Utf8String newTaskName = (TileGenerator::TaskName::CollectingTileMeshes == task) ? "Publishing tiles" : "Generating range tree";
+    Utf8String newTaskName;
+    switch (task)
+        {
+        case ITileGenerationProgressMonitor::TaskName::PopulatingCache:         newTaskName = "Populating cache"; break;
+        case ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes:     newTaskName = "Generating tile tree"; break;
+        case ITileGenerationProgressMonitor::TaskName::CollectingTileMeshes:    newTaskName = "Publishing tiles"; break;
+        default:                                                                BeAssert(false); newTaskName = "Unknown task"; break;
+        }
+
     if (!m_taskName.Equals(newTaskName))
         {
         m_lastPercentCompleted = 0xffffffff;
@@ -762,8 +680,11 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
+    static size_t           s_maxPointsPerTile = 20000;
+
+    TileViewControllerFilter filter(m_viewController);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), s_maxPointsPerTile, &filter, &progressMeter);
 
     DRange3d            range;
 
@@ -888,7 +809,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetPublishPolylines());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth());
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

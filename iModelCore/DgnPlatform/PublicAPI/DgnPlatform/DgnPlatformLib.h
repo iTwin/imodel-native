@@ -330,6 +330,8 @@ public:
             FreeType_LibraryP GetFreeTypeLibrary() {return _GetFreeTypeLibrary();}
             DGNPLATFORM_EXPORT void Suspend();
             DGNPLATFORM_EXPORT void Resume();
+
+            void EnsureInitialized();
         };
 
         //! Allows interaction between the host and the LineStyleManager.

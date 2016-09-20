@@ -503,6 +503,9 @@
         OnlyPlatforms="WinRT*"
         >
         <SubProduct ProductName="DgnPlatform-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/DgnPlatform-UwpTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ******************************************************************************************* -->
