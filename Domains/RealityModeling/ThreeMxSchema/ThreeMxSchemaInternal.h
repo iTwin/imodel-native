@@ -16,8 +16,8 @@
 #include <ThreeMxSchema/ThreeMxSchemaAPI.h>
 #include <ThreeMxSchema/ThreeMxHandler.h>
 
-#include <ThreeMxSchema/ThreeMxReader.h>
-#include <ThreeMxSchema/MRMesh.h>
+#include "Reader/ThreeMxReader.h"
+#include "MRMesh/MRMesh.h"
 
 #if defined (__THREEMXSCHEMA_BUILD__)
 #   define THREEMXSCHEMA_EXPORT      EXPORT_ATTRIBUTE
