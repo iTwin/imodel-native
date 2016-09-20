@@ -11,6 +11,7 @@
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
+#include <map> // NB: Because bmap doesn't support move semantics...
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -363,17 +364,27 @@ public:
 //=======================================================================================
 struct TileGenerationCache
 {
-    enum class CacheGeometry { Yes, No };
+    // ###TODO: Put upper limit on sizes of geometry source/list caches...
+    // The following options are mutually exclusive
+    enum class Options
+    {
+        None = 0,               // cache nothin
+        CacheGeometrySources,   // cache GeometrySources by element ID
+        CacheGeometryLists,     // cache TileGeometryLists by element ID
+    };
 private:
-    typedef bmap<DgnElementId, TileGeometryList>    GeometryMap;
+    typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
+    typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
-    XYZRangeTreeRoot*       m_tree;
-    mutable GeometryMap     m_geometry;
-    mutable BeMutex         m_mutex;
-    bool                    m_wantCacheGeometry;
+    XYZRangeTreeRoot*           m_tree;
+    mutable GeometryListMap     m_geometry;
+    mutable GeometrySourceMap   m_geometrySources;
+    mutable BeMutex             m_mutex;    // for geometry cache
+    mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
+    Options                     m_options;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
-    TileGenerationCache(CacheGeometry cacheGeometry=CacheGeometry::Yes);
+    TileGenerationCache(Options options = Options::CacheGeometrySources);
     void Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter);
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
@@ -381,9 +392,15 @@ public:
     XYZRangeTreeRoot& GetTree() const { return *m_tree; }
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
 
-    bool WantCacheGeometry() const { return m_wantCacheGeometry; }
+    bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
+    GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
+    void AddCachedGeometrySource(std::unique_ptr<GeometrySource>&& source, DgnElementId elementId) const;
+
+    bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
+
+    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 };
 
 //=======================================================================================

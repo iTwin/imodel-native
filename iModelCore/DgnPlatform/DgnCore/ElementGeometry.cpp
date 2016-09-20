@@ -3223,6 +3223,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSize) const
     {
+    return Draw(context, pixelSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) const
+    {
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
     Render::GeometryParams params;
 
