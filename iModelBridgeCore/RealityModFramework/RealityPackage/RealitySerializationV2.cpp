@@ -86,7 +86,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadPackageInfo(RealityDataPackage
 
     // Origin.
     Utf8String origin;
-    xmlDom.SelectNodeContent(origin, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageOrigin, pContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(origin, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Origin, pContext, BeXmlDom::NODE_BIAS_First);
     package.SetOrigin(origin.c_str());
 
     // Name.
@@ -219,10 +219,26 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
             }
 
         // Create imagery data and add alternate sources.
-        ImageryDataPtr pImgData = ImageryData::Create(*pSources[0], corners);
-        for (size_t i = 1; i < pSources.size(); ++i)
+        ImageryDataPtr pImgData;
+        if (!pSources.empty())
             {
-            pImgData->AddSource(*pSources[i]);
+            pImgData = ImageryData::Create(*pSources[0], corners);
+            pImgData->SetDataId(id.c_str());
+            pImgData->SetDataName(name.c_str());
+            for (size_t i = 1; i < pSources.size(); ++i)
+                {
+                pImgData->AddSource(*pSources[i]);
+                }
+            }
+        else if(!pMultiBandSources.empty())
+            {
+            pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
+            pImgData->SetDataId(id.c_str());
+            pImgData->SetDataName(name.c_str());
+            for (size_t i = 1; i < pMultiBandSources.size(); ++i)
+                {
+                pImgData->AddSource(*pMultiBandSources[i]);
+                }
             }
         
         // Add data to group.
@@ -524,15 +540,14 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
     {
     // Create data source from uri and type.
     Utf8String uri, type;
-    if (BEXML_Success != pSourceNode->GetAttributeStringValue(uri, PACKAGE_SOURCE_ATTRIBUTE_Uri) ||
-        BEXML_Success != pSourceNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type))
+    if (BEXML_Success != pSourceNode->GetAttributeStringValue(uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
         {
         status = RealityPackageStatus::MissingSourceAttribute;
         return NULL;
         }
-        
-
     UriPtr pUri = Uri::Create(uri.c_str());
+    pSourceNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type);
+
     RealityDataSourcePtr pDataSource = RealityDataSource::Create(*pUri, type.c_str());
     if (pDataSource == NULL)
         {
@@ -569,8 +584,11 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
     Utf8String metadataType;
     BeXmlNodeP pMetadataNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
     if (NULL != pMetadataNode)
+        {
         pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
-    
+        pDataSource->SetMetadataType(metadataType.c_str());
+        }
+
     // GeoCS.
     Utf8String geocs;
     pSourceNode->GetContent(geocs, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GeoCS);
@@ -603,23 +621,90 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
 //-------------------------------------------------------------------------------------
 MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pSourceNode)
     {
-    // Read base data source.
-    RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+    // *** Read base data source ***
+    // Create data source from uri and type.
+    Utf8String uri, type;
+    if (BEXML_Success != pSourceNode->GetAttributeStringValue(uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
+    {
+        status = RealityPackageStatus::MissingSourceAttribute;
+        return NULL;
+    }
+    UriPtr pUri = Uri::Create(uri.c_str());
+    pSourceNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type);
+
+    MultiBandSourcePtr pDataSource = MultiBandSource::Create(*pUri, type.c_str());
     if (pDataSource == NULL)
-        return NULL; // Unexpected error while creating data source.
+        {
+        status = RealityPackageStatus::UnknownError;
+        return NULL;
+        }
 
-    // Read MultiBand specific data.
-    MultiBandSourcePtr pMultiBandSource = dynamic_cast<MultiBandSourceP>(pDataSource.get());
-    if (pMultiBandSource == NULL)
-        return NULL; // Unexpected error while casting to specific source.
+    // Id.
+    Utf8String id;
+    pSourceNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
+    pDataSource->SetId(id.c_str());
 
+    // Copyright.
+    Utf8String copyright;
+    pSourceNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
+    pDataSource->SetCopyright(copyright.c_str());
+
+    // Provider.
+    Utf8String provider;
+    pSourceNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
+    pDataSource->SetProvider(provider.c_str());
+
+    // Size.
+    uint64_t size;
+    pSourceNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
+    pDataSource->SetSize(size);
+
+    // Metadata.
+    Utf8String metadata;
+    pSourceNode->GetContent(metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
+    pDataSource->SetMetadata(metadata.c_str());
+
+    // Metadata type.
+    Utf8String metadataType;
+    BeXmlNodeP pMetadataNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
+    if (NULL != pMetadataNode)
+        {
+        pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
+        pDataSource->SetMetadataType(metadataType.c_str());
+        }
+
+    // GeoCS.
+    Utf8String geocs;
+    pSourceNode->GetContent(geocs, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GeoCS);
+    pDataSource->SetGeoCS(geocs.c_str());
+
+    // NoDataValue.
+    Utf8String nodatavalue;
+    pSourceNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
+    pDataSource->SetNoDataValue(nodatavalue.c_str());
+
+    // &&JFC Sister files.
+    bvector<Utf8String> sisterFiles;
+    BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
+    if (NULL != pSisterFilesNode)
+    {
+        Utf8String file;
+        for (BeXmlNodeP pFileNode = pSisterFilesNode->GetFirstChild(); NULL != pFileNode; pFileNode = pFileNode->GetNextSibling())
+        {
+            pFileNode->GetContent(file, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
+            sisterFiles.push_back(file);
+        }
+        pDataSource->SetSisterFiles(sisterFiles);
+    }
+
+    // *** Read MultiBand specific data ***
     // Red band.
     BeXmlNodeP pRedBandNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_RedBand);
     if (pRedBandNode != NULL)
         {
         RealityDataSourcePtr pRedBandSource = ReadSource(status, pRedBandNode->GetFirstChild());
         if (pRedBandSource != NULL)
-            pMultiBandSource->SetRedBand(*pRedBandSource);
+            pDataSource->SetRedBand(*pRedBandSource);
         }    
 
     // Green band.
@@ -628,7 +713,7 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
         {
         RealityDataSourcePtr pGreenBandSource = ReadSource(status, pGreenBandNode->GetFirstChild());
         if (pGreenBandSource != NULL)
-            pMultiBandSource->SetGreenBand(*pGreenBandSource);
+            pDataSource->SetGreenBand(*pGreenBandSource);
         }
 
     // Blue band.
@@ -637,7 +722,7 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
         {
         RealityDataSourcePtr pBlueBandSource = ReadSource(status, pBlueBandNode->GetFirstChild());
         if (pBlueBandSource != NULL)
-            pMultiBandSource->SetBlueBand(*pBlueBandSource);
+            pDataSource->SetBlueBand(*pBlueBandSource);
         }
 
     // Panchromatic band.
@@ -646,10 +731,10 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
         {
         RealityDataSourcePtr pPanchromaticBandSource = ReadSource(status, pPanchromaticNode->GetFirstChild());
         if (pPanchromaticBandSource != NULL)
-            pMultiBandSource->SetPanchromaticBand(*pPanchromaticBandSource);
+            pDataSource->SetPanchromaticBand(*pPanchromaticBandSource);
         }
     
-    return pMultiBandSource;
+    return pDataSource;
     }
 
 //-------------------------------------------------------------------------------------
@@ -710,7 +795,7 @@ RealityPackageStatus RealityDataSerializerV2::WritePackageInfo(BeXmlNodeR node, 
 
     // Optional fields, if empty don't add them to the package.
     if (!package.GetOrigin().empty())
-        node.AddElementStringValue(PACKAGE_ELEMENT_PackageOrigin, package.GetOrigin().c_str());
+        node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
 
     if (!package.GetDescription().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Description, package.GetDescription().c_str());

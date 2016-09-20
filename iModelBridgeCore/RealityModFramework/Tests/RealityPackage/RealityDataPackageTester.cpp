@@ -384,6 +384,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_COPYRIGHT2                     "(c) 2015 Bentley Systems"
     #define RPACKAGE_ID2                            "7c71c780-8b52-47ba-adac-a29b407c5ac6"
     #define RPACKAGE_POLYGON2                       "-71.072445 42.339894 -71.056824 42.339894 -71.056824 42.332027 -71.072445 42.332027 -71.072445 42.339894"
+    #define RPACKAGE_SOURCE                         "Source"
     #define RPACKAGE_MULTIBANDSOURCE                "MultiBandSource"
 
     #define RPACKAGE_IMDATA_A_ID                    "412"
@@ -825,12 +826,12 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     Utf8CP packageString = 
   "<?xml version='1.0' encoding='UTF-8'?>"
   "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v2' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:noNamespaceSchemaLocation='../../RealityPackage/RealityPackage.2.0.xsd' version='2.0'>"
-  "<PackageOrigin>" RPACKAGE_ORIGIN2 "</PackageOrigin>"
+  "<Origin>" RPACKAGE_ORIGIN2 "</Origin>"
   "<Name>" RPACKAGE_NAME2 "</Name>"
   "<Description>" RPACKAGE_DESCRIPTION2 "</Description>"
   "<CreationDate>" RPACKAGE_DATE2 "</CreationDate>"
   "<Copyright>" RPACKAGE_COPYRIGHT2 "</Copyright>"
-  "<PackageId>" RPACKAGE_ID2 "</PackageId>"
+  "<Id>" RPACKAGE_ID2 "</Id>"
   "<BoundingPolygon>" RPACKAGE_POLYGON2 "</BoundingPolygon>"
   "<ImageryGroup>"
     "<ImageryData>"
@@ -935,13 +936,15 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Name>" RPACKAGE_IMDATA_E_NAME "</Name>"
         "<!-- Here is an example of a source that we know to be imagery but not the format. In this case it is a SID but the packager provider could"
              "not determine for sure prior to creation. It is then up to the application to select and interpret the data regardless no type is specified. -->"
-        "<Source uri='" RPACKAGE_IMDATA_E_SRC_1_URI_PART1 "'>"
-            "<Id>" RPACKAGE_IMDATA_E_SRC_1_ID "</Id>"
-            "<Size>" STRINGIFY(RPACKAGE_IMDATA_E_SRC_1_SIZE) "</Size>"
-            "<!-- Notice the type of the metadata. This TEXT indicates that the metadata is not in either FGDC or ISO-19115 format the only two other formats"
-            "     supported. All other formats will be indicated as TEXT to be interpreted by a human. -->"
-            "<Metadata type='" RPACKAGE_IMDATA_E_SRC_1_METTYPE "'>" RPACKAGE_IMDATA_E_SRC_1_METADATA "</Metadata>"
-        "</Source>"
+        "<Sources>"
+            "<Source uri='" RPACKAGE_IMDATA_E_SRC_1_URI_PART1 "'>"
+                "<Id>" RPACKAGE_IMDATA_E_SRC_1_ID "</Id>"
+                "<Size>" STRINGIFY(RPACKAGE_IMDATA_E_SRC_1_SIZE) "</Size>"
+                "<!-- Notice the type of the metadata. This TEXT indicates that the metadata is not in either FGDC or ISO-19115 format the only two other formats"
+                "     supported. All other formats will be indicated as TEXT to be interpreted by a human. -->"
+                "<Metadata type='" RPACKAGE_IMDATA_E_SRC_1_METTYPE "'>" RPACKAGE_IMDATA_E_SRC_1_METADATA "</Metadata>"
+            "</Source>"
+        "</Sources>"
     "</ImageryData>"
     "<ImageryData>"
         "<Id>" RPACKAGE_IMDATA_F_ID "</Id>"
@@ -1004,6 +1007,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "</Sources>"
     "</ImageryData>"
     "<ImageryData>"
+        "<Id>" RPACKAGE_IMDATA_MULTI_A_ID "</Id>"
+        "<Name>" RPACKAGE_IMDATA_MULTI_A_NAME "</Name>"
         "<Sources>"
             "<MultiBandSource uri='" RPACKAGE_IMDATA_MULTI_A_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_A_SRC_URI_TYPE "'>"
                 "<Id>" RPACKAGE_IMDATA_MULTI_A_SRC_ID "</Id>"
@@ -1011,7 +1016,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Provider>" RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER "</Provider>"
                 "<!-- Here the size will be the one of the band only but this info will not have much use -->"
                 "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE) "</Size>"
-                "<Metadata type='" RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE ">" RPACKAGE_IMDATA_MULTI_A_SRC_METADATA "</Metadata>"
+                "<Metadata type='" RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE "'>" RPACKAGE_IMDATA_MULTI_A_SRC_METADATA "</Metadata>"
                 "<!-- The coordinate system is fixed -->"
                 "<GeoCS>" RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS "</GeoCS>"
                 "<!-- The no data value is the padding color of raster file -->"
@@ -1061,7 +1066,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                         "</SisterFiles>"
                     "</Source>"
                 "</Blue>"
-                "<PanChromatic>"
+                "<Panchromatic>"
                     "<Source uri='" RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI_TYPE "'>"
                         "<Id>" RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_ID "</Id>"
                         "<Copyright>" RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_COPYRIGHT "</Copyright>"
@@ -1074,7 +1079,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                             "<File>" RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_SIS1 "</File>"
                         "</SisterFiles>"
                     "</Source>"
-                "</PanChromatic>"
+                "</Panchromatic>"
             "</MultiBandSource>"
         "</Sources>"
     "</ImageryData>"
@@ -1271,7 +1276,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_DESCRIPTION2, pPackage->GetDescription().c_str()); 
     ASSERT_STREQ(WIDEN(RPACKAGE_DATE2), pPackage->GetCreationDate().ToString().c_str()); 
     ASSERT_STREQ(RPACKAGE_COPYRIGHT2, pPackage->GetCopyright().c_str());     
-    ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
+    ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON2), pPackage->GetBoundingPolygon().ToString().c_str());
 
     ASSERT_STREQ(RPACKAGE_ORIGIN2, pPackage->GetOrigin().c_str());
     ASSERT_STREQ(RPACKAGE_ID2, pPackage->GetId().c_str());
@@ -1286,7 +1291,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_A_ID, pPackage->GetImageryGroup()[0]->GetDataId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_NAME, pPackage->GetImageryGroup()[0]->GetDataName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[0]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[0]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART1, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[0]->GetSource(0).GetType().c_str());
@@ -1310,7 +1315,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_B_NAME, pPackage->GetImageryGroup()[1]->GetDataName().c_str());
 
         // 2A
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[1]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(0).GetType().c_str());
@@ -1328,7 +1333,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(0).GetSisterFiles().size() == 0);
 
         // 2B
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[1]->GetSource(1).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetSource(1).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(1).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(1).GetType().c_str());
@@ -1339,9 +1344,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART2, pPackage->GetImageryGroup()[1]->GetSource(1).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METADATA, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadata().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METTYPE, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataType().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(1).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_GEOCS, pPackage->GetImageryGroup()[1]->GetSource(1).GetGeoCS().c_str());
 
     ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(1).GetSisterFiles().size() == 0);
 
@@ -1350,7 +1355,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_C_ID, pPackage->GetImageryGroup()[2]->GetDataId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_NAME, pPackage->GetImageryGroup()[2]->GetDataName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[2]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[2]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART1, pPackage->GetImageryGroup()[2]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[2]->GetSource(0).GetType().c_str());
@@ -1372,7 +1377,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_D_ID, pPackage->GetImageryGroup()[3]->GetDataId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_NAME, pPackage->GetImageryGroup()[3]->GetDataName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[3]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[3]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART1, pPackage->GetImageryGroup()[3]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[3]->GetSource(0).GetType().c_str());
@@ -1387,14 +1392,14 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles().size() == 1);
 
     // image data 5
     ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetNumSources() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_E_ID, pPackage->GetImageryGroup()[4]->GetDataId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_E_NAME, pPackage->GetImageryGroup()[4]->GetDataName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[4]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[4]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART1, pPackage->GetImageryGroup()[4]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[4]->GetSource(0).GetType().c_str());
@@ -1417,7 +1422,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_F_NAME, pPackage->GetImageryGroup()[5]->GetDataName().c_str());
 
         // 6A
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[5]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetType().c_str());
@@ -1429,13 +1434,12 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(0).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METADATA, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadata().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadataType().c_str());
-
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(0).GetGeoCS().c_str());
 
     ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(0).GetSisterFiles().size() == 0);
 
         // 6B
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[5]->GetSource(1).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(1).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(1).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetType().c_str());
@@ -1447,13 +1451,12 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(1).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METADATA, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadata().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataType().c_str());
-
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(1).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(1).GetGeoCS().c_str());
 
     ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(1).GetSisterFiles().size() == 0);
 
         // 6C
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[5]->GetSource(2).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(2).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(2).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetType().c_str());
@@ -1465,10 +1468,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(2).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METADATA, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadata().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(2).GetGeoCS().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(2).GetGeoCS().c_str());
-
-    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles().size() == 1);
 
 
     // image data 7
@@ -1476,7 +1478,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_G_ID, pPackage->GetImageryGroup()[6]->GetDataId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_NAME, pPackage->GetImageryGroup()[6]->GetDataName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[6]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[6]->GetSource(0).GetElementName());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART1, pPackage->GetImageryGroup()[6]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetType().c_str());
@@ -1488,10 +1490,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART2, pPackage->GetImageryGroup()[6]->GetSource(0).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METADATA, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadata().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METTYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_GEOCS, pPackage->GetImageryGroup()[6]->GetSource(0).GetGeoCS().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetSource(0).GetGeoCS().c_str());
-
-    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles().size() == 2);
 
     // image data 8
     ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetNumSources() == 1);
@@ -1510,8 +1511,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetSource(0).GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METADATA, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadata().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadataType().c_str());
-
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS, pPackage->GetImageryGroup()[7]->GetSource(0).GetGeoCS().c_str());
 
     ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetSource(0).GetSisterFiles().size() == 0);
 
@@ -1545,9 +1545,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ("", pRedBand->GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ("", pRedBand->GetMetadata().c_str());
     ASSERT_STREQ("", pRedBand->GetMetadataType().c_str());
-    ASSERT_STREQ("", pRedBand->GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_GEOCS, pRedBand->GetGeoCS().c_str());
 
-    ASSERT_TRUE(pRedBand->GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pRedBand->GetSisterFiles().size() == 1);
 
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI, pGreenBand->GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_URI_TYPE, pGreenBand->GetType().c_str());
@@ -1558,40 +1558,40 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ("", pGreenBand->GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ("", pGreenBand->GetMetadata().c_str());
     ASSERT_STREQ("", pGreenBand->GetMetadataType().c_str());
-    ASSERT_STREQ("", pGreenBand->GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_GEOCS, pGreenBand->GetGeoCS().c_str());
 
-    ASSERT_TRUE(pGreenBand->GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pGreenBand->GetSisterFiles().size() == 1);
 
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_JPEG_LR_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_JPEG_UL_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LONGLAT_EPSILON);
-    ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetSource(0).GetType().c_str());
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_IMDATA_B_CORNER_LL_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_IMDATA_B_CORNER_LL_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_IMDATA_B_CORNER_LR_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_IMDATA_B_CORNER_LR_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_IMDATA_B_CORNER_UL_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_IMDATA_B_CORNER_UL_LAT, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_IMDATA_B_CORNER_UR_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[1]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_IMDATA_B_CORNER_UR_LAT, LONGLAT_EPSILON);
+    //ASSERT_STREQ(RPACKAGE_WMS_URI2, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
+    //ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetSource(0).GetType().c_str());
 
     // Model
-    ASSERT_STREQ(RPACKAGE_ROAD_URI, pPackage->GetModelGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("shapefile", pPackage->GetModelGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_PART1, pPackage->GetModelGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_TYPE, pPackage->GetModelGroup()[0]->GetSource(0).GetType().c_str());
 
     // Pinned
     ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LAT, LONGLAT_EPSILON);
-    ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("video/avi", pPackage->GetPinnedGroup()[1]->GetSource(0).GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LONG, LONGLAT_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LAT, LONGLAT_EPSILON);
+    ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_PINDATA_A_LAT, LONGLAT_EPSILON);
+    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_PART1, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[1]->GetSource(0).GetType().c_str());
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_PINDATA_B_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_PINDATA_B_LAT, LONGLAT_EPSILON);
 
     // Terrain
-    ASSERT_STREQ(RPACKAGE_CANADA_POD_URI, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("pod", pPackage->GetTerrainGroup()[0]->GetSource(0).GetType().c_str());
-    ASSERT_STREQ(RPACKAGE_CANADA_DTM_URI, pPackage->GetTerrainGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("dtm", pPackage->GetTerrainGroup()[1]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[0]->GetSource(0).GetType().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[1]->GetSource(0).GetType().c_str());
     }
 
 

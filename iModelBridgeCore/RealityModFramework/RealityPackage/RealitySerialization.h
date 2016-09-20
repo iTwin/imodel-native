@@ -45,6 +45,7 @@
 #define PACKAGE_ELEMENT_PackageId           "PackageId"
 #define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
 #define PACKAGE_ELEMENT_PackageOrigin       "PackageOrigin"
+#define PACKAGE_ELEMENT_Origin              "Origin"
 
 // RealityData
 #define PACKAGE_ELEMENT_ImageryGroup        "ImageryGroup"
