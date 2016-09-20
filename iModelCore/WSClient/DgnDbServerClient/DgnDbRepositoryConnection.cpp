@@ -1124,9 +1124,23 @@ const BeBriefcaseId*  briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest
+(
+std::shared_ptr<WSChangeset> changeset,
+IBriefcaseManager::ResponseOptions options,
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
+
+    changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::Empty);
+
+    if (IBriefcaseManager::ResponseOptions::None == options || IBriefcaseManager::ResponseOptions::LockState != options)
+        changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Locks, "false");
+
+    if (IBriefcaseManager::ResponseOptions::None == options || IBriefcaseManager::ResponseOptions::CodeState != options)
+        changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Locks, "false");
+
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
         ([=] (const WSChangesetResult& result)
@@ -1146,12 +1160,13 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::sh
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
 (
-    LockRequestCR         locks,
-    DgnCodeSet            codes,
-    BeBriefcaseId         briefcaseId,
-    BeGuidCR              masterFileId,
-    Utf8StringCR          lastRevisionId,
-    ICancellationTokenPtr cancellationToken
+    LockRequestCR                       locks,
+    DgnCodeSet                          codes,
+    BeBriefcaseId                       briefcaseId,
+    BeGuidCR                            masterFileId,
+    Utf8StringCR                        lastRevisionId,
+    IBriefcaseManager::ResponseOptions  options,
+    ICancellationTokenPtr               cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::AcquireCodesLocks";
@@ -1164,7 +1179,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
     state.SetReserved(briefcaseId);
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created);
 
-    return SendChangesetRequest(changeset, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 
@@ -1173,12 +1188,13 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
 (
-    LockRequestCR         locks,
-    DgnCodeSet            codes,
-    BeBriefcaseId         briefcaseId,
-    BeGuidCR              masterFileId,
-    Utf8StringCR          lastRevisionId,
-    ICancellationTokenPtr cancellationToken
+    LockRequestCR                       locks,
+    DgnCodeSet                          codes,
+    BeBriefcaseId                       briefcaseId,
+    BeGuidCR                            masterFileId,
+    Utf8StringCR                        lastRevisionId,
+    IBriefcaseManager::ResponseOptions  options,
+    ICancellationTokenPtr               cancellationToken
 ) const
     {
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
@@ -1189,7 +1205,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
     state.SetReserved(briefcaseId);
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
 
-    return SendChangesetRequest(changeset, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1197,11 +1213,12 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DemoteCodesLocks
 (
-const DgnLockSet&     locks,
-DgnCodeSet const&     codes,
-BeBriefcaseId         briefcaseId,
-BeGuidCR              masterFileId,
-ICancellationTokenPtr cancellationToken
+const DgnLockSet&                       locks,
+DgnCodeSet const&                       codes,
+BeBriefcaseId                           briefcaseId,
+BeGuidCR                                masterFileId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::DemoteCodesLocks";
@@ -1214,7 +1231,7 @@ ICancellationTokenPtr cancellationToken
     state.SetAvailable();
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, "", *changeset, WSChangeset::ChangeState::Modified);
 
-    return SendChangesetRequest(changeset, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1222,8 +1239,9 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::RelinquishCodesLocks
 (
-BeBriefcaseId         briefcaseId,
-ICancellationTokenPtr cancellationToken
+BeBriefcaseId                           briefcaseId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::RelinquishCodesLocks";
@@ -1232,7 +1250,7 @@ ICancellationTokenPtr cancellationToken
     LockDeleteAllJsonRequest (changeset, briefcaseId);
     CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
-    return SendChangesetRequest(changeset, cancellationToken);
+    return SendChangesetRequest(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2584,8 +2602,8 @@ ICancellationTokenPtr           cancellationToken
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
 
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)
-        ->Then([=] (const WSChangesetResult& initializeRevisionResult)
+    return SendChangesetRequest(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken)
+        ->Then([=] (const DgnDbServerStatusResult& initializeRevisionResult)
         {
         if (initializeRevisionResult.IsSuccess())
             {
@@ -2607,7 +2625,7 @@ ICancellationTokenPtr           cancellationToken
         BeGuid masterFileId;
         masterFileId.FromString(revision->GetDbGuid().c_str());
 
-        AcquireCodesLocks(usedLocks, codesToReserve, briefcaseId, masterFileId, revision->GetParentId(), cancellationToken)
+        AcquireCodesLocks(usedLocks, codesToReserve, briefcaseId, masterFileId, revision->GetParentId(), IBriefcaseManager::ResponseOptions::None, cancellationToken)
             ->Then([=] (DgnDbServerStatusResultCR acquireCodesLocksResult)
             {
             if (!acquireCodesLocksResult.IsSuccess())
