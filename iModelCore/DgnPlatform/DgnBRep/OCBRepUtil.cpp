@@ -1072,6 +1072,46 @@ MSBsplineSurfacePtr OCBRep::ToBsplineSurface(CurveVectorPtr& boundaries, TopoDS_
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::Topology::EdgeAskFaces(bvector<TopoDS_Face>& faces, TopoDS_Edge const& edge, TopoDS_Shape const& parent)
+    {
+    TopTools_IndexedDataMapOfShapeListOfShape edgeFaceMap;
+
+    TopExp::MapShapesAndAncestors(parent, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
+
+    TopTools_ListOfShape const* facesOfEdge = edgeFaceMap.ChangeSeek(edge);
+ 
+    if (nullptr == facesOfEdge || 0 == facesOfEdge->Size())
+        return false;
+
+    for (TopTools_ListIteratorOfListOfShape iter(*facesOfEdge); iter.More(); iter.Next())
+        faces.push_back(TopoDS::Face(iter.Value()));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::Topology::VertexAskFaces(bvector<TopoDS_Face>& faces, TopoDS_Vertex const& vertex, TopoDS_Shape const& parent)
+    {
+    TopTools_IndexedDataMapOfShapeListOfShape vertexFaceMap;
+
+    TopExp::MapShapesAndAncestors(parent, TopAbs_VERTEX, TopAbs_FACE, vertexFaceMap);
+
+    TopTools_ListOfShape const* facesOfVertex = vertexFaceMap.ChangeSeek(vertex);
+ 
+    if (nullptr == facesOfVertex || 0 == facesOfVertex->Size())
+        return false;
+
+    for (TopTools_ListIteratorOfListOfShape iter(*facesOfVertex); iter.More(); iter.Next())
+        faces.push_back(TopoDS::Face(iter.Value()));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool OCBRep::Locate::Faces(TopoDS_Shape const& shape, DRay3dCR boresite, bvector<TopoDS_Face>& faces, bvector<DPoint2d>& params, bvector<DPoint3d>& points, uint32_t maxFace)

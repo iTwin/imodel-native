@@ -143,6 +143,25 @@ void DgnPlatformLib::Host::FontAdmin::Resume()
         return;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* This method exists for multi-threaded code which wants to adopt the host. Because
+* The FontAdmin lazily-initializes various data members, it cannot be safely used
+* on multiple threads until all of those data members are initialized.
+* So code that is otherwise very confident in its thread-safety can invoke this method
+* before spawning new threads in order to ensure they will not encounter race conditions
+* when accessing the FontAdmin.
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::Host::FontAdmin::EnsureInitialized()
+    {
+    GetLastResortTrueTypeFont();
+    GetLastResortRscFont();
+    GetLastResortShxFont();
+    GetAnyLastResortFont();
+    GetDecoratorFont();
+    GetFreeTypeLibrary();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
