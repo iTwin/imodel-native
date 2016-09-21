@@ -1387,7 +1387,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, GraphicalModel2d);
     friend struct dgn_ModelHandler::Drawing;
 
-public: /* WIP: Should be protected! */
+protected:
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
 public:

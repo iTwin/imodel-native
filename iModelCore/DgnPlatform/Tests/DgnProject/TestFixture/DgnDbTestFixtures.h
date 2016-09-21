@@ -31,7 +31,7 @@ struct DgnDbTestFixture : ::testing::Test
 public: 
     static void SetUpTestCase();
     static void TearDownTestCase();
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     ScopedDgnHost               m_host;
     DgnDbPtr                    m_db;

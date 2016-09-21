@@ -174,7 +174,7 @@ DgnDbPtr m_dgnDb;
 
 public:
 
-static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
 AnnotationTableTest() { }
 
@@ -184,7 +184,7 @@ public: static void TearDownTestCase();
 DgnDbR                  GetDgnDb()
     {
     if (m_dgnDb.IsNull())
-        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName);
+        m_dgnDb = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName);
 
     return *m_dgnDb;
     }
@@ -329,7 +329,7 @@ static void     VerifyCellsWithMergeBlocks (AnnotationTableCR table, bvector<Mer
 
 }; // AnnotationTableTest
 
-DgnDbTestUtils::SeedDbInfo AnnotationTableTest::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo AnnotationTableTest::s_seedFileInfo;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
@@ -339,13 +339,13 @@ void AnnotationTableTest::SetUpTestCase()
     ScopedDgnHost tempHost;
 
     //  Request a root seed file.
-    DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
 
     AnnotationTableTest::s_seedFileInfo = rootSeedInfo;
     AnnotationTableTest::s_seedFileInfo.fileName.SetName(L"AnnotationTableTest/AnnotationTableTest.bim");
 
     // Make a copy of the root seed which will be customized as a seed for tests in this group
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, AnnotationTableTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, AnnotationTableTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
 
     // Create a category
@@ -391,7 +391,7 @@ void AnnotationTableTest::TearDownTestCase()
     // base class to detect and throw an error if two groups try to use a directory of the same name.
     // Don't worry about stale data. The test runner will clean out everything at the start of the program.
     // You can empty the directory, if you want to save space.
-    DgnDbTestUtils::EmptySubDirectory(AnnotationTableTest::s_seedFileInfo.fileName.GetDirectoryName());
+    DgnPlatformSeedManager::EmptySubDirectory(AnnotationTableTest::s_seedFileInfo.fileName.GetDirectoryName());
     }
 
 /*---------------------------------------------------------------------------------**//**
