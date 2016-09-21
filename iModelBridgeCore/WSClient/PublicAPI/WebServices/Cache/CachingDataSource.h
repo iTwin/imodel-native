@@ -120,6 +120,14 @@ struct CachingDataSource :
             SyncOptions options
             );
 
+        AsyncTaskPtr<BatchResult> DownloadAndCacheFiles
+            (
+            bset<ObjectId> filesToDownload,
+            FileCache fileCacheLocation,
+            CachingDataSource::LabeledProgressCallback onProgress,
+            ICancellationTokenPtr ct
+            );
+
     public:
         virtual ~CachingDataSource() override;
 
