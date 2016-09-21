@@ -4335,7 +4335,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
         "</ECSchema>", 
-        true, "Multi-inheritance with one TPH base class and one NotMapped base class"));
+        true, "Multi-inheritance with one TPH base class and one NotMapped base class")); //It should fail. This will be changed in bim02
         //false, "Multi-inheritance with one TPH base class and one NotMapped base class"));
 
 
