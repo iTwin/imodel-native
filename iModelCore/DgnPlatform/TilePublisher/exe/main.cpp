@@ -302,7 +302,8 @@ struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
 {
 private:
     TileGeneratorP              m_generator = nullptr;
-    TileViewControllerFilter    m_filter;
+    DgnModelIdSet               m_allModels;
+    DgnCategoryIdSet            m_allCategories;
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
 
@@ -340,11 +341,33 @@ private:
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_filter(viewController),
-        m_publishedTileDepth(publishDepth)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+
+        auto& db = viewController.GetDgnDb();
+        for (auto& view : ViewDefinition::MakeIterator(db))
+            {
+            auto viewDefinition = ViewDefinition::QueryView(view.GetId(), db);
+            auto spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
+            if (nullptr == spatialView)
+                continue;
+
+            auto modelSelector = db.Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
+            if (modelSelector.IsValid())
+                {
+                auto viewModels = modelSelector->GetModelIds();
+                m_allModels.insert(viewModels.begin(), viewModels.end());
+                }
+
+            auto categorySelector = db.Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
+            if (categorySelector.IsValid())
+                {
+                auto viewCats = categorySelector->GetCategoryIds();
+                m_allCategories.insert(viewCats.begin(), viewCats.end());
+                }
+            }
         }
 
     Status Publish(PublisherParams const& params);
@@ -490,9 +513,6 @@ void TilesetPublisher::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
     {
-    DgnModelIdSet       modelIds;
-    DgnCategoryIdSet    categoryIds;
-
     // URL of tileset .json
     Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
     Utf8String tilesetUrl = rootNameUtf8;
@@ -532,31 +552,21 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
 
         if (modelSelector.IsValid())
-            {
-            auto const& viewModelIds = modelSelector->GetModelIds();
-
-            entry["models"] = idSetToJson (viewModelIds);
-            modelIds.insert (viewModelIds.begin(), viewModelIds.end());
-            }
+            entry["models"] = idSetToJson(modelSelector->GetModelIds());
 
         auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
 
         if (categorySelector.IsValid())
-            {
-            auto const& viewCategoryIds = categorySelector->GetCategoryIds();
-
-            entry["categories"] = idSetToJson (viewCategoryIds);
-            categoryIds.insert (viewCategoryIds.begin(), viewCategoryIds.end());
-            }
+            entry["categories"] = idSetToJson (categorySelector->GetCategoryIds());
 
         viewsJson[view.GetId().ToString()] = entry;
         }
 
-    if (modelIds.empty())
+    if (m_allModels.empty())
         return Status::NoGeometry;
 
-    json["models"] = GetModelsJson (modelIds);
-    json["categories"] = GetCategoriesJson (categoryIds);
+    json["models"] = GetModelsJson (m_allModels);
+    json["categories"] = GetCategoriesJson (m_allCategories);
     json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
@@ -685,7 +695,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
 
     static size_t           s_maxPointsPerTile = 20000;
 
-    TileViewControllerFilter filter(m_viewController);
+    TileModelCategoryFilter filter(GetDgnDb(), &m_allModels, &m_allCategories);
     ProgressMeter progressMeter(*this);
     TileGenerator generator (m_dbToTile, GetDgnDb(), s_maxPointsPerTile, &filter, &progressMeter);
 

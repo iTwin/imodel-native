@@ -1700,18 +1700,18 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileViewControllerFilter::TileViewControllerFilter(ViewControllerCR view) : m_set(view)
+TileModelCategoryFilter::TileModelCategoryFilter(DgnDbR db, DgnModelIdSet const* models, DgnCategoryIdSet const* categories) : m_set(models, categories)
     {
     static const Utf8CP s_sql = "SELECT g.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
                                 " WHERE g.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
 
-    m_stmt = view.GetDgnDb().GetPreparedECSqlStatement(s_sql);
+    m_stmt = db.GetPreparedECSqlStatement(s_sql);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileViewControllerFilter::_AcceptElement(DgnElementId elementId)
+bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId)
     {
     m_stmt->BindVirtualSet(1, m_set);
     bool accepted = BE_SQLITE_ROW == m_stmt->Step();
