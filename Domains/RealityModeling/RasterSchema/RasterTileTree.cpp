@@ -13,88 +13,6 @@ USING_NAMESPACE_TILETREE
 //static const uint32_t DRAW_FINER_DELTA = 2;
 static const uint32_t DRAW_COARSER_DELTA = 6;
 
-//=======================================================================================
-// @bsiclass                                                    Mathieu.Marchand  9/2016
-//=======================================================================================
-struct TileQuery
-    {
-    TileQuery(RasterTile& tile, TileLoadsPtr loads) : m_tile(&tile), m_loads(loads) {}
-
-    RefCountedPtr<RasterTile> m_tile;
-    mutable TileLoadsPtr m_loads;
-
-    struct TileLoader
-        {
-        Root& m_root;
-        TileLoader(Root& root) : m_root(root) { root.StartTileLoad(); }
-        ~TileLoader() { m_root.DoneTileLoad(); }
-        };
-    
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  9/2016
-    //----------------------------------------------------------------------------------------
-    BentleyStatus DoRead() const
-        {
-        if (m_loads!=nullptr && m_loads->IsCanceled())
-            {
-            if (m_tile.IsValid()) 
-                m_tile->SetNotLoaded();
-
-            return ERROR;
-            }
-
-        if (m_tile.IsValid() && !m_tile->IsQueued())
-            return SUCCESS; // this node was abandoned.
-
-        TileLoader loadFlag(m_tile->GetRoot());
-        bool enableAlphaBlend = false;
-        Render::Image image = m_tile->GetRoot().GetSource().QueryTile(m_tile->GetTileId(), enableAlphaBlend);
-
-#ifndef NDEBUG  // debug build only.
-        static bool s_missingTilesInRed = false;
-        if (s_missingTilesInRed && !image.IsValid())
-            {
-            ByteStream data(256 * 256 * 3);
-            Byte red[3] = {255,0,0};
-            for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
-                memcpy(data.GetDataP() + pixel * 3, red, 3);
-
-            image = Render::Image(256, 256, std::move(data), Render::Image::Format::Rgb);
-            enableAlphaBlend = false;
-            }
-#endif  
-
-        if (!image.IsValid())
-            {
-            m_tile->SetNotFound();
-            return ERROR;
-            }
-
-        if (m_tile->IsAbandoned())
-            return ERROR;
-
-        auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
-
-        Render::Texture::CreateParams params;
-        params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
-        auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, params);
-
-        graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-        graphic->AddTile(*texture, m_tile->GetCorners());
-
-        auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-        BeAssert(SUCCESS == stat);
-        UNUSED_VARIABLE(stat);
-
-        m_tile->m_graphic = graphic;
-        m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-        if (m_loads != nullptr)
-            m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-
-        return SUCCESS;
-        }
-    };
 
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterRoot -------------------------------------------------
@@ -103,43 +21,30 @@ struct TileQuery
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-RasterRoot::RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::SystemP system)
-    :TileTree::Root(model.GetDgnDb(), Transform::FromIdentity(), model.GetName().c_str(), "", system),
-    m_source(&source), m_model(model)
+RasterRoot::RasterRoot(RasterModel& model, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system)
+    :TileTree::Root(model.GetDgnDb(), Transform::FromIdentity(), realityCacheName, rootUrl, system),
+     m_model(model)
     {
-    //&&MM need to reproject.
-    // Init m_physicalToWorld transformation
-    DMatrix4d physicalToWorld;
-    physicalToWorld.InitProduct(model.GetSourceToWorld(), DMatrix4d::From(source._PhysicalToSource()));
-    DMatrix4d worldToPhysical;
-    worldToPhysical.QrInverseOf(physicalToWorld);
-    m_physicalToWorld.InitFrom(physicalToWorld, worldToPhysical);
-
-    // not required for non http. CreateCache(100 * 1024 * 1024); // 100 Mb
-    m_rootTile = new RasterTile(*this, TileId(m_source->GetResolutionCount() - 1, 0, 0), nullptr);
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
+// @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads)
+void RasterRoot::GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY)
     {
-    DgnDb::VerifyClientThread();
+    resolution.push_back(Resolution(width, height, tileSizeX, tileSizeY));
 
-    if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
+    // Add the resolution until we have reach the lower limits.
+    while (height > tileSizeY || width > tileSizeX)
         {
-        BeAssert(false);
-        return ERROR;
+        // Compute the lower resolution.
+        width = (uint32_t) ceil(width / 2.0);
+        height = (uint32_t) ceil(height / 2.0);
+
+        resolution.push_back(Resolution(width, height, tileSizeX, tileSizeY));
         }
-
-    if (loads)
-        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
-    tile.SetIsQueued(); // mark as queued so we don't request it again.
-
-    TileQuery query(const_cast<RasterTileR>(static_cast<RasterTileCR>(tile)), loads);
-    return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return query.DoRead(); });
     }
+
 
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterTile -------------------------------------------------
@@ -149,45 +54,14 @@ folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, Til
 * Construct a new MapTile by TileId.
 * @bsimethod                                    Mathieu.Marchand                9/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterTile::RasterTile(RasterRootR root, TileId id, RasterTileCP parent)
+RasterTile::RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent)
     : Tile(parent), m_root(root), m_id(id)
     {
-    uint32_t xMinInRes = id.x * m_root.GetSource().GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMinInRes = id.y * m_root.GetSource().GetResolution(id.resolution).GetTileSizeY();
-    uint32_t xMaxInRes = xMinInRes + m_root.GetSource().GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMaxInRes = yMinInRes + m_root.GetSource().GetResolution(id.resolution).GetTileSizeY();
-
-    uint32_t xMin = xMinInRes << id.resolution;
-    uint32_t yMin = yMinInRes << id.resolution;
-    uint32_t xMax = xMaxInRes << id.resolution;
-    uint32_t yMax = yMaxInRes << id.resolution;
-
-    // Limit the tile extent to the raster physical size 
-    if (xMax > m_root.GetSource().GetWidth())
-        xMax = m_root.GetSource().GetWidth();
-    if (yMax > m_root.GetSource().GetHeight())
-        yMax = m_root.GetSource().GetHeight();
-
-    DPoint3d physicalCorners[4];
-    physicalCorners[0].x = physicalCorners[2].x = xMin;
-    physicalCorners[1].x = physicalCorners[3].x = xMax;
-    physicalCorners[0].y = physicalCorners[1].y = yMin;
-    physicalCorners[2].y = physicalCorners[3].y = yMax;
-    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
-    m_root.GetPhysicalToWorld().MultiplyAndRenormalize(m_corners.m_pts, physicalCorners, 4);
-
-    m_range.InitFrom(m_corners.m_pts, 4);
-    m_range.low.z = -1.0;
-    m_range.high.z = 1.0;
-    m_reprojected = true;
-
-    if (parent)
-        parent->ExtendRange(m_range);
-
-    // That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
-    uint32_t tileSizeX = m_root.GetSource().GetTileSizeX(GetTileId());
-    uint32_t tileSizeY = m_root.GetSource().GetTileSizeY(GetTileId());
-    m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
+    //&&MM todo here?
+//     That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
+//         uint32_t tileSizeX = m_root.GetSource().GetTileSizeX(GetTileId());
+//         uint32_t tileSizeY = m_root.GetSource().GetTileSizeY(GetTileId());
+//         m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
     }
 
 //----------------------------------------------------------------------------------------
@@ -196,49 +70,6 @@ RasterTile::RasterTile(RasterRootR root, TileId id, RasterTileCP parent)
 Utf8String RasterTile::_GetTileName() const
     {
     return Utf8PrintfString("%d/%d/%d", m_id.resolution, m_id.x, m_id.y);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-TileTree::Tile::ChildTiles const* RasterTile::_GetChildren(bool load) const
-    {
-    if (!_HasChildren()) // is this is the highest resolution tile?
-        return nullptr;
-
-    if (load && m_children.empty())
-        {
-        // this Tile has children, but we haven't created them yet. Do so now
-        RasterSource::Resolution const& childrenResolution = m_root.GetSource().GetResolution(m_id.resolution - 1);
-
-        // Upper-Left child, we always have one 
-        TileId childUpperLeft(m_id.resolution - 1, m_id.x << 1, m_id.y << 1);
-        m_children.push_back(new RasterTile(m_root, childUpperLeft, this));
-
-        // Upper-Right
-        if (childUpperLeft.x + 1 < childrenResolution.GetTileCountX())
-            {
-            TileId childUpperRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y);
-            m_children.push_back(new RasterTile(m_root, childUpperRight, this));
-            }
-
-        // Lower-left
-        if (childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
-            {
-            TileId childLowerLeft(childUpperLeft.resolution, childUpperLeft.x, childUpperLeft.y + 1);
-            m_children.push_back(new RasterTile(m_root, childLowerLeft, this));
-            }
-
-        // Lower-Right
-        if (childUpperLeft.x + 1 < childrenResolution.GetTileCountX() &&
-            childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
-            {
-            TileId childLowerRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y + 1);
-            m_children.push_back(new RasterTile(m_root, childLowerRight, this));
-            }
-        }
-
-    return &m_children;
     }
 
 //----------------------------------------------------------------------------------------
@@ -285,8 +116,9 @@ void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
 //----------------------------------------------------------------------------------------
 void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     {
-    if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
-        return;
+//&&MM review if we should draw tiles that failed with an approx? webmercator do not display them but use the approximation for volume testing.
+//     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
+//         return;
 
     if (!IsReady())
         {
@@ -304,19 +136,20 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     }
 
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------                                                                                     +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RasterTile::_LoadTile(TileTree::StreamBuffer& data, TileTree::RootR root)
-    {
-    BeAssert(!"not expected we load from _RequestTile");
-
-    return ERROR;
-    }
-
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterProgressive ------------------------------------------
 //---------------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+RasterProgressive::~RasterProgressive()
+    {
+    if (nullptr != m_loads) 
+        m_loads->SetCanceled();
+
+    DEBUG_PRINTF("Raster progressive destroyed");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.Marchand                9/2016
@@ -327,7 +160,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     TileTree::DrawArgs args(context, m_root.GetLocation(), now, now - m_root.GetExpirationTime());
     args.SetClip(m_root.GetModel().GetClip().GetClipVector());
 
-    DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
+    DEBUG_PRINTF("Raster progressive %d missing", m_missing.size());
 
     for (auto const& node : m_missing)
         {
@@ -343,7 +176,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
-    DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
+    DEBUG_PRINTF("Raster after progressive still %d missing", m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
         //m_loads = nullptr; // for debugging

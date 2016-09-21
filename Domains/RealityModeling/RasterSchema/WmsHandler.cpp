@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/WmsHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 
@@ -240,10 +239,18 @@ BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
     {
     if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
         return SUCCESS;
-    
-    RasterSourcePtr pSource = WmsSource::Create(m_map);
-    if(pSource.IsValid())
-        m_root = new RasterRoot(*pSource, const_cast<WmsModel&>(*this), renderSys);
+#if 0
+    //http://ows.geobase.ca/wms/geobase_en?service=wms&version=1.1.1&request=GetCapabilities
+
+    WmsMap mapInfo("http://ows.geobase.ca/wms/geobase_en",
+                   DRange2d::From(-78.18, 43.83, -69.48, 49.45),
+                   "1.1.1",
+                   "elevation:cded50k,reference:hydro,reference:roads,boundaries:geopolitical,reference:boundaries,nrwn:track,reference:placenames:capitals10m",
+                   "EPSG:4269");
+   m_root = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
+#else
+    m_root = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
+#endif    
 
     return m_root.IsValid() ? BSISUCCESS : BSIERROR;
     }

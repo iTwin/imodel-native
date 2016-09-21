@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterFileHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "RasterFileSource.h"
 
@@ -263,12 +262,8 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     if (status != SUCCESS)
         return ERROR;        
 
-    Utf8String resolvedName(fileName);
-
-    RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
-    if (pSource.IsValid())
-        m_root = new RasterRoot(*pSource, const_cast<RasterFileModel&>(*this), renderSys);
-        
+    m_root = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+         
     return m_root.IsValid() ? SUCCESS : ERROR;
     }
 

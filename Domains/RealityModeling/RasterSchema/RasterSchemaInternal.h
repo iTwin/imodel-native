@@ -73,19 +73,16 @@
 #include <RasterSchema/RasterFileHandler.h>
 #include <RasterSchema/RasterDomain.h>
 
-RASTERSCHEMA_TYPEDEFS(RasterSource)
-RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
 
 //
 // Internal header files
 //
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "ImagePPAdmin.h"
 #include "RasterFile.h"
 
 #ifndef NDEBUG
-//#define RASTER_TRACE 1
+#define RASTER_TRACE 1
 #endif
 
 #if defined (RASTER_TRACE)

@@ -10,50 +10,70 @@
 
 #include <RasterSchema/WmsHandler.h>
 #include <DgnPlatform/RealityDataCache.h>
-#include "RasterSource.h"
+#include "RasterTileTree.h"
+
+RASTERSCHEMA_TYPEDEFS(WmsSource)
+RASTERSCHEMA_TYPEDEFS(WmsTile)
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-struct WmsSource : public RasterSource
+struct WmsSource : public RasterRoot
 {
 private:
-    mutable RealityData::CachePtr m_realityDataCache;
+    DMatrix4d m_physicalToCartesian;    //&&MM todo reprojection
 
-public:
-    static WmsSourcePtr Create(WmsMap const& mapInfo);
+    WmsMap m_mapInfo;   //&&MM use the one from the model and remove this one?
 
-    WmsMap const& GetMapInfo() {return m_mapInfo;}
+    bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 
-    virtual TransformCR _PhysicalToSource() const override
-        {
-        BeAssert(!"todo"); //&&MM
-        static Transform m_trans;
-        return m_trans;
-        }
+                        //uint32_t    m_metaTileSizeX;    //&&MM todo.
+                        //uint32_t    m_metaTileSizeY;
 
-protected:
-    virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
-    RealityData::Cache& GetRealityDataCache() const;
+    WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system);
 
-private:
-    WmsSource(WmsMap const& mapInfo);
-
-    virtual ~WmsSource(){};
+    virtual ~WmsSource() {};
 
     Utf8String BuildTileUrl(TileId const& tileId);
 
     static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
     static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
 
-    WmsMap m_mapInfo;
+    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
 
-    bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
+    void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;
 
-    //uint32_t    m_metaTileSizeX;    //&&MM todo.
-    //uint32_t    m_metaTileSizeY;
+    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads) override;
+
+public:
+    static WmsSourcePtr Create(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system);
+
+    WmsMap const& GetMapInfo() {return m_mapInfo;}    
+
+    DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToCartesian; }    //&&MM todo reproject
+};
+
+//=======================================================================================
+//! A raster tile. May or may not have its graphics loaded.
+// @bsiclass                                                    Mathieu.Marchand  9/2016
+//=======================================================================================
+struct WmsTile : RasterTile
+{
+protected:
+    typedef WmsSource root_type;
+    
+    root_type& GetSource() { return (root_type&) GetRoot(); }
+
+public:
+    typedef WmsSource root_type;
+
+    WmsTile(WmsSourceR root, TileId id, WmsTileCP parent);
+
+    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override;
+
+    TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

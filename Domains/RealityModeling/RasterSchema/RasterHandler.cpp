@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 

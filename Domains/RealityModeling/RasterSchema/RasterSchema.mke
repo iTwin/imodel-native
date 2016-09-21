@@ -38,8 +38,7 @@ rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.
                                   $(RasterSchemaPublicApiSrc)RasterFileHandler.h            \
                                   $(RasterSchemaPublicApiSrc)WmsHandler.h
 
-rasterDisplayDepends =  $(SrcRasterSchema)RasterSource.h \
-                        $(SrcRasterSchema)RasterTileTree.h
+rasterDisplayDepends =  $(SrcRasterSchema)RasterTileTree.h
 
 wmsDepends    = $(rasterSchemaDepends) \
                 $(rasterDisplayDepends) \
@@ -90,14 +89,10 @@ $(o)RasterDomain$(oext)         : $(SrcRasterSchema)RasterDomain.cpp        $(ra
 
 $(o)RasterTileTree$(oext)       : $(SrcRasterSchema)RasterTileTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
-$(o)RasterSource$(oext)         : $(SrcRasterSchema)RasterSource.cpp        $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
-
-# Wms source support
 $(o)WmsHandler$(oext)           : $(SrcRasterSchema)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
 
 $(o)WmsSource$(oext)            : $(SrcRasterSchema)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
 
-# Local raster files support
 $(o)RasterFile$(oext)           : $(SrcRasterSchema)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
 
 $(o)ImagePPAdmin$(oext)         : $(SrcRasterSchema)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
