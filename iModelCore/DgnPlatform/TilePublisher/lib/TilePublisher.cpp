@@ -92,7 +92,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetFilter(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile._GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,8 +932,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1054,7 +1054,7 @@ PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& ro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
+PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     IGenerateMeshTiles*         generateMeshTiles;
     TileNodePtr                 rootTile;
@@ -1064,7 +1064,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
         return Status::NotImplemented;
 
     progressMeter._SetModel (&model);
-    progressMeter._SetTaskName (TileGenerator::TaskName::GeneratingRangeTree);       // Needs work -- meter progress in model publisher.
+    progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
 
     if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
@@ -1083,7 +1083,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     Status                  status;
     static size_t           s_maxPointsPerTile = 20000;
 
-    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, m_viewController, s_maxPointsPerTile))))
+    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
         return status;
         
     return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
@@ -1092,7 +1092,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter)
+PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     Json::Value         realityModelTilesets, elementTileSet;
 
