@@ -694,17 +694,21 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         }
 
     const bool hasBaseClasses = m_ecClass.HasBaseClasses();
-    ClassMap const* baseClassMap = nullptr;
+    ClassMap const* firstBaseClassMap = nullptr;
     ECDbMapStrategy const* baseStrategy = nullptr;
     if (hasBaseClasses)
         {
-        ECRelationshipClassCP baseClass = m_ecClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-        BeAssert(baseClass != nullptr);
-        baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
-        if (baseClassMap == nullptr)
-            return MappingStatus::BaseClassesNotMapped;
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+            {
+            ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+            if (baseClassMap == nullptr)
+                return MappingStatus::BaseClassesNotMapped;
 
-        baseStrategy = &baseClassMap->GetMapStrategy();
+            if (firstBaseClassMap == nullptr)
+                firstBaseClassMap = baseClassMap;
+            }
+
+        baseStrategy = &firstBaseClassMap->GetMapStrategy();
         if (!ValidateChildStrategy(*baseStrategy, *userStrategy))
             return MappingStatus::Error;
 
@@ -720,23 +724,23 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Success;
             }
 
-        m_baseClassMap = baseClassMap;
-        if (baseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
+        m_baseClassMap = firstBaseClassMap;
+        if (firstBaseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
-            if (SUCCESS != EvaluateForeignKeyStrategy(*userStrategy, baseClassMap))
+            if (SUCCESS != EvaluateForeignKeyStrategy(*userStrategy, firstBaseClassMap))
                 return MappingStatus::Error;
             }
         else
             {
-            BeAssert(baseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
-            if (SUCCESS != EvaluateLinkTableStrategy(*userStrategy, baseClassMap))
+            BeAssert(firstBaseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
+            if (SUCCESS != EvaluateLinkTableStrategy(*userStrategy, firstBaseClassMap))
                 return MappingStatus::Error;
             }
 
         if (baseStrategy->GetStrategy() != m_resolvedStrategy.GetStrategy())
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its mapping type (%s) differs from the mapping type of its base relationship class %s (%s). The mapping type must not change within an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), ECDbMapStrategy::ToString(m_resolvedStrategy.GetStrategy()), baseClassMap->GetClass().GetFullName(), ECDbMapStrategy::ToString(baseClassMap->GetMapStrategy().GetStrategy()));
+                            m_ecClass.GetFullName(), ECDbMapStrategy::ToString(m_resolvedStrategy.GetStrategy()), firstBaseClassMap->GetClass().GetFullName(), ECDbMapStrategy::ToString(firstBaseClassMap->GetMapStrategy().GetStrategy()));
             return MappingStatus::Error;
             }
 
@@ -748,9 +752,9 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         return m_resolvedStrategy.Assign(*userStrategy) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
     if (m_customMapType == CustomMapType::LinkTable || m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0)
-        return EvaluateLinkTableStrategy(*userStrategy, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        return EvaluateLinkTableStrategy(*userStrategy, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
-    return EvaluateForeignKeyStrategy(*userStrategy, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+    return EvaluateForeignKeyStrategy(*userStrategy, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
     }
 
 

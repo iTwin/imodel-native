@@ -685,7 +685,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     {
     bvector<ClassMap const*> baseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
-    if (inheritanceMode != PropertyMapInheritanceMode::New)
+    if (inheritanceMode == PropertyMapInheritanceMode::Reuse)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {

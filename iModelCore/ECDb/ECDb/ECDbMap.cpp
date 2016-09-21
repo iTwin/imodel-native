@@ -389,7 +389,6 @@ MappingStatus ECDbMap::DoMapSchemas()
     BeMutexHolder lock(m_mutex);
     classMap = nullptr;
 
-
     DbClassMapLoadContext classMapLoadContext;
     if (DbClassMapLoadContext::Load(classMapLoadContext, GetECDb(), ecClass.GetId()) != SUCCESS)
         {
