@@ -443,7 +443,7 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
     int relClassDist = INT_MAX;
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        bvector<ECClassP> candidateClasses;
+        ECConstraintClassesList candidateClasses;
 
         if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward 
                     && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
