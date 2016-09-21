@@ -267,6 +267,11 @@ struct RealityDataSerializerV2 : public RealityDataSerializer
         RealityPackageStatus ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
+        #if defined (ANDROID)
+        RefCountedData_T pData = new typename RefCountedData_T::element_type();
+        #else
+        #endif
+        
         RealityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
         MultiBandSourcePtr   ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
 

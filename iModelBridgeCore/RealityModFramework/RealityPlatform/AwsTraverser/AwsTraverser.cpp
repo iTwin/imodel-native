@@ -393,6 +393,7 @@ int main(int argc, char *argv[])
 
     std::string line;
     std::ifstream file(fileName);
+    std::ofstream log("D:\\RealityModFramework\\log.txt");
 
     if(file.is_open())
         {
@@ -487,6 +488,10 @@ int main(int argc, char *argv[])
 
                 serverConnection.Save(*data);
                 }
+            else 
+                {
+                log << line;
+                }
             }while(getline(file, line));
         }
     else
@@ -495,7 +500,7 @@ int main(int argc, char *argv[])
         getch();
         return 0;
         }
-    
+    log.close();
     return 1;
 }
 

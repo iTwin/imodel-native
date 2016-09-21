@@ -5,7 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if !defined(ANDROID)
 #pragma once
+#endif
 
 #include <RealityPackage/RealityPackage.h>
 #include <RealityPackage/RealityDataPackage.h>
