@@ -56,7 +56,6 @@ var viewset = new Bim.Viewset(viewJsonUrl);
 Cesium.when(viewset.readyPromise).then(function() {
     var viewer = new Cesium.Viewer('cesiumContainer', viewset.createCesiumViewerOptions());
     viewer.extend(Bim.viewerInspectorMixin);
-    Bim.fixupSandboxAttributes();
 
     var tileset = new Bim.Tileset(viewset, viewer);
     Cesium.when(tileset.readyPromise).then(function() {
