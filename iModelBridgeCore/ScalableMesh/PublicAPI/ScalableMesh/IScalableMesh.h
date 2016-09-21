@@ -153,6 +153,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
+
+        virtual IScalableMeshNodePtr               _GetRootNode() = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -225,6 +227,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
 
         BENTLEY_SM_EXPORT int                    SynchWithSources(); 
+
+        BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 
         BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 

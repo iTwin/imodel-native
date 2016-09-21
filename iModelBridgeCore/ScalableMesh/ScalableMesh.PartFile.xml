@@ -83,8 +83,8 @@
   </Part>
       
   <Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-    <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-      <Bindings>
+    <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling" Repository="Dgndomains-realitymodeling" />
+    <Bindings>
         <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
       </Bindings>
   </Part>
@@ -216,29 +216,29 @@
                  
 
   <ProductDirectoryList ListName="ScalableMeshCmd">
-        <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="Assemblies" Path="Dlls"/>
-        <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
+        <ProductDirectory Name="ScalableMeshAssemblies" Path="Assets"/>
+        <ProductDirectory Name="Assemblies" Path="Assets"/>
+        <ProductDirectory Name="ImagePPAssemblies" Path="Assets"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Assets"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="Assets"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Assets"/>
+        <ProductDirectory Name="BeCurlAssemblies" Path="Assets"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Assets"/>
+        <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Assets/GeoCoordinateData"/>
         <ProductDirectory Name="Libs" Deliver="false" />
         <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
-      <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
-      <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
-      <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
-      <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
-      <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
-      <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
-      <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+      <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Assets" />
+      <ProductDirectory Name="BeOpenSSLAssemblies" Path="Assets"/>
+      <ProductDirectory Name="wastorageAssemblies" Path="Assets" />
+      <ProductDirectory Name="BeCurlAssemblies" Path="Assets"/>
+      <ProductDirectory Name="cpprestsdkAssemblies" Path="Assets" />
+      <ProductDirectory Name="BeIcu4cData"       Path="Assets" LibType="static" />
+      <ProductDirectory Name="PointCloudAssemblies" Path="Assets" Deliver="true" />
     </ProductDirectoryList>   
       
     <Product Name="ScalableMeshCommandLine">
         <SubPart PartName="ScalableMeshCommandLineTest" />  
-        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />            
+        <Directories DirectoryListName="TilePublisherDirs" PartFile="DgnPlatform" Repository="DgnPlatform" />            
         <Directories DirectoryListName="ScalableMeshCmd" />        
     </Product>
   

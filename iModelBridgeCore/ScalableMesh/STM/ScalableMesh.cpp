@@ -356,6 +356,11 @@ void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     return _SetEditFilesBasePath(path);
     }
 
+IScalableMeshNodePtr IScalableMesh::GetRootNode()
+    {
+    return _GetRootNode();
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -1864,6 +1869,24 @@ template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
+    }
+
+template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
+    {
+    auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+    if (m_scmIndexPtr == nullptr) 
+ #ifndef VANCOUVER_API
+        return new ScalableMeshNode<POINT>(ptr);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(ptr);
+#endif
+    auto nodeP = m_scmIndexPtr->GetRootNode();
+ #ifndef VANCOUVER_API
+    return new ScalableMeshNode<POINT>(nodeP);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(nodeP);
+#endif
+
     }
 
 
