@@ -62,7 +62,7 @@ struct CommandParam
 static CommandParam s_paramTable[] =
     {
         { L"i", L"input", L"Name of the .bim file to publish", true },
-        { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
+        { L"v", L"view", L"Name of the view that will be initially opened in the viewer. If omitted, the default view is used", false },
         { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
         { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
         { L"h", L"groundheight",L"Ground height (meters).", false},
