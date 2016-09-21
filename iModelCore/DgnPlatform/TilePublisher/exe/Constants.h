@@ -24,9 +24,8 @@ R"HTML(
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
-<script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <script src="scripts/Bentley/BimWidgets.js"></script>
-<script src="scripts/Bentley/BimToolbar.js"></script>
+<script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
