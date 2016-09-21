@@ -60,7 +60,7 @@ Cesium.when(viewset.readyPromise).then(function() {
         var toolbar = new Bim.Toolbar(viewer);
         var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', Bim.createModelToggleWidget(tileset));
         var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', Bim.createCategoryToggleWidget(tileset));
-        // ###TODO: Views...
+        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', Bim.createViewSelectionWidget(tileset));
     });
 });
 </script>
