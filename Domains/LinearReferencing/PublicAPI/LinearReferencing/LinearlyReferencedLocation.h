@@ -27,6 +27,9 @@ protected:
 
     virtual Utf8CP _GetECSchemaName() const override { return BLR_SCHEMA_NAME; }
     virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
+
+public:
+    DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedLocation)
 }; // LinearlyReferencedLocation
 
 //=======================================================================================
@@ -52,7 +55,9 @@ protected:
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
 public:
+    DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedAtLocation)
     LINEARREFERENCING_EXPORT DistanceExpressionCR GetAtPosition() const { return m_atPosition; }
+    LINEARREFERENCING_EXPORT DistanceExpressionR GetAtPositionR() { return m_atPosition; }
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedAtLocationPtr Create(DistanceExpressionCR atPosition);
 }; // LinearlyReferencedAtLocation
@@ -80,6 +85,7 @@ protected:
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
 public:
+    DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedFromToLocation)
     LINEARREFERENCING_EXPORT DistanceExpressionCR GetFromPosition() const { return m_fromPosition; }
     LINEARREFERENCING_EXPORT DistanceExpressionCR GetToPosition() const { return m_toPosition; }
 
