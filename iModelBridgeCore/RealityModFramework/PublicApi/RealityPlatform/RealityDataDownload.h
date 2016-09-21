@@ -47,7 +47,10 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
 
-    typedef std::pair<AString, WString>     url_file_pair;
+    typedef std::pair<AString, WString>    url_file_pair; //this pair contains the url and the file name
+    typedef bvector<url_file_pair>         sisterFileVector; //this vector contains the primary file and its sister files
+    typedef bvector<sisterFileVector>      mirrorWSistersVector; //this vector contains mirrors of a set of sister files to download
+    typedef bvector<url_file_pair>         mirrorVector; //this vector contains mirrors of the same data to download
 
     struct FileTransfer;
 
@@ -93,12 +96,12 @@ public:
         };
 
     //{{url, file},{url, file}}
-    typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
+    typedef bvector<url_file_pair>    UrlLink_UrlFile;
     //{{mirror set:{url, file}, {url, file}}, {mirror set: ...}} 
-    typedef bvector<bvector<std::pair<AString, WString>>> Link_File_wMirrors;
+    typedef bvector<mirrorVector> Link_File_wMirrors;
     //{{mirror set:{sister set:{url, file}, {url, file}}, {sister set:{url, file}}}{mirror set: ...}}
-    typedef bvector<bvector<bvector<std::pair<AString, WString>>>> Link_File_wMirrors_wSisters;
-
+    typedef bvector<mirrorWSistersVector> Link_File_wMirrors_wSisters;
+    
     //! Create an instance of RealityDataDownload
     //! @param[in]  pi_Link_FileName A list of (Url link, url file)
     //! @return NULL if error   
