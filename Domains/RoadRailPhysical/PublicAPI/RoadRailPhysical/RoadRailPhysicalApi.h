@@ -64,6 +64,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
+#define BRRP_CLASS_RoadRange                                        "RoadRange"
 
 
 // Aspects
@@ -81,13 +82,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
-#define BRRP_CATEGORY_Alignment                                     "Alignment"
+#define BRRP_CATEGORY_Road                                          "Road"
 
 
 //-----------------------------------------------------------------------------------------
 // Authority names
 //-----------------------------------------------------------------------------------------
-#define BRRP_AUTHORITY_Alignment                                    "Alignment"
+//#define BRRP_AUTHORITY_Alignment                                    "Alignment"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
@@ -125,10 +126,11 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 ROADRAILPHYSICAL_TYPEDEFS(SegmentRange)
 ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
+ROADRAILPHYSICAL_TYPEDEFS(RoadRange)
 
 
 ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
-
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
 
 
 //-----------------------------------------------------------------------------------------

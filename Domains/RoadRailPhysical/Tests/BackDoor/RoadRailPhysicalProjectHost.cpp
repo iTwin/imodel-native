@@ -178,11 +178,18 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
-    auto& modelHandlerR = AlignmentModelHandler::GetHandler();
-    auto modelPtr = modelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr), 
+    auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
+    auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr),
         projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
 
-    if (DgnDbStatus::Success != modelPtr->Insert())
+    if (DgnDbStatus::Success != alignmentModelPtr->Insert())
+        return nullptr;
+
+    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
+    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(physicalModelHandlerR),
+        projectPtr->Elements().GetRootSubjectId(), PhysicalModel::CreateModelCode("Test Physical Model")));
+
+    if (DgnDbStatus::Success != physicalModelPtr->Insert())
         return nullptr;
 
     return projectPtr;
@@ -267,6 +274,25 @@ DgnModelId RoadRailPhysicalTestsFixture::QueryFirstAlignmentModelId(DgnDbR db)
         }
 
     BeAssert(false && "No AlignmentModel found");
+    return DgnModelId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DgnModelId RoadRailPhysicalTestsFixture::QueryFirstSpatialModelId(DgnDbR db)
+    {
+    for (auto const& modelEntry : db.Models().MakeIterator())
+        {
+        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+
+        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
+        if (model->IsGeometricModel() && dynamic_cast<SpatialModelP>(model.get()))
+            return modelEntry.GetModelId();
+        }
+
+    BeAssert(false && "No SpatialModel found");
     return DgnModelId();
     }
 

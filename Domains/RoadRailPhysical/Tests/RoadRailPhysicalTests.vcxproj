@@ -86,8 +86,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -ax64 -p BackdoorForUnitTests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 -p Gtest-RoadRailPhysical-Tests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailPhysical-Tests RoadRailPhysical:Gtest</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p BackdoorForUnitTests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -p Gtest-RoadRailPhysical-Tests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests RoadRailPhysical-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailPhysical-Tests RoadRailPhysical:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p Gtest-RoadRailPhysical-Tests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests RoadRailPhysical-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailPhysical-Tests RoadRailPhysical:Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailPhysical\BackDoorRoadRailPhysicalUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

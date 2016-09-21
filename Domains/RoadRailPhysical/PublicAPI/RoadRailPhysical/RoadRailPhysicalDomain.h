@@ -19,11 +19,16 @@ struct RoadRailPhysicalDomain : Dgn::DgnDomain
 {
 DOMAIN_DECLARE_MEMBERS(RoadRailPhysicalDomain, ROADRAILPHYSICAL_EXPORT)
 
+private:
+    static Dgn::DgnCategoryId QueryCategoryId(Dgn::DgnDbCR, Utf8CP);
+
 protected:
-    //void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
+    void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
 
 public:
     RoadRailPhysicalDomain();
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId QueryRoadCategoryId(Dgn::DgnDbCR);
 }; // RoadRailPhysicalDomain
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

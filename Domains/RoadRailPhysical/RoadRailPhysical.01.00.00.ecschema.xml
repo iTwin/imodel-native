@@ -58,6 +58,9 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="RoadRange" modifier="Sealed" description="Physical range of a Road that can be segmented." >
         <BaseClass>SegmentRangeElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RailRange" modifier="Sealed" description="Physical range of a Rail that can be segmented." >
         <BaseClass>SegmentRangeElement</BaseClass>
@@ -89,7 +92,6 @@
         <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="IntersectionSegmentElement"/>
         </Source>
@@ -127,7 +129,7 @@
     <!-- BEGIN FurnitureElement Class Hierarchy -->
     <ECEntityClass typeName="FurnitureElement" modifier="Abstract" description="Physical element supplementing Road and Rail models.">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="forward"/>
+        <!--ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="forward"/-->
     </ECEntityClass>
     <ECEntityClass typeName="DiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single placement-point.">
         <BaseClass>FurnitureElement</BaseClass>
@@ -178,7 +180,6 @@
         <BaseClass>FurnitureDefinitionElement</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="FurnitureDefinitionElement"/>
         </Source>
@@ -260,6 +261,7 @@
         <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TerrainClippingMask" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH" />
         <ECProperty propertyName="DerivedPropertiesCache" typeName="string" description="Json string containing derived properties, typically computed by an EGA"/>
     </ECEntityClass>
@@ -290,10 +292,10 @@
         <ECProperty propertyName="UnitCost" typeName="double" />
         <ECProperty propertyName="UnitCostStorageUnit" typeName="string" />
         <ECProperty propertyName="UnitCostKindOfQuantity" typeName="string" />
-        <ECNavigationProperty propertyName="UnitCostGroup" relationshipName="ConstructionComponentRefersToUnitCostGroup" direction="forward" />
+        <!--ECNavigationProperty propertyName="UnitCostGroup" relationshipName="ConstructionComponentRefersToUnitCostGroup" direction="forward" /-->
         <ECProperty propertyName="UnitCostSubGroup" typeName="string" />
         <ECProperty propertyName="UseInCalculations" typeName="boolean" />
-        <ECNavigationProperty propertyName="ConstructionAllowance" relationshipName="ConstructionComponentRefersToAllowance" direction="forward" />
+        <!--ECNavigationProperty propertyName="ConstructionAllowance" relationshipName="ConstructionComponentRefersToAllowance" direction="forward" /-->
     </ECEntityClass>
     <ECRelationshipClass typeName="ConstructionComponentQuantityRefersToComponent" strength="referencing">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 construction component">

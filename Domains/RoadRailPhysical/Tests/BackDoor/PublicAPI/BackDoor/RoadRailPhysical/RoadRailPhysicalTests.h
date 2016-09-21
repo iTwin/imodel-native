@@ -60,6 +60,7 @@ public:
     static RoadRailPhysicalProjectHost& GetHost() { return *m_host; }
 
     static Dgn::DgnModelId QueryFirstAlignmentModelId(Dgn::DgnDbR db);
+    static Dgn::DgnModelId QueryFirstSpatialModelId(Dgn::DgnDbR db);
 
     //! Creates and caches a fresh "created" file to make the whole process faster
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
