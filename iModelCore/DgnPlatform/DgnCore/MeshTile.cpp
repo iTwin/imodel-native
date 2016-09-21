@@ -1603,7 +1603,7 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
@@ -1666,7 +1666,7 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
                 }
             }
 
-        if (strokes.IsValid())
+        if (doPolylines && strokes.IsValid())
             {
             for (auto& curvePrimitive : *strokes)
                 {
