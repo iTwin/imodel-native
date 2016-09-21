@@ -387,27 +387,32 @@ static Json::Value pointToJson(DPoint3dCR pt)
     return json;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static Json::Value idSetToJson(T const& ids)
+    {
+    Json::Value json(Json::arrayValue);
+    for (auto const& id : ids)
+        json.append(id.ToString());
+
+    return json;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value TilesetPublisher::GetModelsJson (DgnModelIdSet const& modelIds)
     {
-    Json::Value     modelJson (Json::arrayValue);
+    Json::Value     modelJson (Json::objectValue);
     
     for (auto& modelId : modelIds)
         {
         auto const&  model = GetDgnDb().Models().GetModel (modelId);
-
         if (model.IsValid())
-            {
-            Json::Value     entry (Json::objectValue);
-
-            entry["id"] = modelId.ToString();
-            entry["name"] = model->GetName();
-            modelJson.append (entry);
-            }
+            modelJson[modelId.ToString()] = model->GetName();
         }
+
     return modelJson;
     }
 
@@ -416,21 +421,16 @@ Json::Value TilesetPublisher::GetModelsJson (DgnModelIdSet const& modelIds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value TilesetPublisher::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
     {
-    Json::Value categoryJson (Json::arrayValue); 
+    Json::Value categoryJson (Json::objectValue); 
     
     for (auto& categoryId : categoryIds)
         {
         auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
 
         if (category.IsValid())
-            {
-            Json::Value     entry (Json::objectValue);
-
-            entry["id"] = categoryId.ToString();
-            entry["name"] = category->GetCategoryName();
-            categoryJson.append (entry);
-            }
+            categoryJson[categoryId.ToString()] = category->GetCategoryName();
         }
+
     return categoryJson;
     }
 
@@ -499,7 +499,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     tilesetUrl.append(1, '/');
     tilesetUrl.append(rootNameUtf8);
     tilesetUrl.append(".json");
-    json["url"] = tilesetUrl;
+    json["tilesetUrl"] = tilesetUrl;
 
     // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
@@ -512,7 +512,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         json["groundPoint"] = pointToJson(groundEcefPoint);
         }
 
-    auto& viewsJson =  json["views"] = Json::Value (Json::arrayValue); 
+    auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
@@ -535,7 +535,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             {
             auto const& viewModelIds = modelSelector->GetModelIds();
 
-            entry["models"] = GetModelsJson (viewModelIds);
+            entry["models"] = idSetToJson (viewModelIds);
             modelIds.insert (viewModelIds.begin(), viewModelIds.end());
             }
 
@@ -545,16 +545,19 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             {
             auto const& viewCategoryIds = categorySelector->GetCategoryIds();
 
-            entry["categories"] = GetCategoriesJson (viewCategoryIds);
+            entry["categories"] = idSetToJson (viewCategoryIds);
             categoryIds.insert (viewCategoryIds.begin(), viewCategoryIds.end());
             }
-        viewsJson.append (entry);
+
+        viewsJson[view.GetId().ToString()] = entry;
         }
+
     if (modelIds.empty())
         return Status::NoGeometry;
 
     json["models"] = GetModelsJson (modelIds);
     json["categories"] = GetCategoriesJson (categoryIds);
+    json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
     }

@@ -24,10 +24,8 @@ R"HTML(
 <title>Cesium 3D Tiles generated from Bentley MicroStation</title>
 <script src="scripts/Cesium/Cesium.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
+<script src="scripts/Bentley/BimWidgets.js"></script>
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
-<script src="scripts/Bentley/BimStyler.js"></script>
-<script src="scripts/Bentley/BimToolbar.js"></script>
-<script src="scripts/Bentley/BimViews.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -52,23 +50,19 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-var json = Bim.requestJson(viewJsonUrl, function(err, json)
-    {
-    if (Cesium.defined(err)) 
-        {
-        console.log("Failed to load " + viewJsonUrl); 
-        return;
-        } 
-    else
-        {
-        var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(json.geolocated));
-        viewer.extend(Bim.viewerInspectorMixin);
-        Bim.fixupSandboxAttributes();
-        var tileset = Bim.loadTileset(viewer, json);
+var viewset = new Bim.Viewset(viewJsonUrl);
+Cesium.when(viewset.readyPromise).then(function() {
+    var viewer = new Cesium.Viewer('cesiumContainer', viewset.createCesiumViewerOptions());
+    viewer.extend(Bim.viewerInspectorMixin);
 
-        Bim.CreateViewCategoryAndModelWidgets(viewer, tileset, json);
-        }
+    var tileset = new Bim.Tileset(viewset, viewer);
+    Cesium.when(tileset.readyPromise).then(function() {
+        var toolbar = new Bim.Toolbar(viewer);
+        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', Bim.createModelToggleWidget(tileset));
+        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', Bim.createCategoryToggleWidget(tileset));
+        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', Bim.createViewSelectionWidget(tileset));
     });
+});
 </script>
 </body>
 </html>
