@@ -1650,8 +1650,9 @@ DTMDrapedLinearElement^ DTM::DrapeLinearPoints (array<BGEO::DPoint3d>^ points)
     pin_ptr<BGEO::DPoint3d> uPoints = &points[0];
     DTMException::CheckForErrorStatus(Handle->DrapeLinearPoints (pDrapedLine, (DPoint3d*)uPoints, nullptr, points->Length));
 
-    DTMDrapedLinearElement^ ret = gcnew DTMDrapedLinearElement (pDrapedLine.get());
-    return ret;
+    if (pDrapedLine.IsValid())
+        return gcnew DTMDrapedLinearElement(pDrapedLine.get());
+    return nullptr;
     }
 
 //=======================================================================================
@@ -1670,8 +1671,9 @@ DTMDrapedLinearElement^ DTM::DrapeLinearPoints (System::Collections::Generic::IE
     BcDTMDrapedLinePtr pDrapedLine;
     DTMException::CheckForErrorStatus (Handle->DrapeLinearPoints (pDrapedLine, (DPoint3d*)&pts[0], nullptr, nbPt));
 
-    DTMDrapedLinearElement^ ret = gcnew DTMDrapedLinearElement (pDrapedLine.get());
-    return ret;
+    if (pDrapedLine.IsValid())
+        return gcnew DTMDrapedLinearElement(pDrapedLine.get());
+    return nullptr;
     }
 
 //=======================================================================================

@@ -287,7 +287,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
 /*
@@ -2650,7 +2650,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
  /*
@@ -3345,7 +3345,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
 /*
