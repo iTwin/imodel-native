@@ -296,12 +296,14 @@ public:
     //! @param[in] codes Set of codes to release
     //! @param[in] briefcaseId
     //! @param[in] masterFileId
+    //! @param[in] options
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeGuidCR masterFileId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete all currently held codes abd locks by specific briefcase.
     //! @param[in] briefcaseId
+    //! @param[in] options
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RelinquishCodesLocks (BeSQLite::BeBriefcaseId briefcaseId,
         IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
