@@ -103,7 +103,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
         return false;
         }
 
-    m_maxSize = val.asDouble();
+    m_maxDiameter = val.asDouble();
     if (!readVectorEntry(pt, "resources", nodeResources))
         {
         LOG_ERROR("Cannot find \"resources\" entry");

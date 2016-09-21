@@ -75,7 +75,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     :m_dgnDb(model.GetDgnDb()),
     m_categoryId(DgnCategory::QueryFirstCategoryId(model.GetDgnDb())),
     m_hilited(DgnElement::Hilited::None),
-    m_infoString(model.GetUserLabel())
+    m_infoString(model.GetName())
     {
     if (m_infoString.empty())
         m_infoString = model.GetCode().GetValueCP();
@@ -302,11 +302,7 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
-    // Wait for tasks that we may have queued. 
-    //&&MM bogus in WaitForIdle it will deadlock if task queue is not empty.
-    BeFolly::IOThreadPool::GetPool().WaitForIdle();
 
-    m_root = nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -322,6 +318,31 @@ void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
     //&&MM todo
 //     if (m_rasterTreeP.IsValid())
 //         m_rasterTreeP->DropGraphicsForViewport(viewport);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d RasterModel::_QueryModelRange() const
+    {
+    _Load(nullptr);
+    if (!m_root.IsValid())
+        {
+        BeAssert(false);
+        return AxisAlignedBox3d();
+        }
+
+    ElementAlignedBox3d range = m_root->ComputeRange();
+    if (!range.IsValid())
+        return AxisAlignedBox3d();
+
+    Frustum box(range);
+    box.Multiply(m_root->GetLocation());
+
+    AxisAlignedBox3d aaRange;
+    aaRange.Extend(box.m_pts, 8);
+
+    return aaRange;
     }
 
 //----------------------------------------------------------------------------------------
@@ -374,6 +395,8 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     auto now = std::chrono::steady_clock::now();
     TileTree::DrawArgs args(context, m_root->GetLocation(), now, now - m_root->GetExpirationTime());
+    args.SetClip(GetClip().GetClipVector());
+
     m_root->Draw(args);
 
     DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
@@ -382,8 +405,9 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        args.RequestMissingTiles(*m_root);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing));
+        TileTree::TileLoadsPtr loads = std::make_shared<TileTree::TileLoads>();
+        args.RequestMissingTiles(*m_root, loads);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads));
         }
     }
 

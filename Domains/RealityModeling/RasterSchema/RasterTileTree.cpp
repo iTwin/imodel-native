@@ -8,6 +8,10 @@
 #include "RasterSchemaInternal.h"
 #include "RasterTileTree.h"
 
+USING_NAMESPACE_TILETREE
+
+//static const uint32_t DRAW_FINER_DELTA = 2;
+static const uint32_t DRAW_COARSER_DELTA = 6;
 
 //=======================================================================================
 //! &&MM review the need for this class.
@@ -15,17 +19,39 @@
 //=======================================================================================
 struct TileQuery
     {
-    TileQuery(RasterTile& tile) : m_tile(&tile) {}
+    TileQuery(RasterTile& tile, TileLoadsPtr loads) : m_tile(&tile), m_loads(loads) {}
 
     RefCountedPtr<RasterTile> m_tile;
+    mutable TileLoadsPtr m_loads;
 
+    struct TileLoader
+        {
+        Root& m_root;
+        TileLoader(Root& root) : m_root(root) { root.StartTileLoad(); }
+        ~TileLoader() { m_root.DoneTileLoad(); }
+        };
+
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  9/2016
+    //----------------------------------------------------------------------------------------
     BentleyStatus DoRead() const
         {
+        if (m_loads!=nullptr && m_loads->IsCanceled())
+            {
+            if (m_tile.IsValid()) 
+                m_tile->SetNotLoaded();
+
+            return ERROR;
+            }
+
         if (m_tile.IsValid() && !m_tile->IsQueued())
             return SUCCESS; // this node was abandoned.
 
+        TileLoader loadFlag(m_tile->GetRoot());
         bool enableAlphaBlend = false;
         Render::Image image = m_tile->GetRoot().GetSource().QueryTile(m_tile->GetTileId(), enableAlphaBlend);
+
 #ifndef NDEBUG  // debug build only.
         static bool s_missingTilesInRed = false;
         if (s_missingTilesInRed && !image.IsValid())
@@ -46,6 +72,9 @@ struct TileQuery
             return ERROR;
             }
 
+        if (m_tile->IsAbandoned())
+            return ERROR;
+
         auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
 
         Render::Texture::CreateParams params;
@@ -55,12 +84,15 @@ struct TileQuery
         graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
         graphic->AddTile(*texture, m_tile->GetCorners());
 
-        auto stat = graphic->Close();
+        auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
         BeAssert(SUCCESS == stat);
         UNUSED_VARIABLE(stat);
 
         m_tile->m_graphic = graphic;
-        m_tile->SetIsReady();
+        m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+
+        if (m_loads != nullptr)
+            m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
 
         return SUCCESS;
         }
@@ -89,19 +121,10 @@ RasterRoot::RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::Sy
     m_rootTile = new RasterTile(*this, TileId(m_source->GetResolutionCount() - 1, 0, 0), nullptr);
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-RasterRoot::~RasterRoot()
-    {
-    m_rootTile = nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile)
+folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads)
     {
     DgnDb::VerifyClientThread();
 
@@ -111,9 +134,12 @@ folly::Future<BentleyStatus> RasterRoot::_RequestTile(TileTree::TileCR tile)
         return ERROR;
         }
 
-    tile.SetIsQueued();
+    if (loads)
+        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
 
-    TileQuery query((RasterTile&) tile);
+    tile.SetIsQueued(); // mark as queued so we don't request it again.
+
+    TileQuery query(const_cast<RasterTileR>(static_cast<RasterTileCR>(tile)), loads);
     return folly::via(&BeFolly::IOThreadPool::GetPool(), [=] () { return query.DoRead(); });
     }
 
@@ -160,13 +186,10 @@ RasterTile::RasterTile(RasterRootR root, TileId id, RasterTileCP parent)
     if (parent)
         parent->ExtendRange(m_range);
 
-    //&&MM I don't get what this _GetMaximumSize means.  To me it looks like the size in pixel for a tile radium.
-    // so that would mean half a tilesize?? Webmercator use a tile diagonal which is 2xRadius??? this is why I added the /2 below.
-    // It also doesn't work well for non square tiles(borders) that is why I use the minTileSize. to review.
+    // That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
     uint32_t tileSizeX = m_root.GetSource().GetTileSizeX(GetTileId());
     uint32_t tileSizeY = m_root.GetSource().GetTileSizeY(GetTileId());
-    uint32_t minTileSize = MIN(tileSizeX, tileSizeY);
-    m_maxSize = sqrt(minTileSize*minTileSize + minTileSize*minTileSize) / 2/*???*/;
+    m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
     }
 
 //----------------------------------------------------------------------------------------
@@ -272,7 +295,7 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        if (!TryLowerRes(args, 10))
+        if (!TryLowerRes(args, DRAW_COARSER_DELTA))
             TryHigherRes(args);
 
         return;
@@ -304,6 +327,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     {
     auto now = std::chrono::steady_clock::now();
     TileTree::DrawArgs args(context, m_root.GetLocation(), now, now - m_root.GetExpirationTime());
+    args.SetClip(m_root.GetModel().GetClip().GetClipVector());
 
     DEBUG_PRINTF("Map progressive %d missing", m_missing.size());
 
@@ -316,7 +340,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    args.RequestMissingTiles(m_root);
+    args.RequestMissingTiles(m_root, m_loads);
     args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
@@ -324,6 +348,7 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     DEBUG_PRINTF("Map after progressive still %d missing", m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
+        //m_loads = nullptr; // for debugging
         context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
         return Completion::Finished;
         }

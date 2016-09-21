@@ -97,6 +97,8 @@ protected:
 
     virtual void _OnFitView(Dgn::FitContextR) override;
 
+    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+
     //This how we make our raster pick-able
 //    virtual void _DrawModel(Dgn::ViewContextR) override;
     

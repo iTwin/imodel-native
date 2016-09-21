@@ -58,6 +58,7 @@ public:
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
+    bvector<FPoint3d> const& GetPoints() const { return m_points; }
     bool IsEmpty() const {return m_points.empty();}
 };
 
@@ -99,7 +100,9 @@ struct Node : Dgn::TileTree::Tile
     typedef std::forward_list<GeometryPtr> GeometryList;
 
 private:
-    double m_maxSize;
+    double m_maxDiameter; // maximum diameter
+    double m_factor=0.5;  // by default, 1/2 of diameter
+
     GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
@@ -113,11 +116,11 @@ private:
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
-    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxSize (0.0) {}
+    Node(NodeP parent) : Dgn::TileTree::Tile(parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
-    double _GetMaximumSize() const override {return m_maxSize;}
+    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
     void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
@@ -141,6 +144,7 @@ private:
 
 public:
     using Root::Root;
+    ~Scene() {ClearAllTiles();}
 
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     BentleyStatus LoadNodeSynchronous(NodeR);
@@ -174,6 +178,7 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
 private:
     Utf8String m_sceneFile;
     Transform m_location;
+    mutable Dgn::ClipVectorPtr m_clip;
     mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
@@ -194,6 +199,9 @@ public:
 
     //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
+
+    //! Set clipping
+    void SetClip (Dgn::ClipVectorCR clip);
 };
 
 //=======================================================================================
@@ -202,7 +210,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
