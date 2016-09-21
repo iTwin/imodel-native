@@ -264,15 +264,11 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
                 WHERE RCC.IsPolymorphic = 1
                 ORDER BY 2 DESC
             )
-        SELECT SRC.RelationshipClassId
+        SELECT DISTINCT SRC.RelationshipClassId
             FROM RelationshipConstraintClasses SRC
             INNER JOIN RelationshipConstraintClasses TRG 
                 ON SRC.RelationshipClassId = TRG.RelationshipClassId
-            WHERE
-                SRC.RelationshipEnd = 0
-                AND SRC.ClassId = ?
-                AND TRG.RelationshipEnd = 1
-                AND TRG.ClassId = ? )";
+            WHERE SRC.ClassId = ? AND TRG.ClassId = ? )";
 
         m_findRelationshipClassesStatement = std::make_shared<Statement>();
 
@@ -381,7 +377,10 @@ ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithSource(ECClassId sou
 
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        if (DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false))
+        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward 
+            && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false)
+            || candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
+            && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, false))
             {
             if (relClass != nullptr)
                 {
@@ -410,7 +409,10 @@ ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithTarget(ECClassId sou
 
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        if (DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *targetClass, false))
+        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
+            && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *targetClass, false)
+            || candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
+            && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *targetClass, false))
             {
             if (relClass != nullptr)
                 {
@@ -441,17 +443,23 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
     int relClassDist = INT_MAX;
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        if (DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false))
+        bvector<ECClassP> candidateClasses;
+
+        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward 
+                    && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
+            candidateClasses = candidateRelClass->GetSource().GetClasses();           
+        else if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward 
+                    && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
+            candidateClasses = candidateRelClass->GetTarget().GetClasses();
+
+        for (auto candClass : candidateClasses)
             {
-            for (auto candTargClass : candidateRelClass->GetTarget().GetClasses())
+            //Find closest distance from inherited class
+            int dist = FindDistanceFromBaseClass(targetClass, candClass);
+            if (dist >= 0 && dist < relClassDist)
                 {
-                //Find closest distance from inherited class
-                int dist = FindDistanceFromBaseClass(targetClass, candTargClass);
-                if (dist >= 0 && dist < relClassDist)
-                    {
-                    relClass = candidateRelClass;
-                    relClassDist = dist;
-                    }
+                relClass = candidateRelClass;
+                relClassDist = dist;
                 }
             }
         }
