@@ -29,6 +29,7 @@ public:
     RoadRailPhysicalDomain();
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId QueryRoadCategoryId(Dgn::DgnDbCR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId QueryTrackCategoryId(Dgn::DgnDbCR);
 }; // RoadRailPhysicalDomain
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

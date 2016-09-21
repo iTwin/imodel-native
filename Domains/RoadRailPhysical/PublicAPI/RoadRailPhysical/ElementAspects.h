@@ -41,7 +41,7 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(StatusAspect)
     ROADRAILPHYSICAL_EXPORT static StatusAspectPtr Create(Status status);
-    ROADRAILPHYSICAL_EXPORT static StatusAspectCP Get(Dgn::PhysicalElementR el);
+    ROADRAILPHYSICAL_EXPORT static StatusAspectCP Get(Dgn::PhysicalElementCR el);
     ROADRAILPHYSICAL_EXPORT static StatusAspectP GetP(Dgn::PhysicalElementR el, StatusAspectR aspect);
     ROADRAILPHYSICAL_EXPORT static void Set(Dgn::PhysicalElementR el, StatusAspectR aspect);
 

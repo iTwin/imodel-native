@@ -52,6 +52,9 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Segment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -64,6 +67,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ElementAspects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Segment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

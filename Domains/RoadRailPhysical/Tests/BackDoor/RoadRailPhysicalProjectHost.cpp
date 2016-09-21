@@ -282,7 +282,7 @@ DgnModelId RoadRailPhysicalTestsFixture::QueryFirstAlignmentModelId(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
-DgnModelId RoadRailPhysicalTestsFixture::QueryFirstSpatialModelId(DgnDbR db)
+DgnModelId RoadRailPhysicalTestsFixture::QueryFirstPhysicalModelId(DgnDbR db)
     {
     for (auto const& modelEntry : db.Models().MakeIterator())
         {
@@ -290,11 +290,11 @@ DgnModelId RoadRailPhysicalTestsFixture::QueryFirstSpatialModelId(DgnDbR db)
             continue;
 
         DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel() && dynamic_cast<SpatialModelP>(model.get()))
+        if (model->IsGeometricModel() && dynamic_cast<PhysicalModelP>(model.get()))
             return modelEntry.GetModelId();
         }
 
-    BeAssert(false && "No SpatialModel found");
+    BeAssert(false && "No PhysicalModel found");
     return DgnModelId();
     }
 

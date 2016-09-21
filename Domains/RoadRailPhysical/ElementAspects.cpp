@@ -20,7 +20,7 @@ StatusAspectPtr StatusAspect::Create(Status status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusAspectCP StatusAspect::Get(Dgn::PhysicalElementR el)
+StatusAspectCP StatusAspect::Get(Dgn::PhysicalElementCR el)
     {
     return DgnElement::UniqueAspect::Get<StatusAspect>(el, *QueryClass(el.GetDgnDb()));
     }
@@ -69,7 +69,7 @@ DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el)
         "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE ElementId = ?;");
     BeAssert(stmtPtr.IsValid());
 
-    stmtPtr->BindId(1, el.GetElementId());
+    stmtPtr->BindInt(1, static_cast<int>(m_status));
     stmtPtr->BindId(2, el.GetElementId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())

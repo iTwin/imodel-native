@@ -47,6 +47,8 @@ $(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDep
 
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
 
+$(o)Segment$(oext) : $(_MakeFilePath)Segment.cpp ${MultiCompileDepends} $(appPublicApi)Segment.h
+
 $(o)SegmentRange$(oext) : $(_MakeFilePath)SegmentRange.cpp ${MultiCompileDepends} $(appPublicApi)SegmentRange.h
 
 %include MultiCppCompileGo.mki

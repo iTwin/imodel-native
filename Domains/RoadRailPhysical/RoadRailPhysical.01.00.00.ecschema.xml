@@ -44,15 +44,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Alignment" relationshipName="SegmentRangeElementOwnsAlignment" direction="forward"/>
+        <ECNavigationProperty propertyName="Alignment" relationshipName="SegmentRangeElementRefersToAlignment" direction="forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeElementOwnsAlignment" strength="embedding">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+    <ECRelationshipClass typeName="SegmentRangeElementRefersToAlignment" strength="referencing">
         <!--BaseClass>lr:ILinearElementSourceOwnsILinearElements</BaseClass-->
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by 1 segment range">
             <Class class="SegmentRangeElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 alignment">
             <Class class="rralign:Alignment"/>
         </Target>
     </ECRelationshipClass>
@@ -64,6 +63,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="RailRange" modifier="Sealed" description="Physical range of a Rail that can be segmented." >
         <BaseClass>SegmentRangeElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <!-- END SegmentRangeElement Class Hierarchy -->
     
@@ -71,6 +73,9 @@
     <ECEntityClass typeName="SegmentElement" modifier="Abstract" description="Base class for segments from Road/Rail Linear-Element-Sources." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding">
         <BaseClass>bis:PhysicalElementAssemblesPhysicalElements</BaseClass>
@@ -83,9 +88,15 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="RoadSegmentElement" modifier="Abstract" description="Base class for Physical segment of a road." >
         <BaseClass>SegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RailSegmentElement" modifier="Abstract" description="Base class for Physical segment of a rail." >
         <BaseClass>SegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="IntersectionSegmentElement" modifier="Abstract" description="Base class for Physical segment of a road connected to an intersection.">
         <BaseClass>RoadSegmentElement</BaseClass>
@@ -100,7 +111,24 @@
         </Target>
     </ECRelationshipClass>
     <!-- END SegmentElement Class Hierarchy -->
-    
+
+    <!-- BEGIN RoadSegmentElement Class Hierarchy -->
+    <ECEntityClass typeName="RoadSegment" modifier="Sealed" description="Physical segment of a road, with a constant cross-section." >
+        <BaseClass>RoadSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <!--ECNavigationProperty propertyName="RoadCrossSectionDefinitionId" relationshipName="RoadCrossSectionReferencesDefinition" direction="forward"/-->
+        <ECProperty propertyName="CrossSectionDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
+    </ECEntityClass>
+    <ECEntityClass typeName="TransitionSegment" modifier="Sealed" description="Physical segment of a road, with a variable cross-section.">
+        <BaseClass>RoadSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!-- END RoadSegmentElement Class Hierarchy -->
+
     <!-- BEGIN IntersectionElement Class Hierarchy -->
     <ECEntityClass typeName="IntersectionElement" modifier="Abstract" description="Base class for Physical intersections.">
         <BaseClass>bis:PhysicalElement</BaseClass>
@@ -250,7 +278,7 @@
     <ECEntityClass typeName="SwappableUniqueAspect" modifier="Abstract">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="UsableMultiAspect" modifier="Abstract">
+    <ECEntityClass typeName="IndexedMultiAspect" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="StatusAspect" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">

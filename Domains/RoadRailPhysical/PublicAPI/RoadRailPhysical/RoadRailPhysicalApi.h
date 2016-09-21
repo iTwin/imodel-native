@@ -63,8 +63,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Elements
-#define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
+#define BRRP_CLASS_RailRange                                        "RailRange"
 #define BRRP_CLASS_RoadRange                                        "RoadRange"
+#define BRRP_CLASS_RoadSegment                                      "RoadSegment"
+#define BRRP_CLASS_RoadSegmentElement                               "RoadSegmentElement"
+#define BRRP_CLASS_SegmentElement                                   "SegmentElement"
+#define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
+#define BRRP_CLASS_TransitionSegment                                "TransitionSegment"
 
 
 // Aspects
@@ -82,6 +87,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
+#define BRRP_CATEGORY_Track                                         "Track"
 #define BRRP_CATEGORY_Road                                          "Road"
 
 
@@ -124,13 +130,25 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the RoadRailPhysical namespace
 //-----------------------------------------------------------------------------------------
-ROADRAILPHYSICAL_TYPEDEFS(SegmentRange)
-ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
+ROADRAILPHYSICAL_TYPEDEFS(RailRange)
+ROADRAILPHYSICAL_TYPEDEFS(RailSegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(RoadRange)
+ROADRAILPHYSICAL_TYPEDEFS(RoadSegment)
+ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentElement)
+ROADRAILPHYSICAL_TYPEDEFS(SegmentElement)
+ROADRAILPHYSICAL_TYPEDEFS(SegmentRangeElement)
+ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
+ROADRAILPHYSICAL_TYPEDEFS(TransitionSegment)
 
 
-ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RailRange)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RailSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(SegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(TransitionSegment)
 
 
 //-----------------------------------------------------------------------------------------
@@ -139,3 +157,4 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
 #include "RoadRailPhysicalDomain.h"
 #include "ElementAspects.h"
 #include "SegmentRange.h"
+#include "Segment.h"
