@@ -92,10 +92,10 @@
         <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 intersection">
             <Class class="IntersectionSegmentElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by zero or more intersection segments">
             <Class class="IntersectionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -180,10 +180,10 @@
         <BaseClass>FurnitureDefinitionElement</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
             <Class class="FurnitureDefinitionElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by zero or more furniture definitions">
             <Class class="GeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>

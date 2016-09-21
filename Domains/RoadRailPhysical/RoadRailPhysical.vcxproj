@@ -94,7 +94,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -N0 r RoadRailPhysical</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILPHYSICAL_BUILD__</NMakePreprocessorDefinitions>
