@@ -49,6 +49,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             CodeDoesNotExist,
             CodesExist,
             FileDoesNotExist,
+            RepositoryIsLocked,
 
             //WebServices Errors
             LoginFailed,
