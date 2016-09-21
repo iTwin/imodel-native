@@ -260,7 +260,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ():m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap), m_originalECXmlVersionMajor(3), m_originalECXmlVersionMinor(1)
     {};
 
 /*---------------------------------------------------------------------------------**//**
