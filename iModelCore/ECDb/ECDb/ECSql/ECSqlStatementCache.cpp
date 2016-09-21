@@ -109,8 +109,12 @@ CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
     {
-    for (CachedECSqlStatementPtr& stmt : m_entries)
+    BeDbMutexHolder _v_v(m_mutex);
+
+    std::list<CachedECSqlStatementPtr>::iterator foundIt = m_entries.end();
+    for (auto it = m_entries.begin(), end = m_entries.end(); it != end; ++it)
         {
+        CachedECSqlStatementPtr& stmt = *it;
         //ECSqlStatement::GetECSql returns nullptr if stmt is not prepared, so don't compare ECSQL string if not prepared
         if (stmt->IsPrepared() && 0 == strcmp(stmt->GetECSql(), ecsql))
             {
@@ -118,12 +122,17 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
             if (stmt->GetRefCount() <= 1)
                 {
                 ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::GotFromCache, ecsql);
-                return stmt.get();
+                foundIt = it;
+                break;
                 }
             }
         }
 
-    return nullptr;
+    if (foundIt == m_entries.end())
+        return nullptr;
+
+    m_entries.splice(m_entries.begin(), m_entries, foundIt); // move this most-recently-accessed statement to front 
+    return foundIt->get();
     }
 
 //---------------------------------------------------------------------------------------

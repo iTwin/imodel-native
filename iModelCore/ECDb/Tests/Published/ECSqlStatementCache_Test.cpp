@@ -225,19 +225,21 @@ TEST_F(ECSqlStatementCacheTests, CacheExcess)
     ECSqlStatementCache cache(2);
 
     //populate cache
+    //hold raw pointers of the statement for testing purposes to not increment ref count
     CachedECSqlStatement* stmt1A = cache.GetPreparedStatement(ecdb, ecsql1).get();
-    cache.GetPreparedStatement(ecdb, ecsql2);
+    CachedECSqlStatementPtr stmt2 = cache.GetPreparedStatement(ecdb, ecsql2);
     ASSERT_EQ(2, cache.Size());
 
     //this should not add a new statement to the cache
+    //but will move it to the top of the cache.
     CachedECSqlStatementPtr stmt1B = cache.GetPreparedStatement(ecdb, ecsql1);
     ASSERT_TRUE(stmt1A == stmt1B.get()) << "Statement is expected to still be in cache";
 
-    //now first statement should be removed from cache
+    //now second statement should be removed from cache, as stmt1 was moved to top of cache
     cache.GetPreparedStatement(ecdb, ecsql3);
     ASSERT_EQ(2, cache.Size());
 
-    ASSERT_EQ(1, stmt1B->GetRefCount()) << "Statement was removed from cache, so only holder is expected to be stmt1B";
+    ASSERT_EQ(1, stmt2->GetRefCount()) << "Statement was removed from cache, so only holder is expected to be stmt1B";
     }
 
 END_ECDBUNITTESTS_NAMESPACE
