@@ -100,6 +100,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
     // Create Stations
     auto station1Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
     ASSERT_TRUE(station1Ptr->Insert().IsValid());
+    ASSERT_DOUBLE_EQ(50.0, station1Ptr->GetAtPosition().GetDistanceAlongFromStart());
 
     auto station2Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
     ASSERT_TRUE(station2Ptr->Insert().IsValid());

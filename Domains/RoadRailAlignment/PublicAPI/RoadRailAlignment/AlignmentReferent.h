@@ -51,9 +51,12 @@ struct AlignmentStation : AlignmentReferentElement
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentReferentElement);
     friend struct AlignmentStationHandler;
 
+private:
+    uint64_t m_atLocationAspectId;
+
 protected:
     //! @private
-    explicit AlignmentStation(CreateParams const& params) : T_Super(params) {}
+    explicit AlignmentStation(CreateParams const& params);
 
     //! @private
     explicit AlignmentStation(CreateParams const& params, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue);
@@ -62,7 +65,10 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentStation)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentStation)
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, LinearReferencing::DistanceExpressionCR distanceExpression, double restartValue = 0.0);
+    ROADRAILALIGNMENT_EXPORT LinearReferencing::DistanceExpressionCR GetAtPosition() const;
+    ROADRAILALIGNMENT_EXPORT LinearReferencing::DistanceExpressionP GetAtPositionP();
+
+    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, LinearReferencing::DistanceExpressionCR atPosition, double restartValue = 0.0);
 }; // AlignmentStation
 
 //=================================================================================
