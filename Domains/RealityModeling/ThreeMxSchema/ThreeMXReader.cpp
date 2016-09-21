@@ -229,7 +229,9 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            if (nullptr != scene.GetRenderSystem())
+#ifdef KEITH_FIX_RENDER_SYSTEM_TEST
+        if (nullptr != scene.GetRenderSystem())
+#endif
                 renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
             }
         }
