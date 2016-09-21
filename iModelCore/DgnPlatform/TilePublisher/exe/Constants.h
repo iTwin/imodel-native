@@ -25,9 +25,8 @@ R"HTML(
 <script src="scripts/Cesium/Cesium.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimInspectorWidget.js"></script>
-<script src="scripts/Bentley/BimStyler.js"></script>
+<script src="scripts/Bentley/BimWidgets.js"></script>
 <script src="scripts/Bentley/BimToolbar.js"></script>
-<script src="scripts/Bentley/BimViews.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -59,7 +58,10 @@ Cesium.when(viewset.readyPromise).then(function() {
 
     var tileset = new Bim.Tileset(viewset, viewer);
     Cesium.when(tileset.readyPromise).then(function() {
-        // ###TODO: create widgets...
+        var toolbar = new Bim.Toolbar(viewer);
+        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', Bim.createModelToggleWidget(tileset));
+        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', Bim.createCategoryToggleWidget(tileset));
+        // ###TODO: Views...
     });
 });
 </script>
