@@ -55,6 +55,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         map["DgnDbServer.FileDoesNotExist"]                          = Id::FileDoesNotExist;
         map["DgnDbServer.FileAlreadyExists"]                         = Id::FileAlreadyExists;
+        map["DgnDbServer.RepositoryIsLocked"]                        = Id::RepositoryIsLocked;
         }
 
     auto it = map.find(errorIdString);

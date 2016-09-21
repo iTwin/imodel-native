@@ -63,6 +63,7 @@ RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<voi
         map[DgnDbServerError::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
         map[DgnDbServerError::Id::CodeStateRevisionDenied]        = RepositoryStatus::InvalidRequest;
         map[DgnDbServerError::Id::CodeAlreadyExists]              = RepositoryStatus::CodeUnavailable;
+        map[DgnDbServerError::Id::RepositoryIsLocked]             = RepositoryStatus::RepositoryIsLocked;
         }
 
     auto it = map.find(result.GetError().GetId());
