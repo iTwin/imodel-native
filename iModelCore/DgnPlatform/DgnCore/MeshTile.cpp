@@ -21,18 +21,28 @@
 USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
-    static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-    static UnconditionalTileGenerationFilter s_defaultFilter;
+static ITileGenerationProgressMonitor   s_defaultProgressMeter;
+static UnconditionalTileGenerationFilter s_defaultFilter;
 
-    struct RangeTreeNode
-    {
-        size_t          m_facetCount;
-        DgnElementId    m_elementId;
+struct RangeTreeNode
+{
+    size_t          m_facetCount;
+    DgnElementId    m_elementId;
 
-        RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
-    };
+    RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
+};
 
-    static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+
+static Render::GraphicSet s_unusedDummyGraphicSet;
+
+#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
+static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
+#else
+static const Utf8CP s_geometrySource3dNativeSql =
+    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+    BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+#endif
 
 END_UNNAMED_NAMESPACE
 
@@ -42,7 +52,8 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerationCache::TileGenerationCache(CacheGeometry cacheGeometry) : m_tree(XYZRangeTreeRoot::Allocate()), m_wantCacheGeometry(CacheGeometry::Yes==cacheGeometry)
+TileGenerationCache::TileGenerationCache(Options options) : m_tree(XYZRangeTreeRoot::Allocate()), m_options(options),
+    m_dbMutex(BeSQLite::BeDbMutex::MutexType::Recursive)
     {
     // Caller will populate...
     }
@@ -52,7 +63,7 @@ TileGenerationCache::TileGenerationCache(CacheGeometry cacheGeometry) : m_tree(X
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGenerationCache::AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const
     {
-    if (m_wantCacheGeometry)
+    if (WantCacheGeometry())
         {
         BeMutexHolder lock(m_mutex);
 
@@ -65,7 +76,7 @@ void TileGenerationCache::AddCachedGeometry(DgnElementId elementId, TileGeometry
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const
     {
-    if (m_wantCacheGeometry)
+    if (WantCacheGeometry())
         {
         BeMutexHolder lock(m_mutex);
         auto iter = m_geometry.find(elementId);
@@ -81,6 +92,34 @@ bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnEleme
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGenerationCache::AddCachedGeometrySource(std::unique_ptr<GeometrySource>&& source, DgnElementId elemId) const
+    {
+    if (WantCacheGeometrySources())
+        {
+        BeMutexHolder lock(m_mutex);
+        m_geometrySources.insert(GeometrySourceMap::value_type(elemId, std::move(source)));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemId) const
+    {
+    if (WantCacheGeometrySources())
+        {
+        BeMutexHolder lock(m_mutex);
+        auto iter = m_geometrySources.find(elemId);
+        if (m_geometrySources.end() != iter)
+            return iter->second.get();
+        }
+
+    return nullptr;
     }
 
 //=======================================================================================
@@ -846,7 +885,7 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb),
-    m_maxPointsPerTile(maxPointsPerTile), m_cache(TileGenerationCache::CacheGeometry::No)
+    m_maxPointsPerTile(maxPointsPerTile), m_cache(TileGenerationCache::Options::CacheGeometrySources)
     {
     StopWatch timer(true);
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
@@ -1154,6 +1193,185 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
+struct TileGeometrySource
+{
+    struct GeomBlob
+    {
+        void const* m_blob;
+        int         m_size;
+
+        GeomBlob(void const* blob, int size) : m_blob(blob), m_size(size) { }
+        template<typename T> GeomBlob(T& stmt, int columnIndex)
+            {
+#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
+            m_blob = stmt.GetValueBinary(columnIndex, &m_size);
+#else
+            m_blob = stmt.GetValueBlob(columnIndex);
+            m_size = stmt.GetColumnBytes(columnIndex);
+#endif
+            }
+    };
+protected:
+    DgnCategoryId           m_categoryId;
+    GeometryStream          m_geom;
+    DgnDbR                  m_db;
+    bool                    m_valid;
+
+    TileGeometrySource(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob) : m_categoryId(categoryId), m_db(db)
+        {
+        m_valid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
+        }
+public:
+    bool IsValid() const { return m_valid; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileGeometrySource3d : TileGeometrySource, GeometrySource3d
+{
+private:
+    Placement3d     m_placement;
+
+    TileGeometrySource3d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    virtual DgnElementCP _ToElement() const override { return nullptr; }
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override { return this; }
+    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    virtual Placement3dCR _GetPlacement() const override { return m_placement; }
+
+    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+public:
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+        {
+        std::unique_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        if (!pSrc->IsValid())
+            return nullptr;
+
+        return std::move(pSrc);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TileGeometryProcessorContext : NullContext
+{
+private:
+    IGeometryProcessorR                     m_processor;
+    TileGenerationCacheCR                   m_cache;
+#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
+    BeSQLite::EC::CachedECSqlStatementPtr   m_statement;
+
+    bool IsValueNull(int index) { return m_statement->IsValueNull(index); }
+#else
+    BeSQLite::CachedStatementPtr            m_statement;
+
+    bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
+#endif
+
+    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+        {
+        return new SimplifyGraphic(params, m_processor, *this);
+        }
+
+    virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
+    virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
+public:
+    TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
+#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
+    m_statement(db.GetPreparedECSqlStatement(s_geometrySource3dECSql))
+#else
+    m_statement(db.GetCachedStatement(s_geometrySource3dNativeSql))
+#endif
+        {
+        SetDgnDb(db);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bool allowLoad)
+    {
+    GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
+    if (nullptr != pSrc)
+        return VisitGeometry(*pSrc);
+
+    // Never load elements - but do use them if they're already loaded
+    DgnElementCPtr el = GetDgnDb().Elements().FindElement(elementId);
+    if (el.IsValid())
+        {
+        GeometrySourceCP geomElem = el->ToGeometrySource();
+        return nullptr != geomElem ? VisitGeometry(*geomElem) : ERROR;
+        }
+
+    // Load only the data we actually need for processing geometry
+    // NB: The Step() below as well as each column access requires acquiring the sqlite mutex.
+    // Prevent micro-contention by locking the db here
+    // Note we do not use a mutex holder because we want to release the mutex before processing the geometry.
+    m_cache.GetDbMutex().Enter();
+    StatusInt status = ERROR;
+    auto& stmt = *m_statement;
+    stmt.BindInt64(1, static_cast<int64_t>(elementId.GetValueUnchecked()));
+
+    if (BeSQLite::BE_SQLITE_ROW == stmt.Step() && !IsValueNull(1))
+        {
+        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
+
+#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
+        DPoint3d origin = stmt.GetValuePoint3D(5),
+                 boxLo  = stmt.GetValuePoint3D(6),
+                 boxHi  = stmt.GetValuePoint3D(7);
+#else
+        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7)),
+                 boxLo  = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10)),
+                 boxHi  = DPoint3d::From(stmt.GetValueDouble(11), stmt.GetValueDouble(12), stmt.GetValueDouble(13));
+#endif
+
+        Placement3d placement(origin,
+                YawPitchRollAngles(Angle::FromDegrees(stmt.GetValueDouble(2)), Angle::FromDegrees(stmt.GetValueDouble(3)), Angle::FromDegrees(stmt.GetValueDouble(4))),
+                ElementAlignedBox3d(boxLo.x, boxLo.y, boxLo.z, boxHi.x, boxHi.y, boxHi.z));
+
+        auto geomSrcPtr = TileGeometrySource3d::Create(categoryId, GetDgnDb(), geomBlob, placement);
+
+        stmt.Reset();
+        m_cache.GetDbMutex().Leave();
+
+        pSrc = geomSrcPtr.get();
+        if (m_cache.WantCacheGeometrySources())
+            m_cache.AddCachedGeometrySource(std::move(geomSrcPtr), elementId); // otherwise don't std::move it...
+
+        if (nullptr != pSrc)
+            status = VisitGeometry(*pSrc);
+        }
+    else
+        {
+        stmt.Reset();
+        m_cache.GetDbMutex().Leave();
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr TileGeometryProcessorContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+    {
+    Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
+    return WasAborted() ? nullptr : graphic;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
 struct TileGeometryProcessor : IGeometryProcessor
 {
 private:
@@ -1173,7 +1391,6 @@ private:
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
-    virtual void _OutputGraphics(ViewContextR context) override;
 
     virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
     virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
@@ -1195,6 +1412,7 @@ public:
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
     void ProcessElement(ViewContextR context, DgnElementId elementId);
+    virtual void _OutputGraphics(ViewContextR context) override;
 
     bool BelowMinRange(DRange3dCR range) const
         {
@@ -1231,7 +1449,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     if (!haveCached)
         {
         m_curElemId = elemId;
-        context.VisitElement(elemId, true);
+        context.VisitElement(elemId, false);
         }
 
     for (auto& geom : m_curElemGeometries)
@@ -1385,7 +1603,7 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
@@ -1397,8 +1615,8 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
     // Collect geometry from elements in this node, sorted by facet count density
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
-
-    GeometryProcessor::Process(processor, db);
+    TileGeometryProcessorContext context(processor, db, cache);
+    processor._OutputGraphics(context);
 
     // Convert to meshes
     MeshBuilderMap builderMap;
@@ -1448,7 +1666,7 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
                 }
             }
 
-        if (strokes.IsValid())
+        if (doPolylines && strokes.IsValid())
             {
             for (auto& curvePrimitive : *strokes)
                 {
@@ -1482,18 +1700,18 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileViewControllerFilter::TileViewControllerFilter(ViewControllerCR view) : m_set(view)
+TileModelCategoryFilter::TileModelCategoryFilter(DgnDbR db, DgnModelIdSet const* models, DgnCategoryIdSet const* categories) : m_set(models, categories)
     {
     static const Utf8CP s_sql = "SELECT g.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " As g, " BIS_SCHEMA(BIS_CLASS_Element) " AS e "
                                 " WHERE g.ECInstanceId=e.ECInstanceId AND InVirtualSet(?,e.ModelId,g.CategoryId)";
 
-    m_stmt = view.GetDgnDb().GetPreparedECSqlStatement(s_sql);
+    m_stmt = db.GetPreparedECSqlStatement(s_sql);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileViewControllerFilter::_AcceptElement(DgnElementId elementId)
+bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId)
     {
     m_stmt->BindVirtualSet(1, m_set);
     bool accepted = BE_SQLITE_ROW == m_stmt->Step();

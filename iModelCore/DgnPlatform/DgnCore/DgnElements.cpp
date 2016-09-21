@@ -1161,6 +1161,14 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     DgnElementCP element = FindElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize)
+    {
+    BeDbMutexHolder _v(m_mutex);
+    return geom.ReadGeometryStream(GetSnappyFrom(), GetDgnDb(), blob, blobSize);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16

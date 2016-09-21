@@ -11,6 +11,7 @@
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
+#include <map> // NB: Because bmap doesn't support move semantics...
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -324,13 +325,11 @@ protected:
 };
 
 //=======================================================================================
-//! Filters elements according to the viewed models and categories associated with a
-//! ViewController.
+//! Filters elements according to a set of models and categories.
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct TileViewControllerFilter : ITileGenerationFilter
+struct TileModelCategoryFilter : ITileGenerationFilter
 {
-protected:
     struct ModelAndCategorySet : BeSQLite::VirtualSet
         {
     private:
@@ -342,19 +341,34 @@ protected:
             return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
             }
     public:
-        ModelAndCategorySet(ViewControllerCR view) : m_models(view.GetViewedModels()), m_categories(view.GetViewedCategories()) { }
+        ModelAndCategorySet(DgnModelIdSet const* models, DgnCategoryIdSet const* categories)
+            {
+            if (nullptr != models)      m_models = *models;
+            if (nullptr != categories)  m_categories = *categories;
+            }
 
         bool IsEmpty() const { return m_models.empty() && m_categories.empty(); }
         };
-
+protected:
     ModelAndCategorySet                     m_set;
     BeSQLite::EC::CachedECSqlStatementPtr   m_stmt;
 
     DGNPLATFORM_EXPORT virtual bool _AcceptElement(DgnElementId elementId) override;
 public:
-    DGNPLATFORM_EXPORT TileViewControllerFilter(ViewControllerCR view);
+    DGNPLATFORM_EXPORT TileModelCategoryFilter(DgnDbR dgndb, DgnModelIdSet const* modelIds, DgnCategoryIdSet const* categoryIds);
 
     bool IsEmpty() const { return m_set.IsEmpty(); }
+};
+
+//=======================================================================================
+//! Filters elements according to the viewed models and categories associated with a
+//! ViewController.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileViewControllerFilter : TileModelCategoryFilter
+{
+public:
+    TileViewControllerFilter(ViewControllerCR view) : TileModelCategoryFilter(view.GetDgnDb(), &view.GetViewedModels(), &view.GetViewedCategories()) { }
 };
 
 //=======================================================================================
@@ -363,17 +377,27 @@ public:
 //=======================================================================================
 struct TileGenerationCache
 {
-    enum class CacheGeometry { Yes, No };
+    // ###TODO: Put upper limit on sizes of geometry source/list caches...
+    // The following options are mutually exclusive
+    enum class Options
+    {
+        None = 0,               // cache nothin
+        CacheGeometrySources,   // cache GeometrySources by element ID
+        CacheGeometryLists,     // cache TileGeometryLists by element ID
+    };
 private:
-    typedef bmap<DgnElementId, TileGeometryList>    GeometryMap;
+    typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
+    typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
-    XYZRangeTreeRoot*       m_tree;
-    mutable GeometryMap     m_geometry;
-    mutable BeMutex         m_mutex;
-    bool                    m_wantCacheGeometry;
+    XYZRangeTreeRoot*           m_tree;
+    mutable GeometryListMap     m_geometry;
+    mutable GeometrySourceMap   m_geometrySources;
+    mutable BeMutex             m_mutex;    // for geometry cache
+    mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
+    Options                     m_options;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
-    TileGenerationCache(CacheGeometry cacheGeometry=CacheGeometry::Yes);
+    TileGenerationCache(Options options = Options::CacheGeometrySources);
     void Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter);
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
@@ -381,9 +405,15 @@ public:
     XYZRangeTreeRoot& GetTree() const { return *m_tree; }
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
 
-    bool WantCacheGeometry() const { return m_wantCacheGeometry; }
+    bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
+    GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
+    void AddCachedGeometrySource(std::unique_ptr<GeometrySource>&& source, DgnElementId elementId) const;
+
+    bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
+
+    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 };
 
 //=======================================================================================
@@ -440,7 +470,7 @@ public:
 
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
     DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache);
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const;
 };
 
 //=======================================================================================
