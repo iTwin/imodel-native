@@ -20,11 +20,13 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedLocation : Dgn::DgnElement::MultiAspect
 {
     DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
+    friend struct LinearlyReferencedLocationHandler;
 
 protected:
     LinearlyReferencedLocation();
 
     virtual Utf8CP _GetECSchemaName() const override { return BLR_SCHEMA_NAME; }
+    virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 }; // LinearlyReferencedLocation
 
 //=======================================================================================
@@ -33,7 +35,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedAtLocation : LinearlyReferencedLocation
 {
-    DEFINE_T_SUPER(LinearlyReferencedAtLocation)
+    DEFINE_T_SUPER(LinearlyReferencedLocation)
     friend struct LinearlyReferencedAtLocationHandler;
 
 private:
@@ -44,6 +46,7 @@ protected:
     LinearlyReferencedAtLocation(DistanceExpressionCR atPosition);
 
     virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedAtLocation; }
+    virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
@@ -60,7 +63,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedFromToLocation : LinearlyReferencedLocation
 {
-    DEFINE_T_SUPER(LinearlyReferencedFromToLocation)
+    DEFINE_T_SUPER(LinearlyReferencedLocation)
     friend struct LinearlyReferencedFromToLocationHandler;
 
 private:
@@ -71,6 +74,7 @@ protected:
     LinearlyReferencedFromToLocation(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);
 
     virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedFromToLocation; }
+    virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;

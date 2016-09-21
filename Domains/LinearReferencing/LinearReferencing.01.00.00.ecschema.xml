@@ -99,7 +99,7 @@
     <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
         <!--ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
@@ -108,7 +108,7 @@
     <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="FromPosition" typeName="DistanceExpression"/>
         <!--ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyReferencedLocationRefersToReferent" direction="forward"/-->
