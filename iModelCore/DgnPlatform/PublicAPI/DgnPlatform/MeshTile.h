@@ -325,13 +325,11 @@ protected:
 };
 
 //=======================================================================================
-//! Filters elements according to the viewed models and categories associated with a
-//! ViewController.
+//! Filters elements according to a set of models and categories.
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
-struct TileViewControllerFilter : ITileGenerationFilter
+struct TileModelCategoryFilter : ITileGenerationFilter
 {
-protected:
     struct ModelAndCategorySet : BeSQLite::VirtualSet
         {
     private:
@@ -343,19 +341,34 @@ protected:
             return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
             }
     public:
-        ModelAndCategorySet(ViewControllerCR view) : m_models(view.GetViewedModels()), m_categories(view.GetViewedCategories()) { }
+        ModelAndCategorySet(DgnModelIdSet const* models, DgnCategoryIdSet const* categories)
+            {
+            if (nullptr != models)      m_models = *models;
+            if (nullptr != categories)  m_categories = *categories;
+            }
 
         bool IsEmpty() const { return m_models.empty() && m_categories.empty(); }
         };
-
+protected:
     ModelAndCategorySet                     m_set;
     BeSQLite::EC::CachedECSqlStatementPtr   m_stmt;
 
     DGNPLATFORM_EXPORT virtual bool _AcceptElement(DgnElementId elementId) override;
 public:
-    DGNPLATFORM_EXPORT TileViewControllerFilter(ViewControllerCR view);
+    DGNPLATFORM_EXPORT TileModelCategoryFilter(DgnDbR dgndb, DgnModelIdSet const* modelIds, DgnCategoryIdSet const* categoryIds);
 
     bool IsEmpty() const { return m_set.IsEmpty(); }
+};
+
+//=======================================================================================
+//! Filters elements according to the viewed models and categories associated with a
+//! ViewController.
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileViewControllerFilter : TileModelCategoryFilter
+{
+public:
+    TileViewControllerFilter(ViewControllerCR view) : TileModelCategoryFilter(view.GetDgnDb(), &view.GetViewedModels(), &view.GetViewedCategories()) { }
 };
 
 //=======================================================================================
