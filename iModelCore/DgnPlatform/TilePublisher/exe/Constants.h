@@ -52,23 +52,17 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-var json = Bim.requestJson(viewJsonUrl, function(err, json)
-    {
-    if (Cesium.defined(err)) 
-        {
-        console.log("Failed to load " + viewJsonUrl); 
-        return;
-        } 
-    else
-        {
-        var viewer = new Cesium.Viewer('cesiumContainer', Bim.createCesiumViewerOptions(json.geolocated));
-        viewer.extend(Bim.viewerInspectorMixin);
-        Bim.fixupSandboxAttributes();
-        var tileset = Bim.loadTileset(viewer, json);
+var viewset = new Bim.Viewset(viewJsonUrl);
+Cesium.when(viewset.readyPromise).then(function() {
+    var viewer = new Cesium.Viewer('cesiumContainer', viewset.createCesiumViewerOptions());
+    viewer.extend(Bim.viewerInspectorMixin);
+    Bim.fixupSandboxAttributes();
 
-        Bim.CreateViewCategoryAndModelWidgets(viewer, tileset, json);
-        }
+    var tileset = new Bim.Tileset(viewset, viewer);
+    Cesium.when(tileset.readyPromise).then(function() {
+        // ###TODO: create widgets...
     });
+});
 </script>
 </body>
 </html>
