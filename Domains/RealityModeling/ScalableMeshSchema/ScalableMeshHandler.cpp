@@ -19,7 +19,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
-
+USING_NAMESPACE_BENTLEY_RENDER
 
 //#define PRINT_SMDISPLAY_MSG
 
@@ -618,6 +618,94 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
         }
     }
 
+struct  ScalableMeshTileNode : TileNode
+    {
+    IScalableMeshNodePtr             m_node;
+    Transform           m_transform;
+
+    ScalableMeshTileNode(IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
+        m_node(node), m_transform(transform), TileNode(transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
+        {}
+
+
+    virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode = TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles = false) const override
+        {
+        TileMeshList        tileMeshes;
+
+        if (m_node->GetChildrenNodes().empty())
+            {
+            BeAssert(false);
+            return tileMeshes;
+            }
+
+
+        for (auto& child : m_node->GetChildrenNodes())
+            {
+
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+            bvector<bool> clips;
+            auto meshP = child->GetMesh(flags, clips);
+            if (!meshP.IsValid() || meshP->GetNbFaces() == 0) continue;
+            TileMeshBuilderPtr      builder;
+            TileDisplayParamsPtr    displayParams;
+
+            if (child->IsTextured())
+                {
+                auto textureP = child->GetTexture();
+                ByteStream myImage(textureP->GetDimension().x* textureP->GetDimension().y * 3);
+                memcpy(myImage.GetDataP(), textureP->GetData(), textureP->GetDimension().x* textureP->GetDimension().y * 3);
+                Image image(textureP->GetDimension().x, textureP->GetDimension().y, std::move(myImage), Image::Format::Rgb);
+                ImageSource jpgTex(image, ImageSource::Format::Jpeg, 70);
+                TileTextureImagePtr     tileTexture = new TileTextureImage(jpgTex);
+                displayParams = new TileDisplayParams(0xffffff, tileTexture, true);
+                }
+            else
+                {
+                TileTextureImagePtr     tileTexture = nullptr;
+                displayParams = new TileDisplayParams(0x007700, tileTexture, false);
+                }
+            builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
+                builder->AddTriangle(*visitor, DgnElementId(), false, twoSidedTriangles);
+
+            tileMeshes.push_back(builder->GetMesh());
+            }
+
+        return tileMeshes;
+        }
+
+    };  //  ScalableMeshTileNode
+
+void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex, TileNode* parent)
+    {
+    DRange3d transformedRange = node->GetContentExtent();
+    if (transformedRange.IsNull() || transformedRange.IsEmpty()) transformedRange = node->GetNodeExtent();
+    transformDbToTile.Multiply(transformedRange, transformedRange);
+    rootTile = new ScalableMeshTileNode(node, transformedRange, transformDbToTile, childIndex, parent);
+
+    for (auto& child : node->GetChildrenNodes())
+        {
+        size_t idx = &child - &node->GetChildrenNodes().front();
+        TileNodePtr childTile;
+        MakeTileSubTree(childTile, child, transformDbToTile, idx, rootTile.get());
+        rootTile->GetChildren().push_back(childTile);
+        }
+    }
+
+TileGenerator::Status ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile)
+    {
+    if (!m_smPtr.IsValid())
+        return TileGenerator::Status::NoGeometry;
+
+    Transform   modelToTile;
+    modelToTile.InitFrom(m_storageToUorsTransfo);
+    modelToTile = modelToTile.ValidatedInverse();
+
+    IScalableMeshNodePtr rootNode = m_smPtr->GetRootNode();
+    MakeTileSubTree(rootTile, rootNode, modelToTile);
+    return TileGenerator::Status::Success;
+    }
+
 //NEEDS_WORK_SM : Should be at application level
 void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
     {    
@@ -718,7 +806,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
-    if (nullptr != m_progressiveQueryEngine.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
@@ -770,8 +858,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         dgnGcsPtr->UorsFromCartesian(scale, scale);
         }
     else
-        {                
-        dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        {
+        if (dgnProject.Units().GetDgnGCS()!=nullptr)
+            dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
         }
            
     DPoint3d translation = {0,0,0};
@@ -803,7 +892,7 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh","ScalableMeshModel"));
     BeAssert(classId.IsValid());
 
-    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("terrain")));
+    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, dgnDb.Elements().GetRootSubjectId(), DgnModel::CreateModelCode("terrain")));
     
     BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
     model->Insert();
@@ -911,7 +1000,7 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     if (appData->m_smTerrainPhysicalModelP != nullptr)
         nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
 
-    RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(nameToSet))));
+    RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, db.Elements().GetRootSubjectId(), DgnModel::CreateModelCode(nameToSet))));
 
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
