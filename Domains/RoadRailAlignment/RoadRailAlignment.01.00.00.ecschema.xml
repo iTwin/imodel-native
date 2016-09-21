@@ -6,13 +6,13 @@
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentHorizontal">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="lr:LENGTH"/>
@@ -20,14 +20,14 @@
     <ECEntityClass typeName="AlignmentVertical">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentModel">
         <BaseClass>bis:SpatialModel</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding">

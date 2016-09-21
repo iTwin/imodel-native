@@ -106,7 +106,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 re RoadRailAlignment</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -N0 r RoadRailAlignment</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 re RoadRailAlignment -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILALIGNMENT_BUILD__</NMakePreprocessorDefinitions>

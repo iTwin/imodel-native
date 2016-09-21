@@ -85,11 +85,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p BackdoorForUnitTests -r DgnDomains-RoadRailAlignment -f RoadRailAlignment re BackdoorForUnitTests</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p RoadRailAlignment-Tested -r DgnDomains-RoadRailAlignment -f RoadRailAlignment b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r DgnDomains-RoadRailAlignment -f RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r DgnDomains-RoadRailAlignment -f RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailAlignment\BackDoorConceptDataAccessUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailAlignment\BackDoorRoadRailAlignmentUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
