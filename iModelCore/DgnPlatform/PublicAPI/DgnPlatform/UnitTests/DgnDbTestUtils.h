@@ -120,9 +120,26 @@ public:
     //! @{
 
     //! Insert a PhysicalModel 
+    //! @note Also creates a Subject for the PhysicalModel to describe
+    //! @note No need for caller to assert a valid return (asserts within implementation)
     static PhysicalModelPtr InsertPhysicalModel(DgnDbR, DgnCodeCR modelCode);
+
+    //! Insert a DocumentListModel 
+    //! @note Also creates a Subject for the DocumentListModel to describe
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static DocumentListModelPtr InsertDocumentListModel(DgnDbR, DgnCodeCR modelCode);
+
+    //! Insert a Drawing element
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static DrawingPtr InsertDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+
+    //! Insert a DrawingModel 
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static DrawingModelPtr InsertDrawingModel(DrawingCR, DgnCodeCR modelCode);
+
     //! Insert a SheetModel 
     static SheetModelPtr InsertSheetModel(DgnDbR db, DgnCode modelCode);
+
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
                                       StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade)

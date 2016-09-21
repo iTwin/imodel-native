@@ -365,16 +365,15 @@ void AnnotationTableTest::SetUpTestCase()
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model
-    RefCountedPtr<DrawingModel> model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(TEST_MODEL_NAME)));
-    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
-    ASSERT_TRUE(model->GetModelId().IsValid());
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL_NAME);
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode(TEST_MODEL_NAME));
 
 #define WANT_VIEW
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................
-    auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "AnnotationTableTest");
+    auto viewDef = DrawingViewDefinition::MakeViewOfModel(*drawingModel, "AnnotationTableTest");
     EXPECT_TRUE(viewDef->Insert().IsValid());
 #endif
 

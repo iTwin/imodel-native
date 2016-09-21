@@ -73,11 +73,10 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        RefCountedPtr<DrawingModel> model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("2D Model")));
-        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "2D Drawing");
+        DrawingModelPtr model = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("2D Model"));
         modelId = model->GetModelId();
-        ASSERT_TRUE(modelId.IsValid());
 
         textStyleId = ensureAnnotationTextStyle1(*db);
         ASSERT_TRUE(textStyleId.IsValid());
@@ -252,13 +251,8 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        SubjectCPtr rootSubject = db->Elements().GetRootSubject();
-        SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
-        ASSERT_TRUE(modelSubject.IsValid());
-        PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode(TEST_NAME));
-        ASSERT_TRUE(model.IsValid());
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode(TEST_NAME));
         modelId = model->GetModelId();
-        ASSERT_TRUE(modelId.IsValid());
 
         textStyleId = ensureAnnotationTextStyle1(*db);
         ASSERT_TRUE(textStyleId.IsValid());

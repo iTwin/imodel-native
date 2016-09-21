@@ -67,16 +67,15 @@ void GenericDgnModel2dTestFixture::SetUpTestCase()
     GenericDgnModel2dTestFixture::s_seedFileInfo = rootSeedInfo;
     GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.SetName(L"Seed_GenericDgnModel2d/DgnDbTestUtils_OneSpatialMoelWithOneGeometricModel2d.bim");
 
-    //// Make a copy of the root seed which will be customized as a seed for tests in this group
+    // Make a copy of the root seed which will be customized as a seed for tests in this group
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, GenericDgnModel2dTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(TEST_MODEL2D_NAME)));
-    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
-    ASSERT_TRUE(model->GetModelId().IsValid());
-
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("DrawingListModel"));
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL2D_NAME);
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode(TEST_MODEL2D_NAME));
+    
     db->SaveChanges();
     }
 

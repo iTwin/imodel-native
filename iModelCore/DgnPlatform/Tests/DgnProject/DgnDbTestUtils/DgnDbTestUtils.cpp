@@ -313,8 +313,47 @@ DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
             return modelEntry.GetModelId();
         }
 
-    BeAssert(false && "No PhysicalModel found");
+    BeAssert(false && "No GeometricModel found");
     return DgnModelId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, DgnCodeCR modelCode)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*modelSubject, modelCode);
+    EXPECT_TRUE(model.IsValid());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    DrawingPtr drawing = Drawing::Create(model, code, label);
+    EXPECT_TRUE(drawing.IsValid());
+    EXPECT_TRUE(drawing->Insert().IsValid());
+    return drawing;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR modelCode)
+    {
+    MUST_HAVE_HOST(nullptr);
+    DrawingModelPtr model = DrawingModel::Create(drawing, modelCode);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,7 +362,6 @@ DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
 PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);
-
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
     EXPECT_TRUE(modelSubject.IsValid());
