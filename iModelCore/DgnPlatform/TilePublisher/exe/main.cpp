@@ -447,29 +447,53 @@ void TilesetPublisher::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
 
     if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
         {
+        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
+        // Simulate by pointing the camera toward the center of the viewed volume.
         eyePoint = cameraView->GetEyePoint();
         rotation =  cameraView->GetViewDirection().ToRotMatrix();
+
+        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
+
+        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
+        rotation.Multiply(viewEyePoint, eyePoint);
+
+        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
+        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
+        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
+
+        rotation.MultiplyTranspose (target, viewTarget);
+
+        rotation.GetRows(xVec, yVec, zVec);
+        zVec.NormalizedDifference (eyePoint, target);
+
+        xVec.NormalizedCrossProduct (yVec, zVec);
+        yVec.NormalizedCrossProduct (zVec, xVec);
+
+        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
         }
     else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
         {
-        static const    double s_zRatio = 1.5;
-        DPoint3d        viewDelta = orthographicView->GetExtents();
+        // Simulate orthographic with a small field of view.
+        static const    double s_orthographicFieldOfView = .01;
+        DVec3d          extents = orthographicView->GetExtents();
+        DPoint3d        viewOrigin, backCenter;
 
         rotation = orthographicView->GetViewDirection().ToRotMatrix();
+        rotation.GetRows(xVec, yVec, zVec);
 
-        eyePoint = DPoint3d::FromScale (viewDelta, .5);
-        eyePoint.z += s_zRatio * std::max(viewDelta.x, viewDelta.y);        // Back up from view center.
-        
-        rotation.MultiplyTranspose (eyePoint);
-        eyePoint.Add (orthographicView->GetOrigin());
+        rotation.Multiply (backCenter, orthographicView->GetOrigin());
+        backCenter.SumOf (backCenter, extents, .5);
+        rotation.MultiplyTranspose (backCenter);
+
+        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
+
+        eyePoint.SumOf (backCenter, zVec, zDistance);
+        json["fov"] = s_orthographicFieldOfView;
         }
     else
         {
         BeAssert (false && "unsuppored view type");
         }
-
-
-    rotation.GetRows(xVec, yVec, zVec);
 
     transform.Multiply(eyePoint);
     transform.MultiplyMatrixOnly(yVec);
