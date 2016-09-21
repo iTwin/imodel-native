@@ -319,6 +319,7 @@ void ShowUsage()
     std::cout << "Usage: awstraverser.exe -f:[file] -cs:[connectionString] [options]" << std::endl << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -f, --file              The AWS file to parse (Required)" << std::endl;
+    std::cout << "  -l, --logfile           The file in which to write failed entries" <<std::endl;
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
     std::cout << "  -u, --update            Enable update mode" << std::endl;
     std::cout << "  -provider:PROVIDER      Set provider name" << std::endl;
@@ -344,7 +345,8 @@ int main(int argc, char *argv[])
     char* substringPosition;
     std::string dbName;
     std::string pwszConnStr;
-    std::string fileName;
+    std::string fileName, logFileName;
+    bool logErrors = false;
     int hasRequired = 0;
     for (int i = 0; i < argc; ++i)
         {
@@ -367,6 +369,13 @@ int main(int argc, char *argv[])
             substringPosition++;
             fileName = std::string(substringPosition);
             hasRequired |= 1;
+            }
+        else if (strstr(argv[i], "-l:") || strstr(argv[i], "--logfile:"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            logFileName = std::string(substringPosition);
+            logErrors = true;
             }
         else if (strstr(argv[i], "--connectionString:") || strstr(argv[i], "-cs:"))
             {
@@ -393,7 +402,14 @@ int main(int argc, char *argv[])
 
     std::string line;
     std::ifstream file(fileName);
-    std::ofstream log("D:\\RealityModFramework\\log.txt");
+    std::ofstream log;
+    if(logErrors)
+        log.open(logFileName);
+    if(!log.is_open())
+        {
+        logErrors = false;
+        std::cout << "could not open logfile, proceeding without logging" << std::endl;
+        }
 
     if(file.is_open())
         {
@@ -488,9 +504,9 @@ int main(int argc, char *argv[])
 
                 serverConnection.Save(*data);
                 }
-            else 
+            else if (logErrors)
                 {
-                log << line;
+                log << line << std::endl;
                 }
             }while(getline(file, line));
         }
@@ -500,7 +516,8 @@ int main(int argc, char *argv[])
         getch();
         return 0;
         }
-    log.close();
+    if(logErrors)
+        log.close();
     return 1;
 }
 

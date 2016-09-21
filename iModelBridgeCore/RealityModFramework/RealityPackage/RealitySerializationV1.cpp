@@ -5,7 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if !defined(ANDROID)
 #pragma once
+#endif
 
 #include <RealityPackage/RealityPackage.h>
 #include <RealityPackage/RealityDataPackage.h>
@@ -144,9 +146,6 @@ RealityPackageStatus RealityDataSerializerV1::ReadImageryGroup(RealityDataPackag
     if (NULL == pRootNode)
         return RealityPackageStatus::XmlReadError;
 
-    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(pRootNode); 
-    pContext;
-
     // Get imagery group node.
     BeXmlNodeP pGroupNode = pRootNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ImageryGroup);
     if (NULL == pGroupNode)
@@ -203,9 +202,6 @@ RealityPackageStatus RealityDataSerializerV1::ReadModelGroup(RealityDataPackageR
     if (NULL == pRootNode)
         return RealityPackageStatus::XmlReadError;
 
-    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(pRootNode);
-    pContext;
-
     // Get model group node.
     BeXmlNodeP pGroupNode = pRootNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ModelGroup);
     if (NULL == pGroupNode)
@@ -245,9 +241,6 @@ RealityPackageStatus RealityDataSerializerV1::ReadPinnedGroup(RealityDataPackage
     BeXmlNodeP pRootNode = xmlDom.GetRootElement();
     if (NULL == pRootNode)
         return RealityPackageStatus::XmlReadError;
-
-    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(pRootNode);
-    pContext;
 
     // Get pinned group node.
     BeXmlNodeP pGroupNode = pRootNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PinnedGroup);
@@ -296,9 +289,6 @@ RealityPackageStatus RealityDataSerializerV1::ReadTerrainGroup(RealityDataPackag
     BeXmlNodeP pRootNode = xmlDom.GetRootElement();
     if (NULL == pRootNode)
         return RealityPackageStatus::XmlReadError;
-
-    xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(pRootNode);
-    pContext;
 
     // Get terrain group node.
     BeXmlNodeP pGroupNode = pRootNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TerrainGroup);
@@ -518,7 +508,11 @@ RealityPackageStatus RealityDataSerializerV1::WriteImageryGroup(BeXmlNodeR node,
 
     // Add data to group.
     RealityDataPackage::ImageryGroup imgGroup = package.GetImageryGroup();
+#if defined(ANDROID)
+    for (ImageryDataPtr pImgData : imgGroup)
+#else
     for each (ImageryDataPtr pImgData in imgGroup)
+#endif
         {
         if (!pImgData.IsValid())
             continue;
@@ -565,7 +559,11 @@ RealityPackageStatus RealityDataSerializerV1::WriteModelGroup(BeXmlNodeR node, R
 
     // Add data to group.
     RealityDataPackage::ModelGroup modelGroup = package.GetModelGroup();
+#if defined(ANDROID)
+    for (ModelDataPtr pModelData : modelGroup)
+#else
     for each (ModelDataPtr pModelData in modelGroup)
+#endif
         {
         if (!pModelData.IsValid())
             continue;
@@ -597,7 +595,11 @@ RealityPackageStatus RealityDataSerializerV1::WritePinnedGroup(BeXmlNodeR node, 
 
     // Add data to group.
     RealityDataPackage::PinnedGroup pinnedGroup = package.GetPinnedGroup();
+#if defined(ANDROID)
+    for (PinnedDataPtr pPinnedData : pinnedGroup)
+#else
     for each (PinnedDataPtr pPinnedData in pinnedGroup)
+#endif
         {
         if (!pPinnedData.IsValid())
             continue;
@@ -634,7 +636,11 @@ RealityPackageStatus RealityDataSerializerV1::WriteTerrainGroup(BeXmlNodeR node,
 
     // Add data to group.
     RealityDataPackage::TerrainGroup terrainGroup = package.GetTerrainGroup();
+#if defined(ANDROID)
+    for (TerrainDataPtr pTerrainData : terrainGroup)
+#else
     for each (TerrainDataPtr pTerrainData in terrainGroup)
+#endif
         {
         if (!pTerrainData.IsValid())
             continue;
