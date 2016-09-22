@@ -229,15 +229,9 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-#ifdef KEITH_FIX_RENDER_SYSTEM_TEST
-        if (nullptr != scene.GetRenderSystem())
-#endif
-                renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
+            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
             }
         }
-
-    if (renderTextures.empty())
-        return SUCCESS;
 
     offset = (uint32_t) GetMagicString().size() + 4 + infoSize;
     for (JsonValueCR resource : resources)
@@ -281,13 +275,6 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
             if (texName.empty())
                 continue;
 
-            auto texture = renderTextures.find(texName);
-            if (texture == renderTextures.end())
-                {
-                LOG_ERROR("Bad texture name %s", texName.c_str());
-                return ERROR;
-                }
-
             Render::IGraphicBuilder::TriMeshArgs trimesh;
             trimesh.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
             trimesh.m_points     = ctm.GetFloatArray(CTM_VERTICES);
@@ -295,7 +282,9 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
             trimesh.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
             trimesh.m_vertIndex  = ctm.GetIntegerArray(CTM_INDICES);
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
-            trimesh.m_texture    = texture->second;
+
+            auto texture = renderTextures.find(texName);
+            trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
             ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh));
             }
