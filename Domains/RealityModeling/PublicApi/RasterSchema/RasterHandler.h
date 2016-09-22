@@ -107,21 +107,10 @@ protected:
     Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     void _InitFrom(Dgn::DgnModelCR other) override;
 
-    virtual DMatrix4dCR  _GetSourceToWorld() const
-        {
-        //&&MM I have to implement this method so we can RASTERMODELHANDLER_DECLARE_MEMBERS on RasterModelHandler. We are not expecting to 
-        // instantiate RasterModel directly so do we need to add RASTERMODELHANDLER_DECLARE_MEMBERS.
-        static DMatrix4d s_identity;
-        s_identity.InitIdentity();
-        return s_identity;
-        }
-
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
     
-    DMatrix4dCR  GetSourceToWorld() const;
-
     //! Get the clips of this RasterModel.
     RASTERSCHEMA_EXPORT RasterClipCR GetClip() const;
 

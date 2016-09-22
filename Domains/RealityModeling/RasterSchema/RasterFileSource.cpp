@@ -136,6 +136,7 @@ RasterFileSourcePtr RasterFileSource::Create(Utf8StringCR resolvedName, RasterFi
 //----------------------------------------------------------------------------------------
 RasterFileSource::~RasterFileSource()
     {
+    ClearAllTiles();        // wait for pending tasks that use the raster before we destroy it.
     m_rasterFile = nullptr;
     }
 

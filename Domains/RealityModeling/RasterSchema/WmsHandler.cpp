@@ -15,32 +15,13 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 
 HANDLER_DEFINE_MEMBERS(WmsModelHandler)
 
-//&&MM from json utils. need make these public
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DPoint2dFromJson (DPoint2dR point, JsonValueCR inValue)
-    {
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
-    {
-    outValue[0] = point.x;
-    outValue[1] = point.y;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
 static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
     {
-    DPoint2dFromJson (range.low, inValue["low"]);
-    DPoint2dFromJson (range.high, inValue["high"]);
+    JsonUtils::DPoint2dFromJson (range.low, inValue["low"]);
+    JsonUtils::DPoint2dFromJson (range.high, inValue["high"]);
     }
 
 //----------------------------------------------------------------------------------------
@@ -48,8 +29,8 @@ static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
 //----------------------------------------------------------------------------------------
 static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
     {
-    DPoint2dToJson (outValue["low"], range.low);
-    DPoint2dToJson (outValue["high"], range.high);
+    JsonUtils::DPoint2dToJson (outValue["low"], range.low);
+    JsonUtils::DPoint2dToJson (outValue["high"], range.high);
     }
 
 //----------------------------------------------------------------------------------------
@@ -281,12 +262,4 @@ AxisAlignedBox3d WmsModel::_QueryModelRange() const
     return AxisAlignedBox3d(m_map.m_boundingBox);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  8/2016
-//----------------------------------------------------------------------------------------
-DMatrix4dCR WmsModel::_GetSourceToWorld() const
-    {
-    //&&MM TODO
-    return RasterModel::_GetSourceToWorld();
-    }
 

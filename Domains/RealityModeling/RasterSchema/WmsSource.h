@@ -23,14 +23,15 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct WmsSource : public RasterRoot
 {
 private:
-    DMatrix4d m_physicalToCartesian;    //&&MM todo reprojection
+    Transform m_physicalToCartesian;    //! from physical pixel to Wms Gcs coordinate.
 
-    WmsMap m_mapInfo;   //&&MM use the one from the model and remove this one?
+    Transform m_cartesianToWorldApproximation;  //! linear transform from Wms gcs to Bim world. Only used when reprojection fails.
+
+    WmsMap m_mapInfo; 
 
     bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 
-                        //uint32_t    m_metaTileSizeX;    //&&MM todo.
-                        //uint32_t    m_metaTileSizeY;
+    GeoCoordinates::BaseGCSPtr m_gcs;   //! WMS Gcs. Might be NULL if we cannot create one.
 
     WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system);
 
@@ -43,16 +44,22 @@ private:
 
     Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
 
-    void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;
-
     folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads) override;
+
+    StatusInt ComputeLinearApproximation(TransformR cartesianToWorld);
 
 public:
     static WmsSourcePtr Create(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system);
 
-    WmsMap const& GetMapInfo() {return m_mapInfo;}    
+    WmsMap const& GetMapInfo() const {return m_mapInfo;}    
 
-    DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToCartesian; }    //&&MM todo reproject
+    TransformCR GetCartesianToWorldApproximation() const { return m_cartesianToWorldApproximation; }
+
+    TransformCR GetPhysicalToCartesian() const { return m_physicalToCartesian; }
+
+    GeoCoordinates::BaseGCSP GetGcsP() const { return m_gcs.get(); }
+
+    StatusInt ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesian) const;
 };
 
 //=======================================================================================
@@ -64,7 +71,7 @@ struct WmsTile : RasterTile
 protected:
     typedef WmsSource root_type;
     
-    root_type& GetSource() { return (root_type&) GetRoot(); }
+    root_type const& GetSource() const { return (root_type&) m_root; }
 
 public:
     typedef WmsSource root_type;
@@ -74,6 +81,9 @@ public:
     BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override;
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
+
+    //! Cartesian(in WMS gcs) corners of this tile. 
+    void GetCartesianCorners(DPoint3dP pCorners) const;
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

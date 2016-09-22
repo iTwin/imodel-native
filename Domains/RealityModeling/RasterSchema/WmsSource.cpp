@@ -8,53 +8,103 @@
 #include "RasterSchemaInternal.h"
 #include "WmsSource.h"
 
-#define TABLE_NAME_WmsTileData "WmsTileData"
-
 #define  CONTENT_TYPE_PNG       "image/png"
 #define  CONTENT_TYPE_JPEG      "image/jpeg"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#if 0 //&&MM TODO reject xml response.
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
+// @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
+static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)  //&&MM create shared Gcs services.
     {
-    // Only jpeg and png for now.
-    // "application/vnd.ogc.se_xml" would be a Wms exception. In the future, we should report that to the user.
-    if (contentType.EqualsI(CONTENT_TYPE_PNG) || contentType.EqualsI(CONTENT_TYPE_JPEG))
-        return true;
-    
-    return false;
+    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // These are warnings
+        return REPROJECT_Success;
+
+    return status;
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
+// @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
-    {    
-    m_creationDate = DateTime::GetCurrentTime();
+static StatusInt reproject(DPoint3dR dest, DgnGCSCR destGcs, DPoint3dCR srcCartesian, GeoCoordinates::BaseGCSCR sourceGcs)
+    {
+    GeoPoint srcGeo;
+    if (REPROJECT_Success != s_FilterGeocoordWarning(sourceGcs.LatLongFromCartesian(srcGeo, srcCartesian)))
+        {
+        BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
+        return ERROR;
+        }
 
-    auto contentTypeIter = header.find("Content-Type");
-    if (contentTypeIter == header.end())
+    // Source latlong to BIM latlong.
+    GeoPoint bimGeo;
+    if (REPROJECT_Success != s_FilterGeocoordWarning(sourceGcs.LatLongFromLatLong(bimGeo, srcGeo, destGcs)))
         return ERROR;
 
-    // Reject and don't cache what we can't consumed.
-    if (!IsSupportedContent(contentTypeIter->second))
-        return BSIERROR;
+    // Finally to UOR/BIM
+    if (REPROJECT_Success != s_FilterGeocoordWarning(destGcs.UorsFromLatLong(dest, bimGeo)))
+        return ERROR;
 
-    m_contentType = contentTypeIter->second.c_str();
-    m_data = body;
-
-    return BSISUCCESS;
+    return SUCCESS;
     }
-#endif
-
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsSource      ----------------------------------------
 //----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+StatusInt WmsSource::ComputeLinearApproximation(TransformR cartesianToWorld)
+    {
+    DgnDbR db = GetModel().GetDgnDb();
+
+    if (nullptr == GetGcsP() || GetModel().GetDgnDb().Units().GetDgnGCS() == nullptr)
+        {
+        cartesianToWorld.InitIdentity(); // assumed coincident
+        return SUCCESS;
+        }
+
+    DPoint3d pointsPhysical[4];
+    pointsPhysical[0].Init(0, 0, 0);
+    pointsPhysical[1].Init(GetWidth(), 0, 0);
+    pointsPhysical[2].Init(0, GetHeight(), 0);
+    pointsPhysical[3].Init(GetWidth(), GetHeight(), 0);
+
+    DPoint3d pointsCartesian[4];
+    GetPhysicalToCartesian().Multiply(pointsCartesian, pointsPhysical, 4);
+
+    double seed[] = {0.25, 0.5, 0.75};
+    size_t seedCount = sizeof(seed) / sizeof(seed[0]);
+    std::vector<DPoint3d> tiePoints;
+
+    for (size_t y = 0; y < seedCount; ++y)
+        {
+        for (size_t x = 0; x < seedCount; ++x)
+            {
+            DPoint3d pointCartesian = DPoint3d::FromInterpolateBilinear(pointsCartesian[0], pointsCartesian[1], pointsCartesian[2], pointsCartesian[3], seed[x], seed[y]);
+
+            DPoint3d pointWorld;
+            if (SUCCESS == reproject(pointWorld, *db.Units().GetDgnGCS(), pointCartesian, *GetGcsP()))
+                {
+                tiePoints.push_back(pointCartesian);    // uncorrected
+                tiePoints.push_back(pointWorld);        // corrected
+                }
+            }
+        }
+            
+    DMatrix4d result;
+    if (0 != ImagePP::HGF2DDCTransfoModel::GetAffineTransfoMatrixFromScaleAndTiePts(result.coff, (uint16_t) tiePoints.size() * 3, (double const*) tiePoints.data()))
+        {
+        cartesianToWorld.InitIdentity();
+        return ERROR;
+        }
+
+    cartesianToWorld.InitFrom(result);
+
+    return SUCCESS;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -163,25 +213,32 @@ WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::System
     // for WMS we define a 256x256 multi-resolution image.
     GenerateResolution(m_resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
 
-    GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
-    BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
+    m_gcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
+    BeAssert(m_gcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
 
-    DPoint3d translation = DPoint3d::From(m_mapInfo.m_boundingBox.low); // z == 0
-    DPoint3d scale = DPoint3d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
-                                    (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight, 
-                                    0);                                         
+    DPoint2d translation = m_mapInfo.m_boundingBox.low;
+    DPoint2d scale = DPoint2d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
+                                    (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight);                                         
 
-    DMatrix4d mapTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+    Transform mapTransfo = Transform::FromRowValues(scale.x, 0.0, 0.0, translation.x,
+                                                    0.0, scale.y, 0.0, translation.y,
+                                                    0.0, 0.0, 1.0, 0.0);
+
 
     // Data from server is upper-left(jpeg or png) and cartesians coordinate must have a lower-left origin, add a flip.
-    DMatrix4d physicalToLowerLeft = DMatrix4d::FromRowValues(1.0, 0.0, 0.0, 0.0,
+    Transform physicalToLowerLeft = Transform::FromRowValues(1.0, 0.0, 0.0, 0.0,
                                                              0.0, -1.0, 0.0, m_mapInfo.m_metaHeight,
-                                                             0.0, 0.0, 1.0, 0.0,
-                                                             0.0, 0.0, 0.0, 1.0);
+                                                             0.0, 0.0, 1.0, 0.0);
 
     m_physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
 
-    m_reverseAxis = EvaluateReverseAxis(m_mapInfo, pGcs.get());
+    m_reverseAxis = EvaluateReverseAxis(m_mapInfo, m_gcs.get());
+
+    if (SUCCESS != ComputeLinearApproximation(m_cartesianToWorldApproximation))
+        {
+        BeAssert(!"Unable to compute reprojection approximation");
+        m_cartesianToWorldApproximation.InitIdentity();
+        }
 
     CreateCache(100 * 1024 * 1024); // 100 Mb
     m_rootTile = new WmsTile(*this, TileId(GetResolutionCount() - 1, 0, 0), nullptr);
@@ -192,13 +249,15 @@ WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::System
 //----------------------------------------------------------------------------------------
 Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile)
     {
-    TileId tileId = static_cast<WmsTile const&>(tile).GetTileId();
+    WmsTileCR wmsTile = static_cast<WmsTile const&>(tile);
+
+    TileId tileId = wmsTile.GetTileId();
 
     // Get tile corners in this order, with a lower-left origin.
     // [0] [1]
     // [2] [3]
     DPoint3d tileCorners[4];
-    ComputeTileCorners(tileCorners, tileId);
+    wmsTile.GetCartesianCorners(tileCorners);
 
     double minX = tileCorners[2].x;
     double minY = tileCorners[2].y;
@@ -235,47 +294,38 @@ Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-void WmsSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const
-    {
-    uint32_t xMinInRes = id.x * GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMinInRes = id.y * GetResolution(id.resolution).GetTileSizeY();
-    uint32_t xMaxInRes = xMinInRes + GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMaxInRes = yMinInRes + GetResolution(id.resolution).GetTileSizeY();
-
-    uint32_t xMin = xMinInRes << id.resolution;
-    uint32_t yMin = yMinInRes << id.resolution;
-    uint32_t xMax = xMaxInRes << id.resolution;
-    uint32_t yMax = yMaxInRes << id.resolution;
-
-    // Limit the tile extent to the raster physical size 
-    if (xMax > GetWidth())
-        xMax = GetWidth();
-    if (yMax > GetHeight())
-        yMax = GetHeight();
-
-    BeAssert(xMax >= xMin);  // For a tile of one pixel, xMin == xMax
-    BeAssert(yMax >= yMin);
-
-    // Convert pixel to coordinates.
-    DPoint3d physicalCorners[4];
-    physicalCorners[0].x = physicalCorners[2].x = xMin;
-    physicalCorners[1].x = physicalCorners[3].x = xMax;
-    physicalCorners[0].y = physicalCorners[1].y = yMin;
-    physicalCorners[2].y = physicalCorners[3].y = yMax;
-    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
-
-    m_physicalToCartesian.MultiplyAndRenormalize(pCorners, physicalCorners, 4);
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> WmsSource::_RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads)
     {
     DEBUG_PRINTF("RequestTile r=%d (%d,%d) %d", ((WmsTileR) tile).GetTileId().resolution, ((WmsTileR) tile).GetTileId().x, ((WmsTileR) tile).GetTileId().y, (uintptr_t)&tile);
     return RasterRoot::_RequestTile(tile, loads);
+    }
+
+//----------------------------------------------------------------------------------------
+// Attempt to reproject the cartesian corners of this tile through the non - linear GCS of the BIM file.
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+StatusInt WmsSource::ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesian) const
+    {
+    GeoCoordinates::BaseGCSP pSrcGcs = GetGcsP();
+
+    DgnGCSP pDgnGcs = m_model.GetDgnDb().Units().GetDgnGCS();
+
+    if (NULL == pSrcGcs || NULL == pDgnGcs || !pSrcGcs->IsValid() || !pDgnGcs->IsValid())
+        {
+        // Assume raster to be coincident.
+        memcpy(destWorld, srcCartesian, sizeof(DPoint3d) * 4);
+        return SUCCESS;
+        }
+
+    for (uint32_t i = 0; i < 4; ++i)
+        {
+        if (SUCCESS != reproject(destWorld[i], *pDgnGcs, srcCartesian[i], *pSrcGcs))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -288,33 +338,20 @@ folly::Future<BentleyStatus> WmsSource::_RequestTile(Dgn::TileTree::TileCR tile,
 WmsTile::WmsTile(WmsSourceR root, TileId id, WmsTileCP parent)
     : RasterTile(root, id, parent)
     {
-    //&&MM rasterFileTile has the same code we should share it.
-    uint32_t xMinInRes = id.x * GetRoot().GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMinInRes = id.y * GetRoot().GetResolution(id.resolution).GetTileSizeY();
-    uint32_t xMaxInRes = xMinInRes + GetRoot().GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMaxInRes = yMinInRes + GetRoot().GetResolution(id.resolution).GetTileSizeY();
-
-    uint32_t xMin = xMinInRes << id.resolution;
-    uint32_t yMin = yMinInRes << id.resolution;
-    uint32_t xMax = xMaxInRes << id.resolution;
-    uint32_t yMax = yMaxInRes << id.resolution;
-
-    // Limit the tile extent to the raster physical size 
-    if (xMax > GetRoot().GetWidth())
-        xMax = GetRoot().GetWidth();
-    if (yMax > GetRoot().GetHeight())
-        yMax = GetRoot().GetHeight();
-
-    DPoint3d physicalCorners[4];
-    physicalCorners[0].x = physicalCorners[2].x = xMin;
-    physicalCorners[1].x = physicalCorners[3].x = xMax;
-    physicalCorners[0].y = physicalCorners[1].y = yMin;
-    physicalCorners[2].y = physicalCorners[3].y = yMax;
-    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
-    root.GetPhysicalToWorld().MultiplyAndRenormalize(m_corners.m_pts, physicalCorners, 4);
+    DPoint3d cartesianCorners[4];
+    GetCartesianCorners(cartesianCorners);
+    
+    if (SUCCESS != root.ReprojectCorners(m_corners.m_pts, cartesianCorners))
+        {
+        // Reprojection failed! In that case, mark this tile as "not reprojected" and calculate its coordinates 
+        // through a approximate linear transform for purposes of volume testing, but we will never display this tile.
+        m_reprojected = false;
+        root.GetCartesianToWorldApproximation().Multiply(m_corners.m_pts, cartesianCorners, 4);
+        }
 
     m_range.InitFrom(m_corners.m_pts, 4);
-    //&&MM review. doesn't work with GCS in lat/long.
+    //&&MM review. doesn't work with GCS in lat/long. Why we need that?
+    //             also problematic in DrawArgs::DrawGraphics where substitute are offseted.
 //     m_range.low.z = -1.0;
 //     m_range.high.z = 1.0;
 
@@ -325,6 +362,43 @@ WmsTile::WmsTile(WmsSourceR root, TileId id, WmsTileCP parent)
     uint32_t tileSizeX = GetRoot().GetTileSizeX(GetTileId());
     uint32_t tileSizeY = GetRoot().GetTileSizeY(GetTileId());
     m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+void WmsTile::GetCartesianCorners(DPoint3dP pCorners) const
+    {
+    auto id = GetTileId();
+    uint32_t xMinInRes = id.x * GetSource().GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMinInRes = id.y * GetSource().GetResolution(id.resolution).GetTileSizeY();
+    uint32_t xMaxInRes = xMinInRes + GetSource().GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMaxInRes = yMinInRes + GetSource().GetResolution(id.resolution).GetTileSizeY();
+
+    uint32_t xMin = xMinInRes << id.resolution;
+    uint32_t yMin = yMinInRes << id.resolution;
+    uint32_t xMax = xMaxInRes << id.resolution;
+    uint32_t yMax = yMaxInRes << id.resolution;
+
+    // Limit the tile extent to the raster physical size 
+    if (xMax > GetSource().GetWidth())
+        xMax = GetSource().GetWidth();
+    if (yMax > GetSource().GetHeight())
+        yMax = GetSource().GetHeight();
+
+    BeAssert(xMax >= xMin);  // For a tile of one pixel, xMin == xMax
+    BeAssert(yMax >= yMin);
+
+    // Convert pixel to coordinates.
+    DPoint3d physicalCorners[4];
+    physicalCorners[0].x = physicalCorners[2].x = xMin;
+    physicalCorners[1].x = physicalCorners[3].x = xMax;
+    physicalCorners[0].y = physicalCorners[1].y = yMin;
+    physicalCorners[2].y = physicalCorners[3].y = yMax;
+    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
+
+    GetSource().GetPhysicalToCartesian().Multiply(pCorners, physicalCorners, 4);
     }
 
 //----------------------------------------------------------------------------------------
@@ -396,7 +470,7 @@ BentleyStatus WmsTile::_LoadTile(Dgn::TileTree::StreamBuffer& data, Dgn::TileTre
     if (!image.IsValid())
         {
         // We might have receive an error message from the server in the form of an XML stream.
-        // the html field "Content-Type" have that info but we do not have access to it.
+        // the html field "Content-Type" have that info but we do not have access to it. >> Content-Type=application/vnd.ogc.se_xml
         SetNotFound();
         ERROR_PRINTF("invalid tile data r=%d (%d,%d)", GetTileId().resolution, GetTileId().x, GetTileId().y);
         return ERROR;

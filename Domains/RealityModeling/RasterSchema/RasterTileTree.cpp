@@ -57,11 +57,6 @@ void RasterRoot::GenerateResolution(bvector<Resolution>& resolution, uint32_t wi
 RasterTile::RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent)
     : Tile(parent), m_root(root), m_id(id)
     {
-    //&&MM todo here?
-//     That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
-//         uint32_t tileSizeX = m_root.GetSource().GetTileSizeX(GetTileId());
-//         uint32_t tileSizeY = m_root.GetSource().GetTileSizeY(GetTileId());
-//         m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
     }
 
 //----------------------------------------------------------------------------------------
@@ -116,9 +111,8 @@ void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
 //----------------------------------------------------------------------------------------
 void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     {
-//&&MM review if we should draw tiles that failed with an approx? webmercator do not display them but use the approximation for volume testing.
-//     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
-//         return;
+    if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
+        return;
 
     if (!IsReady())
         {
@@ -193,60 +187,3 @@ ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext
     return Completion::Aborted;
     }
 
-
-
-#if 0 //&&MM this is how we reproject 4 corners. 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree)
-    {
-    //&&MM WIP reproject
-    tree.GetSourceToWorld().MultiplyAndRenormalize(outUors, srcCartesian, 4);
-    
-    ReprojectStatus status = REPROJECT_Success;
-
-    static bool s_doExactTransform = false;  // for debugging
-
-    if (s_doExactTransform)
-        {
-        DPoint3d outUors2[4];
-        GeoCoordinates::BaseGCSP pSourceGcs = tree.GetSource().GetGcsP();
-
-        DgnGCSP pDgnGcs = tree.GetDgnDb().Units().GetDgnGCS();
-
-        if (NULL == pSourceGcs || NULL == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid())
-            {
-            // Assume raster to be coincident.
-            memcpy(outUors, srcCartesian, sizeof(DPoint3d) * 4);
-            return REPROJECT_Success;
-            }
-
-        GeoPoint srcGeoCorners[4];
-        for (size_t i = 0; i < 4; ++i)
-            {
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))))
-                {
-                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-                return status;
-                }
-            }
-
-        // Source latlong to DgnDb latlong.
-        GeoPoint dgnGeoCorners[4];
-        for (size_t i = 0; i < 4; ++i)
-            {
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], *pDgnGcs))))
-                return status;
-            }
-
-        //Finally to UOR
-        for (uint32_t i = 0; i < 4; ++i)
-            {
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(outUors2[i], dgnGeoCorners[i]))))
-                return status;
-            }
-        }
-
-    return status;    
-#endif

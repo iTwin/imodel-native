@@ -117,6 +117,8 @@ protected:
     RasterRootR m_root;                                     //! the root that loaded this tile.
     Dgn::Render::GraphicPtr m_graphic;                      //! the texture for this tile.
 
+    bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
+
     double m_maxSize = 362 / 2;                             //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
     
 public:
