@@ -20,7 +20,7 @@ DgnElementId SegmentRangeElement::QueryAlignmentId() const
         "SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
-    stmtPtr->BindId(0, GetElementId());
+    stmtPtr->BindId(1, GetElementId());
 
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
         return DgnElementId();
@@ -40,7 +40,7 @@ DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, A
         "DELETE FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
     BeAssert(delStmtPtr.IsValid());
 
-    delStmtPtr->BindId(0, roadRange.GetElementId());
+    delStmtPtr->BindId(1, roadRange.GetElementId());
     if (DbResult::BE_SQLITE_DONE != delStmtPtr->Step())
         return DgnDbStatus::WriteError;
 
@@ -50,8 +50,8 @@ DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, A
             "INSERT INTO " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " (SourceECInstanceId, TargetECInstanceId) VALUES (?,?);");
         BeAssert(insStmtPtr.IsValid());
 
-        insStmtPtr->BindId(0, roadRange.GetElementId());
-        insStmtPtr->BindId(1, alignment->GetElementId());
+        insStmtPtr->BindId(1, roadRange.GetElementId());
+        insStmtPtr->BindId(2, alignment->GetElementId());
 
         if (DbResult::BE_SQLITE_DONE != insStmtPtr->Step())
             return DgnDbStatus::WriteError;
@@ -81,7 +81,11 @@ RoadRangeCPtr RoadRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus*
     {
     auto retVal = Insert(status);
     if (retVal.IsValid())
-        *status = SetAlignment(*retVal, &alignment);
+        {
+        DgnDbStatus localStatus = SetAlignment(*retVal, &alignment);
+        if (status)
+            *status = localStatus;
+        }
     
     return retVal;
     }
