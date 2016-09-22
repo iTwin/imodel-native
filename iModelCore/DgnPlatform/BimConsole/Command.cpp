@@ -1277,55 +1277,41 @@ Utf8String ClassMappingCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
     {
-    if (args.size() < 2)
+    if (args.size() < 2 || args.size() > 3)
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    Utf8StringCR switchArg = args[1];
-
     Json::Value json;
-    if (switchArg.EqualsI("*"))
-        {
-        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
-            {
-            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
-            return;
-            }
-        }
-    else if (switchArg.EqualsI("ecschema"))
-        {
-        if (args.size() < 3)
-            {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
-            }
+    Utf8StringCR schemaName = args[1];
 
-        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), args[2].c_str(), false))
-            {
-            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
-            return;
-            }
-        }
-    else if (switchArg.EqualsI("ecclass"))
+    if (args.size() == 2)
         {
-        if (args.size() < 4)
+        if (schemaName.EqualsI("*"))
             {
-            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
+            if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
+                {
+                Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
+                return;
+                }
             }
-
-        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), args[2].c_str(), args[3].c_str()))
+        else
             {
-            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
-            return;
+            if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), schemaName.c_str(), false))
+                {
+                Console::WriteErrorLine("Retrieving ECClass mapping information for ECSchema '%s' failed.", schemaName.c_str());
+                return;
+                }
             }
         }
     else
         {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
+        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName.c_str(), args[2].c_str()))
+            {
+            Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
+            return;
+            }
         }
 
     Json::FastWriter writer;
