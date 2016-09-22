@@ -7,250 +7,71 @@
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
 #include "WmsSource.h"
-
-#define TABLE_NAME_WmsTileData "WmsTileData"
+#include "GcsUtils.h"
 
 #define  CONTENT_TYPE_PNG       "image/png"
 #define  CONTENT_TYPE_JPEG      "image/jpeg"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#if defined (NEEDS_WORK_REALTY_DATA)
-//=======================================================================================
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//=======================================================================================
-struct WmsTileData 
-{
-    //===================================================================================
-    // @bsimethod                                               Mathieu.Marchand  6/2015
-    //===================================================================================
-    struct RequestOptions : RealityData::Options
-    {
-        RequestOptions(bool requestFromSource){m_requestFromSource=requestFromSource;}
-    };
-
-private:
-    ByteStream      m_data;
-    DateTime        m_creationDate;
-    Utf8String      m_contentType;
-
-    bool IsSupportedContent(Utf8StringCR contentType) const;
-        
-protected:
-    virtual bool _IsExpired() const override;
-    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
-    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
-
-public:
-    WmsTileData(Utf8CP name) : Payload(name) {}
-    ByteStream const& GetData() const  {return m_data;}
-    DateTime GetCreationDate() const  {return m_creationDate;}
-    Utf8String GetContentType() const  {return m_contentType;}
-};
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-bool WmsTileData::_IsExpired() const 
-    {
-    return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//=======================================================================================
-struct WmsTileCache : RealityData::Storage
-{
-    using Storage::Storage;
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  6/2015
-    //----------------------------------------------------------------------------------------
-    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
-        {
-        if (db.TableExists(TABLE_NAME_WmsTileData))
-            {
-            return SUCCESS;
-            }
-    
-        Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
-        if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_WmsTileData, ddl))
-            {
-            return SUCCESS;
-            }
-        return ERROR;
-        }
-    
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  6/2015
-    //----------------------------------------------------------------------------------------
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
-        {
-        static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
-
-        CachedStatementPtr selectStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_WmsTileData " ORDER BY Created ASC"))
-            return ERROR;
-    
-        uint64_t accumulatedSize = 0;
-        while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-            accumulatedSize += selectStatement->GetValueUInt64(0);
-        uint64_t date = selectStatement->GetValueUInt64(1);
-            
-        CachedStatementPtr deleteStatement;        
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_WmsTileData " WHERE Created  <= ? "))
-            return ERROR;
-
-        deleteStatement->BindUInt64(1, date);
-        if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
-            return ERROR;
-            
-        return SUCCESS;
-        }
-};
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
-    {
-    // Only jpeg and png for now.
-    // "application/vnd.ogc.se_xml" would be a Wms exception. In the future, we should report that to the user.
-    if (contentType.EqualsI(CONTENT_TYPE_PNG) || contentType.EqualsI(CONTENT_TYPE_JPEG))
-        return true;
-    
-    return false;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
-    {    
-    m_creationDate = DateTime::GetCurrentTime();
-
-    auto contentTypeIter = header.find("Content-Type");
-    if (contentTypeIter == header.end())
-        return ERROR;
-
-    // Reject and don't cache what we can't consumed.
-    if (!IsSupportedContent(contentTypeIter->second))
-        return BSIERROR;
-
-    m_contentType = contentTypeIter->second.c_str();
-    m_data = body;
-
-    return BSISUCCESS;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_LoadFromStorage(BeSQLite::Db& db)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    wt_OperationForGraphics highPriority;
-    BeMutexHolder lock(cs);
-
-    CachedStatementPtr stmt;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster, RasterSize, Created, Expires, ETag, ContentType from " TABLE_NAME_WmsTileData " WHERE Url=?"))
-        return ERROR;
-
-    stmt->ClearBindings();
-    stmt->BindText(1, key, BeSQLite::Statement::MakeCopy::Yes);
-    if (BeSQLite::BE_SQLITE_ROW == stmt->Step())
-        {
-        m_url = key;
-
-        auto raster     = static_cast<Byte const*>(stmt->GetValueBlob(0));
-        auto rasterSize = stmt->GetValueInt(1);
-        m_data.assign(raster, raster + rasterSize);
-
-        DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(2));
-        m_contentType = stmt->GetValueText(5);
-
-        DateTime expirationDate;
-        DateTime::FromUnixMilliseconds(expirationDate,(uint64_t) stmt->GetValueInt64(3));
-        SetExpirationDate(expirationDate);
-        SetEntityTag(stmt->GetValueText(4));
-
-        return SUCCESS;
-        }
-#endif
-    return ERROR;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_PersistToStorage(BeSQLite::Db& db) const
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    int bufferSize = (int) GetData().size();
-
-    int64_t creationTime = 0;
-    if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
-        return ERROR;
-
-    int64_t expirationDate = 0;
-    if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
-        return ERROR;
-
-    wt_OperationForGraphics highPriority;
-    BeMutexHolder lock(cs);
-
-    CachedStatementPtr selectStatement;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url from " TABLE_NAME_WmsTileData " WHERE Url=?"))
-        return ERROR;
-
-    selectStatement->ClearBindings();
-    selectStatement->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-    if (BeSQLite::BE_SQLITE_ROW == selectStatement->Step())
-        {
-        // update
-        CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "UPDATE " TABLE_NAME_WmsTileData " SET Expires=?, ETag=? WHERE Url=?"))
-            return ERROR;
-
-        stmt->ClearBindings();
-        stmt->BindInt64(1, expirationDate);
-        stmt->BindText(2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText(3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
-        }
-    else
-        {
-        // insert
-        CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_WmsTileData "(Url, Raster, RasterSize, Created, Expires, ETag, ContentType) VALUES(?,?,?,?,?,?,?)"))
-            return ERROR;
-
-        stmt->ClearBindings();
-        stmt->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob(2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
-        stmt->BindInt(3, bufferSize);
-        stmt->BindInt64(4, creationTime);
-        stmt->BindInt64(5, expirationDate);
-        stmt->BindText(6, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText(7, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
-        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
-        }
-
-    return SUCCESS;
-#else
-    return ERROR;
-#endif
-    }
-
-#endif
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsSource      ----------------------------------------
 //----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+StatusInt WmsSource::ComputeLinearApproximation(TransformR cartesianToWorld)
+    {
+    DgnDbR db = GetModel().GetDgnDb();
+
+    if (nullptr == GetGcsP() || GetModel().GetDgnDb().Units().GetDgnGCS() == nullptr)
+        {
+        cartesianToWorld.InitIdentity(); // assumed coincident
+        return SUCCESS;
+        }
+
+    DPoint3d pointsPhysical[4];
+    pointsPhysical[0].Init(0, 0, 0);
+    pointsPhysical[1].Init(GetWidth(), 0, 0);
+    pointsPhysical[2].Init(0, GetHeight(), 0);
+    pointsPhysical[3].Init(GetWidth(), GetHeight(), 0);
+
+    DPoint3d pointsCartesian[4];
+    GetPhysicalToCartesian().Multiply(pointsCartesian, pointsPhysical, 4);
+
+    double seed[] = {0.25, 0.5, 0.75};
+    size_t seedCount = sizeof(seed) / sizeof(seed[0]);
+    std::vector<DPoint3d> tiePoints;
+
+    for (size_t y = 0; y < seedCount; ++y)
+        {
+        for (size_t x = 0; x < seedCount; ++x)
+            {
+            DPoint3d pointCartesian = DPoint3d::FromInterpolateBilinear(pointsCartesian[0], pointsCartesian[1], pointsCartesian[2], pointsCartesian[3], seed[x], seed[y]);
+
+            DPoint3d pointWorld;
+            if (SUCCESS == GcsUtils::Reproject(pointWorld, *db.Units().GetDgnGCS(), pointCartesian, *GetGcsP()))
+                {
+                tiePoints.push_back(pointCartesian);    // uncorrected
+                tiePoints.push_back(pointWorld);        // corrected
+                }
+            }
+        }
+            
+    DMatrix4d result;
+    if (0 != ImagePP::HGF2DDCTransfoModel::GetAffineTransfoMatrixFromScaleAndTiePts(result.coff, (uint16_t) tiePoints.size() * 3, (double const*) tiePoints.data()))
+        {
+        cartesianToWorld.InitIdentity();
+        return ERROR;
+        }
+
+    cartesianToWorld.InitFrom(result);
+
+    return SUCCESS;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -340,119 +161,70 @@ BentleyStatus WmsTileData::_PersistToStorage(BeSQLite::Db& db) const
     return false;
     }
 
-
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
+// @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo)
+WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system)
     {
-    return new WmsSource(mapInfo);
+    return new WmsSource(mapInfo, model, system);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-WmsSource::WmsSource(WmsMap const& mapInfo)
- :m_mapInfo(mapInfo),
+WmsSource::WmsSource(WmsMap const& mapInfo, WmsModel& model, Dgn::Render::SystemP system)
+ :RasterRoot(model, model.GetName().c_str(), mapInfo.m_url.c_str(), system),
+  m_mapInfo(mapInfo),
   m_reverseAxis(false)
     {
     // for WMS we define a 256x256 multi-resolution image.
-    bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
+    GenerateResolution(m_resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
 
-    GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
-    BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
+    m_gcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
+    BeAssert(m_gcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
 
-    DPoint3d translation = DPoint3d::From(m_mapInfo.m_boundingBox.low); // z == 0
-    DPoint3d scale = DPoint3d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
-                                    (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight, 
-                                    0);                                         
+    DPoint2d translation = m_mapInfo.m_boundingBox.low;
+    DPoint2d scale = DPoint2d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
+                                    (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight);                                         
 
-    DMatrix4d mapTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+    Transform mapTransfo = Transform::FromRowValues(scale.x, 0.0, 0.0, translation.x,
+                                                    0.0, scale.y, 0.0, translation.y,
+                                                    0.0, 0.0, 1.0, 0.0);
+
 
     // Data from server is upper-left(jpeg or png) and cartesians coordinate must have a lower-left origin, add a flip.
-    DMatrix4d physicalToLowerLeft = DMatrix4d::FromRowValues(1.0, 0.0, 0.0, 0.0,
+    Transform physicalToLowerLeft = Transform::FromRowValues(1.0, 0.0, 0.0, 0.0,
                                                              0.0, -1.0, 0.0, m_mapInfo.m_metaHeight,
-                                                             0.0, 0.0, 1.0, 0.0,
-                                                             0.0, 0.0, 0.0, 1.0);
+                                                             0.0, 0.0, 1.0, 0.0);
 
-    DMatrix4d physicalToCartesian;
-    physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
+    m_physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
 
-    m_reverseAxis = EvaluateReverseAxis(m_mapInfo, pGcs.get());
-           
-    Initialize(resolution, physicalToCartesian, pGcs.get());
+    m_reverseAxis = EvaluateReverseAxis(m_mapInfo, m_gcs.get());
+
+    if (SUCCESS != ComputeLinearApproximation(m_cartesianToWorldApproximation))
+        {
+        BeAssert(!"Unable to compute reprojection approximation");
+        m_cartesianToWorldApproximation.InitIdentity();
+        }
+
+    CreateCache(100 * 1024 * 1024); // 100 Mb
+    m_rootTile = new WmsTile(*this, TileId(GetResolutionCount() - 1, 0, 0), nullptr);
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
+// @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
+Utf8String WmsSource::_ConstructTileName(Dgn::TileTree::TileCR tile)
     {
-    //&&MM WMS will return nullptr. so we can check back later. we do not want that anymore. review.
+    WmsTileCR wmsTile = static_cast<WmsTile const&>(tile);
 
-    Utf8String tileUrl = BuildTileUrl(id);
-    Render::Image image;
-        
-#if defined (NEEDS_WORK_REALTY_DATA)
-    //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
-    //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
-    //     stored into the dataCache.  contentType equals "application/vnd.ogc.se_xml" (required by wms spec).
-    //     Poss sol:  reject in TiledRaster::_InitFrom >>> did that for now.
-    // *** maybe we could use the expiration date to handle errors. e.g. set a short expiration date for errors, timeout.
-    //     that way the caller would receive the WmsTileData and we would retry at a later time.
-    // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
-    //     Maybe one table per server?  and use TileId or hash the url ?
-    //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
-    RefCountedPtr<WmsTileData> pWmsTileData = new WmsTileData(tileUrl.c_str());
-    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, WmsTileData::RequestOptions(true)))
-        return image;
+    TileId tileId = wmsTile.GetTileId();
 
-    BeAssert(pWmsTileData.IsValid());
-
-    auto const& data = pWmsTileData->GetData();
-    RgbImageInfo actualImageInfo;
-    Utf8StringCR contentType = pWmsTileData->GetContentType();
-    
-    BentleyStatus status;
-
-    if (contentType.EqualsI(CONTENT_TYPE_PNG))
-        {
-        status = actualImageInfo.ReadImageFromPngBuffer(image, data.GetData(), data.GetSize());
-        }
-    else if (contentType.EqualsI(CONTENT_TYPE_JPEG))
-        {
-        status = actualImageInfo.ReadImageFromJpgBuffer(image, data.GetData(), data.GetSize());
-        }
-    else
-        {
-        BeAssertOnce(false && "Unsupported image type");
-        return image;
-        }
-
-    //&&MM we probably need a way to handle errors and avoid trying over and over again.
-    if (SUCCESS != status)
-        return image;
-    
-    BeAssert(!actualImageInfo.m_isBGR);    //&&MM todo 
-
-    //&&MM how to tell if we need to enable alpha?
-    //     We cannot reuse buffer anymore review...
-    alphaBlend = m_mapInfo.m_transparent && actualImageInfo.m_hasAlpha;
-#endif
-    return image;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
-    {
     // Get tile corners in this order, with a lower-left origin.
     // [0] [1]
     // [2] [3]
     DPoint3d tileCorners[4];
-    ComputeTileCorners(tileCorners, tileId);
+    wmsTile.GetCartesianCorners(tileCorners);
 
     double minX = tileCorners[2].x;
     double minY = tileCorners[2].y;
@@ -488,24 +260,205 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     return tileUrl;   
     }
 
-#if defined (NEEDS_WORK_REALTY_DATA)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityData::CacheR WmsSource::GetRealityDataCache() const
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> WmsSource::_RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads)
     {
-    if (m_realityDataCache.IsNull())
-        {
-        m_realityDataCache = new RealityData::Cache();
-        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        storageFileName.AppendToPath(L"WMS");
-
-        RefCountedPtr<WmsTileCache> cache = new WmsTileCache(4);
-        if (SUCCESS == cache->OpenAndPrepare(storageFileName))
-            m_realityDataCache->SetStorage(*cache);
-
-        m_realityDataCache->SetSource(*new RealityData::HttpSource(8, RealityData::SchedulingMethod::FIFO));
-        }
-    return *m_realityDataCache;
+    DEBUG_PRINTF("RequestTile r=%d (%d,%d) %d", ((WmsTileR) tile).GetTileId().resolution, ((WmsTileR) tile).GetTileId().x, ((WmsTileR) tile).GetTileId().y, (uintptr_t)&tile);
+    return RasterRoot::_RequestTile(tile, loads);
     }
-#endif
+
+//----------------------------------------------------------------------------------------
+// Attempt to reproject the cartesian corners of this tile through the non - linear GCS of the BIM file.
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+StatusInt WmsSource::ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesian) const
+    {
+    GeoCoordinates::BaseGCSP pSrcGcs = GetGcsP();
+
+    DgnGCSP pDgnGcs = m_model.GetDgnDb().Units().GetDgnGCS();
+
+    if (NULL == pSrcGcs || NULL == pDgnGcs || !pSrcGcs->IsValid() || !pDgnGcs->IsValid())
+        {
+        // Assume raster to be coincident.
+        memcpy(destWorld, srcCartesian, sizeof(DPoint3d) * 4);
+        return SUCCESS;
+        }
+
+    for (uint32_t i = 0; i < 4; ++i)
+        {
+        if (SUCCESS != GcsUtils::Reproject(destWorld[i], *pDgnGcs, srcCartesian[i], *pSrcGcs))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//----------------------------------------------------------------------------------------
+//-------------------------------------  WmsTile  ----------------------------------------
+//----------------------------------------------------------------------------------------
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                9/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WmsTile::WmsTile(WmsSourceR root, TileId id, WmsTileCP parent)
+    : RasterTile(root, id, parent)
+    {
+    DPoint3d cartesianCorners[4];
+    GetCartesianCorners(cartesianCorners);
+    
+    if (SUCCESS != root.ReprojectCorners(m_corners.m_pts, cartesianCorners))
+        {
+        // Reprojection failed! In that case, mark this tile as "not reprojected" and calculate its coordinates 
+        // through a approximate linear transform for purposes of volume testing, but we will never display this tile.
+        m_reprojected = false;
+        root.GetCartesianToWorldApproximation().Multiply(m_corners.m_pts, cartesianCorners, 4);
+        }
+
+    m_range.InitFrom(m_corners.m_pts, 4);
+    //&&MM review. doesn't work with GCS in lat/long. Why we need that?
+    //             also problematic in DrawArgs::DrawGraphics where substitute are offseted.
+//     m_range.low.z = -1.0;
+//     m_range.high.z = 1.0;
+
+    if (parent)
+        parent->ExtendRange(m_range);
+
+    // That max size is the radius and not the diagonal of the bounding sphere in pixels, this is why there is a /2.
+    uint32_t tileSizeX = GetRoot().GetTileSizeX(GetTileId());
+    uint32_t tileSizeY = GetRoot().GetTileSizeY(GetTileId());
+    m_maxSize = sqrt(tileSizeX*tileSizeX + tileSizeY*tileSizeY) / 2;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+void WmsTile::GetCartesianCorners(DPoint3dP pCorners) const
+    {
+    auto id = GetTileId();
+    uint32_t xMinInRes = id.x * GetSource().GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMinInRes = id.y * GetSource().GetResolution(id.resolution).GetTileSizeY();
+    uint32_t xMaxInRes = xMinInRes + GetSource().GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMaxInRes = yMinInRes + GetSource().GetResolution(id.resolution).GetTileSizeY();
+
+    uint32_t xMin = xMinInRes << id.resolution;
+    uint32_t yMin = yMinInRes << id.resolution;
+    uint32_t xMax = xMaxInRes << id.resolution;
+    uint32_t yMax = yMaxInRes << id.resolution;
+
+    // Limit the tile extent to the raster physical size 
+    if (xMax > GetSource().GetWidth())
+        xMax = GetSource().GetWidth();
+    if (yMax > GetSource().GetHeight())
+        yMax = GetSource().GetHeight();
+
+    BeAssert(xMax >= xMin);  // For a tile of one pixel, xMin == xMax
+    BeAssert(yMax >= yMin);
+
+    // Convert pixel to coordinates.
+    DPoint3d physicalCorners[4];
+    physicalCorners[0].x = physicalCorners[2].x = xMin;
+    physicalCorners[1].x = physicalCorners[3].x = xMax;
+    physicalCorners[0].y = physicalCorners[1].y = yMin;
+    physicalCorners[2].y = physicalCorners[3].y = yMax;
+    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
+
+    GetSource().GetPhysicalToCartesian().Multiply(pCorners, physicalCorners, 4);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
+    {
+    if (!_HasChildren()) // is this is the highest resolution tile?
+        return nullptr;
+
+    if (load && m_children.empty())
+        {
+        // this Tile has children, but we haven't created them yet. Do so now
+        RasterRoot::Resolution const& childrenResolution = m_root.GetResolution(m_id.resolution - 1);
+
+        // Upper-Left child, we always have one 
+        TileId childUpperLeft(m_id.resolution - 1, m_id.x << 1, m_id.y << 1);
+        m_children.push_back(new WmsTile((root_type&)m_root, childUpperLeft, this));
+
+        // Upper-Right
+        if (childUpperLeft.x + 1 < childrenResolution.GetTileCountX())
+            {
+            TileId childUpperRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y);
+            m_children.push_back(new WmsTile((root_type&)m_root, childUpperRight, this));
+            }
+
+        // Lower-left
+        if (childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
+            {
+            TileId childLowerLeft(childUpperLeft.resolution, childUpperLeft.x, childUpperLeft.y + 1);
+            m_children.push_back(new WmsTile((root_type&)m_root, childLowerLeft, this));
+            }
+
+        // Lower-Right
+        if (childUpperLeft.x + 1 < childrenResolution.GetTileCountX() &&
+            childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
+            {
+            TileId childLowerRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y + 1);
+            m_children.push_back(new WmsTile((root_type&)m_root, childLowerRight, this));
+            }
+        }
+
+    return &m_children;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus WmsTile::_LoadTile(Dgn::TileTree::StreamBuffer& data, Dgn::TileTree::RootR root)
+    {
+    Render::ImageSource::Format format;
+    if (GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_PNG))
+        {
+        format = Render::ImageSource::Format::Png;
+        }
+    else if (GetSource().GetMapInfo().m_format.EqualsI(CONTENT_TYPE_JPEG))
+        {
+        format = Render::ImageSource::Format::Jpeg;
+        }
+    else
+        {
+        SetNotFound();
+        return ERROR;
+        }
+
+    Render::ImageSource source(format, std::move(data));
+    Render::Image image(source, Render::Image::Format::Rgb, Render::Image::BottomUp::No);
+
+    if (!image.IsValid())
+        {
+        // We might have receive an error message from the server in the form of an XML stream.
+        // the html field "Content-Type" have that info but we do not have access to it. >> Content-Type=application/vnd.ogc.se_xml
+        SetNotFound();
+        ERROR_PRINTF("invalid tile data r=%d (%d,%d)", GetTileId().resolution, GetTileId().x, GetTileId().y);
+        return ERROR;
+        }
+
+    Render::Texture::CreateParams textureParams;
+    textureParams.SetIsTileSection();
+    auto texture = root.GetRenderSystem()->_CreateTexture(image, textureParams);
+
+    data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
+
+    auto graphic = root.GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
+    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+
+    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
+    BeAssert(SUCCESS == stat);
+    UNUSED_VARIABLE(stat);
+
+    m_graphic = graphic;
+
+    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    return SUCCESS;
+    }

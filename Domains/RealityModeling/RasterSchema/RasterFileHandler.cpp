@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterFileHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "RasterFileSource.h"
+#include "GcsUtils.h"
 
 HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
@@ -75,17 +75,6 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
-    {
-    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // These are warnings
-        return REPROJECT_Success;
-
-    return status;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
 StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceToWorld, RasterFileR raster, DgnDbR dgndb)
     {
     GeoCoordinates::BaseGCSPtr pSourceGcs = raster.GetBaseGcs();
@@ -128,21 +117,8 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
             // Transform to GCS native units.
             srcCartesian.Scale(pSourceGcs->UnitsFromMeters());
 
-            GeoPoint srcGeo;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeo, srcCartesian))))
-                {
-                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-                return ERROR;
-                }
-
-            // Source latlong to BIM latlong.
-            GeoPoint bimGeo;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(bimGeo, srcGeo, *pDgnGcs))))
-                return ERROR;
-            
-            // Finally to UOR/BIM
             DPoint3d bimPoint;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(bimPoint, bimGeo))))
+            if (SUCCESS != GcsUtils::Reproject(bimPoint, *pDgnGcs, srcCartesian, *pSourceGcs))
                 return ERROR;
             
             tiePoints.push_back(pointPixel);   // uncorrected
@@ -246,7 +222,7 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 //----------------------------------------------------------------------------------------
 RasterFileModel::~RasterFileModel()
     {
-    DEBUG_PRINTF("RasterFileModel Destroyed");
+    //DEBUG_PRINTF("RasterFileModel Destroyed");
     }
 
 //----------------------------------------------------------------------------------------
@@ -263,12 +239,8 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     if (status != SUCCESS)
         return ERROR;        
 
-    Utf8String resolvedName(fileName);
-
-    RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
-    if (pSource.IsValid())
-        m_root = new RasterRoot(*pSource, const_cast<RasterFileModel&>(*this), renderSys);
-        
+    m_root = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+         
     return m_root.IsValid() ? SUCCESS : ERROR;
     }
 
