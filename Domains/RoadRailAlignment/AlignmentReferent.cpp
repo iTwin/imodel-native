@@ -14,7 +14,7 @@ HANDLER_DEFINE_MEMBERS(AlignmentStationHandler)
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentStation::AlignmentStation(CreateParams const& params) :
-    T_Super(params), m_atLocationAspectId(0)
+    T_Super(params)
     {
     }
 
@@ -22,9 +22,10 @@ AlignmentStation::AlignmentStation(CreateParams const& params) :
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentStation::AlignmentStation(CreateParams const& params, DistanceExpressionCR distanceExpression, double restartValue) :
-    T_Super(params, restartValue), m_atLocationAspectId(0)
+    T_Super(params, restartValue)
     {
-    _AddLinearlyReferencedLocation(*LinearlyReferencedAtLocation::Create(distanceExpression));
+    m_unpersistedAtLocation = LinearlyReferencedAtLocation::Create(distanceExpression);
+    _AddLinearlyReferencedLocation(*m_unpersistedAtLocation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,23 +50,15 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, DistanceExpr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceExpressionP AlignmentStation::GetAtPositionP()
     {
-    // TODO: Handle access to an un-persisted AlignmentStation
-    BeAssert(GetElementId().IsValid());
+    if (!GetElementId().IsValid())
+        return &m_unpersistedAtLocation->GetAtPositionR();
 
-    if (m_atLocationAspectId == 0)
+    if (!m_atLocationAspectId.IsValid())
         {
-        auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
-            "SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " WHERE ElementId = ?;");
-        BeAssert(stmtPtr.IsValid());
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
 
-        stmtPtr->BindId(1, GetElementId());
-        if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        m_atLocationAspectId = stmtPtr->GetValueId<ECInstanceId>(0).GetValue();
+        m_atLocationAspectId = aspectIds.front();
         }
 
     auto locationP = DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(

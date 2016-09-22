@@ -39,6 +39,15 @@
             <Class class="AlignmentHorizontal"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="SpatialElementRefersToAlignment" strength="referencing" modifier="Abstract">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" polymorphic="true">
+            <Class class="bis:SpatialElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="Alignment"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>

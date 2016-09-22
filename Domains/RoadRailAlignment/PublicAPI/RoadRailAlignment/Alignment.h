@@ -38,6 +38,7 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentHorizontalCPtr QueryHorizontal() const;
     ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentVerticalIds() const;
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryReferingSpatialElements() const;
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);

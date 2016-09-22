@@ -52,7 +52,8 @@ struct AlignmentStation : AlignmentReferentElement
     friend struct AlignmentStationHandler;
 
 private:
-    uint64_t m_atLocationAspectId;
+    LinearReferencing::LinearlyReferencedLocationId m_atLocationAspectId;
+    LinearReferencing::LinearlyReferencedAtLocationPtr m_unpersistedAtLocation;
 
 protected:
     //! @private

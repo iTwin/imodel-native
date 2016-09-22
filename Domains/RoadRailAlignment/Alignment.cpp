@@ -32,6 +32,24 @@ double Alignment::_GetLength() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet Alignment::QueryReferingSpatialElements() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT SourceECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_SpatialElementRefersToAlignment) " WHERE TargetECInstanceId = ?;");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetElementId());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
