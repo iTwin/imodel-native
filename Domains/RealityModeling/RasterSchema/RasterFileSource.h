@@ -30,7 +30,6 @@ protected:
 public:
     static RasterFileSourcePtr Create(Utf8StringCR resolvedName, RasterFileModel& model, Dgn::Render::SystemP system);
 
-    //&&MM move that to the tile object?
     Render::Image QueryTile(TileId const& id, bool& alphaBlend);
 
     DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToWorld.M0; }

@@ -232,16 +232,27 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     {
     if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
         return SUCCESS;
+    
+    if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
+        return ERROR;
 
     // Resolve raster name
     BeFileName fileName;
     BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
     if (status != SUCCESS)
-        return ERROR;        
+        {
+        m_loadFileFailed = true;
+        return ERROR;
+        }
 
     m_root = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+    if (!m_root.IsValid())
+        {  
+        m_loadFileFailed = true;
+        return ERROR;
+        }
          
-    return m_root.IsValid() ? SUCCESS : ERROR;
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------

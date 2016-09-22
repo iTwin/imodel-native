@@ -68,7 +68,9 @@ public:
 
 
 private:
+
     RasterFileProperties    m_fileProperties;
+    mutable bool            m_loadFileFailed = false;       //! if we failed to open the file, we won't try again again...
 
 protected:
     friend struct RasterFileModelHandler;

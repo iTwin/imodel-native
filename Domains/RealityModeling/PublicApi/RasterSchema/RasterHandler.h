@@ -76,14 +76,6 @@ private:
 protected:
     friend struct RasterModelHandler;
 
-    enum class LoadRasterStatus
-        {
-        Unloaded,
-        Loaded,
-        UnknownError,
-        };
-
-    //&&MM TODO avoid trying to load over and over in case of error. mutable LoadRasterStatus  m_loadStatus;
     mutable RasterRootPtr m_root;
 
     RasterClip m_clips;
