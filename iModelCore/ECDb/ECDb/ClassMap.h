@@ -124,14 +124,59 @@ struct ClassMap : RefCountedBase
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 
+        enum class PropertyMapInheritanceMode
+            {
+            New, //!< inherited property maps are never reused or cloned, but always created from scratch in the subclass
+            Reuse, //! inherited property maps are reused by subclasses
+            Clone //! inherited property maps are always cloned from the base class property map
+            };
+
+        //! Rules:
+        //! If MapStrategy != TPH: New
+        //! If MapStrategy == TPH, but without joined tables: Reuse
+        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
+        PropertyMapInheritanceMode GetPropertyMapInheritanceMode(ECN::ECPropertyCR prop) const
+            {
+            BeAssert(&prop.GetClass() != &m_ecClass);
+            PropertyMapInheritanceMode perClassMode = GetPropertyMapInheritanceMode();
+            if (perClassMode == PropertyMapInheritanceMode::New) //default mode
+                return perClassMode;
+
+            //If mode is reuse, it must be overwritten for nav props which must always be cloned if not in default mode
+            if (prop.GetIsNavigation())
+                return PropertyMapInheritanceMode::Clone;
+
+            return perClassMode;
+            }
+
+        //! Rules:
+        //! If MapStrategy != TPH: New
+        //! If MapStrategy == TPH, but without joined tables: Reuse
+        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
+        PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const
+            {
+            //No TPH
+            if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+                return PropertyMapInheritanceMode::New;
+
+            //TPH with joined tables
+            if (HasJoinedTable())
+                return PropertyMapInheritanceMode::Clone;
+
+            //TPH without joined tables
+            return PropertyMapInheritanceMode::Reuse;
+            }
+
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, MapStrategyExtendedInfo const&, bool setIsDirty);
-
+ 
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
+        MappingStatus MapProperties(SchemaImportContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
-        MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, DbClassMapLoadContext const* loadInfo, ClassMappingInfo const* classMapInfo);
+        BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
+
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
         void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }

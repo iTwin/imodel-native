@@ -377,22 +377,6 @@ MappingStatus ECDbMap::DoMapSchemas()
         return SUCCESS;
         }
 
-    TablePerHierarchyInfo const& tphInfo = classMapLoadContext.GetMapStrategy().GetTphInfo();
-    const bool isJoinedTableMapping = tphInfo.IsValid() && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
-    if (classMapLoadContext.GetBaseClassId().IsValid() && !isJoinedTableMapping)
-        {
-        ECClassCP baseClass =  GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
-        if (baseClass != nullptr)
-            {
-            ClassMapPtr baseClassMapPtr = nullptr;
-            if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
-                return ERROR;
-
-            if (classMapLoadContext.SetBaseClassMap(*baseClassMapPtr) != SUCCESS)
-                return ERROR;
-            }
-        }
-
     bool setIsDirty = false;
     MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;

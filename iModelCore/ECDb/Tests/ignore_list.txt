@@ -13,9 +13,6 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-#TFS 368922
-ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
-
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
@@ -44,9 +41,9 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
 
-#TFS 560975
-ECDbMappingTestFixture.SharedColumnsAndMultiInheritance
-
 #TFS 559996 failing due to disallowing multiinheritence in a given case (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
+
+#TFS 368922
+ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 

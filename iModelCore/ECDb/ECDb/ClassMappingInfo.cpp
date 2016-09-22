@@ -663,16 +663,20 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         }
 
     const bool hasBaseClasses = m_ecClass.HasBaseClasses();
-    ClassMap const* baseClassMap = nullptr;
+    ClassMap const* firstBaseClassMap = nullptr;
     if (hasBaseClasses)
         {
-        ECRelationshipClassCP baseClass = m_ecClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-        BeAssert(baseClass != nullptr);
-        baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
-        if (baseClassMap == nullptr)
-            return MappingStatus::BaseClassesNotMapped;
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+            {
+            ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+            if (baseClassMap == nullptr)
+                return MappingStatus::BaseClassesNotMapped;
 
-        const MapStrategy baseStrategy = baseClassMap->GetMapStrategy().GetStrategy();
+            if (firstBaseClassMap == nullptr)
+                firstBaseClassMap = baseClassMap;
+            }
+
+        const MapStrategy baseStrategy = firstBaseClassMap->GetMapStrategy().GetStrategy();
 
         if (baseStrategy == MapStrategy::NotMapped)
             {
@@ -691,7 +695,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         if (baseStrategy == MapStrategy::ExistingTable || baseStrategy == MapStrategy::SharedTable)
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'ExistingTable' or 'SharedTable' which is not supported in an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
+                            m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
             return MappingStatus::Error;
             }
 
@@ -701,16 +705,16 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Success;
             }
 
-        m_baseClassMap = baseClassMap;
-        if (baseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
+        m_baseClassMap = firstBaseClassMap;
+        if (firstBaseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
-            if (SUCCESS != EvaluateForeignKeyStrategy(*caCache, baseClassMap))
+            if (SUCCESS != EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap))
                 return MappingStatus::Error;
             }
         else
             {
-            BeAssert(baseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
-            if (SUCCESS != EvaluateLinkTableStrategy(*caCache, baseClassMap))
+            BeAssert(firstBaseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
+            if (SUCCESS != EvaluateLinkTableStrategy(*caCache, firstBaseClassMap))
                 return MappingStatus::Error;
             }
 
@@ -718,7 +722,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its mapping type (%s) differs from the mapping type of its base relationship class %s (%s). The mapping type must not change within an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_mapStrategyExtInfo.GetStrategy()), 
-                            baseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
+                            firstBaseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
             return MappingStatus::Error;
             }
 
@@ -733,9 +737,9 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         }
 
     if (m_customMapType == CustomMapType::LinkTable || m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0)
-        return EvaluateLinkTableStrategy(*caCache, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        return EvaluateLinkTableStrategy(*caCache, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
-    return EvaluateForeignKeyStrategy(*caCache, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+    return EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
     }
 
 
