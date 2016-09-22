@@ -45,6 +45,17 @@ RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8Stri
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfoPtr RepositoryInfo::ReadFromDb(Dgn::DgnDbCR db)
+    {
+    RepositoryInfoPtr repositoryInfo = std::make_shared<RepositoryInfo>();
+    if (ReadRepositoryInfo(*repositoryInfo, db).IsSuccess())
+        return repositoryInfo;
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 Utf8StringCR RepositoryInfo::GetDescription() const
