@@ -168,27 +168,29 @@ DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el)
     else
         stmtPtr->BindNull(5);
 
-    if (GetToPosition().GetLateralOffsetFromILinearElement().IsValid())
-        stmtPtr->BindDouble(6, GetToPosition().GetLateralOffsetFromILinearElement().Value());
-    else
-        stmtPtr->BindNull(6);
+    stmtPtr->BindDouble(6, GetToPosition().GetDistanceAlongFromStart());
 
-    if (GetToPosition().GetVerticalOffsetFromILinearElement().IsValid())
-        stmtPtr->BindDouble(7, GetToPosition().GetVerticalOffsetFromILinearElement().Value());
+    if (GetToPosition().GetLateralOffsetFromILinearElement().IsValid())
+        stmtPtr->BindDouble(7, GetToPosition().GetLateralOffsetFromILinearElement().Value());
     else
         stmtPtr->BindNull(7);
 
-    if (GetToPosition().GetDistanceAlongFromReferent().IsValid())
-        stmtPtr->BindDouble(8, GetToPosition().GetDistanceAlongFromReferent().Value());
+    if (GetToPosition().GetVerticalOffsetFromILinearElement().IsValid())
+        stmtPtr->BindDouble(8, GetToPosition().GetVerticalOffsetFromILinearElement().Value());
     else
         stmtPtr->BindNull(8);
 
-    if (GetToPosition().GetFromReferentId().IsValid())
-        stmtPtr->BindId(9, GetToPosition().GetFromReferentId());
+    if (GetToPosition().GetDistanceAlongFromReferent().IsValid())
+        stmtPtr->BindDouble(9, GetToPosition().GetDistanceAlongFromReferent().Value());
     else
         stmtPtr->BindNull(9);
 
-    stmtPtr->BindId(10, GetAspectInstanceId());
+    if (GetToPosition().GetFromReferentId().IsValid())
+        stmtPtr->BindId(10, GetToPosition().GetFromReferentId());
+    else
+        stmtPtr->BindNull(10);
+
+    stmtPtr->BindId(11, GetAspectInstanceId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
         return DgnDbStatus::WriteError;
@@ -202,9 +204,9 @@ DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el)
 DgnDbStatus LinearlyReferencedFromToLocation::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT FromPosition.DistanceAlongFromStart, FromPosition.LateralOffsetFromILinear, FromPosition.VerticalOffsetFromILinear,"
+        "SELECT FromPosition.DistanceAlongFromStart, FromPosition.LateralOffsetFromILinearElement, FromPosition.VerticalOffsetFromILinearElement,"
         "   FromPosition.DistanceAlongFromReferent, FromPositionFromReferent, "
-        "   ToPosition.DistanceAlongFromStart, ToPosition.LateralOffsetFromILinear, ToPosition.VerticalOffsetFromILinear,"
+        "   ToPosition.DistanceAlongFromStart, ToPosition.LateralOffsetFromILinearElement, ToPosition.VerticalOffsetFromILinearElement,"
         "   ToPosition.DistanceAlongFromReferent, ToPositionFromReferent "
         "FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
         "WHERE ECInstanceId = ?;");

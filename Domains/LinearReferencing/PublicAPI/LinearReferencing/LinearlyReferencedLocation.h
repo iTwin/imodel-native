@@ -88,8 +88,10 @@ public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedFromToLocation)
     DistanceExpressionCR GetFromPosition() const { return m_fromPosition; }
     DistanceExpressionR GetFromPositionR() { return m_fromPosition; }
+    void SetFromPosition(DistanceExpressionCR position) { m_fromPosition = position; }
     DistanceExpressionCR GetToPosition() const { return m_toPosition; }
     DistanceExpressionR GetToPositionR() { return m_toPosition; }
+    void SetToPosition(DistanceExpressionCR position) { m_toPosition = position; }
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedFromToLocationPtr Create(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);
 }; // LinearlyReferencedFromToLocation
