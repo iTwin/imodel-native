@@ -22,9 +22,13 @@ struct SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocate
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_SegmentElement, Dgn::PhysicalElement);
     friend struct SegmentElementHandler;
 
+private:
+    LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
+    LinearReferencing::LinearlyReferencedFromToLocationPtr m_unpersistedFromToLocationPtr;
+
 protected:
     //! @private
-    explicit SegmentElement(CreateParams const& params) : T_Super(params) {}
+    explicit SegmentElement(CreateParams const& params);
 
     //! @private
     explicit SegmentElement(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
@@ -34,6 +38,8 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentElement)
 
+    ROADRAILPHYSICAL_EXPORT LinearReferencing::LinearlyReferencedFromToLocationCP GetFromToLocation() const;
+    ROADRAILPHYSICAL_EXPORT LinearReferencing::LinearlyReferencedFromToLocationP GetFromToLocationP();
 }; // SegmentElement
 
 //=======================================================================================

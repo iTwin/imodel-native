@@ -78,6 +78,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Relationships
 #define BRRP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
+#define BRRP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
 
 
 // Properties

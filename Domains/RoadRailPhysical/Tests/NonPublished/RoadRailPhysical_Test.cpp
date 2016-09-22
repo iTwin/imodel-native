@@ -5,6 +5,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     {
+#pragma region SetUp
     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
@@ -27,17 +28,19 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
     auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
+#pragma endregion
 
+#pragma region Create Road Elements
     DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
-    auto roadRangePtr = RoadRange::Create(*physicalModelPtr, *alignmentPtr);
+    auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
     StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-    auto roadRangeCPtr = roadRangePtr->Insert();
-    ASSERT_TRUE(roadRangeCPtr.IsValid());
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadRangePtr->GetAlignmentId());
+    auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
+    ASSERT_TRUE(roadRangeCPtr.IsValid());    
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
     // Create RoadSegment #1
     auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(0), DistanceExpression(50));
@@ -50,4 +53,11 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     // Create RoadSegment #2
     auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(100), DistanceExpression(150));
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
+#pragma endregion
+
+#pragma region Station-change Cascading
+    roadSegment1Ptr->GetFromToLocationP()->GetToPositionR().SetDistanceAlongFromStart(35);
+    ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
+    ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
+#pragma endregion
     }

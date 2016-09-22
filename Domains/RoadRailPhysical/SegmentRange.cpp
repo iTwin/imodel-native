@@ -14,16 +14,56 @@ HANDLER_DEFINE_MEMBERS(RoadRangeHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRange::RoadRange(CreateParams const& params, AlignmentCR alignment):
-    T_Super(params)
+DgnElementId SegmentRangeElement::QueryAlignmentId() const
     {
-    SetAlignmentId(alignment);
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT TargetECInstanceId FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(0, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return DgnElementId();
+
+    return stmtPtr->GetValueId<DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRangePtr RoadRange::Create(PhysicalModelR model, AlignmentCR alignment)
+DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, AlignmentCP alignment)
+    {
+    if (!roadRange.GetElementId().IsValid() || (alignment && !alignment->GetElementId().IsValid()))
+        return DgnDbStatus::BadArg;
+
+    auto delStmtPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement(
+        "DELETE FROM " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " WHERE SourceECInstanceId = ?;");
+    BeAssert(delStmtPtr.IsValid());
+
+    delStmtPtr->BindId(0, roadRange.GetElementId());
+    if (DbResult::BE_SQLITE_DONE != delStmtPtr->Step())
+        return DgnDbStatus::WriteError;
+
+    if (alignment)
+        {
+        auto insStmtPtr = roadRange.GetDgnDb().GetPreparedECSqlStatement(
+            "INSERT INTO " BRRP_SCHEMA(BRRP_REL_SegmentRangeRefersToAlignment) " (SourceECInstanceId, TargetECInstanceId) VALUES (?,?);");
+        BeAssert(insStmtPtr.IsValid());
+
+        insStmtPtr->BindId(0, roadRange.GetElementId());
+        insStmtPtr->BindId(1, alignment->GetElementId());
+
+        if (DbResult::BE_SQLITE_DONE != insStmtPtr->Step())
+            return DgnDbStatus::WriteError;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RoadRangePtr RoadRange::Create(PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
@@ -31,22 +71,25 @@ RoadRangePtr RoadRange::Create(PhysicalModelR model, AlignmentCR alignment)
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
         RoadRailPhysicalDomain::QueryRoadCategoryId(model.GetDgnDb()));
 
-    return new RoadRange(createParams, alignment);
+    return new RoadRange(createParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RailRange::RailRange(CreateParams const& params, AlignmentCR alignment):
-    T_Super(params)
+RoadRangeCPtr RoadRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
     {
-    SetAlignmentId(alignment);
+    auto retVal = Insert(status);
+    if (retVal.IsValid())
+        *status = SetAlignment(*retVal, &alignment);
+    
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RailRangePtr RailRange::Create(PhysicalModelR model, AlignmentCR alignment)
+RailRangePtr RailRange::Create(PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
@@ -54,5 +97,17 @@ RailRangePtr RailRange::Create(PhysicalModelR model, AlignmentCR alignment)
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
         RoadRailPhysicalDomain::QueryTrackCategoryId(model.GetDgnDb()));
 
-    return new RailRange(createParams, alignment);
+    return new RailRange(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RailRangeCPtr RailRange::InsertWithAlignment(AlignmentCR alignment, DgnDbStatus* status)
+    {
+    auto retVal = Insert(status);
+    if (retVal.IsValid())
+        *status = SetAlignment(*retVal, &alignment);
+    
+    return retVal;
     }

@@ -44,14 +44,13 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Alignment" relationshipName="SegmentRangeElementRefersToAlignment" direction="forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeElementRefersToAlignment" strength="referencing">
-        <!--BaseClass>lr:ILinearElementSourceOwnsILinearElements</BaseClass-->
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is refered by 1 segment range">
+    <ECRelationshipClass typeName="SegmentRangeRefersToAlignment" strength="referencing">
+        <BaseClass>rralign:SpatialElementRefersToAlignment</BaseClass>
+        <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="SegmentRangeElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 alignment">
+        <Target multiplicity="(0..1)" polymorphic="false">
             <Class class="rralign:Alignment"/>
         </Target>
     </ECRelationshipClass>
