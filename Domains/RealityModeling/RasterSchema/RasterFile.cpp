@@ -398,6 +398,13 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
         if (rasterFile == nullptr)
             return rasterFile;
 
+        // Fine tuning opportunity: 
+        // We could possibly replace GenericImprove with custom code (such as what is done in RasterCore). 
+        // For the moment, GenericImprove works well for our cases, but maybe we'll need to tune our solution for multi-platform devices,
+        // where memory is scarcer (GenericImprove allocates memory according to the average desktop memory).
+        // But for now, GenericImprove solves these problems for us:
+        // - Raster cache creation
+        // - Correctly georeference rasters with georeference AND a sister file (in which case, the sister file must be used)
         rasterFile = GenericImprove(rasterFile, HRFiTiffCacheFileCreator::GetInstance());
         }
     catch (HFCException&)

@@ -229,7 +229,10 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
+#ifdef KEITH_FIX_RENDER_SYSTEM_TEST
+        if (nullptr != scene.GetRenderSystem())
+#endif
+                renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
             }
         }
 
@@ -325,25 +328,26 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
 //----------------------------------------------------------------------------------------
 BentleyStatus SceneInfo::Read(StreamBuffer& buffer) 
     {
-    Json::Value pt;
+    Json::Value val;
     Json::Reader reader;
     Utf8CP buffStr = (Utf8CP) buffer.GetData();
-    if (!reader.parse(buffStr, buffStr+buffer.GetSize(), pt))
+    if (!reader.parse(buffStr, buffStr+buffer.GetSize(), val))
         {
         LOG_ERROR("Cannot parse info");
         return ERROR;
         } 
 
-    int version = pt.get("3mxVersion", 0).asInt();
+    int version = val.get("3mxVersion", 0).asInt();
     if (version != 1)
         {
         LOG_ERROR("Unsupported version of 3MX");
         return ERROR;
         }
 
-    m_sceneName = pt.get("name", "").asCString();
+    m_sceneName = val.get("name", "").asCString();
+    m_logo = val.get("logo", "").asCString();
 
-    JsonValueCR layers = pt["layers"];
+    JsonValueCR layers = val["layers"];
     if (layers.empty())
         {
         LOG_ERROR("Cannot find \"layers\" tag");

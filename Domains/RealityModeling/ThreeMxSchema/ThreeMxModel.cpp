@@ -16,13 +16,13 @@ USING_NAMESPACE_TILETREE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
+BentleyStatus Scene::ReadSceneFile()
     {
     StreamBuffer rootStream;
     auto result = _RequestFile(m_rootUrl, rootStream);
 
     result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
-    return result.isReady() ? sceneInfo.Read(rootStream) : ERROR;
+    return result.isReady() ? m_sceneInfo.Read(rootStream) : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -32,12 +32,11 @@ BentleyStatus Scene::LoadScene()
     {
     CreateCache(1024*1024*1024); // 1 GB
 
-    SceneInfo sceneInfo;
-    if (SUCCESS != ReadSceneFile(sceneInfo))
+    if (SUCCESS != ReadSceneFile())
         return ERROR;
 
     Node* root = new Node(nullptr);
-    root->m_childPath = sceneInfo.m_rootNodePath;
+    root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
     auto result = _RequestTile(*root, nullptr);
@@ -58,41 +57,36 @@ BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
+BentleyStatus Scene::LocateFromSRS()
     {
-    DRange3d  range = ComputeRange();
-    if (range.IsNull())
-        return ERROR;
+    DgnGCSPtr bimGCS = m_db.Units().GetDgnGCS();
+    if (!bimGCS.IsValid())
+        return ERROR; // BIM is not geolocated, can't use geolocation in 3mx scene
 
-    DgnGCSPtr databaseGCS = m_db.Units().GetDgnGCS();
-    if (!databaseGCS.IsValid())
-        return ERROR;
+    if (m_sceneInfo.m_reprojectionSystem.empty())
+        return SUCCESS;  // scene has no spatial reference system, give up.
 
-    if (sceneInfo.m_reprojectionSystem.empty())
-        return SUCCESS;         // No GCS...
-
-    Transform transform = Transform::From(sceneInfo.m_origin);
     WString    warningMsg;
     StatusInt  status, warning;
 
-    DgnGCSPtr acute3dGCS = DgnGCS::CreateGCS(m_db);
+    DgnGCSPtr threeMxGCS = DgnGCS::CreateGCS(m_db);
 
     int epsgCode;
     double latitude, longitude;
-    if (1 == sscanf(sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
-        status = acute3dGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
-    else if (2 == sscanf(sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
+    if (1 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
+        status = threeMxGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
+    else if (2 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
         {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
         // mimic the intent (North is Y positive, no offset)
         // Note that we could have injected the origin here but keeping it in the transform as for other GCS specs
         if (latitude < 90.0 && latitude > -90.0 && longitude < 180.0 && longitude > -180.0)
-            status = acute3dGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
+            status = threeMxGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
         else
             status = ERROR;
         }
     else
-        status = acute3dGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(sceneInfo.m_reprojectionSystem.c_str(), false).c_str());
+        status = threeMxGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(m_sceneInfo.m_reprojectionSystem.c_str(), false).c_str());
 
     if (SUCCESS != status)
         {
@@ -100,20 +94,14 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
         return ERROR;
         }
 
-    DRange3d sourceRange;
-    transform.Multiply(sourceRange, range);
-
-    DPoint3d extent;
-    extent.DifferenceOf(sourceRange.high, sourceRange.low);
-
-    // Compute a linear transform that approximate the reprojection transformation.
+    // Compute a linear transform that approximates the reprojection transformation at the origin.
     Transform localTransform;
-    status = acute3dGCS->GetLocalTransform(&localTransform, sourceRange.low, &extent, true/*doRotate*/, true/*doScale*/, *databaseGCS);
+    status = threeMxGCS->GetLocalTransform(&localTransform, m_sceneInfo.m_origin, nullptr, true/*doRotate*/, true/*doScale*/, *bimGCS);
 
     // 0 == SUCCESS, 1 == Warning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
         {
-        m_location = Transform::FromProduct(localTransform, transform);
+        m_location = localTransform;
         return SUCCESS;
         }
 
@@ -137,9 +125,9 @@ struct ThreeMxProgressive : ProgressiveTask
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
     TileLoadsPtr m_loads;
-    ClipVectorPtr m_clip;
+    ClipVectorCPtr m_clip;
 
-    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadsPtr loads, ClipVectorPtr& clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
+    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadsPtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
     ~ThreeMxProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
@@ -185,8 +173,6 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     return Completion::Aborted;
     }
 
-void ThreeMxModel::SetClip (Dgn::ClipVectorCR clip)     { m_clip = ClipVector::CreateCopy (clip); }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -218,7 +204,7 @@ DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelNameIn, Utf8CP scene
         model->SetLocation(*trans);
     
     if (clip)
-        model->SetClip (*clip);
+        model->SetClip(ClipVector::CreateCopy(*clip).get());
 
     model->Insert();
     return model->GetModelId();
@@ -274,7 +260,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         {
         TileLoadsPtr loads = std::make_shared<TileLoads>();
         args.RequestMissingTiles(*m_scene, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip));
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
         }
     }
 
@@ -306,7 +292,7 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
         JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
 
     if (m_clip.IsValid())
-        JsonUtils::ClipVectorToJson (val[JSON_CLIP()], *m_clip);
+        JsonUtils::ClipVectorToJson(val[JSON_CLIP()], *m_clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,11 +308,24 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
     else
         m_location.InitIdentity();
 
-    if (val.isMember (JSON_CLIP()))
+    if (val.isMember(JSON_CLIP()))
         {
-        m_clip = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson (*m_clip, val[JSON_CLIP()]);
+        ClipVectorPtr clip = ClipVector::Create();
+        JsonUtils::ClipVectorFromJson(*clip, val[JSON_CLIP()]);
+        m_clip = clip;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxModel::GeolocateFromSceneFile()
+    {
+    Load(nullptr);
+    auto stat = m_scene->LocateFromSRS();
+    if (SUCCESS == stat)
+        m_location = m_scene->GetLocation();
+    return stat;
     }
 
 BEGIN_UNNAMED_NAMESPACE
@@ -358,7 +357,6 @@ struct Publish3mxGeometry : Geometry
             m_textureUV.resize(args.m_numPoints);
             memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
             }
-            
         }
 };
 
@@ -380,10 +378,10 @@ struct  PublishTileNode : TileNode
 {
     ScenePtr            m_scene;
     NodePtr             m_node;
-    ClipVectorPtr       m_clip;
+    ClipVectorCPtr      m_clip;
 
-    PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorPtr& clip)
-        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent), m_scene(&scene), m_node(&node), m_clip (clip) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
+        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
 
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
@@ -391,23 +389,23 @@ struct  PublishTileNode : TileNode
         TileMeshBuilderR   m_builder;
         bool                m_twoSidedTriangles;
         
-        ClipOutputCollector (TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder (builder), m_twoSidedTriangles (twoSidedTriangles) { }
+        ClipOutputCollector(TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface (PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface (polyfaceQuery, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface (polyfaceHeader, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const override
+virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
     {
     TileMeshList        tileMeshes;
     Transform           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
 
     if (nullptr == m_node->_GetChildren(true))
         {
-        BeAssert (false);
+        BeAssert(false);
         return tileMeshes;
         }
 
@@ -419,7 +417,7 @@ virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometr
     for (auto& child : *m_node->_GetChildren(true))
         {
         NodeR       node = (NodeR) *child;
-        bool        clipRequired = m_clip.IsValid() && ClipPlaneContainment_StronglyInside != m_clip->ClassifyRangeContainment (node.GetRange());
+        bool        clipRequired = m_clip.IsValid() && ClipPlaneContainment_StronglyInside != m_clip->ClassifyRangeContainment(node.GetRange());
 
 
         for (auto& geometry : node.GetGeometry())
@@ -433,7 +431,7 @@ virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometr
             if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
                 polyface->BuildPerFaceNormals();
 
-            polyface->Transform (sceneToTile);
+            polyface->Transform(sceneToTile);
 
             Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
             Publish3mxTexture*      publishTexture;
@@ -443,7 +441,7 @@ virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometr
             if (nullptr != publishGeometry &&
                 nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
                 {
-                auto const&   found = builderMap.find (publishTexture);
+                auto const&   found = builderMap.find(publishTexture);
                 
                 if (found == builderMap.end())
                     {
@@ -451,7 +449,7 @@ virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometr
                     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
                     builder = TileMeshBuilder::Create(displayParams, 0.0);
 
-                    builderMap.Insert (publishTexture, builder);
+                    builderMap.Insert(publishTexture, builder);
                     }
                 else
                     {
@@ -461,20 +459,20 @@ virtual TileMeshList _GenerateMeshes(ITileGenerationFilterR, DgnDbR, TileGeometr
 
             if (clipRequired)
                 {
-                ClipOutputCollector clipOutputCollector (*builder, twoSidedTriangles);
+                ClipOutputCollector clipOutputCollector(*builder, twoSidedTriangles);
 
-                m_clip->ClipPolyface (*polyface, clipOutputCollector, true);
+                m_clip->ClipPolyface(*polyface, clipOutputCollector, true);
                 }
             else
                 {
-                builder->AddPolyface (*polyface, DgnElementId(), twoSidedTriangles);
+                builder->AddPolyface(*polyface, DgnElementId(), twoSidedTriangles);
                 }
             }
         }                                                                                                                                                                                                                        
 
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
-            tileMeshes.push_back (builder.second->GetMesh());
+            tileMeshes.push_back(builder.second->GetMesh());
         
     return tileMeshes;
     }
@@ -497,16 +495,16 @@ typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR transformFromDgn, ClipVectorPtr& dgnClip, ClipVectorPtr& tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
+static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR transformFromDgn, ClipVectorCPtr& dgnClip, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
     TransformCR sceneToDgn = scene.GetLocation();
     double   tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
 
     range = node.GetRange();
-    sceneToDgn.Multiply (range, range);
+    sceneToDgn.Multiply(range, range);
 
     if (dgnClip.IsValid() &&
-        ClipPlaneContainment_StronglyOutside == dgnClip->ClassifyRangeContainment (range))
+        ClipPlaneContainment_StronglyOutside == dgnClip->ClassifyRangeContainment(range))
         return nullptr;
 
     if (node._HasChildren() && node.IsNotLoaded())
@@ -514,7 +512,7 @@ static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, 
 
     static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
     DRange3d                        childrenRange = DRange3d::NullRange();
-    T_PublishTilePtr  tileNode = new PublishTileNode (scene, node, transformFromDgn, range, depth, siblingIndex, tolerance, parent, tileClip);
+    T_PublishTilePtr  tileNode = new PublishTileNode(scene, node, transformFromDgn, range, depth, siblingIndex, tolerance, parent, tileClip);
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
@@ -530,23 +528,23 @@ static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, 
                 DRange3d            childRange;
                 T_PublishTilePtr    childTile;
 
-                if ((childTile = tileFromNode (childRange, (NodeR) *child, scene, transformFromDgn, dgnClip, tileClip, depth, childIndex++, tileNode.get())).IsValid())
+                if ((childTile = tileFromNode(childRange, (NodeR) *child, scene, transformFromDgn, dgnClip, tileClip, depth, childIndex++, tileNode.get())).IsValid())
                     {
-                    tileNode->GetChildren().push_back (childTile);
-                    childrenRange.Extend (childRange);
+                    tileNode->GetChildren().push_back(childTile);
+                    childrenRange.Extend(childRange);
                     }
                 }
             else
                 {
                 for (auto& geometry : childNode.GetGeometry())
                     for (auto& point : geometry->GetPoints())
-                        childrenRange.Extend (point.x, point.y, point.z);
+                        childrenRange.Extend(point.x, point.y, point.z);
                 }
             }
         }
 
     if (!childrenRange.IsNull())
-        tileNode->SetDgnRange (range = childrenRange);
+        tileNode->SetDgnRange(range = childrenRange);
 
     return tileNode;
     }
@@ -568,18 +566,11 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
 
     if (m_clip.IsValid())
         {
-        tileClip = ClipVector::CreateCopy (*m_clip);
-        tileClip->TransformInPlace (transformDbToTile);
+        tileClip = ClipVector::CreateCopy(*m_clip);
+        tileClip->TransformInPlace(transformDbToTile);
         }
 
-    rootTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, m_clip, tileClip, 0, 0, nullptr).get();
+    rootTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, m_clip, tileClip.get(), 0, 0, nullptr).get();
 
     return TileGenerator::Status::Success;
     }
-                                       
-
-
-
-
-
-
