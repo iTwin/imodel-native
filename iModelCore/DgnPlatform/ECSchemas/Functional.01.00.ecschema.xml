@@ -5,7 +5,7 @@
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="FunctionalModel">
-        <BaseClass>bis:Model</BaseClass>
+        <BaseClass>bis:RoleModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
