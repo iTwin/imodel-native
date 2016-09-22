@@ -56,8 +56,8 @@ protected:
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedAtLocation)
-    LINEARREFERENCING_EXPORT DistanceExpressionCR GetAtPosition() const { return m_atPosition; }
-    LINEARREFERENCING_EXPORT DistanceExpressionR GetAtPositionR() { return m_atPosition; }
+    DistanceExpressionCR GetAtPosition() const { return m_atPosition; }
+    DistanceExpressionR GetAtPositionR() { return m_atPosition; }
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedAtLocationPtr Create(DistanceExpressionCR atPosition);
 }; // LinearlyReferencedAtLocation
@@ -86,8 +86,10 @@ protected:
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedFromToLocation)
-    LINEARREFERENCING_EXPORT DistanceExpressionCR GetFromPosition() const { return m_fromPosition; }
-    LINEARREFERENCING_EXPORT DistanceExpressionCR GetToPosition() const { return m_toPosition; }
+    DistanceExpressionCR GetFromPosition() const { return m_fromPosition; }
+    DistanceExpressionR GetFromPositionR() { return m_fromPosition; }
+    DistanceExpressionCR GetToPosition() const { return m_toPosition; }
+    DistanceExpressionR GetToPositionR() { return m_toPosition; }
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedFromToLocationPtr Create(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);
 }; // LinearlyReferencedFromToLocation
