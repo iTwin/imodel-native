@@ -7,46 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
 #include "WmsSource.h"
+#include "GcsUtils.h"
 
 #define  CONTENT_TYPE_PNG       "image/png"
 #define  CONTENT_TYPE_JPEG      "image/jpeg"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
-static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)  //&&MM create shared Gcs services.
-    {
-    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // These are warnings
-        return REPROJECT_Success;
-
-    return status;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-static StatusInt reproject(DPoint3dR dest, DgnGCSCR destGcs, DPoint3dCR srcCartesian, GeoCoordinates::BaseGCSCR sourceGcs)
-    {
-    GeoPoint srcGeo;
-    if (REPROJECT_Success != s_FilterGeocoordWarning(sourceGcs.LatLongFromCartesian(srcGeo, srcCartesian)))
-        {
-        BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-        return ERROR;
-        }
-
-    // Source latlong to BIM latlong.
-    GeoPoint bimGeo;
-    if (REPROJECT_Success != s_FilterGeocoordWarning(sourceGcs.LatLongFromLatLong(bimGeo, srcGeo, destGcs)))
-        return ERROR;
-
-    // Finally to UOR/BIM
-    if (REPROJECT_Success != s_FilterGeocoordWarning(destGcs.UorsFromLatLong(dest, bimGeo)))
-        return ERROR;
-
-    return SUCCESS;
-    }
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsSource      ----------------------------------------
@@ -85,7 +52,7 @@ StatusInt WmsSource::ComputeLinearApproximation(TransformR cartesianToWorld)
             DPoint3d pointCartesian = DPoint3d::FromInterpolateBilinear(pointsCartesian[0], pointsCartesian[1], pointsCartesian[2], pointsCartesian[3], seed[x], seed[y]);
 
             DPoint3d pointWorld;
-            if (SUCCESS == reproject(pointWorld, *db.Units().GetDgnGCS(), pointCartesian, *GetGcsP()))
+            if (SUCCESS == GcsUtils::Reproject(pointWorld, *db.Units().GetDgnGCS(), pointCartesian, *GetGcsP()))
                 {
                 tiePoints.push_back(pointCartesian);    // uncorrected
                 tiePoints.push_back(pointWorld);        // corrected
@@ -321,7 +288,7 @@ StatusInt WmsSource::ReprojectCorners(DPoint3dP destWorld, DPoint3dCP srcCartesi
 
     for (uint32_t i = 0; i < 4; ++i)
         {
-        if (SUCCESS != reproject(destWorld[i], *pDgnGcs, srcCartesian[i], *pSrcGcs))
+        if (SUCCESS != GcsUtils::Reproject(destWorld[i], *pDgnGcs, srcCartesian[i], *pSrcGcs))
             return ERROR;
         }
 

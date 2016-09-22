@@ -99,6 +99,8 @@ $(o)ImagePPAdmin$(oext)         : $(SrcRasterSchema)ImagePPAdmin.cpp        $(ra
 
 $(o)RasterFileSource$(oext)     : $(SrcRasterSchema)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
 
+$(o)GcsUtils$(oext)             : $(SrcRasterSchema)GcsUtils.cpp            $(SrcRasterSchema)GcsUtils.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the

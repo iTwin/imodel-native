@@ -9,6 +9,7 @@
 #include <RasterSchema/RasterFileHandler.h>
 #include "RasterTileTree.h"
 #include "RasterFileSource.h"
+#include "GcsUtils.h"
 
 HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
@@ -74,17 +75,6 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
-    {
-    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // These are warnings
-        return REPROJECT_Success;
-
-    return status;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  5/2015
-//----------------------------------------------------------------------------------------
 StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceToWorld, RasterFileR raster, DgnDbR dgndb)
     {
     GeoCoordinates::BaseGCSPtr pSourceGcs = raster.GetBaseGcs();
@@ -127,21 +117,8 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
             // Transform to GCS native units.
             srcCartesian.Scale(pSourceGcs->UnitsFromMeters());
 
-            GeoPoint srcGeo;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeo, srcCartesian))))
-                {
-                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-                return ERROR;
-                }
-
-            // Source latlong to BIM latlong.
-            GeoPoint bimGeo;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(bimGeo, srcGeo, *pDgnGcs))))
-                return ERROR;
-            
-            // Finally to UOR/BIM
             DPoint3d bimPoint;
-            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(bimPoint, bimGeo))))
+            if (SUCCESS != GcsUtils::Reproject(bimPoint, *pDgnGcs, srcCartesian, *pSourceGcs))
                 return ERROR;
             
             tiePoints.push_back(pointPixel);   // uncorrected
