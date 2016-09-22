@@ -137,6 +137,7 @@ enum class RepositoryStatus : int
     CodeNotReserved = 0x1500B, //!< A DgnCode cannot be released because it has not been reserved by the requesting briefcase
     CodeUsed = 0x1500C, //!< A DgnCode cannot be relinquished because it has been used locally
     LockNotHeld = 0x1500D, //!< A required lock is not held by this briefcase
+    RepositoryIsLocked = 0x1500E, //!< Repository is currently locked, no changes allowed
 };
 
 //__PUBLISH_SECTION_END__

@@ -524,6 +524,14 @@ DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus RoleModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsGeometricElement() ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Read(DgnModelId modelId)

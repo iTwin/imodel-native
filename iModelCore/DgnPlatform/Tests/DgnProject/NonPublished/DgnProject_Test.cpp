@@ -722,7 +722,7 @@ struct ElementUriTests : ::testing::Test
     ScopedDgnHost m_host;
     RefCountedPtr<Dgn::NamespaceAuthority> m_codeAuthority;
 
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     ElementUriTests()
         {
@@ -748,7 +748,7 @@ struct ElementUriTests : ::testing::Test
 
 };
 
-DgnDbTestUtils::SeedDbInfo ElementUriTests::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo ElementUriTests::s_seedFileInfo;
 
 //---------------------------------------------------------------------------------------
 // Do one-time setup for all tests in this group
@@ -758,7 +758,7 @@ DgnDbTestUtils::SeedDbInfo ElementUriTests::s_seedFileInfo;
 void ElementUriTests::SetUpTestCase() 
     {
     ScopedDgnHost tempHost;
-    ElementUriTests::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    ElementUriTests::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -771,7 +771,7 @@ void ElementUriTests::TearDownTestCase()
     // base class to detect and throw an error if two groups try to use a directory of the same name.
     // Don't worry about stale data. The test runner will clean out everything at the start of the program.
     // You can empty the directory, if you want to save space.
-    //DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
+    //DgnPlatformSeedManager::EmptySubDirectory(GROUP_SUBDIR);
     }
 
 //---------------------------------------------------------------------------------------
@@ -780,7 +780,7 @@ void ElementUriTests::TearDownTestCase()
 TEST_F(ElementUriTests, Test1)
     {
     // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
     ASSERT_TRUE(db.IsValid());
 
     DgnModelId mid = db->Models().QueryModelId(s_seedFileInfo.modelCode);

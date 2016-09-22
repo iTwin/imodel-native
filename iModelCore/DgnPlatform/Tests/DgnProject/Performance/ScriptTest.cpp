@@ -38,7 +38,7 @@ struct ScriptTest : ::testing::Test
     DgnDbPtr      m_db;
     DgnModelId    m_defaultModelId;
     DgnCategoryId m_defaultCategoryId;
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     ScriptTest();
     ~ScriptTest();
@@ -51,7 +51,7 @@ struct ScriptTest : ::testing::Test
     void PopulateProperties(GeometricElement3d& el);
 };
 
-DgnDbTestUtils::SeedDbInfo ScriptTest::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo ScriptTest::s_seedFileInfo;
 
 END_UNNAMED_NAMESPACE
 
@@ -63,7 +63,7 @@ END_UNNAMED_NAMESPACE
 void ScriptTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    ScriptTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    ScriptTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -100,9 +100,9 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
     {
     // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
-        m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, testFile);
+        m_db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName, testFile);
     else
-        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
+        m_db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
     ASSERT_TRUE(m_db.IsValid());
 
     if (needBriefcase)

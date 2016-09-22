@@ -103,7 +103,7 @@ void ElementDependencyGraph::TearDownTestCase()
     // base class to detect and throw an error if two groups try to use a directory of the same name.
     // Don't worry about stale data. The test runner will clean out everything at the start of the program.
     // You can empty the directory, if you want to save space.
-    DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
+    DgnPlatformSeedManager::EmptySubDirectory(GROUP_SUBDIR);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -32,7 +32,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Physical; struct Spatial;};
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Physical; struct Role; struct Spatial;};
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -357,6 +357,7 @@ protected:
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
+    virtual RoleModelCP _ToRoleModel() const {return nullptr;}
     virtual InformationModelCP _ToInformationModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
@@ -488,6 +489,7 @@ public:
     //! @name Dynamic casting to DgnModel subclasses
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
+    RoleModelCP ToRoleModel() const {return _ToRoleModel();} //!< more efficient substitute for dynamic_cast<RoleModelCP>(model)
     InformationModelCP ToInformationModel() const {return _ToInformationModel();} //!< more efficient substitute for dynamic_cast<InformationModelCP>(model)
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
@@ -497,6 +499,7 @@ public:
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
+    RoleModelP ToRoleModelP() {return const_cast<RoleModelP>(_ToRoleModel());} //!< more efficient substitute for dynamic_cast<RoleModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
@@ -511,6 +514,7 @@ public:
     bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
     bool Is2dModel() const { return nullptr != ToGeometricModel2d(); }
     bool Is3dModel() const { return nullptr != ToGeometricModel3d(); }
+    bool IsRoleModel() const { return nullptr != ToRoleModel(); }
     bool IsInformationModel() const { return nullptr != ToInformationModel(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
@@ -936,6 +940,21 @@ protected:
 public:
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    09/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RoleModel, DgnModel);
+    friend struct dgn_ModelHandler::Role;
+
+protected:
+    RoleModelCP _ToRoleModel() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    explicit RoleModel(CreateParams const& params) : T_Super(params) { }
 };
 
 //=======================================================================================
@@ -1387,7 +1406,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, GraphicalModel2d);
     friend struct dgn_ModelHandler::Drawing;
 
-public: /* WIP: Should be protected! */
+protected:
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1567,6 +1586,12 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
+    };
+
+    //! The ModelHandler for RoleModel
+    struct EXPORT_VTABLE_ATTRIBUTE Role : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RoleModel, RoleModel, Role, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DefinitionModel

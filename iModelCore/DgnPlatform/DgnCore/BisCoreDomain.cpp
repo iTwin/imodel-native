@@ -34,6 +34,7 @@ HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
+HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
@@ -57,6 +58,7 @@ HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
+HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(InformationContent)
 HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
@@ -111,6 +113,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Role::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
@@ -147,6 +150,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Role::GetHandler());
 
 #if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());

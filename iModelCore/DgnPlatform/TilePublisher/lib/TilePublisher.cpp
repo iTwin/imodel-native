@@ -108,6 +108,7 @@ void TilePublisher::AppendUInt32(uint32_t value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     {
+    BeAssert (!range.IsNull());
     DPoint3d    center = DPoint3d::FromInterpolate (range.low, .5, range.high);
     DVec3d      diagonal = range.DiagonalVector();
 
@@ -134,60 +135,6 @@ void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)
 
     std::fwrite(metadataStr.data(), 1, metadataStr.size(), outputFile);
     std::fclose(outputFile);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_t depth)
-    {
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = tile.GetTolerance();
-    WriteBoundingVolume(root, tile.GetTileRange());
-
-    root[JSON_Content]["url"] = Utf8String(m_context.GetTileUrl(tile, s_binaryDataExtension));
-    if (!tile.GetChildren().empty())
-        {
-        root[JSON_Children] = Json::arrayValue;
-        if (0 == --depth)
-            {
-            // Write children as seperate tilesets.
-            for (auto& childTile : tile.GetChildren())
-                {
-                Json::Value         childTileset;
-
-                childTileset["asset"]["version"] = "0.0";
-
-                auto&       childRoot = childTileset[JSON_Root];
-                WString     metadataRelativePath = childTile->GetRelativePath(m_context.GetRootName().c_str(), s_metadataExtension);
-                BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
-
-
-                WriteMetadataTree (childRoot, *childTile, m_context.GetMaxTilesetDepth());
-                WriteJsonToFile (metadataFileName.c_str(), childTileset);
-
-                Json::Value         child;
-
-                child["refine"] = "replace";
-                child[JSON_GeometricError] = childTile->GetTolerance();
-                WriteBoundingVolume(child, childTile->GetTileRange());
-
-                child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
-                root[JSON_Children].append(child);
-                }
-            }
-        else
-            {
-            // Append children to this tileset.
-            for (auto& childTile : tile.GetChildren())
-                {
-                Json::Value         child;
-
-                WriteMetadataTree (child, *childTile, depth);
-                root[JSON_Children].append(child);
-                }
-            }
-        }
     }
 
 
@@ -238,44 +185,21 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     memcpy(m_binaryData.data() + binaryDataSize, bufferData.data(), bufferDataSize);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth)
-    {
-    Json::Value val;
-
-    val["asset"]["version"] = "0.0";
-
-    if (!m_context.GetTilesetTransform().IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTilesetTransform());
-        auto&       transformValue = val[JSON_Root][JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
-
-    auto& root = val[JSON_Root];
-    WriteMetadataTree (root, m_tile, maxDepth);
-    WriteJsonToFile (metadataFileName.c_str(), val);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
+    if (m_meshes.empty())
+        return PublisherContext::Status::Success;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     
-    if (0 == m_tile.GetDepth())
-        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), m_context.GetMaxTilesetDepth());
-
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
+
     ProcessMeshes(sceneJson);
+
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
     Json::Value batchTableJson(Json::objectValue);
@@ -329,21 +253,18 @@ PublisherContext::Status TilePublisher::Publish()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::ProcessMeshes(Json::Value& val)
     {
-    if (m_meshes.empty())
-        {
-        val["scene"] = "defaultScene";
-        val["scenes"]["defaultScene"]["nodes"] = Json::arrayValue;
-        val["nodes"]["node_0"] = Json::objectValue;
-        val["nodes"]["node_0"]["name"] = "";
-
-        return;
-        }
-
     AddExtensions(val);
 
     val["meshes"]["mesh_0"]["primitives"] = Json::arrayValue;
+
+    DRange3d    publishedRange = DRange3d::NullRange();
+
     for (size_t i = 0; i < m_meshes.size(); i++)
+        {
         AddMesh(val, *m_meshes[i], i);
+        publishedRange.Extend (m_meshes[i]->GetRange());
+        }
+    m_tile.SetPublishedRange (publishedRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1029,6 +950,107 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
+    {
+    // the published range represents the actual range of the published meshes. - This may be smaller than the 
+    // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
+    // so start the range out as the intersection of the tile range and the published range.
+    DRange3d        contentRange;
+
+    contentRange.IntersectionOf (tile.GetTileRange(), tile.GetPublishedRange());
+    range = contentRange;
+
+    if (!tile.GetChildren().empty())
+        {
+        root[JSON_Children] = Json::arrayValue;
+        if (0 == --depth)
+            {
+            // Write children as seperate tilesets.
+            for (auto& childTile : tile.GetChildren())
+                {
+                Json::Value         childTileset;
+                DRange3d            childRange;
+
+                childTileset["asset"]["version"] = "0.0";
+
+                auto&       childRoot = childTileset[JSON_Root];
+                WString     metadataRelativePath = childTile->GetRelativePath(GetRootName().c_str(), s_metadataExtension);
+                BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
+
+                WriteMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
+                if (!childRange.IsNull())
+                    {
+                    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), childTileset);
+
+                    Json::Value         child;
+
+                    child["refine"] = "replace";
+                    child[JSON_GeometricError] = childTile->GetTolerance();
+                    TilePublisher::WriteBoundingVolume(child, childRange);
+
+                    child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
+                    root[JSON_Children].append(child);
+                    range.Extend (childRange);
+                    }
+                }
+            }
+        else
+            {
+            // Append children to this tileset.
+            for (auto& childTile : tile.GetChildren())
+                {
+                Json::Value         child;
+                DRange3d            childRange;
+
+                WriteMetadataTree (childRange, child, *childTile, depth);
+                if (!childRange.IsNull())
+                    {
+                    root[JSON_Children].append(child);
+                    range.Extend (childRange);
+                    }
+                }
+            }
+        }
+    root["refine"] = "replace";
+    root[JSON_GeometricError] = tile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(root, range);
+
+    root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
+    
+    // The content bounding box represents the actual 
+    if (!contentRange.IsNull())
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], tile.GetPublishedRange());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth)
+    {
+    Json::Value val;
+
+    val["asset"]["version"] = "0.0";
+
+    if (!GetTilesetTransform().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (GetTilesetTransform());
+        auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
+    auto&       root = val[JSON_Root];
+    DRange3d    rootRange;
+
+    WriteMetadataTree (rootRange, root, rootTile, maxDepth);
+    TilePublisher::WriteJsonToFile (metadataFileName.c_str(), val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
     {
     Status                      status;
@@ -1047,6 +1069,8 @@ PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& ro
         TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 
         rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
+
+        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
         }
     return status;
     }
@@ -1066,7 +1090,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     progressMeter._SetModel (&model);
     progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
-
+                                                                            
     if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
         return status;
 

@@ -53,9 +53,9 @@ public:
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : RoleModel
 {
-    DGNMODEL_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, RoleModel);
     friend struct func_ModelHandler::Functional;
 
 protected:
@@ -140,9 +140,9 @@ namespace func_ModelHandler
 {
     //! The ModelHandler for FunctionalModel
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE Functional : dgn_ModelHandler::Model
+    struct EXPORT_VTABLE_ATTRIBUTE Functional : dgn_ModelHandler::Role
     {
-        MODELHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, FunctionalModel, Functional, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, FunctionalModel, Functional, dgn_ModelHandler::Role, DGNPLATFORM_EXPORT)
     };
 }
 
@@ -154,16 +154,16 @@ namespace func_ElementHandler
 {
     //! The ElementHandler for FunctionalBreakdownElement
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElementHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElementHandler : dgn_ElementHandler::Role
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalBreakdownElement, FunctionalBreakdownElement, FunctionalBreakdownElementHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalBreakdownElement, FunctionalBreakdownElement, FunctionalBreakdownElementHandler, dgn_ElementHandler::Role, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for FunctionalComponentElement
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElementHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElementHandler : dgn_ElementHandler::Role
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComponentElement, FunctionalComponentElement, FunctionalComponentElementHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComponentElement, FunctionalComponentElement, FunctionalComponentElementHandler, dgn_ElementHandler::Role, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for FunctionalType
