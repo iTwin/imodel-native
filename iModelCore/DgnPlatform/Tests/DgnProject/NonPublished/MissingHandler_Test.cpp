@@ -117,7 +117,7 @@ struct MissingHandlerTest : public ::testing::Test
 public: 
     static void SetUpTestCase();
     typedef PhysicalElement::RestrictedAction Restriction;
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     struct ElemInfo
     {
@@ -140,7 +140,7 @@ public:
     void TestDelete(DgnElementId elemId, DgnDbR db, bool allowed);
 };
 
-DgnDbTestUtils::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 // Do one-time setup for all tests in this group
 // In this case, I just request the (root) seed file that my tests will use and make a note of it.
@@ -149,7 +149,7 @@ DgnDbTestUtils::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
 void MissingHandlerTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    MissingHandlerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    MissingHandlerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,7 +336,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Create a new dgndb, with our domain + handlers loaded
         {
         ScopedDgnHost host;
-        DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(MissingHandlerTest::s_seedFileInfo.fileName, L"HandlerRestrictions");
+        DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(MissingHandlerTest::s_seedFileInfo.fileName, L"HandlerRestrictions");
         ASSERT_TRUE(db.IsValid());
         fullDgnDbFileName = db->GetFileName();
 

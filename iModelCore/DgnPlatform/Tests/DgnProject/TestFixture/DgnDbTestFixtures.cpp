@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_SQLITE
 
-DgnDbTestUtils::SeedDbInfo DgnDbTestFixture::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo DgnDbTestFixture::s_seedFileInfo;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
@@ -20,7 +20,7 @@ void DgnDbTestFixture::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     //  Request a root seed file.
-    DgnDbTestFixture::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, false));
+    DgnDbTestFixture::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, false));
     }
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
@@ -28,7 +28,7 @@ void DgnDbTestFixture::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 void DgnDbTestFixture::TearDownTestCase()
     {
-    //DgnDbTestUtils::EmptySubDirectory(DgnDbTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
+    //DgnPlatformSeedManager::EmptySubDirectory(DgnDbTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Umar.Hayat                   07/2016
@@ -36,7 +36,7 @@ void DgnDbTestFixture::TearDownTestCase()
 DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newName)
     {
     BeFileName outPath;
-    DgnDbStatus status = DgnDbTestUtils::MakeSeedDbCopy(outPath, DgnDbTestFixture::s_seedFileInfo.fileName, newName);
+    DgnDbStatus status = DgnPlatformSeedManager::MakeSeedDbCopy(outPath, DgnDbTestFixture::s_seedFileInfo.fileName, newName);
     BeTest::GetHost().GetOutputRoot(actualName);
     actualName.AppendToPath(outPath.c_str());
     return status;
@@ -63,9 +63,9 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
     {
     // Note: We know that our group's SetUpTestCase() function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
-        m_db = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, inFileName);
+        m_db = DgnPlatformSeedManager::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, inFileName);
     else
-        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
+        m_db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
 
     if (needBriefcase)
         {
@@ -81,6 +81,7 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
 
     m_db->SaveChanges();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15

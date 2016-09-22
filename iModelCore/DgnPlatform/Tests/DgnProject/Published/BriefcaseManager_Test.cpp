@@ -970,7 +970,7 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
 {
 public: 
     static void SetUpTestCase();
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
     typedef IRepositoryManager::Request Request;
     typedef IRepositoryManager::Response Response;
     typedef IBriefcaseManager::ResponseOptions ResponseOptions;
@@ -1019,14 +1019,14 @@ public:
         return db;
         }
 };
-DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
+DgnPlatformSeedManager::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             08/2016
 //---------------------------------------------------------------------------------------
 void RepositoryManagerTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    RepositoryManagerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    RepositoryManagerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
     }
 
 /*---------------------------------------------------------------------------------**//**

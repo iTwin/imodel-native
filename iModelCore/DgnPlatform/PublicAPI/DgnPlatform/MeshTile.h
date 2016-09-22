@@ -169,6 +169,7 @@ public:
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    DRange3d GetRange() { return DRange3d::From (m_points); }
     bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
@@ -432,11 +433,12 @@ private:
     TileNodeP           m_parent;
     WString             m_subdirectory;
     Transform           m_transformFromDgn;
+    mutable DRange3d    m_publishedRange;
 
 protected:
     TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, 0.0, nullptr) { }
     TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
-        : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn) { }
+        : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn), m_publishedRange(DRange3d::NullRange()) { }
 
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 public:
@@ -459,6 +461,8 @@ public:
     void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
     void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
+    void SetPublishedRange (DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
+    DRange3dCR GetPublishedRange() const { return m_publishedRange; }
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
