@@ -129,6 +129,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for RoleElement
+    struct EXPORT_VTABLE_ATTRIBUTE Role : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RoleElement, RoleElement, Role, Element, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for InformationContentElement
     struct EXPORT_VTABLE_ATTRIBUTE InformationContent : Element
     {
