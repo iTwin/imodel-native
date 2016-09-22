@@ -96,7 +96,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& r
         JsonValueCR errorData = error.GetExtendedData();
         SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], errorData[ServerSchema::Property::CodesRequiresPull]);
         }
-    else if (RepositoryStatus::InvalidRequest == responseStatus)
+    else if (RepositoryStatus::InvalidRequest == responseStatus || RepositoryStatus::RepositoryIsLocked == responseStatus)
         {
         response.SetResult(responseStatus);
         }
