@@ -3156,14 +3156,6 @@ void StatementCache::AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile const& dbFile, Utf8CP sqlString) const
     {
-#if defined (NO_NOT_THREAD_SAFE)
-    if (!dbFile.CheckImplicitTxn())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR_NoTxnActive;
-        }
-#endif
-
     FindStatement(stmt, sqlString);
     if (stmt.IsValid())
         return BE_SQLITE_OK;
