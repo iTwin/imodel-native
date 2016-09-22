@@ -14,8 +14,6 @@
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
 
-#define THUMBNAIL_WIDTH     512
-#define THUMBNAIL_HEIGHT    512
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -149,7 +147,7 @@ FtpStatus FtpClient::GetData() const
         return status;
 
     // Data extraction.
-    FtpDataPtr pExtractedData = FtpData::Create();
+    WebResourceDataPtr pExtractedData = WebResourceData::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
         {
         //&&JFC TODO: Can do better ?
@@ -225,7 +223,7 @@ void FtpClient::SetObserver(IFtpTraversalObserver* pObserver)
 //-------------------------------------------------------------------------------------
 FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName)
     {
-    m_pServer = FtpServer::Create(serverUrl, serverName);
+    m_pServer = WebResourceServer::Create(serverUrl, serverName);
     m_pObserver = NULL;    
     m_dataRepositories = RepositoryMapping();    
     }
@@ -440,300 +438,10 @@ FtpResponse::FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status)
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
     {}
 
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpDataPtr FtpData::Create()
-    {
-    return new FtpData();
-    }
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR FtpData::GetName() const { return m_name; }
-void FtpData::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR FtpData::GetUrl() const { return m_url; }
-void FtpData::SetUrl(Utf8CP url) { m_url = url; }
-
-Utf8StringCR FtpData::GetCompoundType() const { return m_compoundType; }
-void FtpData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
-
-uint64_t FtpData::GetSize() const { return m_size; }
-void FtpData::SetSize(uint64_t size) { m_size = size; }
-
-Utf8StringCR FtpData::GetResolution() const { return m_resolution; }
-void FtpData::SetResolution(Utf8CP res) { m_resolution = res; }
-
-Utf8StringCR FtpData::GetProvider() const { return m_provider; }
-void FtpData::SetProvider(Utf8CP provider) { m_provider = provider; }
-
-Utf8StringCR FtpData::GetDataType() const { return m_dataType; }
-void FtpData::SetDataType(Utf8CP type) { m_dataType = type; }
-
-Utf8StringCR FtpData::GetLocationInCompound() const { return m_locationInCompound; }
-void FtpData::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
-
-DateTimeCR FtpData::GetDate() const { return m_date; }
-void FtpData::SetDate(DateTimeCR date) { m_date = date; }
-
-DRange2dCR FtpData::GetFootprint() const { return m_footprint; }
-void FtpData::SetFootprint(DRange2dCR footprint) { m_footprint = footprint; }
-
-FtpThumbnailCR FtpData::GetThumbnail() const { return *m_pThumbnail; }
-void FtpData::SetThumbnail(FtpThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
-
-FtpMetadataCR FtpData::GetMetadata() const { return *m_pMetadata; }
-void FtpData::SetMetadata(FtpMetadataR metadata) { m_pMetadata = &metadata; }
-
-FtpServerCR FtpData::GetServer() const { return *m_pServer; }
-void FtpData::SetServer(FtpServerR server) { m_pServer = &server; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpData::FtpData()
-    {
-    m_size = 0;
-    m_date = DateTime();
-    m_footprint = DRange2d();
-    m_pThumbnail = FtpThumbnail::Create();
-    m_pMetadata = FtpMetadata::Create();
-    m_pServer = FtpServer::Create();
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpThumbnailPtr FtpThumbnail::Create()
-    {
-    return new FtpThumbnail();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpThumbnailPtr FtpThumbnail::Create(RealityDataCR rasterData)
-    {
-    return new FtpThumbnail(rasterData);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR FtpThumbnail::GetProvenance() const { return m_provenance; }
-void FtpThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
-
-Utf8StringCR FtpThumbnail::GetFormat() const { return m_format; }
-void FtpThumbnail::SetFormat(Utf8CP format) { m_format = format; }
-
-uint32_t FtpThumbnail::GetWidth() const { return m_width; }
-void FtpThumbnail::SetWidth(uint32_t width) { m_width = width; }
-
-uint32_t FtpThumbnail::GetHeight() const { return m_height; }
-void FtpThumbnail::SetHeight(uint32_t height) { m_height = height; }
-
-DateTimeCR FtpThumbnail::GetStamp() const { return m_stamp; }
-void FtpThumbnail::SetStamp(DateTimeCR date) { m_stamp = date; }
-
-const bvector<Byte>& FtpThumbnail::GetData() const { return m_data; }
-void FtpThumbnail::SetData(const bvector<Byte>& data) { m_data = data; }
-
-Utf8StringCR FtpThumbnail::GetGenerationDetails() const { return m_generationDetails; }
-void FtpThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpThumbnail::FtpThumbnail()
-    {
-    m_width = THUMBNAIL_WIDTH;
-    m_height = THUMBNAIL_HEIGHT;
-    m_stamp = DateTime::GetCurrentTimeUtc();
-    m_data = bvector<Byte>();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpThumbnail::FtpThumbnail(RealityDataCR rasterData)
-    {
-    m_provenance = "Created by RealityDataHandler tool.";
-    m_format = "png";
-    m_width = THUMBNAIL_WIDTH;
-    m_height = THUMBNAIL_HEIGHT;  
-    m_stamp = DateTime::GetCurrentTimeUtc();
-    m_generationDetails = "Created by RealityDataHandler tool.";        
-
-    rasterData.GetThumbnail(m_data, m_width, m_height);
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpMetadataPtr FtpMetadata::Create()
-    {
-    return new FtpMetadata();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpMetadataPtr FtpMetadata::CreateFromFile(Utf8CP filePath)
-    {
-    return new FtpMetadata(filePath);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR FtpMetadata::GetProvenance() const { return m_provenance; }
-void FtpMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
-
-Utf8StringCR FtpMetadata::GetDescription() const { return m_description; }
-void FtpMetadata::SetDescription(Utf8CP description) { m_description = description; }
-
-Utf8StringCR FtpMetadata::GetContactInfo() const { return m_contactInfo; }
-void FtpMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
-
-Utf8StringCR FtpMetadata::GetLegal() const { return m_legal; }
-void FtpMetadata::SetLegal(Utf8CP legal) { m_legal = legal; }
-
-Utf8StringCR FtpMetadata::GetFormat() const { return m_format; }
-void FtpMetadata::SetFormat(Utf8CP format) { m_format = format; }
-
-Utf8StringCR FtpMetadata::GetData() const { return m_data; }
-void FtpMetadata::SetData(Utf8CP data) { m_data = data; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpMetadata::FtpMetadata()
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpMetadata::FtpMetadata(Utf8CP filePath)
-    {
-    BeFileName metadataFile(filePath);
-    Utf8String provenance(metadataFile.GetFileNameAndExtension());
-    m_provenance = provenance;
-    Utf8String format(metadataFile.GetExtension());
-    m_format = format;
-
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
-    if (BEXML_Success == xmlStatus)
-        {
-        BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
-        if (NULL != pRootNode)
-            {
-            // Convert to string.
-            pRootNode->GetXmlString(m_data);
-            }
-        }
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpServerPtr FtpServer::Create()
-    {
-    return new FtpServer();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpServerPtr FtpServer::Create(Utf8CP url, Utf8CP name)
-    {
-    return new FtpServer(url, name);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR FtpServer::GetProtocol() const { return m_protocol; }
-void FtpServer::SetProtocol(Utf8CP protocol) { m_protocol = protocol; }
-
-Utf8StringCR FtpServer::GetName() const { return m_name; }
-void FtpServer::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR FtpServer::GetUrl() const { return m_url; }
-void FtpServer::SetUrl(Utf8CP url) { m_url = url; }
-
-Utf8StringCR FtpServer::GetContactInfo() const { return m_contactInfo; }
-void FtpServer::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
-
-Utf8StringCR FtpServer::GetLegal() const { return m_legal; }
-void FtpServer::SetLegal(Utf8CP legal) { m_legal = legal; }
-
-bool FtpServer::IsOnline() const { return m_online; }
-void FtpServer::SetOnline(bool online) { m_online = online; }
-
-DateTimeCR FtpServer::GetLastCheck() const { return m_lastCheck; }
-void FtpServer::SetLastCheck(DateTimeCR data) { m_lastCheck = data; }
-
-DateTimeCR FtpServer::GetLastTimeOnline() const { return m_lastTimeOnline; }
-void FtpServer::SetLastTimeOnline(DateTimeCR data) { m_lastTimeOnline = data; }
-
-double FtpServer::GetLatency() const { return m_latency; }
-void FtpServer::SetLatency(double latency) { m_latency = latency; }
-
-Utf8StringCR FtpServer::GetState() const { return m_state; }
-void FtpServer::SetState(Utf8CP state) { m_state = state; }
-
-Utf8StringCR FtpServer::GetType() const { return m_type; }
-void FtpServer::SetType(Utf8CP type) { m_type = type; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpServer::FtpServer()
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpServer::FtpServer(Utf8CP url, Utf8CP name)
-    : m_url(url), m_name(name)
-    {
-    // Default values.
-    m_online = true;
-    m_lastCheck = DateTime::GetCurrentTimeUtc();
-    m_lastTimeOnline = DateTime::GetCurrentTimeUtc();
-    m_latency = 0.0;
-
-    if (!m_url.empty())
-        {
-        // Extract protocol and type from url.
-        Utf8String protocol(url);
-        m_protocol = protocol.substr(0, protocol.find_first_of(":"));
-        m_type = m_protocol;
-
-        if (m_name.empty())
-            {
-            // No server name was provided, try to extract it from url.
-            Utf8String name(url);
-            size_t beginPos = name.find_first_of("://") + 3;
-            size_t pos = name.find_last_of(".");
-            size_t endPos = name.find("/", pos);
-            m_name = name.substr(beginPos, endPos - beginPos);
-            }        
-        }
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
+WebResourceDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> tifFileList;
@@ -763,7 +471,7 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
         return NULL;
 
     // Create empty data.
-    FtpDataPtr pExtractedData = FtpData::Create();    
+    WebResourceDataPtr pExtractedData = WebResourceData::Create();    
 
     // Data extraction.
     RealityDataPtr pData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
@@ -808,7 +516,7 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
 
     // Metadata.    
     BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    FtpMetadataPtr pMetadata = FtpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
+    WebResourceMetadataPtr pMetadata = WebResourceMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
     if (pMetadata != NULL)
         pExtractedData->SetMetadata(*pMetadata);
 
@@ -850,12 +558,12 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     pExtractedData->SetFootprint(shape);
 
     // Thumbnail.
-    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pData);
+    WebResourceThumbnailPtr pThumbnail = WebResourceThumbnail::Create(*pData);
     if (pThumbnail != NULL)
         pExtractedData->SetThumbnail(*pThumbnail);
 
     // Server.
-    FtpServerPtr pServer = FtpServer::Create();
+    WebResourceServerPtr pServer = WebResourceServer::Create();
     if (pServer != NULL)
         pExtractedData->SetServer(*pServer);
 

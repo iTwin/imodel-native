@@ -15,9 +15,6 @@
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
 
-#define THUMBNAIL_WIDTH     512
-#define THUMBNAIL_HEIGHT    512
-
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -153,7 +150,7 @@ HttpStatus HttpClient::GetData() const
         return status;
 
     // Data extraction.
-    HttpDataPtr pExtractedData = HttpData::Create();
+    WebResourceDataPtr pExtractedData = WebResourceData::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
         {
         //&&JFC TODO: Can do better ?
@@ -230,7 +227,7 @@ void HttpClient::SetObserver(IHttpTraversalObserver* pObserver)
 HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName)
     {
     m_certificatePath = BeFileName();
-    m_pServer = HttpServer::Create(serverUrl, serverName);
+    m_pServer = WebResourceServer::Create(serverUrl, serverName);
     m_pObserver = NULL;    
     m_dataRepositories = RepositoryMapping();       
 
@@ -486,300 +483,10 @@ HttpResponse::HttpResponse(Utf8CP effectiveUrl, Utf8CP content, HttpStatus statu
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
     {}
 
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpDataPtr HttpData::Create()
-    {
-    return new HttpData();
-    }
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR HttpData::GetName() const { return m_name; }
-void HttpData::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR HttpData::GetUrl() const { return m_url; }
-void HttpData::SetUrl(Utf8CP url) { m_url = url; }
-
-Utf8StringCR HttpData::GetCompoundType() const { return m_compoundType; }
-void HttpData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
-
-uint64_t HttpData::GetSize() const { return m_size; }
-void HttpData::SetSize(uint64_t size) { m_size = size; }
-
-Utf8StringCR HttpData::GetResolution() const { return m_resolution; }
-void HttpData::SetResolution(Utf8CP res) { m_resolution = res; }
-
-Utf8StringCR HttpData::GetProvider() const { return m_provider; }
-void HttpData::SetProvider(Utf8CP provider) { m_provider = provider; }
-
-Utf8StringCR HttpData::GetDataType() const { return m_dataType; }
-void HttpData::SetDataType(Utf8CP type) { m_dataType = type; }
-
-Utf8StringCR HttpData::GetLocationInCompound() const { return m_locationInCompound; }
-void HttpData::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
-
-DateTimeCR HttpData::GetDate() const { return m_date; }
-void HttpData::SetDate(DateTimeCR date) { m_date = date; }
-
-DRange2dCR HttpData::GetFootprint() const { return m_footprint; }
-void HttpData::SetFootprint(DRange2dCR footprint) { m_footprint = footprint; }
-
-HttpThumbnailCR HttpData::GetThumbnail() const { return *m_pThumbnail; }
-void HttpData::SetThumbnail(HttpThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
-
-HttpMetadataCR HttpData::GetMetadata() const { return *m_pMetadata; }
-void HttpData::SetMetadata(HttpMetadataR metadata) { m_pMetadata = &metadata; }
-
-HttpServerCR HttpData::GetServer() const { return *m_pServer; }
-void HttpData::SetServer(HttpServerR server) { m_pServer = &server; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpData::HttpData()
-    {
-    m_size = 0;
-    m_date = DateTime();
-    m_footprint = DRange2d();
-    m_pThumbnail = HttpThumbnail::Create();
-    m_pMetadata = HttpMetadata::Create();
-    m_pServer = HttpServer::Create();
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpThumbnailPtr HttpThumbnail::Create()
-    {
-    return new HttpThumbnail();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpThumbnailPtr HttpThumbnail::Create(RealityDataCR rasterData)
-    {
-    return new HttpThumbnail(rasterData);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR HttpThumbnail::GetProvenance() const { return m_provenance; }
-void HttpThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
-
-Utf8StringCR HttpThumbnail::GetFormat() const { return m_format; }
-void HttpThumbnail::SetFormat(Utf8CP format) { m_format = format; }
-
-uint32_t HttpThumbnail::GetWidth() const { return m_width; }
-void HttpThumbnail::SetWidth(uint32_t width) { m_width = width; }
-
-uint32_t HttpThumbnail::GetHeight() const { return m_height; }
-void HttpThumbnail::SetHeight(uint32_t height) { m_height = height; }
-
-DateTimeCR HttpThumbnail::GetStamp() const { return m_stamp; }
-void HttpThumbnail::SetStamp(DateTimeCR date) { m_stamp = date; }
-
-const bvector<Byte>& HttpThumbnail::GetData() const { return m_data; }
-void HttpThumbnail::SetData(const bvector<Byte>& data) { m_data = data; }
-
-Utf8StringCR HttpThumbnail::GetGenerationDetails() const { return m_generationDetails; }
-void HttpThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpThumbnail::HttpThumbnail()
-    {
-    m_width = THUMBNAIL_WIDTH;
-    m_height = THUMBNAIL_HEIGHT;
-    m_stamp = DateTime::GetCurrentTimeUtc();
-    m_data = bvector<Byte>();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpThumbnail::HttpThumbnail(RealityDataCR rasterData)
-    {
-    m_provenance = "Created by RealityDataHandler tool.";
-    m_format = "png";
-    m_width = THUMBNAIL_WIDTH;
-    m_height = THUMBNAIL_HEIGHT;  
-    m_stamp = DateTime::GetCurrentTimeUtc();
-    m_generationDetails = "Created by RealityDataHandler tool.";        
-
-    rasterData.GetThumbnail(m_data, m_width, m_height);
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpMetadataPtr HttpMetadata::Create()
-    {
-    return new HttpMetadata();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpMetadataPtr HttpMetadata::CreateFromFile(Utf8CP filePath)
-    {
-    return new HttpMetadata(filePath);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR HttpMetadata::GetProvenance() const { return m_provenance; }
-void HttpMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
-
-Utf8StringCR HttpMetadata::GetDescription() const { return m_description; }
-void HttpMetadata::SetDescription(Utf8CP description) { m_description = description; }
-
-Utf8StringCR HttpMetadata::GetContactInfo() const { return m_contactInfo; }
-void HttpMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
-
-Utf8StringCR HttpMetadata::GetLegal() const { return m_legal; }
-void HttpMetadata::SetLegal(Utf8CP legal) { m_legal = legal; }
-
-Utf8StringCR HttpMetadata::GetFormat() const { return m_format; }
-void HttpMetadata::SetFormat(Utf8CP format) { m_format = format; }
-
-Utf8StringCR HttpMetadata::GetData() const { return m_data; }
-void HttpMetadata::SetData(Utf8CP data) { m_data = data; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpMetadata::HttpMetadata()
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpMetadata::HttpMetadata(Utf8CP filePath)
-    {
-    BeFileName metadataFile(filePath);
-    Utf8String provenance(metadataFile.GetFileNameAndExtension());
-    m_provenance = provenance;
-    Utf8String format(metadataFile.GetExtension());
-    m_format = format;
-
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
-    if (BEXML_Success == xmlStatus)
-        {
-        BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
-        if (NULL != pRootNode)
-            {
-            // Convert to string.
-            pRootNode->GetXmlString(m_data);
-            }
-        }
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpServerPtr HttpServer::Create()
-    {
-    return new HttpServer();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpServerPtr HttpServer::Create(Utf8CP url, Utf8CP name)
-    {
-    return new HttpServer(url, name);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-Utf8StringCR HttpServer::GetProtocol() const { return m_protocol; }
-void HttpServer::SetProtocol(Utf8CP protocol) { m_protocol = protocol; }
-
-Utf8StringCR HttpServer::GetName() const { return m_name; }
-void HttpServer::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR HttpServer::GetUrl() const { return m_url; }
-void HttpServer::SetUrl(Utf8CP url) { m_url = url; }
-
-Utf8StringCR HttpServer::GetContactInfo() const { return m_contactInfo; }
-void HttpServer::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
-
-Utf8StringCR HttpServer::GetLegal() const { return m_legal; }
-void HttpServer::SetLegal(Utf8CP legal) { m_legal = legal; }
-
-bool HttpServer::IsOnline() const { return m_online; }
-void HttpServer::SetOnline(bool online) { m_online = online; }
-
-DateTimeCR HttpServer::GetLastCheck() const { return m_lastCheck; }
-void HttpServer::SetLastCheck(DateTimeCR data) { m_lastCheck = data; }
-
-DateTimeCR HttpServer::GetLastTimeOnline() const { return m_lastTimeOnline; }
-void HttpServer::SetLastTimeOnline(DateTimeCR data) { m_lastTimeOnline = data; }
-
-double HttpServer::GetLatency() const { return m_latency; }
-void HttpServer::SetLatency(double latency) { m_latency = latency; }
-
-Utf8StringCR HttpServer::GetState() const { return m_state; }
-void HttpServer::SetState(Utf8CP state) { m_state = state; }
-
-Utf8StringCR HttpServer::GetType() const { return m_type; }
-void HttpServer::SetType(Utf8CP type) { m_type = type; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpServer::HttpServer()
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-HttpServer::HttpServer(Utf8CP url, Utf8CP name)
-    : m_url(url), m_name(name)
-    {
-    // Default values.
-    m_online = true;
-    m_lastCheck = DateTime::GetCurrentTimeUtc();
-    m_lastTimeOnline = DateTime::GetCurrentTimeUtc();
-    m_latency = 0.0;
-
-    if (!m_url.empty())
-        {
-        // Extract protocol and type from url.
-        Utf8String protocol(url);
-        m_protocol = protocol.substr(0, protocol.find_first_of(":"));
-        m_type = m_protocol;
-
-        if (m_name.empty())
-            {
-            // No server name was provided, try to extract it from url.
-            Utf8String name(url);
-            size_t beginPos = name.find_first_of("://") + 3;
-            size_t pos = name.find_last_of(".");
-            size_t endPos = name.find("/", pos);
-            m_name = name.substr(beginPos, endPos - beginPos);
-            }        
-        }
-    }
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-HttpDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
+WebResourceDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -824,7 +531,7 @@ HttpDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP out
         return NULL;
 
     // Create empty data.
-    HttpDataPtr pExtractedData = HttpData::Create();    
+    WebResourceDataPtr pExtractedData = WebResourceData::Create();    
 
     // Data extraction.
     RealityDataPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
@@ -867,30 +574,12 @@ HttpDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP out
         DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
 
     pExtractedData->SetDate(date);
-
-    // Metadata.    
-    //BeFileName metadataFilename = HttpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    //HttpMetadataPtr pMetadata = HttpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
-    //if (pMetadata != NULL)
-    //    pExtractedData->SetMetadata(*pMetadata);
-
+    
     // Resolution.
     RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
     if (pRasterData != NULL)
         {
         Utf8String resolution = pRasterData->ComputeResolutionInMeters();
-        //if (resolution.empty())
-        //    {
-        //    // File has no geocoding, try to parse metadata and create sister file.
-        //    Utf8String geocoding = HttpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
-        //    if (!geocoding.empty())
-        //        {
-        //        // Make sure geocoding is well formatted.
-        //        geocoding.ReplaceAll("::", ":");
-        //        RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-        //        resolution = pRasterData->ComputeResolutionInMeters();
-        //        }
-        //    }
         pExtractedData->SetResolution(resolution.c_str());
         }
   
@@ -898,25 +587,11 @@ HttpDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP out
     DRange2d shape = DRange2d::NullRange();
     if (SUCCESS != pData->GetFootprint(&shape))
         {
-        //// File has no geocoding, try to parse metadata and create sister file.
-        //Utf8String geocoding = HttpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
-        //if (!geocoding.empty())
-        //    {
-        //    // Make sure geocoding is well formatted.
-        //    geocoding.ReplaceAll("::", ":");
-        //    RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-        //    pData->GetFootprint(&shape);
-        //    }
         }
     pExtractedData->SetFootprint(shape);
 
-    // Thumbnail.
-    //HttpThumbnailPtr pThumbnail = HttpThumbnail::Create(*pData);
-    //if (pThumbnail != NULL)
-    //    pExtractedData->SetThumbnail(*pThumbnail);
-
     // Server.
-    HttpServerPtr pServer = HttpServer::Create();
+    WebResourceServerPtr pServer = WebResourceServer::Create();
     if (pServer != NULL)
         pExtractedData->SetServer(*pServer);
 
