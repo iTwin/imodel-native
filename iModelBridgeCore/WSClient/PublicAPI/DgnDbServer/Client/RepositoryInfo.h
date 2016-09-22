@@ -35,6 +35,7 @@ public:
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr ReadFromDb(Dgn::DgnDbCR db);
 
     //__PUBLISH_SECTION_END__
     static DgnDbServerStatusResult ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db);
