@@ -47,3 +47,6 @@ ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJo
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 
+#TFS 560975
+ECDbMappingTestFixture.MultiInheritance_Diamond
+
