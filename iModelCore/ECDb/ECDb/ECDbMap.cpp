@@ -160,29 +160,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         }
     return SUCCESS;
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      12/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-DbTable const* ECDbMap::GetPrimaryTable(DbTable const& joinedTable) const
-    {
-    if (joinedTable.GetType() != DbTable::Type::Joined)
-        return &joinedTable;
 
-    for (ECClassId firstClassId : GetLightweightCache().GetClassesForTable(joinedTable))
-        {
-        ClassMapCP classMap = GetClassMap(firstClassId);
-        if (classMap != nullptr)
-            {
-            if (!classMap->IsMappedToSingleTable())
-                {
-                return &classMap->GetPrimaryTable();
-                }
-            }
-        }
-
-    BeAssert(false && "Must find a classmap");
-    return nullptr;
-    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -550,6 +528,8 @@ MappingStatus ECDbMap::AddClassMap(ClassMapPtr& classMap) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
+    BeMutexHolder lock(m_mutex);
+
     if (m_schemaImportContext == nullptr)
         {
         ClassMapLoadContext ctx;
@@ -577,24 +557,10 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
-    {
-    ECClassCP ecClass = GetECDb().Schemas().GetECClass(classId);
-    if (ecClass == nullptr)
-        return nullptr;
-
-    return GetClassMap(*ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
-    BeMutexHolder lock(m_mutex);
-
     //we must use this method here and cannot just see whether ecClass has already an id
     //because the ecClass object can come from an ECSchema deserialized from disk, hence
     //not having the id set, and already imported in the ECSchema. In that case
@@ -803,9 +769,14 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         if (!classId.IsValid())
             continue;
 
-        DbTable const& indexTable = index->GetTable();
+        ECClassCP ecClass = m_ecdb.Schemas().GetECClass(classId);
+        if (ecClass == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
 
-        ClassMap const* classMap = GetClassMap(classId);
+        ClassMap const* classMap = GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(false);
@@ -821,6 +792,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
 
         BeAssert(baseClassIndexInfos != nullptr);
 
+        DbTable const& indexTable = index->GetTable();
         for (Partition const& horizPartition : horizPartitions)
             {
             if (&indexTable == &horizPartition.GetTable())
@@ -831,7 +803,14 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
             alreadyProcessedTables.insert(&indexTable);
             for (ECClassId derivedClassId : horizPartition.GetClassIds())
                 {
-                ClassMap const* derivedClassMap = GetClassMap(derivedClassId);
+                ECClassCP derivedClass = m_ecdb.Schemas().GetECClass(derivedClassId);
+                if (derivedClass == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                ClassMap const* derivedClassMap = GetClassMap(*derivedClass);
                 if (derivedClassMap == nullptr)
                     {
                     BeAssert(false);

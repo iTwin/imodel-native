@@ -1836,8 +1836,14 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
     bool sharedColumnFound = false;
     for (Partition const& partition : classMap->GetStorageDescription().GetHorizontalPartitions())
         {
-        ClassMapCP partitionRootClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(partition.GetRootClassId());
-        if (classMap == nullptr)
+        ECClassCP rootClass = m_ecdb.Schemas().GetECClass(partition.GetRootClassId());
+        if (rootClass == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        ClassMapCP partitionRootClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*rootClass);
+        if (partitionRootClassMap == nullptr)
             {
             BeAssert(false && "Failed to find classMap");
             return ERROR;

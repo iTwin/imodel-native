@@ -822,7 +822,11 @@ BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*
         if (!nextBaseId.IsValid())
             return SUCCESS;
 
-        current = GetECDbMap().GetClassMap(nextBaseId);
+        ECClassCP nextBaseClass = m_ecDbMap.GetECDb().Schemas().GetECClass(nextBaseId);
+        if (nextBaseClass == nullptr)
+            return ERROR;
+
+        current = GetECDbMap().GetClassMap(*nextBaseClass);
         if (current == nullptr)
             {
             BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
@@ -854,14 +858,21 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
         if (current->IsParentOfJoinedTable())
             return current;
 
-        auto nextBaseId = current->GetBaseClassId();
+        ECClassId nextBaseId = current->GetBaseClassId();
         if (!nextBaseId.IsValid())
             return nullptr;
 
-        current = GetECDbMap().GetClassMap(nextBaseId);
+        ECClassCP nextBaseClass = GetECDbMap().GetECDb().Schemas().GetECClass(nextBaseId);
+        if (nextBaseClass == nullptr)
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+
+        current = GetECDbMap().GetClassMap(*nextBaseClass);
         if (current == nullptr)
             {
-            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+            BeAssert(current != nullptr && "Failed to find base classmap. This should not happen");
             return nullptr;
             }
 
@@ -878,18 +889,25 @@ ClassMap const* ClassMap::FindTablePerHierarchyRootClassMap() const
     if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
         return nullptr;
 
-    ECClassId parentId = GetBaseClassId();
-    if (!parentId.IsValid())
+    ECClassId baseId = GetBaseClassId();
+    if (!baseId.IsValid())
         return this;
 
-    ClassMap const* parent = GetECDbMap().GetClassMap(parentId);
-    if (parent == nullptr)
+    ECClassCP baseClass = GetECDbMap().GetECDb().Schemas().GetECClass(baseId);
+    if (baseClass == nullptr)
         {
-        BeAssert(false && "Failed to find parent classmap. This should not happen");
+        BeAssert(false);
         return nullptr;
         }
 
-    return parent->FindTablePerHierarchyRootClassMap();
+    ClassMap const* baseClassMap = GetECDbMap().GetClassMap(*baseClass);
+    if (baseClassMap == nullptr)
+        {
+        BeAssert(false && "Failed to find base classmap. This should not happen");
+        return nullptr;
+        }
+
+    return baseClassMap->FindTablePerHierarchyRootClassMap();
     }
 
 //---------------------------------------------------------------------------------------

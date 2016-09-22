@@ -50,7 +50,11 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ClassMapCP classMap = map.GetClassMap(classId);
+        ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
+        if (ecClass == nullptr)
+            return ERROR;
+
+        ClassMapCP classMap = map.GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(classMap != nullptr);
@@ -118,7 +122,14 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ClassMapCP classMap = map.GetClassMap(classId);
+        ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
+        if (ecClass == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        ClassMapCP classMap = map.GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(classMap != nullptr);
@@ -339,7 +350,13 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
         if (updateTables.find(&partition.GetTable()) != updateTables.end())
             {//<----------UPDATE trigger----------
-            ClassMapCP derviedClassMap = ecdbMap.GetClassMap(partition.GetRootClassId());
+        	ECClassCP rootClass = ecdbMap.GetECDb().Schemas().GetECClass(partition.GetRootClassId());
+	        if (rootClass == nullptr)
+	            {
+	            BeAssert(false);
+	            return ERROR;
+	            }
+	        ClassMapCP derviedClassMap = ecdbMap.GetClassMap(*rootClass);
             if (derviedClassMap == nullptr)
                 {
                 BeAssert(false && "ClassMap not found");
@@ -916,20 +933,15 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
     {
     if (classMap._RequiresJoin(endPoint))
         {
-        ECDbMap const& ecdbMap = classMap.GetECDbMap();
         RelConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
         RelationshipConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = static_cast<RelationshipConstraintECInstanceIdPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
-        size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
+        size_t tableCount = classMap.GetECDbMap().GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         DbTable const* targetTable = &ecclassIdPropertyMap->GetSingleColumn()->GetTable();
         if (tableCount > 1
             /*In this case we expecting we have relationship with one end abstract we only support it in case joinedTable*/)
             {
-            BeAssert(targetTable->GetType() == DbTable::Type::Joined);
+            BeAssert(targetTable->GetType() == DbTable::Type::Joined && ecclassIdPropertyMap->GetSingleColumn()->GetTable().GetParentOfJoinedTable() != nullptr);
             if (targetTable->GetType() != DbTable::Type::Joined)
-                return ERROR;
-
-            targetTable = ecdbMap.GetPrimaryTable(ecclassIdPropertyMap->GetSingleColumn()->GetTable());
-            if (!targetTable)
                 return ERROR;
             }
 

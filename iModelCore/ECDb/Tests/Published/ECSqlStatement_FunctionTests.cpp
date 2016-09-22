@@ -32,6 +32,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},
             {"SELECT ANY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT AVG(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT COALESCE(I,L) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT COUNT(*) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT COUNT(ECInstanceId) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT COUNT(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
@@ -54,6 +55,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
             {"SELECT MAX(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as MAX(arg) is a dedicated ECSQL grammar rule
             {"SELECT MIN(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT MIN(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as MIN(arg) is a dedicated ECSQL grammar rule
+            {"SELECT NULLIF(I,123) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT QUOTE(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT RANDOM() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT RANDOMBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
@@ -97,6 +99,72 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
         ASSERT_EQ(expectedResult.m_returnType, actualColumnType.GetPrimitiveType()) << ecsql;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
+    {
+    ECDbR ecdb = SetupECDb("builtinfunctiontests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+
+    
+    {
+    //insert two test rows
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,L) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 123));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 124));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,L,COALESCE(I,L),COALESCE(L,I) FROM ecsql.P"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        if (stmt.IsValueNull(0))
+            {
+            ASSERT_FALSE(stmt.IsValueNull(1)) << stmt.GetECSql();
+            ASSERT_EQ(stmt.GetValueInt(1), stmt.GetValueInt(2)) << "First coalesce " << stmt.GetECSql();
+            ASSERT_EQ(stmt.GetValueInt(1), stmt.GetValueInt(3)) << "Second coalesce " << stmt.GetECSql();
+            }
+        else
+            {
+            ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
+            ASSERT_EQ(stmt.GetValueInt(0), stmt.GetValueInt(2)) << "First coalesce " << stmt.GetECSql();
+            ASSERT_EQ(stmt.GetValueInt(0), stmt.GetValueInt(3)) << "Second coalesce " << stmt.GetECSql();
+            }
+        }
+
+    stmt.Finalize();
+    ecdb.AbandonChanges();
+    }
+
+    {
+    //insert a test row
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,L) VALUES(123,124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,L, NULLIF(I,123), NULLIF(I,124), NULLIF(L,123), NULLIF(L,124) FROM ecsql.P"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+
+    ASSERT_TRUE(stmt.IsValueNull(2)) << "first nullif " << stmt.GetECSql();
+    ASSERT_FALSE(stmt.IsValueNull(3)) << "second nullif " << stmt.GetECSql();
+    ASSERT_EQ(stmt.GetValueInt(0), stmt.GetValueInt(3)) << "second nullif " << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(4)) << "third nullif " << stmt.GetECSql();
+    ASSERT_EQ(stmt.GetValueInt(1), stmt.GetValueInt(4)) << "third nullif " << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(5)) << "fourth nullif " << stmt.GetECSql();
+    }
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15

@@ -54,10 +54,8 @@ struct ECDbMap :NonCopyableClass
         ~ECDbMap() {}
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
-        ClassMap const* GetClassMap(ECN::ECClassId) const;
         std::vector<ECN::ECClassCP> GetFlattenListOfClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
-        DbTable const* GetPrimaryTable(DbTable const& joinedTable) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         MappingStatus MapSchemas(SchemaImportContext&);
