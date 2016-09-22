@@ -73,11 +73,6 @@
         </ECCustomAttributes>
         <ECProperty propertyName="stringFoo" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="AFooChild" modifier="None">
-        <BaseClass>AAFoo</BaseClass>
-        <BaseClass>ABFoo</BaseClass>
-        <ECProperty propertyName="binaryAFooChild" typeName="binary" readOnly="false"/>
-    </ECEntityClass>
     <ECEntityClass typeName="ArrayTestclass" modifier="None">
         <ECArrayProperty propertyName="p0_unbounded" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="p1_unbounded" typeName="int" readOnly="false" minOccurs="1" maxOccurs="unbounded"/>

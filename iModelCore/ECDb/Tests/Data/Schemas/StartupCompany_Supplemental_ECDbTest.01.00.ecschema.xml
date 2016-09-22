@@ -56,15 +56,6 @@
             </StandardValues>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="AFooChild" modifier="None">
-        <ECStructProperty propertyName="anglesAAFoo" typeName="stco:AnglesStruct" readOnly="false">
-            <ECCustomAttributes>
-                <AlwaysExpand xmlns="EditorCustomAttributes.01.02">
-                    <ArrayMembers>True</ArrayMembers>
-                </AlwaysExpand>
-            </ECCustomAttributes>
-        </ECStructProperty>
-    </ECEntityClass>
     <ECEntityClass typeName="ClassWithPrimitiveArrayProperties" modifier="None">
         <ECCustomAttributes>
             <ClassPriority xmlns="EditorCustomAttributes.01.02"/>

@@ -3331,6 +3331,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
 TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
     {
     std::vector<SchemaItem> unsupportedSchemas;
+
     unsupportedSchemas.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -3462,7 +3463,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
         "        <ECProperty propertyName='MyProp' typeName='int' />"
         "    </ECEntityClass>"
         "</ECSchema>", 
-        true, "Multi-inheritance with one TPH base class and one NotMapped base class"));
+        false, "Multi-inheritance with one TPH base class and one NotMapped base class"));
 
 
     unsupportedSchemas.push_back(SchemaItem(
@@ -3716,10 +3717,10 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
                         "               <OnDeleteAction>Cascade</OnDeleteAction>"
                         "            </ForeignKeyRelationshipMap>"
                         "        </ECCustomAttributes>"
-                        "       <Source multiplicity='(0..1)' polymorphic='True'>"
+                        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                         "           <Class class='ClassA' />"
                         "       </Source>"
-                        "       <Target multiplicity='(0..*)' polymorphic='True'>"
+                        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target'>"
                         "           <Class class='ClassB' />"
                         "       </Target>"
                         "     </ECRelationshipClass>"
@@ -3727,10 +3728,10 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
                         "        <ECProperty propertyName='CC' typeName='string' />"
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='BHasC' modifier='Sealed' strength='embedding'>"
-                        "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                         "      <Class class = 'ClassB' />"
                         "    </Source>"
-                        "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target'>"
                         "      <Class class = 'ClassC' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
