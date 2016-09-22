@@ -189,8 +189,8 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     Utf8String sql;
     sql.Sprintf("SELECT CH.ClassId, CT.TableId FROM " ECDB_CACHETABLE_ClassHasTables " CT"
                 "       INNER JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.ClassId = CT.ClassId"
-                "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId AND ec_Table.Type <> %d "
-                "WHERE CH.BaseClassId=?", Enum::ToInt(DbTable::Type::Joined));
+                "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
+                "WHERE CH.BaseClassId=?1 AND ((SELECT JoinedTableInfo FROM ec_ClassMap WHERE ClassId = ?1) IS  NULL OR ec_Table.Type <> %d)", Enum::ToInt(DbTable::Type::Joined));
 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, classId);
@@ -285,6 +285,25 @@ StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const
 //****************************************************************************************
 // StorageDescription
 //****************************************************************************************
+Partition const* StorageDescription::GetPartition(DbTable const& table) const
+    {
+    Partition const* partition = GetHorizontalPartition(table);
+    if (partition == nullptr)
+        {
+        if (!GetVerticalPartitions().empty())
+            {
+            partition = GetVerticalPartition(table);
+            }
+
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            }
+        }
+
+    return partition;
+    }
+
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
@@ -322,21 +341,25 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlE
         }
 
     classIdColSql.append(classIdColumn.GetName());
+    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    m_classId.ToString(classIdStr);
 
     if (!polymorphic)
         {
         //if partition's table is only used by a single class, no filter needed     
         if (partition->IsSharedTable())
             {
-            Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-            m_classId.ToString(classIdStr);
             filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
             }
 
         return SUCCESS;
         }
 
-    partition->AppendECClassIdFilterSql(filterSqlExpression, classIdColSql.c_str());
+    if ( partition->NeedsECClassIdFilter())
+        {
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " ECDB_CACHETABLE_ClassHierarchy " WHERE BaseClassId=").append(classIdStr).append(")");
+        }
+   
     return SUCCESS;
     }
 

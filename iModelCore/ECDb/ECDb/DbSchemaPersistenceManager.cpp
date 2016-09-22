@@ -408,6 +408,38 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
 //static
 BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR whereClause, ECDbCR ecdb, DbIndex const& index)
     {
+    auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
+        {
+        if (table.GetPersistenceType() != PersistenceType::Persisted)
+            return SUCCESS; //table is virtual -> noop
+
+        Partition const* partition = desc.GetPartition(table);
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ERROR;
+            }
+
+        Utf8String classIdColSql;
+        classIdColSql.append(classIdColumn.GetName());
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        desc.GetClassId().ToString(classIdStr);
+
+        if (!polymorphic)
+            {
+            //if partition's table is only used by a single class, no filter needed     
+            if (partition->IsSharedTable())
+                {
+                filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+                }
+
+            return SUCCESS;
+            }
+
+        partition->AppendECClassIdFilterSql(filterSqlExpression, classIdColSql.c_str());
+        return SUCCESS;
+        };
+
     if (index.IsAddColumnsAreNotNullWhereExp())
         {
         Utf8String notNullWhereExp;
@@ -460,7 +492,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         }
 
     Utf8String classIdFilter;
-    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
+    if (SUCCESS != buildECClassIdFilter(classIdFilter, storageDescription, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
         return ERROR;
 
     if (classIdFilter.empty())

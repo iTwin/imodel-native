@@ -77,8 +77,6 @@ struct Partition final
         std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
         bool m_hasInversedPartitionClassIds;
 
-        bool IsSharedTable() const { return m_partitionClassIds.size() + m_inversedPartitionClassIds.size() > 1; }
-
         void AddClassId(ECN::ECClassId classId) { m_partitionClassIds.push_back(classId); }
         void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
 
@@ -88,7 +86,7 @@ struct Partition final
         Partition(Partition const&);
         Partition& operator=(Partition const& rhs);
         Partition(Partition&& rhs);
-
+        bool IsSharedTable() const { return m_partitionClassIds.size() + m_inversedPartitionClassIds.size() > 1; }
         DbTable const& GetTable() const { return *m_table; }
         ECN::ECClassId GetRootClassId() const { BeAssert(!m_partitionClassIds.empty()); return m_partitionClassIds[0]; }
         std::vector<ECN::ECClassId> const& GetClassIds() const { return m_partitionClassIds; }
@@ -129,12 +127,15 @@ struct StorageDescription  final: NonCopyableClass
         Partition const& GetRootHorizontalPartition() const;
         Partition const* GetVerticalPartition(DbTable const&) const;
         Partition const* GetHorizontalPartition(DbTable const&) const;
+        //!First attempt to get horizontal partition if fails then try vertical partition and if that fail it assert and return nullptr
+        Partition const* GetPartition(DbTable const&) const;
 
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
-
+        //Uses ec_cache_ClassHiearchy instead of creating ORed or ANDed ECClassId clauses
+        //This is mainly used for SELECT/UPDATE/DELETE but not indexes which does not support subquery
         BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
     };
 

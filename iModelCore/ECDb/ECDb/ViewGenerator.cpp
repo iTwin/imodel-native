@@ -271,6 +271,40 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
     std::vector<Utf8String> triggerDdlList;
 
+    std::set<DbTable const*> updateTables;
+    std::set<DbTable const*> deleteTables;
+    std::vector<DbTable const*> joinedTables;
+    std::vector<DbTable const*> primaryTables;
+
+    for (Partition const& partition : partitions)
+        {
+        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
+        updateTables.insert(&partition.GetTable());
+        deleteTables.insert(&partition.GetTable());
+        if (partition.GetTable().GetType() == DbTable::Type::Joined)
+            {
+            joinedTables.push_back(&partition.GetTable());
+            }
+
+        if (partition.GetTable().GetType() == DbTable::Type::Primary)
+            {
+            primaryTables.push_back(&partition.GetTable());
+            }
+        }
+    //Remove any primary table
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        updateTables.erase(joinedTable->GetParentOfJoinedTable());
+        }
+
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        deleteTables.insert(joinedTable->GetParentOfJoinedTable());
+        deleteTables.erase(joinedTable);
+        }
+
     int tableCount = 0;
     for (Partition const& partition : partitions)
         {
@@ -288,43 +322,45 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         else
             whenClause.append("OLD.ECClassId=").append(partition.GetRootClassId().ToString());
 
-        {//<----------DELETE trigger----------
-        Utf8String ddl("CREATE TRIGGER [");
-        ddl.append(triggerNamePrefix).append("_delete]");
+        if (deleteTables.find(&partition.GetTable()) != deleteTables.end())
+            {//<----------DELETE trigger----------
+            Utf8String ddl("CREATE TRIGGER [");
+            ddl.append(triggerNamePrefix).append("_delete]");
 
-        ddl.append(" INSTEAD OF DELETE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
+            ddl.append(" INSTEAD OF DELETE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
 
-        Utf8String body;
-        body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            Utf8String body;
+            body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
 
-        ddl.append(body);
+            ddl.append(body);
 
-        triggerDdlList.push_back(ddl);
-        }
-
-        {//<----------UPDATE trigger----------
-        ClassMapCP derviedClassMap = ecdbMap.GetClassMap(partition.GetRootClassId());
-        if (derviedClassMap == nullptr)
-            {
-            BeAssert(false && "ClassMap not found");
-            return ERROR;
+            triggerDdlList.push_back(ddl);
             }
 
-        Utf8String ddl("CREATE TRIGGER [");
-        ddl.append(triggerNamePrefix).append("_update]");
+        if (updateTables.find(&partition.GetTable()) != updateTables.end())
+            {//<----------UPDATE trigger----------
+            ClassMapCP derviedClassMap = ecdbMap.GetClassMap(partition.GetRootClassId());
+            if (derviedClassMap == nullptr)
+                {
+                BeAssert(false && "ClassMap not found");
+                return ERROR;
+                }
 
-        ddl.append(" INSTEAD OF UPDATE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
+            Utf8String ddl("CREATE TRIGGER [");
+            ddl.append(triggerNamePrefix).append("_update]");
 
-        NativeSqlBuilder setClause;
-        if (SUCCESS != GenerateUpdateTriggerSetClause(setClause, classMap, *derviedClassMap))
-            continue; //nothing to update.
+            ddl.append(" INSTEAD OF UPDATE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
 
-        Utf8String body;
-        body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
-        ddl.append(body);
+            NativeSqlBuilder setClause;
+            if (SUCCESS != GenerateUpdateTriggerSetClause(setClause, classMap, *derviedClassMap))
+                continue; //nothing to update.
 
-        triggerDdlList.push_back(ddl);
-        }
+            Utf8String body;
+            body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            ddl.append(body);
+
+            triggerDdlList.push_back(ddl);
+            }
         }
 
     if (tableCount < 2)

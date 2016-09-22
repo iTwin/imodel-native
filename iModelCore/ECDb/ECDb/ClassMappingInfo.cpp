@@ -51,7 +51,10 @@ MappingStatus ClassMappingInfo::Initialize()
     {
     if (SUCCESS != _InitializeFromSchema())
         return MappingStatus::Error;
-
+    if (GetECClass().GetName() == "GeometrySource")
+        {
+        printf("");
+        }
     return EvaluateMapStrategy();
     }
 

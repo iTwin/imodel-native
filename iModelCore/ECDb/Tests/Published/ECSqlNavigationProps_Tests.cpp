@@ -640,9 +640,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     
     //UPDATE CategoryId
     {
-    //UPDATE via GeometrySource is not expected to work as it is mapped to multiple joined tables
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE CategoryId IS NULL")) << "ECSQL UPDATE on that kind of class not supported as it results in multiple UPDATES";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE CategoryId IS NULL"));
     stmt.Finalize();
 
     //UPDATE via classes that is mapped to a single joined table, is expected to work
