@@ -649,8 +649,7 @@ WSChangeset::ChangeState WSChangeset::Instance::GetState() const
 void WSChangeset::Options::SetResponseContent(ResponseContent content)
     {
     m_baseSize = 0;
-    m_responseContent = new ResponseContent;
-    *m_responseContent = content;
+    m_responseContent = content;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -677,7 +676,13 @@ void WSChangeset::Options::RemoveCustomOption(Utf8StringCR name)
 void WSChangeset::Options::SetRefreshInstances(bool toRefreshInstance)
     {
     m_baseSize = 0;
-    m_refreshInstances = &toRefreshInstance;
+    if (toRefreshInstance)
+        {
+        m_refreshInstances = OptRefreshInstances::Refresh;
+        return;
+        }
+
+    m_refreshInstances = OptRefreshInstances::DontRefresh;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -705,17 +710,22 @@ Utf8CP WSChangeset::Options::GetResponseContentStr(ResponseContent response)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
     {
-    if (nullptr == m_responseContent && nullptr == m_refreshInstances && m_customOptions.empty())
+    if (ResponseContent::Null == m_responseContent && OptRefreshInstances::Null == m_refreshInstances && m_customOptions.empty())
         {
         jsonOut = Json::objectValue;
         return;
         }
 
-    if (nullptr != m_responseContent)
-        jsonOut["ResponseContent"] = GetResponseContentStr(*m_responseContent);
+    if (ResponseContent::Null != m_responseContent)
+        jsonOut["ResponseContent"] = GetResponseContentStr(m_responseContent);
 
-    if (nullptr != m_refreshInstances)
-        jsonOut["RefreshInstances"] = *m_refreshInstances;
+    if (OptRefreshInstances::Null != m_refreshInstances)
+        {
+        if (OptRefreshInstances::Refresh == m_refreshInstances)
+            jsonOut["RefreshInstances"] = true;
+        else
+            jsonOut["RefreshInstances"] = false;
+        }
 
     if (!m_customOptions.empty())
         {

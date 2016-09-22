@@ -178,18 +178,26 @@ struct WSChangeset::Options
     {
     friend struct WSChangeset;
 
-    //! better enum comments
     public:
-        enum ResponseContent
+        enum class ResponseContent
             {
-            FullInstance, //full instances are returned (default behaviuor).
-            Empty, //response body is empty, only HTTP status is returned.
-            InstanceId  //only class info and instance id's are returned. All properties are removed from response. 
+            Null,
+            FullInstance,
+            Empty,
+            InstanceId
             };
 
     private:
-        ResponseContent* m_responseContent;
-        bool* m_refreshInstances;
+        enum class OptRefreshInstances
+            {
+            Null, 
+            Refresh, 
+            DontRefresh
+            };
+
+    private:
+        ResponseContent m_responseContent = ResponseContent::Null;
+        OptRefreshInstances m_refreshInstances = OptRefreshInstances::Null;
         std::map<Utf8String, Utf8String> m_customOptions;
         mutable size_t m_baseSize = 0;
 

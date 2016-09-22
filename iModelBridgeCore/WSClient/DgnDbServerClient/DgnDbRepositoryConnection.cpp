@@ -1133,7 +1133,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
 
-    changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::Empty);
+    changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::Empty);
 
     if (IBriefcaseManager::ResponseOptions::None == options || IBriefcaseManager::ResponseOptions::LockState != options)
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Locks, "false");
