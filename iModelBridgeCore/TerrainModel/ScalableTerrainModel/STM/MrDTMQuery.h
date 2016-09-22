@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,10 +27,10 @@
 
 #include <ScalableTerrainModel/IMrDTMClipContainer.h>
 #include <ScalableTerrainModel/IMrDTM.h>
-#include <hash_map>
+//#include <hash_map>
 
-//Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
-#pragma warning( push, 0 )
+#pragma warning( push )
+#pragma warning(disable:4250)
 
 
 

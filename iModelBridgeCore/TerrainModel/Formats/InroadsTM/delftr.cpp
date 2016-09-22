@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* delftr.c                                         twl    21-Jan-1999        */
@@ -133,6 +133,7 @@ int aecDTM_deleteFeature /* <= TRUE if error                         */
             aecDTM_hashDeleteFeature ( srfP, ftrP );
             aecDTM_getComponentMemberParentsPtrs ( &cmpPtrsPP, &numCmpPtrs, srfP, &ftrP->guid );
 
+			#pragma warning(disable:4456) // NEEDSWORK_VS2015: WIP, hides previous local declaration
             for ( int i = 0; i < numCmpPtrs; i++ )
             {
                 aecDTM_deleteComponent ( srfP, cmpPtrsPP[i] );

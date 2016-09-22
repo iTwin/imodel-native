@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -513,7 +513,7 @@ template <class POINT> int MrDTMFixResolutionViewPointQuery<POINT>::_Query(Bentl
 
         IMrDTMFixResolutionMaxPointsQueryParams* queryParams(dynamic_cast<IMrDTMFixResolutionMaxPointsQueryParams*>(mrDTMQueryParamsPtr.get()));       
           
-        StatusInt status = SUCCESS;
+        status = SUCCESS;
                                           
         if (m_mrDTMPointIndexPtr->IsEmpty() == false)
             {                    

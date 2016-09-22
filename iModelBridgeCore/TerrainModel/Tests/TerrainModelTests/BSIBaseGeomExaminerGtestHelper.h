@@ -18,7 +18,7 @@ public:
         {
         Int64 finalAllocationCount = BSIBaseGeom::GetAllocationDifference ();
         if (finalAllocationCount != baseAllocationCount)
-            printf ("BSIBaseGeom Allocation Difference %ld\n", finalAllocationCount - baseAllocationCount);
+            printf ("BSIBaseGeom Allocation Difference %I64d\n", finalAllocationCount - baseAllocationCount);
         }        
 };
 

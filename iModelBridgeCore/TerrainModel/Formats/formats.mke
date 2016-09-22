@@ -6,9 +6,11 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
 
 always:
   bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstm.mke 

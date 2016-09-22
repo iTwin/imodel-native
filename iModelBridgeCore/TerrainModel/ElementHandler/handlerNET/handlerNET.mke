@@ -11,6 +11,9 @@ SolutionPolicyMki=$(baseDir)handlerNET.mki
 
 %include  mdl.mki
 
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts +  -wd4457
+
 
 %ifdef CREATE_STATIC_LIBRARIES
 %error can't be build as a static library
