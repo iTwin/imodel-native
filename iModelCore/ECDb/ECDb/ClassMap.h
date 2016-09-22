@@ -173,7 +173,7 @@ struct ClassMap : RefCountedBase
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
-        MappingStatus MapProperties(SchemaImportContext&);
+        MappingStatus MapProperties(SchemaImportContext&, ClassMappingInfo const&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 

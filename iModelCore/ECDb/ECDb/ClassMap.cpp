@@ -182,7 +182,7 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
     {
-    MappingStatus stat = MapProperties(schemaImportContext);
+    MappingStatus stat = MapProperties(schemaImportContext, mappingInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -351,13 +351,16 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
+MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo const& mappingInfo)
     {
     bvector<ClassMap const*> baseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
     if (inheritanceMode != PropertyMapInheritanceMode::New)
         {
-        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        if (mappingInfo.GetBaseClassMap() != nullptr)
+            baseClassMaps.push_back(mappingInfo.GetBaseClassMap());
+
+/*        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -369,7 +372,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 baseClassMaps.push_back(baseClassMap);
-            }
+            }*/
         }
 
     std::vector<ECPropertyCP> propertiesToMap;
@@ -711,7 +714,9 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
     if (inheritanceMode == PropertyMapInheritanceMode::Reuse)
         {
-        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        if (dbCtx.GetBaseClassMap() != nullptr)
+            baseClassMaps.push_back(dbCtx.GetBaseClassMap());
+        /*for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -723,7 +728,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 baseClassMaps.push_back(baseClassMap);
-            }
+            }*/
         }
 
     std::vector<ECPropertyCP> unloadedProperties;

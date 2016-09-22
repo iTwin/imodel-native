@@ -673,7 +673,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     ClassMap const* firstBaseClassMap = nullptr;
     if (hasBaseClasses)
         {
-        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        /*for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -681,7 +681,12 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
             if (firstBaseClassMap == nullptr)
                 firstBaseClassMap = baseClassMap;
-            }
+            }*/
+        ECRelationshipClassCP baseClass = m_ecClass.GetBaseClasses()[0]->GetRelationshipClassCP();
+        BeAssert(baseClass != nullptr);
+        firstBaseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+        if (firstBaseClassMap == nullptr)
+            return MappingStatus::BaseClassesNotMapped;
 
         const MapStrategy baseStrategy = firstBaseClassMap->GetMapStrategy().GetStrategy();
 
