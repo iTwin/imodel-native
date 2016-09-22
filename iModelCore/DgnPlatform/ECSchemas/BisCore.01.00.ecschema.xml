@@ -2015,7 +2015,7 @@
 
     <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing">
         <BaseClass>ElementRefersToElements</BaseClass>
-        <Source cardinality="(0,N)" polymorphic="true   ">
+        <Source cardinality="(0,N)" polymorphic="true">
             <Class class="DrawingGraphic"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
