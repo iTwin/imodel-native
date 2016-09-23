@@ -289,7 +289,7 @@ public:
     uint32_t GetHeight() const {return m_height;} //!< Get the height of this image in pixels
     Format GetFormat() const {return m_format;} //!< Get the format (Rgb or Rgba) of this image
     void SetFormat(Format format) {m_format=format;} //!< Change the format of this image in pixels
-    bool IsValid() {return 0!=m_width && 0!=m_height && 0!=m_image.GetSize();} //!< @return true if this image holds valid data
+    bool IsValid() const {return 0!=m_width && 0!=m_height && 0!=m_image.GetSize();} //!< @return true if this image holds valid data
     ByteStream const& GetByteStream() const {return m_image;} //!< get a readonly reference to the ByteStream of this image
     ByteStream& GetByteStreamR() {return m_image;}//!< Get a writable reference to the ByteStream of this image
     void SetSize(uint32_t width, uint32_t height) {BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height;} //!< change the size in pixels of this image
