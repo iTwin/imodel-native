@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/WmsHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 
@@ -16,32 +15,13 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 
 HANDLER_DEFINE_MEMBERS(WmsModelHandler)
 
-//&&MM from json utils. need make these public
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DPoint2dFromJson (DPoint2dR point, JsonValueCR inValue)
-    {
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
-    {
-    outValue[0] = point.x;
-    outValue[1] = point.y;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
 static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
     {
-    DPoint2dFromJson (range.low, inValue["low"]);
-    DPoint2dFromJson (range.high, inValue["high"]);
+    JsonUtils::DPoint2dFromJson (range.low, inValue["low"]);
+    JsonUtils::DPoint2dFromJson (range.high, inValue["high"]);
     }
 
 //----------------------------------------------------------------------------------------
@@ -49,8 +29,8 @@ static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
 //----------------------------------------------------------------------------------------
 static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
     {
-    DPoint2dToJson (outValue["low"], range.low);
-    DPoint2dToJson (outValue["high"], range.high);
+    JsonUtils::DPoint2dToJson (outValue["low"], range.low);
+    JsonUtils::DPoint2dToJson (outValue["high"], range.high);
     }
 
 //----------------------------------------------------------------------------------------
@@ -240,10 +220,18 @@ BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
     {
     if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
         return SUCCESS;
-    
-    RasterSourcePtr pSource = WmsSource::Create(m_map);
-    if(pSource.IsValid())
-        m_root = new RasterRoot(*pSource, const_cast<WmsModel&>(*this), renderSys);
+#if 0
+    //http://ows.geobase.ca/wms/geobase_en?service=wms&version=1.1.1&request=GetCapabilities
+
+    WmsMap mapInfo("http://ows.geobase.ca/wms/geobase_en",
+                   DRange2d::From(-78.18, 43.83, -69.48, 49.45),
+                   "1.1.1",
+                   "elevation:cded50k,reference:hydro,reference:roads,boundaries:geopolitical,reference:boundaries,nrwn:track,reference:placenames:capitals10m",
+                   "EPSG:4269");
+   m_root = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
+#else
+    m_root = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
+#endif    
 
     return m_root.IsValid() ? BSISUCCESS : BSIERROR;
     }
@@ -274,12 +262,4 @@ AxisAlignedBox3d WmsModel::_QueryModelRange() const
     return AxisAlignedBox3d(m_map.m_boundingBox);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  8/2016
-//----------------------------------------------------------------------------------------
-DMatrix4dCR WmsModel::_GetSourceToWorld() const
-    {
-    //&&MM TODO
-    return RasterModel::_GetSourceToWorld();
-    }
 

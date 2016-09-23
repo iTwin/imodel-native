@@ -94,8 +94,6 @@ protected:
     //! Create a new WmsModel object to be stored in the DgnDb.
     WmsModel(CreateParams const& params, WmsMap const& prop);
 
-    virtual DMatrix4dCR  _GetSourceToWorld() const override;
-
 public:
     
 };

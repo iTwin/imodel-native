@@ -86,9 +86,9 @@ protected:
     virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
     
-    virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_sourceToWorld;}
-
 public:
+
+    DMatrix4dCR  GetSourceToWorld() const { return m_fileProperties.m_sourceToWorld; }
 
     //! Query the DgnClassId of the RasterFileModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the RasterFileModel class - it does @em not return the class of a specific instance.

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 #include <RasterSchema/RasterHandler.h>
-#include "RasterSource.h"
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 
@@ -303,21 +302,6 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 RasterModel::~RasterModel()
     {
 
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  8/2016
-//----------------------------------------------------------------------------------------
-DMatrix4dCR  RasterModel::GetSourceToWorld() const { return _GetSourceToWorld(); }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    //&&MM todo
-//     if (m_rasterTreeP.IsValid())
-//         m_rasterTreeP->DropGraphicsForViewport(viewport);
     }
 
 //----------------------------------------------------------------------------------------

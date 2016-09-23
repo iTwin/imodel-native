@@ -8,12 +8,33 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "RasterSource.h"
 #include <DgnPlatform/TileTree.h>
 
-struct TileQuery; //&&MM keep that struct?
+struct TileQuery;
+
+// On some hardware this the tile size limit.
+#define TILESIZE_LIMIT 1024
+#define IsPowerOfTwo(X) (((X)&((X)-1))==0)
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+struct TileId
+    {
+    TileId(uint32_t r, uint32_t tX, uint32_t tY) : resolution(r), x(tX), y(tY) {}
+
+    uint32_t resolution;            // current level. 0 being the finest resolution.
+                                    // Tile position:
+                                    //   -----------
+                                    //  | 0,0 | 1,0 |
+                                    //   -----------
+                                    //  | 0,1 | 1,1 |
+                                    //   -----------
+    uint32_t x;
+    uint32_t y;
+    };
 
 //=======================================================================================
 //! The root of a multi-resolution raster.
@@ -21,23 +42,67 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 //=======================================================================================
 struct RasterRoot : Dgn::TileTree::Root
 {
-private:
-    DMap4d m_physicalToWorld;                      //! Including units change and reprojection approximation if any. Only used when 4 corners reprojection fails.
-    RasterSourcePtr m_source;
+
+//=======================================================================================
+//! Raster resolution definition. Tile size cannot exceed TILESIZE_LIMIT and must be a power 
+//! of two to avoid resampling by QV.
+// @bsiclass                                                    Mathieu.Marchand  9/2016
+//=======================================================================================
+struct Resolution
+    {
+    public:
+        Resolution(uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY)
+            :m_width(width), m_height(height), m_tileSizeX(tileSizeX), m_tileSizeY(tileSizeY)
+            {
+            BeAssert(GetTileSizeX() <= TILESIZE_LIMIT && GetTileSizeY() <= TILESIZE_LIMIT);
+            BeAssert(IsPowerOfTwo(GetTileSizeX()) && IsPowerOfTwo(GetTileSizeY()));
+
+            m_tileCountX = (width + (tileSizeX - 1)) / tileSizeX;
+            m_tileCountY = (height + (tileSizeY - 1)) / tileSizeY;
+            }
+
+        uint32_t GetWidth() const { return m_width; }
+        uint32_t GetHeight() const { return m_height; }
+        uint32_t GetTileCountX() const { return m_tileCountX; }
+        uint32_t GetTileCountY() const { return m_tileCountY; }
+
+        uint32_t GetTileSizeX() const { return m_tileSizeX; }
+        uint32_t GetTileSizeY() const { return m_tileSizeY; }
+
+    private:
+
+        uint32_t m_width;
+        uint32_t m_height;
+        uint32_t m_tileCountX;
+        uint32_t m_tileCountY;
+        uint32_t m_tileSizeX;
+        uint32_t m_tileSizeY;
+    };
+
+protected:
     RasterModel& m_model;
 
-    folly::Future<BentleyStatus> _RequestTile(Dgn::TileTree::TileCR tile, Dgn::TileTree::TileLoadsPtr loads) override;
+    bvector<Resolution> m_resolution;
 
 public:
-    RasterRoot(RasterSourceR source, RasterModel& model, Dgn::Render::SystemP system);
+    RasterRoot(RasterModel& model, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
     ~RasterRoot() {ClearAllTiles();}
-
-    RasterSourceR GetSource() { return *m_source; }
 
     RasterModel& GetModel() { return m_model; }
 
-    DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToWorld.M0; }
-    DMatrix4dCR GetWorldToPhysical() const { return m_physicalToWorld.M1; }
+    uint32_t GetResolutionCount() const { return (uint32_t) m_resolution.size(); }
+
+    Resolution const& GetResolution(uint32_t res) const { return m_resolution[res]; }
+
+    uint32_t GetWidth() const { return GetResolution(0).GetWidth(); }
+    uint32_t GetHeight() const { return GetResolution(0).GetHeight(); }
+
+    //! return tile size. Border tiles are clipped to their effective size in pixels
+    uint32_t GetTileSizeX(TileId const& id) const { return MIN(GetResolution(id.resolution).GetTileSizeX(), GetResolution(id.resolution).GetWidth() - GetResolution(id.resolution).GetTileSizeX()*id.x); }
+    uint32_t GetTileSizeY(TileId const& id) const { return MIN(GetResolution(id.resolution).GetTileSizeY(), GetResolution(id.resolution).GetHeight() - GetResolution(id.resolution).GetTileSizeY()*id.y); }
+
+    static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);
+
 };
 
 //=======================================================================================
@@ -46,19 +111,20 @@ public:
 //=======================================================================================
 struct RasterTile : Dgn::TileTree::Tile
 {
-private:
+protected:
     TileId m_id;                                            //! tile id 
     Dgn::Render::IGraphicBuilder::TileCorners m_corners;    //! 4 corners of tile, in world coordinates
     RasterRootR m_root;                                     //! the root that loaded this tile.
-    bool m_reprojected = false;  /*&&MM todo*/              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     Dgn::Render::GraphicPtr m_graphic;                      //! the texture for this tile.
 
-    double m_maxSize;                                       //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
+    bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
+
+    double m_maxSize = 362 / 2;                             //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
     
 public:
     friend TileQuery;
     
-    RasterTile(RasterRootR mapRoot, TileId id, RasterTileCP parent);
+    RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent);
 
     RasterRootR GetRoot() { return m_root; }
 
@@ -72,10 +138,7 @@ public:
 
     bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
 
-    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override;
-
     bool _HasChildren() const override { return m_id.resolution > 0; }
-    ChildTiles const* _GetChildren(bool load) const override;
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
 
@@ -100,7 +163,7 @@ struct RasterProgressive : Dgn::ProgressiveTask
 
     Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
     RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes, Dgn::TileTree::TileLoadsPtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads) {}
-    ~RasterProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
+    ~RasterProgressive();
     };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

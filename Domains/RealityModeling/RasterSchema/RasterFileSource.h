@@ -8,32 +8,51 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "RasterSource.h"
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                                    Eric.Paquet     06/2015
+// @bsiclass                                                    Mathieu.Marchand  9/2016
 //=======================================================================================
-struct RasterFileSource : public RasterSource
+struct RasterFileSource : RasterRoot
 {
-private:
-    RasterFileProperties    m_properties;
-    RasterFilePtr           m_rasterFilePtr;
-    Transform               m_physicalToSource;  // Transformation from raster file true origin to a lower-left origin. In pixel unit.
-
-private:
-            RasterFileSource(Utf8StringCR resolvedName);
-    virtual ~RasterFileSource() {m_rasterFilePtr = nullptr;};
-
 protected:
-    virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
+    RasterFilePtr       m_rasterFile;
+    RasterFileModel&    m_model;
+    Transform           m_physicalToSource;  //! Transformation from raster file true origin to a lower-left origin. In pixel unit.    
+    DMap4d              m_physicalToWorld;   //! Including units change and reprojection approximation if any.
+
+    folly::Future<BentleyStatus> _RequestTile(TileTree::TileCR tile, TileTree::TileLoadsPtr loads) override;
+
+    RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system);
+    ~RasterFileSource();
 
 public:
-    static  RasterSourcePtr Create(Utf8StringCR resolvedName);
+    static RasterFileSourcePtr Create(Utf8StringCR resolvedName, RasterFileModel& model, Dgn::Render::SystemP system);
 
-    virtual TransformCR _PhysicalToSource() const override { return m_physicalToSource; }
+    //&&MM move that to the tile object?
+    Render::Image QueryTile(TileId const& id, bool& alphaBlend);
+
+    DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToWorld.M0; }
+    DMatrix4dCR GetWorldToPhysical() const { return m_physicalToWorld.M1; }
+};
+
+//=======================================================================================
+//! A raster tile. May or may not have its graphics loaded.
+// @bsiclass                                                    Mathieu.Marchand  9/2016
+//=======================================================================================
+struct RasterFileTile : RasterTile
+{
+protected:
     
+public:
+    typedef RasterFileSource root_type;
+
+    RasterFileTile(RasterFileSourceR root, TileId id, RasterFileTileCP parent);
+
+    BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override { BeAssert(!"not expected we load from _RequestTile"); return ERROR; }
+
+    TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 };
 
 
