@@ -342,7 +342,7 @@ void StatementDiagnostics::SetIsEnabled(bool isEnabled) {s_diagIsEnabled=isEnabl
 
 #endif
 
-void        Statement::Finalize() { if (m_stmt) { sqlite3_finalize(m_stmt); m_stmt = nullptr; } }
+void        Statement::Finalize() {if (m_stmt) {sqlite3_finalize(m_stmt); m_stmt = nullptr;}}
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
 DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
@@ -355,7 +355,7 @@ DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy mak
 DbResult    Statement::BindGuid(int col, BeGuidCR guid) {return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
-DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) { return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP()); }
+DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 int         Statement::GetColumnCount()         {return sqlite3_column_count(m_stmt);}
@@ -472,7 +472,7 @@ DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::Prepare(DbCR db, Utf8CP sql) { return Prepare(*db.m_dbFile, sql);  }
+DbResult Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
