@@ -222,7 +222,7 @@ BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
     {
     if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
         return SUCCESS;
-#if 0
+#if 0 // for testing. North east coast.
     //http://ows.geobase.ca/wms/geobase_en?service=wms&version=1.1.1&request=GetCapabilities
 
     WmsMap mapInfo("http://ows.geobase.ca/wms/geobase_en",
@@ -254,14 +254,6 @@ void WmsModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
     m_map.FromJson(v);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-AxisAlignedBox3d WmsModel::_QueryModelRange() const
-    {
-    return AxisAlignedBox3d(m_map.m_boundingBox);
     }
 
 
