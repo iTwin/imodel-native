@@ -777,15 +777,6 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::SpatialViewController(SpatialViewDefinition const& def) : T_Super(def)
-    {
-    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
-    m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
 OrthographicViewController::OrthographicViewController(OrthographicViewDefinition const& def) : T_Super(def)
     {
     // not valid, but better than random
@@ -1615,7 +1606,7 @@ void ViewFlags::InitDefaults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::AdjustAspectRatio(DPoint3dR origin, DVec3dR delta, RotMatrixR rotation, double windowAspect, bool expandView)
+void ViewController3d::AdjustAspectRatio(DPoint3dR origin, DVec3dR delta, RotMatrixR rotation, double windowAspect, bool expandView)
     {
     windowAspect *= GetAspectRatioSkew();
 

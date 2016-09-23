@@ -858,7 +858,7 @@ struct DGN_rtree : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
-        auto matcher = (QueryViewController::SpatialQuery*) info.m_args[0].GetValueInt64();
+        auto matcher = (SpatialViewController::SpatialQuery*) info.m_args[0].GetValueInt64();
         return matcher->_TestRTree(info);
         }
     DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}
@@ -871,7 +871,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-
     static DbFunction* s_funcs[] = 
                           {
                           new DGN_angles_value,

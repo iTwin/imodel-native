@@ -502,7 +502,7 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetScanReturn()
+void ViewContext::SetScanReturn()
     {
     m_scanCriteria.SetRangeNodeCheck(this);
     m_scanCriteria.SetElementCallback(visitElementFunc, this);
