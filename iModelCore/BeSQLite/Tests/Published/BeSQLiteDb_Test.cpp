@@ -258,6 +258,14 @@ TEST_F(BeSQLiteDbTests, SetGuids)
     EXPECT_EQ (SUCCESS, projGuidOut.FromString(guidstr.c_str()));
     EXPECT_TRUE (projGuidOut==projGuid);
 
+    // roundtrip a GUID that started as a string
+    Utf8CP strGuid = "c69ec318-60d6-4c54-8f58-e34b78fb8110";
+    BeGuid guid;
+    EXPECT_FALSE(guid.IsValid());
+    guid.FromString(strGuid);
+    EXPECT_TRUE(guid.IsValid());
+    EXPECT_STREQ(strGuid, guid.ToString().c_str());
+
     //get the BeGUID
     BeSQLite::BeGuid dbGuid = m_db.GetDbGuid();
     EXPECT_TRUE (dbGuid.IsValid());
