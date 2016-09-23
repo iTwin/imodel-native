@@ -795,6 +795,14 @@ ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer              09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ExtendedTypeECProperty::IsKindOfQuantityDefinedLocally() const
+    {
+    return m_kindOfQuantity != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP ExtendedTypeECProperty::GetKindOfQuantity() const
     {
     if (m_kindOfQuantity == nullptr)
@@ -881,7 +889,7 @@ SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(
         attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
         }
 
-    if (ecXmlVersionMajor >= 3)
+    if (ecXmlVersionMajor >= 3 && IsKindOfQuantityDefinedLocally())
         {
         auto kindOfQuantity = GetKindOfQuantity();
         if (kindOfQuantity != nullptr)

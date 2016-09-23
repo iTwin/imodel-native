@@ -643,6 +643,201 @@ TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+    schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
+    schema->SetDisplayLabel("KOQ Inheritance Test Schema");
+
+    ECEntityClassP parentEntityClass;
+    ECEntityClassP derivedEntityClass1;
+    ECEntityClassP derivedEntityClass2;
+    ECEntityClassP derivedEntityClass3;
+    KindOfQuantityP kindOfQuantity;
+    KindOfQuantityP kindOfQuantity2;
+    
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    kindOfQuantity->SetDescription("Kind of a Description here");
+    kindOfQuantity->SetDisplayLabel("best quantity of all times");
+    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
+    kindOfQuantity->SetPrecision(10);
+    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
+    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
+    altPresUnits.push_back("INCH");
+    altPresUnits.push_back("MILLIINCH");
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
+    kindOfQuantity2->SetDescription("Kind of a Description here");
+    kindOfQuantity2->SetDisplayLabel("best quantity of all times");
+    kindOfQuantity2->SetPersistenceUnit("CENTIMETRE");
+    kindOfQuantity2->SetPrecision(5);
+    kindOfQuantity2->SetDefaultPresentationUnit("FOOT");
+    auto& altPresUnits2 = kindOfQuantity->GetAlternativePresentationUnitListR();
+    altPresUnits2.push_back("INCH");
+    altPresUnits2.push_back("MILLIINCH");
+
+    schema->CreateEntityClass(parentEntityClass, "ParentEntity");
+    parentEntityClass->SetClassModifier(ECClassModifier::Abstract);
+    parentEntityClass->SetDisplayLabel("Parent Entity");
+    parentEntityClass->SetDescription("Parent Entity Description");
+    PrimitiveECPropertyP parentPrimitiveProperty;
+    parentEntityClass->CreatePrimitiveProperty(parentPrimitiveProperty, "InheritedProperty", PrimitiveType::PRIMITIVETYPE_String);
+    parentPrimitiveProperty->SetKindOfQuantity(kindOfQuantity);
+
+    schema->CreateEntityClass(derivedEntityClass1, "DerivedEntity1");
+    derivedEntityClass1->AddBaseClass(*parentEntityClass);
+    derivedEntityClass1->SetClassModifier(ECClassModifier::Abstract);
+    derivedEntityClass1->SetDisplayLabel("Derived Entity 1");
+    derivedEntityClass1->SetDescription("Derived Entity Description");
+    PrimitiveECPropertyP derivedPrimitiveProperty1;
+    derivedEntityClass1->CreatePrimitiveProperty(derivedPrimitiveProperty1, "InheritedProperty", PrimitiveType::PRIMITIVETYPE_String);
+    derivedPrimitiveProperty1->SetBaseProperty(parentPrimitiveProperty);
+
+    schema->CreateEntityClass(derivedEntityClass2, "DerivedEntity2");
+    derivedEntityClass2->AddBaseClass(*derivedEntityClass1);
+    derivedEntityClass2->SetClassModifier(ECClassModifier::Sealed);
+    derivedEntityClass2->SetDisplayLabel("Derived Entity 2");
+    derivedEntityClass2->SetDescription("Derived Entity Description");
+    PrimitiveECPropertyP derivedPrimitiveProperty2;
+    derivedEntityClass2->CreatePrimitiveProperty(derivedPrimitiveProperty2, "InheritedProperty", PrimitiveType::PRIMITIVETYPE_String);
+    derivedPrimitiveProperty2->SetBaseProperty(derivedPrimitiveProperty1);
+
+    schema->CreateEntityClass(derivedEntityClass3, "DerivedEntity3");
+    derivedEntityClass3->AddBaseClass(*derivedEntityClass1);
+    derivedEntityClass3->SetClassModifier(ECClassModifier::Sealed);
+    derivedEntityClass3->SetDisplayLabel("Derived Entity 3");
+    derivedEntityClass3->SetDescription("Derived Entity Description");
+    PrimitiveECPropertyP derivedPrimitiveProperty3;
+    derivedEntityClass3->CreatePrimitiveProperty(derivedPrimitiveProperty3, "InheritedProperty", PrimitiveType::PRIMITIVETYPE_String);
+    derivedPrimitiveProperty3->SetBaseProperty(derivedPrimitiveProperty1);
+    derivedPrimitiveProperty3->SetKindOfQuantity(kindOfQuantity2);
+
+    SchemaWriteStatus writeStatus = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"InheritedKOQ.01.00.00.ecschema.xml").c_str());
+    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
+    
+    ECSchemaPtr readSchema; 
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlFile(readSchema, ECTestFixture::GetTempDataPath(L"InheritedKOQ.01.00.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus);
+    ASSERT_TRUE(readSchema.IsValid());
+
+    ExtendedTypeECPropertyCP parentProp = readSchema->GetClassCP("ParentEntity")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    ASSERT_TRUE(parentProp != nullptr);
+    ASSERT_TRUE(parentProp->IsKindOfQuantityDefinedLocally());
+    ASSERT_STREQ("MyKindOfQuantity", parentProp->GetKindOfQuantity()->GetName().c_str());
+    
+    ExtendedTypeECPropertyCP derivedProp1 = readSchema->GetClassCP("DerivedEntity1")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    ASSERT_TRUE(derivedProp1 != nullptr);
+    ASSERT_FALSE(derivedProp1->IsKindOfQuantityDefinedLocally());
+    ASSERT_STREQ("MyKindOfQuantity", derivedProp1->GetKindOfQuantity()->GetName().c_str());
+
+    ExtendedTypeECPropertyCP derivedProp2 = readSchema->GetClassCP("DerivedEntity2")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    ASSERT_TRUE(derivedProp2 != nullptr);
+    ASSERT_FALSE(derivedProp2->IsKindOfQuantityDefinedLocally());
+    ASSERT_STREQ("MyKindOfQuantity", derivedProp2->GetKindOfQuantity()->GetName().c_str());
+
+    ExtendedTypeECPropertyCP derivedProp3 = readSchema->GetClassCP("DerivedEntity3")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    ASSERT_TRUE(derivedProp3 != nullptr);
+    ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
+    ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedRoleLabels)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+    schema->SetDescription("Schema to test Relationship Class Role Label Inheritance serialization.");
+    schema->SetDisplayLabel("RoleLabel Inheritance Test Schema");
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ECRelationshipClassP classARelB;
+    ECRelationshipClassP classARelC;
+    ECRelationshipClassP classBRelC;
+
+    schema->CreateEntityClass(entityClassA, "A");
+    entityClassA->SetClassModifier(ECClassModifier::Abstract);
+    entityClassA->SetDisplayLabel("Entity A");
+    entityClassA->SetDescription("Entity A Description");
+
+    schema->CreateEntityClass(entityClassB, "B");
+    entityClassB->SetClassModifier(ECClassModifier::Abstract);
+    entityClassB->SetDisplayLabel("Entity B");
+    entityClassB->SetDescription("Entity B Description");
+    entityClassB->AddBaseClass(*entityClassA);
+
+    schema->CreateEntityClass(entityClassC, "C");
+    entityClassC->SetClassModifier(ECClassModifier::Abstract);
+    entityClassC->SetDisplayLabel("Entity C");
+    entityClassC->SetDescription("Entity C Description");
+    entityClassC->AddBaseClass(*entityClassB);
+
+    schema->CreateRelationshipClass(classARelB, "ARelB");
+    classARelB->SetClassModifier(ECClassModifier::Abstract);
+    classARelB->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classARelB->GetSource().AddClass(*entityClassA);
+    classARelB->GetSource().SetRoleLabel("testSource");
+    classARelB->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classARelB->GetTarget().AddClass(*entityClassB);
+    classARelB->GetTarget().SetRoleLabel("testTarget");
+
+    schema->CreateRelationshipClass(classARelC, "ARelC");
+    classARelC->SetClassModifier(ECClassModifier::Abstract);
+    classARelC->AddBaseClass(*classARelB);
+    classARelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classARelC->GetSource().AddClass(*entityClassA);
+    classARelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classARelC->GetTarget().AddClass(*entityClassC);
+
+    schema->CreateRelationshipClass(classBRelC, "BRelC");
+    classBRelC->SetClassModifier(ECClassModifier::Sealed);
+    classBRelC->AddBaseClass(*classARelC);
+    classBRelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classBRelC->GetSource().AddClass(*entityClassB);
+    classBRelC->GetSource().SetRoleLabel("overrideSource");
+    classBRelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    classBRelC->GetTarget().AddClass(*entityClassC);
+    classBRelC->GetTarget().SetRoleLabel("overrideTarget");
+
+    SchemaWriteStatus writeStatus = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str());
+    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
+
+    ECSchemaPtr readSchema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlFile(readSchema, ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus);
+    ASSERT_TRUE(readSchema.IsValid());
+
+    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
+    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
+    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
+    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
+
+    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
+    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
+    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
+    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
+
+    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
+    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("overrideSource", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
+    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
+    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
+    EXPECT_STREQ("overrideTarget", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, InvalidReference)
     {
     // show error messages but do not assert.

@@ -603,4 +603,44 @@ TEST_F (ECRelationshipTests, TestRelationshipMultiplicityConstraint)
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
     ASSERT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClassBase));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipTests, TestRoleLabelInheritance)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "RelClass");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    EXPECT_TRUE(Utf8String::IsNullOrEmpty(relationClass->GetSource().GetInvariantRoleLabel().c_str())) << "The Source constraint's roleLabel is expected to be empty when a relationship class is first created.";
+    EXPECT_TRUE(Utf8String::IsNullOrEmpty(relationClass->GetTarget().GetInvariantRoleLabel().c_str())) << "The Target constraint's roleLabel is expected to be empty when a relationship class is first created.";
+
+    ECRelationshipClassP relationClassBase;
+    ecSchema->CreateRelationshipClass(relationClassBase, "RelBaseClass");
+    relationClassBase->SetStrength(StrengthType::Referencing);
+    relationClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClassBase->GetSource().SetRoleLabel("Test Source");
+    relationClassBase->GetTarget().SetRoleLabel("Test Target");
+
+    EXPECT_TRUE(relationClassBase->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set, so it should be defined.";
+    EXPECT_TRUE(relationClassBase->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set, so it should be defined.";
+    EXPECT_TRUE(relationClassBase->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set locally, so it should be defined locally.";
+    EXPECT_TRUE(relationClassBase->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set locally, so it should be defined locally.";
+
+    ASSERT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase)) << "There should not be any conflicts between the class and the base class trying to be added.";
+
+    EXPECT_STREQ("Test Source", relationClass->GetSource().GetInvariantRoleLabel().c_str()) << "The Source constraint should find be able to find the role label from base relationship.";
+    EXPECT_STREQ("Test Target", relationClass->GetTarget().GetInvariantRoleLabel().c_str()) << "The Target constraint should find be able to find the role label from base relationship.";
+    EXPECT_TRUE(relationClass->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_TRUE(relationClass->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_FALSE(relationClass->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set in a base class, so it should not be locally defined.";
+    EXPECT_FALSE(relationClass->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set in a base class, so it should not be locally defined.";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -906,6 +906,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
+    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
+    ECOBJECTS_EXPORT bool IsKindOfQuantityDefinedLocally() const;
     //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
     ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
     //! Sets the KindOfQuantity of this property, provide nullptr to unset.
@@ -2141,8 +2143,7 @@ private:
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
-    
-    // Used to search base classes for RoleLabel
+
     ECObjectsStatus             _SetRoleLabel(Utf8StringCR value);
     ECObjectsStatus             ValidateRoleLabel();
 
@@ -2177,8 +2178,11 @@ public:
     //! If the role label is not defined, the invariant display label of the relationship class is returned
     ECOBJECTS_EXPORT Utf8String const           GetInvariantRoleLabel() const;
 
-    //! Returns whether the RoleLabel has been set explicitly
+    //! Returns whether the RoleLabel has been set explicitly or inherited from a base constraint
     ECOBJECTS_EXPORT bool                       IsRoleLabelDefined() const;
+
+    //! Returns whether the RoleLabel has been set explicitly and not inherited from a base constraint
+    ECOBJECTS_EXPORT bool                       IsRoleLabelDefinedLocally() const;
 
     //! Sets whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(bool value);

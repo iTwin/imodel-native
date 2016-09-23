@@ -1794,6 +1794,36 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenRoleLabelNotFoundOrEmpty)
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
+
+    Utf8CP schemaXml3 = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema3' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' modifier='abstract'>"
+        "       <BaseClass>ARelC</BaseClass>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True' >"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema3;
+    status = ECSchema::ReadFromXmlString(schema3, schemaXml3, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1806,11 +1836,22 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
+        "   <ECEntityClass typeName='B' modifier='abstract'>"
+        "       <BaseClass>A</BaseClass>"
+        "   </ECEntityClass>"
         "   <ECEntityClass typeName='C' modifier='abstract'>"
         "       <BaseClass>B</BaseClass>"
         "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelC' modifier='sealed'>"
+        "   <ECRelationshipClass typeName='BRelC' modifier='sealed' >"
+        "       <BaseClass>ARelC</BaseClass>"
+        "       <Source multiplicity='(0..1)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..1)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' modifier='abstract'>"
         "       <BaseClass>ARelB</BaseClass>"
         "       <Source multiplicity='(0..1)' polymorphic='True' >"
         "           <Class class='A' />"
@@ -1831,11 +1872,29 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECRelationshipConstraint that inherits a roleLabel attribute should succeed.";
-    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "An ECSchema with ECRelationshipConstraint that inherits a roleLabel attribute should succeed.";
+    ASSERT_TRUE(schema.IsValid()) << "schema should not be a nullptr";
+
+    ASSERT_STREQ("testSource", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
+    ASSERT_STREQ("testTarget", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+    ASSERT_TRUE(schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set, so it should be defined.";
+    ASSERT_TRUE(schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set, so it should be defined.";
+    ASSERT_TRUE(schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set locally, so it should be defined locally.";
+    ASSERT_TRUE(schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set locally, so it should be defined locally.";
     
-    ASSERT_STREQ("testSource", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
-    ASSERT_STREQ("testTarget", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+    EXPECT_STREQ("testSource", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
+    EXPECT_STREQ("testTarget", schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+    EXPECT_TRUE(schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_TRUE(schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_FALSE(schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set in a base class, so it should not be defined locally.";
+    EXPECT_FALSE(schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set in a base class, so it should not be defined locally.";
+
+    EXPECT_STREQ("testSource", schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().GetRoleLabel().c_str());
+    EXPECT_STREQ("testTarget", schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().GetRoleLabel().c_str());
+    EXPECT_TRUE(schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined()) << "The Source constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_TRUE(schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined()) << "The Target constraint's role label was set in a base class, so it should be defined.";
+    EXPECT_FALSE(schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set in a base class, so it should not be defined locally.";
+    EXPECT_FALSE(schema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally()) << "The Source constraint's role label was set in a base class, so it should not be defined locally.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1871,13 +1930,18 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     for (auto const& pClass : schema->GetClasses())
         {
         ECPropertyP p = pClass->GetPropertyP("KindOfQuantityProperty");
-        ASSERT_TRUE(p != nullptr);
+        EXPECT_TRUE(p != nullptr);
 
         PrimitiveECPropertyCP prim = p->GetAsPrimitiveProperty();
-        ASSERT_TRUE(prim != nullptr);
+        EXPECT_TRUE(prim != nullptr);
 
         KindOfQuantityCP kindOfQuantity = prim->GetKindOfQuantity();
-        ASSERT_TRUE(kindOfQuantity != nullptr);
+        EXPECT_TRUE(kindOfQuantity != nullptr);
+
+        if (pClass->GetName() != "A")
+            EXPECT_FALSE(prim->IsKindOfQuantityDefinedLocally()) << "The Kind of Quantity is defined in a base class, so it should not be defined locally.";
+        else
+            EXPECT_TRUE(prim->IsKindOfQuantityDefinedLocally()) << "The Kind of Quantity is defined, so it should be defined locally.";
 
         EXPECT_STREQ(kindOfQuantity->GetName().c_str(), "MyKindOfQuantity");
         }

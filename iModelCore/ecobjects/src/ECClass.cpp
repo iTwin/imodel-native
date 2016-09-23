@@ -2584,7 +2584,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     else
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
-    if (IsRoleLabelDefined())
+    if (IsRoleLabelDefinedLocally())
         xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
@@ -2813,7 +2813,15 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraint::IsRoleLabelDefined () const
     {
-    return m_roleLabel.length() != 0;
+    return !Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipConstraint::IsRoleLabelDefinedLocally() const
+    {
+    return m_roleLabel.length() > 0;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2832,6 +2840,16 @@ Utf8String const ECRelationshipConstraint::GetRoleLabel () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     {
+    if (m_roleLabel.length() > 0)
+        return m_roleLabel;
+
+    for (auto const& relBaseClass : m_relClass->GetBaseClasses())
+        {
+        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
+                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+        return baseClassConstraint->GetInvariantRoleLabel();
+        }
+
     return m_roleLabel;
     }
 
@@ -2840,35 +2858,20 @@ Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel()
     {
-    if (!Utf8String::IsNullOrEmpty(m_roleLabel.c_str()))
+    if (!Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
         return ECObjectsStatus::Success;
 
-    ECObjectsStatus status = ECObjectsStatus::Error;
-    for (auto const& relBaseClass : m_relClass->GetBaseClasses())
-        {
-        if (!relBaseClass->IsRelationshipClass())
-            continue;
-
-        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-        if (ECObjectsStatus::Success == (status = SetRoleLabel(baseClassConstraint->GetRoleLabel())))
-            return status;
-        }
-
-    uint32_t majorVersion = m_relClass->GetSchema().GetOriginalECXmlVersionMajor();
-    uint32_t minorVersion = m_relClass->GetSchema().GetOriginalECXmlVersionMinor();
-    if (Utf8String::IsNullOrEmpty(m_roleLabel.c_str()) && (majorVersion <= 3 && minorVersion == 0))
+    if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
         {
         if (m_isSource)
-            return SetRoleLabel(m_relClass->GetDisplayLabel());
+            return SetRoleLabel(m_relClass->GetInvariantDisplayLabel());
         else
-            return SetRoleLabel(m_relClass->GetDisplayLabel() + " (Reversed)");
+            return SetRoleLabel(m_relClass->GetInvariantDisplayLabel() + " (Reversed)");
         }
-    
-    if (status != ECObjectsStatus::Success)
-        LOG.errorv("Invalid ECSchemaXML: The %s of the ECRelationshipClass, %s, must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
-                    m_relClass->GetDisplayLabel().c_str(), ROLELABEL_ATTRIBUTE);
-    return status;
+
+    LOG.errorv("Invalid ECSchemaXML: The %s of the ECRelationshipClass, %s, must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+                m_relClass->GetDisplayLabel().c_str(), ROLELABEL_ATTRIBUTE);
+    return ECObjectsStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2887,9 +2890,7 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8StringCR value)
     {
     if (Utf8String::IsNullOrEmpty(value.c_str()))
         return ECObjectsStatus::Error;
-
-    m_roleLabel = value;
-    return ECObjectsStatus::Success;
+    return _SetRoleLabel(value);
     }
   
   /*---------------------------------------------------------------------------------**//**
