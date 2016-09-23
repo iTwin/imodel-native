@@ -60,6 +60,8 @@ Cesium.when(viewset.readyPromise).then(function() {
         var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', 'scripts/Bentley/Assets/Icons/views.png', viewer.createViewSelectionWidget());
         var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', 'scripts/Bentley/Assets/Icons/models.png', viewer.createModelToggleWidget());
         var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', 'scripts/Bentley/Assets/Icons/categories.png', viewer.createCategoryToggleWidget());
+        viewer.createIsolateTool(toolbar);
+        viewer.createFitViewTool(toolbar);
     });
 });
 </script>
