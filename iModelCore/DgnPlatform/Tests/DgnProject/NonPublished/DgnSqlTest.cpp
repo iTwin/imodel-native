@@ -18,7 +18,7 @@ using namespace DgnSqlTestNamespace;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SqlFunctionsTest : public ::testing::Test
 {   
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
     ScopedDgnHost m_host;
     DgnDbPtr      m_db;
     DgnModelId    m_defaultModelId;
@@ -62,10 +62,10 @@ void SqlFunctionsTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     //  Request a root seed file.
-    DgnDbTestUtils::SeedDbInfo seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnPlatformSeedManager::SeedDbInfo seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
 
     // Customize for my tests
-    auto db = DgnDbTestUtils::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
+    auto db = DgnPlatformSeedManager::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
     ASSERT_TRUE(db.IsValid());
 
     DgnSqlTestDomain::ImportSchemaFromPath(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -86,9 +86,9 @@ void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode 
     {
     m_openMode = mode;
     if (BeSQLite::Db::OpenMode::Readonly == mode)
-        m_db = DgnDbTestUtils::OpenSeedDb(L"SqlFunctionsTest/seed.bim");
+        m_db = DgnPlatformSeedManager::OpenSeedDb(L"SqlFunctionsTest/seed.bim");
     else
-        m_db = DgnDbTestUtils::OpenSeedDbCopy(L"SqlFunctionsTest/seed.bim", newFileName);
+        m_db = DgnPlatformSeedManager::OpenSeedDbCopy(L"SqlFunctionsTest/seed.bim", newFileName);
     ASSERT_TRUE (m_db.IsValid());
 
     m_defaultModelId = DgnDbTestUtils::QueryFirstGeometricModelId(*m_db);

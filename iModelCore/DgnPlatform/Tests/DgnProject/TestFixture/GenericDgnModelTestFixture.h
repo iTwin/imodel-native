@@ -12,7 +12,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-
+#include "DgnPlatformSeedManager.h"
 
 #define TEST_MODEL2D_NAME     "TestModel2D"
 
@@ -49,7 +49,7 @@ struct GenericDgnModelTestFixture : public GenericBaseFixture
 public:
     DEFINE_T_SUPER(GenericBaseFixture);
 
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     GenericDgnModelTestFixture() { }
 
@@ -71,7 +71,7 @@ struct GenericDgnModel2dTestFixture : public GenericBaseFixture
 public:
     DEFINE_T_SUPER(GenericBaseFixture);
 
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+    static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
     GenericDgnModel2dTestFixture() { }
 

@@ -337,6 +337,12 @@
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="RoleModel" displayLabel="Role Model">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
@@ -425,7 +431,7 @@
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PhysicalModel"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="PhysicalElement" />
         </Target>
     </ECRelationshipClass>
@@ -1522,20 +1528,6 @@
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
-            <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <DateTimeKind>Utc</DateTimeKind>
-                </DateTimeInfo>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
-                <CustomHandledProperty>
-                    <StatementTypes>0</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SubCategory">
         <ECCustomAttributes>
@@ -1954,6 +1946,7 @@
     <ECEntityClass typeName="RoleElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -2026,7 +2019,17 @@
             <Class class="GeometryPart"/>
         </Target>
     </ECRelationshipClass>
-    
+
+    <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="DrawingGraphic"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="GeometricElement"/>
+        </Target>
+    </ECRelationshipClass>
+
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Experimental classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->

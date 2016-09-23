@@ -1756,6 +1756,7 @@ void ViewController2d::_LoadFromDefinition()
 
     ViewDefinition2d& vdef = GetViewDefinition2d();
     m_targetModelId = m_baseModelId = vdef.GetBaseModelId();
+    m_viewedModels.insert(m_baseModelId);
     m_origin = vdef.GetOrigin();
     m_delta = vdef.GetExtents();
     m_rotAngle = vdef.GetRotationAngle().Radians();

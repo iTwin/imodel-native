@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct Subject; struct Role;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -1136,6 +1136,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
+    virtual RoleElementCP _ToRoleElement() const {return nullptr;}
     virtual InformationContentElementCP _ToInformationContentElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DocumentCP _ToDocumentElement() const {return nullptr;}
@@ -1184,6 +1185,7 @@ public:
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
     DgnGeometryPartCP ToGeometryPart() const {return _ToGeometryPart();}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
+    RoleElementCP ToRoleElement() const {return _ToRoleElement();}                      //!< more efficient substitute for dynamic_cast<RoleElementCP>(el)
     InformationContentElementCP ToInformationContentElement() const {return _ToInformationContentElement();} //!< more efficient substitute for dynamic_cast<InformationContentElementCP>(el)
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     DocumentCP ToDocumentElement() const {return _ToDocumentElement();}                 //!< more efficient substitute for dynamic_cast<DocumentCP>(el)
@@ -1196,6 +1198,7 @@ public:
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
     DgnGeometryPartP ToGeometryPartP() {return const_cast<DgnGeometryPartP>(_ToGeometryPart());} //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
+    RoleElementP ToRoleElementP() {return const_cast<RoleElementP>(_ToRoleElement());} //!< more efficient substitute for dynamic_cast<RoleElementP>(el)
     InformationContentElementP ToInformationContentElementP() {return const_cast<InformationContentElementP>(_ToInformationContentElement());} //!< more efficient substitute for dynamic_cast<InformationContentElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DocumentP ToDocumentElementP() {return const_cast<DocumentP>(_ToDocumentElement());}  //!< more efficient substitute for dynamic_cast<DocumentP>(el)
@@ -1206,6 +1209,7 @@ public:
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
     bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
+    bool IsRoleElement() const {return nullptr != ToRoleElement();}                 //!< Determine whether this element is a RoleElement or not
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
     bool IsDocumentElement() const {return nullptr != ToDocumentElement();}         //!< Determine whether this element is a Document element or not
@@ -1603,6 +1607,8 @@ public:
     Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
     Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
+    DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
+
     void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
 };
@@ -2249,8 +2255,12 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_RoleElement, DgnElement)
+    friend struct dgn_ElementHandler::Role;
+
 protected:
+    virtual RoleElementCP _ToRoleElement() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -2377,6 +2387,7 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private
+    DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.

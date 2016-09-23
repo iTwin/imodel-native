@@ -71,18 +71,23 @@ protected:
     Transform           m_tilesetTransform;
     size_t              m_maxTilesetDepth;
     size_t              m_maxTilesPerDirectory;
+    bool                m_publishPolylines;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines = false, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
-    virtual ITileGenerationFilterR _GetFilter() = 0;
+    virtual TileGenerationCacheCR _GetCache() const = 0;
 
     TILEPUBLISHER_EXPORT Status Setup();
-
-    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
-    Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
-    Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
     TILEPUBLISHER_EXPORT Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
+
+    Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
+    Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
+
+    void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
+    void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
+
 
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
@@ -99,7 +104,7 @@ public:
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
-    ITileGenerationFilterR GetFilter() { return _GetFilter(); }
+    TileGenerationCacheCR GetCache() const { return _GetCache(); }
 };
 
 //=======================================================================================
@@ -138,13 +143,12 @@ private:
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
     void AppendUInt32(uint32_t value);
-    void WriteMetadataTree (Json::Value& val, TileNodeCR tile, size_t depth);
-    void WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth);
 
     Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
+
 public:
 
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);

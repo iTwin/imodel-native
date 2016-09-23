@@ -947,8 +947,8 @@ TEST(ECDbInstances3, BGRJoinedTable)
         "</ECSchema>";
     ScopedDgnHost host;
 
-    auto seedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
-    DgnDbPtr dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedInfo.fileName, L"ECDbInstances3/bgr.ibim");
+    auto seedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
+    DgnDbPtr dgnDb = DgnPlatformSeedManager::OpenSeedDbCopy(seedInfo.fileName, L"ECDbInstances3/bgr.ibim");
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();

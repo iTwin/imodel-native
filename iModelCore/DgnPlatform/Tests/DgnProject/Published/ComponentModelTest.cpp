@@ -14,6 +14,7 @@
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "../TestFixture/DgnPlatformSeedManager.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -30,7 +31,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     {
-    db = DgnDbTestUtils::OpenDgnDb(name, mode);
+    db = DgnPlatformSeedManager::OpenDgnDb(name, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -761,13 +762,13 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     timer.Start();
 
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnPlatformSeedManager::SeedDbInfo rootInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Component.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Client.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
     
     timer.Stop();
     BeTest::Log("Performance", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("ComponentModelTest - Create seed Dbs (with imported schemas): %lf seconds", timer.GetElapsedSeconds()).c_str());
@@ -786,13 +787,13 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
 TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnPlatformSeedManager::SeedDbInfo rootInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Component.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Client.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -835,13 +836,13 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
 TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnPlatformSeedManager::SeedDbInfo rootInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Component.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Client.bim");
-    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
+    DgnPlatformSeedManager::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -906,9 +907,9 @@ TEST(SchemaImportTest, SelectAfterImport)
     Dgn::ScopedDgnHost host;
 
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnPlatformSeedManager::SeedDbInfo rootInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));
 
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, L"ComponentModelTest/SelectAfterImport.bim");
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootInfo.fileName, L"ComponentModelTest/SelectAfterImport.bim");
 
     if (true)
         {
