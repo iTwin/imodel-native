@@ -1,0 +1,93 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: AutomaticGroundDetection/AutomaticGroundDetection.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+     
+baseDir         = $(_MakeFilePath)
+
+%include  mdl.mki
+%include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+o = $(OutputRootDir)Build/TerrainModel/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI\AutomaticGroundDetection"
+   
+
+CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
+
+#Uncomment this to allow generating design meshes
+#CCompOpts + -DWIP_MESH_IMPORT
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+        |  -------- --------
+
+#CCompOpts + $(PublicApiIncludes) 
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+PchCompiland = $(groundDetectSrcDir)AutomaticGroundDetection.cpp
+PchOutputDir = $(o)
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEY_GROUND_DETECT_BUILD__
+CompileOptionsMki =  $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+#%include $(SharedMki)PreCompileHeader.mki
+
+# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+
+PCHHeaderDepends=$(o)AutomaticGroundDetectionPch$(oext)
+MultiCompileDepends=$(_MakeFileSpec) 
+
+#----------------------------------------------------------------------
+#   Build 
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)BcDtmProvider$(oext) : $(groundDetectSrcDir)BcDtmProvider.cpp $(groundDetectSrcDir)BcDtmProvider.h  ${MultiCompileDepends}
+
+$(o)GroundDetectionGrid$(oext) : $(groundDetectSrcDir)GroundDetectionGrid.cpp $(groundDetectSrcDir)GroundDetectionGrid.h  ${MultiCompileDepends}
+
+#$(o)GroundDetectionManagerDc$(oext) : $(groundDetectSrcDir)GroundDetectionManagerDc.cpp $(groundDetectSrcDir)GroundDetectionManagerDc.h  ${MultiCompileDepends}
+
+#$(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
+
+#$(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+
+cppObjects =% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_OBJECT_PCH      = $(o)AutomaticGroundDetectionPch$(oext)
+DLM_OBJECT_FILES    = $(cppObjects)
+
+LINKER_LIBRARIES_DELAYLOADED  = \    
+    $(ContextSubpartsLibs)$(BaseGeocoordLib) \
+    ws2_32.lib \
+    $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+
+#LINKER_LIBRARIES            = 
+
+%include $(sharedMki)LinkLibrary.mki
+

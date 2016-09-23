@@ -43,6 +43,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="AutomaticGroundDetection" BMakeFile="AutomaticGroundDetection\AutomaticGroundDetection.mke">      
+      <SubPart PartName="Core" />                
+      <Bindings>
+        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>
+        <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
+      </Bindings>
+    </Part>
+
     <Part Name="STM" BMakeFile="stm\stm.mke">
         <SubPart PartName="Core" />
         <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
