@@ -38,12 +38,15 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
+    seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+        schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
         searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
@@ -51,9 +54,11 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
         ECN::ECSchemaPtr schema = nullptr;
         ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
+        ASSERT_TRUE(schema != nullptr);
 
         schemaContext->AddSchema(*schema);
         ASSERT_EQ(DgnDbStatus::Success, DgnBaseDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+        m_db->SaveChanges();
         ASSERT_TRUE (m_db->IsDbOpen());
 
         bvector<DgnElementPtr> testElements;
@@ -65,7 +70,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
             ASSERT_EQ (DgnDbStatus::Success, stat);
             }
         m_db->SaveChanges();
-        m_db->CloseDb();
         }
 
     BeFileName dgndbFilePath;
@@ -91,46 +95,110 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>dgn:PhysicalElement</BaseClass>"
-        "    <ECProperty propertyName='Prop1_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop1_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop1_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop1_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop1_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop1_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element2' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element1</BaseClass>"
-        "    <ECProperty propertyName='Prop2_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop2_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop2_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop2_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element3' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element2</BaseClass>"
-        "    <ECProperty propertyName='Prop3_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop3_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop3_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop3_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop3_2' typeName='long' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop3_3' typeName='double' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element4' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
-        "    <ECProperty propertyName='Prop4_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop4_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop4_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop4_1' typeName='string' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4_2' typeName='long' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4_3' typeName='double' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element4b' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
-        "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop4b_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
-        "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
+        "    <ECProperty propertyName='Prop4b_1' typeName='string' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_2' typeName='long' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_3' typeName='double' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_4' typeName='point3d' >"
+        "    <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>dgn:ElementMultiAspect</BaseClass>"
@@ -1561,7 +1629,7 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql(Utf8CP className, Utf8St
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties(true))
         {
-        if (0 == strcmp("LastMod", prop->GetName().c_str()))
+        if (0 == strcmp("LastMod", prop->GetName().c_str()) || 0 == strcmp("UserProperties", prop->GetName().c_str()))
             continue;
         if (!isFirstItem)
             {
@@ -1616,7 +1684,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql(Utf8CP className, Utf8St
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties(true))
         {
-        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()))
+        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()) || 0 == strcmp("UserProperties", prop->GetName().c_str()))
             continue;
         if (!isFirstItem)
             {
