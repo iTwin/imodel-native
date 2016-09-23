@@ -52,15 +52,14 @@ Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
 var viewset = new Bim.Viewset(viewJsonUrl);
 Cesium.when(viewset.readyPromise).then(function() {
-    var viewer = new Cesium.Viewer('cesiumContainer', viewset.createCesiumViewerOptions());
-    viewer.extend(Bim.viewerInspectorMixin);
-
-    var tileset = new Bim.Tileset(viewset, viewer);
+    var tileset = new Bim.Tileset(viewset);
     Cesium.when(tileset.readyPromise).then(function() {
-        var toolbar = new Bim.Toolbar(viewer);
-        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', 'scripts/Bentley/Assets/Icons/views.png', Bim.createViewSelectionWidget(tileset));
-        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', 'scripts/Bentley/Assets/Icons/models.png', Bim.createModelToggleWidget(tileset));
-        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', 'scripts/Bentley/Assets/Icons/categories.png', Bim.createCategoryToggleWidget(tileset));
+        var viewer = new Bim.Viewer('cesiumContainer', tileset, { 'cesiumViewerOptions': viewset.createCesiumViewerOptions() });
+        viewer.cesiumViewer.extend(Bim.viewerInspectorMixin);
+        var toolbar = viewer.createToolbar();
+        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', 'scripts/Bentley/Assets/Icons/views.png', viewer.createViewSelectionWidget());
+        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', 'scripts/Bentley/Assets/Icons/models.png', viewer.createModelToggleWidget());
+        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', 'scripts/Bentley/Assets/Icons/categories.png', viewer.createCategoryToggleWidget());
     });
 });
 </script>
