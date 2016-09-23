@@ -63,6 +63,8 @@ WmsMap::WmsMap()
   m_transparent(false),
   m_axisOrder(AxisOrder::Default)
     {
+    BeAssert(m_url.at(m_url.size()-1) != '?');
+
     // 1.3.x use CRS.
     if(m_version.size() >= sizeof("1.3") && memcmp(m_version.c_str(), "1.3", sizeof("1.3")-1) == 0)
         {
