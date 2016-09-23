@@ -2,10 +2,9 @@
 #
 #     $Source: ElementHandler/app/app.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
 #SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
@@ -15,6 +14,9 @@ PolicyPaths+$(BuildContext)SubParts/Assemblies/
 %undef appendMacroSeparator
 
 %include  mdl.mki
+
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts +  -wd4458
 
 ## Could be in solution policy file..
 

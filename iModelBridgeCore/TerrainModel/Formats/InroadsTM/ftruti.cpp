@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* ftruti.c                                            twl    27-Oct-1998     */
@@ -227,7 +227,7 @@ void aecDTM_generateUniqueFeatureName
     if ( newNameP != (wchar_t *)0 )
     {
         newNameP[0] = '\0';
-
+        #pragma warning(disable:4459) // NEEDSWORK_VS2015: WIP, hides previous local declaration
         if ( oldNameP != (wchar_t *)0 )
         {
             wchar_t tmpOldName[DTM_C_NAMSIZ];

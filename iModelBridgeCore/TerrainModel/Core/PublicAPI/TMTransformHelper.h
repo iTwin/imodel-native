@@ -185,9 +185,10 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_params = params;
                     }
-                DTMFenceParamsCopy(DTMFenceParamsCopy&& copy) : DPoint3dCopy(copy)
+                DTMFenceParamsCopy(DTMFenceParamsCopy&& copy) : DPoint3dCopy((DTMFenceParamsCopy&&)copy)
                     {
-
+                    m_params = copy.m_params;
+                    copy.m_params = nullptr;
                     }
                 ~DTMFenceParamsCopy()
                     {
@@ -209,6 +210,13 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<double*>(values);
                     m_ownValues = ownValues;
                     }
+                DoubleCopy(DoubleCopy&& copy) : DoubleCopy((DoubleCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
+                    }
                 ~DoubleCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -229,6 +237,13 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<VOLRANGETAB*>(values);
                     m_ownValues = ownValues;
                     }
+                VOLRANGETABCopy(VOLRANGETABCopy&& copy) : VOLRANGETABCopy((VOLRANGETABCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
+                    }
                 ~VOLRANGETABCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -248,6 +263,13 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_values = const_cast<DRange1d*>(values);
                     m_ownValues = ownValues;
+                    }
+                DRange1dCopy(DRange1dCopy&& copy) : DRange1dCopy((DRange1dCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
                     }
                 ~DRange1dCopy ()
                     {
