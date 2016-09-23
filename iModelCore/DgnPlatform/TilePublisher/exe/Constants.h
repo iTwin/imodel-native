@@ -58,9 +58,9 @@ Cesium.when(viewset.readyPromise).then(function() {
     var tileset = new Bim.Tileset(viewset, viewer);
     Cesium.when(tileset.readyPromise).then(function() {
         var toolbar = new Bim.Toolbar(viewer);
-        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', Bim.createModelToggleWidget(tileset));
-        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', Bim.createCategoryToggleWidget(tileset));
-        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', Bim.createViewSelectionWidget(tileset));
+        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', 'scripts/Bentley/Assets/Icons/views.png', Bim.createViewSelectionWidget(tileset));
+        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', 'scripts/Bentley/Assets/Icons/models.png', Bim.createModelToggleWidget(tileset));
+        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', 'scripts/Bentley/Assets/Icons/categories.png', Bim.createCategoryToggleWidget(tileset));
     });
 });
 </script>
