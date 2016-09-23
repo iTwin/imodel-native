@@ -90,6 +90,8 @@ const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     {
     ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
     BeFileName searchDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
     searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
@@ -101,6 +103,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
 
     if (SUCCESS != m_db->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas()))
         return ERROR;
+    m_db->SaveChanges();
 
     m_db->ClearECDbCache();
 

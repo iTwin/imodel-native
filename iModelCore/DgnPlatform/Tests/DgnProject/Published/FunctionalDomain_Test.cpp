@@ -259,12 +259,14 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     FunctionalModelPtr model = FunctionalModel::Create(*m_db->Elements().GetRootSubject());
     ASSERT_TRUE(model.IsValid());
+    ASSERT_TRUE(model->IsRoleModel());
     ASSERT_EQ(DgnDbStatus::Success, model->Insert());
 
     // create a FunctionalComponent and set its FunctionalType
         {
         TestComponentPtr component = TestComponent::Create(*model, 1.0);
         ASSERT_TRUE(component.IsValid());
+        ASSERT_TRUE(component->IsRoleElement());
         ASSERT_FALSE(component->GetFunctionalTypeId().IsValid());
         ASSERT_FALSE(component->GetFunctionalType().IsValid());
         component->SetFunctionalType(functionalTypeId[0]);

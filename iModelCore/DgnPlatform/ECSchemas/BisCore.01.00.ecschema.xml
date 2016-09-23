@@ -337,6 +337,12 @@
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="RoleModel" displayLabel="Role Model">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
@@ -425,7 +431,7 @@
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PhysicalModel"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="PhysicalElement" />
         </Target>
     </ECRelationshipClass>
@@ -1940,6 +1946,7 @@
     <ECEntityClass typeName="RoleElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
