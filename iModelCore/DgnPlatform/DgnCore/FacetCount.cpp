@@ -8,6 +8,7 @@
 #include "DgnPlatformInternal.h"
 #if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
+#include <GeomLib_IsPlanarSurface.hxx>
 #endif
 
 #define TRIANGLE_MULTIPLIER 2
@@ -371,38 +372,59 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
+size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
     {
     size_t facetCount = 0;
 
     for (TopExp_Explorer faceExplorer (shape, TopAbs_FACE); faceExplorer.More(); faceExplorer.Next())
         {
-        try
-            {
-            CurveVectorPtr boundaries;
+        TopLoc_Location location;
+        Handle(Geom_Surface) faceSurf = BRep_Tool::Surface((const TopoDS_Face&)faceExplorer.Current(), location);
 
-            ISolidPrimitivePtr solidPrimitive = OCBRep::ToSolidPrimitive(boundaries, (const TopoDS_Face&)faceExplorer.Current());
-            if (solidPrimitive.IsValid())
+        GeomLib_IsPlanarSurface isPlanar(faceSurf);
+        if (isPlanar.IsPlanar())
+            {
+           CurveVectorPtr curveVector;
+            if (SUCCESS == OCBRep::CurveVectorFromPlanarFace(curveVector, (const TopoDS_Face&)faceExplorer.Current()))
                 {
-                facetCount += GetFacetCount(*solidPrimitive);
-                continue;
+                size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
+                facetCount += multiplier * GetFacetCount(*curveVector);
+                }
+            continue;
+            }
+
+        DRange2d uvRange;
+        BRepTools::UVBounds((const TopoDS_Face&)faceExplorer.Current(), uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
+
+        size_t uStrokeMax = 0, vStrokeMax = 0;
+        double stepSize = 1.0/3;
+        for (double i = 0.0; i <= 1.0; i+=stepSize)
+            {
+            double currentU = i * (uvRange.high.x - uvRange.low.x) + uvRange.low.x;
+            double currentV = i * (uvRange.high.y - uvRange.low.y) + uvRange.low.y;
+            Handle(Geom_Curve) uCurve = faceSurf->UIso(currentU);
+            Handle(Geom_Curve) vCurve = faceSurf->VIso(currentV);
+
+            ICurvePrimitivePtr uPrimitive = OCBRep::ToCurvePrimitive(uCurve, uCurve->FirstParameter(), uCurve->LastParameter()),
+                               vPrimitive = OCBRep::ToCurvePrimitive(vCurve, vCurve->FirstParameter(), vCurve->LastParameter());
+
+            if (uPrimitive.IsValid())
+                {
+                CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, uPrimitive);
+                size_t strokeCount = GetFacetCount(*curveVector);
+                uStrokeMax = uStrokeMax < strokeCount ? strokeCount : uStrokeMax;
                 }
 
-            CurveVectorPtr curveVector = OCBRep::ToCurveVector((const TopoDS_Face&)faceExplorer.Current());
-            if (curveVector.IsValid())
+            if (vPrimitive.IsValid())
                 {
-                facetCount += GetFacetCount(*curveVector);
-                continue;
-                }
+                CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, vPrimitive);
+                size_t strokeCount = GetFacetCount(*curveVector);
+                vStrokeMax = vStrokeMax < strokeCount ? strokeCount : vStrokeMax;
+               }
+            }
 
-            // WIP: Bspline fix needed. Approximation tend to be way over (1000+ ratio)
-            MSBsplineSurfacePtr bspline = OCBRep::ToBsplineSurface(boundaries, (const TopoDS_Face&)faceExplorer.Current());
-            if (bspline.IsValid())
-                facetCount += GetFacetCount(*bspline);
-            }
-        catch (...)
-            {
-            }
+        size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
+        facetCount += uStrokeMax * vStrokeMax * multiplier;
         }
 
     return facetCount;
