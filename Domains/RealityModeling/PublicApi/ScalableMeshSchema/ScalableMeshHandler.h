@@ -15,7 +15,8 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
-
+#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/MeshTile.h>
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
@@ -79,7 +80,7 @@ public :
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -96,6 +97,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         mutable DMatrix4d                               m_storageToUorsTransfo; 
         mutable bool m_forceRedraw;
         mutable bset<uint64_t>                          m_activeClips;
+
+        void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
                        
     protected:
 
@@ -126,7 +129,9 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         
-        SCALABLEMESH_SCHEMA_EXPORT void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const override;
+        SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
+
+        virtual Render::TileGenerator::Status _GenerateMeshTiles(Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
 
     public:
 
