@@ -105,10 +105,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct SpatialBounds : QueryViewController::SpatialQuery
+struct SpatialBounds : SpatialViewController::SpatialQuery
 {
     BeSQLite::RTree3dVal  m_bounds;
-    SpatialBounds() : QueryViewController::SpatialQuery(nullptr,nullptr) {m_bounds.Invalidate();}
+    SpatialBounds() : SpatialViewController::SpatialQuery(nullptr,nullptr) {m_bounds.Invalidate();}
     int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const& info) override
         {
         BeAssert(6 == info.m_nCoord);

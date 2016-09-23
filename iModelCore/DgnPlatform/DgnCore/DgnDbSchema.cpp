@@ -275,22 +275,22 @@ DbResult DgnDb::CreateRepositoryLink(CreateDgnDbParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     {
-    CreateTable(DGN_TABLE_Domain,   "[Name] TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
-                                    "[Descr] TEXT,"
-                                    "[Version] INTEGER");
+    CreateTable(DGN_TABLE_Domain,   "Name TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
+                                    "Descr TEXT,"
+                                    "Version INTEGER");
 
-    CreateTable(DGN_TABLE_Handler,  "[ClassId] INTEGER PRIMARY KEY,"
-                                    "[Domain] TEXT NOT NULL COLLATE NoCase REFERENCES " DGN_TABLE_Domain "([Name]),"
-                                    "[Name] TEXT NOT NULL COLLATE NoCase,"
-                                    "[Permissions] INTEGER,"
-                                    "CONSTRAINT names UNIQUE([Domain],[Name])");
+    CreateTable(DGN_TABLE_Handler,  "ClassId INTEGER PRIMARY KEY,"
+                                    "Domain TEXT NOT NULL COLLATE NoCase REFERENCES " DGN_TABLE_Domain "(Name),"
+                                    "Name TEXT NOT NULL COLLATE NoCase,"
+                                    "Permissions INTEGER,"
+                                    "CONSTRAINT names UNIQUE(Domain,Name)");
 
-    CreateTable(DGN_TABLE_Txns, "[Id] INTEGER PRIMARY KEY NOT NULL," 
-                                "[Deleted] BOOLEAN,"
-                                "[Grouped] BOOLEAN,"
-                                "[Operation] TEXT,"
-                                "[Time] TIMESTAMP DEFAULT(julianday('now')),"
-                                "[Change] BLOB");
+    CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL," 
+                                "Deleted BOOLEAN,"
+                                "Grouped BOOLEAN,"
+                                "Operation TEXT,"
+                                "Time TIMESTAMP DEFAULT(julianday('now')),"
+                                "Change BLOB");
 
     Fonts().DbFontMap().CreateFontTable();
 
@@ -334,11 +334,6 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
-
-#ifdef NEEDSWORK_VIEW_SETTINGS_TRIGGER
-    ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " BIS_TABLE(BIS_CLASS_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
-               " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id;END");
-#endif
 
     DbResult result = DgnSearchableText::CreateTable(*this);
     BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");

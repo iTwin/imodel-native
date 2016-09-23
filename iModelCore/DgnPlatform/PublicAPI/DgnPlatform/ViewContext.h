@@ -353,7 +353,7 @@ public:
 struct RenderListContext : RenderContext
 {
     DEFINE_T_SUPER(RenderContext);
-    friend struct QueryViewController;
+    friend struct SpatialViewController;
 
 protected:
     bool m_wantStroke = true;
@@ -385,7 +385,7 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-    friend struct QueryViewController;
+    friend struct SpatialViewController;
 
 private:
     bool _CheckStop() override;

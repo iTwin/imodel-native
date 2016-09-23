@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/QueryView.cpp $
+|     $Source: DgnCore/SpatialViewController.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -50,25 +50,20 @@ Frustum::Frustum(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::QueryViewController(SpatialViewDefinition const& def) : T_Super(def)
+SpatialViewController::SpatialViewController(SpatialViewDefinition const& def) : T_Super(def)
     {
+    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
+    m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
+
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::~QueryViewController()
-    {
-    RequestAbort(true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* QueryViews decorate the copyright messages from reality models, if any.
+* SpatialViews decorate the copyright messages from reality models, if any.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_DrawDecorations(DecorateContextR context)
+void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
     DrawGroundPlane(context);
 
@@ -135,7 +130,7 @@ void QueryViewController::_DrawDecorations(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d QueryViewController::_GetViewedExtents(DgnViewportCR vp) const
+AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
     AxisAlignedBox3d box = GetDgnDb().Units().GetProjectExtents();
     box.Extend(GetGroundExtents(vp));
@@ -145,7 +140,7 @@ AxisAlignedBox3d QueryViewController::_GetViewedExtents(DgnViewportCR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::RequestAbort(bool wait)
+void SpatialViewController::RequestAbort(bool wait)
     {
     DgnDb::VerifyClientThread();
 
@@ -160,7 +155,7 @@ void QueryViewController::RequestAbort(bool wait)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
+void SpatialViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
@@ -171,7 +166,7 @@ void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
+void SpatialViewController::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
     if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
@@ -210,7 +205,7 @@ void SpatialViewController::ClearActiveVolume()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
+void SpatialViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
     RequestAbort(true);
     m_noQuery = exclusive;
@@ -220,7 +215,7 @@ void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::ClearAlwaysDrawn()
+void SpatialViewController::ClearAlwaysDrawn()
     {
     RequestAbort(true);
     m_special.m_always.clear();
@@ -230,7 +225,7 @@ void QueryViewController::ClearAlwaysDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
+void SpatialViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
@@ -239,7 +234,7 @@ void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::ClearNeverDrawn()
+void SpatialViewController::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
@@ -248,7 +243,7 @@ void QueryViewController::ClearNeverDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
+void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
     if (onOff == m_viewedModels.Contains(modelId))
         return;
@@ -271,7 +266,7 @@ void QueryViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnCategoryChange(bool singleEnabled)
+void SpatialViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
@@ -280,7 +275,7 @@ void QueryViewController::_OnCategoryChange(bool singleEnabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::ElementsQuery::TestElement(DgnElementId elId)
+bool SpatialViewController::ElementsQuery::TestElement(DgnElementId elId)
     {
     if (IsNever(elId))
         return false;
@@ -295,7 +290,7 @@ bool QueryViewController::ElementsQuery::TestElement(DgnElementId elId)
 * virtual method bound to the "InVirtualSet(@vset,e.ModelId,g.CategoryId)" SQL function for view query.
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
+bool SpatialViewController::_IsInSet(int nVals, DbValue const* vals) const
     {
     BeAssert(nVals == 2);   // we need ModelId and Category
 
@@ -304,16 +299,9 @@ bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnAttachedToViewport(DgnViewportR)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_DrawView(ViewContextR context)
+void SpatialViewController::_DrawView(ViewContextR context)
     {
     if (m_activeVolume.IsValid())
         context.SetActiveVolume(*m_activeVolume);
@@ -339,7 +327,7 @@ void QueryViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_InvalidateScene()
+void SpatialViewController::_InvalidateScene()
     {
     RequestAbort(false);
     }
@@ -347,7 +335,7 @@ void QueryViewController::_InvalidateScene()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::NonSceneQuery::NonSceneQuery(QueryViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query())
+SpatialViewController::NonSceneQuery::NonSceneQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query())
     {
     if (0.0 != view.GetNonSceneLODSize()) // do we want to filter small elements during progressive phase?
         {
@@ -361,7 +349,7 @@ QueryViewController::NonSceneQuery::NonSceneQuery(QueryViewControllerCR view, Fr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::ProgressiveTask::ProgressiveTask(QueryViewControllerR view, DgnViewportCR vp) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp), m_view(view)
+SpatialViewController::ProgressiveTask::ProgressiveTask(SpatialViewControllerR view, DgnViewportCR vp) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp), m_view(view)
     {
     }
 
@@ -371,7 +359,7 @@ QueryViewController::ProgressiveTask::ProgressiveTask(QueryViewControllerR view,
 * are in the scene if we abort
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
+void SpatialViewController::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
     {
     context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
     DgnElements& pool = GetDgnDb().Elements();
@@ -403,11 +391,13 @@ void QueryViewController::AddtoSceneQuick(SceneContextR context, QueryResults& r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_CreateTerrain(TerrainContextR context) 
+void SpatialViewController::_CreateTerrain(TerrainContextR context) 
     {
     DgnDb::VerifyClientThread();
 
     T_Super::_CreateTerrain(context);
+
+    DrawSkyBox(context);
 
     m_copyrightMsgs.clear();
     auto& models = GetDgnDb().Models();
@@ -431,7 +421,7 @@ void QueryViewController::_CreateTerrain(TerrainContextR context)
 * Create the scene and potentially schedule progressive tasks
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_CreateScene(SceneContextR context)
+void SpatialViewController::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
@@ -524,16 +514,16 @@ void QueryViewController::_CreateScene(SceneContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::_IsSceneReady() const
+bool SpatialViewController::_IsSceneReady() const
     {
     return m_results.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Visit all of the elements in a QueryViewController. This is used for picking, etc.
+* Visit all of the elements in a SpatialViewController. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_VisitAllElements(ViewContextR context)
+void SpatialViewController::_VisitAllElements(ViewContextR context)
     {
     RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query()); // NOTE: the context may have a smaller frustum than the view
 
@@ -542,7 +532,7 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     if (m_noQuery)
         {
         // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
-        QueryViewController::QueryResultsPtr results = rangeQuery.GetResults();
+        SpatialViewController::QueryResultsPtr results = rangeQuery.GetResults();
 
         for (auto& thisScore : results->m_scores)
             {
@@ -615,7 +605,7 @@ void DgnQueryQueue::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::RemovePending(QueryViewControllerCR view)
+void DgnQueryQueue::RemovePending(SpatialViewControllerCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -658,7 +648,7 @@ void DgnQueryQueue::Add(Task& task)
 * Note: Must be called on client thread with query queue mutex held!
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryQueue::HasActiveOrPending(QueryViewControllerCR view)
+bool DgnQueryQueue::HasActiveOrPending(SpatialViewControllerCR view)
     {
     if (m_active.IsValid() && m_active->IsForView(view))
         return true;
@@ -675,7 +665,7 @@ bool DgnQueryQueue::HasActiveOrPending(QueryViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::WaitFor(QueryViewControllerCR view)
+void DgnQueryQueue::WaitFor(SpatialViewControllerCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -752,7 +742,7 @@ void DgnQueryQueue::Process()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::RangeQuery::_Go()
+void SpatialViewController::RangeQuery::_Go()
     {
     DgnDb::VerifyQueryThread();
     m_view.m_results = DoQuery();
@@ -761,7 +751,7 @@ void QueryViewController::RangeQuery::_Go()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::RangeQuery::AddAlwaysDrawn(QueryViewControllerCR view)
+void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)
     {
     if (!HasAlwaysList())
         return;
@@ -783,7 +773,7 @@ void QueryViewController::RangeQuery::AddAlwaysDrawn(QueryViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::QueryResultsPtr QueryViewController::RangeQuery::DoQuery()
+SpatialViewController::QueryResultsPtr SpatialViewController::RangeQuery::DoQuery()
     {
     StopWatch watch(true);
     m_view.SetAbortQuery(false); // gets turned on by client thread
@@ -860,7 +850,7 @@ QueryViewController::QueryResultsPtr QueryViewController::RangeQuery::DoQuery()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RTreeMatchFunction::Within QueryViewController::SpatialQuery::TestVolume(FrustumCR box, RTree3dValCP coords)
+RTreeMatchFunction::Within SpatialViewController::SpatialQuery::TestVolume(FrustumCR box, RTree3dValCP coords)
     {
     if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
         return RTreeMatchFunction::Within::Outside;
@@ -883,7 +873,7 @@ RTreeMatchFunction::Within QueryViewController::SpatialQuery::TestVolume(Frustum
 * callback function for "MATCH DGN_rTree(?1)" against the spatial index
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-int QueryViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int SpatialViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     BeAssert(6 == info.m_nCoord);
     info.m_within = RTreeMatchFunction::Within::Outside;
@@ -921,7 +911,7 @@ int QueryViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion QueryViewController::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     m_thisBatch = 0; // restart every pass
     m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
@@ -975,7 +965,7 @@ ProgressiveTask::Completion QueryViewController::ProgressiveTask::_DoProgressive
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_DoHeal(HealContext& context)
+void SpatialViewController::_DoHeal(HealContext& context)
     {
     if (!m_scene.IsValid() || m_scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
        return;
@@ -1007,7 +997,7 @@ void QueryViewController::_DoHeal(HealContext& context)
 * For range queries, we only enable this after we've found our maximum number of hits.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
+void SpatialViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
     {
     BSIRect screenRect = vp.GetViewRect();
     if (screenRect.Width() > 0 && screenRect.Height() > 0)
@@ -1022,7 +1012,7 @@ void QueryViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double siz
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::RangeQuery::RangeQuery(QueryViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) :
+SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) :
         SpatialQuery(&view.m_special, view.GetActiveVolume().get()), DgnQueryQueue::Task(view, plan)
     {
     m_count = 0;
@@ -1056,7 +1046,7 @@ QueryViewController::RangeQuery::RangeQuery(QueryViewControllerCR view, FrustumC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
+bool SpatialViewController::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
     {
     npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]);
     npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]);
@@ -1080,7 +1070,7 @@ bool QueryViewController::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR lo
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR box)
+bool SpatialViewController::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR box)
     {
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
@@ -1237,7 +1227,7 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::SpatialQuery::SkewTest(RTree3dValCP testRange)
+bool SpatialViewController::SpatialQuery::SkewTest(RTree3dValCP testRange)
     {
     if (!m_doSkewTest || testRange->Intersects(m_backFace))
         return true;
@@ -1321,7 +1311,7 @@ bool QueryViewController::SpatialQuery::SkewTest(RTree3dValCP testRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SpatialQuery::SetFrustum(FrustumCR frustum)
+void SpatialViewController::SpatialQuery::SetFrustum(FrustumCR frustum)
     {
     DRange3d range = frustum.ToRange();
     m_boundingRange.FromRange(range);
@@ -1343,7 +1333,7 @@ void QueryViewController::SpatialQuery::SetFrustum(FrustumCR frustum)
 * this method must be called from the client thread.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SpatialQuery::Start(QueryViewControllerCR view)
+void SpatialViewController::SpatialQuery::Start(SpatialViewControllerCR view)
     {
     view.GetDgnDb().GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
@@ -1354,7 +1344,7 @@ void QueryViewController::SpatialQuery::Start(QueryViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::ElementsQuery::Start(QueryViewControllerCR view)
+void SpatialViewController::ElementsQuery::Start(SpatialViewControllerCR view)
     {
     view.GetDgnDb().GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
     int vSetCol = m_viewStmt->GetParameterIndex("@vset");
@@ -1368,7 +1358,7 @@ void QueryViewController::ElementsQuery::Start(QueryViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId QueryViewController::SpatialQuery::StepRtree()
+DgnElementId SpatialViewController::SpatialQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
