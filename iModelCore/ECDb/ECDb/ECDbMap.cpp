@@ -381,7 +381,7 @@ MappingStatus ECDbMap::DoMapSchemas()
     const bool isJoinedTableMapping = tphInfo.IsValid() && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
     if (classMapLoadContext.GetBaseClassId().IsValid() && !isJoinedTableMapping)
         {
-        ECClassCP baseClass =  GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
+        ECClassCP baseClass = GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
         if (baseClass != nullptr)
             {
             ClassMapPtr baseClassMapPtr = nullptr;

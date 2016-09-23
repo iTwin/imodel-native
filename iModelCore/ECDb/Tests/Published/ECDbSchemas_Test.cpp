@@ -403,8 +403,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //========================[sc_AAFoo]=========================================================
     Utf8CP tblAAFoo = "sc_AAFoo";
     EXPECT_TRUE(db.TableExists(tblAAFoo));
-    EXPECT_FALSE(db.TableExists("AFooChild")); //This child class of AAFoo which have TablePerHierarchy so table for its child classes should not be created
-    EXPECT_EQ(26, GetColumnCount(db, tblAAFoo));
+    EXPECT_EQ(24, GetColumnCount(db, tblAAFoo));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "ECInstanceId"));
     //This a TablePerHieracrchy
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "ECClassId"));
@@ -423,7 +422,6 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "point3dAAFoo_X"));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "point3dAAFoo_Y"));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "point3dAAFoo_Z"));
-    //EXPECT_TRUE (db.ColumnExists(tblAAFoo, "anglesAAFoo")); // we are no longer stuffing structs into blobs
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "commonGeometryAAFoo"));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "colorAAFoo"));
 
@@ -431,11 +429,6 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "arrayOfIntsAAFoo"));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "arrayOfpoint2dAAFoo"));
     EXPECT_TRUE(db.ColumnExists(tblAAFoo, "arrayOfpoint3dAAFoo"));
-
-    //From ABFoo since its one of the base class of child class AFooChild
-    EXPECT_TRUE(db.ColumnExists(tblAAFoo, "stringABFoo"));
-    //From AFooChild which is child of AAFoo
-    EXPECT_TRUE(db.ColumnExists(tblAAFoo, "binaryAFooChild"));
 
     //========================[sc_Bar]===========================================================
     Utf8CP tblBar = "sc_Bar";
