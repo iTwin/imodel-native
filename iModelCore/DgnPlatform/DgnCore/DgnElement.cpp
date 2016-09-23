@@ -3002,6 +3002,14 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalType2d>(GetGraphicalTypeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false), m_preserveOriginalModels(true)

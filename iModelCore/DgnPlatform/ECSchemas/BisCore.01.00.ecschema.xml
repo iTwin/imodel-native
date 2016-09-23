@@ -632,6 +632,21 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="GraphicalElement2d" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="GraphicalType2d"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
@@ -963,6 +978,8 @@
     <ECEntityClass typeName="GraphicalElement2d" modifier="Abstract">
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
         <BaseClass>GeometricElement2d</BaseClass>
+        <ECNavigationProperty propertyName="GraphicalType" relationshipName="GraphicalElement2dIsOfType" direction="Forward">
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement2d">
         <!-- 2D element used to annotate drawings and sheets -->

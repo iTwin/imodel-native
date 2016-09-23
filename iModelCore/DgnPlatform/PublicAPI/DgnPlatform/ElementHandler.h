@@ -177,6 +177,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for GraphicalType2d
+    struct EXPORT_VTABLE_ATTRIBUTE GraphicalType2d : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalType2d, Dgn::GraphicalType2d, GraphicalType2d, Definition, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for Subject
     struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationContent
     {

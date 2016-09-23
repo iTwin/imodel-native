@@ -49,6 +49,7 @@
 #define BIS_CLASS_GraphicalElement2d        "GraphicalElement2d"
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
+#define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_LineStyle                 "LineStyle"

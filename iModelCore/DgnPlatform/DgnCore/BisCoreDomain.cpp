@@ -66,6 +66,7 @@ HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
+HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(Subject)
 };
 
@@ -142,6 +143,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());

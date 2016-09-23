@@ -1203,12 +1203,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     SetupSeedProject();
     
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
-    EXPECT_TRUE(categoryId.IsValid());
-
     PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
     PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
-    EXPECT_TRUE(modelA.IsValid());
-    EXPECT_TRUE(modelB.IsValid());
 
     GenericPhysicalObjectPtr parentA = GenericPhysicalObject::Create(*modelA, categoryId);
     GenericPhysicalObjectPtr parentB = GenericPhysicalObject::Create(*modelB, categoryId);
@@ -1291,10 +1287,7 @@ TEST_F(DgnElementTests, FederationGuid)
     SetupSeedProject();
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
-    EXPECT_TRUE(model.IsValid());
-
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
-    EXPECT_TRUE(categoryId.IsValid());
 
     DgnElementId elementId;
     BeGuid federationGuid(true);
@@ -1436,10 +1429,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     // create a PhysicalElement and set its PhysicalType
         {
         DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
-        ASSERT_TRUE(categoryId.IsValid());
-
         PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
-        ASSERT_TRUE(model.IsValid());
 
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
@@ -1487,6 +1477,108 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, GraphicalType2dCRUD)
+    {
+    SetupSeedProject();
+
+    DgnElementId graphicalTypeId[3];
+    DgnElementId elementId;
+
+    // insert some sample GraphicalType2ds
+    for (int32_t i=0; i<_countof(graphicalTypeId); i++)
+        {
+        TestGraphicalType2dPtr graphicalType = TestGraphicalType2d::Create(*m_db);
+        ASSERT_TRUE(graphicalType.IsValid());
+        graphicalType->SetUserLabel(Utf8PrintfString("GraphicalType2d%d", i).c_str());
+        graphicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
+        graphicalType->SetIntProperty(i);
+        ASSERT_TRUE(graphicalType->Insert().IsValid());
+        graphicalTypeId[i] = graphicalType->GetElementId();
+        }
+
+    // flush cache to make sure GraphicalTypes were inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(graphicalTypeId); i++)
+            {
+            TestGraphicalType2dPtr graphicalType = m_db->Elements().GetForEdit<TestGraphicalType2d>(graphicalTypeId[i]);
+            ASSERT_TRUE(graphicalType.IsValid());
+            ASSERT_STREQ(graphicalType->GetStringProperty().c_str(), Utf8PrintfString("String%d", i).c_str());
+            ASSERT_EQ(graphicalType->GetIntProperty(), i);
+
+            graphicalType->SetStringProperty(Utf8PrintfString("Updated%d", i).c_str());
+            graphicalType->SetIntProperty(i+100);
+            ASSERT_TRUE(graphicalType->Update().IsValid());
+            }
+        }
+
+    // flush cache to make sure GraphicalTypes were updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(graphicalTypeId); i++)
+            {
+            TestGraphicalType2dCPtr graphicalType = m_db->Elements().Get<TestGraphicalType2d>(graphicalTypeId[i]);
+            ASSERT_TRUE(graphicalType.IsValid());
+            ASSERT_STREQ(graphicalType->GetStringProperty().c_str(), Utf8PrintfString("Updated%d", i).c_str());
+            ASSERT_EQ(graphicalType->GetIntProperty(), i+100);
+            }
+        }
+
+    // create a TestElement2d and set its GraphicalType
+        {
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(GetDgnDb(), "TestCategory");
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), DgnModel::CreateModelCode("DrawingListModel"));
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), "Drawing");
+        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("DrawingModel"));
+
+        TestElement2dPtr element = TestElement2d::Create(GetDgnDb(), drawingModel->GetModelId(), categoryId, DgnCode(), 2.0);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetGraphicalType().IsValid());
+        element->SetGraphicalType(graphicalTypeId[0]);
+        ASSERT_TRUE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_TRUE(element->GetGraphicalType().IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        }
+
+    // flush cache to make sure the TestElement2d's GraphicalType was inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetGraphicalType().IsValid());
+        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[0].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1]));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the TestElement2d's GraphicalType was updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetGraphicalType().IsValid());
+        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[1].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId()));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the TestElement2d's GraphicalType was cleared properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetGraphicalType().IsValid());
+        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, EqualsTests)
@@ -1494,12 +1586,8 @@ TEST_F(DgnElementTests, EqualsTests)
     SetupSeedProject();
 
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
-    ASSERT_TRUE(categoryId.IsValid());
-
     PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
     PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
-    ASSERT_TRUE(modelA.IsValid());
-    ASSERT_TRUE(modelB.IsValid());
 
     GenericPhysicalObjectPtr elementA = GenericPhysicalObject::Create(*modelA, categoryId);
     ASSERT_TRUE(elementA.IsValid());

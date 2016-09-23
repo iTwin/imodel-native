@@ -39,6 +39,7 @@
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
+#define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
@@ -230,6 +231,38 @@ typedef RefCountedCPtr<TestPhysicalType> TestPhysicalTypeCPtr;
 struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalType, TestPhysicalType, TestPhysicalTypeHandler, Dgn::dgn_ElementHandler::PhysicalType, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestGraphicalType2d : Dgn::GraphicalType2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, Dgn::GraphicalType2d)
+    friend struct TestGraphicalType2dHandler;
+
+protected:
+    explicit TestGraphicalType2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestGraphicalType2d> Create(Dgn::DgnDbR);
+
+    Utf8String GetStringProperty() const {return GetPropertyValueString("StringProperty");}
+    void SetStringProperty(Utf8CP s) {SetPropertyValue("StringProperty", s);}
+
+    int32_t GetIntProperty() const {return GetPropertyValueInt32("IntProperty");}
+    void SetIntProperty(int32_t i) {SetPropertyValue("IntProperty", i);}
+};
+
+typedef RefCountedPtr<TestGraphicalType2d> TestGraphicalType2dPtr;
+typedef RefCountedCPtr<TestGraphicalType2d> TestGraphicalType2dCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestGraphicalType2dHandler : Dgn::dgn_ElementHandler::GraphicalType2d
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, TestGraphicalType2d, TestGraphicalType2dHandler, Dgn::dgn_ElementHandler::GraphicalType2d, )
 };
 
 //=======================================================================================

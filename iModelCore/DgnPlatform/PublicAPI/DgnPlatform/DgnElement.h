@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct Subject; struct Role;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct GraphicalType2d; struct Subject; struct Role;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -1934,8 +1934,19 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DEFINE_T_SUPER(GeometricElement2d);
+
 protected:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Set the GraphicalType for this GraphicalElement2d
+    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId) {return SetPropertyValue("GraphicalType", graphicalTypeId);}
+    //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
+    //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
+    DgnElementId GetGraphicalTypeId() const {return GetPropertyValueId<DgnElementId>("GraphicalType");}
+    //! Get the GraphicalType for this GraphicalElement2d
+    //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
+    DGNPLATFORM_EXPORT GraphicalType2dCPtr GetGraphicalType() const;
 };
 
 //=======================================================================================
@@ -2202,6 +2213,19 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : DefinitionElement
 
 protected:
     explicit PhysicalType(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalType2d : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GraphicalType2d, DefinitionElement)
+    friend struct dgn_ElementHandler::GraphicalType2d;
+
+protected:
+    explicit GraphicalType2d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

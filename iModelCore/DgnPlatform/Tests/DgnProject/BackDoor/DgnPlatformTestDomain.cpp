@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
+HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
@@ -358,6 +359,15 @@ TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGraphicalType2dPtr TestGraphicalType2d::Create(DgnDbR db)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestGraphicalType2dHandler::GetHandler());
+    return new TestGraphicalType2d(CreateParams(db, DgnModel::DictionaryId(), classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
@@ -489,6 +499,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
+    RegisterHandler(TestGraphicalType2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
