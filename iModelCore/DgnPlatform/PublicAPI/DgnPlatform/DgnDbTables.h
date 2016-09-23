@@ -52,6 +52,7 @@
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
+#define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"

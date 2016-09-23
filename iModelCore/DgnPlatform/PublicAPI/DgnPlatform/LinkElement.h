@@ -482,9 +482,9 @@ public:
 namespace dgn_ModelHandler
 {
     //! The ModelHandler for LinkModel
-    struct EXPORT_VTABLE_ATTRIBUTE Link : Model
+    struct EXPORT_VTABLE_ATTRIBUTE Link : Information
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkModel, LinkModel, Link, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkModel, LinkModel, Link, Information, DGNPLATFORM_EXPORT)
     };
 }
 

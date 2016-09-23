@@ -345,6 +345,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
         <BaseClass>Model</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel" displayLabel="Definition Model">
         <ECCustomAttributes>

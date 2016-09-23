@@ -41,13 +41,6 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! Identifies the coordinate space of a geometric model
-enum class CoordinateSpace
-    {
-    Local   = 0,    // the model has a local coordinate system
-    World   = 1,    // the model is in the physical (world) coordinate system.
-    };
-
 enum class AngleFormatVals
     {
     None        = -2,

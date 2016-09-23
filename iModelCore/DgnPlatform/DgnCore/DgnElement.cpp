@@ -2383,11 +2383,7 @@ DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP na
 
     if (0 == strcmp(name, "InSpatialIndex"))
         {
-        auto gmodel = GetModel()->ToGeometricModel();
-        if (nullptr == gmodel)
-            value.SetBoolean(false);
-        else
-            value.SetBoolean(CoordinateSpace::World == gmodel->GetCoordinateSpace());
+        value.SetBoolean(!GetModel()->IsTemplate());
         return DgnDbStatus::Success;
         }
     
@@ -3838,6 +3834,15 @@ DgnDbStatus GeometricElement2d::BindParams(ECSqlStatement& stmt)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::_OnInsert()
+    {
+    // GeometricElement2ds can only reside in 2D models
+    return GetModel()->Is2dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_BindInsertParams(ECSqlStatement& stmt)
@@ -3860,13 +3865,7 @@ DgnDbStatus GeometricElement2d::_BindUpdateParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
     {
-    auto model = GetModel();
-    auto geomModel = model.IsValid() ? model->ToGeometricModel() : nullptr;
-    BeAssert(nullptr != geomModel);
-    if (nullptr == geomModel)
-        return DgnDbStatus::WrongModel;
-
-    stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
+    stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
 
     if (!m_placement.IsValid())
         {
@@ -3888,6 +3887,15 @@ DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
         }
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_OnInsert()
+    {
+    // GeometricElement3ds can only reside in 3D models
+    return GetModel()->Is3dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

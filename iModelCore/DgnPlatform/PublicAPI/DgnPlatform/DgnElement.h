@@ -1777,6 +1777,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
@@ -1848,6 +1849,7 @@ protected:
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;

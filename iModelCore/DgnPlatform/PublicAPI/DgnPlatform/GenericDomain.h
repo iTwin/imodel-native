@@ -156,9 +156,9 @@ namespace generic_ModelHandler
 {
     //! The ModelHandler for GroupModel
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::Model
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::Information
     {
-        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::Information, DGNPLATFORM_EXPORT)
     };
 }
 
