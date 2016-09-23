@@ -67,14 +67,14 @@ struct IElemTopology : IRefCounted
     virtual IElemTopologyP _Clone() const = 0;
 
     //! Compare objects and return true if they should be considered the same.
-    virtual bool _IsEqual (IElemTopologyCR) const = 0;
+    virtual bool _IsEqual(IElemTopologyCR) const = 0;
 
     //! Return GeometrySource to handle requests related to transient geometry (like locate) where we don't have an DgnElement.
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
 
     //! Return IEditManipulator for interacting with transient geometry.
     //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
-    virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR) const {return nullptr;}
+    virtual IEditManipulatorPtr _GetTransientManipulator(HitDetailCR) const {return nullptr;}
 };
 
 DEFINE_REF_COUNTED_PTR(IElemTopology)
@@ -134,7 +134,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
-    DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
@@ -163,7 +162,7 @@ public:
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
-    void SetScanReturn() {_SetScanReturn();}
+    DGNPLATFORM_EXPORT void SetScanReturn();
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
     ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}

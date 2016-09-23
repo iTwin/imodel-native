@@ -194,7 +194,7 @@ Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); 
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(5);}
 DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(6);}
 BeGuid          DgnModels::Iterator::Entry::GetFederationGuid() const {Verify(); return m_sql->GetValueGuid(7);}
-bool            DgnModels::Iterator::Entry::GetIsTemplate() const { Verify(); return (0 != m_sql->GetValueInt(8)); }
+bool            DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(8));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -1508,12 +1508,6 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetModel::SheetModel(CreateParams const& params) : T_Super(params), m_size(params.m_size) {}
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
@@ -1927,11 +1921,11 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
     struct Pair { Utf8CP name; uint64_t value; };
     static const Pair s_pairs[] =
         {
-            { "insertelement", InsertElement },
-            { "updateelement", UpdateElement },
-            { "deleteelement", DeleteElement },
-            { "clone", Clone },
-            { "setcode", SetCode },
+            {"insertelement", InsertElement},
+            {"updateelement", UpdateElement},
+            {"deleteelement", DeleteElement},
+            {"clone", Clone },
+            {"setcode", SetCode },
         };
 
     for (auto const& pair : s_pairs)

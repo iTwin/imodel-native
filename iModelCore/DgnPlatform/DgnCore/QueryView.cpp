@@ -20,6 +20,7 @@
 #else
 #   define PROGRESSIVE_PRINTF(fmt, ...)
 #endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1372,4 +1373,3 @@ DgnElementId QueryViewController::SpatialQuery::StepRtree()
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
-
