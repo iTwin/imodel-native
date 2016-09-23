@@ -559,7 +559,7 @@
     <!-- // BimConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="BimConsole" SaveProduct="true">
+    <Product Name="BimConsole">
         <SubPart PartName="BimConsoleExe" />
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
