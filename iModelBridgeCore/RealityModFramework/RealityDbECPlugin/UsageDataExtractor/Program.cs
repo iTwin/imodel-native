@@ -36,7 +36,7 @@ namespace UsageDataExtractor
                     if ( args[0].ToLower() == "fetch" )
                         {
 
-                        if ( !File.Exists(fetchResultsFileName) )
+                        if ( !File.Exists(fetchResultsFileName) ) 
                             {
                             using ( StreamWriter file = new System.IO.StreamWriter(fetchResultsFileName) )
                                 {
@@ -103,19 +103,25 @@ namespace UsageDataExtractor
         private static void PrintUsage()
             {
             Console.Out.WriteLine("Usage 1: UsageDataExtractor.exe fetch [fetchFileName] [Year] [Month]");
-            Console.Out.WriteLine("The fetch mode searches the GCS logs located in the azure table and gets all xrdp GUIDs captured by the logs, along with the email of the requester.");
-            Console.Out.WriteLine("[fetchFileName] is the name of the file that will be written on disk and contain the results of the fetch operation.");
-            Console.Out.WriteLine("[Year] Is the year of the period for which we want the data.");
-            Console.Out.WriteLine("[Month] Is the month of the period for which we want the data.");
-            Console.Out.WriteLine("The extractor uses the year and month to know from which azure table to extract the data. Example : For 2016 08, the table name is BCLogETW201608");
-            Console.Out.WriteLine(@"Example: UsageDataExtractor.exe fetch C:\Users\MyName\Documents\QueryResults\xrdpGUIDsAUGUST.txt 2016 08");
-            Console.Out.WriteLine("BE WARNED: THIS MODE CAN RUN FOR MANY HOURS, PROBABLY SEVERAL DAYS");
+            Console.Out.WriteLine("  The fetch mode searches the GCS logs located in the azure table and gets all xrdp GUIDs captured by the logs,");
+            Console.Out.WriteLine("  along with the email of the requester.");
+            Console.Out.WriteLine("    [fetchFileName] is the name of the file that will be written on disk and contain the results of the fetch operation.");
+            Console.Out.WriteLine("    [Year] Is the year of the period for which we want the data.");
+            Console.Out.WriteLine("    [Month] Is the month of the period for which we want the data.");
+            Console.Out.WriteLine("    The extractor uses the year and month to know from which azure table to extract the data.");
+            Console.Out.WriteLine("         Example : For 2016 08, the table name is BCLogETW201608");
+            Console.Out.WriteLine(" ");
+            Console.Out.WriteLine(@"   Example: UsageDataExtractor.exe fetch C:\Data\QueryResults\xrdpGUIDsAUGUST.txt 2016 08");
+            Console.Out.WriteLine(" ");
+            Console.Out.WriteLine("  BE WARNED: THIS MODE CAN RUN FOR MANY HOURS, PROBABLY SEVERAL DAYS");
             Console.Out.WriteLine("-------------------------------------------------------------------------");
             Console.Out.WriteLine("Usage 2: UsageDataExtractor.exe extract [fetchFileName] [resultsFileNameBase]");
-            Console.Out.WriteLine("Downloads the actual xrdp files from the GCS and extracts useful information.");
-            Console.Out.WriteLine("[fetchFileName] is the name of the file containing the xrdp GUIDs. This should be the file created by the fetch mode.");
-            Console.Out.WriteLine("[resultsFileNameBase] is the base name of the result files that will be written on disk. An extension will be added by the program.");
-            Console.Out.WriteLine(@"Example: UsageDataExtractor.exe extract C:\Users\MyName\Documents\QueryResults\xrdpGUIDsAUGUST.txt C:\Users\MyName\Documents\QueryResults\resultsAUGUST");
+            Console.Out.WriteLine("    Downloads the actual xrdp files from the GCS and extracts useful information.");
+            Console.Out.WriteLine("    [fetchFileName] is the name of the file containing the xrdp GUIDs. This should be the file created by the fetch mode.");
+            Console.Out.WriteLine("    [resultsFileNameBase] is the base name of the result files that will be written on disk.");
+            Console.Out.WriteLine("                          An extension will be added by the program.");
+            Console.Out.WriteLine(" ");
+            Console.Out.WriteLine(@"   Example: UsageDataExtractor.exe extract C:\data\xrdpGUIDsAUGUST.txt C:\data\QueryResults\resultsAUGUST");
             }
 
         private static void FetchResults (StreamWriter file, string tableName, string lowerPartitionKey, string upperPartitionKey)
