@@ -758,16 +758,12 @@ DgnDbStatus ModelSelector::WriteModelIds() const
 DgnModelIdSet ModelSelector::GetModelIds() const
     {
     if (m_isLoaded)
-        {
         return vectorToSet(m_modelIds);
-        }
 
     m_isLoaded = true;
 
     if (!GetElementId().IsValid())
-        {
         return DgnModelIdSet();
-        }
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
@@ -794,9 +790,7 @@ DgnModelIdSet ModelSelector::GetModelIds() const
 bool ModelSelector::ContainsModelId(DgnModelId mid) const
     {
     if (m_isLoaded)
-        {
         return std::find(m_modelIds.begin(), m_modelIds.end(), mid) != m_modelIds.end();
-        }
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())

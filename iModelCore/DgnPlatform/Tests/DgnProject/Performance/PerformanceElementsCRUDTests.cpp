@@ -38,6 +38,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
+    seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
@@ -69,7 +70,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
             ASSERT_EQ (DgnDbStatus::Success, stat);
             }
         m_db->SaveChanges();
-        m_db->CloseDb();
         }
 
     BeFileName dgndbFilePath;
@@ -95,46 +95,110 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>bis:PhysicalElement</BaseClass>"
-        "    <ECProperty propertyName='Prop1_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop1_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop1_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop1_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop1_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop1_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element2' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element1</BaseClass>"
-        "    <ECProperty propertyName='Prop2_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop2_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop2_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop2_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element3' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element2</BaseClass>"
-        "    <ECProperty propertyName='Prop3_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop3_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop3_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop3_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop3_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop3_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element4' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
-        "    <ECProperty propertyName='Prop4_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop4_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop4_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop4_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element4b' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
-        "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop4b_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
-        "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
+        "    <ECProperty propertyName='Prop4b_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop4b_4' typeName='point3d' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>bis:ElementMultiAspect</BaseClass>"
@@ -993,6 +1057,12 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ECInstanceId"), id));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ModelId"), element->GetModelId()));
 
+    if (!element->GetFederationGuid().IsValid())
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
+
     // Bind Code
     DgnCode elementCode = DgnCode::CreateEmpty();
 
@@ -1022,7 +1092,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
 
     //bind Geometry
     {
-    ASSERT_TRUE (element->ToGeometrySourceP ()->HasGeometry());
+    ASSERT_TRUE (element->ToGeometrySourceP ()->HasGeometry ());
 
     // Compress the serialized GeomStream
     bool m_multiChunkGeomStream = false;
@@ -1059,7 +1129,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt (stmt.GetParameterIndex ("InSpatialIndex"), element->GetModel()->IsTemplate() ? 0 : 1));
 
-    Placement3dCR placement = element->ToGeometrySource3d()->GetPlacement();
+    Placement3dCR placement = element->ToGeometrySource3d ()->GetPlacement ();
     if (!placement.IsValid())
         {
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("Origin")));
@@ -1104,22 +1174,26 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
 void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className)
     {
     bool updateParams = true;
+
+    if (!element->GetFederationGuid ().IsValid ())
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
+
     // Bind Code
-    {
     DgnCode elementCode = element->GetCode();
-    IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
-    if (elementCode.IsEmpty())
+    if (elementCode.IsEmpty ())
         {
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Value").BindNull());
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("CodeValue")));
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Value").BindText(elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("CodeValue"), elementCode.GetValue ().c_str (), IECSqlBinder::MakeCopy::No));
         }
 
-    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
-    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
-    }
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("CodeAuthorityId"), elementCode.GetAuthority ()));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("CodeNamespace"), elementCode.GetNamespace ().c_str (), IECSqlBinder::MakeCopy::No));
 
     if (element->HasUserLabel())
         {
@@ -1303,13 +1377,13 @@ void PerformanceElementsCRUDTestFixture::ExtractSelectParams(BeSQLite::Statement
 //static
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSqlStatement& stmt)
     {
-    //printf ("\n String Prop : %s", stmt.GetValueText (15));
-    //printf ("\n int Prop : %lld", stmt.GetValueInt64 (16));
-    //printf ("\n double Prop : %f", stmt.GetValueDouble (17));
+    //printf ("\n String Prop : %s", stmt.GetValueText (20));
+    //printf ("\n int Prop : %lld", stmt.GetValueInt64 (21));
+    //printf ("\n double Prop : %f", stmt.GetValueDouble (22));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (15))) ||
-        (stmt.GetValueInt64 (16) != 10000000) ||
-        (stmt.GetValueDouble (17) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (20))) ||
+        (stmt.GetValueInt64 (21) != 10000000) ||
+        (stmt.GetValueDouble (22) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1322,9 +1396,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams(stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (18))) ||
-        (stmt.GetValueInt64 (19) != 20000000) ||
-        (stmt.GetValueDouble (20) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (23))) ||
+        (stmt.GetValueInt64 (24) != 20000000) ||
+        (stmt.GetValueDouble (25) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1337,9 +1411,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams(stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (21))) ||
-        (stmt.GetValueInt64 (22) != 30000000) ||
-        (stmt.GetValueDouble (23) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (26))) ||
+        (stmt.GetValueInt64 (27) != 30000000) ||
+        (stmt.GetValueDouble (28) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1352,9 +1426,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams(stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (24))) ||
-        (stmt.GetValueInt64 (25) != 40000000) ||
-        (stmt.GetValueDouble (26) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (29))) ||
+        (stmt.GetValueInt64 (30) != 40000000) ||
+        (stmt.GetValueDouble (31) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1559,7 +1633,7 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql(Utf8CP className, Utf8St
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties(true))
         {
-        if (0 == strcmp("LastMod", prop->GetName().c_str()))
+        if (0 == strcmp ("LastMod", prop->GetName ().c_str ()) || 0 == strcmp ("UserProperties", prop->GetName ().c_str ()) || 0 == strcmp ("PhysicalType", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {
@@ -1614,7 +1688,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql(Utf8CP className, Utf8St
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties(true))
         {
-        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()))
+        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()) || 0 == strcmp ("UserProperties", prop->GetName ().c_str ()) || 0 == strcmp ("PhysicalType", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {

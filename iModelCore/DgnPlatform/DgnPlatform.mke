@@ -359,7 +359,7 @@ $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.c
 
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
-$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(ViewControllerDepends) ${MultiCompileDepends}
+$(CoreObjs)SpatialViewController$(oext) :           $(DgnCoreDir)SpatialViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 

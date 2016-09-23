@@ -52,15 +52,11 @@ Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
 var viewset = new Bim.Viewset(viewJsonUrl);
 Cesium.when(viewset.readyPromise).then(function() {
-    var viewer = new Cesium.Viewer('cesiumContainer', viewset.createCesiumViewerOptions());
-    viewer.extend(Bim.viewerInspectorMixin);
-
-    var tileset = new Bim.Tileset(viewset, viewer);
+    var tileset = new Bim.Tileset(viewset);
     Cesium.when(tileset.readyPromise).then(function() {
-        var toolbar = new Bim.Toolbar(viewer);
-        var modelsButton = new Bim.ToolbarButton(toolbar, 'Models', Bim.createModelToggleWidget(tileset));
-        var categoriesButton = new Bim.ToolbarButton(toolbar, 'Categories', Bim.createCategoryToggleWidget(tileset));
-        var viewsButton = new Bim.ToolbarButton(toolbar, 'Views', Bim.createViewSelectionWidget(tileset));
+        var viewer = new Bim.Viewer('cesiumContainer', tileset, { 'cesiumViewerOptions': viewset.createCesiumViewerOptions() });
+        viewer.cesiumViewer.extend(Bim.viewerInspectorMixin);
+        viewer.createDefaultToolbar();
     });
 });
 </script>

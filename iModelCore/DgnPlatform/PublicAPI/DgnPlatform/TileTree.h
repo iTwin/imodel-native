@@ -207,7 +207,7 @@ public:
     RealityData::CachePtr GetCache() const {return m_cache;}
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
-    Dgn::Render::SystemP GetRenderSystem() {return m_renderSystem;}
+    Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
 
     //! Get the full name of a Tile in this TileTree. By default it concatenates the tile name to the rootDir

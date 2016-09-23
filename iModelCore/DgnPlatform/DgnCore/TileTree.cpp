@@ -490,8 +490,6 @@ void Tile::Draw(DrawArgsR args, int depth) const
 
     bool tooCoarse = true;
 
-    BeAssert(m_parent==nullptr || !m_parent->m_range.IsValid() || m_range.IsContained(m_parent->m_range));
-
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
