@@ -975,7 +975,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     if (projectName.Contains(WString(L"load_test")))
         {
         size_t nbLoadedNodes = 0;
-        m_smPtr->LoadAllNodeHeaders(nbLoadedNodes, 6);
+        m_smPtr->LoadAllNodeData(nbLoadedNodes, 10);
         }
 #endif
 
