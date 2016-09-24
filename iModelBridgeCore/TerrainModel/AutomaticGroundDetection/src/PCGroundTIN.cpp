@@ -13,7 +13,6 @@
 
 #include "PCGroundTIN.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_POINTCLOUDAPP
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -33,7 +32,7 @@ const unsigned int PCGroundTINMT::MAX_NUMBER_THREAD = 8;
 BeCriticalSection PCGroundTINMT::s_CSPCGroundTIN;
 BeCriticalSection PCGroundTINMT::s_newPointToAddCS;
 BeCriticalSection PCGroundTINMT::s_dtmLibCS;
-static const UInt32 PROGESS_UPDATE_TIME = 2000;
+static const uint32_t PROGESS_UPDATE_TIME = 2000;
 
 /*=================================================================================**//**
 * Wrapper class over a ProgressReport class to support multithread
@@ -426,14 +425,9 @@ m_pAcceptedPointCollection(TINPointContainer::Create())
     {
     DRange3d boundingBoxMeters = ComputeBoundingBox(pcGroundTIN.GetParamR());
     pcGroundTIN.GetParam().GetMetersToUors().Multiply(m_boundingBoxUors, boundingBoxMeters);
-    m_pPointsProvider = IPointsProvider::CreateFrom(pcGroundTIN.GetParam().GetElementHandle(), &m_boundingBoxUors);
-    m_pPointsProvider->SetUseViewFilters(pcGroundTIN.GetParam().GetUseViewFilters());
+    m_pPointsProvider = IPointsProvider::CreateFrom(pcGroundTIN.GetParam().GetElementHandle(), &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(pcGroundTIN.GetParam().GetUseMultiThread());
-    m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...
-    PointCloud::IPointCloudDataQuery::QUERY_MODE queryMode;
-    int viewNumber;
-    pcGroundTIN.GetParam().GetQueryMode(queryMode, viewNumber);
-    m_pPointsProvider->SetQueryMode(queryMode, viewNumber);
+    m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -901,6 +895,7 @@ size_t  DensifyTriangleWork::_GetMemorySize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+/*
 void QueryAllPointsForFirstSeedPointWork::_DoWork()
     {
     try
@@ -914,7 +909,7 @@ void QueryAllPointsForFirstSeedPointWork::_DoWork()
         ProgressMonitor::SignalErrorInThread();
         }
     }
-
+*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -996,7 +991,7 @@ m_isFirstIteration(true)
         }
     m_pHeightDeltaHisto = DiscreetHistogram::Create(histoStepPrecisionFactor, (maxValue - minValue), static_cast<size_t>(histoSteps));
     m_pAnglesHisto = DiscreetHistogram::Create(0, PI / 2.0, 10000);
-
+	/*
     if (GroundDetectionParameters::USE_EXISTING_DTM == params.GetCreateDtmFile() && !WString::IsNullOrEmpty(params.GetDtmFilename().c_str()))
         {
         m_pBcDtm = BcDtmProvider::CreateFrom(params.GetDtmFilename().c_str());
@@ -1006,6 +1001,7 @@ m_isFirstIteration(true)
         if (!params.GetDensifyTin() && !params.GetClassifyPointCloud())
             ComputeParameterFromTINPoints();
         }
+		*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1292,13 +1288,6 @@ StatusInt PCGroundTIN::_Classify()
     for (size_t i = 0; i < m_pGDGrid->GetSize() && progressMonitor.InProgress(); i++, IncrementWorkDone())
         {
         GridCellEntryPtr pGridCellEntry = m_pGDGrid->GetGridCellEntry(i);
-
-        BeAssert(NULL!=GetParam().GetElementHandleToClassifyCP());
-        if (SUCCESS != pGridCellEntry->Classify(*GetParam().GetElementHandleToClassifyCP(),*this))
-            {
-            m_pReport->EndPhase(L"ABORT - Classification");
-            return ERROR;//User abort
-            }
         }
     progressMonitor.FinalStageProcessing();
 
@@ -1586,23 +1575,6 @@ bool PCGroundTIN::_IsAccepted(DPoint3d const& point) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PCGroundTIN::SaveDtmFile()
-    {
-    StatusInt status(SUCCESS);
-    if (GroundDetectionParameters::CREATE_NEW_DTM == GetParam().GetCreateDtmFile() || 
-        GroundDetectionParameters::USE_EXISTING_DTM == GetParam().GetCreateDtmFile() )
-        {
-        BeFileName dtmFileName(GetParam().GetDtmFilename());
-        if (WString::IsNullOrEmpty(dtmFileName.c_str()))
-            return ERROR;
-        status = m_pBcDtm->SaveDtmFile(dtmFileName.c_str(), GetParam().GetDtmFileType());
-        }
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Daniel.Mckenzie                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PCGroundTIN::_GetDTMPoints(bvector<DPoint3d>& points)
@@ -1640,6 +1612,8 @@ PCGroundTINMT::~PCGroundTINMT()
     FlushThreadPoolWork();
     }
 
+//GDZERO
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1775,7 +1749,7 @@ void PCGroundTINMT::_SetNewSeedPoints(const bvector<DPoint3d>& newpoints)
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PCGroundTINMT::_CreateInitialTIN()
-    {
+    {	
     m_pReport->StartPhase(1, L"START - Find Initial Seed Points");
     if (!m_pReport->CheckContinueOnProgress())
         return ERROR;//User abort
@@ -1808,7 +1782,7 @@ StatusInt PCGroundTINMT::_CreateInitialTIN()
 
 
     //If we don't want to densify or classify, at least compute our parameters once.
-    if (!m_pParams->GetDensifyTin() && !m_pParams->GetClassifyPointCloud())
+    if (!m_pParams->GetDensifyTin())
         {
         size_t trianglesCount = _ComputeTriangulation();
         if (trianglesCount == 0)
@@ -1957,6 +1931,6 @@ StatusInt PCGroundTINMT::_Classify()
     m_pReport->EndPhase(L"END - Classification");
     return SUCCESS;
     }
-
+#endif
 
 END_GROUND_DETECTION_NAMESPACE

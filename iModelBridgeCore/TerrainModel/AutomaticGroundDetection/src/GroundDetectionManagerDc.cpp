@@ -11,12 +11,9 @@
 #include "GroundDetectionManagerDc.h"
 #include "PCGroundTIN.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
-USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
-USING_NAMESPACE_DCSTMCORE
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -65,6 +62,7 @@ StatusInt GroundDetectionManagerDc::_DoGroundDetection(GroundDetectionParameters
 
 
     //Classify all point cloud points from resulting TIN
+	/*
     if (pParameters->GetClassifyPointCloud() && (status == SUCCESS) && (NULL!=params.GetElementHandleToClassifyCP()))
         {
         // Create channel handler for saving ground channel
@@ -80,18 +78,9 @@ StatusInt GroundDetectionManagerDc::_DoGroundDetection(GroundDetectionParameters
 
         // For undo/redo classification
         ChannelUndoRedoManager::GetInstance().RecordUndoRedo(true, ClassificationChannelManager::Get()._GetExtension());
-        }
+        }        
+		*/
     
-    //Attach result in STM Manager
-    if (params.GetCreateStmAttachment())
-        {
-        MrDTMNewSettings stmSettings;
-        BeFileName stmFilename(params.GetStmFilename());
-        BeFileName tinFilename(params.GetDtmFilename());
-
-        StmManager::CreateNewStmAttachmentWithElevationFromFile(stmFilename.c_str(), stmSettings, tinFilename.c_str(), BENTLEY_NAMESPACE_NAME::MrDTM::DTMSourceDataType::DTM_SOURCE_DATA_DTM);
-        }
-
     //Destroy PCGroundTIN - we want to recreate it on next ground detection
     m_PCGroundTIN = nullptr;    
     

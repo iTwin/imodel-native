@@ -7,11 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "GroundDetectionManager.h"
-#include "IGroundDetectionServices.h"
+//#include "GroundDetectionManager.h"
+#include <AutomaticGroundDetection\IGroundDetectionServices.h>
 
 GROUND_DETECTION_TYPEDEF(PCGroundTIN)
-GROUND_DETECTION_REF_COUNTED_PTR(PCGroundTIN)
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 

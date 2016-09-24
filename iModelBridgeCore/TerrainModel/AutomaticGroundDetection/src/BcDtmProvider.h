@@ -76,8 +76,7 @@ private:
     virtual void        _AddPoint(DPoint3d const& point) override;
     virtual long        _ComputeTriangulation() override;
     virtual bool        _FindNearestTriangleDistanceFromPoint(Triangle* pTri, double& distance, DPoint3d const& point) const override;
-    virtual void        _ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) const override;
-    virtual StatusInt   _SaveDtmFile(WChar* filename, GroundDetectionParameters::DTMFileTypeOptions fileType);
+    virtual void        _ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) const override;    
     virtual StatusInt   _GetDTMPoints(DPoint3d* pPoints) const override;
 
 }; // BcDtmProvider

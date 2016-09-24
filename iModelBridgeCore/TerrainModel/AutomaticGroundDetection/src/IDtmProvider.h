@@ -162,13 +162,12 @@ public:
     size_t         size() const { return _size(); }
 
     size_t      GetTriangleCount() const { return _GetTriangleCount(); }
-     size_t      GetPointCount() const { return _GetPointCount(); }
-     void        AddPoint(DPoint3d const& point) { return _AddPoint(point); }
-     long        ComputeTriangulation() { return _ComputeTriangulation(); }
+     size_t     GetPointCount() const { return _GetPointCount(); }
+     void       AddPoint(DPoint3d const& point) { return _AddPoint(point); }
+     long       ComputeTriangulation() { return _ComputeTriangulation(); }
     bool        FindNearestTriangleDistanceFromPoint(Triangle* pTri, double& distance, DPoint3d const& point) const { return _FindNearestTriangleDistanceFromPoint(pTri, distance, point); }
-    void        ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) { return _ComputeStatisticsFromDTM(angleStats, heightStats); }
-     StatusInt   SaveDtmFile(WChar* filename, GroundDetectionParameters::DTMFileTypeOptions fileType) { return _SaveDtmFile(filename, fileType); }
-     StatusInt   GetDTMPoints(DPoint3d* pPoints) const { return _GetDTMPoints(pPoints); }
+    void        ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) { return _ComputeStatisticsFromDTM(angleStats, heightStats); }     
+     StatusInt  GetDTMPoints(DPoint3d* pPoints) const { return _GetDTMPoints(pPoints); }
 
 protected:
     virtual const_iterator _begin() const=0;
@@ -180,8 +179,7 @@ protected:
     virtual void        _AddPoint(DPoint3d const& point) = 0;
     virtual long        _ComputeTriangulation() = 0;
     virtual bool        _FindNearestTriangleDistanceFromPoint(Triangle* pTri, double& distance, DPoint3d const& point) const = 0;
-    virtual void        _ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) const = 0;
-    virtual StatusInt   _SaveDtmFile(WChar* filename, GroundDetectionParameters::DTMFileTypeOptions fileType) = 0;
+    virtual void        _ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) const = 0;    
     virtual StatusInt   _GetDTMPoints(DPoint3d* pPoints) const = 0;
 }; // IDtmProvider
 

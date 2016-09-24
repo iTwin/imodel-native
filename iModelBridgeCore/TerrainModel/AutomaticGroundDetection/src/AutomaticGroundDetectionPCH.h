@@ -18,13 +18,14 @@
 #include <mutex> 
 #include <excpt.h> 
 #include <map>
+#include <vector>
+
+using namespace std;
 
 
 /*
 #include <Bentley\Bentley.h>
 #include <Bentley\Bentley.r.h>
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 
 /*----------------------------------------------------------------------+

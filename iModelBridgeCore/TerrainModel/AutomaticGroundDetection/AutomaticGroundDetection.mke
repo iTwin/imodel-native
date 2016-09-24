@@ -64,11 +64,13 @@ $(o)BcDtmProvider$(oext) : $(groundDetectSrcDir)BcDtmProvider.cpp $(groundDetect
 
 $(o)GroundDetectionGrid$(oext) : $(groundDetectSrcDir)GroundDetectionGrid.cpp $(groundDetectSrcDir)GroundDetectionGrid.h  ${MultiCompileDepends}
 
-#$(o)GroundDetectionManagerDc$(oext) : $(groundDetectSrcDir)GroundDetectionManagerDc.cpp $(groundDetectSrcDir)GroundDetectionManagerDc.h  ${MultiCompileDepends}
+$(o)GroundDetectionManagerDc$(oext) : $(groundDetectSrcDir)GroundDetectionManagerDc.cpp $(groundDetectSrcDir)GroundDetectionManagerDc.h  ${MultiCompileDepends}
 
 #$(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
 
 #$(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
+
+#$(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

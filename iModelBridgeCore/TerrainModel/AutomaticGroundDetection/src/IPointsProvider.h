@@ -11,7 +11,6 @@
 
 
 GROUND_DETECTION_TYPEDEF(IPointsProvider)
-GROUND_DETECTION_REF_COUNTED_PTR(IPointsProvider)
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -65,17 +64,10 @@ template <typename Impl> struct IPointsProviderIterator : std::iterator<std::for
 +===============+===============+===============+===============+===============+======*/
 struct IPointsProvider : public RefCountedBase
 {
-static const UInt32 DATA_QUERY_BUFFER_SIZE;
+static const uint32_t DATA_QUERY_BUFFER_SIZE;
 
-//__PUBLISH_CLASS_VIRTUAL__
-public:
-     static IPointsProviderPtr CreateFrom(ElementHandle&eh, DRange3dC* pRange = NULL);
-     static bool IsSupported(ElementHandle&eh);
-     static DRange3d GetBoundingBox(ElementHandle&eh, bool useClip=false);
-     static Transform GetUorToMeterTransform(DgnModelRef* model, bool useGlobalOrigin);
-
-
-    //=======================================================================================
+public : 
+  //=======================================================================================
     //! @bsiclass
     //===============+===============+===============+===============+===============+=======
     struct      IPointsProviderIteratorImpl : public RefCountedBase, NonCopyableClass
@@ -103,44 +95,8 @@ public:
 
     typedef IPointsProviderIterator<IPointsProviderIteratorImpl> const_iterator;
 
-    IPointsProviderPtr Clone() const    {return _Clone();}
-    void        PrefetchPoints() { return _PrefetchPoints(); }
-    size_t      GetPrefetchedPoints(DPoint3d* points, size_t maxSize) { return _GetPrefetchedPoints(points, maxSize); }
-    void        ClearPrefetchedPoints() { return _ClearPrefetchedPoints(); }
-
-    size_t      GetMemorySize() const { return _GetMemorySize(); }
-
-    void        SetUseViewFilters(bool value) { _SetUseViewFilters(value); }
-    bool        GetUseViewFilters() const { return _GetUseViewFilters(); }
-    void        SetUseMultiThread(bool value) { _SetUseMultiThread(value); }
-    bool        GetUseMultiThread() const { return _GetUseMultiThread(); }
-    void        GetQueryMode(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE& queryMode, int& viewNumber) const  { _GetQueryMode(queryMode,viewNumber); }
-    void        SetQueryMode(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE queryMode, int viewNumber) { _SetQueryMode(queryMode,viewNumber); }
-    void        GetQueryDensity(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_DENSITY& queryDensity, float& density) const { _GetQueryDensity(queryDensity, density); };
-    void        SetQueryDensity(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_DENSITY  queryDensity, float density) { _SetQueryDensity(queryDensity, density); };
-    void        SetMaxPointsToPrefetch(int value) { _SetMaxPointsToPrefetch (value); };
-    int         GetMaxPointsToPrefetch() const    { return _GetMaxPointsToPrefetch(); };
-    void        SetExportResolution(double exportResolution)    { _SetExportResolution(exportResolution); }
-    double      GetExportResolution() const                     { return _GetExportResolution(); }
-
-    //Point always returned in meters, you can set this to false if you want otherwise and point will be transformed to UORs
-    //before being returned
-    void        SetUseMeterUnit(bool value) { _SetUseMeterUnit(value); }
-    bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }
-    Transform   GetUorToMeterTransform(bool useGlobalOrigin) const { return _GetUorToMeterTransform(useGlobalOrigin); }
-    Transform   GetMeterToNativeTransform() const { return _GetMeterToNativeTransform(); }
-
-    BeFileName GetFileName() const { return _GetFileName(); }
-    DRange3d   GetBoundingBox() const  { return _GetBoundingBox(); }
-    void       SetBoundingBox(DRange3d&boundingBoxInUors)  { return _SetBoundingBox(boundingBoxInUors); }
-    ElementHandle&GetElementHandle() const { return _GetElementHandle(); }
-
-    const_iterator begin() const { return _begin(); }
-    const_iterator end() const { return _end(); }
-
-
 protected:
-    IPointsProvider(ElementHandle&eh, DRange3d&boundingBoxInUors);
+    IPointsProvider(DRange3d&boundingBoxInUors);
     IPointsProvider(IPointsProvider&object);
     IPointsProvider();
 
@@ -148,8 +104,7 @@ protected:
 
     virtual IPointsProviderPtr _Clone() const=0;
     virtual DRange3d        _GetBoundingBox() const;
-    virtual void            _SetBoundingBox(DRange3d&boundingBoxInUors);
-    virtual ElementHandle&_GetElementHandle() const;
+    virtual void            _SetBoundingBox(DRange3d&boundingBoxInUors);    
     virtual size_t          _GetMemorySize() const;
     virtual size_t          _ComputeMemorySize() const;
     virtual const_iterator  _begin() const = 0;
@@ -164,32 +119,55 @@ protected:
     virtual int             _GetMaxPointsToPrefetch() const;
     virtual void            _SetExportResolution(double exportResolution);
     virtual double          _GetExportResolution() const;
-
-
-    virtual void            _SetUseViewFilters(bool value);
-    virtual bool            _GetUseViewFilters() const;
+    
     virtual void            _SetUseMultiThread(bool value);
-    virtual bool            _GetUseMultiThread() const;
-    virtual void            _GetQueryMode(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE& queryMode, int& viewNumber) const;
-    virtual void            _SetQueryMode(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE queryMode, int viewNumber);
-    virtual void            _GetQueryDensity(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_DENSITY& queryDensity, float& density) const;
-    virtual void            _SetQueryDensity(BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_DENSITY  queryDensity, float density);
+    virtual bool            _GetUseMultiThread() const;    
     virtual void            _SetUseMeterUnit(bool value); 
     virtual bool            _GetUseMeterUnit() const;
-
-
-    ElementHandle&                    m_eh;
+    
     DRange3d                            m_boundingBoxInUors;
     mutable bool                        m_prefetchPoints;
     mutable bvector<IPointsProvider::IPointsProviderIteratorImpl::ReturnType>  m_prefetchedPoints;
     int                                 m_maxPointsToPreFetch; //-1 means we don't want to cap the number of points to prefetch
     double                              m_exportResolution;//In Meters
 
+//__PUBLISH_CLASS_VIRTUAL__
+public:
+     static IPointsProviderPtr CreateFrom(DRange3d* pRange = NULL);                 
+
+    IPointsProviderPtr Clone() const    {return _Clone();}
+    void        PrefetchPoints() { return _PrefetchPoints(); }
+    size_t      GetPrefetchedPoints(DPoint3d* points, size_t maxSize) { return _GetPrefetchedPoints(points, maxSize); }
+    void        ClearPrefetchedPoints() { return _ClearPrefetchedPoints(); }
+
+    size_t      GetMemorySize() const { return _GetMemorySize(); }
+    
+    void        SetUseMultiThread(bool value) { _SetUseMultiThread(value); }
+    bool        GetUseMultiThread() const { return _GetUseMultiThread(); }    
+    void        SetMaxPointsToPrefetch(int value) { _SetMaxPointsToPrefetch (value); };
+    int         GetMaxPointsToPrefetch() const    { return _GetMaxPointsToPrefetch(); };
+    void        SetExportResolution(double exportResolution)    { _SetExportResolution(exportResolution); }
+    double      GetExportResolution() const                     { return _GetExportResolution(); }
+
+    //Point always returned in meters, you can set this to false if you want otherwise and point will be transformed to UORs
+    //before being returned
+    void        SetUseMeterUnit(bool value) { _SetUseMeterUnit(value); }
+    bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }
+    Transform   GetUorToMeterTransform(bool useGlobalOrigin) const { return _GetUorToMeterTransform(useGlobalOrigin); }
+    Transform   GetMeterToNativeTransform() const { return _GetMeterToNativeTransform(); }
+
+    BeFileName GetFileName() const { return _GetFileName(); }
+    DRange3d   GetBoundingBox() const  { return _GetBoundingBox(); }
+    void       SetBoundingBox(DRange3d& boundingBoxInUors)  { return _SetBoundingBox(boundingBoxInUors); }    
+
+    const_iterator begin() const { return _begin(); }
+    const_iterator end() const { return _end(); }
+
+
+
 private:
     bool                                m_useViewFilters;
-    bool                                m_isMultiThread;
-    BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE       m_queryMode;
-    BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_DENSITY    m_queryDensity;
+    bool                                m_isMultiThread;    
     float                               m_density;
     int                                 m_queryView;
     bool                                m_useMeterUnit; //if true, point will be returned in meter unit instead of UORs

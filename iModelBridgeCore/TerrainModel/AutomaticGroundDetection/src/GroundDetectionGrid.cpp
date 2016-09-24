@@ -10,16 +10,12 @@
 #include "GroundDetectionMacros.h"
 #include "PCGroundTIN.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_POINTCLOUDAPP
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
+GROUND_DETECTION_TYPEDEF(SeedPointContainer)
 
 BEGIN_GROUND_DETECTION_NAMESPACE
-
-static const UChar CLASSIFICATION_GROUND = 2;
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
@@ -100,16 +96,8 @@ void SeedPointContainer::Draw() const
 
         m_metersToUors.Multiply(PointInUors);
         pointArray.push_back(PointInUors);
-        }
-                                     
-    MSElementDescr* pElmDscr;
-    mdlElmdscr_createFromVertices(&pElmDscr, NULL, &pointArray[0], pointArray.size(), TRUE, 0);
-    mdlElmdscr_add(pElmDscr);
-    mdlElmdscr_freeAll(&pElmDscr);
+        }                                         
     }
-
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
@@ -129,21 +117,14 @@ m_isMultiThread(params.GetUseMultiThread()),
 m_boundingBoxUors(boundingBoxInUors),
 m_channelFlags(0),
 m_memorySize(0),
-m_nbPointToAdd(PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD),
-m_useViewFilters(params.GetUseViewFilters())
+m_nbPointToAdd(PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD)
     {
     Transform uorsToMeters;
-    uorsToMeters.InverseOf(m_metersToUors);
-    params.GetQueryMode(m_queryMode,m_queryView);
-    m_pPointsProvider = IPointsProvider::CreateFrom(params.GetElementHandle(), &m_boundingBoxUors);
-    m_pPointsProvider->SetUseViewFilters(params.GetUseViewFilters());
+    uorsToMeters.InverseOf(m_metersToUors);    
+    m_pPointsProvider = IPointsProvider::CreateFrom(&m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(params.GetUseMultiThread());
     m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...
-    uorsToMeters.Multiply(m_boundingBoxMeter, m_boundingBoxUors);
-    PointCloud::IPointCloudDataQuery::QUERY_MODE queryMode;
-    int viewNumber;
-    params.GetQueryMode(queryMode, viewNumber);
-    m_pPointsProvider->SetQueryMode(queryMode, viewNumber);
+    uorsToMeters.Multiply(m_boundingBoxMeter, m_boundingBoxUors);        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,7 +195,7 @@ void GridCellEntry::_FilterFirstCandidate(PCGroundTIN& pcGroundTIN, SeedPointCon
     nth_element(cellCandidates.begin(), cellCandidates.begin() + (m_nbPointToAdd-1), cellCandidates.end(), fPredicat);
 
     //We assume that there is at least one seed point in each cell (unless there is no point in the cell)
-    UInt32 nbPtsCopied(0);
+    uint32_t nbPtsCopied(0);
     for (auto itr = cellCandidates.begin(); (nbPtsCopied < m_nbPointToAdd) && (itr != cellCandidates.end()); itr++, nbPtsCopied++)
         pcGroundTIN.AddPoint(*itr);
     }
@@ -222,12 +203,13 @@ void GridCellEntry::_FilterFirstCandidate(PCGroundTIN& pcGroundTIN, SeedPointCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+//GDZERO
+#if 0 
 StatusInt GridCellEntry::Classify(IDPoint3dCriteria const& criteria)
     {
     //reset last query and create our query buffer in preparation for our new query
 
-	//GDZERO
-#if 0 
+	
     QueryContextGuard qerryContext(pointCloudeh, m_isMultiThread, m_boundingBoxUors);
     PCQueryHandle& queryHandle(qerryContext.GetQuery());
     queryHandle.SetMode(m_queryMode, m_queryView);
@@ -237,9 +219,9 @@ StatusInt GridCellEntry::Classify(IDPoint3dCriteria const& criteria)
     IPointCloudChannelVector queryChannels;
     queryChannels.push_back(channel.get());
 
-    UInt32 m_channelFlags = (UInt32) PointCloudChannelId::Xyz | (UInt32) PointCloudChannelId::Classification;
+    uint32_t m_channelFlags = (uint32_t) PointCloudChannelId::Xyz | (uint32_t) PointCloudChannelId::Classification;
     if (m_useViewFilters)
-        m_channelFlags |= (UInt32) PointCloudChannelId::Filter;
+        m_channelFlags |= (uint32_t) PointCloudChannelId::Filter;
 
     IPointCloudQueryBuffersPtr queryBuffer = queryHandle.CreateBuffers(IPointsProvider::DATA_QUERY_BUFFER_SIZE, m_channelFlags, queryChannels);
 
@@ -248,7 +230,7 @@ StatusInt GridCellEntry::Classify(IDPoint3dCriteria const& criteria)
     //For all points
     bool needSave(false);
     unsigned  queryRun(0);
-    for (UInt32 pointsRead = queryHandle.GetPoints(*queryBuffer.get()); pointsRead > 0 && CheckProcessNotAborted(); pointsRead = queryHandle.GetPoints(*queryBuffer.get()), queryRun++)
+    for (uint32_t pointsRead = queryHandle.GetPoints(*queryBuffer.get()); pointsRead > 0 && CheckProcessNotAborted(); pointsRead = queryHandle.GetPoints(*queryBuffer.get()), queryRun++)
         {
         UChar* pFilterBuffer(m_useViewFilters ? queryBuffer->GetFilterBuffer() : nullptr);
         byte*  pChannelBuffer((byte*) queryBuffer->GetChannelBuffer(queryChannels[0]));
@@ -274,9 +256,10 @@ StatusInt GridCellEntry::Classify(IDPoint3dCriteria const& criteria)
             queryHandle.SubmitUpdate(queryChannels[0]);
             }
         }
-#endif
+
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2015
@@ -302,11 +285,7 @@ void GridCellEntry::Draw() const
     point.y = m_boundingBoxUors.low.y;
     point.z = m_boundingBoxUors.high.z;
     pointArray.push_back(point);
-
-    MSElementDescr* pElmDscr;
-    mdlElmdscr_createFromVertices(&pElmDscr, NULL, &pointArray[0], pointArray.size(), TRUE, 0);
-    EditElementHandle eeh(pElmDscr,true,false,ACTIVEMODEL);
-    eeh.AddToModel();
+    
     //SeedPointFinder::GetAgenda().Insert(eeh);
     }
 
@@ -462,7 +441,8 @@ GroundDetectionGrid::GroundDetectionGrid(GroundDetectionParameters const& params
 :m_gridCellSize(params.GetLargestStructureSize()),
 m_density(params.GetDensity())
     {
-    DRange3d    boundingBoxInUors(IPointsProvider::GetBoundingBox(params.GetElementHandle(),params.GetUseViewFilters()));
+	
+	DRange3d    boundingBoxInUors;//GDZERO (IPointsProvider::GetBoundingBox());
 
     //Create a grid cell entry that encompass all the range and extract the box in meters
     GridCellEntryPtr pEntry(GridCellEntry::Create(boundingBoxInUors, params));
@@ -474,7 +454,7 @@ m_density(params.GetDensity())
     metersToUorTrans.ZeroTranslation();       //Don't want translation part, only scale
     DVec3d vectX(DVec3d::From(1.0, 0.0, 0.0));//One meter length vector
     metersToUorTrans.Multiply(vectX);
-    double   uorPerMeter = vectX.magnitude();
+    double   uorPerMeter = vectX.Magnitude();
     double   largestStructInUors = m_gridCellSize * uorPerMeter;
     double NbRow(0);
     double NbCol(0);
@@ -485,13 +465,13 @@ m_density(params.GetDensity())
     //The border grid is just a trick to prevent having a TIN only in the middle of the cloud...
     NbRow = floor((hightInUors.y - lowInUors.y) / largestStructInUors);
     NbCol = floor((hightInUors.x - lowInUors.x) / largestStructInUors);
-    NbRow = max(1, NbRow);
-    NbCol = max(1, NbCol);
+    NbRow = max(1.0, NbRow);
+    NbCol = max(1.0, NbCol);
     //Use at minimum a 2 x 2 grid so we get at minimum 3 pts to form a triangle.
     if ((NbRow*NbCol) < 4)
         {
-        NbRow = max(2, NbRow);
-        NbCol = max(3, NbCol);
+        NbRow = max(2.0, NbRow);
+        NbCol = max(3.0, NbCol);
         }
     double requiredLargestStructInUorsY = (hightInUors.y - lowInUors.y) / NbRow;
     double requiredLargestStructInUorsX = (hightInUors.x - lowInUors.x) / NbCol;

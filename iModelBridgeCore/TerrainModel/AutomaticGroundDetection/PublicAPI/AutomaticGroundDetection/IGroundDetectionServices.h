@@ -101,10 +101,7 @@ struct GroundDetectionParameters : public RefCountedBase
 {
 public:
   
-     static GroundDetectionParametersPtr Create();
-
-     static WString DtmExtensionFromFileType(DTMFileTypeOptions fileType);
-     static DTMFileTypeOptions DtmFileTypeFromExtension(WChar* extension);
+     static GroundDetectionParametersPtr Create();     
 
 
     //General options     

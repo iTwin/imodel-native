@@ -11,9 +11,6 @@
 #include "GroundDetectionTypes.h"
 #include "GroundDetectionManagerDc.h"
 #include "IPointsProvider.h"
-#include "..\PCQueryHandle.h"
-#include "..\PCThreadUtilities.h"
-
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -66,16 +63,35 @@ protected:
 +===============+===============+===============+===============+===============+======*/
 struct GridCellEntry : public RefCountedBase
 {
+protected:
+    GridCellEntry(DRange3d const& boundingBoxInUors, GroundDetectionParameters const& params);
+    virtual ~GridCellEntry();
+
+    virtual void _QueryFirstSeedPointAndAddToTin(PCGroundTIN& pcGroundTin);
+    virtual void _FilterFirstCandidate(PCGroundTIN& pcGroundTin, SeedPointContainer& cellCandidates);
+
+    DRange3d                        m_boundingBoxMeter; //In Meters
+    DRange3d                        m_boundingBoxUors; //In UORs
+    Transform                       m_metersToUors;
+    bool                            m_IsExpandTinToRange;
+    bool                            m_isMultiThread;    
+    int                             m_queryView;
+    bool                            m_useViewFilters;
+    size_t                           m_memorySize;
+    uint32_t                          m_channelFlags;
+    size_t                          m_nbPointToAdd;
+    IPointsProviderPtr              m_pPointsProvider;
+
 public:
     enum BorderPositionFlags
         {
-        NOT_ON_BORDE& = 0,
+        NOT_ON_BORDER = 0,
         LEFT    = (1 << 0),
         RIGHT   = (1 << 1),
-        TO*     = (1 << 2),
+        TOP     = (1 << 2),
         BOTTOM  = (1 << 3),
-        TOP_LEFT = TO* | LEFT,
-        TOP_RIGHT = TO* | RIGHT,
+        TOP_LEFT = TOP | LEFT,
+        TOP_RIGHT = TOP | RIGHT,
         BOTTOM_LEFT = BOTTOM | LEFT,
         BOTTOM_RIGHT = BOTTOM | RIGHT,
         };
@@ -92,29 +108,10 @@ public:
     void        PrefetchPoints();
     void        QueryFirstSeedPointAndAddToTin(PCGroundTIN& pcGroundTin);
     size_t      GetMemorySize() const;
-
-    StatusInt   Classify(IDPoint3dCriteria const& criteria);
+    
     void        SetNbPointToAdd(size_t val) { BeAssert(val >= 1); m_nbPointToAdd = val; }
     
-protected:
-    GridCellEntry(DRange3d const& boundingBoxInUors, GroundDetectionParameters const& params);
-    virtual ~GridCellEntry();
 
-    virtual void _QueryFirstSeedPointAndAddToTin(PCGroundTIN& pcGroundTin);
-    virtual void _FilterFirstCandidate(PCGroundTIN& pcGroundTin, SeedPointContainer& cellCandidates);
-
-    DRange3d                        m_boundingBoxMeter; //In Meters
-    DRange3d                        m_boundingBoxUors; //In UORs
-    Transform                       m_metersToUors;
-    bool                            m_IsExpandTinToRange;
-    bool                            m_isMultiThread;
-    BENTLEY_NAMESPACE_NAME::PointCloud::IPointCloudDataQuery::QUERY_MODE m_queryMode;
-    int                             m_queryView;
-    bool                            m_useViewFilters;
-    size_t                           m_memorySize;
-    UInt32                          m_channelFlags;
-    size_t                          m_nbPointToAdd;
-    IPointsProviderPtr              m_pPointsProvider;
 }; // GridCellEntry
 
 /*=================================================================================**//**

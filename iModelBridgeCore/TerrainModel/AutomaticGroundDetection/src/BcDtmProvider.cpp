@@ -11,9 +11,7 @@
 #include "BcDtmProvider.h"
 #include <TerrainModel/Formats/TerrainImporter.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_POINTCLOUDAPP
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -36,7 +34,7 @@ BcDtmProviderPtr BcDtmProvider::CreateFrom(BENTLEY_NAMESPACE_NAME::TerrainModel:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BcDtmProviderPtr BcDtmProvider::CreateFrom(WCharC* filename, WCharC* name)
+BcDtmProviderPtr BcDtmProvider::CreateFrom(WChar* filename, WChar* name)
     {
     BcDTMPtr pBcDtm = LoadTerrainModel(filename, name);
     if (pBcDtm != nullptr)
@@ -69,7 +67,7 @@ BcDtmProvider::~BcDtmProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMPtr BcDtmProvider::LoadTerrainModel(WCharC* filename, WCharC* name)
+BcDTMPtr BcDtmProvider::LoadTerrainModel(WChar* filename, WChar* name)
     {
     TerrainImporterPtr reader = TerrainImporter::CreateImporter(filename);
     WString surfaceName;
@@ -89,59 +87,6 @@ BcDTMPtr BcDtmProvider::LoadTerrainModel(WCharC* filename, WCharC* name)
     ImportedTerrain dtm = reader->ImportTerrain(surfaceName.c_str());
     return dtm.GetTerrain();
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   BcDtmProvider::_SaveDtmFile(WCharC* filename, GroundDetectionParameters::DTMFileTypeOptions fileType)
-    {
-    StatusInt status(SUCCESS);
-
-    if (WString::IsNullOrEmpty(filename))
-        return ERROR;
-
-    DTMStatusInt dtmStatus;
-
-    if (GroundDetectionParameters::FILE_TYPE_TIN == fileType)
-        {    
-        DgnGCS* pGCS = GeoCoordinates::DgnGCS::FromModel(ACTIVEMODEL, true);
-
-        if (pGCS != NULL)
-            {        
-            Transform GCSToMeters;
-            GCSToMeters.InitFromRowValues(pGCS->UnitsFromMeters(), 0.0, 0.0, 0.0,
-                                          0.0, pGCS->UnitsFromMeters(), 0.0, 0.0,
-                                          0.0, 0.0, pGCS->UnitsFromMeters(), 0.0);        
-
-            // Transform the coordinate in the unit of the coordinate system of the model
-            m_pBcDtm->Transform(GCSToMeters);
-
-            dtmStatus = m_pBcDtm->SaveAsGeopakTinFile(filename);
-
-            Transform metersToGCS;
-            metersToGCS.InverseOf(GCSToMeters);
-
-            // Transform the coordinate in meter for the next iteration
-            m_pBcDtm->Transform(metersToGCS);
-            }
-        else
-            dtmStatus = m_pBcDtm->SaveAsGeopakTinFile(filename);
-        }
-    else if (GroundDetectionParameters::FILE_TYPE_BCDTM == fileType)
-        dtmStatus = m_pBcDtm->SaveAsGeopakTinFile(filename);
-    else if (GroundDetectionParameters::FILE_TYPE_DAT == fileType)
-        dtmStatus = m_pBcDtm->SaveAsGeopakDat(filename);
-    else if (GroundDetectionParameters::FILE_TYPE_DTM == fileType)
-        dtmStatus = m_pBcDtm->Save(filename);
-    else if (GroundDetectionParameters::FILE_TYPE_XYZ == fileType)
-        dtmStatus = m_pBcDtm->SaveAsGeopakAsciiDat(filename, 0);
-
-    if (DTM_SUCCESS != dtmStatus)
-        status = ERROR;
-
-    return status;
-    }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
@@ -304,15 +249,23 @@ long BcDtmProvider::_ComputeTriangulation()
         return 0;  //Error, stop iteration
 
     long newTrianglesCount(m_pBcDtm->GetTrianglesCount());
+    
+	DPoint3d* meshPtsP = 0; 
+	long numMeshPts;
+	long* meshFacesP = 0; 
+	long numMeshFaces;
 
-    bvector<DPoint3d> meshPts;
-    bvector<long> meshFaces;
-
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject(m_pBcDtm->GetTinHandle(), TRUE, newTrianglesCount, NULL, DTMFenceType::Block, DTMFenceOption::Overlap, NULL, 0, meshPts, meshFaces);
+    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject(m_pBcDtm->GetTinHandle(), 1, newTrianglesCount, NULL, DTMFenceType::Block, DTMFenceOption::Overlap, NULL, 0, &meshPtsP, &numMeshPts, &meshFacesP, &numMeshFaces);
 
     BeAssert(status == DTM_SUCCESS);
 
-    m_pMesh = BcDTMMesh::Create(meshPts, meshFaces);
+    m_pMesh = BcDTMMesh::Create(meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
+
+	if (!meshPtsP)
+		delete[] meshPtsP;
+
+	if (!meshFacesP)
+		delete[] meshFacesP;
     
     BeAssert(m_pMesh.IsValid());
 
@@ -327,9 +280,9 @@ bool BcDtmProvider::_FindNearestTriangleDistanceFromPoint(Triangle* pTri, double
     bool found(false);
     BC_DTM_OBJ* dtmObject = m_pBcDtm->GetTinHandle();
 
-    long fndTypeP, pnt1P, pnt2P, pnt3P;
+    long fndTypeP, pnt1, pnt2, pnt3;
     double Zs;
-    StatusInt status = bcdtmFind_triangleForPointDtmObject(dtmObject, point.x, point.y, &Zs, &fndTypeP, &pnt1P, &pnt2P, &pnt3P);
+    StatusInt status = bcdtmFind_triangleForPointDtmObject(dtmObject, point.x, point.y, &Zs, &fndTypeP, &pnt1, &pnt2, &pnt3);
     if (status != DTM_SUCCESS)
         return NULL;
 
@@ -342,7 +295,7 @@ bool BcDtmProvider::_FindNearestTriangleDistanceFromPoint(Triangle* pTri, double
             found = false;
             }
             break;
-        case 1: //Point Coincident with Point pnt1P
+        case 1: //Point Coincident with Point pnt1
             {
             found = true;
             }
@@ -352,32 +305,32 @@ bool BcDtmProvider::_FindNearestTriangleDistanceFromPoint(Triangle* pTri, double
             found = true;
             }
             break;
-        case 3: // Point On Hull Line pnt1P-pnt2P
+        case 3: // Point On Hull Line pnt1-pnt2
             {
             found = false;
             }
             break;
-        case 4: //Point In Triangle pnt1P-pnt2P-pnt3P
+        case 4: //Point In Triangle pnt1-pnt2-pnt3
             {
             found = true;
 
-            if (pnt1* == dtmObject->nullPnt || pnt2* == dtmObject->nullPnt || pnt3* == dtmObject->nullPnt)
+            if (pnt1 == dtmObject->nullPnt || pnt2 == dtmObject->nullPnt || pnt3 == dtmObject->nullPnt)
                 return false;
 
             DPoint3d p1;
-            p1.x = pointAddrP(dtmObject, pnt1P)->x;
-            p1.y = pointAddrP(dtmObject, pnt1P)->y;
-            p1.z = pointAddrP(dtmObject, pnt1P)->z;
+            p1.x = pointAddrP(dtmObject, pnt1)->x;
+            p1.y = pointAddrP(dtmObject, pnt1)->y;
+            p1.z = pointAddrP(dtmObject, pnt1)->z;
 
             DPoint3d p2;
-            p2.x = pointAddrP(dtmObject, pnt2P)->x;
-            p2.y = pointAddrP(dtmObject, pnt2P)->y;
-            p2.z = pointAddrP(dtmObject, pnt2P)->z;
+            p2.x = pointAddrP(dtmObject, pnt2)->x;
+            p2.y = pointAddrP(dtmObject, pnt2)->y;
+            p2.z = pointAddrP(dtmObject, pnt2)->z;
 
             DPoint3d p3;
-            p3.x = pointAddrP(dtmObject, pnt3P)->x;
-            p3.y = pointAddrP(dtmObject, pnt3P)->y;
-            p3.z = pointAddrP(dtmObject, pnt3P)->z;
+            p3.x = pointAddrP(dtmObject, pnt3)->x;
+            p3.y = pointAddrP(dtmObject, pnt3)->y;
+            p3.z = pointAddrP(dtmObject, pnt3)->z;
 
             Triangle foundTri(p1, p2, p3);
 
