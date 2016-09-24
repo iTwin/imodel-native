@@ -105,8 +105,8 @@ public:
             throw std::invalid_argument("Max items per thread must be non-zero");
 
         for (unsigned int count{ 0 }; count < concurrency; count += 1)
-            threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
-                                 (&SMNodeDistributor::consume), this, function);
+            m_threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
+                                 (&SMNodeDistributor::Consume), this, function);
         }
 
 //    SMNodeDistributor(SMNodeDistributor &&) = default;
@@ -138,7 +138,7 @@ public:
 #endif
             wait(lock, [this]
                 {
-                return this->m_done;
+                return Queue::size() < capacity;
                 });
             }
         Queue::push(std::forward<Type>(value));
@@ -193,7 +193,7 @@ private:
 #ifdef DEBUG_GROUPS
             {
             std::lock_guard<mutex> clk(s_consoleMutex);
-            std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Going to perform work; size of queue = " << Queue::size() << std::endl;
             }
 #endif
                 }

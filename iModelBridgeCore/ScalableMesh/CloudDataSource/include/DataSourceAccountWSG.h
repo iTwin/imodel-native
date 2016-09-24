@@ -18,7 +18,7 @@ namespace WSGServer
         typedef   std::wstring     server;
         typedef   std::wstring     port;
         }
-    typedef   std::wstring     token;
+    typedef   std::string      token;
     typedef   std::wstring     version;
     typedef   std::wstring     apiID;
     typedef   std::wstring     repository;
@@ -35,20 +35,22 @@ class DataSourceAccountWSG : public DataSourceAccountCURL
 protected:
 
     typedef DataSourceAccountCURL           Super;
+    typedef std::string                     WSGEtag;
+    typedef std::string                     WSGToken;
 
     WSGServer::Request::protocol            wsgProtocol         = L"https:";
     WSGServer::Request::port                wsgPort             = L"443";
-    WSGServer::version                      wsgVersion          = L"v2.3";
+    WSGServer::version                      wsgVersion          = L"v2.4";
     WSGServer::apiID                        wsgAPIID            = L"Repositories";
     WSGServer::repository                   wsgRepository       = L"S3MXECPlugin--Server";
     WSGServer::schema                       wsgSchema           = L"S3MX";
     WSGServer::class_name                   wsgClassName        = L"Document";
     WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544";
+    WSGServer::token                        wsgToken            = "";
 
-    typedef std::string WSGEtag;
-    typedef std::string WSGToken;
 
 public:
+                                            DataSourceAccountWSG                (void) = delete;
                                             DataSourceAccountWSG                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountWSG                (void);
 

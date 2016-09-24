@@ -81,17 +81,18 @@ DataSource * DataSourceAccountAzure::createDataSource(void)
 }
 
 
-DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
-{
-    if (dataSource)
-    {
-        delete dataSource;
-
-        return DataSourceStatus();
-    }
-
-    return DataSourceStatus(DataSourceStatus::Status_Error);
-}
+//DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
+//{
+//    DataSourceAccount::destroyDataSource(dataSource);
+//    if (dataSource)
+//    {
+//        delete dataSource;
+//
+//        return DataSourceStatus();
+//    }
+//
+//    return DataSourceStatus(DataSourceStatus::Status_Error);
+//}
 
 
 void DataSourceAccountAzure::setDefaultSegmentSize(DataSourceBuffer::BufferSize size)

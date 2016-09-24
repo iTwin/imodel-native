@@ -127,7 +127,6 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
         if (deleteItem && it->second)
         {
             delete it->second;
-            it->second = nullptr;
         }
 
         items.erase(it);
@@ -155,7 +154,6 @@ inline bool Manager<T>::destroyAll(bool deleteItems)
         if (deleteItems && it->second)
         {
             delete it->second;
-            it->second = nullptr;
         }
     }
 

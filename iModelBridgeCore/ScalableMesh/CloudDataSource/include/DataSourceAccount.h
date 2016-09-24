@@ -73,7 +73,7 @@ public:
     CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);
 
             DataSourceStatus            destroyDataSources              (void);
-    virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource) = 0;
+    virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource);
 
             DataSourceStatus            uploadSegments                  (DataSource &dataSource);
             DataSourceStatus            downloadSegments                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);

@@ -37,6 +37,12 @@ DataSourceStatus DataSourceAccount::destroyDataSources(void)
     return getDataSourceManager().destroyDataSources(this);
     }
 
+DataSourceStatus DataSourceAccount::destroyDataSource(DataSource * dataSource)
+    {
+    getDataSourceManager().destroyDataSource(dataSource);
+    return DataSourceStatus();
+    }
+
 void DataSourceAccount::setDataSourceManager(DataSourceManager &manager)
     {
     dataSourceManager = &manager;
@@ -267,9 +273,11 @@ DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, Dat
                                                             // Only buffered datasources are supported, so downcast
     if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                            // Transfer ownership of the DataSource's buffer
-    if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
+    //                                                        // Transfer ownership of the DataSource's buffer
+    //if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error);
+    buffer = dataSourceBuffered->getBuffer();
+    buffer->setLocator(*dataSourceBuffered);
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for specified timeout
@@ -287,10 +295,12 @@ DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceB
                                                             // Only buffered datasources are supported, so downcast
     if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                            // Transfer ownership of the DataSource's buffer
-    if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                            // Transfer the buffer to the upload scheduler, where it will eventually be deleted
+    //                                                        // Transfer ownership of the DataSource's buffer
+    //if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error);
+    buffer = dataSourceBuffered->getBuffer();
+    buffer->setLocator(*dataSourceBuffered);
+                                                            // Transfer the buffer to the upload scheduler
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for specified timeout
     DataSourceStatus status =  buffer->waitForSegments(dataSource.getTimeout());

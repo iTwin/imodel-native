@@ -486,9 +486,19 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
         Load();
 
     nLoaded++;
-    RunOnNextAvailableThread(std::bind([headersOnly](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+
+    auto loadNodeHelper = [](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
-        if (!headersOnly)
+        //node->LoadTreeNode(nLoaded, level, headersOnly);
+        if (!node->IsLoaded())
+            node->Load();
+        SetThreadAvailableAsync(threadId);
+        };
+    //static auto* s_distributor = new SMNodeDistributor<SMMeshIndexNode<POINT, EXTENT>*>(loadNodeHelper);
+
+    if (!headersOnly)
+        {
+        RunOnNextAvailableThread(std::bind([](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
             {
             if (node->GetNbPoints() > 0)
                 {
@@ -510,9 +520,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
                     RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texturePtr(node->GetTexturePtr());
                     }
                 }
-            }
-        SetThreadAvailableAsync(threadId);
-        }, this, std::placeholders::_1));
+            SetThreadAvailableAsync(threadId);
+            }, this, std::placeholders::_1));
+        }
 
     if (level != 0 && this->GetLevel() + 1 > level) return;
 
@@ -520,19 +530,28 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+            //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_pSubNodeNoSplit)));
+            RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
+            m_pSubNodeNoSplit->LoadTreeNode(nLoaded, level, headersOnly);
             }
         else
             {
             for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+                //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNodes])));
+                RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNodes], std::placeholders::_1));
                 }
-
+            for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+                {
+                m_apSubNodes[indexNodes]->LoadTreeNode(nLoaded, level, headersOnly);
+                }
             }
         }
     if (m_nodeHeader.m_level == 0)
+        {
         WaitForThreadStop();
+        //delete s_distributor;
+        }
 
     }
 

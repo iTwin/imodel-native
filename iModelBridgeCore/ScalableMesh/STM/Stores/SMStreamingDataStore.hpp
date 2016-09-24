@@ -238,6 +238,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
                 dataSource->close();
 
+                this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
                 headerSize = readSize;
 
                 uint64_t position = 0;
@@ -333,6 +335,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 }
 
             dataSource->close();
+
+            this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
             headerSize = readSize;
 
@@ -912,7 +916,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
         assert(buffer);
         assert(readSize > 0);
-        }   
+        }  
+    this->GetDataSourceAccount()->destroyDataSource(dataSource);
     }
 
 
@@ -1291,7 +1296,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 if (dataSource->close().isFailed())
                     return;
 
-//                dataSourceAccount->destroyDataSource(dataSource);
+                dataSourceAccount->destroyDataSource(dataSource);
 
                 if (readSize > 0)
                 {

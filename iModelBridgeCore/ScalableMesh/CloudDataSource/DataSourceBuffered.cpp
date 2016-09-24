@@ -11,6 +11,14 @@ DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super
     setSegmentSize(0);
 }
 
+DataSourceBuffered::~DataSourceBuffered(void)
+    {
+    if (this->buffer)
+        {
+        delete this->buffer;
+        }
+    }
+
 void DataSourceBuffered::setBuffer(DataSourceBuffer * newBuffer)
 {
     buffer = newBuffer;
