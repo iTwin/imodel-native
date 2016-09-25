@@ -120,9 +120,13 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
 
 // Helper point block data structure
-struct StreamingDataBlock : public bvector<uint8_t> {
+struct StreamingDataBlock : public bvector<uint8_t> 
+    {
+
 public:
+
     bool IsLoading();
+    
     bool IsLoaded();
 
     void LockAndWait();
@@ -141,18 +145,25 @@ public:
         
     uint64_t GetID();
 
-    void SetDataSource(const DataSourceURL& pi_DataSource);
+    void SetDataSourceURL(const DataSourceURL& pi_DataSource);
+
+    void SetDataSourcePrefix(const std::wstring& prefix);
         
     void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
         
-private:
+protected:
+
+    DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
+
+protected:
 
     bool m_pIsLoading = false;
     bool m_pIsLoaded = false;
     uint64_t m_pID = -1;
-    DataSourceURL m_pDataSource;    
-    condition_variable m_pPointBlockCV;
-    mutex m_pPointBlockMutex;
+    DataSourceURL m_pDataSourceURL;
+    std::wstring m_pPrefix = L"p_";
+    condition_variable m_pDataBlockCV;
+    mutex m_pDataBlockMutex;
     };
 
 template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
@@ -197,217 +208,36 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     };
 
 
-struct Texture : public bvector<uint8_t>
+
+
+struct StreamingTextureBlock : public StreamingDataBlock
     {
+
     public:
-        Texture(){}
 
-        Texture(const int& width, const int& height, const int& numChannels)
-            : m_Width{width}, m_Height{height}, m_NbChannels(numChannels)
-            {}
-        void SetDataSourceAccount(DataSourceAccount * dataSourceAccount)
-            {
-            m_dataSourceAccount = dataSourceAccount;
-            }
-        void SetDataSourceURL(const DataSourceURL& url)
-            {
-            m_url = url;
-            }
-        void SavePixelDataToDisk(uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID)
-            {
-            // First, compress the texture
-            HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-            pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
-            pi_uncompressedPacket.SetDataSize(countData);
+        StreamingTextureBlock();
 
-            CompressTexture(pi_uncompressedPacket, pi_compressedPacket);
+        StreamingTextureBlock(const int& width, const int& height, const int& numChannels);
 
-            // Second, save to DataSource
-            int format = 0; // Keep an int to define the format and possible other options
+        void Load(DataSourceAccount *dataSourceAccount, uint64_t blockSizeKnown = uint64_t(-1));
 
-            bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
-            int *pHeader = (int*)(texData.data());
-            pHeader[0] = m_Width;
-            pHeader[1] = m_Height;
-            pHeader[2] = m_NbChannels;
-            pHeader[3] = format;
-            memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+        void Store(DataSourceAccount *dataSourceAccount, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
 
-            DataSourceStatus writeStatus;
-            DataSourceURL    url(m_url);
-            url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
-
-            bool created = false;
-            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
-            assert(dataSource != nullptr);
-            //{
-            //std::lock_guard<mutex> clk(s_consoleMutex);
-            //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
-            //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
-            //}
-
-            writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
-            assert(writeStatus.isOK()); // problem opening a DataSource
-
-            writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
-            assert(writeStatus.isOK()); // problem writing a DataSource
-
-            writeStatus = dataSource->close();
-            assert(writeStatus.isOK()); // problem closing a DataSource
-            //{
-            //std::lock_guard<mutex> clk(s_consoleMutex);
-            //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
-            //}
-            }
-
-        void Load(uint64_t blockSize = uint64_t(-1))
-            {
-            std::unique_ptr<DataSource::Buffer[]>       dest;
-            DataSource                              *   dataSource;
-            DataSource::DataSize                        readSize;
-
-            assert(m_ID != -1);
-
-            DataSourceURL   dataSourceURL(m_url);
-            dataSourceURL.append(L"t_" + std::to_wstring(m_ID) + L".bin");
-
-            DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
-
-            dataSource = this->GetDataSource(dest, destSize);
-            if (dataSource == nullptr)
-                return;
-
-            if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-                return;
-
-            if (blockSize == uint64_t(-1)) blockSize = 0;
-            if (dataSource->read(dest.get(), destSize, readSize, blockSize).isFailed())
-                return;
-
-            dataSource->close();
-            m_dataSourceAccount->destroyDataSource(dataSource);
-
-            if (readSize > 0)
-                {
-                m_Width = reinterpret_cast<int&>(dest.get()[0]);
-                m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
-                m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
-                m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
-
-                auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-                uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
-
-                DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
-                }
-
-            m_IsLoaded = true;
-            }
-
-        bool IsLoaded() { return m_IsLoaded; }
-        bool IsLoading() { return m_IsLoading; }
-        void LockAndWait()
-            {
-            unique_lock<mutex> lock(m_TextureMutex);
-            m_TextureCV.wait(lock, [this]() { return m_IsLoaded; });
-            }
-        void SetLoading()
-            {
-            m_IsLoaded = false;
-            m_IsLoading = true;
-            }
-        void SetLoaded()
-            {
-            m_IsLoaded = true;
-            m_IsLoading = false;
-            m_TextureCV.notify_all();
-            }
-        void Unload()
-            {
-            m_IsLoaded = false;
-            m_IsLoading = false;
-            m_TextureCV.notify_all();
-            this->clear();
-            }
-        void SetID(const uint64_t& pi_ID)
-            {
-            m_ID = pi_ID;
-            }
-        uint64_t GetID()
-            {
-            return m_ID;
-            }
         size_t GetWidth() { return m_Width; }
         size_t GetHeight() { return m_Height; }
         size_t GetNbChannels() { return m_NbChannels; }
 
     private:
 
-        DataSource *GetDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
-            {
-            assert(m_dataSourceAccount); // A data source account must be set first!
-
-            DataSource *dataSource = m_dataSourceAccount->createDataSource();
-            if (dataSource == nullptr) return nullptr;
-
-            // Make sure caching is enabled for this DataSource
-            dataSource->setCachingEnabled(s_stream_enable_caching);
-
-            dest.reset(new unsigned char[destSize]);
-
-            return dataSource;
-            }
-
-        void DecompressTexture(uint8_t* pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize)
-            {
-            assert(m_Width > 0 && m_Height > 0 && m_NbChannels > 0);
-
-            auto codec = new HCDCodecIJG(m_Width, m_Height, m_NbChannels * 8);// m_NbChannels * 8 bits per pixels
-            codec->SetQuality(70);
-            codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-            HFCPtr<HCDCodec> pCodec = codec;
-            try {
-                this->resize(pi_TextureSize);
-                const size_t uncompressedDataSize = pCodec->DecompressSubset(pi_CompressedTextureData, pi_CompressedTextureSize, this->data(), pi_TextureSize);
-                assert(pi_TextureSize == uncompressedDataSize);
-                }
-            catch (const std::exception& e)
-                {
-                assert(!"There is an error decompressing texture");
-                std::wcout << L"Error: " << e.what() << std::endl;
-                }
-            }
-
-        bool CompressTexture(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket)
-            {
-            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
-
-            // initialize codec
-            auto codec = new HCDCodecIJG(m_Width, m_Height, 8 * m_NbChannels);
-            codec->SetQuality(70);
-            codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-            HFCPtr<HCDCodec> pCodec = codec;
-            pi_compressedPacket.SetBufferOwnership(true);
-            size_t compressedBufferSize = pCodec->GetSubsetMaxCompressedSize();
-            pi_compressedPacket.SetBuffer(new uint8_t[compressedBufferSize], compressedBufferSize * sizeof(uint8_t));
-            const size_t compressedDataSize = pCodec->CompressSubset(pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetDataSize() * sizeof(uint8_t), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetBufferSize() * sizeof(uint8_t));
-            pi_compressedPacket.SetDataSize(compressedDataSize);
-
-            return true;
-            }
+        void DecompressTexture(uint8_t* pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize);
+        bool CompressTexture(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket);
 
     private:
-        uint64_t m_ID = -1;
-        bool m_IsLoaded = false;
-        bool m_IsLoading = false;
+
         int m_Width = 256;
         int m_Height = 256;
         int m_NbChannels = 3; // 3 channels by default
         int m_Format = 0;     // could be useful in the future
-        DataSourceURL m_url;
-        condition_variable m_TextureCV;
-        mutex m_TextureMutex;
-
-        DataSourceAccount * m_dataSourceAccount;
     };
     
 template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public ISMNodeDataStore<DATATYPE> 
@@ -416,7 +246,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         DataSourceURL m_path;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        mutable map<uint32_t, Texture> m_textureCache;
+        mutable map<uint32_t, StreamingTextureBlock> m_textureCache;
         mutable std::mutex m_textureCacheLock;
 
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
@@ -424,7 +254,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
     public:              
 
-        Texture& GetTexture(HPMBlockID blockID) const;
+        StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
             
         StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader);
 

@@ -1215,7 +1215,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         auto blockSize = m_nodeHeader->GetBlockSize((short)m_dataType);
         //assert(blockSize != uint64_t(-1));
         block.SetID(blockID.m_integerID);
-        block.SetDataSource(m_pathToNodeData);        
+        block.SetDataSourceURL(m_pathToNodeData);        
         block.Load(m_dataSourceAccount, blockSize);
         }
     assert(block.GetID() == blockID.m_integerID);
@@ -1237,8 +1237,8 @@ bool StreamingDataBlock::IsLoaded()
 
 void StreamingDataBlock::LockAndWait()
     {
-    unique_lock<mutex> lock(m_pPointBlockMutex);
-    m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
+    unique_lock<mutex> lock(m_pDataBlockMutex);
+    m_pDataBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
     }
 
 void StreamingDataBlock::SetLoading() 
@@ -1262,7 +1262,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     return dataSource;
     }
     
-void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize)
+void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dataSizeKnown)
     {
     if (!IsLoaded())
         {
@@ -1271,33 +1271,9 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 LockAndWait();
             }
         else
-            {           
-                std::unique_ptr<DataSource::Buffer[]>        dest;
-                DataSource                                *  dataSource;
-                DataSource::DataSize                         readSize;
-
-                DataSourceURL    dataSourceURL(m_pDataSource);
-                dataSourceURL.append(L"p_" + std::to_wstring(m_pID) + L".bin");
-
-                DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
-
-                dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
-                assert(dest != nullptr);
-                if (dataSource == nullptr)
-                    return;
-
-                if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-                    return;
-
-                if (dataSize == uint64_t(-1)) dataSize = 0;
-                if (dataSource->read(dest.get(), destSize, readSize, dataSize).isFailed())
-                    return;
-
-                if (dataSource->close().isFailed())
-                    return;
-
-                dataSourceAccount->destroyDataSource(dataSource);
-
+            {
+                std::unique_ptr<DataSource::Buffer[]> dest;
+                auto readSize = this->LoadDataBlock(dataSourceAccount, dest, dataSizeKnown);
                 if (readSize > 0)
                 {
                     m_pIsLoaded = true;
@@ -1307,6 +1283,10 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                     uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
                     DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
                 }
+                else
+                    {
+                    assert(false); // something went wrong loading streaming data block
+                    }
             }
         }
     }
@@ -1322,7 +1302,7 @@ void StreamingDataBlock::SetLoaded()
     {
     m_pIsLoaded = true;
     m_pIsLoading = false;
-    m_pPointBlockCV.notify_all();
+    m_pDataBlockCV.notify_all();
     }
 
 void StreamingDataBlock::SetID(const uint64_t& pi_ID)
@@ -1335,9 +1315,14 @@ uint64_t StreamingDataBlock::GetID()
     return m_pID; 
     }
 
-void StreamingDataBlock::SetDataSource(const DataSourceURL& pi_DataSource)
+void StreamingDataBlock::SetDataSourceURL(const DataSourceURL& pi_URL)
     {
-    m_pDataSource = pi_DataSource;
+    m_pDataSourceURL = pi_URL;
+    }
+
+inline void StreamingDataBlock::SetDataSourcePrefix(const std::wstring & prefix)
+    {
+    m_pPrefix = prefix;
     }
 
 void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
@@ -1355,11 +1340,41 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
 
-template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
+inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown)
+    {
+    DataSource                                *  dataSource;
+    DataSource::DataSize                         readSize;
+
+    DataSourceURL    dataSourceURL(m_pDataSourceURL);
+    dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + L".bin");
+
+    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+
+    dataSource = initializeDataSource(dataSourceAccount, destination, destSize);
+    assert(destination != nullptr);
+    if (dataSource == nullptr)
+        return 0;
+
+    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+        return 0;
+
+    if (dataSizeKnown == uint64_t(-1)) dataSizeKnown = 0;
+    if (dataSource->read(destination.get(), destSize, readSize, dataSizeKnown).isFailed())
+        return 0;
+
+    if (dataSource->close().isFailed())
+        return 0;
+
+    dataSourceAccount->destroyDataSource(dataSource);
+
+    return readSize;
+    }
+
+template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
     m_textureCacheLock.lock();
-    Texture& texture = m_textureCache[blockID.m_integerID];
+    StreamingTextureBlock& texture = m_textureCache[blockID.m_integerID];
     m_textureCacheLock.unlock();
     assert((texture.GetID() != uint64_t(-1) ? texture.GetID() == blockID.m_integerID : true));
     if (!texture.IsLoaded())
@@ -1371,10 +1386,9 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
         else
             {
             auto blockSize = m_nodeHeader->GetBlockSize(5);
-            texture.SetDataSourceAccount(this->GetDataSourceAccount());
             texture.SetDataSourceURL(m_path);
             texture.SetID(blockID.m_integerID);
-            texture.Load(blockSize);
+            texture.Load(this->GetDataSourceAccount(), blockSize);
             }
         }
     assert(texture.IsLoaded() && !texture.empty());
@@ -1417,10 +1431,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     assert(blockID.IsValid());
 
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
-    Texture texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
-    texture.SetDataSourceAccount(m_dataSourceAccount);
+    StreamingTextureBlock texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
     texture.SetDataSourceURL(m_path);
-    texture.SavePixelDataToDisk(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
+    texture.Store(m_dataSourceAccount, DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
 
     return blockID;
     }
@@ -1489,7 +1502,7 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     assert(maxCountData >= texture.size());
     memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
     m_textureCacheLock.lock();
-    texture.Unload();
+    texture.UnLoad();
     m_textureCache.erase(texture.GetID());
     m_textureCacheLock.unlock();
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
@@ -1503,4 +1516,120 @@ template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE,
 template <class DATATYPE, class EXTENT> DataSourceAccount* StreamingNodeTextureStore<DATATYPE, EXTENT>::GetDataSourceAccount(void) const                            
     {
     return m_dataSourceAccount;
+    }
+
+StreamingTextureBlock::StreamingTextureBlock(void)
+    {
+    this->SetDataSourcePrefix(L"t_");
+    }
+
+inline StreamingTextureBlock::StreamingTextureBlock(const int & width, const int & height, const int & numChannels)
+    : m_Width{ width }, m_Height{ height }, m_NbChannels(numChannels)
+    {
+    this->SetDataSourcePrefix(L"t_");
+    }
+
+inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, uint8_t * DataTypeArray, size_t countData, const HPMBlockID & blockID)
+    {
+    // First, compress the texture
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
+    pi_uncompressedPacket.SetDataSize(countData);
+
+    CompressTexture(pi_uncompressedPacket, pi_compressedPacket);
+
+    // Second, save to DataSource
+    int format = 0; // Keep an int to define the format and possible other options
+
+    bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
+    int *pHeader = (int*)(texData.data());
+    pHeader[0] = m_Width;
+    pHeader[1] = m_Height;
+    pHeader[2] = m_NbChannels;
+    pHeader[3] = format;
+    memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+
+    DataSourceStatus writeStatus;
+    DataSourceURL    url(m_pDataSourceURL);
+    url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
+
+    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource(/*&created*/);
+    assert(dataSource != nullptr);
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+    //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+    //}
+
+    writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
+    assert(writeStatus.isOK()); // problem opening a DataSource
+
+    writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
+    assert(writeStatus.isOK()); // problem writing a DataSource
+
+    writeStatus = dataSource->close();
+    assert(writeStatus.isOK()); // problem closing a DataSource
+                                //{
+                                //std::lock_guard<mutex> clk(s_consoleMutex);
+                                //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+                                //}
+    }
+
+inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, uint64_t blockSizeKnown)
+    {
+    std::unique_ptr<DataSource::Buffer[]> dest;
+    auto readSize = this->LoadDataBlock(dataSourceAccount, dest, blockSizeKnown);
+
+    if (readSize > 0)
+        {
+        m_Width = reinterpret_cast<int&>(dest.get()[0]);
+        m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
+        m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
+        m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
+
+        auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+        uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+
+        DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
+        }
+
+    m_pIsLoaded = true;
+    }
+
+inline void StreamingTextureBlock::DecompressTexture(uint8_t * pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize)
+    {
+    assert(m_Width > 0 && m_Height > 0 && m_NbChannels > 0);
+
+    auto codec = new HCDCodecIJG(m_Width, m_Height, m_NbChannels * 8);// m_NbChannels * 8 bits per pixels
+    codec->SetQuality(70);
+    codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+    HFCPtr<HCDCodec> pCodec = codec;
+    try {
+        this->resize(pi_TextureSize);
+        const size_t uncompressedDataSize = pCodec->DecompressSubset(pi_CompressedTextureData, pi_CompressedTextureSize, this->data(), pi_TextureSize);
+        assert(pi_TextureSize == uncompressedDataSize);
+        }
+    catch (const std::exception& e)
+        {
+        assert(!"There is an error decompressing texture");
+        std::wcout << L"Error: " << e.what() << std::endl;
+        }
+    }
+
+inline bool StreamingTextureBlock::CompressTexture(const HCDPacket & pi_uncompressedPacket, HCDPacket & pi_compressedPacket)
+    {
+    HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
+
+    // initialize codec
+    auto codec = new HCDCodecIJG(m_Width, m_Height, 8 * m_NbChannels);
+    codec->SetQuality(70);
+    codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+    HFCPtr<HCDCodec> pCodec = codec;
+    pi_compressedPacket.SetBufferOwnership(true);
+    size_t compressedBufferSize = pCodec->GetSubsetMaxCompressedSize();
+    pi_compressedPacket.SetBuffer(new uint8_t[compressedBufferSize], compressedBufferSize * sizeof(uint8_t));
+    const size_t compressedDataSize = pCodec->CompressSubset(pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetDataSize() * sizeof(uint8_t), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetBufferSize() * sizeof(uint8_t));
+    pi_compressedPacket.SetDataSize(compressedDataSize);
+
+    return true;
     }
