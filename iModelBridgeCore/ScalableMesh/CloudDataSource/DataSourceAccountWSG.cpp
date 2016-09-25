@@ -56,6 +56,9 @@ DataSourceStatus DataSourceAccountWSG::setAccount(const AccountName & account, c
                                                             // Set details in base class
     DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceWSG"), account, identifier, key);
 
+    this->wsgToken = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->getAccountKey());
+    
+
     return DataSourceStatus();
 }
 
@@ -134,10 +137,6 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSourceURL &url, const 
 
         std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
 
-        std::string utf8Token = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->accountKey);
-        std::string authToken = "Authorization: Token ";
-        authToken.append(utf8Token);
-
         std::string contentLength = "Content-Length " + std::to_string(size);
         std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
         contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
@@ -145,7 +144,7 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSourceURL &url, const 
 
 
         struct curl_slist *headers = NULL;
-        headers = curl_slist_append(headers, authToken.c_str());
+        headers = curl_slist_append(headers, this->getWSGToken().c_str());
         headers = curl_slist_append(headers, "Content-Type: text/plain");
         headers = curl_slist_append(headers, contentLength.c_str());
         headers = curl_slist_append(headers, contentDisposition.c_str());
@@ -211,10 +210,6 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, 
 
     std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
 
-    std::string utf8Token = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->accountKey);
-    std::string authToken = "Authorization: Token ";
-    authToken.append(utf8Token);
-
     std::string ETag = "If-Match: " + etag;
     std::string contentRange = "Content-Range: bytes 0-";
     contentRange += std::to_string(size - 1) + "/" + std::to_string(size);
@@ -222,7 +217,7 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, 
     
 
     struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, authToken.c_str());
+    headers = curl_slist_append(headers, this->getWSGToken().c_str());
     headers = curl_slist_append(headers, "Content-Type: text/plain");
     headers = curl_slist_append(headers, ETag.c_str());
     headers = curl_slist_append(headers, contentRange.c_str());
@@ -266,8 +261,7 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, 
 
 DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken()
     {
-    std::string utf8Token = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->accountKey);
-    return DataSourceAccountWSG::WSGToken("Authorization: Token " + utf8Token);
+    return DataSourceAccountWSG::WSGToken("Authorization: Token " + this->wsgToken);
     }
 
 DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSourceURL & url, const DataSourceURL & filename, DataSourceBuffer::BufferSize size)
@@ -279,10 +273,6 @@ DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSo
 
     std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
 
-    std::string utf8Token = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->accountKey);
-    std::string authToken = "Authorization: Token ";
-    authToken.append(utf8Token);
-
     std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
     contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
     contentDisposition += "\"";
@@ -291,7 +281,7 @@ DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSo
 
 
     struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, authToken.c_str());
+    headers = curl_slist_append(headers, this->getWSGToken().c_str());
     headers = curl_slist_append(headers, contentDisposition.c_str());
     headers = curl_slist_append(headers, contentRange.c_str());
     headers = curl_slist_append(headers, "Content-Length: 0");
