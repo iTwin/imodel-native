@@ -346,7 +346,7 @@ struct Texture : public bvector<uint8_t>
             {
             assert(m_dataSourceAccount); // A data source account must be set first!
 
-            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+            DataSource *dataSource = m_dataSourceAccount->createDataSource();
             if (dataSource == nullptr) return nullptr;
 
             // Make sure caching is enabled for this DataSource

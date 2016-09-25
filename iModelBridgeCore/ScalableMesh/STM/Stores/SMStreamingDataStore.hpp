@@ -996,7 +996,7 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
     if (this->GetDataSourceAccount() == nullptr)
         return nullptr;
                                                     // Get the thread's DataSource or create a new one
-    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+    DataSource *dataSource = m_dataSourceAccount->createDataSource();
     if (dataSource == nullptr)
         return nullptr;
                                                     // Make sure caching is enabled for this DataSource
@@ -1251,7 +1251,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     if (dataSourceAccount == nullptr)
         return nullptr;
                                                         // Get the thread's DataSource or create a new one
-    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+    DataSource *dataSource = dataSourceAccount->createDataSource();
     if (dataSource == nullptr)
         return nullptr;
                                                         // Make sure caching is enabled for this DataSource
