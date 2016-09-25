@@ -256,7 +256,7 @@ struct MrDTMFullResolutionLinearQueryParams : public virtual IMrDTMFullResolutio
 
         MrDTMFullResolutionLinearQueryParams()
             {
-            m_maximumNumberOfPointsForLinear = UINT64_MAX;
+            m_maximumNumberOfPointsForLinear = SIZE_MAX;
             m_useDecimation = true;
             m_cutLinears = false;
             m_addLinears = true;
