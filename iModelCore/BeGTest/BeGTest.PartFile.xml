@@ -28,7 +28,9 @@
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
-        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="DgnPlatform" Repository="DgnPlatform" />
+        
+        <!-- Changing this SubPart? Please update the same SubPart in DgnClientFx:DgnClientFx:DgnClientSdk-Tested. -->
+        <SubPart LibType="Static" PartName="UnitTests_Documents" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     </Product>
 
     <Part Name="DgnV8Converter" OnlyPlatforms="x64,x86">
@@ -93,6 +95,8 @@
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
+        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false"/>
+        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false" LibType="static"/>
         
     </ProductDirectoryList>
 

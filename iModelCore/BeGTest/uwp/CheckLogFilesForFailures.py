@@ -16,15 +16,21 @@ failedTestRe = re.compile('Failed\s+(\w+)')
 def checkLogFileForFailures(logfilename):
     summarystr = logfilename + '\n'
 
-    anyFailures = False
-
     lineNo = 0
     previousLine = ''
     failedTestsList = ''
+    advicestr = ''
     comma = ''
+    foundSummary = False
+    collectingErrorDetails = False
 
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
+
+            if collectingErrorDetails:
+                advicestr = advicestr + '\n' + line.rstrip()
+                continue
+
             lline = line.lower()
     
             if lineNo == 0:
@@ -35,41 +41,50 @@ def checkLogFileForFailures(logfilename):
             lineNo = lineNo + 1
 
             if lline.find('test run failed.') != -1:
-                anyFailures = True
                 summarystr = summarystr + line
                 continue
 
+            #Error: Installation of package 'C:\dgndb61-16q4\out\WinRTx64\Product\DgnClientFx-UwpTest\AppPackages\BeTestTest1\BeTestTest1_1.0.0.0_x64_Debug_Test\BeTestTest1_1.0.0.0_x64_Debug.appx' failed with Error: (0x5B4) Operation timed out. Unable to install Windows app package in 30 sec..
+            #For more details look into Event Viewer under Applications and Services Logs -> Microsoft -> Windows -> AppXDeployment-Server -> Microsoft-Windows-AppXDeploymentServer/Operational.
+            if lline.find('installation of package') != -1 and lline.find('failed') != -1:
+                advicestr = advicestr + '\n' + line
+                collectingErrorDetails = True
+                continue
+
             if lline.find('the test execution process crashed while running the tests.') != -1:
-                anyFailures = True
-                failedTestsList = failedTestsList + '\n' + line.rstrip() + '\nWhile attempting to run:'
-                failedTestsList = failedTestsList + '\n' + previousLine
+                advicestr = advicestr + '\n' + line.rstrip() + '\nWhile attempting to run:'
+                advicestr = advicestr + '\n' + previousLine
                 summarystr = summarystr + line
+                collectingErrorDetails = True
                 continue
 
             failedTest = failedTestRe.match(line)
             if failedTest != None:
-                anyFailures = True
                 failedTestsList = failedTestsList + comma + failedTest.group(1)
                 comma = ', '
+                continue
 
             if lline.startswith('total tests:'):
                 stats = summaryRe.search(line)
                 if stats.group(3) != '0':
                     anyFailures = True
+                    advicestr = advicestr + '\n' + stats.group(3)  + ' tests failed'
 
                 summarystr = summarystr + line
+                foundSummary = True
 
             previousLine = line
 
     if lineNo == 0:
         summarystr = summarystr + '\n' + 'Empty test results log. Tests were not run?'
-        return 0,summarystr
-
-    advicestr = ''
+        return '',summarystr
 
     # Report all failures that we saw in the log
     if len(failedTestsList) != 0:
         advicestr = advicestr + "\nThe following tests failed:  " + failedTestsList
+
+    if not foundSummary:
+        advicestr = advicestr + "\nA hard error preempted or interrupted the tests"
 
     # There is no point in printing the log file, as it does not contain any details of the failures.
     # The user must look at the native code logging output.
