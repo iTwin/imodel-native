@@ -19,170 +19,43 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
-//! Status codes for FTP traversal operations.
 //=====================================================================================
-enum class HttpStatus
-    {
-    Success = SUCCESS,      // The operation was successful.
-    ClientError,
-    CurlError,
-    DataExtractError,
-    DownloadError,
-    // *** Add new here.
-    UnknownError = ERROR,   // The operation failed with an unspecified error.
-    };
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote              5/2016
-// Defines the traversal observer interface as an abstract class.
-// The traversal observer that must inherit from the present one must implement
-// a behavior for the OnFileListed, OnFileDownloaded and OnDataExtracted method.
-//=====================================================================================
-struct IHttpTraversalObserver
+struct HttpClient : public WebResourceClient
     {
     public:
-        //! OnFileListed is called whenever a file was listed for download. It is up to
-        //! the effective traversal observer to do whatever process is required on the data.
-        virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file) = 0;
-
-        //! OnFileDownloaded is called whenever a download is completed. It is up to
-        //! the effective traversal observer to do whatever process is required on the data.
-        virtual void OnFileDownloaded(Utf8CP file) = 0;
-
-        //! OnDataExtracted is called whenever an extraction is completed by the 
-        //! data handler. The data object given defines the data discovered. It is up to
-        //! the effective traversal observer to do whatever process is required on the data.
-        virtual void OnDataExtracted(WebResourceDataCR data) = 0;    
-    };
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote              4/2016
-//=====================================================================================
-struct HttpClient : public RefCountedBase
-    {
-    public:
-        //! Mapping of the remote and local link to a file.
-        typedef bvector<bpair<Utf8String, Utf8String>> RepositoryMapping;
-
         //! Create http client by setting the url/root.
         REALITYDATAPLATFORM_EXPORT static HttpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL);
-
-        //! Download all files from root and saved them in the specified directory. Default is temp directory.
-        REALITYDATAPLATFORM_EXPORT HttpStatus DownloadContent(Utf8CP outputDirPath = NULL) const;
-
-        //! Get a list of all files from all directories starting at root.
-        REALITYDATAPLATFORM_EXPORT HttpStatus GetFileList(bvector<Utf8String>& fileList) const;
-
-        //! Get complete data from root. This includes base, source, thumbnail, metadata and server details.
-        //! An observer must be set to catch the data after each extraction.
-        REALITYDATAPLATFORM_EXPORT HttpStatus GetData() const;
-
-        //! Get server url.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerUrl() const;
-
-        //! Get server name.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const;
-
-        //! Get repository mapping (remote and local repository).
-        REALITYDATAPLATFORM_EXPORT const RepositoryMapping& GetRepositoryMapping() const;
-
-        //! Set the IHttpTraversalObserver to be called after each extraction. Only one observer
-        //! can be set. Typically, the user of the handler would implement the IHttpTraversalObserver
-        //! interface and send "this" as the argument to this method.
-        REALITYDATAPLATFORM_EXPORT void SetObserver(IHttpTraversalObserver* pObserver);    
-
-    private:
+        
+    protected:
         HttpClient(Utf8CP serverUrl, Utf8CP serverName);
-        ~HttpClient();
 
         //! Recurse into sub directories and create a list of all files.
-        HttpStatus GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const;
+        WebResourceStatus GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const override;
 
-        //! Check if content is a directory or not.
-        bool IsDirectory(Utf8CP content) const;
-
+        WebResourceDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const override;
+        
         //! Callback when a file is downloaded to construct the data repository mapping.
         static void ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg);
-        
-        BeFileName m_certificatePath;
-        WebResourceServerPtr m_pServer;   
-
-        static IHttpTraversalObserver* m_pObserver;        
-        static RepositoryMapping m_dataRepositories;
-        static int m_retryCount;
     };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
-struct HttpRequest : public RefCountedBase
+struct HttpRequest : public WebResourceRequest
     {
     public:
         //! Create curl request.
         static HttpRequestPtr Create(Utf8CP url);
 
         //! Get response from request.
-        HttpResponsePtr Perform();
+        WebResourceResponsePtr Perform() override;
 
-        //! Get url.
-        Utf8StringCR GetUrl() const { return m_url; }
-
-        //! Get/Set method option.
-        Utf8StringCR GetMethod() const { return m_method; }
-        void SetMethod(Utf8CP method) { m_method = method; }
-
-        //! Set certificate path.
         void SetCertificatePath(Utf8CP path) { m_caPath = path; }
 
-        //! Get/Set dirList option.
-        bool IsDirListOnly() const { return m_dirListOnly; }
-        void SetDirListOnly(bool isDirListOnly) { m_dirListOnly = isDirListOnly; }
-
-        //! Get/Set verbose option.
-        bool IsVerbose() const { return m_verbose; }
-        void SetVerbose(bool isVerbose) { m_verbose = isVerbose; }
-        
-    private:
+    protected:
         HttpRequest(Utf8CP url);
 
-        Utf8String m_url;
-        Utf8String m_method;
         Utf8String m_caPath;
-        bool m_dirListOnly;
-        bool m_verbose;
-    };
-
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote              4/2016
-//=====================================================================================
-struct HttpResponse : public RefCountedBase
-    {
-    public:
-        //! Create invalid response with HttpStatus::UnknownError.
-        static HttpResponsePtr Create();
-
-        //! Create response.
-        static HttpResponsePtr Create(Utf8CP effectiveUrl, Utf8CP m_content, HttpStatus traversalStatus);
-
-        //! Get url.
-        Utf8StringCR GetUrl() const;
-
-        //! Get content.
-        Utf8StringCR GetContent() const;
-
-        //! Get status.
-        HttpStatus GetStatus() const;
-
-        //! Return if request was a success or not.
-        bool IsSuccess() const;
-
-    private:
-        HttpResponse(Utf8CP effectiveUrl, Utf8CP content, HttpStatus status);
-
-        Utf8String m_effectiveUrl;
-        Utf8String m_content;
-        HttpStatus m_status;
     };
 
 //=====================================================================================
@@ -190,21 +63,12 @@ struct HttpResponse : public RefCountedBase
 //!
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
-struct HttpDataHandler
+struct HttpDataHandler : public WebResourceDataHandler
     {
     public:
         //! Http data extraction.
         REALITYDATAPLATFORM_EXPORT static WebResourceDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath);
 
-        //! Unzip files.
-        REALITYDATAPLATFORM_EXPORT static HttpStatus UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath);
-
-    private:
-        //! Http data extraction.
-        static BeFileName BuildMetadataFilename(Utf8CP filePath);
-
-        //! Geocoding lookup.
-        static Utf8String RetrieveGeocodingFromMetadata(BeFileNameCR filename);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
