@@ -61,8 +61,7 @@ DistanceExpressionP AlignmentStation::GetAtPositionP()
         m_atLocationAspectId = aspectIds.front();
         }
 
-    auto locationP = DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(
-        *this, *LinearlyReferencedAtLocation::QueryClass(GetDgnDb()), ECInstanceId(m_atLocationAspectId));
+    auto locationP = GetLinearlyReferencedAtLocationP(m_atLocationAspectId);
     BeAssert(locationP);
 
     return &locationP->GetAtPositionR();
