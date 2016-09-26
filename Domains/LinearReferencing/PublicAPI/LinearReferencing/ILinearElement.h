@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 
+enum class CascadeLocationChangesAction { None, OnlyIfLocationsChanged, Always };
+
 //=======================================================================================
 //! Interface implemented by elements that can be used as a scale 
 //! along which linear referencing is performed.
@@ -41,8 +43,15 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearElementSource
 {
-public:
+protected:
+    LINEARREFERENCING_EXPORT virtual Dgn::DgnDbStatus _PrepareCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const;
+    LINEARREFERENCING_EXPORT virtual Dgn::DgnDbStatus _CommitCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const;
 
+    virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const = 0;
+
+public:
+    Dgn::DgnElementCR ToElement() const { return _ILinearElementSourceToDgnElement(); }
+    Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementSourceToDgnElement()); }
 }; // ILinearElementSource
 
 typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
@@ -53,12 +62,20 @@ typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocated
 {
+friend struct CascadeFromToLocationChangesAlgorithm;
+
+private:
+    CascadeLocationChangesAction m_cascadeLocationChangesFlag;
+    bset<LinearlyReferencedLocationId> m_accessedAtLocationIds, m_accessedFromToLocationIds;
+
 protected:
     LINEARREFERENCING_EXPORT ILinearlyLocated();
 
     LINEARREFERENCING_EXPORT void _SetLinearElementId(Dgn::DgnElementId);
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const = 0;
-    LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);    
+    LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);
+    bset<LinearlyReferencedLocationId> const& _GetLinearlyReferencedAtLocationIdsAccessed() const { return m_accessedAtLocationIds; }
+    bset<LinearlyReferencedLocationId> const& _GetLinearlyReferencedFromToLocationIdsAccessed() const { return m_accessedFromToLocationIds; }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearlyLocated)
@@ -69,8 +86,45 @@ public:
     LINEARREFERENCING_EXPORT ILinearElementCP GetLinearElement() const;
     LINEARREFERENCING_EXPORT bvector<LinearlyReferencedLocationId> QueryLinearlyReferencedLocationIds() const;
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationCP GetLinearlyReferencedLocation(LinearlyReferencedLocationId) const;
-    LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);    
+    LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationCP GetLinearlyReferencedAtLocation(LinearlyReferencedLocationId) const;
+    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationCP GetLinearlyReferencedFromToLocation(LinearlyReferencedLocationId) const;
+    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationP GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId);
+
+    CascadeLocationChangesAction GetCascadeLocationChangesActionFlag() const { return m_cascadeLocationChangesFlag;}
+    void SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction flag) { m_cascadeLocationChangesFlag = flag; }
 }; // ILinearlyLocated
+
+//=======================================================================================
+//! Interface implemented by algorithm classes to be applied during cascading of
+//! changes on linearly-located elements.
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ICascadeLinearLocationChangesAlgorithm : RefCountedBase
+{
+private:
+    CascadeLocationChangesAction m_action;
+    Dgn::DgnElementCPtr m_original, m_replacement;    
+    bvector<Dgn::DgnElementPtr> m_impactedLinearlyLocatedDgnElements;
+
+protected:
+    ICascadeLinearLocationChangesAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action) :
+        m_original(&original.ToElement()), m_replacement(&replacement.ToElement()), m_action(action) {}
+
+    virtual Dgn::DgnDbStatus _Prepare(ILinearElementSourceCR source) = 0;
+    virtual Dgn::DgnDbStatus _Commit(ILinearElementSourceCR source) = 0;
+    void _AddImpactedDgnElement(Dgn::DgnElementPtr& dgnElement) { m_impactedLinearlyLocatedDgnElements.push_back(dgnElement); }
+    bvector<Dgn::DgnElementPtr> _GetImpactedDgnElements() const { return m_impactedLinearlyLocatedDgnElements; }
+
+public:
+    ILinearlyLocatedCR GetOriginal() const { return *dynamic_cast<ILinearlyLocatedCP>(m_original.get()); }
+    ILinearlyLocatedCR GetReplacement() const { return *dynamic_cast<ILinearlyLocatedCP>(m_replacement.get()); }
+    CascadeLocationChangesAction GetAction() const { return m_action; }
+
+    Dgn::DgnDbStatus Prepare(ILinearElementSourceCR source) { return _Prepare(source); }
+    Dgn::DgnDbStatus Commit(ILinearElementSourceCR source) { return _Commit(source); }
+}; // ICascadeLinearLocationChangesAlgorithm
 
 //=======================================================================================
 //! Interface implemented by attribution-elements, representing values of a property

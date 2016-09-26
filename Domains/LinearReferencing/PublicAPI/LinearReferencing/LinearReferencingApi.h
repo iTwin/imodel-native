@@ -120,10 +120,13 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // Define typedefs and Ptrs in the LinearReferencing namespace
 //-----------------------------------------------------------------------------------------
 LINEARREFERENCING_TYPEDEFS(DistanceExpression)
+LINEARREFERENCING_TYPEDEFS(ICascadeLinearLocationChangesAlgorithm)
 LINEARREFERENCING_TYPEDEFS(ILinearElement)
+LINEARREFERENCING_TYPEDEFS(ILinearElementSource)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocated)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocatedElement)
 LINEARREFERENCING_TYPEDEFS(IReferent)
+LINEARREFERENCING_TYPEDEFS(ISegmentableLinearElement)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedAtLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedFromToLocation)

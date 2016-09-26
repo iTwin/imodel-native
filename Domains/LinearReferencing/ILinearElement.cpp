@@ -8,9 +8,26 @@
 #include <LinearReferencingInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ILinearElementSource::_PrepareCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const
+    {
+    return algorithm.Prepare(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ILinearElementSource::_CommitCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const
+    {
+    return algorithm.Commit(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocated::ILinearlyLocated()
+ILinearlyLocated::ILinearlyLocated():
+    m_cascadeLocationChangesFlag(CascadeLocationChangesAction::None)
     {
     }
 
@@ -77,7 +94,55 @@ LinearlyReferencedLocationCP ILinearlyLocated::GetLinearlyReferencedLocation(Lin
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(LinearlyReferencedLocationId id)
     {
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedLocation>(ToElementR(), *QueryClass(ToElement().GetDgnDb()), id);
+    LinearlyReferencedLocationP retVal = GetLinearlyReferencedAtLocationP(id);
+    if (!retVal)
+        retVal = GetLinearlyReferencedFromToLocationP(id);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedAtLocationCP ILinearlyLocated::GetLinearlyReferencedAtLocation(LinearlyReferencedLocationId id) const
+    {
+    return const_cast<ILinearlyLocatedP>(this)->GetLinearlyReferencedAtLocationP(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedAtLocationP ILinearlyLocated::GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId id)
+    {
+    auto retValP = DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(ToElementR(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id);
+
+    // Keeping track of accessed locationIds - needed while determining changes during cascade to neighbors
+    if (retValP && m_accessedAtLocationIds.find(id) == m_accessedAtLocationIds.end())
+        m_accessedAtLocationIds.insert(id);
+        
+    return retValP;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedFromToLocationCP ILinearlyLocated::GetLinearlyReferencedFromToLocation(LinearlyReferencedLocationId id) const
+    {
+    return const_cast<ILinearlyLocatedP>(this)->GetLinearlyReferencedFromToLocationP(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedFromToLocationP ILinearlyLocated::GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId id)
+    {
+    auto retValP = DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(ToElementR(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id);
+
+    // Keeping track of accessed locationIds - needed while determining changes during cascade to neighbors
+    if (retValP && m_accessedFromToLocationIds.find(id) == m_accessedFromToLocationIds.end())
+        m_accessedFromToLocationIds.insert(id);
+        
+    return retValP;
     }
 
 /*---------------------------------------------------------------------------------**//**

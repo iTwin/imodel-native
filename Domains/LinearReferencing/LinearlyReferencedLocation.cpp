@@ -41,6 +41,14 @@ LinearlyReferencedAtLocationPtr LinearlyReferencedAtLocation::Create(DistanceExp
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LinearlyReferencedAtLocation::_HasChanges() const
+    {
+    return m_originalAtPosition != m_atPosition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el)
@@ -106,6 +114,8 @@ DgnDbStatus LinearlyReferencedAtLocation::_LoadProperties(DgnElementCR el)
         stmtPtr->IsValueNull(4) ? DgnElementId() : stmtPtr->GetValueId<DgnElementId>(4),
         stmtPtr->IsValueNull(3) ? NullableDouble() : stmtPtr->GetValueDouble(3));
 
+    m_originalAtPosition = m_atPosition;
+
     return DgnDbStatus::Success;
     }
 
@@ -120,7 +130,7 @@ LinearlyReferencedFromToLocation::LinearlyReferencedFromToLocation()
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedFromToLocation::LinearlyReferencedFromToLocation(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-    m_fromPosition(fromPosition), m_toPosition(toPosition)
+    m_fromPosition(fromPosition), m_toPosition(toPosition), m_originalFromPosition(DistanceExpression()), m_originalToPosition(DistanceExpression())
     {
     }
 
@@ -130,6 +140,14 @@ LinearlyReferencedFromToLocation::LinearlyReferencedFromToLocation(DistanceExpre
 LinearlyReferencedFromToLocationPtr LinearlyReferencedFromToLocation::Create(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition)
     {
     return new LinearlyReferencedFromToLocation(fromPosition, toPosition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LinearlyReferencedFromToLocation::_HasChanges() const
+    {
+    return (m_originalFromPosition != m_fromPosition || m_originalToPosition != m_toPosition);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,6 +248,9 @@ DgnDbStatus LinearlyReferencedFromToLocation::_LoadProperties(DgnElementCR el)
         stmtPtr->IsValueNull(7) ? NullableDouble() : stmtPtr->GetValueDouble(7),
         stmtPtr->IsValueNull(9) ? DgnElementId() : stmtPtr->GetValueId<DgnElementId>(9),
         stmtPtr->IsValueNull(8) ? NullableDouble() : stmtPtr->GetValueDouble(8));
+
+    m_originalFromPosition = m_fromPosition;
+    m_originalToPosition = m_toPosition;
 
     return DgnDbStatus::Success;
     }

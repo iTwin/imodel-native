@@ -28,8 +28,16 @@ protected:
     virtual Utf8CP _GetECSchemaName() const override { return BLR_SCHEMA_NAME; }
     virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 
+    virtual bool _HasChanges() const = 0;
+    virtual LinearlyReferencedAtLocationCP _ToLinearlyReferencedAtLocation() const { return nullptr; }
+    virtual LinearlyReferencedFromToLocationCP _ToLinearlyReferencedFromToLocation() const { return nullptr; }
+
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedLocation)
+
+    bool HasChanges() const { return _HasChanges(); }
+    LinearlyReferencedAtLocationCP ToLinearlyReferencedAtLocation() const { return _ToLinearlyReferencedAtLocation(); }
+    LinearlyReferencedFromToLocationCP ToLinearlyReferencedFromToLocation() const { return _ToLinearlyReferencedFromToLocation(); }
 }; // LinearlyReferencedLocation
 
 //=======================================================================================
@@ -42,7 +50,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedAtLocation : LinearlyReferenced
     friend struct LinearlyReferencedAtLocationHandler;
 
 private:
-    DistanceExpression m_atPosition;
+    DistanceExpression m_originalAtPosition, m_atPosition;
 
 protected:
     LinearlyReferencedAtLocation();
@@ -53,6 +61,9 @@ protected:
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+
+    virtual bool _HasChanges() const override;
+    virtual LinearlyReferencedAtLocationCP _ToLinearlyReferencedAtLocation() const override { return this; }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedAtLocation)
@@ -72,6 +83,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinearlyReferencedFromToLocation : LinearlyRefere
     friend struct LinearlyReferencedFromToLocationHandler;
 
 private:
+    DistanceExpression m_originalFromPosition, m_originalToPosition;
     DistanceExpression m_fromPosition, m_toPosition;
 
 protected:
@@ -84,13 +96,18 @@ protected:
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
+    virtual bool _HasChanges() const override;
+    virtual LinearlyReferencedFromToLocationCP _ToLinearlyReferencedFromToLocation() const override { return this; }
+
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedFromToLocation)
     DistanceExpressionCR GetFromPosition() const { return m_fromPosition; }
     DistanceExpressionR GetFromPositionR() { return m_fromPosition; }
+    DistanceExpressionCR GetOriginalFromPosition() const { return m_originalFromPosition; }
     void SetFromPosition(DistanceExpressionCR position) { m_fromPosition = position; }
     DistanceExpressionCR GetToPosition() const { return m_toPosition; }
     DistanceExpressionR GetToPositionR() { return m_toPosition; }
+    DistanceExpressionCR GetOriginalToPosition() const { return m_originalToPosition; }
     void SetToPosition(DistanceExpressionCR position) { m_toPosition = position; }
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedFromToLocationPtr Create(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);

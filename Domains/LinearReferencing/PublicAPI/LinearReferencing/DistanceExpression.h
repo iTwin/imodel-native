@@ -51,4 +51,22 @@ public:
     LINEARREFERENCING_EXPORT void SetFromReferent(IReferentCP fromReferent);
 }; // DistanceExpression
 
+inline bool operator==(const DistanceExpression& lhs, const DistanceExpression& rhs) 
+    {
+    return (lhs.GetDistanceAlongFromStart() == rhs.GetDistanceAlongFromStart() && 
+        lhs.GetLateralOffsetFromILinearElement() == rhs.GetLateralOffsetFromILinearElement() &&
+        lhs.GetVerticalOffsetFromILinearElement() == rhs.GetVerticalOffsetFromILinearElement() &&
+        lhs.GetDistanceAlongFromReferent() == rhs.GetDistanceAlongFromReferent() &&
+        lhs.GetFromReferentId() == rhs.GetFromReferentId());
+    }
+
+inline bool operator!=(const DistanceExpression& lhs, const DistanceExpression& rhs)
+    {
+    return (lhs.GetDistanceAlongFromStart() != rhs.GetDistanceAlongFromStart() ||
+        lhs.GetLateralOffsetFromILinearElement() != rhs.GetLateralOffsetFromILinearElement() ||
+        lhs.GetVerticalOffsetFromILinearElement() != rhs.GetVerticalOffsetFromILinearElement() ||
+        lhs.GetDistanceAlongFromReferent() != rhs.GetDistanceAlongFromReferent() ||
+        lhs.GetFromReferentId() != rhs.GetFromReferentId());
+    }
+
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

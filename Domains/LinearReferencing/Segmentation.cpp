@@ -37,6 +37,9 @@ inline void operator|=(LinearlyReferencedLocationType& a, LinearlyReferencedLoca
     a = static_cast<LinearlyReferencedLocationType>(static_cast<int>(a) | static_cast<int>(b));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedLocationType GetLinearlyReferencedLocationTypesToUse(DgnDbR dgnDb, bset<DgnClassId> const& iLinearlyLocatedClassIds)
     {
     LinearlyReferencedLocationType locationType = static_cast<LinearlyReferencedLocationType>(0);
@@ -103,8 +106,9 @@ void GetAtLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Ut
     NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong, bvector<double>& bindVals)
     {
     ecSql.append(
-        "SELECT LinearlyLocated.ECInstanceId, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart "
-        "FROM (SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.ECInstanceId "
+        "FROM (SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -140,8 +144,9 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
     NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong, bvector<double>& bindVals)
     {
     ecSql.append(
-        "SELECT LinearlyLocated.ECInstanceId, FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart "
-        "FROM (SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart, FromToLocation.ECInstanceId "
+        "FROM (SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -179,9 +184,11 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
     NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong, bvector<double>& bindVals)
     {
     ecSql.append(
-        "SELECT LinearlyLocated.ECInstanceId, coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "
-        "coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart)"
-        "FROM ((SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
+        "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
+        "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
+        "FROM ((SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -259,12 +266,132 @@ bvector<LinearSegment> ISegmentableLinearElement::_QuerySegments(bset<DgnClassId
     bvector<LinearSegment> retVal;
     while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         {
-        auto dgnElementCPtr = dgnDbR.Elements().GetElement(stmtPtr->GetValueId<DgnElementId>(0));
-        auto linearlyLocatedCP = dynamic_cast<ILinearlyLocatedCP>(dgnElementCPtr.get());
-        BeAssert(linearlyLocatedCP != nullptr);
-
-        retVal.push_back(LinearSegment(*linearlyLocatedCP, stmtPtr->GetValueDouble(1), stmtPtr->GetValueDouble(2)));
+        retVal.push_back(LinearSegment(
+            stmtPtr->GetValueId<DgnElementId>(0), 
+            stmtPtr->GetValueId<DgnClassId>(1), 
+            stmtPtr->GetValueDouble(2), stmtPtr->GetValueDouble(3),
+            stmtPtr->GetValueId<LinearlyReferencedLocationId>(4)));
         }
 
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void CascadeFromToLocationChangesAlgorithm::_FindFromToLocationChanges(bvector<LinearlyReferencedFromToLocationCP>& fromToLocationsChanged)
+    {
+    for (auto& locationId : GetReplacement()._GetLinearlyReferencedFromToLocationIdsAccessed())
+        {
+        auto locationCP = GetReplacement().GetLinearlyReferencedFromToLocation(locationId);
+        if (!locationCP->HasChanges())
+            continue;
+
+        fromToLocationsChanged.push_back(locationCP);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSourceCR source)
+    {
+    if (CascadeLocationChangesAction::None == GetAction())
+        return DgnDbStatus::Success;
+
+    bvector<LinearlyReferencedFromToLocationCP> fromToLocationsChanged;
+    _FindFromToLocationChanges(fromToLocationsChanged);
+
+    if (CascadeLocationChangesAction::OnlyIfLocationsChanged == GetAction() && fromToLocationsChanged.empty())
+        return DgnDbStatus::Success;
+
+    auto iSegmentableLinearElemCP = dynamic_cast<ISegmentableLinearElementCP>(GetReplacement().GetLinearElement());
+    BeAssert(iSegmentableLinearElemCP != nullptr);
+
+    bset<DgnClassId> classIds;
+    classIds.insert(GetOriginal().ToElement().GetElementClassId());
+    auto linearSegmentVector = iSegmentableLinearElemCP->QuerySegments(classIds);
+
+    return _Prepare(source, linearSegmentVector, fromToLocationsChanged);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSourceCR source,
+    bvector<LinearSegment> const& existingLinearSegments, bvector<LinearlyReferencedFromToLocationCP> const& fromToLocationsChanged)
+    {
+    auto originElementId = GetReplacement().ToElement().GetElementId();
+    for (auto iter = existingLinearSegments.begin(); iter != existingLinearSegments.end(); ++iter)
+        {
+        auto const& linearSegmentCR = *iter;
+        if (linearSegmentCR.GetILinearlyLocatedId() != originElementId)
+            continue;
+
+        LinearlyReferencedFromToLocationCP fromToLocationCP = nullptr;
+
+        for (auto locationCP : fromToLocationsChanged)
+            {
+            if (fabs(locationCP->GetOriginalFromPosition().GetDistanceAlongFromStart() - linearSegmentCR.GetStartDistanceAlong()) < DBL_EPSILON &&
+                fabs(locationCP->GetOriginalToPosition().GetDistanceAlongFromStart() - linearSegmentCR.GetStopDistanceAlong()) < DBL_EPSILON)
+                {
+                fromToLocationCP = locationCP;
+                break;
+                }
+            }
+
+        if (!fromToLocationCP)
+            continue;
+
+        // If segment being processed not at the front, and its start distance along changed...
+        if (iter != existingLinearSegments.begin() && 
+            fabs(fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart() - linearSegmentCR.GetStartDistanceAlong()) > DBL_EPSILON)
+            {
+            double newFromDistanceAlong = fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart();
+
+            LinearSegment const* prevSegment = iter - 1;
+            if (fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart() < prevSegment->GetStartDistanceAlong())
+                return DgnDbStatus::BadRequest; // New start distance along can't go before previous segment's start distance along
+
+            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(linearSegmentCR.GetILinearlyLocatedId());
+            auto linearlyLocatedP = dynamic_cast<ILinearlyLocatedP>(impactedDgnElementPtr.get());
+            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(prevSegment->GetLinearlyReferencedLocationId());
+            prevLocationP->GetToPositionR().SetDistanceAlongFromStart(newFromDistanceAlong);
+
+            _AddImpactedDgnElement(impactedDgnElementPtr);
+            }
+
+        // If segment being processed not at the end, and its stop distance along changed...
+        if (iter != (existingLinearSegments.end() - 1) &&
+            fabs(fromToLocationCP->GetToPosition().GetDistanceAlongFromStart() - linearSegmentCR.GetStopDistanceAlong()) > DBL_EPSILON)
+            {
+            double newToDistanceAlong = fromToLocationCP->GetToPosition().GetDistanceAlongFromStart();
+
+            LinearSegment const* nextSegment = iter + 1;
+            if (fromToLocationCP->GetToPosition().GetDistanceAlongFromStart() > nextSegment->GetStopDistanceAlong())
+                return DgnDbStatus::BadRequest; // New stop distance along can't go after next segment's stop distance along
+
+            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(linearSegmentCR.GetILinearlyLocatedId());
+            auto linearlyLocatedP = dynamic_cast<ILinearlyLocatedP>(impactedDgnElementPtr.get());
+            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(nextSegment->GetLinearlyReferencedLocationId());
+            prevLocationP->GetToPositionR().SetDistanceAlongFromStart(newToDistanceAlong);
+
+            _AddImpactedDgnElement(impactedDgnElementPtr);
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Commit(ILinearElementSourceCR source)
+    {
+    DgnDbStatus status = DgnDbStatus::Success;
+    for (auto& dgnElementPtr : _GetImpactedDgnElements())
+        if (dgnElementPtr->Update(&status).IsNull())
+            return status;
+
+    return status;
     }
