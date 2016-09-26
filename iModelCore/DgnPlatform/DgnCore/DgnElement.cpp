@@ -362,6 +362,23 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP use
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, code, userLabel));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SheetPtr Sheet::Create(DocumentListModelCR model, DgnCodeCR code, Utf8CP userLabel)
     {
     DgnDbR db = model.GetDgnDb();
