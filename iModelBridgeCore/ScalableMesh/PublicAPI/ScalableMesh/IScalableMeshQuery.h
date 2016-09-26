@@ -477,6 +477,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
+
+        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const= 0;
+
+        virtual IScalableMeshTexturePtr _GetTexture(uint64_t texID) const= 0;
 #endif
 
                 
@@ -544,6 +548,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
+
+        BENTLEY_SM_EXPORT void GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const;
+
+        BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture(uint64_t texID) const;
 #endif
     };
 
@@ -554,17 +562,17 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
     {
     protected:
 
-        virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const = 0;
+        virtual StatusInt _GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const = 0;
 
-        virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const = 0;      
+        virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
         virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;        
 
     public : 
 
-        BENTLEY_SM_EXPORT StatusInt GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const;
+        BENTLEY_SM_EXPORT StatusInt GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const;        
+        BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
         BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;                
     };

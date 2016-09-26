@@ -1668,7 +1668,9 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     : ScalableMeshNode(nodePtr)
     {    
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
-    m_cachedDisplayData = meshNode->GetDisplayData();                
+    //m_cachedDisplayData = meshNode->GetDisplayData();     
+    m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
+    meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData);
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
@@ -1682,14 +1684,20 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::AddClipVector(
      
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() const
     {
-    return m_cachedDisplayData.IsValid();
+    return m_cachedDisplayMeshData.IsValid();
     }
 
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
     assert(IsLoaded() == true);
 
-    const bvector<uint64_t>& appliedClips(const_cast<SmCachedDisplayData*>(m_cachedDisplayData->GetData())->GetAppliedClips());
+    bvector<uint64_t> appliedClips;
+    for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
+        {
+        auto& meshData = (*m_cachedDisplayMeshData)[i];
+        const bvector<uint64_t>& clipsForMesh = const_cast<SmCachedDisplayMeshData&>(meshData).GetAppliedClips();
+        appliedClips.insert(appliedClips.end(), clipsForMesh.begin(), clipsForMesh.end());
+        }
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
     bvector<bool> appliedClipsVisible;
     appliedClipsVisible.resize(appliedClips.size(), false);        
@@ -1734,9 +1742,117 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::RemoveDisplayD
         auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
             
        // assert(m_cachedDisplayData->GetRefCount() == 2);
-        m_cachedDisplayData = 0;
-    
-        meshNode->RemoveDisplayData();
+        m_cachedDisplayMeshData = 0;
+        m_cachedDisplayTextureData.clear();
+
+        meshNode->RemoveDisplayMesh();
+        }
+    }
+
+template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTextureData(IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+    {
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (!meshNode->IsTextured())
+        {
+        return false;
+        }
+    else
+        {
+        m_cachedDisplayTextureData.clear();
+
+#ifdef WIP_MESH_IMPORT
+        //check whether we have any tex IDs in the metadata
+        meshNode->GetMeshParts();
+        meshNode->GetMetadata();
+        if (!meshNode->m_meshParts.empty())
+            {
+            bvector<uint64_t> textureIDs;
+            for(auto& data: meshNode->m_meshMetadata)
+                {
+                Json::Value val;
+                Json::Reader reader;
+                reader.parse(data, val);
+                if (val["texId"].size() > 0)
+                    textureIDs.push_back((*val["texId"].begin()).asUInt64());
+                }
+            for(auto& texId: textureIDs)
+                {
+                RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetDisplayTexture(texId);
+                if (!displayTextureDataPtr.IsValid())
+                    {
+                    auto texPtr = meshNode->GetTexturePtr(texId);
+                    if (texPtr.IsValid())
+                        {
+                        int width, height;
+                        memcpy(&width, texPtr->GetData(), sizeof(int));
+                        memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
+                        SmCachedDisplayTexture* cachedDisplayTexture;
+                        displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                     width,
+                                                                     height,
+                                                                     false,
+                                                                     QV_RGB_FORMAT,
+                                                                     texPtr->GetData() + 3 * sizeof(int));
+
+                        /*WString fileName = L"file://";
+                        fileName.append(L"e:\\output\\scmesh\\2016-09-25\\texture_");
+                        fileName.append(std::to_wstring(texId).c_str());
+                        fileName.append(L".bmp");
+                        HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(fileName));
+                        HFCPtr<HRPPixelType> pImageDataPixelType(new HRPPixelTypeV24B8G8R8());
+
+                        HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
+                                                                  width,
+                                                                  height,
+                                                                  pImageDataPixelType,
+                                                                  const_cast<byte*>(texPtr->GetData() + 3 * sizeof(int)));*/
+
+                        SmCachedDisplayTextureData* data = new SmCachedDisplayTextureData(cachedDisplayTexture,
+                                                                                          texId,
+                                                                                          displayCacheManagerPtr,
+                                                                                          width*height * 6
+                                                                                          );
+                        displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
+                        }
+                    }
+                m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
+                }
+            }
+        else
+            {
+#endif
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetSingleDisplayTexture();
+            if (!displayTextureDataPtr.IsValid())
+                {
+                auto texPtr = meshNode->GetTexturePtr();
+                if (texPtr.IsValid())
+                    {
+                    int width, height;
+                    memcpy(&width, texPtr->GetData(), sizeof(int));
+                    memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
+                    SmCachedDisplayTexture* cachedDisplayTexture;
+                    displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                 width,
+                                                                 height,
+                                                                 false,
+                                                                 QV_RGB_FORMAT,
+                                                                 texPtr->GetData() + 3 * sizeof(int));
+
+                    SmCachedDisplayTextureData* data = new SmCachedDisplayTextureData(cachedDisplayTexture,
+                                                                                      meshNode->GetSingleTextureID(),
+                                                                                      displayCacheManagerPtr,
+                                                                                      width*height * 6
+                                                                                      );
+                    displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
+                    }
+
+
+                }
+            m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
+#ifdef WIP_MESH_IMPORT
+            }
+#endif
+        return true;
         }
     }
 
@@ -1750,7 +1866,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
     LOAD_NODE
             
-    if (displayCacheManagerPtr != 0 && !m_cachedDisplayData.IsValid())                
+    if (displayCacheManagerPtr != 0 && !m_cachedDisplayMeshData.IsValid())                
         {        
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->GetNbPoints() > 0)
@@ -1758,12 +1874,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             //NEEDS_WORK_SM : Load texture here
             //m_cachedDisplayTexture
 
-            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);            
-            
+            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+
             DRange3d range3D(_GetContentExtent());
 
             DPoint3d centroid;
-            centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);            
+            centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
 
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
             vector<FloatXYZ> dataPoints(pointsPtr->size());
@@ -1773,266 +1889,305 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 dataPoints[pointInd].x = (float)(PointOp<POINT>::GetX(pointsPtr->operator[](pointInd)) - centroid.x);
                 dataPoints[pointInd].y = (float)(PointOp<POINT>::GetY(pointsPtr->operator[](pointInd)) - centroid.y);
                 dataPoints[pointInd].z = (float)(PointOp<POINT>::GetZ(pointsPtr->operator[](pointInd)) - centroid.z);
-                }            
-            
-            FloatXYZ*       toLoadPoints = 0;
-            size_t          toLoadNbPoints = 0;
-            int32_t*        toLoadFaceIndexes = 0;
-            size_t          toLoadNbFaceIndexes = 0;
-            FloatXY*        toLoadUv = 0;
-            const int32_t*  toLoadUvIndex = 0;
-            size_t          toLoadUvCount = 0;                
+                }
+
 
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(meshNode->GetPtsIndicePtr());
-                                    
-            size_t nbFaceIndices = faceIndexes->size(); 
+
+            size_t nbFaceIndices = faceIndexes->size();
 
             if (nbFaceIndices == 0)
-                {                        
+                {
                 return;
                 }
 
 
-            SmCachedDisplayTexture* cachedDisplayTexture = 0;
-            size_t                  qvMemorySizeEstimate = 0;
-            
+            //SmCachedDisplayTexture* cachedDisplayTexture = 0;
+            //size_t                  qvMemorySizeEstimate = 0;
+            bool texLoaded = false;
             if (loadTexture && meshNode->IsTextured())
-                {             
+                {
                 //NEEDS_WORK_SM : Don't keep texture in memory.
-                IScalableMeshTexturePtr smTexturePtr(GetTexture());
+                /* IScalableMeshTexturePtr smTexturePtr(GetTexture());
 
-                if (smTexturePtr.IsValid())
+                 if (smTexturePtr.IsValid())
+                 {
+                 BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                 smTexturePtr->GetDimension().x,
+                 smTexturePtr->GetDimension().y,
+                 false,
+                 QV_RGB_FORMAT,
+                 smTexturePtr->GetData());
+
+                 //Estimate which seems to give good result.
+                 qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
+
+                 assert(status == SUCCESS);
+                 }*/
+                texLoaded = GetOrLoadAllTextureData(displayCacheManagerPtr);
+                }
+
+            bvector<int> meshParts;
+            bvector<bpair<bool, uint64_t>> textureIDs;
+#ifdef WIP_MESH_IMPORT            
+            meshNode->GetMetadata();
+            meshNode->GetMeshParts();
+            if (!meshNode->m_meshParts.empty())
+                {
+                meshParts = meshNode->m_meshParts;
+                for(auto& data: meshNode->m_meshMetadata)
                     {
-                    BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
-                                                                                        smTexturePtr->GetDimension().x,
-                                                                                        smTexturePtr->GetDimension().y,
-                                                                                        false,
-                                                                                        QV_RGB_FORMAT,
-                                                                                        smTexturePtr->GetData());
+                    Json::Value val;
+                    Json::Reader reader;
+                    reader.parse(data, val);
+                    if(val["texId"].size() > 0)
+                        textureIDs.push_back(make_bpair(true,(*val["texId"].begin()).asUInt64()));
 
-                    //Estimate which seems to give good result. 
-                    qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
+                    else textureIDs.push_back(make_bpair(false,0));
+                    }
+                }
+            else
+#endif
+                {
+                meshParts.push_back(0);
+                meshParts.push_back((int)nbFaceIndices);
+                if (meshNode->IsTextured()) textureIDs.push_back(make_bpair(true, meshNode->GetSingleTextureID()));
+                else textureIDs.push_back(make_bpair(false, meshNode->GetSingleTextureID()));
+                }
+            size_t sizeToReserve = meshParts.size() / 2;
+            for (size_t part = 0; part < meshParts.size(); part += 2)
+                {
+                uint64_t textureID = textureIDs[part / 2].second;
+                const DPoint2d* uvPtr = 0;
+                size_t          nbUvs = 0;
+                const int32_t*  uvIndicesP = 0;
+                FloatXYZ*       toLoadPoints = 0;
+                size_t          toLoadNbPoints = 0;
+                int32_t*        toLoadFaceIndexes = 0;
+                size_t          toLoadNbFaceIndexes = 0;
+                FloatXY*        toLoadUv = 0;
+                const int32_t*  toLoadUvIndex = 0;
+                size_t          toLoadUvCount = 0;
+
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicesPtr;
+                RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr;
+                nbFaceIndices = meshParts[part + 1] - meshParts[part];
+                const int32_t* indicesP = &(*faceIndexes)[0] + meshParts[part];
+                if (texLoaded && textureIDs[part / 2].first)
+                    {
+                    uvIndicesPtr = meshNode->GetUVsIndicesPtr();
+
+                    if (uvIndicesPtr.IsValid() && uvIndicesPtr->size() > 0)
+                        uvIndicesP = &(*uvIndicesPtr)[0] + meshParts[part];
+
+                    uvCoordsPtr = meshNode->GetUVCoordsPtr();
+
+                    if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                        {
+                        nbUvs = uvCoordsPtr->size();
+                        uvPtr = &(*uvCoordsPtr)[0];
+                        }
+                    }
+
+                DifferenceSet clipDiffSet;
+                bool isClipped = false;
+                bvector<uint64_t> appliedClips;
+
+                if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0))
+                    {
+                    ComputeDiffSet(clipDiffSet, clipsToShow);
+
+                    ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints,
+                                           toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                           toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                           &dataPoints[0], dataPoints.size(),
+                                           indicesP, nbFaceIndices,
+                                           uvPtr, uvIndicesP, nbUvs,
+                                           clipDiffSet,
+                                           centroid);
+
+                    bool dbg = false;
+
+                    if (dbg)
+                        {
+                        const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
+                        bvector<DPoint3d> ptArray;
+                        for (size_t i = 0; i < toLoadNbPoints; ++i)
+                            ptArray.push_back(DPoint3d::From(toLoadPoints[i].x + centroid.x, toLoadPoints[i].y + centroid.y, toLoadPoints[i].z + centroid.z));
+                        WString name = WString(s_path) + L"fmeshduringdraw_";
+                        name.append(to_wstring(meshNode->GetBlockID().m_integerID).c_str());
+                        name.append(L"_");
+                        name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.x).c_str());
+                        name.append(L"_");
+                        name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.y).c_str());
+                        name.append(L".m");
+                        FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+                        size_t ptCount = toLoadNbPoints;
+                        size_t faceCount = toLoadNbFaceIndexes;
+                        fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+                        fwrite(&ptArray[0], sizeof(DPoint3d), ptCount, meshAfterClip);
+                        fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+                        fwrite(toLoadFaceIndexes, sizeof(int32_t), faceCount, meshAfterClip);
+                        fclose(meshAfterClip);
+                        }
+
+
+                    for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
+                        {
+                        toLoadFaceIndexes[ind] -= 1;
+                        }
+
+                    for (auto& clipToShow : clipsToShow)
+                        {
+                        if (meshNode->HasClip(clipToShow))
+                            {
+                            appliedClips.push_back(clipToShow);
+                            }
+                        }
+
+                    isClipped = true;
+                    }
+                else
+                    {
+                    toLoadPoints = &dataPoints[0];
+                    toLoadNbPoints = dataPoints.size();
+                    toLoadFaceIndexes = new int32_t[nbFaceIndices];
+                    toLoadNbFaceIndexes = nbFaceIndices;
+
+                    //NEEDS_WORK_SM : Could generate them starting at 0.
+                    for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
+                        {
+                        toLoadFaceIndexes[ind] = indicesP[ind] - 1;
+                        }
+
+                    if (nbUvs > 0)
+                        {
+                        toLoadUv = new FloatXY[nbUvs];
+
+                        for (size_t ind = 0; ind < nbUvs; ind++)
+                            {
+                            toLoadUv[ind].x = uvPtr[ind].x;
+                            toLoadUv[ind].y = uvPtr[ind].y;
+                            }
+                        }
+
+                    toLoadUvIndex = uvIndicesP;
+                    toLoadUvCount = nbUvs;
+                    }
+
+                // Pointers to the arrays that we will pass to QV
+                float* finalPointPtr = (float*)toLoadPoints;
+                size_t finalPointNb = toLoadNbPoints;
+                int32_t* finalIndexPtr = toLoadFaceIndexes;
+                size_t finalIndexNb = toLoadNbFaceIndexes;
+                float* finalUVPtr = 0;
+
+                // For textured meshes, we need to create new arrays of points, UV coords and face indices, such that face indices map to the correct points and UVs
+                // In particular, this requires to duplicate points having different UVs in different triangles, as it typically happens for meshes generated by ContextCapture
+                typedef std::pair<int32_t, int32_t> PointUVIndexPair;
+                bmap<PointUVIndexPair, int32_t> mapPointUVIndexToNewIndex;
+                bvector<FloatXYZ> newPoints;
+                bvector<FloatXY> newUVs;
+                bvector<int32_t> newIndices;
+
+                if (texLoaded&& toLoadUvCount > 0 && textureIDs[part / 2].first)
+                    {
+                    for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
+                        {
+                        int32_t pointInd = toLoadFaceIndexes[faceInd];
+                        int32_t uvInd = toLoadUvIndex[faceInd] - 1; // For UVs, we haven't yet made the indices zero-based
+                        // When we encounter the point/UV pair for the first time, we create a new element in the new point and UV arrays
+                        // Otherwise, we retrieve the index of the point/UV pair from the map
+                        PointUVIndexPair p(pointInd, uvInd);
+                        auto mapIt = mapPointUVIndexToNewIndex.find(p);
+                        if (mapIt == mapPointUVIndexToNewIndex.end())
+                            {
+                            int32_t newIndex = (int32_t)newPoints.size();
+                            mapPointUVIndexToNewIndex[p] = newIndex;
+                            newIndices.push_back(newIndex);
+                            newPoints.push_back(toLoadPoints[pointInd]);
+                            FloatXY uv = toLoadUv[uvInd];
+                            //assert(uv.x <= 1.f && uv.x >= 0.f);
+                            //assert(uv.y <= 1.f && uv.y >= 0.f);
+                            newUVs.push_back({ uv.x, uv.y <= 1.f ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
+                            }
+                        else
+                            {
+                            int32_t newIndex = mapIt->second;
+                            newIndices.push_back(newIndex);
+                            }
+                        }
+
+                    // Update the pointers passed to QV so that they point to the new arrays
+                    finalPointPtr = (float*)newPoints.data();
+                    finalUVPtr = (float*)newUVs.data();
+                    finalPointNb = newPoints.size();
+                    finalIndexPtr = newIndices.data();
+                    finalIndexNb = newIndices.size();
+                    }
+
+                SmCachedDisplayMesh* cachedDisplayMesh = 0;
+
+                if (s_deactivateTexture || !texLoaded)
+                    {
+                    BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
+                                                                                     finalPointNb,
+                                                                                     &centroid,
+                                                                                     finalPointPtr,
+                                                                                     0,
+                                                                                     (int)finalIndexNb / 3,
+                                                                                     finalIndexPtr,
+                                                                                     0,
+                                                                                     0);
 
                     assert(status == SUCCESS);
                     }
-                }
-
-            const DPoint2d* uvPtr = 0;
-            size_t          nbUvs = 0;
-            const int32_t*  uvIndicesP = 0;
-
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicesPtr;
-            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr;
-
-            if (cachedDisplayTexture != 0)
-                {                                                                
-                uvIndicesPtr = meshNode->GetUVsIndicesPtr();
-
-                if (uvIndicesPtr.IsValid() && uvIndicesPtr->size() > 0)
-                    uvIndicesP = &(*uvIndicesPtr)[0];
-
-                uvCoordsPtr = meshNode->GetUVCoordsPtr();
-
-                if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                else
                     {
-                    nbUvs = uvCoordsPtr->size();
-                    uvPtr = &(*uvCoordsPtr)[0];
-                    }                
-                }
+                    BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
+                                                                                         finalPointNb,
+                                                                                         &centroid,
+                                                                                         finalPointPtr,
+                                                                                         0,
+                                                                                         (int)finalIndexNb / 3,
+                                                                                         finalIndexPtr,
+                                                                                         finalUVPtr,
+                                                                                         GetCachedDisplayTextureForID(textureID));
 
-            DifferenceSet clipDiffSet;
-            bool isClipped = false;
-            bvector<uint64_t> appliedClips;
-
-            if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0))
-                {
-                ComputeDiffSet(clipDiffSet, clipsToShow);
-
-                ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints,
-                                       toLoadFaceIndexes, toLoadNbFaceIndexes,
-                                       toLoadUv, toLoadUvIndex, toLoadUvCount,
-                                       &dataPoints[0], dataPoints.size(),
-                                       &(*faceIndexes)[0], nbFaceIndices,
-                                       uvPtr, uvIndicesP, nbUvs,
-                                       clipDiffSet,
-                                       centroid);
-
-                bool dbg = false;
-
-                if (dbg)
-                    {
-                    const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
-                    bvector<DPoint3d> ptArray;
-                    for (size_t i = 0; i < toLoadNbPoints; ++i)
-                        ptArray.push_back(DPoint3d::From(toLoadPoints[i].x + centroid.x, toLoadPoints[i].y + centroid.y, toLoadPoints[i].z + centroid.z));
-                    WString name = WString(s_path) + L"fmeshduringdraw_";
-                    name.append(to_wstring(meshNode->GetBlockID().m_integerID).c_str());
-                    name.append(L"_");
-                    name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.x).c_str());
-                    name.append(L"_");
-                    name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.y).c_str());
-                    name.append(L".m");
-                    FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
-                    size_t ptCount = toLoadNbPoints;
-                    size_t faceCount = toLoadNbFaceIndexes;
-                    fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
-                    fwrite(&ptArray[0], sizeof(DPoint3d), ptCount, meshAfterClip);
-                    fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
-                    fwrite(toLoadFaceIndexes, sizeof(int32_t), faceCount, meshAfterClip);
-                    fclose(meshAfterClip);
+                    assert(status == SUCCESS);
                     }
 
+                size_t qvMemorySizeEstimate = finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
 
-                for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
-                    {
-                    toLoadFaceIndexes[ind] -= 1;
-                    }
-                
-                for (auto& clipToShow : clipsToShow)
-                    {
-                    if (meshNode->HasClip(clipToShow))
-                        {
-                        appliedClips.push_back(clipToShow);
-                        }
-                    }
+                SmCachedDisplayMeshData* displayMeshData(new SmCachedDisplayMeshData(cachedDisplayMesh,
+                    displayCacheManagerPtr,
+                    textureID,
+                    texLoaded && !s_deactivateTexture && toLoadUvCount > 0 && textureIDs[part / 2].first,
+                    qvMemorySizeEstimate,
+                    appliedClips));
 
-                isClipped = true;
-                }
-            else
-                {
-                toLoadPoints = &dataPoints[0];
-                toLoadNbPoints = dataPoints.size();
-                toLoadFaceIndexes = new int32_t[nbFaceIndices];
-                toLoadNbFaceIndexes = nbFaceIndices;
-
-                //NEEDS_WORK_SM : Could generate them starting at 0.
-                for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
+                //m_cachedDisplayData = meshNode->AddDisplayData(displayData);
+                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
+                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve);
+                else m_cachedDisplayMeshData->push_back(*displayMeshData);
+                if (isClipped)
                     {
-                    toLoadFaceIndexes[ind] = (*faceIndexes)[ind] - 1;
+                    if (toLoadPoints != 0)
+                        delete[] toLoadPoints;
+
+                    if (toLoadUvIndex != 0)
+                        delete[] toLoadUvIndex;
                     }
 
-                if (nbUvs > 0)
-                    {
-                    toLoadUv = new FloatXY[nbUvs];
+                if (toLoadFaceIndexes != 0)
+                    delete[] toLoadFaceIndexes;
 
-                    for (size_t ind = 0; ind < nbUvs; ind++)
-                        {
-                        toLoadUv[ind].x = uvPtr[ind].x;
-                        toLoadUv[ind].y = uvPtr[ind].y;
-                        }
-                    }
+                if (toLoadUv != 0)
+                    delete[] toLoadUv;
 
-                toLoadUvIndex = uvIndicesP;
-                toLoadUvCount = nbUvs;
                 }
 
-            // Pointers to the arrays that we will pass to QV
-            float* finalPointPtr = (float*)toLoadPoints;
-            size_t finalPointNb = toLoadNbPoints;
-            int32_t* finalIndexPtr = toLoadFaceIndexes;
-            size_t finalIndexNb = toLoadNbFaceIndexes;
-            float* finalUVPtr = 0;
-            
-            // For textured meshes, we need to create new arrays of points, UV coords and face indices, such that face indices map to the correct points and UVs
-            // In particular, this requires to duplicate points having different UVs in different triangles, as it typically happens for meshes generated by ContextCapture
-            typedef std::pair<int32_t, int32_t> PointUVIndexPair;
-            bmap<PointUVIndexPair, int32_t> mapPointUVIndexToNewIndex;
-            bvector<FloatXYZ> newPoints;
-            bvector<FloatXY> newUVs;
-            bvector<int32_t> newIndices;  
-
-            if (cachedDisplayTexture != 0 && toLoadUvCount > 0)
-                {                                                         
-                for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
-                    {
-                    int32_t pointInd = toLoadFaceIndexes[faceInd];
-                    int32_t uvInd = toLoadUvIndex[faceInd] - 1; // For UVs, we haven't yet made the indices zero-based
-                    // When we encounter the point/UV pair for the first time, we create a new element in the new point and UV arrays
-                    // Otherwise, we retrieve the index of the point/UV pair from the map
-                    PointUVIndexPair p(pointInd, uvInd);
-                    auto mapIt = mapPointUVIndexToNewIndex.find(p);
-                    if (mapIt == mapPointUVIndexToNewIndex.end())
-                        {
-                        int32_t newIndex = (int32_t)newPoints.size();
-                        mapPointUVIndexToNewIndex[p] = newIndex;
-                        newIndices.push_back(newIndex);
-                        newPoints.push_back(toLoadPoints[pointInd]);
-                        FloatXY uv = toLoadUv[uvInd];
-                        assert(uv.x <= 1.f && uv.x >= 0.f);
-                        assert(uv.y <= 1.f && uv.y >= 0.f);
-                        newUVs.push_back({ uv.x, 1.f - uv.y }); // Different convention in QV (or ScalableMesh bug?)
-                        }
-                    else
-                        {
-                        int32_t newIndex = mapIt->second;
-                        newIndices.push_back(newIndex);
-                        }
-                    }
-
-                // Update the pointers passed to QV so that they point to the new arrays
-                finalPointPtr = (float*)newPoints.data();
-                finalUVPtr = (float*)newUVs.data();
-                finalPointNb = newPoints.size();
-                finalIndexPtr = newIndices.data();
-                finalIndexNb = newIndices.size();                    
-                }
-
-            SmCachedDisplayMesh* cachedDisplayMesh = 0;            
-            
-            if (s_deactivateTexture)
-                {
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh, 
-                                                                                 finalPointNb, 
-                                                                                 &centroid,
-                                                                                 finalPointPtr,
-                                                                                 0,
-                                                                                 (int)finalIndexNb / 3,
-                                                                                 finalIndexPtr, 
-                                                                                 0,
-                                                                                 0);
-
-                assert(status == SUCCESS);
-                }
-            else
-                {
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh, 
-                                                                                 finalPointNb,
-                                                                                 &centroid,
-                                                                                 finalPointPtr,
-                                                                                 0,
-                                                                                 (int)finalIndexNb / 3,
-                                                                                 finalIndexPtr,
-                                                                                 finalUVPtr,
-                                                                                 cachedDisplayTexture);
-
-                assert(status == SUCCESS);
-                }         
-            
-            qvMemorySizeEstimate += finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
-
-            SmCachedDisplayData* displayData(new SmCachedDisplayData(cachedDisplayMesh,
-                                                                     cachedDisplayTexture,
-                                                                     displayCacheManagerPtr, 
-                                                                     qvMemorySizeEstimate, 
-                                                                     appliedClips));
-            
-            m_cachedDisplayData = meshNode->AddDisplayData(displayData);
-
-            if (isClipped)
-                {
-                if (toLoadPoints != 0)
-                    delete[] toLoadPoints;
-
-                if (toLoadUvIndex != 0)
-                    delete[] toLoadUvIndex;
-                }
-
-            if (toLoadFaceIndexes != 0)
-                delete[] toLoadFaceIndexes;
-
-            if (toLoadUv != 0)
-                delete[] toLoadUv;
-            }       
+            }
         }                    
     }
     
@@ -2076,6 +2231,48 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     }
 
 #ifdef WIP_MESH_IMPORT
+
+template <class POINT> void ScalableMeshNode<POINT>::_GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const
+    {
+    LOAD_NODE
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    bvector<bvector<uint8_t>> texData;
+    bvector<Utf8String> metadata;
+    meshNode->GetMeshParts(meshes, metadata, texData);
+    for(auto& data: metadata)
+        {
+        Json::Value val;
+        Json::Reader reader;
+        reader.parse(data, val);
+        if (val["texId"].size() > 0)
+            texIDs.push_back((*val["texId"].begin()).asUInt64());
+        }
+    }
+
+template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetTexture(uint64_t texID) const
+    {
+    LOAD_NODE
+
+        IScalableMeshTexturePtr texturePtr;
+
+    if (m_node->GetNbPoints() > 0)
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+
+        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTexturePtr(texID));
+
+        if (texPtr.IsValid())
+            {
+            ScalableMeshTexturePtr textureP(ScalableMeshTexture::Create(texPtr));
+
+            if (textureP->GetSize() != 0)
+                texturePtr = IScalableMeshTexturePtr(textureP.get());                
+            }
+        }
+
+    return texturePtr;
+    }
+
 template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
     {
     bvector<IScalableMeshMeshPtr> meshParts;

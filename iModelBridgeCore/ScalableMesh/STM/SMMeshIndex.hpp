@@ -26,6 +26,7 @@
 #include "LogUtils.h"
 #include "Edits\Skirts.h"
 #include <map>
+#include <json/json.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #define SM_OUTPUT_MESHES_GRAPH 0
@@ -46,6 +47,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                 m_displayMeshPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
@@ -85,6 +87,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                 m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                m_displayMeshPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
@@ -123,6 +126,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                      m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                      m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                                                                                     m_displayMeshPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
@@ -169,6 +173,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                       m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                                                                                      m_displayMeshPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
@@ -251,6 +256,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
 
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
         ISMMTGGraphDataStorePtr nodeGraphStore;
@@ -355,6 +363,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
        
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -797,11 +808,11 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ClearP
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV( const DPoint2d* uv, size_t size) 
     {
-    for (size_t i = 0; i < size; ++i)
+  /*  for (size_t i = 0; i < size; ++i)
         {
         if (uv[i].x < -0.00000001 || uv[i].x > 1.00001 || uv[i].y < -0.000001 || uv[i].y > 1.00001 || std::isnan(uv[i].x) || std::isnan(uv[i].y))
             std::cout << "wrong uv " << std::endl;
-        }
+        }*/
     RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr = GetUVCoordsPtr();    
     bool result = uvCoordsPtr->push_back(uv, size);
     assert(result);    
@@ -1262,7 +1273,51 @@ template<class POINT> void SimplifyMesh(bvector<int32_t>& indices, bvector<POINT
     uvs = newUvs;
     }
 
-template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint3d>& pointsClipped, DRange3d& extentClipped, bvector<int32_t>& indicesClipped,bvector<DPoint2d>& inOutUvs, const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent)
+template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint3d>& pointsClipped, DRange3d& extentClipped, bvector<int32_t>& indicesClipped, bvector<DPoint2d>& inOutUvs, const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent)
+    {
+    if ((extent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && extent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && extent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
+        && extent.high.x <= ExtentOp<EXTENT>::GetXMax(clipExtent) && extent.high.y <= ExtentOp<EXTENT>::GetYMax(clipExtent) && extent.high.z <= ExtentOp<EXTENT>::GetZMax(clipExtent)))
+        {
+        pointsClipped.insert(pointsClipped.end(), pts, pts + nPts);
+        indicesClipped.insert(indicesClipped.end(), indices, indices + nIndices);
+        extentClipped = extent;
+        return;
+        }
+    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(clipExtent), ExtentOp<EXTENT>::GetYMin(clipExtent), ExtentOp<EXTENT>::GetZMin(clipExtent),
+                                        ExtentOp<EXTENT>::GetXMax(clipExtent), ExtentOp<EXTENT>::GetYMax(clipExtent), ExtentOp<EXTENT>::GetZMax(clipExtent));
+
+    IScalableMeshMeshPtr meshPtr = IScalableMeshMesh::Create(nPts, const_cast<DPoint3d*>(pts), nIndices, indices, 0, 0, 0, 0, 0, 0);
+    ScalableMeshMesh* meshP = (ScalableMeshMesh*)meshPtr.get();
+    vector<int32_t> newIndices;
+    bvector<DPoint3d> origPoints;
+    vector<DPoint3d> meshPts;
+    for (size_t i = 0; i < nPts; ++i)
+        {
+        meshPts.push_back(pts[i]);
+        origPoints.push_back(pts[i]);
+        }
+
+    
+    ClipMeshToNodeRange<DPoint3d, EXTENT>(newIndices, meshPts, origPoints, inOutUvs, extentClipped, nodeRange, meshP);
+    if (newIndices.size() == 0) return;
+    bvector<int32_t> ptMap(meshPts.size(), -1);
+    bvector<DPoint2d> tempUvs;
+    for (auto& idx : newIndices)
+        {
+        assert(idx - 1 < ptMap.size());
+        if (ptMap[idx - 1] == -1)
+            {
+            pointsClipped.push_back(meshPts[idx - 1]);
+            extentClipped.Extend(pointsClipped.back());
+            if (inOutUvs.size() > 0) tempUvs.push_back(inOutUvs[idx - 1]);
+            ptMap[idx - 1] = (int)pointsClipped.size() - 1;
+            }
+        indicesClipped.push_back(ptMap[idx - 1] + 1);
+        }
+    inOutUvs = tempUvs;
+    }
+
+template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint3d>& pointsClipped, DRange3d& extentClipped, bvector<int32_t>& indicesClipped, bvector<DPoint2d>& inOutUvs, const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bvector<int64_t>& texIds, bvector<int>& parts)
     {
     if ((extent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && extent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && extent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
         && extent.high.x <= ExtentOp<EXTENT>::GetXMax(clipExtent) && extent.high.y <= ExtentOp<EXTENT>::GetYMax(clipExtent) && extent.high.z <= ExtentOp<EXTENT>::GetZMax(clipExtent)))
@@ -1286,13 +1341,25 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
         origPoints.push_back(pts[i]);
         }
 
-    ClipMeshToNodeRange<DPoint3d, EXTENT>(newIndices, meshPts, origPoints, inOutUvs, extentClipped, nodeRange, meshP);
+    bvector<int64_t> faceIds;
+    ClipMeshToNodeRange<DPoint3d, EXTENT>(newIndices, meshPts, origPoints, inOutUvs, extentClipped, nodeRange, meshP, parts, texIds, faceIds);
     if (newIndices.size() == 0) return;
     bvector<int32_t> ptMap(meshPts.size(), -1);
     bvector<DPoint2d> tempUvs;
-
+    bvector<int> newParts;
+    bvector<int64_t> newTexIds;
+    int64_t currentTexId = -1;
     for (auto& idx : newIndices)
         {
+        if (faceIds[(&idx - &newIndices[0]) / 3] != currentTexId)
+            {
+            if (currentTexId != -1)
+                {
+                newTexIds.push_back(currentTexId);
+                newParts.push_back((int)indicesClipped.size());
+                }
+            currentTexId = faceIds[(&idx - &newIndices[0]) / 3];
+            }
         assert(idx - 1 < ptMap.size());
         if (ptMap[idx - 1] == -1)
             {
@@ -1303,7 +1370,11 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
             }
         indicesClipped.push_back(ptMap[idx - 1] + 1);
         }
+    newTexIds.push_back(currentTexId);
+    newParts.push_back((int)indicesClipped.size());
     inOutUvs = tempUvs;
+    parts = newParts;
+    texIds = newTexIds;
    // SimplifyMesh(indicesClipped, pointsClipped, inOutUvs);
     }
 
@@ -1366,11 +1437,33 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     bvector<DPoint3d> pointsClipped;
     bvector<int32_t> indicesClipped;
     bvector<DPoint2d> outUvs;
-    if(texSize > 0)
+    if(uvs != nullptr)
         {
         outUvs.insert(outUvs.end(), uvs, uvs+nPts);
         }
-    ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, outUvs, pts, nPts, indices, nIndices, extent);
+    auto metadataString = Utf8String(metadata);
+    Json::Value val;
+    Json::Reader reader;
+    reader.parse(metadataString, val);
+    bvector<int> parts;
+    bvector<int64_t> texId;
+    for (const Json::Value& id : val["texId"])
+        {
+        texId.push_back(id.asInt64());
+        }
+
+    for (const Json::Value& id : val["parts"])
+        {
+        parts.push_back(id.asInt());
+        }
+    ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, outUvs, pts, nPts, indices, nIndices, extent,texId, parts);
+
+    val["texId"] = Json::arrayValue;
+    val["parts"] = Json::arrayValue;
+
+    for(auto& id: texId) val["texId"].append(id);
+    for(auto& id: parts) val["parts"].append(id);
+    Utf8String metadataStr(Json::FastWriter().write(val));
     if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
     if (m_mesher2_5d != &s_ExistingMeshMesher || m_mesher3d != &s_ExistingMeshMesher) m_mesher2_5d = m_mesher3d = &s_ExistingMeshMesher;
@@ -1416,16 +1509,35 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
         size_t offset = pointsPtr->size();
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
         m_meshParts.push_back((int)indicesPtr->size());
+        size_t currentPart =0;
         pointsPtr->push_back(&pointsClipped[0], pointsClipped.size());
         for (auto& idx : indicesClipped)
             {
+            if(&idx-&indicesClipped[0] >= parts[currentPart] ) 
+                {
+                m_meshParts.push_back((int)indicesPtr->size());
+                Json::Value subMetadata = val;
+                subMetadata["texId"] = Json::arrayValue;
+                subMetadata["parts"] = Json::arrayValue;
+                subMetadata["parts"].append((int)indicesPtr->size());
+                subMetadata["texId"].append(texId[currentPart]);
+                Utf8String subMetadataStr(Json::FastWriter().write(subMetadata));
+                m_meshMetadata.push_back(subMetadataStr);
+                m_meshParts.push_back((int)indicesPtr->size());
+                currentPart++;
+                }
             indicesPtr->push_back(idx+(int)offset);
             }
 
         m_meshParts.push_back((int)indicesPtr->size());
-        m_meshMetadata.push_back(Utf8String(metadata));
+        val["texId"] = Json::arrayValue;
+        val["parts"] = Json::arrayValue;
+        val["parts"].append((int)indicesPtr->size());
+        val["texId"].append(texId[currentPart]);
+        metadataStr = Json::FastWriter().write(val);
+        m_meshMetadata.push_back(metadataStr);
 
-        if(texSize > 3*sizeof(int))
+       /* if(texSize > 3*sizeof(int))
             {
             RefCountedPtr<SMMemoryPoolBlobItem<uint8_t>>  texPtr = GetTexturePtr();
 
@@ -1473,6 +1585,19 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
             PushUV(&outUvs[0], outUvs.size());
             StoreMetadata();
             StoreMeshParts();
+            }*/
+        if (uvs != nullptr)
+            {
+            m_nodeHeader.m_isTextured = true;
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>>  uvPtr = GetUVCoordsPtr();
+            if(offset != 0 && uvPtr->size() < offset)
+                {
+                bvector<DPoint2d> dummyUvs(offset-uvPtr->size(),DPoint2d::From(0.0,0.0));
+                PushUV(&dummyUvs[0], dummyUvs.size());
+                }
+            PushUV(&outUvs[0], outUvs.size());
+            StoreMetadata();
+            StoreMeshParts();
             }
         else
             {
@@ -1496,12 +1621,12 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     else
         {
         if (IsParentOfARealUnsplitNode())
-            added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddMeshDefinitionUnconditional(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, metadata, texData,texSize,outUvs.size() > 0 ? outUvs.data() : 0);
+            added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddMeshDefinitionUnconditional(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, metadataStr.c_str(), texData,texSize,outUvs.size() > 0 ? outUvs.data() : 0);
         else
             {
             for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                 {
-                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNode])->AddMeshDefinition(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, true, metadata, texData,texSize,outUvs.size() > 0 ? outUvs.data() : 0);
+                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNode])->AddMeshDefinition(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, true, metadataStr.c_str(), texData,texSize,outUvs.size() > 0 ? outUvs.data() : 0);
                 }
             }
         }
@@ -2683,7 +2808,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
 
             bvector<uint8_t> texPart;
             bvector<DVec2d> newUvs;
-            if(!existingTex.IsValid() || existingTex->GetSize() == 0)
+            if(!existingUvs.IsValid() || existingUvs->GetSize() == 0)
                 {
                 texData.push_back(texPart);
                 }
@@ -2692,11 +2817,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
                 newUvs.resize(idxMax - (idxMin - 1));
                 DVec2d* uvPart = (DVec2d*)const_cast<DPoint2d*>(&(*existingUvs)[idxMin-1]);
                 memcpy(&newUvs[0], uvPart, newUvs.size()*sizeof(DPoint2d));
-                ComputeTexPart(texPart,&newUvs[0],idxMax - (idxMin - 1), texDataUnified );
+               /* ComputeTexPart(texPart,&newUvs[0],idxMax - (idxMin - 1), texDataUnified );
+                texData.push_back(texPart);*/
                 texData.push_back(texPart);
                 }
             IScalableMeshMeshPtr meshPtr;
-            if(!existingTex.IsValid() || existingTex->GetSize() == 0)
+            if(!existingUvs.IsValid() || existingUvs->GetSize() == 0)
                 meshPtr = IScalableMeshMesh::Create(idxMax - (idxMin - 1), const_cast<DPoint3d*>(&(*existingPts)[idxMin-1]), indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
             else
                 meshPtr = IScalableMeshMesh::Create(idxMax - (idxMin - 1), const_cast<DPoint3d*>(&(*existingPts)[idxMin-1]), indices.size(), &indices[0], 0, 0, 0,idxMax - (idxMin - 1), &newUvs[0], &indices[0]);
@@ -2733,6 +2859,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
             {
             outUvs.insert(outUvs.end(), uvs[i].begin(), uvs[i].end());
             }
+        Json::Value val;
+        Json::Reader reader;
+        reader.parse(metadata[i], val);
+        bvector<int64_t> texId;
+        for (const Json::Value& id : val["texId"])
+            {
+            texId.push_back(id.asInt64());
+            }
         ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, outUvs, &points[i][0], points[i].size(), &indices[i][0], indices[i].size(), extent);
         if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) continue;
         if(sum+pointsClipped.size() > 65000)
@@ -2741,6 +2875,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
             indicesClipped.resize(0);
             outUvs.resize(0);
             }
+
+        if(outUvs.size() > 0) m_nodeHeader.m_isTextured = true;
         sum += pointsClipped.size();
         m_meshMetadata.push_back(metadata[i]);
         size_t offset = pointsPtr->size();
@@ -2787,7 +2923,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
                 RemapAllUVs(outUvs, uvBotLeft, uvTopRight);
                 PushTexture(tex[i].data(), tex[i].size());
                 }
-
+            }
+        if(outUvs.size() > 0)
+            {
+            
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>>  uvPtr = GetUVCoordsPtr();
             if (offset != 0 && uvPtr->size() < offset)
                 {
@@ -2828,6 +2967,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::GetMeshParts()
     {
+    std::lock_guard<std::mutex> lock(m_headerMutex);
     if(!m_meshParts.empty()) return;
     ISMInt32DataStorePtr nodeDataStore;
     bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::MeshParts);
@@ -2856,6 +2996,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::GetMesh
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::GetMetadata()
     {
+    std::lock_guard<std::mutex> lock(m_headerMutex);
     if(!m_meshParts.empty()) return;
     ISMTextureDataStorePtr nodeDataStore;
     bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::Metadata);
@@ -3096,6 +3237,39 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
         m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
         assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
         poolMemBlobItemPtr = storedMemoryPoolVector.get();            
+        }
+
+    return poolMemBlobItemPtr;
+    }
+
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr(uint64_t texID)
+    {
+    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
+
+    if (!IsTextured())
+        return poolMemBlobItemPtr;
+
+    SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->GetPoolIdForTextureData(texID);
+
+    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, texPoolItemId, texID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
+        {
+        ISMTextureDataStorePtr nodeDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        assert(result == true);
+
+        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
+#else
+            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
+#endif
+            );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        texPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->SetPoolIdForTextureData(texID, texPoolItemId);
+        assert(texPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemBlobItemPtr = storedMemoryPoolVector.get();
         }
 
     return poolMemBlobItemPtr;
@@ -4194,6 +4368,35 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddMeshDe
         }
     }
 #endif
+
+template<class POINT, class EXTENT>  int64_t  SMMeshIndex<POINT, EXTENT>::AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes)
+    {
+
+    ISMTextureDataStorePtr nodeDataStore;
+    SMIndexNodeHeader<EXTENT> nodeHeader;
+    bool result = GetDataStore()->GetNodeDataStore(nodeDataStore, &nodeHeader);
+    assert(result == true);
+
+    size_t texID = GetNextTextureId();
+
+    size_t size = nOfBytes + 3 * sizeof(int);
+    bvector<uint8_t> texture(size);
+    memcpy(texture.data(), &width, sizeof(int));
+    memcpy(texture.data() + sizeof(int), &height, sizeof(int));
+    memcpy(texture.data() + 2 * sizeof(int), &nOfChannels, sizeof(int));
+    memcpy(texture.data() + 3 * sizeof(int), texData, nOfBytes);
+    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+        new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, texture.data(), size, SMStoreDataType::Texture, (uint64_t)(this))
+#else
+        SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, texture.data(), size, SMStoreDataType::Texture, (uint64_t)(this))
+#endif
+        );
+    SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+    auto id = GetMemoryPool()->AddItem(memPoolItemPtr);
+    GetMemoryPool()->RemoveItem(id, texID, SMStoreDataType::Texture, (uint64_t)this);
+    return (int64_t)texID;
+    }
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {

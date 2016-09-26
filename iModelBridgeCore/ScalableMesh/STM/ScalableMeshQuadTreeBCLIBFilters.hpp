@@ -620,6 +620,56 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
             {
             //user function needs to provide info for all mesh parts
             assert(parentMeshPts.size() == parentMeshIdx.size() && parentMeshPts.size() == parentMetadata.size());
+            size_t partMeshId =0;
+            for(auto& parentData: parentMetadata)
+                {
+                Json::Value val;
+                Json::Reader reader;
+                reader.parse(parentData, val);
+                bvector<int> parts;
+                bvector<int64_t> texId;
+                bmap<int64_t,uint64_t> dgnIds;
+                for (Json::Value& id : val["texId"])
+                    {
+                    texId.push_back(id.asInt64());
+                    }
+                for (Json::Value& id : val["mapIds"])
+                    {
+                    dgnIds[id["dgn"].asUInt64()] = id["SM"].asInt64();
+                    }
+
+                for (const Json::Value& id : val["parts"])
+                    {
+                    parts.push_back(id.asInt());
+                    }
+                if(!parentMeshTex[partMeshId].empty())
+                    {
+                    int width, height, nChannels;
+                    memcpy(&width, &parentMeshTex[partMeshId][0],sizeof(int));
+                    memcpy(&height, &parentMeshTex[partMeshId][0]+sizeof(int),sizeof(int));
+                    memcpy(&nChannels, &parentMeshTex[partMeshId][0]+2*sizeof(int),sizeof(int));
+                    int64_t newTexId = ((SMMeshIndex<POINT,EXTENT>*)pParentMeshNode->m_SMIndex)->AddTexture(width, height, nChannels, &parentMeshTex[partMeshId][0]+3*sizeof(int), parentMeshTex[partMeshId].size()-3*sizeof(int));
+                    uint64_t dgnId = texId[0];
+                    dgnIds[dgnId] = newTexId;
+                    texId[0] = newTexId;
+                    parentMeshTex[partMeshId].clear();
+                    }
+                partMeshId++;
+                val["texId"] = Json::arrayValue;
+
+                for(auto& id: texId) val["texId"].append(id);
+                val["mapIds"] = Json::arrayValue;
+
+                for(auto& mapId: dgnIds)
+                    {
+                    Json::Value newEntry = Json::objectValue;
+                    newEntry["dgn"] = mapId.first;
+                    newEntry["SM"] = mapId.second;
+                    val["mapIds"].append(newEntry);
+                    }
+
+                parentData=Json::FastWriter().write(val);
+                }
             pParentMeshNode->AppendMeshParts(parentMeshPts, parentMeshIdx, parentMetadata, parentMeshUvs, parentMeshTex,shouldCreateGraph);
             }
         return filterSuccess;

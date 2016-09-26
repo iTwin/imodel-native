@@ -45,12 +45,16 @@ enum class SMStoreDataType
     ClipDefinition,     
     //Not persisted data type
     Display,
-    BcDTM,     
-
+    //Not persisted data type
+    BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
     MeshParts,
     Metadata,
+    //Not persisted data type
+    DisplayMesh,
+    //Not persisted data type
+    DisplayTexture,
     Unknown, 
     };
 
