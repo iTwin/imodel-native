@@ -693,4 +693,42 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
     EXPECT_EQ(0, count);
     }
 
+TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerAfterFinalize)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    int count = 0;
+    manager->SetUserSignInHandler([&] { count++; });
+
+    InSequence seq;
+    EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    EXPECT_EQ(0, count);
+    manager->FinalizeSignIn();
+    EXPECT_EQ(1, count);
+    }
+
+TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    int count = 0;
+    manager->SetUserSignOutHandler([&] { count++; });
+
+    InSequence seq;
+    EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    manager->FinalizeSignIn();
+
+    EXPECT_EQ(0, count);
+    manager->SignOut();
+    EXPECT_EQ(1, count);
+    }
+
 #endif
