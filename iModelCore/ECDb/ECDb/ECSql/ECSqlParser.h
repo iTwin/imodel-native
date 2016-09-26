@@ -106,7 +106,6 @@ private:
     BentleyStatus ParseColumnRef(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseComparison(BooleanSqlOperator&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseCompoundSelectOperator(SelectStatementExp::Operator&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseConcatenation(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseCrossUnion(std::unique_ptr<CrossJoinExp>&, connectivity::OSQLParseNode const*) const;
 
@@ -165,6 +164,7 @@ private:
     BentleyStatus ParseRowValueConstructorCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseRTreeMatchPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
 
+    BentleyStatus ParseSelectCompoundOperator(SelectStatementExp::CompoundOperator&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSelection(std::unique_ptr<SelectClauseExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;

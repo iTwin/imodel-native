@@ -53,7 +53,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareClassRefExp(NativeSqlBuilder&, ECSqlPrepareContext&, ClassRefExp const&);
         static ECSqlStatus PrepareComputedExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ComputedExp const*);
         static ECSqlStatus PrepareCrossJoinExp(ECSqlPrepareContext&, CrossJoinExp const&);
-        static ECSqlStatus PrepareDerivedPropertyExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, DerivedPropertyExp const*);
         static ECSqlStatus PrepareFromExp(ECSqlPrepareContext&, FromExp const*);
         static ECSqlStatus PrepareFunctionCallExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, FunctionCallExp const&);
         static ECSqlStatus PrepareECClassIdFunctionExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ECClassIdFunctionExp const&);
@@ -70,7 +69,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext&, QualifiedJoinExp const&);
         static ECSqlStatus PrepareQueryExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, QueryExp const*);
         static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, ECRelationshipJoinExp const&);
-        static ECSqlStatus PrepareSelectClauseExp(ECSqlPrepareContext&, SelectClauseExp const*);
         static ECSqlStatus PrepareSubqueryExp(ECSqlPrepareContext&, SubqueryExp const*);
         static ECSqlStatus PrepareSubqueryRefExp(ECSqlPrepareContext&, SubqueryRefExp const*);
         static ECSqlStatus PrepareSubqueryTestExp(ECSqlPrepareContext&, SubqueryTestExp const*);

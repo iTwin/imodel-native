@@ -2580,16 +2580,16 @@ BentleyStatus ECSqlParser::ParseAllOrDistinctToken(SqlSetQuantifier& setQuantifi
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseCompoundSelectOperator(SelectStatementExp::Operator& op, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseSelectCompoundOperator(SelectStatementExp::CompoundOperator& op, OSQLParseNode const* parseNode) const
     {
     if (SQL_ISTOKEN(parseNode, UNION))
-        op = SelectStatementExp::Operator::Union;
+        op = SelectStatementExp::CompoundOperator::Union;
     else if (SQL_ISTOKEN(parseNode, INTERSECT))
-        op = SelectStatementExp::Operator::Intersect;
+        op = SelectStatementExp::CompoundOperator::Intersect;
     else if (SQL_ISTOKEN(parseNode, EXCEPT))
-        op = SelectStatementExp::Operator::Except;
+        op = SelectStatementExp::CompoundOperator::Except;
     else
-        op = SelectStatementExp::Operator::None;
+        op = SelectStatementExp::CompoundOperator::None;
 
     return SUCCESS;
     }
@@ -2647,8 +2647,8 @@ BentleyStatus ECSqlParser::ParseSelectStatement(std::unique_ptr<SelectStatementE
             return ERROR;
             }
 
-        SelectStatementExp::Operator op = SelectStatementExp::Operator::None;
-        if (SUCCESS != ParseCompoundSelectOperator(op, parseNode.getChild(1)))
+        SelectStatementExp::CompoundOperator op = SelectStatementExp::CompoundOperator::None;
+        if (SUCCESS != ParseSelectCompoundOperator(op, parseNode.getChild(1)))
             return ERROR;
 
         bool isAll = false;

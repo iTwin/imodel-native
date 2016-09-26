@@ -375,7 +375,7 @@ public:
 struct SelectStatementExp : QueryExp
     {
     DEFINE_EXPR_TYPE(Select)
-    enum class Operator
+    enum class CompoundOperator
         {
         None, //TopLevel/First
         Union,
@@ -384,24 +384,28 @@ struct SelectStatementExp : QueryExp
         };
 
     private:
-        Operator m_operator;
+        size_t m_firstSingleSelectStatementExpIndex;
+        int m_rhsSelectStatementExpIndex;
+        CompoundOperator m_operator;
         bool m_isAll;
 
         virtual Utf8String _ToECSql() const override;
-        virtual Utf8String _ToString() const override;
-        virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
-        virtual SelectClauseExp const* _GetSelection() const override;
+        virtual Utf8String _ToString() const override { return "SelectStatementExp"; }
+        virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override { return GetFirstStatement().FindProperty(propertyName); }
+        virtual SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
+
+        static Utf8CP OperatorToString(CompoundOperator);
 
     public:
-        SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs);
-        SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs);
+        explicit SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>);
+        SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator, bool isAll, std::unique_ptr<SelectStatementExp> rhs);
         virtual ~SelectStatementExp(){}
-        SingleSelectStatementExp const& GetCurrent() const;
-        SelectStatementExp const* GetNext() const;
-        bool IsAll()const;
-        Operator GetOperator() const;
-        bool IsCompound() const;
-        static Utf8CP OperatorToString(Operator op);
+
+        bool IsCompound() const { return m_operator != CompoundOperator::None; }
+        SingleSelectStatementExp const& GetFirstStatement() const { return *GetChild<SingleSelectStatementExp>(m_firstSingleSelectStatementExpIndex); }
+        SelectStatementExp const* GetRhsStatement() const;
+        bool IsAll()const { return m_isAll; }
+        CompoundOperator GetOperator() const { return m_operator; }
     };
 
 
