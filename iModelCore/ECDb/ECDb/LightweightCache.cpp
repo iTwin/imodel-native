@@ -190,7 +190,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     sql.Sprintf("SELECT CH.ClassId, CT.TableId FROM " ECDB_CACHETABLE_ClassHasTables " CT"
                 "       INNER JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.ClassId = CT.ClassId"
                 "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
-                "WHERE CH.BaseClassId=?1 AND ((SELECT JoinedTableInfo FROM ec_ClassMap WHERE ClassId = ?1) IS  NULL OR ec_Table.Type <> %d)", Enum::ToInt(DbTable::Type::Joined));
+                "WHERE CH.BaseClassId=?1 AND ((SELECT  1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> %d AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <> %d)", Enum::ToInt(MapStrategy::TablePerHierarchy), Enum::ToInt(DbTable::Type::Joined));
 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, classId);

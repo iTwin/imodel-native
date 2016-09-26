@@ -284,37 +284,37 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
     std::set<DbTable const*> updateTables;
     std::set<DbTable const*> deleteTables;
-    //std::vector<DbTable const*> joinedTables;
-    //std::vector<DbTable const*> primaryTables;
+    std::vector<DbTable const*> joinedTables;
+    std::vector<DbTable const*> primaryTables;
 
-    //for (Partition const& partition : partitions)
-    //    {
-    //    if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
-    //        continue;
+    for (Partition const& partition : partitions)
+        {
+        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
 
-    //    updateTables.insert(&partition.GetTable());
-    //    deleteTables.insert(&partition.GetTable());
-    //    if (partition.GetTable().GetType() == DbTable::Type::Joined)
-    //        {
-    //        joinedTables.push_back(&partition.GetTable());
-    //        }
+        updateTables.insert(&partition.GetTable());
+        deleteTables.insert(&partition.GetTable());
+        if (partition.GetTable().GetType() == DbTable::Type::Joined)
+            {
+            joinedTables.push_back(&partition.GetTable());
+            }
 
-    //    if (partition.GetTable().GetType() == DbTable::Type::Primary)
-    //        {
-    //        primaryTables.push_back(&partition.GetTable());
-    //        }
-    //    }
-    ////Remove any primary table
-    //for (DbTable const* joinedTable : joinedTables)
-    //    {
-    //    updateTables.erase(joinedTable->GetParentOfJoinedTable());
-    //    }
+        if (partition.GetTable().GetType() == DbTable::Type::Primary)
+            {
+            primaryTables.push_back(&partition.GetTable());
+            }
+        }
+    //Remove any primary table
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        updateTables.erase(joinedTable->GetParentOfJoinedTable());
+        }
 
-    //for (DbTable const* joinedTable : joinedTables)
-    //    {
-    //    deleteTables.insert(joinedTable->GetParentOfJoinedTable());
-    //    deleteTables.erase(joinedTable);
-    //    }
+    for (DbTable const* joinedTable : joinedTables)
+        {
+        deleteTables.insert(joinedTable->GetParentOfJoinedTable());
+        deleteTables.erase(joinedTable);
+        }
 
     int tableCount = 0;
     for (Partition const& partition : partitions)
@@ -322,9 +322,6 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
             continue;
 
-        if (partition.GetTable().GetType() == DbTable::Type::Joined)
-            continue;
-            
         tableCount++;
         DbColumn const* partitionIdColumn = partition.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         Utf8String triggerNamePrefix;
@@ -336,7 +333,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         else
             whenClause.append("OLD.ECClassId=").append(partition.GetRootClassId().ToString());
 
-        //if (deleteTables.find(&partition.GetTable()) != deleteTables.end())
+        if (deleteTables.find(&partition.GetTable()) != deleteTables.end())
             {//<----------DELETE trigger----------
             Utf8String ddl("CREATE TRIGGER [");
             ddl.append(triggerNamePrefix).append("_delete]");
@@ -348,7 +345,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             triggerDdlList.push_back(ddl);
             }
 
-        //if (updateTables.find(&partition.GetTable()) != updateTables.end())
+        if (updateTables.find(&partition.GetTable()) != updateTables.end())
             {//<----------UPDATE trigger----------
             ECClassCP rootClass = ecdbMap.GetECDb().Schemas().GetECClass(partition.GetRootClassId());
             if (rootClass == nullptr)
