@@ -78,6 +78,8 @@ public:
             DataSourceStatus            uploadSegments                  (DataSource &dataSource);
             DataSourceStatus            downloadSegments                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
+            DataSourceStatus            download                        (DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize);
+
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
     virtual DataSourceStatus            downloadBlobSync                (DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (DataSource &dataSource, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);

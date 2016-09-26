@@ -796,7 +796,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //create a scalable mesh
     StatusInt createStatus;
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::SetUserFilterCallback(&FilterElement);
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\second_test_dgndb_colorado.stm", createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\second_test_dgndb_colorado.3sm", createStatus));
 
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(L"e:\\output\\coloradoDesign.stm", true, true, createStatus));
     if (!mainProject.IsValid()) OpenProject();

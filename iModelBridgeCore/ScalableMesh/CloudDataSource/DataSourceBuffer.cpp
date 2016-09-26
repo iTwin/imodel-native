@@ -5,6 +5,11 @@
 #include "include\DataSourceBuffer.h"
 
 
+bool DataSourceBuffer::isSegmented(void)
+    {
+    return m_isSegmented;
+    }
+
 void DataSourceBuffer::setSegmentSize(BufferSize size)
 {
     segmentSize = size;
@@ -43,6 +48,11 @@ DataSourceBuffer::SegmentIndex DataSourceBuffer::getCurrentSegmentIndex(void)
 {
     return currentSegmentIndex;
 }
+
+void DataSourceBuffer::setSegmented(const bool & value)
+    {
+    m_isSegmented = value;
+    }
 
 DataSourceBuffer::BufferData * DataSourceBuffer::getSegment(SegmentIndex index)
 {
@@ -85,6 +95,16 @@ DataSourceBuffer::BufferSize DataSourceBuffer::getExternalBufferSize(void)
 {
     return externalBufferSize;
 }
+
+void DataSourceBuffer::updateReadSize(DataSourceBuffer::BufferSize readSize)
+    {
+    m_totalReadSize += readSize;
+    }
+
+DataSourceBuffer::BufferSize DataSourceBuffer::getReadSize(void)
+    {
+    return m_totalReadSize;
+    }
 
 DataSourceBuffer::DataSourceBuffer(void)
 {

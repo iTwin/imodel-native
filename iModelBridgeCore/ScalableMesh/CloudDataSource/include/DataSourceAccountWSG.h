@@ -9,6 +9,7 @@
 #include "DataSourceAccountCached.h"
 #include "DataSourceBuffer.h"
 #include "DataSourceMode.h"
+#include "Manager.h"
 
 unsigned int const DATA_SOURCE_SERVICE_WSG_DEFAULT_TRANSFER_TASKS = 16;
 
@@ -53,7 +54,25 @@ class DataSourceAccountWSG : public DataSourceAccountCached
 {
 
 private:
-    CURL *m_curl;
+
+    class CURLHandleManager : public Manager<CURL*>
+        {
+        public:
+            typedef std::wstring                            HandleName;
+
+        public:
+
+            CURL *     getOrCreateCURLHandle(const HandleName &name, bool *created = nullptr);
+            CURL *     getOrCreateThreadCURLHandle(bool *created = nullptr);
+
+        private:
+
+            CURL *  createCURLHandle(const HandleName &name);
+
+
+        };
+
+    CURLHandleManager m_CURLManager;
 
 protected:
 

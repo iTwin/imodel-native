@@ -460,7 +460,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     if (saveType == SCM_SAVE_DGNDB_BLOB)
                         {
                         WString dgndbFileName(stmFileName);
-                        dgndbFileName.ReplaceAll(L".stm", L".dgndb");
+                        dgndbFileName.ReplaceAll(L".3sm", L".dgndb");
 
                         FILE* f = _wfopen(dgndbFileName.c_str(), L"r");
                         assert(f != 0);
@@ -1611,14 +1611,7 @@ void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
         ss.close();
         ds.close();
         };
-
-    // setup data for adding textures (cleanup, save original, etc)
-    //auto position = scmFileName.find_last_of(L".stm");
-    //auto filenameWithoutExtension = scmFileName.substr(0, position - 3);
-    //WString texturedFileName = filenameWithoutExtension + L"_textured.stm";
-
-    //copy_file(scmFileName, texturedFileName);
-
+       
     // Check existence of scm file
     StatusInt status;
     IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
@@ -4542,7 +4535,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
         // Use default path to output files
-        auto position = smFileName.find_last_of(L".stm");
+        auto position = smFileName.find_last_of(L".3sm");
         cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
@@ -4561,7 +4554,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, uploadToAzure);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
@@ -4924,7 +4917,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         DTMPtr tmPtr;
         GetMeshAsSingleTileDTM(stmFile.get(), tmPtr);
-        WString stmFileName2 = stmFileName + L"2.stm";
+        WString stmFileName2 = stmFileName + L"2.3sm";
         DRange3d range;
         stmFile->GetRange(range);
         range.ScaleAboutCenter(range, 0.80);
@@ -4941,7 +4934,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
         double timeToDrapeSM2 = (double)(clock() - start) / CLOCKS_PER_SEC;
         size_t nDiffLines = 0;
         WString name = stmFileName;
-        name.ReplaceAll(L".stm", L"");
+        name.ReplaceAll(L".3sm", L"");
         size_t pos = name.find_last_of(L"\\");
         if (pos != std::string::npos) name = name.substr(pos + 1);
         WString testcaseNameTM = name + L"_tm";
