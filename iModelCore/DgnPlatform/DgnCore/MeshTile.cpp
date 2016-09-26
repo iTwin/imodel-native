@@ -922,6 +922,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     // Worker threads will adopt host. Ensure no race conditions in FontAdmin when processing TextString geometry.
     auto& host = T_HOST;
     host.GetFontAdmin().EnsureInitialized();
+    GetDgnDb().Fonts().Update();
 
     if (!tiles.empty())
         {
