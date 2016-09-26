@@ -323,6 +323,10 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
         "UNION ALL "
         "SELECT NULL FROM ecsql.PASpatial"] = true;
 
+    ecsqls["SELECT NULL FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT P3D FROM ecsql.P"] = false;
+
     ecsqls["SELECT P3D FROM ecsql.P "
         "UNION ALL "
         "SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial"] = true;
