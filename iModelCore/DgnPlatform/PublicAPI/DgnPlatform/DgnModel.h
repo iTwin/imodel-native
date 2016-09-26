@@ -31,7 +31,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Physical; struct Role; struct Spatial;};
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Information; struct Physical; struct Role; struct Spatial;};
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -805,9 +805,6 @@ protected:
 
     virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
 
-    //! Get the coordinate space in which the model's geometry is defined.
-    virtual CoordinateSpace _GetCoordinateSpace() const = 0;
-
     //! Add non-element graphics for this DgnModel to the scene.
     //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
     //! can override this method to do add elements that QueryView would normally exclude.
@@ -849,9 +846,6 @@ public:
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get the coordinate space in which the model's geometry is defined.
-    CoordinateSpace GetCoordinateSpace() const {return _GetCoordinateSpace();}
-
     //! Get a writable reference to the DisplayInfo for this model.
     DisplayInfo& GetDisplayInfoR() {return m_displayInfo;}
 
@@ -885,7 +879,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 
 protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
@@ -917,7 +910,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
-    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::World;}
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -960,9 +952,12 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
 {
-    DEFINE_T_SUPER(DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_InformationModel, DgnModel);
+    friend struct dgn_ModelHandler::Information;
+
 protected:
     InformationModelCP _ToInformationModel() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit InformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1055,7 +1050,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : GeometricModel3d
 protected:
     Utf8String m_componentECClass;
 
-    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
     DGNPLATFORM_EXPORT void _InitFrom(DgnModelCR other) override;
 
@@ -1592,16 +1586,22 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RoleModel, RoleModel, Role, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for DefinitionModel
-    struct EXPORT_VTABLE_ATTRIBUTE Definition : Model
+    //! The ModelHandler for InformationModel
+    struct EXPORT_VTABLE_ATTRIBUTE Information : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationModel, InformationModel, Information, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for DefinitionModel
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : Information
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, DefinitionModel, Definition, Information, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DocumentListModel
-    struct EXPORT_VTABLE_ATTRIBUTE DocumentList : Model
+    struct EXPORT_VTABLE_ATTRIBUTE DocumentList : Information
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DocumentListModel, DocumentListModel, DocumentList, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DocumentListModel, DocumentListModel, DocumentList, Information, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
@@ -1611,9 +1611,9 @@ namespace dgn_ModelHandler
     };
 
     //! The ModelHandler for RepositoryModel
-    struct EXPORT_VTABLE_ATTRIBUTE Repository : Model
+    struct EXPORT_VTABLE_ATTRIBUTE Repository : Information
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, RepositoryModel, Repository, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, RepositoryModel, Repository, Information, DGNPLATFORM_EXPORT)
     };
 };
 

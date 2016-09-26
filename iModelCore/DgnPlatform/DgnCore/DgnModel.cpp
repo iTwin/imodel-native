@@ -395,6 +395,14 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(DgnElementCR modeledElement, Dgn
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)

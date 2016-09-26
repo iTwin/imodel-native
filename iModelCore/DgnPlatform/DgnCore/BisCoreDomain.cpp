@@ -35,6 +35,7 @@ HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Role)
+HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
@@ -66,6 +67,7 @@ HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
+HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(Subject)
 };
 
@@ -114,6 +116,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(WebMercator::ModelHandler::GetHandler());
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Role::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Information::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
@@ -142,6 +145,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
