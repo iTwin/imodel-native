@@ -2446,8 +2446,10 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
                         lowerLimit, upperLimit, relationshipClass->GetName().c_str(),
                         relationshipBaseClass->GetName().c_str(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
-            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() != 2)
-                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+/// CGM - this is not guaranteed to be accurate.  When using the diff tool to merge, it creates a new ECSchemaPtr which defaults to a 3.1 schema.  The constituent schemas,
+/// though, could be 2.0.
+            //if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() != 2)
+            //    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
             // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
             LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%u..%u) to (%u..%u) to conform to new relationship constraint rules.",
@@ -3202,16 +3204,17 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
     {
     if (baseClass.IsRelationshipClass())
         {
-        // Get the relationship base class and compare it's strength and direction
-        ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
-        if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
-            !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
-            {
-            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-            }
 
         if (validate)
             {
+            // Get the relationship base class and compare it's strength and direction
+            ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
+            if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
+                !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
+                {
+                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                }
+
             if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == -1)
                 {
 			    LOG.errorv("Multiplicity Violation: The Source Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
