@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/CGBinarySerializationTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -99,7 +99,7 @@ TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
                                 <Entry key=\"name\" typeCode=\"String\">test string</Entry> \
                             </TransientLookupCollection> \
                         </ExtendedData> \
-                    ExtendedObject>");
+                    </ExtendedObject>");
 
     Byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
                      0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D,
