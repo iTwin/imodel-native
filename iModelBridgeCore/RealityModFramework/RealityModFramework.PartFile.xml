@@ -81,7 +81,7 @@
 
     <Part Name="DownloadEngineExample" BentleyBuildMakeFile="RealityPlatform\Example\DownloadEngineExample.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
         <Bindings>
@@ -132,32 +132,31 @@
     </Part>
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
-        <!--SubPart PartName="JsonNet45"            PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" /-->
-        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">BentleyIT.STS.RelyingPartyCommon</NuGetPackage>
+        <SubPart PartName="RequiredNugets" />
+        <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
         <RequiredRepository>BCC-IdentityModel</RequiredRepository>
+        <Bindings>
+            <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies> 	
+            <Files ProductDirectoryName="Assemblies">Delivery/UsageDataExtractor.exe.config</Files>
+        </Bindings>
     </Part>
     
-    <Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
+    <Part Name="RequiredNugets" BentleyBuildMakeFile="RequiredNugets.prewire.mke">
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
-    </Part>
-    
-    <Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
-        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <SubPart PartName="S3MXRequiredNuget" />
+        <NuGetPackage targetFramework=".NETFramework4.5">BentleyIT.STS.RelyingPartyCommon</NuGetPackage>
         <Bindings>
-            <Assemblies>Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
+            <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Azure.KeyVault.Core.*</Files> 
+            <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.Edm.*</Files> 
+            <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.OData.*</Files> 
+            <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.Services.Client.*</Files> 
+            <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.WindowsAzure.Storage.*</Files> 
+            <Files ProductDirectoryName="Assemblies">Delivery/System.Spatial.*</Files> 	
+            <Assemblies>Delivery/BentleyIT.STS.RelyingPartyCommon.dll</Assemblies> 	
         </Bindings>
     </Part>
     
@@ -252,7 +251,7 @@
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
         <SubPart PartName="RealityDbECPluginCNuGet"/>
         <!--<SubPart PartName="UsageDataExtractor"/>-->
-        <SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>
+        <!--<SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
