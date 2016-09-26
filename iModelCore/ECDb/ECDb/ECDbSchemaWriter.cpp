@@ -723,7 +723,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
     if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetMultiplicity().GetUpperLimit()))
         return ERROR;
 
-    if (relationshipConstraint.IsRoleLabelDefined())
+    if (relationshipConstraint.IsRoleLabelDefinedLocally())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
@@ -846,9 +846,15 @@ BentleyStatus ECDbSchemaWriter::BindPropertyKindOfQuantityId(Statement& stmt, in
     {
     KindOfQuantityCP koq = nullptr;
     if (prop.GetIsPrimitive())
-        koq = prop.GetAsPrimitiveProperty()->GetKindOfQuantity();
+        {
+        PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
+        koq = primProp->IsKindOfQuantityDefinedLocally() ? primProp->GetKindOfQuantity() : nullptr;
+        }
     else if (prop.GetIsPrimitiveArray())
-        koq = prop.GetAsArrayProperty()->GetKindOfQuantity();
+        {
+        ArrayECPropertyCP arrayProp = prop.GetAsArrayProperty();
+        koq = arrayProp->IsKindOfQuantityDefinedLocally() ? arrayProp->GetKindOfQuantity() : nullptr;
+        }
 
     if (koq == nullptr)
         return SUCCESS;
