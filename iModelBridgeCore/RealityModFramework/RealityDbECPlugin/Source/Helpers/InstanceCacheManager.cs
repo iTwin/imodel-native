@@ -6,9 +6,12 @@
 |
 +-------------------------------------------------------------------------------------*/
 
+#define BBOXQUERY
+
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Spatial;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -159,7 +162,7 @@ namespace IndexECPlugin.Source.Helpers
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLQuery(m_source, instanceIdsList, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns);
 
             List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
-            //List<string> instancesToDelete;
+
             foreach (IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime)inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList())
                 {
                 cachedInstances.Remove(oldInstance);
@@ -261,10 +264,46 @@ namespace IndexECPlugin.Source.Helpers
                 throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", baseECClass.Name));
                 }
 
+#if BBOXQUERY
+            bool removeSpatial = false;
+            if(!basePropertiesSelected.Any(prop => prop.IsSpatial()))
+                {
+                basePropertiesSelected.Add(baseECClass.First(prop => prop.IsSpatial()));
+                removeSpatial = true;
+                }
+#endif
+
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLSpatialQuery(m_source, polygonDescriptor, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns, whereCriteria);
 
             List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
-            //List<string> instancesToDelete;
+
+#if BBOXQUERY
+
+            DbGeometry poly = DbGeometry.FromText(polygonDescriptor.WKT, polygonDescriptor.SRID);
+
+            List<IECInstance> instancesToRemove = new List<IECInstance>();
+
+            foreach ( IECInstance instance in cachedInstances)
+                {
+                IECPropertyValue spatialProp = instance.First(propVal => propVal.Property.IsSpatial());
+                string jsonPoly = spatialProp.StringValue;
+                PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(jsonPoly);
+                DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.points), model.coordinate_system);
+                if(!instGeom.Intersects(poly))
+                    {
+                    instancesToRemove.Add(instance);
+                    }
+                }
+            foreach (IECInstance instToRemove in instancesToRemove)
+                {
+                cachedInstances.Remove(instToRemove);
+                }
+            if(removeSpatial)
+                {
+                cachedInstances.ForEach(inst => inst.First(propVal => propVal.Property.IsSpatial()).SetToNull());
+                }
+#endif
+
             foreach ( IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime) inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList() )
                     {
                     cachedInstances.Remove(oldInstance);

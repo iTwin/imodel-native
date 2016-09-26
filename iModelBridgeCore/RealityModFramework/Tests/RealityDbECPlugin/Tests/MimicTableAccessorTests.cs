@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BBOXQUERY
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -88,8 +90,11 @@ namespace IndexECPlugin.Tests
             GenericParamNameValueMap genericMap = paramNameValueMap as GenericParamNameValueMap;
 
             Assert.IsNotNull(genericMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
-
+#if BBOXQUERY
+            Regex reg = new Regex(@".*SELECT .*" + @".* FROM .*" + Regex.Escape(tableString) + @".*WHERE(.*(MinX|MaxX|MinY|MaxY)){4}.*" + @".*SubAPI.*");
+#else
             Regex reg = new Regex(@".*SELECT .*" + @".* FROM .*" + Regex.Escape(tableString) +  @".*WHERE.*STIntersects.*\('POLYGON \(\(30 10, 40 40, 20 40, 10 20, 30 10\)\)',4326\).*" + @".*SubAPI.*");
+#endif
             Assert.IsTrue(reg.IsMatch(sqlQuery), "The query does not have the required form.");
             foreach ( IECProperty prop in sebClass )
                 {

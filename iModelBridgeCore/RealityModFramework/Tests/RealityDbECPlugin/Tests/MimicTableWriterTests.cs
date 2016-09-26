@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BBOXQUERY
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -104,9 +106,15 @@ namespace IndexECPlugin.Tests
                          (prop.GetCustomAttributes("DBColumn")["IsSpatial"].IsNull) ||
                          (prop.GetCustomAttributes("DBColumn")["IsSpatial"].StringValue.ToLower() == "false") )
                         {
-                        //Spatial parameters are not in the map.
                         count++;
                         }
+#if BBOXQUERY
+                    else
+                        {
+                        //This adds 4 parameters.
+                        count += 4;
+                        }
+#endif
                     string propColumnName = prop.GetCustomAttributes("MimicDBColumn").GetString("CacheColumnName");
                     Assert.IsTrue(sqlQuery.Contains(propColumnName), "The statement does not contain the " + propColumnName + " property name.");
                     }
@@ -137,7 +145,7 @@ namespace IndexECPlugin.Tests
             Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");
 
             Assert.IsTrue(sqlQuery.Contains("TestColumn1234"), "The statement does not contain the name of the added column.");
-            Assert.IsTrue(sqlServerMap.Any(p => (string)p.Value.Item1 == "TestColVal1234"), "The map does not contain the value of the added column.");
+            Assert.IsTrue(sqlServerMap.Any(p => p.Value.Item1.ToString() == "TestColVal1234"), "The map does not contain the value of the added column.");
 
             }
 

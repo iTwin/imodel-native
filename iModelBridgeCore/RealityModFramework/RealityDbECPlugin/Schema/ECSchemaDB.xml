@@ -25,6 +25,13 @@
         <ECProperty propertyName="IsSpatial" typeName="boolean" description="If the property is for holding a series of points representing a polygon, switch this to true" />
     </ECClass>
     
+	<ECClass typeName="SpatialBBox" isCustomAttributeClass="true" isDomainClass="false">
+		<ECProperty propertyName="MinXColumnName" typeName="string"/>
+		<ECProperty propertyName="MaxXColumnName" typeName="string"/>
+		<ECProperty propertyName="MinYColumnName" typeName="string"/>
+		<ECProperty propertyName="MaxYColumnName" typeName="string"/>
+	</ECClass>
+	
     <ECClass typeName="MimicDBColumn" isCustomAttributeClass="true" isDomainClass ="false">
     <!--<ECClass typeName="MimicDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> -->
     <!--<ECClass typeName="OverrideDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> -->
@@ -114,6 +121,12 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+				<SpatialBBox>
+					<MinXColumnName>MinX</MinXColumnName>
+					<MaxXColumnName>MaxX</MaxXColumnName>
+					<MinYColumnName>MinY</MinYColumnName>
+					<MaxYColumnName>MaxY</MaxYColumnName>
+				</SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>Footprint</OverrideColumnName>
                     <CacheColumnName>Footprint</CacheColumnName>
@@ -1385,6 +1398,12 @@
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+				<SpatialBBox>
+					<MinXColumnName>MinX</MinXColumnName>
+					<MaxXColumnName>MaxX</MaxXColumnName>
+					<MinYColumnName>MinY</MinYColumnName>
+					<MaxYColumnName>MaxY</MaxYColumnName>
+				</SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>BoundingBox</OverrideColumnName>
                 </MimicDBColumn>
@@ -1437,6 +1456,12 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+				<SpatialBBox>
+					<MinXColumnName>MinX</MinXColumnName>
+					<MaxXColumnName>MaxX</MaxXColumnName>
+					<MinYColumnName>MinY</MinYColumnName>
+					<MaxYColumnName>MaxY</MaxYColumnName>
+				</SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>Footprint</OverrideColumnName>
                     <CacheColumnName>Footprint</CacheColumnName>

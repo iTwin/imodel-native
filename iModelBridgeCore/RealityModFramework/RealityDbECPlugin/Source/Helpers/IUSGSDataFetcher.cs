@@ -427,31 +427,8 @@ namespace IndexECPlugin.Source.Helpers
 
             //We should now extract a bbox from this wkt
 
-            return DbGeometryHelpers.ExtractBboxFromWKTPolygon(polyDesc.WKT);
+            return DbGeometryHelpers.ExtractBboxStringFromWKTPolygon(polyDesc.WKT);
 
             }
-
-        ///// <summary>
-        ///// Extracts all formats from the extended data key "format". 
-        ///// </summary>
-        ///// <returns>Null if there is no format key, otherwise list of all formats requested</returns>
-        //private List<string> ExtractFormatList ()
-        //    {
-        //    if ( !m_query.ExtendedData.ContainsKey("format") )
-        //        {
-        //        return null;
-        //        }
-        //    string formatString = m_query.ExtendedData["format"].ToString();
-
-        //    string[] formatArray = formatString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-        //    List<string> formatList = new List<string>();
-
-        //    foreach ( var format in formatArray )
-        //        {
-        //        formatList.Add(format.Trim());
-        //        }
-
-        //    return formatList;
-        //    }
         }
     }

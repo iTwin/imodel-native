@@ -222,8 +222,7 @@ namespace IndexECPlugin.Source.Helpers
                                     //throw new ProgrammerException("There should have been a column number.");
                                     }
 
-                                IECPropertyValue isSpatial = dbColumn != null ? dbColumn["IsSpatial"] : null;
-                                if ( isSpatial == null || isSpatial.IsNull || isSpatial.StringValue.ToLower() == "false" )
+                                if ( !prop.IsSpatial() )
                                     {
 
                                     if ( !reader.IsDBNull(columnNumber.Value) )

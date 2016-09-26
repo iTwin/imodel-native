@@ -303,6 +303,26 @@ namespace IndexECPlugin.Source
             m_sqlWhereClause += AddBrackets(columnName) + @".STIntersects(geometry::STGeomFromText('" + polygonWKT + @"'," + polygonSRID + @")) = 'true'";
             }
 
+        /// <summary>
+        /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a bbox.
+        /// </summary>
+        /// <param name="tableName">Table descriptor of the table containing the column</param>
+        /// <param name="minXColName">Name of the column containing the lower X bound of the bbox.</param>
+        /// <param name="maxXColName">Name of the column containing the upper X bound of the bbox.</param>
+        /// <param name="minYColName">Name of the column containing the lower Y bound of the bbox.</param>
+        /// <param name="maxYColName">Name of the column containing the upper Y bound of the bbox.</param>
+        /// <param name="bbox">The bbox to intersect with the values inside the database.</param>
+        public void AddBBoxIntersectsWhereClause (string tableName, string minXColName, string maxXColName, string minYColName, string maxYColName, BBox bbox)
+            {
+            string tN = "";
+            if ( !String.IsNullOrWhiteSpace(tableName) )
+                {
+                tN += AddBrackets(tableName) + ".";
+                }
+
+            m_sqlWhereClause += "NOT((" + tN + minXColName + " > " + bbox.maxX + ") OR (" + bbox.minX + " > " + tN + maxXColName + ") OR (" + tN + minYColName + " > " + bbox.maxY + ") OR (" + bbox.minY + " > " + tN + maxYColName + "))";
+            }
+
         private string GetNewParamName ()
             {
             return String.Format("@param{0}", m_paramNumber++);

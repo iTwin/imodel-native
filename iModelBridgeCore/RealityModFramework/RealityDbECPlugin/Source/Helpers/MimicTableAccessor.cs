@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
+#define BBOXQUERY
 
 using System;
 using System.Collections.Generic;
@@ -154,7 +155,6 @@ namespace IndexECPlugin.Source.Helpers
             {
             foreach ( IECProperty prop in propertyList )
                 {
-                IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
                 IECInstance mimicDBColumn = prop.GetCustomAttributes(MimicDbColumnCustomClassName);
                 if ( (mimicDBColumn == null) || (mimicDBColumn.GetPropertyValue(MimicColumnNameProp) == null) )
                     {
@@ -176,7 +176,7 @@ namespace IndexECPlugin.Source.Helpers
 
                 ColumnCategory category = ColumnCategory.instanceData;
 
-                if ( (dbColumn != null) && (dbColumn.GetPropertyValue("IsSpatial") != null) && (!dbColumn.GetPropertyValue("IsSpatial").IsNull) && (dbColumn.GetPropertyValue("IsSpatial").StringValue.ToLower() == "true") )
+                if ( prop.IsSpatial() )
                     {
                     category = ColumnCategory.spatialInstanceData;
                     }
@@ -266,9 +266,6 @@ namespace IndexECPlugin.Source.Helpers
 
             private void extractSpatialWhereClause (IECClass queriedClass, TableDescriptor tableToJoin, SQLQueryBuilder sqlQueryBuilder, PolygonDescriptor polygonDescriptor, TableAliasCreator tac)
             {
-
-            TableDescriptor propertyTable = tableToJoin;
-            string columnName = null;
             foreach ( var prop in queriedClass )
                 {
                 IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
@@ -277,26 +274,34 @@ namespace IndexECPlugin.Source.Helpers
                     //This is not a column in the sql table. We skip it...
                     continue;
                     }
-                var isSpatialProperty = dbColumn["IsSpatial"];
-                if ( !isSpatialProperty.IsNull && isSpatialProperty.StringValue.ToLower() == "true" )
+                if ( prop.IsSpatial() )
                     {
-                    columnName = dbColumn.GetPropertyValue("ColumnName").StringValue;
+                    TableDescriptor propertyTable = tableToJoin;
+                    string columnName = dbColumn.GetPropertyValue("ColumnName").StringValue;
 
                     if ( queriedClass != prop.ClassDefinition )
                         {
                         propertyTable = SqlQueryHelpers.JoinBaseTables(queriedClass, propertyTable, prop.ClassDefinition, sqlQueryBuilder, tac);
                         }
 
-                    break;
+#if (BBOXQUERY)
+                    IECInstance spatialBBox = prop.GetCustomAttributes("SpatialBBox");
+                    if(spatialBBox == null)
+                        {
+                        throw new ProgrammerException("The SpatialBBox attribute should be set on the spatial property.");
+                        }
+                    string minXCol = spatialBBox["MinXColumnName"].StringValue;
+                    string maxXCol = spatialBBox["MaxXColumnName"].StringValue;
+                    string minYCol = spatialBBox["MinYColumnName"].StringValue;
+                    string maxYCol = spatialBBox["MaxYColumnName"].StringValue;
+                    sqlQueryBuilder.AddBBoxIntersectsWhereClause(propertyTable.Alias, minXCol, maxXCol, minYCol, maxYCol, DbGeometryHelpers.ExtractBboxFromWKTPolygon(polygonDescriptor.WKT));
+#else
+                    sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, polygonDescriptor.WKT, polygonDescriptor.SRID);
+#endif
+                    return;
                     }
                 }
-            if ( String.IsNullOrWhiteSpace(columnName) )
-                {
                 throw new UserFriendlyException("The class for which you requested a spatial query does not have any spatial property.");
-                }
-
-            sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, polygonDescriptor.WKT, polygonDescriptor.SRID);
-
             }
 
         }

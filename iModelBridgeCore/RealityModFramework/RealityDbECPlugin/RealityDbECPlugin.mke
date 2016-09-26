@@ -75,6 +75,8 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\Microsoft.CSharp.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.dll
 %include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.Entity.dll
+%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
 %include csrefapnd.mki
 
@@ -151,6 +153,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
+            $(baseDir)Source/IECPropertyExtension.cs \
             $(baseDir)Source/IndexConstants.cs \
             $(baseDir)Source/IndexECPlugin.cs \
             $(baseDir)Source/IndexFileRetrievalController.cs \

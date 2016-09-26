@@ -135,9 +135,8 @@ namespace IndexECPlugin.Source.Helpers
             return resultString;
             }
 
-        public static string ExtractBboxFromWKTPolygon (string polygon)
+        public static BBox ExtractBboxFromWKTPolygon (string polygon)
             {
-
             List<double> coordsList = new List<double>();
 
             polygon.Trim();
@@ -178,29 +177,33 @@ namespace IndexECPlugin.Source.Helpers
 
             //bbox is a capacity 4 list that will contain a bbox in this format : 
             //[xmin, ymin, xmax, ymax]
-            List<double> bbox = new List<double>(4);
-            bbox.Add(Double.MaxValue);
-            bbox.Add(Double.MaxValue);
-            bbox.Add(Double.MinValue);
-            bbox.Add(Double.MinValue);
+            BBox bbox = new BBox();
+            bbox.minX = (Double.MaxValue);
+            bbox.minY = (Double.MaxValue);
+            bbox.maxX = (Double.MinValue);
+            bbox.maxY = (Double.MinValue);
 
             for ( int i = 0; i < coordsList.Count; i++ )
                 {
                 if ( i % 2 == 0 )
                     {
-                    bbox[0] = Math.Min(coordsList[i], bbox[0]);
-                    bbox[2] = Math.Max(coordsList[i], bbox[2]);
+                    bbox.minX = Math.Min(coordsList[i], bbox.minX);
+                    bbox.maxX = Math.Max(coordsList[i], bbox.maxX);
                     }
                 else
                     {
-                    bbox[1] = Math.Min(coordsList[i], bbox[1]);
-                    bbox[3] = Math.Max(coordsList[i], bbox[3]);
+                    bbox.minY = Math.Min(coordsList[i], bbox.minY);
+                    bbox.maxY = Math.Max(coordsList[i], bbox.maxY);
                     }
                 }
+            return bbox;
+            }
 
+        public static string ExtractBboxStringFromWKTPolygon (string polygon)
+            {
+            BBox bbox = ExtractBboxFromWKTPolygon(polygon);
 
-
-            return String.Format("{0},{1},{2},{3}", bbox[0], bbox[1], bbox[2], bbox[3]);
+            return String.Format("{0},{1},{2},{3}", bbox.minX, bbox.minY, bbox.maxX, bbox.maxY);
             }
 
         /// <summary>
