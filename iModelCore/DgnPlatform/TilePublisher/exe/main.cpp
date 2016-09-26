@@ -312,9 +312,6 @@ private:
     virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
-    Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
-    Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
-    void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint);
 
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
@@ -399,140 +396,6 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value pointToJson(DPoint3dCR pt)
-    {
-    Json::Value json(Json::objectValue);
-    json["x"] = pt.x;
-    json["y"] = pt.y;
-    json["z"] = pt.z;
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static Json::Value idSetToJson(T const& ids)
-    {
-    Json::Value json(Json::arrayValue);
-    for (auto const& id : ids)
-        json.append(id.ToString());
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetModelsJson (DgnModelIdSet const& modelIds)
-    {
-    Json::Value     modelJson (Json::objectValue);
-    
-    for (auto& modelId : modelIds)
-        {
-        auto const&  model = GetDgnDb().Models().GetModel (modelId);
-        if (model.IsValid())
-            modelJson[modelId.ToString()] = model->GetName();
-        }
-
-    return modelJson;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
-    {
-    Json::Value categoryJson (Json::objectValue); 
-    
-    for (auto& categoryId : categoryIds)
-        {
-        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
-
-        if (category.IsValid())
-            categoryJson[categoryId.ToString()] = category->GetCategoryName();
-        }
-
-    return categoryJson;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint)
-    {
-    OrthographicViewDefinitionCP    orthographicView;
-    CameraViewDefinitionCP          cameraView;
-    DVec3d                          xVec, yVec, zVec;
-    RotMatrix                       rotation;
-    DPoint3d                        eyePoint;
-
-    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
-        {
-        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
-        // Simulate by pointing the camera toward the center of the viewed volume.
-        eyePoint = cameraView->GetEyePoint();
-        rotation =  cameraView->GetViewDirection().ToRotMatrix();
-
-        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
-
-        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
-        rotation.Multiply(viewEyePoint, eyePoint);
-
-        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
-        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
-        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
-
-        rotation.MultiplyTranspose (target, viewTarget);
-
-        rotation.GetRows(xVec, yVec, zVec);
-        zVec.NormalizedDifference (eyePoint, target);
-
-        xVec.NormalizedCrossProduct (yVec, zVec);
-        yVec.NormalizedCrossProduct (zVec, xVec);
-
-        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
-        }
-    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
-        {
-        // Simulate orthographic with a small field of view.
-        static const    double s_orthographicFieldOfView = .01;
-        DVec3d          extents = orthographicView->GetExtents();
-        DPoint3d        viewOrigin, backCenter;
-
-        rotation = orthographicView->GetViewDirection().ToRotMatrix();
-        rotation.GetRows(xVec, yVec, zVec);
-
-        rotation.Multiply (backCenter, orthographicView->GetOrigin());
-        backCenter.SumOf (backCenter, extents, .5);
-        rotation.MultiplyTranspose (backCenter);
-
-        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
-
-        eyePoint.SumOf (backCenter, zVec, zDistance);
-        json["fov"] = s_orthographicFieldOfView;
-        }
-    else
-        {
-        BeAssert (false && "unsuppored view type");
-        }
-
-    transform.Multiply(eyePoint);
-    transform.MultiplyMatrixOnly(yVec);
-    transform.MultiplyMatrixOnly(zVec);
-
-    yVec.Normalize();
-    zVec.Normalize();
-    zVec.Negate();      // Towards target.
-
-    // View orientation
-    json["dest"] = pointToJson(eyePoint);
-    json["dir"] = pointToJson(zVec);
-    json["up"] = pointToJson(yVec);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
@@ -553,7 +416,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
         transform.Multiply (groundEcefPoint, groundPoint);
         json["geolocated"] = true;
-        json["groundPoint"] = pointToJson(groundEcefPoint);
+        json["groundPoint"] = PointToJson(groundEcefPoint);
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
@@ -572,16 +435,16 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         if (nullptr != view.GetName())
             entry["name"] = view.GetName();
 
-        GetSpatialViewJson (entry, *spatialView, transform, groundPoint);
+        GetSpatialViewJson (entry, *spatialView, transform);
         auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
 
         if (modelSelector.IsValid())
-            entry["models"] = idSetToJson(modelSelector->GetModelIds());
+            entry["models"] = IdSetToJson(modelSelector->GetModelIds());
 
         auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
 
         if (categorySelector.IsValid())
-            entry["categories"] = idSetToJson (categorySelector->GetCategoryIds());
+            entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
 
         viewsJson[view.GetId().ToString()] = entry;
         }
