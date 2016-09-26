@@ -133,7 +133,7 @@ struct ECDbSchemaReader
 
         ECN::ECClassCP GetECClass(ECN::ECClassId) const;
         ECN::ECClassId GetECClassId(ECN::ECClassCR) const;
-        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
+        ECN::ECClassId GetECClassId(Utf8StringCR schemaNameOrPrefix, Utf8StringCR className, ResolveSchema) const;
 
         ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
         ECN::ECEnumerationId GetECEnumerationId(ECN::ECEnumerationCR) const;

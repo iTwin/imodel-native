@@ -122,27 +122,19 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
-
-        //! Gets the ECClass for the specified ECClassId.
-        //! @param[in] ecClassId Id of the ECClass to retrieve
-        //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
-
-        //! Gets the ECClassId for the ECClass with the specified name.
-        //! @param[out] id ECClassId of the requested ECClass.
-        //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
-        //! @param[in] className Name of the class to be retrieved
-        //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
-        //! @return true, if the %ECDb file has an ECClass with the given name, false, if the ECClass does not exist in the %ECDb file
-        ECDB_EXPORT bool TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+        ECDB_EXPORT ECN::ECClassCP GetECClass(Utf8StringCR schemaNameOrPrefix, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
         //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
+        ECDB_EXPORT ECN::ECClassId GetECClassId(Utf8StringCR schemaNameOrPrefix, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+
+        //! Gets the ECClass for the specified ECClassId.
+        //! @param[in] ecClassId Id of the ECClass to retrieve
+        //! @return The retrieved ECClass or nullptr if not found
+        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
 
         //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
         //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
