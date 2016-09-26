@@ -8,14 +8,14 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <RasterSchema/WmsHandler.h>
+#include <Raster/WmsHandler.h>
 #include <DgnPlatform/RealityDataCache.h>
 #include "RasterTileTree.h"
 
-RASTERSCHEMA_TYPEDEFS(WmsSource)
-RASTERSCHEMA_TYPEDEFS(WmsTile)
+RASTER_TYPEDEFS(WmsSource)
+RASTER_TYPEDEFS(WmsTile)
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -85,4 +85,4 @@ public:
     void GetCartesianCorners(DPoint3dP pCorners) const;
 };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

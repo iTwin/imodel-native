@@ -9,7 +9,7 @@
 
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 /*=================================================================================**//**
 * @bsistruct
@@ -35,4 +35,4 @@ struct PointCloudGcsFacility
     };
 
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

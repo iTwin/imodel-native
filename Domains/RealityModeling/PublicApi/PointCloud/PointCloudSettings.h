@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudSettings.h $
+|     $Source: PublicApi/PointCloud/PointCloudSettings.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -108,7 +108,7 @@ public:
     void _SaveToUserProperties(ViewDefinitionR) const override;
     void _LoadFromUserProperties(ViewDefinitionCR) override;
 
-    POINTCLOUDSCHEMA_EXPORT static PointCloudViewSettings& FromView(SpatialViewController const&);
+    POINTCLOUD_EXPORT static PointCloudViewSettings& FromView(SpatialViewController const&);
 };
 
 /*=================================================================================**//**
@@ -172,7 +172,7 @@ public:
 
     void _SaveToUserProperties(ViewDefinitionR) const override;
     void _LoadFromUserProperties(ViewDefinitionCR) override;
-    POINTCLOUDSCHEMA_EXPORT static PointCloudClassificationSettings& FromView(SpatialViewController const&);
+    POINTCLOUD_EXPORT static PointCloudClassificationSettings& FromView(SpatialViewController const&);
 };
 
 END_BENTLEY_DGN_NAMESPACE

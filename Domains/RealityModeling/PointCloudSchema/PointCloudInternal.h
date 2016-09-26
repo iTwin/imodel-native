@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PointCloudSchema/PointCloudSchemaInternal.h $
+|     $Source: PointCloudSchema/PointCloudInternal.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifndef __POINTCLOUDSCHEMAINTERNAL_H__
-#define __POINTCLOUDSCHEMAINTERNAL_H__
+#ifndef __POINTCLOUDINTERNAL_H__
+#define __POINTCLOUDINTERNAL_H__
 
-#include <PointCloudSchema/PointCloudSchemaApi.h>
+#include <PointCloud/PointCloudApi.h>
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -26,14 +26,14 @@
 #include <BePointCloud/PointCloudQueryBuffer.h>
 #include <BePointCloud/PointCloudVortex.h>
 
-#include <PointCloudSchema/PointCloudSchemaTypes.h>
-#include <PointCloudSchema/PointCloudSchemaCommon.h>
-#include <PointCloudSchema/ExportMacros.h>
-#include <PointCloudSchema/PointCloudDrawBuffer.h>
-#include <PointCloudSchema/PointCloudHandler.h>
-#include <PointCloudSchema/PointCloudDomain.h>
-#include <PointCloudSchema/PointCloudRamps.h>
-#include <PointCloudSchema/PointCloudSettings.h>
+#include <PointCloud/PointCloudTypes.h>
+#include <PointCloud/PointCloudCommon.h>
+#include <PointCloud/ExportMacros.h>
+#include <PointCloud/PointCloudDrawBuffer.h>
+#include <PointCloud/PointCloudHandler.h>
+#include <PointCloud/PointCloudDomain.h>
+#include <PointCloud/PointCloudRamps.h>
+#include <PointCloud/PointCloudSettings.h>
 
 #include "VisualizationManager.h"
 #include "PointCloudGcsFacility.h"
@@ -64,4 +64,4 @@
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
-#endif // __POINTCLOUDSCHEMAINTERNAL_H__
+#endif // __POINTCLOUDINTERNAL_H__

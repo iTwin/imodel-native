@@ -1,33 +1,31 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudDomain.h $
+|     $Source: PublicApi/Raster/RasterDomain.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnDomain.h>
-#include <PointCloudSchema/PointCloudSchemaCommon.h>
+#include <Raster/RasterCommon.h>
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
-//! The DgnDomain for the point cloud schema.
+//! The DgnDomain for the raster schema.
 // @bsiclass                                                    Eric.Paquet     05/15
 //=======================================================================================
-struct PointCloudDomain : Dgn::DgnDomain
+struct RasterDomain : Dgn::DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(PointCloudDomain, POINTCLOUDSCHEMA_EXPORT)
-
-    static  void        InitializeApi();
+    DOMAIN_DECLARE_MEMBERS(RasterDomain, RASTER_EXPORT)
 
 protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
 public:
-    PointCloudDomain();
+    RasterDomain();
 };
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

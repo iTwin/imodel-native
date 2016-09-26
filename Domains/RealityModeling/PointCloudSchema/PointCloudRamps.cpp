@@ -2,19 +2,19 @@
 |
 |     $Source: PointCloudSchema/PointCloudRamps.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include <PointCloudInternal.h>
 
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 /*---------------------------------------------------------------------------------**//**
 * This class delete the static PointCloudRamps pointer in its destructor.
 * @bsiclass                                                    StephanePoulin  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 struct RampsDestroyer
     {
     public:
@@ -27,7 +27,7 @@ struct RampsDestroyer
         RampsDestroyer(RampsDestroyer const&);  //disabled
         RampsDestroyer& operator=(RampsDestroyer const&);   //disabled
     };
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE
 
 PointCloudRamps* PointCloudRamps::s_ramps = NULL;
 RampsDestroyer s_destroyer;

@@ -5,13 +5,13 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RasterSchemaInternal.h>
+#include <RasterInternal.h>
 
 //Will ignore non local file format (WMS; GeoRaster, etc...)
 #define IPP_NO_REMOTE_FILE_FORMAT
 #include <ImagePP/all/h/HRFFileFormats.h>
 
-USING_NAMESPACE_BENTLEY_RASTERSCHEMA
+USING_NAMESPACE_BENTLEY_RASTER
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         05/2015

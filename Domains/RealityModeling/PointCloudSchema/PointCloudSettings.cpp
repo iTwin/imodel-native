@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include <PointCloudInternal.h>
 
 static Utf8CP VIEW_SETTING_PointCloud            = "pointCloud";
 static Utf8CP VIEW_SETTING_PointCloudClassif     = "pointCloudClassif";
