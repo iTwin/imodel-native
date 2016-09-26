@@ -407,6 +407,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     tilesetUrl.append(rootNameUtf8);
     tilesetUrl.append(".json");
     json["tilesetUrl"] = tilesetUrl;
+    json["name"] = rootNameUtf8;
 
     // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
