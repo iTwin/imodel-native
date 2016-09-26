@@ -107,7 +107,7 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
         {
         for (size_t x = 0; x < seedCount; ++x)
             {
-            ReprojectStatus status = REPROJECT_Success;
+            /* unused - ReprojectStatus status = REPROJECT_Success;*/
 
             DPoint3d pointPixel = DPoint3d::FromInterpolateBilinear(physicalCorners[0], physicalCorners[1], physicalCorners[2], physicalCorners[3], seed[x], seed[y]);
 

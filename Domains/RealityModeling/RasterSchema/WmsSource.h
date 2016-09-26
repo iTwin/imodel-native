@@ -68,14 +68,13 @@ public:
 //=======================================================================================
 struct WmsTile : RasterTile
 {
-protected:
-    typedef WmsSource root_type;
-    
-    root_type const& GetSource() const { return (root_type&) m_root; }
-
 public:
     typedef WmsSource root_type;
 
+protected:
+    root_type const& GetSource() const { return (root_type&) m_root; }
+
+public:
     WmsTile(WmsSourceR root, TileId id, WmsTileCP parent);
 
     BentleyStatus _LoadTile(Dgn::TileTree::StreamBuffer&, Dgn::TileTree::RootR) override;
