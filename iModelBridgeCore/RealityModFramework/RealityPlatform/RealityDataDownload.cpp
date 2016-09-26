@@ -614,9 +614,8 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
         sprintf(fullpath, "%s%s", pi_strDest,filename);
 
         const size_t fullpath_length = strlen(fullpath);
-        std::string fp = std::string(fullpath);
-        size_t lastOf = fp.find_last_of("//");
-        if( lastOf != fp.size() - 1 ) //skip folders
+        WString pathString(fullpath, BentleyCharEncoding::Utf8);
+        if(!pathString.EndsWithI(L"/")) //a file
             {
             if(unzOpenCurrentFile( uf ) != UNZ_OK)
                 return false;
@@ -635,6 +634,11 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
                     fwrite( read_buffer, status, 1, out );
                 } while (status > 0 );
             fclose( out );
+            }
+        else // a folder
+            {
+            if(!BeFileName::DoesPathExist(pathString.c_str()) && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(pathString.c_str()))
+                return false;
             }
         unzCloseCurrentFile( uf );
     
