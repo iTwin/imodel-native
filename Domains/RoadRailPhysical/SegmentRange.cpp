@@ -60,6 +60,52 @@ DgnDbStatus SegmentRangeElement::SetAlignment(SegmentRangeElementCR roadRange, A
     return DgnDbStatus::Success;
     }
 
+//=======================================================================================
+//! Concrete implementation of a cascade algorithm targeting SegmentRanges.
+//=======================================================================================
+struct SegmentRangeCascadeAlgorithm : CascadeFromToLocationChangesAlgorithm
+{
+DEFINE_T_SUPER(CascadeFromToLocationChangesAlgorithm)
+
+protected:
+    SegmentRangeCascadeAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action): 
+        T_Super(original, replacement, action) {}
+public:
+    static RefCountedPtr<SegmentRangeCascadeAlgorithm> Create(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action)
+        { return new SegmentRangeCascadeAlgorithm(original, replacement, action); }
+}; // SegmentRangeCascadeAlgorithm
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SegmentRangeElement::_OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const
+    {
+    DgnDbStatus status = T_Super::_OnChildUpdate(original, replacement);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    auto originalLinearlyLocatedCP = dynamic_cast<ILinearlyLocatedCP>(&original);
+    if (!originalLinearlyLocatedCP)
+        return status;
+
+    auto replacementLinearlyLocatedCP = dynamic_cast<ILinearlyLocatedCP>(&replacement);
+    if (!replacementLinearlyLocatedCP || 
+        CascadeLocationChangesAction::None == replacementLinearlyLocatedCP->GetCascadeLocationChangesActionFlag())
+        return status;
+       
+    m_cascadeAlgorithmPtr = SegmentRangeCascadeAlgorithm::Create(
+        *originalLinearlyLocatedCP, *replacementLinearlyLocatedCP, replacementLinearlyLocatedCP->GetCascadeLocationChangesActionFlag());
+    return _PrepareCascadeChanges(*m_cascadeAlgorithmPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SegmentRangeElement::_OnChildUpdated(DgnElementCR child) const
+    {
+    _CommitCascadeChanges(*m_cascadeAlgorithmPtr);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

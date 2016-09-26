@@ -57,7 +57,12 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
 
 #pragma region Station-change Cascading
     roadSegment1Ptr->GetFromToLocationP()->GetToPositionR().SetDistanceAlongFromStart(35);
+    roadSegment1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
     ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
+
+    auto transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromToLocation()->GetFromPosition().GetDistanceAlongFromStart());
+    ASSERT_DOUBLE_EQ(100, transitionCPtr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
 #pragma endregion
     }

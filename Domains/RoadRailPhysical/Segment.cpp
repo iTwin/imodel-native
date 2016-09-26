@@ -54,8 +54,7 @@ LinearlyReferencedFromToLocationP SegmentElement::GetFromToLocationP()
         m_fromToLocationAspectId = aspectIds.front();
         }
 
-    auto locationP = DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(
-        *this, *LinearlyReferencedFromToLocation::QueryClass(GetDgnDb()), ECInstanceId(m_fromToLocationAspectId));
+    auto locationP = GetLinearlyReferencedFromToLocationP(m_fromToLocationAspectId);
     BeAssert(locationP);
 
     return locationP;

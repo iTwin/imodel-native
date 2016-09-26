@@ -17,14 +17,21 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class for Road and Rail range of physical segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct SegmentRangeElement : Dgn::PhysicalElement
+struct SegmentRangeElement : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_SegmentRangeElement, Dgn::PhysicalElement);
     friend struct SegmentRangeElementHandler;
 
+private:
+    mutable RefCountedPtr<LinearReferencing::ICascadeLinearLocationChangesAlgorithm> m_cascadeAlgorithmPtr;
+
 protected:
     //! @private
     explicit SegmentRangeElement(CreateParams const& params) : T_Super(params) {}
+
+    virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
+    virtual Dgn::DgnDbStatus _OnChildUpdate(Dgn::DgnElementCR original, Dgn::DgnElementCR replacement) const override;
+    virtual void _OnChildUpdated(Dgn::DgnElementCR child) const override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentRangeElement)

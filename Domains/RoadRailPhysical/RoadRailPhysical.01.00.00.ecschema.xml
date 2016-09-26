@@ -74,6 +74,9 @@
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding">
