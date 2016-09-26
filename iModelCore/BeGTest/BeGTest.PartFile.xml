@@ -95,6 +95,8 @@
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
+        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false"/>
+        <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false" LibType="static"/>
         
     </ProductDirectoryList>
 
