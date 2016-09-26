@@ -58,7 +58,6 @@
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelAuthority            "ModelAuthority"
-#define BIS_CLASS_VolumeElement             "VolumeElement"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
@@ -67,6 +66,7 @@
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
+#define BIS_CLASS_SectionDrawing            "SectionDrawing"
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
@@ -79,6 +79,7 @@
 #define BIS_CLASS_Texture                   "Texture"
 #define BIS_CLASS_TrueColor                 "TrueColor"
 #define BIS_CLASS_TrueColorAuthority        "TrueColorAuthority"
+#define BIS_CLASS_VolumeElement             "VolumeElement"
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)

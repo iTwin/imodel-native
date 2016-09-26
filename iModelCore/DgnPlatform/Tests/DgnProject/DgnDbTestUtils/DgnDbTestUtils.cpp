@@ -74,6 +74,18 @@ DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
+SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SectionDrawingPtr drawing = SectionDrawing::Create(model, code, label);
+    EXPECT_TRUE(drawing.IsValid());
+    EXPECT_TRUE(drawing->Insert().IsValid());
+    return drawing;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
 DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);

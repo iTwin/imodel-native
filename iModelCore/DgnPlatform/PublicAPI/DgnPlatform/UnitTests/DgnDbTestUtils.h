@@ -38,6 +38,10 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DrawingPtr InsertDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
 
+    //! Insert a SectionDrawing element
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
+
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DrawingModelPtr InsertDrawingModel(DrawingCR, DgnCodeCR modelCode);
