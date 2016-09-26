@@ -1281,6 +1281,8 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECDbSchemaReader::GetECClassId(Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
     {
+    BeMutexHolder lock(m_criticalSection);
+
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     auto outerIt = m_classIdCache.find(schemaName);
     if (outerIt != m_classIdCache.end())
