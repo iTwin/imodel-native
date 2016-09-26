@@ -1951,7 +1951,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     partialInstances.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "NewValue"}});
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
 
     // Assert
     Json::Value instance;
@@ -1980,7 +1980,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     partialInstances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "PartialValue"}});
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
 
     // Assert
     Json::Value instance;
@@ -2616,9 +2616,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ECInstanceKeyMultiMap parentInstances;
@@ -2635,9 +2633,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ECInstanceKeyMultiMap parentInstances, holderInstances;
@@ -2656,9 +2652,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Parent"));
     EXPECT_FALSE(cache->IsResponseCached(key));
@@ -2706,25 +2700,21 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndH
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndHolderIsRemoved_RemovesResults)
     {
     auto cache = GetTestCache();
-    bset<ObjectId> rejected;
 
     StubInstances instances1;
     instances1.Add({"TestSchema.TestClass", "A"});
     CachedResponseKey key1(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances1.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances1.ToWSObjectsResponse()));
 
     StubInstances instances2;
     instances2.Add({"TestSchema.TestClass", "B"});
     CachedResponseKey key2(cache->FindInstance({"TestSchema.TestClass", "A"}), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances2.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances2.ToWSObjectsResponse()));
 
     StubInstances instances3;
     instances3.Add({"TestSchema.TestClass", "C"});
     CachedResponseKey key3(cache->FindInstance({"TestSchema.TestClass", "B"}), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key3, instances3.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key3, instances3.ToWSObjectsResponse()));
 
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Parent"));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
@@ -2745,9 +2735,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
         .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {},
         ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
 
-    bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, nullptr));
-    EXPECT_THAT(rejected, IsEmpty());
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
 
     auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipPropertiesClass");
     auto relationshipKey = cache->FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"});
@@ -2804,16 +2792,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_Ne
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
@@ -2827,16 +2812,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDiffe
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
@@ -2850,16 +2832,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferent
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
