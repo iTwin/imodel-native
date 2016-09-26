@@ -2150,7 +2150,7 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a new Drawing in the specified InformationModel
+    //! Creates a new Drawing in the specified DocumentListModel
     DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
 };
 

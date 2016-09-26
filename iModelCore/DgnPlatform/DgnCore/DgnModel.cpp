@@ -476,6 +476,20 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DgnElementCR modeledElem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DrawingModel::_OnInsert()
+    {
+    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid())
+        {
+        BeAssert(false && "A DrawingModel should be modeling a Drawing element");
+        return DgnDbStatus::BadElement;
+        }
+
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
     {
     DgnDbR db = drawing.GetDgnDb();
