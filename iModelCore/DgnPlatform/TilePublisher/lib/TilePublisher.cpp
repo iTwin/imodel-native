@@ -957,7 +957,11 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     // so start the range out as the intersection of the tile range and the published range.
     DRange3d        contentRange;
 
-    contentRange.IntersectionOf (tile.GetTileRange(), tile.GetPublishedRange());
+    DRange3d publishedRange = tile.GetPublishedRange();
+    if (publishedRange.IsNull())
+        publishedRange = tile.GetTileRange();
+
+    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
     range = contentRange;
 
     if (!tile.GetChildren().empty())
@@ -1019,7 +1023,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     
     // The content bounding box represents the actual 
     if (!contentRange.IsNull())
-        TilePublisher::WriteBoundingVolume (root[JSON_Content], tile.GetPublishedRange());
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], publishedRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1181,3 +1185,115 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     return Status::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
+    {
+    Json::Value     modelJson (Json::objectValue);
+    
+    for (auto& modelId : modelIds)
+        {
+        auto const&  model = GetDgnDb().Models().GetModel (modelId);
+        if (model.IsValid())
+            modelJson[modelId.ToString()] = model->GetName();
+        }
+
+    return modelJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
+    {
+    Json::Value categoryJson (Json::objectValue); 
+    
+    for (auto& categoryId : categoryIds)
+        {
+        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
+
+        if (category.IsValid())
+            categoryJson[categoryId.ToString()] = category->GetCategoryName();
+        }
+
+    return categoryJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+    {
+    OrthographicViewDefinitionCP    orthographicView;
+    CameraViewDefinitionCP          cameraView;
+    DVec3d                          xVec, yVec, zVec;
+    RotMatrix                       rotation;
+    DPoint3d                        eyePoint;
+
+    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
+        {
+        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
+        // Simulate by pointing the camera toward the center of the viewed volume.
+        eyePoint = cameraView->GetEyePoint();
+        rotation =  cameraView->GetViewDirection().ToRotMatrix();
+
+        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
+
+        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
+        rotation.Multiply(viewEyePoint, eyePoint);
+
+        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
+        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
+        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
+
+        rotation.MultiplyTranspose (target, viewTarget);
+
+        rotation.GetRows(xVec, yVec, zVec);
+        zVec.NormalizedDifference (eyePoint, target);
+
+        xVec.NormalizedCrossProduct (yVec, zVec);
+        yVec.NormalizedCrossProduct (zVec, xVec);
+
+        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
+        }
+    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
+        {
+        // Simulate orthographic with a small field of view.
+        static const    double s_orthographicFieldOfView = .01;
+        DVec3d          extents = orthographicView->GetExtents();
+        DPoint3d        backCenter;
+
+        rotation = orthographicView->GetViewDirection().ToRotMatrix();
+        rotation.GetRows(xVec, yVec, zVec);
+
+        rotation.Multiply (backCenter, orthographicView->GetOrigin());
+        backCenter.SumOf (backCenter, extents, .5);
+        rotation.MultiplyTranspose (backCenter);
+
+        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
+
+        eyePoint.SumOf (backCenter, zVec, zDistance);
+        json["fov"] = s_orthographicFieldOfView;
+        }
+    else
+        {
+        BeAssert (false && "unsuppored view type");
+        }
+
+    transform.Multiply(eyePoint);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    // View orientation
+    json["dest"] = PointToJson(eyePoint);
+    json["dir"] = PointToJson(zVec);
+    json["up"] = PointToJson(yVec);
+    }
+
+
