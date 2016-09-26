@@ -5862,6 +5862,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(
     return digDown;
     }
 
+static bool s_queryNodeOrder = true;
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP)
     {    
@@ -5904,16 +5905,24 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
             if (digDown)
                 {                                              
-                /*NEEDS_WORK_SM : Too long to execute
-                vector<size_t> queryNodeOrder;
+				if (s_queryNodeOrder)
+					{                
+					vector<size_t> queryNodeOrder;
                 
-                queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                */
-                                                
-                for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                    {                                      
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
-                    }                                
+					queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());					
+
+					for (auto& nodeOrder : queryNodeOrder)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[nodeOrder]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
+				else
+					{                                                                
+					for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
                 }
             }
         }
