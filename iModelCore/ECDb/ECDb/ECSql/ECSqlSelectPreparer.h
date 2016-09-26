@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlSelectPreparer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,10 +21,15 @@ private:
     //static class
     ECSqlSelectPreparer ();
     ~ECSqlSelectPreparer ();
-    static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, SingleSelectStatementExp const& exp);
-public:
 
-    static ECSqlStatus Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp);
+    static ECSqlStatus Prepare(ECSqlPrepareContext&, SelectStatementExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);
+    static ECSqlStatus Prepare (ECSqlPrepareContext&, NativeSqlBuilder::ListOfLists& selectClauseSqlSnippetList, SingleSelectStatementExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);
+
+    static ECSqlStatus PrepareSelectClauseExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, SelectClauseExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);
+    static ECSqlStatus PrepareDerivedPropertyExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, DerivedPropertyExp const&, size_t referenceSqliteSnippetCount);
+    static void ExtractPropertyRefs(ECSqlPrepareContext&, Exp const*);
+public:
+    static ECSqlStatus Prepare(ECSqlPrepareContext&, SelectStatementExp const&);
     };
 
 

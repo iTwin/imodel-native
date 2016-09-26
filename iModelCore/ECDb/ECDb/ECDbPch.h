@@ -63,6 +63,7 @@
 #include "ECSql/ECSqlParser.h"
 #include "ECSql/IECSqlPrimitiveValue.h"
 #include "ECSql/ECSqlStatementNoopImpls.h"
+#include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"
 #include "ECSql/PrimitiveMappedToSingleColumnECSqlField.h"
 #include "ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h"

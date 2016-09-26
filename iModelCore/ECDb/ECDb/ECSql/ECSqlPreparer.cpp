@@ -13,7 +13,6 @@
 #include "ECSqlDeletePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 #include "ECSqlPreparedStatement.h"
-#include "ECSqlFieldFactory.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
@@ -659,69 +658,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
     return ECSqlStatus::Success;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, DerivedPropertyExp const* exp)
-    {
-    auto innerExp = exp->GetExpression();
-    if (innerExp == nullptr)
-        {
-        BeAssert(false && "DerivedPropertyExp::GetExpression is not expected to return null during preparation.");
-        return ECSqlStatus::Error;
-        }
-
-    const auto startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount();
-
-    auto snippetCountBefore = nativeSqlSnippets.size();
-    if (IsNullExp(*innerExp))
-        //pass 1 here as NULL in select clause item is always a primitive null and maps to the default type of the EC system (string).
-        //E.g. The NULL expression in  'SELECT NULL as Something FROM Foo' will always be of type string
-        PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (innerExp), 1);
-    else
-        {
-        auto status = PrepareValueExp(nativeSqlSnippets, ctx, innerExp);
-        if (!status.IsSuccess())
-            return status;
-        }
-
-    if (!ctx.GetCurrentScope().IsRootScope())
-        {
-        auto alias = exp->GetColumnAlias();
-        if (alias.empty())
-            alias = exp->GetNestedAlias();
-
-        if (!alias.empty())
-            {
-            if (nativeSqlSnippets.size() == 1LL)
-                {
-                nativeSqlSnippets.front().AppendSpace().AppendEscaped(alias.c_str());
-                }
-            else
-                {
-                int idx = 0;
-                Utf8String postfix;
-                for (auto& snippet : nativeSqlSnippets)
-                    {
-                    postfix.clear();
-                    postfix.Sprintf("%s_%d", alias.c_str(), idx);
-                    idx++;
-                    snippet.AppendSpace().AppendEscaped(postfix.c_str());
-                    }
-                }
-            }
-        }
-    else if (ctx.GetCurrentScope().IsRootScope())
-        {
-        ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
-        auto status = ECSqlFieldFactory::CreateField(ctx, exp, startColumnIndex);
-        if (!status.IsSuccess())
-            return status;
-        }
-
-    return ECSqlStatus::Success;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
@@ -1332,36 +1268,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     return ECSqlStatus::Success;
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp(ECSqlPrepareContext& ctx, SelectClauseExp const* selectClause)
-    {
-    std::vector<Exp const*> selection(selectClause->GetChildren().begin(), selectClause->GetChildren().end());
-    NativeSqlBuilder::List selectClauseNativeSqlSnippets;
-    bool first = true;
-    for (Exp const* derivedPropExp : selection)
-        {
-        selectClauseNativeSqlSnippets.clear();
-        ECSqlStatus status = PrepareDerivedPropertyExp(selectClauseNativeSqlSnippets, ctx, static_cast<DerivedPropertyExp const*> (derivedPropExp));
-        if (!status.IsSuccess())
-            return status;
-
-        if (selectClauseNativeSqlSnippets.empty())
-            continue;
-
-        if (first)
-            first = false;
-        else
-            ctx.GetSqlBuilderR().AppendComma();
-
-        ctx.GetSqlBuilderR().Append(selectClauseNativeSqlSnippets);
-        }
-
-    return ECSqlStatus::Success;
-    }
 
 
 //-----------------------------------------------------------------------------------------

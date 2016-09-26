@@ -907,66 +907,42 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 Utf8String SelectStatementExp::_ToECSql() const
     {
     if (IsCompound())
-        {
-        return GetCurrent().ToECSql() + " " + OperatorToString(m_operator) + (m_isAll ? " ALL " : " ") + GetNext()->ToECSql();
-        }
+        return GetFirstStatement().ToECSql() + " " + OperatorToString(m_operator) + (m_isAll ? " ALL " : " ") + GetRhsStatement()->ToECSql();
 
-    return  GetCurrent().ToECSql();
+    return GetFirstStatement().ToECSql();
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SelectStatementExp::_ToString() const  { return "SelectStatementExp"; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp const* SelectStatementExp::_FindProperty(Utf8CP propertyName) const
-    {
-    return GetCurrent().FindProperty(propertyName);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SelectClauseExp const* SelectStatementExp::_GetSelection() const  { return  GetCurrent().GetSelection(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs)
-    :m_isAll(false), m_operator(Operator::None)
+    :m_isAll(false), m_operator(CompoundOperator::None), m_rhsSelectStatementExpIndex(UNSET_CHILDINDEX)
     {
     BeAssert(lhs != nullptr);
-    AddChild(std::move(lhs));
+    m_firstSingleSelectStatementExpIndex = AddChild(std::move(lhs));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
+SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
     :m_isAll(isAll), m_operator(op)
     {
     BeAssert(lhs != nullptr);
     BeAssert(rhs != nullptr);
-    BeAssert(op != Operator::None);
+    BeAssert(op != CompoundOperator::None);
 
-    AddChild(std::move(lhs));
-    AddChild(std::move(rhs));
+    m_firstSingleSelectStatementExpIndex = AddChild(std::move(lhs));
+    m_rhsSelectStatementExpIndex = (int) AddChild(std::move(rhs));
     }
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SingleSelectStatementExp const& SelectStatementExp::GetCurrent() const { return *GetChild<SingleSelectStatementExp>(0); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const* SelectStatementExp::GetNext() const
+SelectStatementExp const* SelectStatementExp::GetRhsStatement() const
     {
     if (IsCompound())
-        return GetChild<SelectStatementExp>(1);
+        return GetChild<SelectStatementExp>((size_t) m_rhsSelectStatementExpIndex);
 
     return nullptr;
     }
@@ -974,30 +950,15 @@ SelectStatementExp const* SelectStatementExp::GetNext() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SelectStatementExp::IsAll()const { return m_isAll; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp::Operator SelectStatementExp::GetOperator() const { return m_operator; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SelectStatementExp::IsCompound() const { return m_operator != Operator::None; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP SelectStatementExp::OperatorToString(Operator op)
+Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
     {
     switch (op)
         {
-        case Operator::Union:
+        case CompoundOperator::Union:
             return "UNION";
-        case Operator::Intersect:
+        case CompoundOperator::Intersect:
             return "INTERSECT";
-        case Operator::Except:
+        case CompoundOperator::Except:
             return "EXCEPT";
         default:
             BeAssert(false && "Programmer error");

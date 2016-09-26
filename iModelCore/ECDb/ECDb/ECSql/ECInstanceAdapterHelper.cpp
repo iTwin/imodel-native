@@ -673,7 +673,7 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
         {
         SelectStatementExp const* stmtExp = static_cast<SelectStatementExp const*>(parseTree.get());
         BeAssert(stmtExp->GetChildrenCount() != 0);
-        selectStmtExp = &stmtExp->GetCurrent();
+        selectStmtExp = &stmtExp->GetFirstStatement();
         }
     else if (parseTree->GetType() == Exp::Type::SingleSelect)
         selectStmtExp = static_cast<SingleSelectStatementExp const*>(parseTree.get());
