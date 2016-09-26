@@ -478,7 +478,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
 
-        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const= 0;
+        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const= 0;
 
         virtual IScalableMeshTexturePtr _GetTexture(uint64_t texID) const= 0;
 #endif
@@ -549,7 +549,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
 
-        BENTLEY_SM_EXPORT void GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const;
+        BENTLEY_SM_EXPORT void GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const;
 
         BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture(uint64_t texID) const;
 #endif

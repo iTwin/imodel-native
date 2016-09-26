@@ -1268,7 +1268,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
 
-        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const override;
+        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const override;
 
         virtual IScalableMeshTexturePtr _GetTexture(uint64_t texID) const override;
 #endif

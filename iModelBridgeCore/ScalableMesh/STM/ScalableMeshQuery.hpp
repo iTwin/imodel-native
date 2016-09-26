@@ -2232,7 +2232,7 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
 
 #ifdef WIP_MESH_IMPORT
 
-template <class POINT> void ScalableMeshNode<POINT>::_GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const
+template <class POINT> void ScalableMeshNode<POINT>::_GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const
     {
     LOAD_NODE
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);

@@ -2449,7 +2449,7 @@ bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Valu
     return _IntersectRay(pt, ray, retrievedMetadata);
     }
 
-void IScalableMeshNode::GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t> texIDs) const
+void IScalableMeshNode::GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const
     {
     return _GetAllSubMeshes(meshes,texIDs);
     }
