@@ -52,3 +52,30 @@ CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCa
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
+
+ECDbAdapterTests.FindRelationshipClassWithSource_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching
+    # Bim0200Dev, x64, DEBUG
+    # [ RUN      ] ECDbAdapterTests.FindRelationshipClassWithSource_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching
+    # 2016-09-27 08:43:02,323 ERROR [0x00004438] ECDb - ECSchema Update failed. ECSchema ECDbMap.02.00.00: Decreasing 'VersionMajor' of an ECSchema is not supported.
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Util\ECDbAdapterTests.cpp(301): error:       Expected: SUCCESS
+    # To be equal to: db.Schemas().ImportECSchemas(*cache)
+    #       Which is: ERROR
+    # [  FAILED  ] ECDbAdapterTests.FindRelationshipClassWithSource_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching (93 ms)
+
+ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithNoDirectMatching_ReturnsParent
+    # Bim0200Dev, x64, DEBUG
+    # [ RUN      ] ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithNoDirectMatching_ReturnsParent
+    # 2016-09-27 08:43:02,980 ERROR [0x00004438] ECDb - ECSchema Update failed. ECSchema ECDbMap.02.00.00: Decreasing 'VersionMajor' of an ECSchema is not supported.
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Util\ECDbAdapterTests.cpp(629): error:       Expected: SUCCESS
+    # To be equal to: db.Schemas().ImportECSchemas(*cache)
+    #       Which is: ERROR
+    # [  FAILED  ] ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithNoDirectMatching_ReturnsParent (93 ms)
+
+ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithMatchingRelationship_ReturnsMatching
+    # Bim0200Dev, x64, DEBUG
+    # [ RUN      ] ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithMatchingRelationship_ReturnsMatching
+    # 2016-09-27 08:43:03,089 ERROR [0x00004438] ECDb - ECSchema Update failed. ECSchema ECDbMap.02.00.00: Decreasing 'VersionMajor' of an ECSchema is not supported.
+    # F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Cache\Util\ECDbAdapterTests.cpp(683): error:       Expected: SUCCESS
+    # To be equal to: db.Schemas().ImportECSchemas(*cache)
+    #       Which is: ERROR
+    # [  FAILED  ] ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithMatchingRelationship_ReturnsMatching (99 ms)
