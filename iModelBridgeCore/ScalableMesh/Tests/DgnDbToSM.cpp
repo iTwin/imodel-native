@@ -83,7 +83,7 @@ DgnDbPtr mainProject;
 Transform s_unitsTrans;
 std::mutex dgndbMutex;
 
-void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, DgnElementCP sourceElem, CurveVectorCP horizontalAlignment, CurveVectorCP verticalAlignment, double samplingFactor = 1);
+void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, bvector<uint64_t>& texIds, DgnElementCP sourceElem, CurveVectorCP horizontalAlignment, CurveVectorCP verticalAlignment, double samplingFactor = 1, uint64_t* defaultTexValue = nullptr);
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
@@ -113,8 +113,20 @@ class AppHost : public DgnPlatformLib::Host
     };
 
 AppHost libHost;
+void MakeColorTile(bvector<uint8_t>& tex, int width, int height, RgbFactor color)
+    {
+    tex.resize(width*height * 3);
+    for (size_t i = 0; i < width; ++i)
+        for (size_t j = 0; j < height; ++j)
+            {
+            *(&tex[0] + (j*width * 3) + i * 3) = (uint8_t)(color.red * 255);
+            *(&tex[0] + (j*width * 3) + i * 3 + 1) = (uint8_t)(color.green * 255);
+            *(&tex[0] + (j*width * 3) + i * 3 + 2) = (uint8_t)(color.blue * 255);
+            }
+    }
 
-void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, JsonValueR resInfo, DgnElementCP sourceElem, JsonValueCR config, DRange3d nodeExt, DRange3d elemRange, size_t totalNElements)
+
+void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, bvector<uint64_t>& texIds, JsonValueR resInfo, DgnElementCP sourceElem, JsonValueCR config, DRange3d nodeExt, DRange3d elemRange, size_t totalNElements)
     {
     RoadSegmentCP roadSegment = (RoadSegmentCP)sourceElem;
 
@@ -127,10 +139,26 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 
     if (!info.IsValid()) return;
 
+    uint64_t* defaultTexId = nullptr;
+    uint64_t texValue;
+    ConceptualMaterialType matType = info->GetGeometryTemplateCP()->GetLeftLanes().front()->GetMaterialType();
+    DgnMaterialId defaultMatId = ConceptualMaterials::QueryMaterialId(*mainProject, matType);
+    RenderMaterialPtr renderMat = JsonRenderMaterial::Create(*mainProject, defaultMatId);
+    if (renderMat.IsValid())
+        {
+        RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
+        if (patternMap.IsValid())
+            {
+            Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
+            texValue = textureIdValue.asUInt64();
+            defaultTexId = &texValue;
+            }
+        }
+
     if (fraction < 0.05 || totalNElements > 50)
         {
         if (info->GetPartialHorizontalAlignmentCP() != nullptr && info->GetPartialVerticalAlignmentCP() != nullptr)
-        DrawPolyline(result, textures, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP());
+            DrawPolyline(result, textures, texIds, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP(), 1.0, defaultTexId);
         return;
         }
     
@@ -164,8 +192,19 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
             RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
             if (patternMap.IsValid())
                 {
+                Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
                 ImageBufferPtr data = patternMap->_GetImage(*mainProject);
                 textures.push_back(data);
+                texIds.push_back((uint64_t)textureIdValue.asInt());
+                }
+            else if (renderMat->_GetBool(RENDER_MATERIAL_FlagHasBaseColor))
+                {
+                RgbFactor diffuseColor = renderMat->_GetColor(RENDER_MATERIAL_Color);
+                bvector<uint8_t> tex;
+                MakeColorTile(tex, 4, 4, diffuseColor);
+                ImageBufferPtr data = ImageBuffer::Create(4, 4, ImageBuffer::Format::Rgb,tex);
+                textures.push_back(data);
+                texIds.push_back(((uint64_t)0xFF00CECE << 32) | diffuseColor.ToIntColor());
                 }
             else textures.push_back(nullptr);
             if (polyface.first->GetParamCount() == 0)
@@ -178,7 +217,7 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
         }
     }
 
-void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, DgnElementCP sourceElem, CurveVectorCP horizontalAlignment, CurveVectorCP verticalAlignment, double samplingFactor)
+void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, bvector<uint64_t>& texIds, DgnElementCP sourceElem, CurveVectorCP horizontalAlignment, CurveVectorCP verticalAlignment, double samplingFactor, uint64_t* defaultTexValue)
     {
     IFacetOptionsPtr  options = IFacetOptions::Create();
     IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::New(*options);
@@ -189,28 +228,30 @@ void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& t
     bvector<DPoint3d> polygon;
     DVec3d vec;
     int step = (int)floor(pointsOnLine[0][0].size() / samplingFactor * pointsOnLine[0][0].size());
+    if (pointsOnLine[0][0].size() < 2) return;
+    DVec3d vecSource = DVec3d::FromStartEnd(pointsOnLine[0][0][1], pointsOnLine[0][0][0]);
+    DVec3d vecTarget = vecSource;
+    vecTarget.Negate();
+    vecTarget.Normalize();
+    vecTarget.Add(DVec3d::From(0, 0.0001, 0));
+    vec = DVec3d::FromRotate90Towards(vecSource, vecTarget);
+    vec.Normalize();
+    vec.Scale(-5);
     for (size_t i = 0; i < pointsOnLine[0][0].size(); ++i)
         {
         DPoint3d pt = pointsOnLine[0][0][i];
         if (elevationPointsOnLine[0][0].size() > i) pt.z = elevationPointsOnLine[0][0][i].z;
-        if (i == 1)
-            {
-            DVec3d vecSource = DVec3d::FromStartEnd(pointsOnLine[0][0][i], pointsOnLine[0][0][i-1]);
-            DVec3d vecTarget = vecSource;
-            vecTarget.Negate();
-            vecTarget.Normalize();
-            vecTarget.Add(DVec3d::From(0, 0.0001, 0));
-            vec = DVec3d::FromRotate90Towards(vecSource, vecTarget);
-            vec.Normalize();
-            vec.Scale(10);
-            }
+        else pt.z = elevationPointsOnLine[0][0].back().z;
+        pt.SumOf(pt, vec);
         //if (i % step != 0) continue;
         polygon.push_back(pt);
         }
+    vec.Negate();
     for (int j = (int)pointsOnLine[0][0].size() - 1; j >= 0; --j)
         {
         DPoint3d pt = pointsOnLine[0][0][j];
         if (elevationPointsOnLine[0][0].size() > j) pt.z = elevationPointsOnLine[0][0][j].z;
+        else pt.z = elevationPointsOnLine[0][0].back().z;
         pt.SumOf(pt, vec);
         polygon.push_back(pt);
         }
@@ -220,11 +261,20 @@ void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& t
         //builder->AddPolyface(*mesh);
         builder->AddTriangulation(polygon);
         result.push_back(builder->GetClientMeshPtr());
-        textures.push_back(nullptr);
+        if (nullptr == defaultTexValue)
+            {
+            RgbFactor diffuseColor = { 0.5, 0.5, 0.5 };
+            bvector<uint8_t> tex;
+            MakeColorTile(tex, 4, 4, diffuseColor);
+            ImageBufferPtr data = ImageBuffer::Create(4, 4, ImageBuffer::Format::Rgb, tex);
+            textures.push_back(data);
+            texIds.push_back(((uint64_t)0xFF00CECE << 32) | diffuseColor.ToIntColor());
+            }
+        else texIds.push_back(*defaultTexValue);
         }
     }
 
-void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, JsonValueR resInfo, DgnElementCP sourceElem, JsonValueCR config, DRange3d nodeExt, DRange3d elemRange, size_t totalNElements)
+void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, bvector<uint64_t>& texIds, JsonValueR resInfo, DgnElementCP sourceElem, JsonValueCR config, DRange3d nodeExt, DRange3d elemRange, size_t totalNElements)
     {
     BridgeSegmentCP bridgeSegment = (BridgeSegmentCP)sourceElem;
     double fraction =  std::min(elemRange.XLength() / nodeExt.XLength(), elemRange.YLength() / nodeExt.YLength())/*, elemRange.ZLength() / nodeExt.ZLength())*/;
@@ -236,10 +286,9 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
 
     CrossSectionTemplateCPtr csTemplate = CrossSectionTemplate::Get(*mainProject, CrossSectionTemplate::Scenery::GetSceneryDeckTemplateId(*mainProject, 1, 1));
 
-    if (fraction < 0.05 || totalNElements > 50)
+    if ((fraction < 0.05 || totalNElements > 50) && info->GetPartialHorizontalAlignmentCP() != nullptr && info->GetPartialVerticalAlignmentCP() != nullptr)
         {
-        if (info->GetPartialHorizontalAlignmentCP() != nullptr && info->GetPartialVerticalAlignmentCP() != nullptr)
-        DrawPolyline(result, textures, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP());
+        DrawPolyline(result, textures, texIds, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP());
         return;
         }
     else if (fraction < 0.25 || totalNElements > 30)
@@ -318,8 +367,19 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
                 RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
                 if (patternMap.IsValid())
                     {
+                    Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
                     ImageBufferPtr data = patternMap->_GetImage(*mainProject);
                     textures.push_back(data);
+                    texIds.push_back((uint64_t)textureIdValue.asInt());
+                    }
+                else if (renderMat->_GetBool(RENDER_MATERIAL_FlagHasBaseColor))
+                    {
+                    RgbFactor diffuseColor = renderMat->_GetColor(RENDER_MATERIAL_Color);
+                    bvector<uint8_t> tex;
+                    MakeColorTile(tex, 4, 4, diffuseColor);
+                    ImageBufferPtr data = ImageBuffer::Create(4, 4, ImageBuffer::Format::Rgb, tex);
+                    textures.push_back(data);
+                    texIds.push_back(((uint64_t)0xFF00CECE << 32) | diffuseColor.ToIntColor());
                     }
                 else textures.push_back(nullptr);
                 if (mesh->GetParamCount() == 0)
@@ -399,9 +459,9 @@ void GetIndexedMesh(bvector<DPoint3d>& pts, bvector<int32_t>& indexes,bvector<DP
                     }
             for (size_t i = 0; i < 3; ++i)
                 paramsMap[idx[i]] = param[i];
-            uvs[idx[0]] = RemapUVs(meshP->GetParamCP()[param[0]], uvMax);
-            uvs[idx[1]] = RemapUVs(meshP->GetParamCP()[param[1]], uvMax);
-            uvs[idx[2]] = RemapUVs(meshP->GetParamCP()[param[2]], uvMax);
+            uvs[idx[0]] = meshP->GetParamCP()[param[0]];//RemapUVs(meshP->GetParamCP()[param[0]], uvMax);
+            uvs[idx[1]] = meshP->GetParamCP()[param[1]];//RemapUVs(meshP->GetParamCP()[param[1]], uvMax);
+            uvs[idx[2]] = meshP->GetParamCP()[param[2]];//RemapUVs(meshP->GetParamCP()[param[2]], uvMax);
             }
         indexes.push_back(idx[0] + 1);
         indexes.push_back(idx[1] + 1);
@@ -451,6 +511,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
         }
     bset<int64_t> processedElems;
     bset<int64_t> uniqueElems;
+    bmap<int64_t, uint64_t> dgnIds;
     for (size_t i = 0; i < submeshes.size(); ++i)
         {
         Json::Value val;
@@ -458,7 +519,12 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
         bool parsingSuccessful = reader.parse(meshMetadata[i], val);
         if (!parsingSuccessful) continue;
         uniqueElems.insert(val["elementId"].asInt64());
+        for (const Json::Value& id : val["mapIds"])
+            {
+            dgnIds[id["dgn"].asInt64()] = id["SM"].asUInt64();
+            }
         }
+ 
     for (size_t i = 0; i < submeshes.size(); ++i)
         {
         Json::Value val;
@@ -478,30 +544,43 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             if (wasProcessed) continue;
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
+            bvector<uint64_t> texIds;
             Json::Value result;
             result["elementId"] = val["elementId"].asInt64();
-
+            result["mapIds"] = Json::arrayValue;
+            for (auto& mapId : dgnIds)
+                {
+                Json::Value newEntry = Json::objectValue;
+                newEntry["dgn"] = mapId.first;
+                newEntry["SM"] = mapId.second;
+                result["mapIds"].append(newEntry);
+                }
             DRange3d elemRange = DRange3d::From(submeshes[i]->GetPolyfaceQuery()->GetPointCP(), (int)submeshes[i]->GetNbPoints());
 
             dgndbMutex.lock();
-            BuildSubResolutionRoad(subMeshPoly, textures, result, elementCP, val, nodeExt, elemRange, uniqueElems.size());
+            BuildSubResolutionRoad(subMeshPoly, textures, texIds, result, elementCP, val, nodeExt, elemRange, uniqueElems.size());
             dgndbMutex.unlock();
 
-            bvector<DPoint3d> pts;
-            bvector<int32_t> indexes;
-            Utf8String metadata = Json::FastWriter().write(result);
+            
             int n = 0;
             for (auto& componentMesh : subMeshPoly)
                 {
+                bvector<DPoint3d> pts;
+                bvector<int32_t> indexes;
                 componentMesh->Transform(s_unitsTrans);
                 bvector<DPoint2d> uvs;
                 GetIndexedMesh(pts, indexes, uvs, componentMesh);
                 newMeshPts.push_back(pts);
                 newMeshIndexes.push_back(indexes);
+                bvector<uint8_t> tex;
+                Json::Value subResult = result;
+                subResult["texId"] = Json::arrayValue;
+                if (dgnIds.count(texIds[n]) != 0)texIds[n] = dgnIds[texIds[n]];
+                else ReadTexture(tex, textures[n]);
+                subResult["texId"].append(texIds[n]);
+                Utf8String metadata = Json::FastWriter().write(subResult);
                 newMeshMetadata.push_back(metadata);
                 newUvs.push_back(uvs);
-                bvector<uint8_t> tex;
-                ReadTexture(tex, textures[n]);
                 newTex.push_back(tex);
                 ++n;
                 }
@@ -524,41 +603,58 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             {
             dgndbMutex.unlock();
             if (wasProcessed) continue;
+
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
+            bvector<uint64_t> texIds;
             Json::Value result;
             result["elementId"] = val["elementId"].asInt64();
+            result["mapIds"] = Json::arrayValue;
+            for (auto& mapId : dgnIds)
+                {
+                Json::Value newEntry = Json::objectValue;
+                newEntry["dgn"] =  mapId.first;
+                newEntry["SM"] = mapId.second;
+                result["mapIds"].append(newEntry);
+                }
 
             DRange3d elemRange = DRange3d::From(submeshes[i]->GetPolyfaceQuery()->GetPointCP(), (int)submeshes[i]->GetNbPoints());
 
             dgndbMutex.lock();
-            BuildSubResolutionBridge(subMeshPoly, textures, result, elementCP, val, nodeExt, elemRange, uniqueElems.size());
+            BuildSubResolutionBridge(subMeshPoly, textures, texIds, result, elementCP, val, nodeExt, elemRange, uniqueElems.size());
             dgndbMutex.unlock();
 
-            bvector<DPoint3d> pts;
-            bvector<int32_t> indexes;
             Utf8String metadata = Json::FastWriter().write(result);
             int n = 0;
             for (auto& componentMesh : subMeshPoly)
                 {
+                bvector<DPoint3d> pts;
+                bvector<int32_t> indexes;
                 componentMesh->Transform(s_unitsTrans);
                 bvector<DPoint2d> uvs;
                 GetIndexedMesh(pts, indexes, uvs, componentMesh);
                 newMeshPts.push_back(pts);
                 newMeshIndexes.push_back(indexes);
+                bvector<uint8_t> tex;
+                Json::Value subResult = result;
+                subResult["texId"] = Json::arrayValue;
+                if (dgnIds.count(texIds[n]) != 0)texIds[n] = dgnIds[texIds[n]];
+                else ReadTexture(tex, textures[n]);
+                subResult["texId"].append(texIds[n]);
+                Utf8String metadata = Json::FastWriter().write(subResult);
                 newMeshMetadata.push_back(metadata);
                 newUvs.push_back(uvs);
-                bvector<uint8_t> tex;
-                ReadTexture(tex, textures[n]);
                 newTex.push_back(tex);
                 ++n;
                 }
+
             }
 
         else if (BridgePier::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
             {
             dgndbMutex.unlock();
             if (wasProcessed) continue;
+#if 0 //WIP TEXTURE
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
             Json::Value result;
@@ -588,6 +684,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
                 newTex.push_back(tex);
                 ++n;
                 }
+#endif
             }
         else /*if (IntersectionSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)*/
             {
@@ -597,6 +694,19 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             if ((int)submeshes[i]->GetNbPoints() > 300 && fraction < 0.05) continue;
             Json::Value result;
             result["elementId"] = val["elementId"].asInt64();
+            result["texId"] = Json::arrayValue;
+            for (const Json::Value& id : val["texId"])
+                {
+                result["texId"].append(id.asInt64());
+                }
+            result["mapIds"] = Json::arrayValue;
+            for (auto& mapId : dgnIds)
+                {
+                Json::Value newEntry = Json::objectValue;
+                newEntry["dgn"] = mapId.first;
+                newEntry["SM"] = mapId.second;
+                result["mapIds"].append(newEntry);
+                }
             Utf8String metadata = Json::FastWriter().write(result);
             newMeshMetadata.push_back(metadata);
             bvector<DPoint3d> pts(submeshes[i]->GetNbPoints());
@@ -686,7 +796,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //create a scalable mesh
     StatusInt createStatus;
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::SetUserFilterCallback(&FilterElement);
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_colorado.3sm", createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\second_test_dgndb_colorado.3sm", createStatus));
 
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(L"e:\\output\\coloradoDesign.stm", true, true, createStatus));
     if (!mainProject.IsValid()) OpenProject();

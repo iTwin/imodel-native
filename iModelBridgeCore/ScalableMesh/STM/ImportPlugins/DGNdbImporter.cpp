@@ -327,6 +327,10 @@ private:
             DgnModelPtr                             m_model;
             DgnModel::const_iterator                m_currentElement;
             Transform                              m_scaleUnits;
+            uint64_t                               m_nextTexId;
+
+            bmap<int, uint64_t>    m_mapOfTexColorIds;
+            bmap<uint64_t, uint64_t>    m_mapOfTexIds;
 
             size_t m_nelements;
 
@@ -346,6 +350,7 @@ private:
                 m_database->Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
                 m_scaleUnits.InverseOf(Transform::FromScaleFactors(scale.x, scale.y, scale.z));
                 m_nelements = 0;
+                m_nextTexId = 1;
                 }
 
             /*---------------------------------------------------------------------------------**//**
@@ -376,7 +381,7 @@ private:
                     {
                     DgnElementCPtr elem = m_currentElement->second;
                    // bool filterElem = true;// elem->GetElementClass()->GetId() == 320;//357 || elem->GetElementClass()->GetId() == 354 || elem->GetElementClass()->GetId() == 328 || elem->GetElementClass()->GetId() == 325 || elem->GetElementClass()->GetId() == 265 || elem->GetElementClass()->GetId() == 320;//265; //341 || elem->GetElementClass()->GetId() == 344 || elem->GetElementClass()->GetId() == 388;
-                    bool filterElem = elem->GetElementClass()->GetId() != 320; //elem->GetElementClass()->GetId() == 257 || elem->GetElementClass()->GetId() == 251 || elem->GetElementClass()->GetId() == 260;
+                    bool filterElem = elem->GetElementClass()->GetId() != 320;// && elem->GetElementClass()->GetId() != 273; //elem->GetElementClass()->GetId() == 257 || elem->GetElementClass()->GetId() == 251 || elem->GetElementClass()->GetId() == 260;
                     if (filterElem && nullptr != elem->ToGeometrySource3d())
                         {
                         Transform transformToWorld;
@@ -385,7 +390,9 @@ private:
                         bvector<int32_t> indices;
                         bvector<DPoint3d> pts;
                         bvector<DPoint2d> uvs;
-                        bvector<uint8_t> tex;
+                        bvector<bvector<uint8_t>> tex;
+                        bvector<int64_t> texIds;
+                        bvector<int32_t> parts;
                         ElementGeometryCollection collection(*m_database, dynamic_cast<const GeometricElement3d*>(elem.get())->GetGeomStream());
                         size_t offset = 0;
                         bool hasTexture = false;
@@ -401,96 +408,115 @@ private:
                             DPoint2d uvMapBottomLeft, uvMapTopRight;
                             bool currentTex = false;
                             bool texBasedOnColor = false;
+                            int64_t currentTexId = -1;
                             ElemDisplayParams params(collection.GetElemDisplayParams()); //find whether element is textured
-                           // if (params.GetSubCategoryId().IsValid())
+                            // if (params.GetSubCategoryId().IsValid())
                                 {
                                 NullContext ct(*m_database);
                                 params.Resolve(ct);
                                 DgnMaterialId id = params.GetMaterial();
                                 RenderMaterialPtr renderMat = JsonRenderMaterial::Create(*m_database, id);
+                                tex.resize(tex.size() + 1);
                                 if (renderMat.IsValid())
                                     {
                                     RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
                                     if (patternMap.IsValid())
                                         {
-                                        ImageBufferPtr data = patternMap->_GetImage(*m_database);
+                                        Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
+                                        if (m_mapOfTexIds.count((uint64_t)textureIdValue.asInt()) == 0)
+                                            {
+                                            ImageBufferPtr data = patternMap->_GetImage(*m_database);
+
+                                            AppendTextureToExisting(tex.back(), uvMapBottomLeft, uvMapTopRight, data->GetWidth(), data->GetHeight(), data->GetDataCP(), data->GetFormat());
+                                            currentTexId = (int64_t)m_nextTexId;
+                                            m_mapOfTexIds[textureIdValue.asUInt64()] = m_nextTexId++;
+                                            }
+                                        else currentTexId = (int64_t)m_mapOfTexIds[textureIdValue.asUInt64()];
+                                        /*ImageBufferPtr data = patternMap->_GetImage(*m_database);
                                         int width = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[0], height = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[1];
                                         AppendTextureToExisting(tex, uvMapBottomLeft, uvMapTopRight, data->GetWidth(), data->GetHeight(), data->GetDataCP(), data->GetFormat());
                                         DPoint2d maxUv = DPoint2d::From(1, 1);
                                         DPoint2d newUvTopRight = DPoint2d::From((double)width / ((uint32_t*)tex.data())[0], 0);
                                         DPoint2d newUvBotLeft = DPoint2d::From(0, (double)height/ ((uint32_t*)tex.data())[1]);
                                         for (auto& uv : uvs)
-                                            {
-                                            uv = RemapUVs(uv, newUvBotLeft, newUvTopRight, maxUv);
-                                            }
+                                        {
+                                        uv = RemapUVs(uv, newUvBotLeft, newUvTopRight, maxUv);
+                                        }*/
                                         currentTex = hasTexture = true;
                                         }
                                     else if (renderMat->_GetBool(RENDER_MATERIAL_FlagHasBaseColor))
                                         {
                                         RgbFactor diffuseColor = renderMat->_GetColor(RENDER_MATERIAL_Color);
-                                        bvector<uint8_t> colorTileRgb;
-                                        MakeColorTile(colorTileRgb, 4, 4, diffuseColor);
-                                        int width = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[0], height = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[1];
-                                        AppendTextureToExisting(tex, uvMapBottomLeft, uvMapTopRight,4, 4,colorTileRgb.data(), ImageBuffer::Format::Rgb);
-                                        DPoint2d maxUv = DPoint2d::From(1, 1);
-                                        DPoint2d newUvTopRight = DPoint2d::From((double)width / ((uint32_t*)tex.data())[0], 0);
-                                        DPoint2d newUvBotLeft = DPoint2d::From(0, (double)height / ((uint32_t*)tex.data())[1]);
-                                        for (auto& uv : uvs)
+                                        if (m_mapOfTexColorIds.count(diffuseColor.ToIntColor()) == 0)
                                             {
-                                            uv = RemapUVs(uv, newUvBotLeft, newUvTopRight, maxUv);
+                                            MakeColorTile(tex.back(), 4, 4, diffuseColor);
+                                            currentTexId = (int64_t)m_nextTexId;
+                                            m_mapOfTexColorIds[diffuseColor.ToIntColor()] = m_nextTexId++;
                                             }
+                                        else currentTexId = (int64_t)m_mapOfTexColorIds[diffuseColor.ToIntColor()];
+                                        /* int width = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[0], height = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[1];
+                                         AppendTextureToExisting(tex, uvMapBottomLeft, uvMapTopRight,4, 4,colorTileRgb.data(), ImageBuffer::Format::Rgb);
+                                         DPoint2d maxUv = DPoint2d::From(1, 1);
+                                         DPoint2d newUvTopRight = DPoint2d::From((double)width / ((uint32_t*)tex.data())[0], 0);
+                                         DPoint2d newUvBotLeft = DPoint2d::From(0, (double)height / ((uint32_t*)tex.data())[1]);
+                                         for (auto& uv : uvs)
+                                         {
+                                         uv = RemapUVs(uv, newUvBotLeft, newUvTopRight, maxUv);
+                                         }*/
                                         currentTex = hasTexture = true;
                                         texBasedOnColor = true;
                                         }
                                     if (mesh->GetParamCount() == 0)
                                         mesh->BuildPerFaceParameters(LocalCoordinateSelect::LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft);
                                     }
+                                texIds.push_back(currentTexId);
                                 }
-                            mesh->Triangulate();
-                            pts.insert(pts.end(), mesh->GetPointCP(), mesh->GetPointCP() + mesh->GetPointCount());
-                            int nextPt = (int)pts.size() - (int)offset;
-                            if (texBasedOnColor &&currentTex && mesh->GetParamCount() > pts.size()) pts.resize(mesh->GetParamCount());
-                            uvs.resize(pts.size(), DPoint2d::From(0.0,0.0));
-                            PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*mesh);
-                            bvector<int> &pointIndex = vis->ClientPointIndex();
-                            bvector<int> &param = vis->ClientParamIndex();
-                            bmap<int, int> paramsMap;
-                            DPoint2d uvMax = DPoint2d::From(1.0, 1.0);
-                            for (size_t i = 0; i < mesh->GetParamCount(); ++i)
-                                {
-                                uvMax.x = std::max(fabs(mesh->GetParamCP()[i].x), uvMax.x);
-                                uvMax.y = std::max(fabs(mesh->GetParamCP()[i].y), uvMax.y);
-                                }
-                            for (vis->Reset(); vis->AdvanceToNextFace();)
-                                {
-                                int32_t idx[3] = { pointIndex[0], pointIndex[1], pointIndex[2] };
-                                if (currentTex)
+                                mesh->Triangulate();
+                                pts.insert(pts.end(), mesh->GetPointCP(), mesh->GetPointCP() + mesh->GetPointCount());
+                                int nextPt = (int)pts.size() - (int)offset;
+                                if (texBasedOnColor &&currentTex && mesh->GetParamCount() > pts.size()) pts.resize(mesh->GetParamCount());
+                                uvs.resize(pts.size(), DPoint2d::From(0.0, 0.0));
+                                PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*mesh);
+                                bvector<int> &pointIndex = vis->ClientPointIndex();
+                                bvector<int> &param = vis->ClientParamIndex();
+                                bmap<int, int> paramsMap;
+                              /*  DPoint2d uvMax = DPoint2d::From(1.0, 1.0);
+                                for (size_t i = 0; i < mesh->GetParamCount(); ++i)
                                     {
-                                    for (size_t i = 0; i < 3; ++i)
-                                        if (!texBasedOnColor && paramsMap.count(idx[i]) > 0 && paramsMap[idx[i]] != param[i])
-                                            {
-                                            if (nextPt + (int)offset >= pts.size())
+                                    uvMax.x = std::max(fabs(mesh->GetParamCP()[i].x), uvMax.x);
+                                    uvMax.y = std::max(fabs(mesh->GetParamCP()[i].y), uvMax.y);
+                                    }*/
+                                for (vis->Reset(); vis->AdvanceToNextFace();)
+                                    {
+                                    int32_t idx[3] = { pointIndex[0], pointIndex[1], pointIndex[2] };
+                                    if (currentTex)
+                                        {
+                                        for (size_t i = 0; i < 3; ++i)
+                                            if (!texBasedOnColor && paramsMap.count(idx[i]) > 0 && paramsMap[idx[i]] != param[i])
                                                 {
-                                                pts.resize(nextPt + (int)offset + 1);
-                                                uvs.resize(pts.size(), DPoint2d::From(0.0, 0.0));
+                                                if (nextPt + (int)offset >= pts.size())
+                                                    {
+                                                    pts.resize(nextPt + (int)offset + 1);
+                                                    uvs.resize(pts.size(), DPoint2d::From(0.0, 0.0));
+                                                    }
+                                                pts[nextPt + (int)offset] = pts[idx[i] + (int)offset];
+                                                idx[i] = nextPt;
+                                                nextPt++;
                                                 }
-                                            pts[nextPt + (int)offset] = pts[idx[i] + (int)offset];
-                                            idx[i] = nextPt;
-                                            nextPt++;
-                                            }
-                                    for (size_t i = 0; i < 3; ++i)
-                                        paramsMap[idx[i]] = param[i];
-                                    uvs[idx[0] + (int)offset] = RemapUVs(mesh->GetParamCP()[param[0]], uvMapBottomLeft, uvMapTopRight, uvMax);
-                                    uvs[idx[1] + (int)offset] = RemapUVs(mesh->GetParamCP()[param[1]], uvMapBottomLeft, uvMapTopRight, uvMax);
-                                    uvs[idx[2] + (int)offset] = RemapUVs(mesh->GetParamCP()[param[2]], uvMapBottomLeft, uvMapTopRight, uvMax);
+                                        for (size_t i = 0; i < 3; ++i)
+                                            paramsMap[idx[i]] = param[i];
+                                        uvs[idx[0] + (int)offset] = mesh->GetParamCP()[param[0]];//RemapUVs(mesh->GetParamCP()[param[0]], uvMapBottomLeft, uvMapTopRight, uvMax);
+                                        uvs[idx[1] + (int)offset] = mesh->GetParamCP()[param[1]];//RemapUVs(mesh->GetParamCP()[param[1]], uvMapBottomLeft, uvMapTopRight, uvMax);
+                                        uvs[idx[2] + (int)offset] = mesh->GetParamCP()[param[2]];//RemapUVs(mesh->GetParamCP()[param[2]], uvMapBottomLeft, uvMapTopRight, uvMax);
+                                        }
+                                    indices.push_back(idx[0] + 1 + (int)offset);
+                                    indices.push_back(idx[1] + 1 + (int)offset);
+                                    indices.push_back(idx[2] + 1 + (int)offset);
                                     }
-                                indices.push_back(idx[0] + 1 + (int)offset);
-                                indices.push_back(idx[1] + 1 + (int)offset);
-                                indices.push_back(idx[2] + 1 + (int)offset);
-                                }
-                            pts.resize(nextPt + (int)offset);
-                            uvs.resize(pts.size(), DPoint2d::From(0.0, 0.0));
-                            offset = pts.size();
+                                pts.resize(nextPt + (int)offset);
+                                uvs.resize(pts.size(), DPoint2d::From(0.0, 0.0));
+                                offset = pts.size();
+                                parts.push_back((int)indices.size());
                             }
                         m_nelements++;
                         if (!pts.empty() && !indices.empty())
@@ -503,6 +529,38 @@ private:
                                 m_indexPacket.SetSize(indices.size());
                                 Json::Value val(Json::objectValue);
                                 val["elementId"] = elem->GetElementId().GetValue();
+                                val["texId"] = Json::arrayValue;
+                                bset<int64_t> texIdSet;
+                                for (auto& texID : texIds)
+                                    {
+                                    val["texId"].append(texID);
+                                    texIdSet.insert(texID);
+                                    }
+                                val["parts"] = Json::arrayValue;
+                                for (auto& part : parts)
+                                    val["parts"].append(part);
+                                val["mapIds"] = Json::arrayValue;
+
+                                for (auto& mapId : m_mapOfTexIds)
+                                    {
+                                    if (texIdSet.count(mapId.second) != 0)
+                                        {
+                                        Json::Value newEntry = Json::objectValue;
+                                        newEntry["dgn"] = mapId.first;
+                                        newEntry["SM"] = mapId.second;
+                                        val["mapIds"].append(newEntry);
+                                        }
+                                    }
+                                for (auto& mapId : m_mapOfTexColorIds)
+                                    {
+                                    if (texIdSet.count(mapId.second) != 0)
+                                        {
+                                        Json::Value newEntry = Json::objectValue;
+                                        newEntry["dgn"] = ((uint64_t)0xFF00CECE << 32) | mapId.first;
+                                        newEntry["SM"] = mapId.second;
+                                        val["mapIds"].append(newEntry);
+                                        }
+                                    }
                                 Utf8String jsonString(Json::FastWriter().write(val));
                                 memcpy(m_metadataPacket.Edit(), jsonString.data(), jsonString.SizeInBytes());
                                 m_metadataPacket.SetSize(jsonString.SizeInBytes());
@@ -512,15 +570,32 @@ private:
                                     memcpy(m_uvPacket.Edit(), &uvs[0], uvs.size()*sizeof(DPoint2d));
                                     m_uvPacket.SetSize(uvs.size());
 
-                                    memcpy(m_texPacket.Edit(), &tex[0], tex.size()*sizeof(uint8_t));
-                                    m_texPacket.SetSize(tex.size());
+                                    bvector<uint8_t> serializedTexData;
+                                    /*memcpy(m_texPacket.Edit(), &tex[0], tex.size()*sizeof(uint8_t));
+                                    m_texPacket.SetSize(tex.size());*/
+                                    for (auto& textureData : tex)
+                                        {
+                                        size_t offset = serializedTexData.size();
+                                        serializedTexData.resize(serializedTexData.size()+textureData.size() + sizeof(size_t));
+                                        size_t currentSize = textureData.size();
+                                        memcpy(&serializedTexData[0] + offset, &currentSize, sizeof(size_t));
+                                        if (currentSize > 0)
+                                            memcpy(&serializedTexData[0] + offset+sizeof(size_t), &textureData[0], currentSize);
+                                        }
+
+                                    if (serializedTexData.size() > 0)
+                                        {
+                                        memcpy(m_texPacket.Edit(), &serializedTexData[0], serializedTexData.size()*sizeof(uint8_t));
+                                        m_texPacket.SetSize(serializedTexData.size());
+                                        }
+
                                     }
                                 }
                             }
                         }
                     m_currentElement++;
                     }
-                    m_hasNext = m_currentElement != m_model->end();
+                    m_hasNext =/* m_nelements < 20 && */m_currentElement != m_model->end();
 //                m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
 //                m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());
                 }
@@ -586,7 +661,7 @@ private:
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(1000000 * sizeof(DPoint3d), 5000000 * sizeof(int32_t), 100 * sizeof(uint8_t), 4000 * 4000 * 3 * sizeof(uint8_t), 1000000 * sizeof(DPoint2d));
+        return RawCapacities(1000000 * sizeof(DPoint3d), 5000000 * sizeof(int32_t), 1000 * sizeof(uint8_t), 4000 * 4000 * 3 * sizeof(uint8_t), 1000000 * sizeof(DPoint2d));
         }
 
     /*---------------------------------------------------------------------------------**//**

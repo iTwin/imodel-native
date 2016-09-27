@@ -169,7 +169,7 @@ void MeshTraversalQueue::CollectAll()
                     {
                     m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(),std::async([] (MeshTraversalStep& step)
                         {
-                        if (step.linkedNode->GetBcDTM() != nullptr)
+                        if (step.linkedNode->ArePoints3d() || step.linkedNode->GetBcDTM() != nullptr)
                             return DTM_SUCCESS;                     
                         return DTM_ERROR;
                         }, step)));
@@ -784,18 +784,31 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     bool ret = false;
     for (auto& node : nodes)
         {
-        BcDTMPtr dtmP = node->GetBcDTM();
-        assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
-        if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
+        if (!node->ArePoints3d())
             {
-            if (endPt != nullptr)
+            BcDTMPtr dtmP = node->GetBcDTM();
+            assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
+            if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
                 {
-                //if (node->GetContentExtent().IsContained(*endPt))
+                if (endPt != nullptr)
                     {
-                    m_transform.Multiply(*endPt);
-                    ret = true;
-                    break;
+                    //if (node->GetContentExtent().IsContained(*endPt))
+                            {
+                            m_transform.Multiply(*endPt);
+                            ret = true;
+                            break;
+                            }
                     }
+                }
+            }
+        else
+            {
+            drapedType = 0;
+            if (IntersectRay3D(*endPt, vecDirection, transformedPt, node))
+                {
+                m_transform.Multiply(*endPt);
+                ret = true;
+                break;
                 }
             }
         }
@@ -888,6 +901,82 @@ int PickLineSegmentForProjectedPoint(DPoint3dCP line, int nPts, int beginning, D
     return beginning;
     }
 
+double DrapeLine3d(bvector<DPoint3d>& pts, const IScalableMeshNodePtr& node, DPoint3d firstPt, DPoint3d secondPt)
+    {
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshP = node->GetMesh(flags);
+    if (meshP.get() == nullptr) return DBL_MAX;
+    bvector<DSegment3d> allSegments;
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    if (firstPt.AlmostEqualXY(secondPt))
+        {
+        DPoint3d pt;
+        if (IntersectRay3D(pt, direction, firstPt, const_cast<IScalableMeshNodePtr&>(node)))
+            pts.push_back(pt);
+        return 0;
+        }
+    DPlane3d planeFromSegment = DPlane3d::From3Points(firstPt, secondPt, DPoint3d::FromSumOf(firstPt, DPoint3d::From(0, 0, -1)));
+    meshP->CutWithPlane(allSegments, planeFromSegment);
+
+    bmap<double, DSegment3d> orderedSegments;
+
+    DSegment3d origSeg = DSegment3d::From(firstPt, secondPt);
+    double params[2];
+
+    for (auto& seg : allSegments)
+        {
+        origSeg.PointToFractionParameter(params[0], seg.point[0]);
+        origSeg.PointToFractionParameter(params[1], seg.point[1]);
+        if (params[0] > params[1])
+            {
+            DPoint3d tmp;
+            double tmpParam;
+            tmp = seg.point[0];
+            seg.point[0] = seg.point[1];
+            seg.point[1] = tmp;
+
+            tmpParam = params[0];
+            params[0] = params[1];
+            params[1] = tmpParam;
+            }
+        if (params[0] > -1e-8 && params[1] < 1 + 1e-8)
+            {
+            orderedSegments.insert(make_bpair(params[0], seg));
+            }
+        else //need to clip the segment
+            {
+            if (params[0] <= -1e-8 && params[1] <= -1e-8) continue;
+            if (params[0] >= 1 + 1e-8 && params[1] >= 1 + 1e-8) continue;
+            if (params[0] <= -1e-8)
+                {
+                DPoint3d pt, tmpPt;
+                double tmpParam;
+                DSegment3d projectSegment = DSegment3d::FromOriginAndDirection(firstPt, direction);
+                seg.ClosestApproachUnbounded(params[0], tmpParam, pt, tmpPt, seg, projectSegment);
+                seg.point[0] = pt;
+                }
+            if (params[1] >= 1 + 1e-8)
+                {
+                DPoint3d pt, tmpPt;
+                double tmpParam;
+                DSegment3d projectSegment = DSegment3d::FromOriginAndDirection(secondPt, direction);
+                seg.ClosestApproachUnbounded(params[1], tmpParam, pt, tmpPt, seg, projectSegment);
+                seg.point[1] = pt;
+                }
+            orderedSegments.insert(make_bpair(params[0], seg));
+            }
+        }
+    for (auto it = orderedSegments.begin(); it != orderedSegments.end(); ++it)
+        {
+        if (pts.empty() || pts.back().DistanceSquaredXY(it->second.point[0]) > 1e-8)
+            pts.push_back(it->second.point[0]);
+        if (pts.empty() || pts.back().DistanceSquaredXY(it->second.point[1]) > 1e-8)
+            pts.push_back(it->second.point[1]);
+        }
+    if (orderedSegments.empty()) return DBL_MAX;
+    return orderedSegments.begin()->first*firstPt.DistanceXY(secondPt);
+    }
+
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     if (m_type == DTMAnalysisType::Fast)
@@ -934,27 +1023,38 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
             *initDistance = DBL_MAX;
             for (auto& node : nodesToDrape)
                 {
-                BcDTMPtr dtmPtr = node.linkedNode->GetBcDTM();
-                DTMDrapedLinePtr drapeForTile;
-                size_t nAdded = 0;
-                if (dtmPtr != nullptr)
+                if (!node.linkedNode->ArePoints3d())
                     {
-                    DTMStatusInt status = dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &line[0] + node.currentSegment, (int)2);
-                    for (size_t i = 0; status == DTM_SUCCESS && i < drapeForTile->GetPointCount(); ++i)
+                    BcDTMPtr dtmPtr = node.linkedNode->GetBcDTM();
+                    DTMDrapedLinePtr drapeForTile;
+                    size_t nAdded = 0;
+                    if (dtmPtr != nullptr)
                         {
-                        retval = DTM_SUCCESS;
-                        DTMDrapedLineCode code;
-                        DPoint3d pt;
-                        double distance;
-                        GET_POINT_AT_INDEX(drapeForTile,pt, &distance, &code, (unsigned int)i);
-                        if (code == DTMDrapedLineCode::Tin || code == DTMDrapedLineCode::OnPoint || code == DTMDrapedLineCode::Breakline || code == DTMDrapedLineCode::Edge)
+                        DTMStatusInt status = dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &line[0] + node.currentSegment, (int)2);
+                        for (size_t i = 0; status == DTM_SUCCESS && i < drapeForTile->GetPointCount(); ++i)
                             {
-                            if (*initDistance == DBL_MAX) *initDistance = distance;
-                            outPts->push_back(pt);
-                            ++nAdded;
+                            retval = DTM_SUCCESS;
+                            DTMDrapedLineCode code;
+                            DPoint3d pt;
+                            double distance;
+                            GET_POINT_AT_INDEX(drapeForTile, pt, &distance, &code, (unsigned int)i);
+                            if (code == DTMDrapedLineCode::Tin || code == DTMDrapedLineCode::OnPoint || code == DTMDrapedLineCode::Breakline || code == DTMDrapedLineCode::Edge)
+                                {
+                                if (*initDistance == DBL_MAX) *initDistance = distance;
+                                outPts->push_back(pt);
+                                ++nAdded;
+                                }
+                            if (nAdded != 0 && code == DTMDrapedLineCode::External) break;
                             }
-                        if (nAdded != 0 && code == DTMDrapedLineCode::External) break;
                         }
+                    }
+                else
+                    {
+                    bvector<DPoint3d> pts;
+                    double dist = DrapeLine3d(pts, node.linkedNode, line[node.currentSegment], line[node.currentSegment + 1]);
+                    if (*initDistance == DBL_MAX) *initDistance = dist;
+                    if (pts.size() > 0) retval = DTM_SUCCESS;
+                    outPts->insert(outPts->end(), pts.begin(), pts.end());
                     }
                 }
             return retval;

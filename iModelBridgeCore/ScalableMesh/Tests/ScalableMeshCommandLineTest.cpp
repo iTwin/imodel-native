@@ -809,6 +809,8 @@ void RunIntersectRayMetadata(WString& stmFileName)
    // params->SetDirection(direction);
     meshQueryInterface->Query(nodes, NULL, 0, params);
     Json::Value val;
+    double minParam = DBL_MAX;
+    int64_t elementId;
     for (auto& node : nodes)
         {
         DSegment3d clipped;
@@ -816,11 +818,16 @@ void RunIntersectRayMetadata(WString& stmFileName)
         if (!ray.ClipToRange(node->GetContentExtent(), clipped, fraction)) continue;
         if (node->IntersectRay(intersectPoint_l, ray, val))
             {
-            std::cout << val["elementId"].asInt64() << std::endl;
-            return;
+            double param;
+            DPoint3d pPt;
+            if (ray.ProjectPointUnbounded(pPt, param, intersectPoint_l) && param < minParam)
+                {
+                minParam = param;
+                elementId = val["elementId"].asInt64();
+                }
             }
         }
-
+    std::cout << elementId << std::endl;
     }
 
 void RunClipPlaneTest()
