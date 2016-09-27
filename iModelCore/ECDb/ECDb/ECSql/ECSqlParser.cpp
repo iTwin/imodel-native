@@ -1564,104 +1564,73 @@ BentleyStatus ECSqlParser::ParseTableNode(unique_ptr<ClassNameExp>& exp, OSQLPar
         return ERROR;
         }
 
-    BentleyStatus stat;
     OSQLParseNode const* first = parseNode->getChild(0);
+    BeAssert(first != nullptr);
     Utf8StringCP catalogName = nullptr;
     Utf8StringCP schemaName = nullptr;
     Utf8StringCP className = nullptr;
-    switch (first->getKnownRuleID())
-        {
-            case OSQLParseNode::schema_name:
-            {
-            stat = ParseSchemaName(schemaName, className, first);
-            break;
-            }
-            case OSQLParseNode::catalog_name:
-            {
-            stat = ParseCatalogName(catalogName, schemaName, className, first);
-            break;
-            }
-            case OSQLParseNode::table_name:
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
-                                          first->getChild(0)->getTokenValue().c_str());
-                return ERROR;
-
-            default:
-                BeAssert(false && "Wrong Grammar. Expecting schema_name or catalog_name");
-                return ERROR;
-
-        };
-
-    if (SUCCESS != stat)
-        return stat;
+    if (SUCCESS != ParseFullyQualifiedClassName(catalogName, schemaName, className, *first))
+        return ERROR;
 
     BeAssert(className != nullptr && schemaName != nullptr);
     shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    stat = m_context->TryResolveClass(classNameExpInfo, *schemaName, *className);
-    if (SUCCESS != stat)
-        return stat;
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className))
+        return ERROR;
 
     exp = unique_ptr<ClassNameExp>(new ClassNameExp(className->c_str(), schemaName->c_str(), catalogName != nullptr ? catalogName->c_str() : nullptr, classNameExpInfo, isPolymorphic));
     return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2013
+// @bsimethod                                    Krischan.Eberle                    09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseTableName(Utf8StringCP& className, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, table_name))
+    catalogName = nullptr;
+    schemaName = nullptr;
+    className = nullptr;
+
+    switch (parseNode.getKnownRuleID())
         {
-        BeAssert(false && "Wrong grammar. Expecting table_name");
-        return ERROR;
-        }
+            case OSQLParseNode::catalog_name:
+            {
+            //parseNode
+            //   child 0: catalog name
+            //   child 2: 
+            //        child 0: schema name
+            //        child 2:
+            //             child 0: class name
+            catalogName = &parseNode.getChild(0)->getTokenValue();
+            OSQLParseNode const* schemaNameNode = parseNode.getChild(2);
 
-    className = &parseNode->getChild(0)->getTokenValue();
-    return SUCCESS;
-    }
+            schemaName = &schemaNameNode->getChild(0)->getTokenValue();
+            className = &schemaNameNode->getChild(2)->getChild(0)->getTokenValue();
+            return SUCCESS;
+            }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseSchemaName(Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const* parseNode) const
-    {
-    if (!SQL_ISRULE(parseNode, schema_name))
-        {
-        BeAssert(false && "Wrong grammar. Expecting schema_name");
-        return ERROR;
-        }
+            case OSQLParseNode::schema_name:
+            {
+            //parseNode
+            //     child 0: schema name
+            //     child 2:
+            //          child 0: class name
+            schemaName = &parseNode.getChild(0)->getTokenValue();
+            className = &parseNode.getChild(2)->getChild(0)->getTokenValue();
+            return SUCCESS;
+            }
+            case OSQLParseNode::table_name:
+            {
+            //parseNode
+            //     child 0: class name
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
+                                      parseNode.getChild(0)->getTokenValue().c_str());
+            return ERROR;
+            }
+            default:
+                BeAssert(false && "Wrong Grammar. Expecting schema_name or catalog_name");
+                return ERROR;
 
-    OSQLParseNode* schemaNameNode = parseNode->getChild(0);
-    OSQLParseNode* tableNameNode = parseNode->getChild(2);
-
-    BentleyStatus stat = ParseTableName(className, tableNameNode);
-    if (stat != SUCCESS)
-        return stat;
-
-    schemaName = &schemaNameNode->getTokenValue();
-    return SUCCESS;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseCatalogName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const* parseNode) const
-    {
-    if (!SQL_ISRULE(parseNode, catalog_name))
-        {
-        BeAssert(false && "Wrong grammar. Expecting catalog_name");
-        return ERROR;
-        }
-
-    OSQLParseNode* catalogNameNode = parseNode->getChild(0);
-    OSQLParseNode* schemaNameNode = parseNode->getChild(2);
-
-    BentleyStatus stat = ParseSchemaName(schemaName, className, schemaNameNode);
-    if (SUCCESS != stat)
-        return stat;
-
-    catalogName = &catalogNameNode->getTokenValue();
-    return SUCCESS;
+        };
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2850,15 +2819,12 @@ void ECSqlParseContext::PopFinalizeParseArg()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className)
     {
+    BeAssert(!schemaNameOrPrefix.empty());
     ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrPrefix, className, ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
-        if (schemaNameOrPrefix.empty())
-            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className.c_str());
-        else
-            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str(), className.c_str());
-
+        Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str(), className.c_str());
         return ERROR;
         }
 
