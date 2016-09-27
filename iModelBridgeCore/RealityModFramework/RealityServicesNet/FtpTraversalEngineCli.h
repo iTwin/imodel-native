@@ -46,7 +46,7 @@ namespace RealityServicesCli
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              5/2016
     //=====================================================================================
-    class FtpTraversalObserverWrapper : public RealityPlatform::IFtpTraversalObserver
+    class FtpTraversalObserverWrapper : public RealityPlatform::IWebResourceTraversalObserver
         {
         public:
             FtpTraversalObserverWrapper(gcroot<IFtpTraversalObserverWrapper^> managedFtpObserver);

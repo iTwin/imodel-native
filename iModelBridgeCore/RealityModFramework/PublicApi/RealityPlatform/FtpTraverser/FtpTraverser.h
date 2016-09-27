@@ -22,7 +22,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 // Observer handling downloaded data
 //=======================================================================================
 
-struct FtpTraversalObserver: public IFtpTraversalObserver
+struct FtpTraversalObserver: public IWebResourceTraversalObserver
     {
     bool m_dualMode = false;
     bool m_updateMode = false;
@@ -32,7 +32,7 @@ public:
 
     virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
     virtual void OnFileDownloaded(Utf8CP file);
-    virtual void OnDataExtracted(FtpDataCR data);
+    virtual void OnDataExtracted(WebResourceDataCR data);
     };
 
 //=======================================================================================
@@ -67,8 +67,8 @@ public:
     bool HasEntries(CHAR* input);
     void Exit();
 
-    void Save(FtpDataCR data, bool dualMode);
-    void Update(FtpDataCR data);
+    void Save(WebResourceDataCR data, bool dualMode);
+    void Update(WebResourceDataCR data);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

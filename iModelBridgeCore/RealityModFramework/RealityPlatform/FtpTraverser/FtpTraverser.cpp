@@ -179,19 +179,19 @@ void ShowUsage()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-Utf8CP EnumString(FtpStatus status)
+Utf8CP EnumString(WebResourceStatus status)
     {
     switch (status)
         {
-        case FtpStatus::Success:
+        case WebResourceStatus::Success:
             return "Success";
-        case FtpStatus::ClientError:
+        case WebResourceStatus::ClientError:
             return "Client Error";
-        case FtpStatus::CurlError:
+        case WebResourceStatus::CurlError:
             return "Curl Error";
-        case FtpStatus::DataExtractError:
+        case WebResourceStatus::DataExtractError:
             return "Data Extract Error";
-        case FtpStatus::DownloadError:
+        case WebResourceStatus::DownloadError:
             return "Download Error";
         default:
             return "Unknown Error";
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
         return 0;
         }
 
-    FtpStatus status = FtpStatus::UnknownError;
+    WebResourceStatus status = WebResourceStatus::UnknownError;
     FtpClientPtr client = nullptr;
     for (int i = 0; i < ftpUrlCount; ++i)
         {
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
             client->SetObserver(new FtpTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str()));
             status = client->GetData();
-            if (status != FtpStatus::Success)
+            if (status != WebResourceStatus::Success)
                 {
                 std::cout << "Status: Failed, " << EnumString(status) << std::endl;
                 continue;
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : IFtpTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
+FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : IWebResourceTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
     {
     ServerConnection::GetInstance().SetStrings(dbName, pwszConnStr);
     }
@@ -367,7 +367,7 @@ void FtpTraversalObserver::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void FtpTraversalObserver::OnDataExtracted(RealityPlatform::FtpDataCR data)
+void FtpTraversalObserver::OnDataExtracted(RealityPlatform::WebResourceDataCR data)
     {
     if (m_updateMode)
         ServerConnection::GetInstance().Update(data);
@@ -378,14 +378,14 @@ void FtpTraversalObserver::OnDataExtracted(RealityPlatform::FtpDataCR data)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void ServerConnection::Save(FtpDataCR data, bool dualMode)
+void ServerConnection::Save(WebResourceDataCR data, bool dualMode)
     {
     CHAR preQuery[512];
     sprintf(preQuery, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, data.GetUrl().c_str());
     if (HasEntries(preQuery))
         return;
 
-    FtpMetadataCR metadata = data.GetMetadata();
+    WebResourceMetadataCR metadata = data.GetMetadata();
 
     CHAR metadataQuery[2048];
     sprintf(metadataQuery, "INSERT INTO [%s].[dbo].[Metadatas] ([Provenance],[Description],[ContactInformation],[Legal],[RawMetadataFormat],[RawMetadata]) VALUES ('%s', '%s', '%s', '%s', '%s', '')",
@@ -406,7 +406,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
 
     FetchTableIdentity(metadataId, tableName, len);
     
-    FtpThumbnailCR thumbnail = data.GetThumbnail();
+    WebResourceThumbnailCR thumbnail = data.GetThumbnail();
 
     const bvector<Byte>& thumbnailBytes = thumbnail.GetData();
     size_t size = thumbnailBytes.size();
@@ -437,7 +437,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
     FetchTableIdentity(thumbnailId, tableName, len);
         
-    FtpServerCR server = data.GetServer();
+    WebResourceServerCR server = data.GetServer();
     Utf8StringCR url = server.GetUrl();
     SQLINTEGER serverId;
     CHAR serverCheckQuery[512];
@@ -594,7 +594,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void ServerConnection::Update(FtpDataCR data)
+void ServerConnection::Update(WebResourceDataCR data)
     {
     CHAR preQuery[512]; 
     sprintf(preQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, data.GetUrl().c_str());
@@ -635,7 +635,7 @@ void ServerConnection::Update(FtpDataCR data)
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
     ReleaseStmt();
 
-    FtpServerCR server = data.GetServer();
+    WebResourceServerCR server = data.GetServer();
 
     CHAR serverQuery[512];
     sprintf(serverQuery, "UPDATE [%s].[dbo].[Servers] SET [CommunicationProtocol] = '%s', [Name] = '%s', [URL] = '%s', [ServerContactInformation] = '%s', [Legal] = '%s', [Online] = %d, [LastCheck] = ?, [LastTimeOnline] = ?, [Latency] = %f, [State] = '%s', [Type] = '%s' WHERE [Id] = %d",
@@ -703,7 +703,7 @@ void ServerConnection::Update(FtpDataCR data)
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
     ReleaseStmt();
     
-    FtpMetadataCR metadata = data.GetMetadata();
+    WebResourceMetadataCR metadata = data.GetMetadata();
     CHAR metadataQuery[512];
     sprintf(metadataQuery, "UPDATE [%s].[dbo].[Metadatas] SET [Provenance] = '%s', [Description] = '%s', [ContactInformation] = '%s', [Legal] = '%s', [RawMetadataFormat] = '%s', [RawMetadata] = '' WHERE [Id] = %d",
         m_dbName,
@@ -725,7 +725,7 @@ void ServerConnection::Update(FtpDataCR data)
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
     ReleaseStmt();
 
-    FtpThumbnailCR thumbnail = data.GetThumbnail();
+    WebResourceThumbnailCR thumbnail = data.GetThumbnail();
     CHAR thumbQuery[100000];
     sprintf(thumbQuery, "UPDATE [%s].[dbo].[Thumbnails] SET [ThumbnailProvenance] = '%s', [ThumbnailFormat] = '%s', [ThumbnailWidth] = %d, [ThumbnailHeight] = %d, [ThumbnailStamp] = ?, [ThumbnailGenerationDetails] = '%s', [ThumbnailData] = ? WHERE [Id] = %d",
         m_dbName,
