@@ -990,9 +990,11 @@ void ParseCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
         ecsql = ConcatArgs(2, args);
         }
-
-    //default mode ('sql' was not specified)
-    ecsql = ConcatArgs(1, args);
+    else
+        {
+        //default mode ('sql' was not specified)
+        ecsql = ConcatArgs(1, args);
+        }
 
     ECSqlStatement stmt;
     ECSqlStatus stat = stmt.Prepare(session.GetFile().GetHandle(), ecsql.c_str());
