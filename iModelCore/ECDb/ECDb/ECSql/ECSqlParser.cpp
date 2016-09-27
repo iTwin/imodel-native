@@ -1581,6 +1581,11 @@ BentleyStatus ECSqlParser::ParseTableNode(unique_ptr<ClassNameExp>& exp, OSQLPar
             stat = ParseCatalogName(catalogName, schemaName, className, first);
             break;
             }
+            case OSQLParseNode::table_name:
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
+                                          first->getChild(0)->getTokenValue().c_str());
+                return ERROR;
+
             default:
                 BeAssert(false && "Wrong Grammar. Expecting schema_name or catalog_name");
                 return ERROR;
