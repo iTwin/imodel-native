@@ -149,9 +149,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT ECN::ECClassId GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
 
         //! Gets the ECClass for the specified ECClassId.
-        //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
         //! @param[in] ecClassId Id of the ECClass to retrieve
-        //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
         ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
 
         //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
