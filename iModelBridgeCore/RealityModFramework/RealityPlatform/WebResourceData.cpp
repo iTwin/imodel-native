@@ -19,6 +19,16 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+//-------------------------------------------------------------------------------------
+// Curl callback that receive data.
+//
+// @bsimethod                                   Jean-Francois.Cote         	    4/2016
+//-------------------------------------------------------------------------------------
+static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
+{
+    ((Utf8StringP)stream)->append((Utf8CP)buffer, size * nmemb);
+    return size * nmemb;
+}
 
 // Static FtpClient members initialization.
 IWebResourceTraversalObserver* WebResourceClient::m_pObserver = NULL;
