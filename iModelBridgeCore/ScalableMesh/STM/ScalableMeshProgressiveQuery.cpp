@@ -893,7 +893,8 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
     {                
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
-    assert(meshNode->IsLoaded() == false);
+    assert(meshNode->IsLoaded() == false);    
+           
     meshNode->ApplyAllExistingClips();
     meshNode->RemoveDisplayDataFromCache();                    
     meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
