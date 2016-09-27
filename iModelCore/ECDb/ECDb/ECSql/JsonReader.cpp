@@ -416,7 +416,7 @@ ECClassCP RelatedItemsDisplaySpecificationsCache::ResolveClass(Utf8StringCR poss
     if (schemaName.empty())
        schemaName = defaultSchema.GetName();
 
-    ECClassCP ecClass = m_ecDb.Schemas().GetECClass(schemaName.c_str(), className.c_str());
+    ECClassCP ecClass = m_ecDb.Schemas().GetECClass(schemaName, className);
     BeAssert(ecClass != nullptr);
 
     return ecClass;
