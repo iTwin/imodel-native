@@ -183,7 +183,7 @@ HttpRequest::HttpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-WebResourceDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
+WebResourceDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;

@@ -140,7 +140,7 @@ FtpRequest::FtpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-WebResourceDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
+WebResourceDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> tifFileList;
