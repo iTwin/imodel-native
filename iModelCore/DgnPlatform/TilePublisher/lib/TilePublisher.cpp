@@ -217,9 +217,9 @@ PublisherContext::Status TilePublisher::Publish()
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
-    // B3DM header = 5 32-bit values
+    // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 20;
+    static const size_t s_b3dmHeaderSize = 24;
     static const char s_b3dmMagic[] = "b3dm";
     static const uint32_t s_b3dmVersion = 1;
     uint32_t b3dmNumBatches = m_batchIds.Count();
@@ -228,8 +228,9 @@ PublisherContext::Status TilePublisher::Publish()
     std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
     AppendUInt32(s_b3dmVersion);
     AppendUInt32(b3dmLength);
-    AppendUInt32(b3dmNumBatches);
     AppendUInt32(batchTableStrLen);
+    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+    AppendUInt32(b3dmNumBatches);
     std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
 
     std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
