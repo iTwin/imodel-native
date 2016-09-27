@@ -564,7 +564,7 @@ BeBriefcaseId                  briefcaseId
     DgnDbServerStatusResult result;
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
-        result = RepositoryInfo::WriteRepositoryInfo (*db, m_repositoryInfo, briefcaseId);
+        result = m_repositoryInfo.WriteRepositoryInfo (*db, briefcaseId);
         db->CloseDb ();
         }
     else

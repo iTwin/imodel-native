@@ -527,7 +527,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         }
     RepositoryInfo repositoryInfo;
     FileInfo fileInfo(*db, "");
-    auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, *db);
+    auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
@@ -609,7 +609,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     RepositoryInfo repositoryInfo;
-    auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, *db);
+    auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
     FileInfo fileInfo(*db, "");
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
