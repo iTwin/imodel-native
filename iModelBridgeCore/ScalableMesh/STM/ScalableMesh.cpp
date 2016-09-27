@@ -819,19 +819,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            if (m_scmIndexPtr->IsTerrain())
-                {
+            
+            BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
-                BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-
-                bool result = dataStore->SetProjectFilesPath(projectFilesPath);
-                assert(result == true);
-
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+            assert(result == true);
                                                                  
-                ClipRegistry* registry = new ClipRegistry(dataStore);
-                m_scmIndexPtr->SetClipRegistry(registry);
-                }
-
+            ClipRegistry* registry = new ClipRegistry(dataStore);
+            m_scmIndexPtr->SetClipRegistry(registry);
+            
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED

@@ -3062,7 +3062,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
        #ifndef VANCOUVER_API
         new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex)
 #else
-SMStoredMemoryPoolGenericVectorItem<DifferenceSet>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex)
+        SMStoredMemoryPoolGenericVectorItem<DifferenceSet>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex)
 #endif  
   );
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
