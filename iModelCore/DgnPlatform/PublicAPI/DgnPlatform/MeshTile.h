@@ -388,7 +388,7 @@ struct TileGenerationCache
     };
 private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
-    typedef std::map<DgnElementId, std::shared_ptr<GeometrySource>> GeometrySourceMap;
+    typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
     XYZRangeTreeRoot*           m_tree;
     mutable GeometryListMap     m_geometry;
@@ -399,7 +399,7 @@ private:
 
     friend struct TileGenerator; // Invokes Populate() from ctor
     TileGenerationCache(Options options = Options::CacheGeometrySources);
-    void Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter);
+    void Populate(DgnDbR db, ITileGenerationFilterR filter);
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
@@ -408,7 +408,7 @@ public:
 
     bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
     GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
-    void AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elementId) const;
+    GeometrySourceCP AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elementId) const;
 
     bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
@@ -435,16 +435,18 @@ private:
     Transform           m_transformFromDgn;
     mutable DRange3d    m_publishedRange;
 
+    size_t ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cach) const;
+
 protected:
-    TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, 0.0, nullptr) { }
-    TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+    TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
+    TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn), m_publishedRange(DRange3d::NullRange()) { }
 
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 public:
     static TileNodePtr Create(TransformCR transformFromDgn) { return new TileNode(transformFromDgn); }
-    static TileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
-        { return new TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent); }
+    static TileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
+        { return new TileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
@@ -473,7 +475,7 @@ public:
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
-    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache);
+    DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
     DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const;
 };
 
@@ -532,11 +534,10 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
-    size_t                          m_maxPointsPerTile;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
