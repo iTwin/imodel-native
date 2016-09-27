@@ -97,13 +97,20 @@ bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elemId) const
+GeometrySourceCP TileGenerationCache::AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        m_geometrySources.insert(GeometrySourceMap::value_type(elemId, source));
-        }
+    if (!WantCacheGeometrySources())
+        return source.get();
+
+    BeMutexHolder lock(m_mutex);
+
+    // May already exist in cache...if so we've moved from it and it will be destroyed...otherwise it's now owned by cache
+    m_geometrySources.insert(GeometrySourceMap::value_type(elemId, std::move(source)));
+
+    // Either way, we know an now exists in cache for this element
+    auto existing = GetCachedGeometrySource(elemId);
+    BeAssert(nullptr != existing);
+    return existing;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,15 +118,12 @@ void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        auto iter = m_geometrySources.find(elemId);
-        if (m_geometrySources.end() != iter)
-            return iter->second.get();
-        }
+    if (!WantCacheGeometrySources())
+        return nullptr;
 
-    return nullptr;
+    BeMutexHolder lock(m_mutex);
+    auto iter = m_geometrySources.find(elemId);
+    return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
 //=======================================================================================
@@ -156,7 +160,7 @@ DRange3d TileGenerationCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter)
+void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
     static const Utf8CP s_sql =
@@ -883,15 +887,15 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
+TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb),
-    m_maxPointsPerTile(maxPointsPerTile), m_cache(TileGenerationCache::Options::CacheGeometrySources)
+    m_cache(TileGenerationCache::Options::CacheGeometrySources)
     {
     StopWatch timer(true);
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
     m_progressMeter._IndicateProgress(0, 1);
 
-    m_cache.Populate(m_dgndb, maxPointsPerTile, nullptr != filter ? *filter : s_defaultFilter);
+    m_cache.Populate(m_dgndb, nullptr != filter ? *filter : s_defaultFilter);
 
     m_progressMeter._IndicateProgress(1, 1);
 
@@ -1067,8 +1071,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t max
 
     // Collect the tiles
     static const double s_leafTolerance = 0.01;
-    double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
-    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
+    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
     root->ComputeTiles(s_leafTolerance, maxPointsPerTile, m_cache);
 
     m_statistics.m_collectionTime = timer.GetCurrentSeconds();
@@ -1109,44 +1112,50 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t TileNode::ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cache) const
+    {
+    ComputeFacetCountTreeHandler handler(range);
+
+    cache.GetTree().Traverse(handler);
+
+    return handler.m_facetCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache)
     {
-    static const size_t s_depthLimit = 0xffff;
-    static const double s_targetChildCount = 5.0;
+    static const double s_minToleranceRatio = 100.0;
 
-    ComputeFacetCountTreeHandler handler(GetDgnRange());
-    cache.GetTree().Traverse(handler);
+    m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
 
-
-    size_t facetCount = handler.m_facetCount;
-    if (facetCount < maxPointsPerTile)
+    if (m_tolerance < chordTolerance || ComputeFacetCount (GetDgnRange(), cache) < maxPointsPerTile)
         {
         m_tolerance = chordTolerance;
+        return;
         }
-    else if (m_depth < s_depthLimit)
+
+    bvector<DRange3d>           subRanges;
+    size_t                      siblingIndex = 0;
+    static const size_t         s_splitCount = 3;       // OctTree.
+
+    ComputeChildTileRanges (subRanges, m_dgnRange, s_splitCount);
+    for (auto& subRange : subRanges)
         {
-        bvector<DRange3d> subRanges;
-        size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
-        size_t siblingIndex = 0;
+        TileNodePtr    child = TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, this);
 
-        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, cache);
-        for (auto& subRange : subRanges)
-            {
-            double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, childTolerance, this));
-            }
-
-        for (auto& child : m_children)
-            child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        m_children.push_back(child);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache)
+void TileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR range, size_t splitCount)
     {
     bvector<DRange3d> bisectRanges;
     DVec3d diagonal = range.DiagonalVector();
@@ -1173,21 +1182,13 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
         bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, bisectValue, range.high.x, range.high.y, range.high.z));
         }
 
+    splitCount--;
     for (auto& bisectRange : bisectRanges)
         {
-        ComputeFacetCountTreeHandler handler(bisectRange);
-        cache.GetTree().Traverse(handler);
-
-        size_t facetCount = handler.m_facetCount;
-        if (facetCount < maxPointsPerSubTile)
-            {
-            if (facetCount != 0)
-                subRanges.push_back(bisectRange);
-            }
+        if (0 == splitCount)
+            subRanges.push_back (bisectRange);
         else
-            {
-            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, cache);
-            }
+            ComputeChildTileRanges(subRanges, bisectRange, splitCount);
         }
     }
 
@@ -1248,9 +1249,9 @@ private:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
-    static std::shared_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
-        std::shared_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        std::unique_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
         if (!pSrc->IsValid())
             return nullptr;
 
@@ -1345,9 +1346,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
         stmt.Reset();
         m_cache.GetDbMutex().Leave();
 
-        pSrc = geomSrcPtr.get();
-        if (m_cache.WantCacheGeometrySources())
-            m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
+        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
 
         if (nullptr != pSrc)
             status = VisitGeometry(*pSrc);
