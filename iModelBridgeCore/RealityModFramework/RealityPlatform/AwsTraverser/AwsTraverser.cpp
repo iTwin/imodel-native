@@ -26,17 +26,6 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
-struct CurlHolder
-    {
-    private:
-        CURL* m_curl;
-
-    public:
-        CurlHolder() : m_curl(curl_easy_init()) {}
-        ~CurlHolder() { if (NULL != m_curl) curl_easy_cleanup(m_curl); }
-        CURL* Get() const { return m_curl; }
-    };
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
