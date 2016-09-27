@@ -155,6 +155,11 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
                                                                                      Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Delete a repository from server
+    //! @param[in] repositoryInfo Information of repository to be deleted. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
+    //! @param[in] cancellationToken Cancellation is not going to prevent repository deletion, if the request is already sent.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Download a briefcase of a repository from the server.
     //! @param[in] repositoryInfo Information of repository to be acquired. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
     //! @param[in] localFileName Path to a local file including filename and extension, where briefcase should be saved.
@@ -195,11 +200,6 @@ public:
     //! @return Asynchronous task that returns error if download has failed. See DgnDbBriefcase.
     //! @note Should be used if briefcase file has became invalid.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Delete a repository from server
-    //! @param[in] repositoryInfo Information of repository to be deleted. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
-    //! @param[in] cancellationToken Cancellation is not going to prevent repository deletion, if the request is already sent.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns repository admin that caches DgnDbRepositoryManager instances.
     //! @return Returns pointer to DgnDbClient managed repository admin.
