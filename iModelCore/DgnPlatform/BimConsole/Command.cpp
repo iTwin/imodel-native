@@ -1250,7 +1250,7 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
             return;
             }
 
-        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), args[2].c_str(), false))
+        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), args[2], false))
             {
             Console::WriteErrorLine("Retrieving ECClass mapping failed.");
             return;
@@ -1264,7 +1264,7 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
             return;
             }
 
-        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), args[2].c_str(), args[3].c_str()))
+        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), args[2], args[3]))
             {
             Console::WriteErrorLine("Retrieving ECClass mapping failed.");
             return;
