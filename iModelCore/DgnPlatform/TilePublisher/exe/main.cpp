@@ -41,6 +41,7 @@ enum class ParamId
     GroundPoint,
     Tolerance,
     Depth,
+    Polylines,
     Invalid,
 };
 
@@ -69,6 +70,7 @@ static CommandParam s_paramTable[] =
         { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t", L"tolerance",L"Tolerance (meters).", false},
         { L"d", L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
+        { L"p", L"polylines", L"Publish poly-lines", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -138,6 +140,7 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
+    bool            m_polylines = false;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -151,6 +154,7 @@ public:
     DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
+    bool WantPolylines() const { return m_polylines; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -273,6 +277,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     return false;
                     }
                 break;
+            case ParamId::Polylines:
+                m_polylines = true;
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -337,8 +344,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
+        : PublisherContext(viewController, outputDir, tilesetName, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -710,7 +717,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"
