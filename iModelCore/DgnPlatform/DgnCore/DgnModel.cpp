@@ -515,7 +515,21 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
+DgnDbStatus SheetModel::_OnInsert()
+    {
+    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
+        {
+        BeAssert(false && "A SheetModel should be modeling a Sheet element");
+        return DgnDbStatus::BadElement;
+        }
+
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize)
     {
     DgnDbR db = sheet.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
@@ -534,7 +548,9 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
         return nullptr;
         }
 
-    return dynamic_cast<SheetModelP>(model.get());
+    SheetModelPtr sheetModel = dynamic_cast<SheetModelP>(model.get());
+    sheetModel->m_size = sheetSize;
+    return sheetModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

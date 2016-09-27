@@ -5,16 +5,17 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once 
+
 //=======================================================================================
 // WARNING: Must be careful of dependencies within this file as it is also included by 
 // WARNING:   DgnDisplayTests, DgnClientFxTests, etc.
 //=======================================================================================
-#pragma once 
-
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/LinkElement.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -42,12 +43,22 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static SectionDrawingPtr InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP userLabel=nullptr);
 
+    //! Insert a Sheet element
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SheetPtr InsertSheet(DocumentListModelCR model, DgnCodeCR elementCode=DgnCode(), Utf8CP label=nullptr);
+
     //! Insert a DrawingModel 
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DrawingModelPtr InsertDrawingModel(DrawingCR, DgnCodeCR modelCode);
 
     //! Insert a SheetModel 
-    static SheetModelPtr InsertSheetModel(DgnDbR db, DgnCode modelCode);
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static SheetModelPtr InsertSheetModel(SheetCR, DgnCode modelCode, DPoint2dCR sheetSize=DPoint2d::FromZero());
+
+    //! Insert a LinkModel
+    //! @note Also creates a Subject for the LinkModel to describe
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static LinkModelPtr InsertLinkModel(DgnDbR, DgnCodeCR modelCode);
 
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 

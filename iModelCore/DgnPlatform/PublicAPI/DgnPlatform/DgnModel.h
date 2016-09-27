@@ -627,7 +627,7 @@ public:
     template<typename T>
     static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
 
-    //! Returns the ID used by the RepositoryModel associated with each DgnDb
+    //! Returns the DgnModelId used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() {return DgnModelId((uint64_t)1LL);}
 //__PUBLISH_SECTION_END__
     //-------------------------------------------------------------------------------------
@@ -1399,7 +1399,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
     friend struct dgn_ModelHandler::Drawing;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1481,6 +1481,7 @@ protected:
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
 
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
@@ -1494,7 +1495,7 @@ public:
     static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
 
     //! Create a SheetModel that breaks down the specified Sheet element
-    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static SheetModelPtr Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize=DPoint2d::FromZero());
 
     //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}
