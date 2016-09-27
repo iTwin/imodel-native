@@ -47,14 +47,14 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
             {
             for (bpair<Utf8String, bmap<Utf8String, ECClassId>> const& kvPair : expectedClassIds)
                 {
-                Utf8CP schemaName = kvPair.first.c_str();
+                Utf8StringCR schemaName = kvPair.first;
 
                 for (bpair<Utf8String, ECClassId> const& innerKvPair : kvPair.second)
                     {
-                    Utf8CP className = innerKvPair.first.c_str();
+                    Utf8StringCR className = innerKvPair.first;
                     ECClassId expectedId = innerKvPair.second;
                     ECClassId actualId = ecdb.Schemas().GetECClassId(schemaName, className, ResolveSchema::BySchemaName);
-                    ASSERT_EQ(expectedId.GetValue(), actualId.GetValue()) << "ECClass: " << schemaName << "." << className;
+                    ASSERT_EQ(expectedId.GetValue(), actualId.GetValue()) << "ECClass: " << schemaName.c_str() << "." << className.c_str();
                     if (!useCache)
                         ecdb.ClearECDbCache();
                     }

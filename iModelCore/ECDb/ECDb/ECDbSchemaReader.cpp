@@ -1279,7 +1279,7 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId ECDbSchemaReader::GetECClassId(Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
+ECClassId ECDbSchemaReader::GetECClassId(Utf8StringCR schemaName, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
     BeMutexHolder lock(m_criticalSection);
 
@@ -1293,7 +1293,7 @@ ECClassId ECDbSchemaReader::GetECClassId(Utf8CP schemaName, Utf8CP className, Re
             return innerIt->second;
         }
 
-    ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, schemaName, className, resolveSchema);
+    ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, schemaName.c_str(), className.c_str(), resolveSchema);
     
     //add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())

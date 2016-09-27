@@ -139,27 +139,20 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
-
-        //! Gets the ECClass for the specified ECClassId.
-        //! @param[in] ecClassId Id of the ECClass to retrieve
-        //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
+        ECDB_EXPORT ECN::ECClassCP GetECClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
-        //! @param[out] id ECClassId of the requested ECClass.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p resolveSchema)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
-        //! @return true, if the %ECDb file has an ECClass with the given name, false, if the ECClass does not exist in the %ECDb file
-        ECDB_EXPORT bool TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
-
-        //! Gets the ECClassId for the ECClass with the specified name.
-        //! @param[in] schemaNameOrAlias Name (not full name) or namespace alias of the schema containing the class (@see @p resolveSchema)
-        //! @param[in] className Name of the class to be retrieved
-        //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id; TryGetECClassId(id, schemaNameOrAlias, className, resolveSchema); return id; }
+        ECDB_EXPORT ECN::ECClassId GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+
+        //! Gets the ECClass for the specified ECClassId.
+        //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
+        //! @param[in] ecClassId Id of the ECClass to retrieve
+        //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
+        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
 
         //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
         //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
@@ -214,8 +207,8 @@ private:
 
 public:
     ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8CP schemaName, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8CP schemaName, Utf8CP className);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8StringCR schemaName, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8StringCR schemaName, Utf8StringCR className);
     };
 
 #endif

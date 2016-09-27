@@ -9,7 +9,6 @@
 #include <ECUnits/Units.h>
 #include "SchemaImportContext.h"
 #include "ECDbExpressionSymbolProvider.h"
-#include <Bentley/BeTest.h>     // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -340,12 +339,9 @@ bool ECDbSchemaManager::ContainsECSchema(Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema) const
+ECClassCP ECDbSchemaManager::GetECClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
-    ECClassId id;
-    if (!TryGetECClassId(id, schemaNameOrAlias, className, resolveSchema))
-        return nullptr;
-
+    const ECClassId id = GetECClassId(schemaNameOrAlias, className, resolveSchema);
     return GetECClass(id);
     }
 
@@ -360,10 +356,9 @@ ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema) const
+ECClassId ECDbSchemaManager::GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
-    id = GetReader().GetECClassId(schemaNameOrAlias, className, resolveSchema);
-    return id.IsValid();
+    return GetReader().GetECClassId(schemaNameOrAlias, className, resolveSchema);
     }
 
 //---------------------------------------------------------------------------------------
