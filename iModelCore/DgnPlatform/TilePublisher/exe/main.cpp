@@ -397,10 +397,13 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
         case Status::Success:
             break;
         case Status::NoGeometry:    // ok for tile to have no geometry - but mark as empty so we avoid including in json
-            {
-            BeMutexHolder lock(m_mutex);
-            m_emptyNodes.push_back(&tile);
-            }
+            if (tile.GetChildren().empty())
+                {
+                // Leaf nodes with no children should not be published.
+                // Reality models often contain empty parents with non-empty children - they must be published.
+                BeMutexHolder lock(m_mutex);
+                m_emptyNodes.push_back(&tile);
+                }
             break;
         default:
             m_acceptTileStatus = publisherStatus;
