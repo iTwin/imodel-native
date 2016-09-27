@@ -35,6 +35,7 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
     switch (sourceMode)
     {
     case DataSourceMode_Write:
+    case DataSourceMode_Write_Segmented:
         streamMode |= std::ios_base::out;
         break;
 
@@ -143,9 +144,9 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
     return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
 }
 
-DataSourceStatus DataSourceFile::write(Buffer * source, DataSize size)
+DataSourceStatus DataSourceFile::write(const Buffer * source, DataSize size)
 {
-    getStream().write(reinterpret_cast<char *>(source), size);
+    getStream().write(reinterpret_cast<const char *>(source), size);
 
     if (getStream())
     {

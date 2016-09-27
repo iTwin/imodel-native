@@ -1307,6 +1307,14 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const override;
 
+#ifdef WIP_MESH_IMPORT
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
+
+        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const override;
+
+        virtual IScalableMeshTexturePtr _GetTexture(uint64_t texID) const override;
+#endif
+
         
     public:   
 #ifdef VANCOUVER_API
@@ -1357,11 +1365,12 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
-            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override {return ERROR;}
+            virtual StatusInt _GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const override { return ERROR; }
 
-            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override {return ERROR;}            
+            virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const override { return ERROR; }
 
             virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const override {return ERROR;}
+
 
             static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture) 
                 {
@@ -1376,28 +1385,49 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     private: 
 
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> m_cachedDisplayData;
+            RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
+            bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;
+
 
 
     protected:         
                                     
-            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override 
+            virtual StatusInt _GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool,uint64_t>>& textureIds) const override 
                 {                            
-                if (m_cachedDisplayData.IsValid())
+                if (m_cachedDisplayMeshData.IsValid() && m_cachedDisplayMeshData->size() > 0)
                     {
-                    cachedMesh = m_cachedDisplayData->GetData()->GetCachedDisplayMesh();
-                    return SUCCESS;                
+                    for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
+                        {
+                        cachedMesh.push_back((*m_cachedDisplayMeshData)[i].GetCachedDisplayMesh());
+                        uint64_t id;
+                        bool ret = (*m_cachedDisplayMeshData)[i].GetTextureInfo(id);
+                        textureIds.push_back(make_bpair(ret, id));
+                        
+                        }
+                    return SUCCESS;
                     }
 
                 return ERROR;                
                 }
 
-            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override                 
+            virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const override
                 {
-                if (m_cachedDisplayData.IsValid())
+                if (!m_cachedDisplayTextureData.empty())
                     {
-                    cachedTexture = m_cachedDisplayData->GetData()->GetCachedDisplayTexture();
+                    for (size_t i = 0; i < m_cachedDisplayTextureData.size(); ++i)
+                        {
+                        if (m_cachedDisplayTextureData[i].IsValid())
+                            {
+                            cachedTexture.push_back(m_cachedDisplayTextureData[i]->GetData()->GetCachedDisplayTexture());
+                            textureIds.push_back(m_cachedDisplayTextureData[i]->GetData()->GetTextureID());
+                            }
+                        else
+                            {
+                            cachedTexture.push_back(nullptr);
+                            textureIds.push_back(0);
+                            }
+                        }
                     return SUCCESS;                
                     }
 
@@ -1425,7 +1455,20 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+          
 
+            SmCachedDisplayTexture* GetCachedDisplayTextureForID(uint64_t textureID)
+                {
+                for (size_t i = 0; i < m_cachedDisplayTextureData.size(); ++i)
+                    {
+                    if (m_cachedDisplayTextureData[i]->GetData()->GetTextureID() == textureID)
+                        return m_cachedDisplayTextureData[i]->GetData()->GetCachedDisplayTexture();
+                    }
+                return nullptr;
+                }
+
+            bool GetOrLoadAllTextureData(IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+                
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
@@ -1451,7 +1494,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
         virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
 
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) override;
         
         virtual StatusInt _SetNodeExtent(DRange3d& extent) override;
 

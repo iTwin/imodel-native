@@ -610,9 +610,11 @@ int CreateBcDTM(DTMPtr& dtmPtr)
     if (status == 0)
         {
         BcDTMPtr bcDtmObjPtr;
-
+#ifdef VANCOUVER_API
         bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
-        //bcDtmObjPtr->Release();     
+#else
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif   
 
         dtmPtr = bcDtmObjPtr.get();
         }    

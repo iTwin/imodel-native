@@ -11,7 +11,8 @@ using namespace ISMStore;
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(size_t pi_SplitTreshold,
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeInd, 
+        size_t pi_SplitTreshold,
         const EXTENT& pi_rExtent,        
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
@@ -45,9 +46,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_arePoints3d = false;
 
-    for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
+    for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
-        m_nodeHeader.m_apAreNeighborNodesStitched[nodeInd] = false;
+        m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndIter] = false;
         }
 
     HDEBUGCODE(m_unspliteable = false;)
@@ -78,9 +79,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         }
     
     m_isGrid = false;
-
-
-    m_nodeId = ++s_nextNodeID;    
+    m_nodeId = nodeInd;
 
     m_isDirty = false;
 
@@ -154,7 +153,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
 
-    m_nodeId = ++s_nextNodeID;
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
     m_isDirty = false;
@@ -232,7 +231,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
    
-    m_nodeId = ++s_nextNodeID;
+    m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
 
@@ -421,8 +420,8 @@ extern std::mutex s_createdNodeMutex;
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load() const
     {
-    HPRECONDITION (!IsLoaded());
-    
+    HPRECONDITION (!IsLoaded());        
+
     if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetDataStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
         {
         // Something went wrong
@@ -6554,20 +6553,21 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
-
-    assert(!"NEW_SSTORE_RB");
-#if 0 
-    auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
-
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
-    if (count > 0) 
-        pi_pPointStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), count, this->GetBlockID());
-#endif
+    if (pointsPtr->size() != 0)
+        {
+        ISM3DPtDataStorePtr pointDataStore;
+        bool result = pi_pDataStreamingStore->GetNodeDataStore(pointDataStore, &m_nodeHeader, SMStoreDataType::Points);
+        assert(result == true);
+        pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), pointsPtr->size(), this->GetBlockID());
+        }
+
+    // Specific order must be kept to allow fetching blob sizes for streaming performance
+    pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     }
 
 /**----------------------------------------------------------------------------
@@ -6575,25 +6575,27 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
-    {    
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
+    {
+    assert(pi_pDataStore != nullptr);
+
     if (!IsLoaded())
         Load();
 
-    this->SavePointDataToCloud(dataSourceAccount, pi_pDataStore);
+    this->SavePointDataToCloud(pi_pDataStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(dataSourceAccount, pi_pDataStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(pi_pDataStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(dataSourceAccount, pi_pDataStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(pi_pDataStore);
                 }
             }
         }
@@ -6604,7 +6606,7 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pGroup,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup,
                                                                                                  SMNodeGroupMasterHeader* pi_pGroupsHeader)
     {
     if (!IsLoaded())
@@ -6639,7 +6641,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(dataSourceAccount, pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
+                nextGroup = new SMNodeGroup(pi_pGroup->GetDataSourceAccount(),
+                                            pi_pGroup->GetFilePath(), 
+                                            nextLevel, 
+                                            ++s_GroupID, 
+                                            pi_pGroup->GetMode());
                 this->AddOpenGroup(nextLevel, nextGroup);
                 pi_pGroupsHeader->AddGroup(s_GroupID);
                 }
@@ -6648,13 +6654,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
                 }
             }
 
@@ -6672,7 +6678,6 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
         }
     }
 
-#ifdef SCALABLE_MESH_ATP
 //=======================================================================================
 // @bsimethod                                                   Richard.Bois 04/16
 //=======================================================================================
@@ -6698,7 +6703,6 @@ uint64_t SMPointIndexNode<POINT, EXTENT>::GetNextID() const
 
     return childID;
     }
-#endif
 
 #ifdef INDEX_DUMPING_ACTIVATED
 
@@ -7350,6 +7354,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 
     bool needsFiltering = false;
 
+
     if (m_nodeHeader.m_IsLeaf)
         needsFiltering = !m_nodeHeader.m_filtered;
     else
@@ -7432,7 +7437,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
   : m_dataStore(dataStore),
     m_filter (filter)
     {
-
+    m_nextNodeID = 0;
     m_propagatesDataDown = propagatesDataDown;
     m_indexHeader.m_numberOfSubNodesOnSplit = 8;
 
@@ -7517,20 +7522,23 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    BeFileName path(pi_pOutputDirPath.c_str());
+    if (pi_pGroupMode == SMNodeGroup::NORMAL)
         {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
+            {
+            return ERROR;
+            }
         }
 
-        HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0);
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::Mode( pi_pGroupMode ));
 
     HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
-    SMIndexMasterHeader<EXTENT> oldMasterHeader;    
-    ISMDataStoreTypePtr<EXTENT> dataStore((const_cast<SMPointIndex<POINT, EXTENT>*>(this))->GetDataStore());
-
-    dataStore->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+    SMIndexMasterHeader<EXTENT> oldMasterHeader;
+    this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
     // Force multi file (in case the originating dataset is single file)
     oldMasterHeader.m_singleFile = false;
     groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
@@ -7541,13 +7549,17 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     auto rootNode = GetRootNode();
     rootNode->AddOpenGroup(0, group);
 
-    rootNode->SaveGroupedNodeHeaders(dataSourceAccount, group, groupMasterHeader);
+    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
 
     // Handle all open groups 
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    groupMasterHeader->SaveToFile(pi_pOutputDirPath + L"../");
+    BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
+    masterHeaderPath.PopDir();
+    masterHeaderPath.PopDir();
+
+    groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
 
     return SUCCESS;
     }
@@ -7556,65 +7568,40 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    BeFileName path(pi_pOutputDirPath.c_str());
+    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
         {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
+        return ERROR;
         }
-    
+
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
-    new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress)
+    new SMStreamingStore<Extent3dType>(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #else
-   SMStreamingStore<Extent3dType>::Create(dataSourceAccount, pi_pOutputDirPath, pi_pCompress)
+   SMStreamingStore<Extent3dType>::Create(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #endif
     );                    
 
-    this->GetRootNode()->SavePointsToCloud(dataSourceAccount, dataStore);
+    this->SaveMasterHeaderToCloud(dataStore);
 
-    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
+    this->GetRootNode()->SavePointsToCloud(dataStore);
 
     return SUCCESS;
     }
 /**----------------------------------------------------------------------------
-This method saves the points for streaming.
+This method saves the master header for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
     {
-    Json::Value masterHeader;
-    masterHeader["balanced"] = this->IsBalanced();
-    masterHeader["depth"] = (uint32_t)this->GetDepth();
-    masterHeader["rootNodeBlockID"] = this->GetRootNode()->GetBlockID().m_integerID;
-    masterHeader["splitThreshold"] = this->GetSplitTreshold();
-    masterHeader["singleFile"] = false;
+    SMIndexMasterHeader<EXTENT> masterHeader;
+    this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
 
-    auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
-    BeFile file;
-    uint64_t buffer_size;
-    auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
-
-        Json::StyledWriter writer;
-        auto buffer = writer.write(object);
-        buffer_size = buffer.size();
-        file.Write(NULL, buffer.c_str(), buffer_size);
-        };
-    if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
-        {
-        jsonWriter(file, masterHeader);
-        }
-    else if (BeFileStatus::Success == file.Create(filename))
-        {
-        jsonWriter(file, masterHeader);
-        }
-    else
-        {
-        HASSERT(!"Problem saving master header file to cloud");
-        return ERROR;
-        }
-    file.Close();
+    pi_pDataStore->StoreMasterHeader(&masterHeader, sizeof(masterHeader));
 
     return SUCCESS;
     }
@@ -7657,18 +7644,16 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::DumpOctTre
     }
 #endif
 
-#ifdef SCALABLE_MESH_ATP
 template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SetNextID(const uint64_t& id)
     {
     assert(id != uint64_t(-1) && id > 0);
-    s_nextNodeID = id;
+    m_nextNodeID = id;
     }
 
 template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextID() const
     {
     return GetRootNode()->GetNextID();
     }
-#endif
 
 #ifdef __HMR_DEBUG
 /**----------------------------------------------------------------------------
@@ -7829,7 +7814,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::UnsplitEmp
 
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetNextNodeId(), GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
     pNewNode->m_isGenerating = m_isGenerating;
 
     if (isRootNode)
@@ -7917,6 +7902,14 @@ template<class POINT, class EXTENT> ISMDataStoreTypePtr<EXTENT> SMPointIndex<POI
     return m_dataStore;
     }
 
+/**----------------------------------------------------------------------------
+ This method returns the next node ID available 
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextNodeId()
+    {    
+    HINVARIANTS;
+    return ++m_nextNodeID;
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 12/2010

@@ -59,11 +59,7 @@ public:
 
     IMPORT_DLLE SMis3D                          IsRepresenting3dData() const;
     IMPORT_DLLE void                            SetRepresenting3dData(SMis3D isRepresenting3dData);
-    IMPORT_DLLE void                            SetRepresenting3dData(bool isRepresenting3dData);
-
-    IMPORT_DLLE __int64                         GetMaximumNbPoints() const;
-    IMPORT_DLLE void                            SetMaximumNbPoints(__int64 maximumNbPoints);
-
+    IMPORT_DLLE void                            SetRepresenting3dData(bool isRepresenting3dData);        
 
     IMPORT_DLLE std::vector<DRange3d>           GetVectorRangeAdd();
     IMPORT_DLLE void                            ClearVectorRangeAdd();

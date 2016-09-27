@@ -116,9 +116,7 @@ public:
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return s_dataSourceManager;}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
-    
-    DataSourceStatus                    InitializeAzureTest     (void);
-
+   
     };
 
 
@@ -295,7 +293,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _ConvertToCloud(const WString& pi_pOutputDirPath) const override;
+        virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override;
 
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
@@ -304,8 +302,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
-        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override;
 #endif
+
+        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override;
+        virtual void _ReFilter() override;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
@@ -414,7 +415,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _SynchWithSources() override;
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
-        virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
+        virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
@@ -431,8 +432,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
-        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override { return ERROR; }
 #endif
+
+        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {};
+        virtual void _ReFilter() override {};
            
     };
 

@@ -2469,6 +2469,24 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     return _GetSkirtMeshes(meshes);
     }
 
+#ifdef WIP_MESH_IMPORT
+bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
+    {
+    return _IntersectRay(pt, ray, retrievedMetadata);
+    }
+
+void IScalableMeshNode::GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const
+    {
+    return _GetAllSubMeshes(meshes,texIDs);
+    }
+
+IScalableMeshTexturePtr IScalableMeshNode::GetTexture(uint64_t texID) const
+    {
+    return _GetTexture(texID);
+    }
+
+#endif
+
 bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
     {
     return _RunQuery(query,nodes);
@@ -2503,9 +2521,9 @@ StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, 
     return _AddMesh(vertices, nVertices, indices, nIndices);
     }
 
-StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID)
     {
-    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture);
+    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID);
     }
 
 StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data, bool sibling)
@@ -2529,20 +2547,21 @@ StatusInt  IScalableMeshNodeEdit::SetContentExtent(DRange3d& extent)
     }
 
 /*=========================IScalableMeshCachedDisplayNode===============================*/
-StatusInt IScalableMeshCachedDisplayNode::GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const
     {
-    return _GetCachedMesh(cachedMesh);
+    return _GetCachedMeshes(cachedMesh, textureIds);
     }
 
-StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const
     {
-    return _GetCachedTexture(cachedTexture);
+    return _GetCachedTextures(cachedTexture, textureIds);
     }
 
 StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const
     {
     return _GetDisplayClipVectors(clipVectors);
     }
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */

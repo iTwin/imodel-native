@@ -22,7 +22,16 @@
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include "IDTMFeatureArray.h"
 
+#ifdef VANCOUVER_API
+typedef IDTMFile::FeatureHeader headerType;
+#else
+#include "Stores/SMStoreUtils.h"
+typedef ISMStore::FeatureHeader headerType;
+#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -165,7 +174,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
     virtual void                            _Write                     () override
         {
-        m_Features.EditHeaders().Wrap((const IDTMFile::FeatureHeader *)m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
         
         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; myFeature++)
@@ -216,7 +225,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap((const IDTMFile::FeatureHeader *)m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -290,8 +299,41 @@ class GenericLinearStorageEditor : public Import::BackInserter
          str.Sprintf("%s", m_metadataPacket.Get());
          
          DRange3d meshExtent = DRange3d::From(m_pointPacket.Get(), (int)m_pointPacket.GetSize());
+
+         size_t remainingTexBytes = 0;
+         bvector<uint8_t> tex;
+         for(size_t i =0; i < m_texPacket.GetSize();)
+             {
+             if (remainingTexBytes == 0)
+                 {
+                 memcpy(&remainingTexBytes,m_texPacket.Get()+i, sizeof(size_t));
+                 i+=sizeof(size_t);
+                 if(!tex.empty())
+                     {
+                     int width, height, nChannels;
+                     memcpy(&width, &tex[0],sizeof(int));
+                     memcpy(&height, &tex[0]+sizeof(int),sizeof(int));
+                     memcpy(&nChannels, &tex[0]+2*sizeof(int),sizeof(int));
+                     m_rIndex.AddTexture(width, height, nChannels, &tex[0]+3*sizeof(int), tex.size()-3*sizeof(int));
+                     }
+                 tex.clear();
+                 }
+             else{
+                 tex.push_back(m_texPacket.Get()[i]);
+                 remainingTexBytes--;
+                 i++;
+                 }
+             }
+         if(!tex.empty())
+             {
+             int width, height, nChannels;
+             memcpy(&width, &tex[0], sizeof(int));
+             memcpy(&height, &tex[0] + sizeof(int), sizeof(int));
+             memcpy(&nChannels, &tex[0] + 2 * sizeof(int), sizeof(int));
+             m_rIndex.AddTexture(width, height, nChannels, &tex[0] + 3 * sizeof(int), tex.size() - 3 * sizeof(int));
+             }
              // Append to index
-         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), m_texPacket.Get(), m_texPacket.GetSize(), m_uvPacket.Get());
+         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), 0,0, m_uvPacket.Get());
 #endif
          // TDORAY: Throw on failures?
          }
@@ -317,7 +359,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap((const IDTMFile::FeatureHeader *)m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -575,7 +617,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
   
     HFCPtr<HVEShape> CreateClipShape()
         {
-        m_Features.EditHeaders().Wrap((const IDTMFile::FeatureHeader *)m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
      
         const HFCPtr<HGF2DCoordSys> coordSysP = m_resultingClipShapePtr->GetCoordSys();

@@ -5,6 +5,7 @@
 
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
+    : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
     }
@@ -14,18 +15,6 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
     // We didn't want to close it. It's ScalableMesh which did this stuff now (and if SMSQLiteFilePtr is destroy, close is automatically called)
     //m_smSQLiteFile->Close();    
 
-    if (m_smFeatureSQLiteFile.IsValid())
-        {
-        Utf8String dbFileName;         
-        bool result = m_smFeatureSQLiteFile->GetFileName(dbFileName); 
-        assert(result == true);
-        assert(m_smFeatureSQLiteFile->GetRefCount() == 1);
-        m_smFeatureSQLiteFile->Close();
-        m_smFeatureSQLiteFile = 0;        
-        WString dbFileNameW;
-        dbFileNameW.AssignUtf8(dbFileName.c_str());
-        _wremove(dbFileNameW.c_str());
-        }    
     }
 
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const
@@ -97,17 +86,7 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    if (m_projectFilesPath.length() > 0)
-        return false;
-    
-    m_projectFilesPath = projectFilesPath;
-
-    //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
-    //Force the opening/creation of project file in main thread to avoid global mutex.
-    GetSisterSQLiteFile(SMStoreDataType::DiffSet);        
-    GetSisterSQLiteFile(SMStoreDataType::Skirt);        
-
-    return true; 
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
@@ -132,7 +111,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
-    if (m_projectFilesPath.empty())
+    if (!IsProjectFilesPathSet())
         return false; 
 
     SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
@@ -141,117 +120,6 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDa
     dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
 
     return true;    
-    }
-
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType)
-    {    
-    switch (dataType)
-        {
-        case SMStoreDataType::LinearFeature :
-            {
-            Utf8String dbFileName;         
-            bool result = m_smSQLiteFile->GetFileName(dbFileName); 
-            assert(result == true);
-
-            WString name;
-            name.AssignUtf8(dbFileName.c_str());
-
-            sqlFileName = name.append(L"_feature"); //temporary file, deleted after generation
-            }
-            return true;
-            break;
-
-        case SMStoreDataType::DiffSet :
-            sqlFileName = m_projectFilesPath;
-            sqlFileName.append(L"_clips"); 
-            return true;
-            break;
-        case SMStoreDataType::ClipDefinition :
-        case SMStoreDataType::Skirt :
-            sqlFileName = m_projectFilesPath;
-            sqlFileName.append(L"_clipDefinitions"); 
-            return true;
-            break;
-
-        default : 
-            assert(!"Unknown data type");
-            break;
-        }    
-
-    return false;
-    }
-
-
-template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFile(SMStoreDataType dataType)
-    {    
-    SMSQLiteFilePtr sqlFilePtr; 
-
-    switch (dataType)
-        {
-        case SMStoreDataType::LinearFeature : 
-            {
-            if (!m_smFeatureSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
-                        
-                _wremove(sqlFileName.c_str());
-
-                m_smFeatureSQLiteFile = new SMSQLiteFile();
-                m_smFeatureSQLiteFile->Create(sqlFileName); 
-                }
-
-            sqlFilePtr = m_smFeatureSQLiteFile;        
-            }
-            break;
-        
-        case SMStoreDataType::DiffSet :         
-            {
-            if (!m_smClipSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);  
-
-                StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
-
-                if (status == 0)
-                    {                    
-                    m_smClipSQLiteFile->Create(sqlFileName); 
-                    }                                                                
-                }
-
-            sqlFilePtr = m_smClipSQLiteFile;                   
-            }
-            break;
-
-        case SMStoreDataType::ClipDefinition :
-        case SMStoreDataType::Skirt : 
-            {
-            if (!m_smClipDefinitionSQLiteFile.IsValid())
-                {
-                WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);  
-
-                StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
-
-                if (status == 0)
-                    {                    
-                    m_smClipDefinitionSQLiteFile->Create(sqlFileName); 
-                    }                                                                
-                }  
-
-            sqlFilePtr = m_smClipDefinitionSQLiteFile;                   
-            }
-            break;            
-
-        default : 
-            assert(!"Unknown datatype");
-            break;
-        }
-        
-    return sqlFilePtr;
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
@@ -508,7 +376,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_nodeHeader->m_nodeCount;            
             break;
         case SMStoreDataType::TriPtIndices : 
-            blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
+            blockDataCount = m_nodeHeader->m_nbFaceIndexes;
             break;                  
         case SMStoreDataType::TriUvIndices :             
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
@@ -595,21 +463,16 @@ case SMStoreDataType::Skirt :
     }
 
 
-template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadTextureBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DecompressTextureData(bvector<uint8_t>& texData, DATATYPE* DataTypeArray, size_t uncompressedSize)
     {
     assert(sizeof(DATATYPE) == 1);
-    bvector<uint8_t> ptData;
-    size_t uncompressedSize = 0;
-    m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
 
-    assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
     HCDPacket pi_uncompressedPacket((Byte*)DataTypeArray + sizeof(int) * 3, uncompressedSize, uncompressedSize);    
     HCDPacket pi_compressedPacket;
-    if (ptData.size() == 0) return 0;
-    pi_compressedPacket.SetBuffer(ptData.data() + 4 * sizeof(int), ptData.size() - 4 * sizeof(int));
-    pi_compressedPacket.SetDataSize(ptData.size() - 4 * sizeof(int));
+    pi_compressedPacket.SetBuffer(texData.data() + 4 * sizeof(int), texData.size() - 4 * sizeof(int));
+    pi_compressedPacket.SetDataSize(texData.size() - 4 * sizeof(int));
     
-    int *pHeader = (int*)(ptData.data());
+    int *pHeader = (int*)(texData.data());
     int w = pHeader[0];
     int h = pHeader[1];
     int nOfChannels = pHeader[2];
@@ -618,7 +481,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     ((int*)DataTypeArray)[0] = w;
     ((int*)DataTypeArray)[1] = h;
     ((int*)DataTypeArray)[2] = nOfChannels;
-    return maxCountData;    
+    return uncompressedSize + sizeof(int) * 3;
     }
 
 
@@ -669,102 +532,20 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     */
 #endif
 
+    bvector<uint8_t> nodeData;
+    size_t uncompressedSize = 0;
+    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
         {        
-        return LoadTextureBlock(DataTypeArray, maxCountData, blockID);
+        if (nodeData.size() == 0) return 0;
+        assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
+        return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
-
-    bool needCompression = true;
-
-    bvector<uint8_t> nodeData;
-    size_t uncompressedSize = 0;        
-
-    switch (m_dataType)
-        {        
-        case SMStoreDataType::DiffSet : 
-            needCompression = false;
-            m_smSQLiteFile->GetDiffSet(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::Graph : 
-            m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
-
-            if (uncompressedSize == 0)
-                return 1; 
-            break;            
-        case SMStoreDataType::LinearFeature :
-            m_smSQLiteFile->GetFeature(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::Points : 
-            m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
-            break;
-        case SMStoreDataType::Skirt :
-            m_smSQLiteFile->GetSkirtPolygon(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::TriPtIndices : 
-            m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::UvCoords :
-            m_smSQLiteFile->GetUVs(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::TriUvIndices :             
-            m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-#ifdef WIP_MESH_IMPORT
-        case SMStoreDataType::MeshParts:
-            m_smSQLiteFile->GetMeshParts(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::Metadata:
-            m_smSQLiteFile->GetMetadata(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-#endif
-        case SMStoreDataType::ClipDefinition :
-            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
-            break;    
-        default : 
-            assert(!"Unsupported type");
-            break;
-        }    
-    
-    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-
-    if (needCompression)
-        {
-        pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
-        pi_compressedPacket.SetDataSize(nodeData.size());
-
-        if (m_dataType == SMStoreDataType::Graph || m_dataType == SMStoreDataType::DiffSet)
-            {
-            pi_uncompressedPacket.SetDataSize(uncompressedSize);        
-            pi_uncompressedPacket.SetBuffer(new Byte[uncompressedSize], uncompressedSize);
-            pi_uncompressedPacket.SetBufferOwnership(true);
-
-            }
-        else
-            {
-            assert(uncompressedSize == maxCountData*sizeof(DATATYPE));
-            pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
-            pi_uncompressedPacket.SetBufferOwnership(false);
-            }
-    
-        LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
-        }
-
-    if (m_dataType == SMStoreDataType::Graph)
-        {
-        assert(typeid(DATATYPE) == typeid(MTGGraph));
-        
-        if(uncompressedSize > 0) 
-            {
-            MTGGraph * graph = new(DataTypeArray)MTGGraph(); //some of the memory managers call malloc but not the constructor            
-            graph->LoadFromBinaryStream(pi_uncompressedPacket.GetBufferAddress(), uncompressedSize);
-            }
-
-        return 1;       
-        }  
-
     if (m_dataType == SMStoreDataType::DiffSet)
-        {       
+        {
+        if (uncompressedSize == 0) return 1;
         size_t offset = (size_t)ceil(sizeof(size_t));        
         size_t ct = 0;
 
@@ -787,11 +568,103 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }        
 
         return nodeData.size();     
-        }  
+        }
+
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
+    pi_compressedPacket.SetDataSize(nodeData.size());
+
+    if (m_dataType == SMStoreDataType::Graph)
+        {
+        pi_uncompressedPacket.SetDataSize(uncompressedSize);        
+        pi_uncompressedPacket.SetBuffer(new Byte[uncompressedSize], uncompressedSize);
+        pi_uncompressedPacket.SetBufferOwnership(true);
+
+        }
+    else
+        {
+        assert(uncompressedSize == maxCountData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetBufferOwnership(false);
+        }
+
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+                
+    if (m_dataType == SMStoreDataType::Graph)
+        {
+        assert(typeid(DATATYPE) == typeid(MTGGraph));
+        
+        if(uncompressedSize > 0) 
+            {
+            MTGGraph * graph = new(DataTypeArray)MTGGraph(); //some of the memory managers call malloc but not the constructor            
+            graph->LoadFromBinaryStream(pi_uncompressedPacket.GetBufferAddress(), uncompressedSize);
+            }
+
+        return 1;       
+        }                
 
     return std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));        
-    }   
-            
+    }
+
+template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetCompressedBlock(bvector<uint8_t>& nodeData, size_t& uncompressedSize, HPMBlockID blockID)
+    {
+    switch (m_dataType)
+        {        
+        case SMStoreDataType::DiffSet : 
+            m_smSQLiteFile->GetDiffSet(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Graph : 
+            m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::LinearFeature :
+            m_smSQLiteFile->GetFeature(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Points:
+            m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Skirt :
+            m_smSQLiteFile->GetSkirtPolygon(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::TriPtIndices:
+            m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::UvCoords:
+            m_smSQLiteFile->GetUVs(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::TriUvIndices:
+            m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
+            break;            
+#ifdef WIP_MESH_IMPORT
+        case SMStoreDataType::MeshParts:
+            m_smSQLiteFile->GetMeshParts(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Metadata:
+            m_smSQLiteFile->GetMetadata(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+#endif
+        case SMStoreDataType::ClipDefinition :
+            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
+            break;    
+        case SMStoreDataType::Texture:
+            m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        default:
+            assert(!"Unsupported type");
+            break;
+        }
+    }
+
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    {
+    bvector<uint8_t> nodeData;
+    size_t uncompressedSize = 0;
+    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+    assert(uncompressedSize <= maxCountData*sizeof(DATATYPE));
+    assert(nodeData.size() <= maxCountData*sizeof(DATATYPE));
+    memcpy(DataTypeArray.data(), nodeData.data(), nodeData.size()*sizeof(DATATYPE));
+    return nodeData.size();
+    }
+
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
     {
     return false;

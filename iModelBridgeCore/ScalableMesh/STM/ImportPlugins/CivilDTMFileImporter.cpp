@@ -428,7 +428,11 @@ private:
         {
         m_headerPacket.AssignTo(pi_rRawEntities[DG_Header]);
         m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
+#ifdef VANCOUVER_API
         m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader *)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#else
+       m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#endif
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 

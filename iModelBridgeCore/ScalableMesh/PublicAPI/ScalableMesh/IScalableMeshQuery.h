@@ -258,8 +258,7 @@ struct IScalableMeshPointQuery abstract: RefCountedBase
     private:  
 
     protected: 
-                
-        //NEEDS_WORK_SM: remove clip shape from query interface??
+                        
         virtual int _Query(bvector<DPoint3d>&               points, 
                            const DPoint3d*                  pClipShapePts, 
                            int                              nbClipShapePts, 
@@ -343,9 +342,7 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
-
-        //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
-        
+                
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
 
@@ -482,6 +479,14 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
 
+#ifdef WIP_MESH_IMPORT
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
+
+        virtual void _GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const= 0;
+
+        virtual IScalableMeshTexturePtr _GetTexture(uint64_t texID) const= 0;
+#endif
+
                 
     public:
         static const BENTLEY_SM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
@@ -548,6 +553,14 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
 
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const;
+
+#ifdef WIP_MESH_IMPORT
+        BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
+
+        BENTLEY_SM_EXPORT void GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const;
+
+        BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture(uint64_t texID) const;
+#endif
     };
 
 struct SmCachedDisplayMesh;
@@ -557,17 +570,17 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
     {
     protected:
 
-        virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const = 0;
+        virtual StatusInt _GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const = 0;
 
-        virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const = 0;       
+        virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
         virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;        
 
     public : 
 
-        BENTLEY_SM_EXPORT StatusInt GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const;
+        BENTLEY_SM_EXPORT StatusInt GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const;        
+        BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
         BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;                
     };
@@ -577,14 +590,14 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     {
     protected:
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) = 0;
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t idTexture) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) = 0;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetContentExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetArePoints3d(bool arePoints3d) = 0;
         virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling) = 0;
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
-        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture);
+        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID = -1);
         BENTLEY_SM_EXPORT StatusInt AddTextures(bvector<Byte>& data, bool sibling = false);
         BENTLEY_SM_EXPORT StatusInt SetNodeExtent(DRange3d& extent);
         BENTLEY_SM_EXPORT StatusInt SetContentExtent(DRange3d& extent);

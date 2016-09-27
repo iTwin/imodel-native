@@ -54,12 +54,14 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-27\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-27\\")
+
+#if SM_TRACE_MESH_STATS
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-08-24\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-08-24\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
-    //NEEDS_WORK_SM
-
+#endif
+    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
     if (pointsPtr->size() > 4)
@@ -96,9 +98,21 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         stats.close();
 #endif
         
-        vector<DPoint3d> points(pointsPtr->size());
+        vector<DPoint3d> points;
+
+
         
-        PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
+        for (size_t i = 0; i < pointsPtr->size(); ++i)
+            {
+            if ((*pointsPtr)[i].x < 1e15 && (*pointsPtr)[i].y < 1e15 && !_isnan((*pointsPtr)[i].y) && !_isnan((*pointsPtr)[i].x))
+                {
+                points.push_back((*pointsPtr)[i]);
+                if (fabs(points.back().x) < 1e-8) points.back().x =0;
+                if (fabs(points.back().y) < 1e-8) points.back().y = 0;
+                }
+            }
+
+
 
         BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
@@ -106,7 +120,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
         if (!node->m_isGrid || linearFeaturesPtr->size() > 0 || !s_useSpecialTriangulationOnGrids)
             {
-            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)pointsPtr->size());
+            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)points.size());
 
             assert(status == SUCCESS);
 
@@ -129,6 +143,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)defs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
             status = bcdtmObject_triangulateDtmObject(dtmObjP);
+
+#if SM_TRACE_FEATURE_DEFINITIONS
             bool dbg = false;
             if(dbg)
                 {
@@ -141,6 +157,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 fwrite(&points[0], sizeof(DPoint3d), _nVertices, _meshFile); 
                 fclose(_meshFile);
                 }
+#endif
+
 #if 0
             WString dtmFileName(LOG_PATH_STR_W + L"meshtile_");
             LOGSTRING_NODE_INFO_W(node, dtmFileName)
@@ -424,8 +442,20 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 node->SetDirty(true);
                 }
             }
-            else 
-                std::cout << " TILE " << node->GetBlockID().m_integerID << " TRIANGULATION FAILED" << std::endl;
+        else
+            {
+#if SM_TRACE_MESH_STATS
+            std::cout << " TILE " << node->GetBlockID().m_integerID << " TRIANGULATION FAILED" << std::endl;
+            Utf8String namePts = LOG_PATH_STR + "mesh_tile_";
+            LOGSTRING_NODE_INFO(node, namePts)
+                namePts.append(".pts");
+            size_t _nVertices = points.size();
+            FILE* _meshFile = fopen(namePts.c_str(), "wb");
+            fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
+            fwrite(&points[0], sizeof(DPoint3d), _nVertices, _meshFile);
+            fclose(_meshFile);
+#endif
+            }
         }
 
     return isMeshingDone;
@@ -1300,12 +1330,13 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP);
 
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
-    {
-    //return true;
+    {    
+#if SM_TRACE_MESH_STATS
     LOG_SET_PATH("E:\\output\\scmesh\\2016-07-15\\")
     LOG_SET_PATH_W("E:\\output\\scmesh\\2016-07-15\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
+#endif
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
     //bool hasPtsToTrack = false;

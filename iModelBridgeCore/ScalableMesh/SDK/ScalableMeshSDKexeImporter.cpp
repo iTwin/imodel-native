@@ -238,8 +238,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 }
                 */
             }       
-
-        //NEEDS_WORK_SM
+        
         WString classesToImportAttr;
 
         status = pTestChildNode->GetAttributeStringValue(classesToImportAttr, "classesToImport");

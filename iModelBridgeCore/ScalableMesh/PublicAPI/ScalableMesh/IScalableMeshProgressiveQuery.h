@@ -73,9 +73,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                           bool                                                                     loadTexture, 
-                                          const bvector<bool>&                                                     clipVisibilities,
-                                          const DMatrix4d*                                                         prevLocalToView, //NEEDS_WORK_SM : prev and new local to view not used anymore.
-                                          const DMatrix4d*                                                         newLocalToView) = 0; 
+                                          const bvector<bool>&                                                     clipVisibilities) = 0; 
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const = 0;
@@ -100,9 +98,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                                    const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                                    bool                                                                     loadTexture, 
-                                                   const bvector<bool>&                                                     clipVisibilities,
-                                                   const DMatrix4d*                                                         prevLocalToView,
-                                                   const DMatrix4d*                                                         newLocalToView); 
+                                                   const bvector<bool>&                                                     clipVisibilities); 
 
         BENTLEY_SM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                          int                                                   queryId);

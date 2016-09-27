@@ -35,6 +35,11 @@ uint64_t ClipRegistry::AddClip(const DPoint3d* clip, size_t clipSize)
 
 void ClipRegistry::ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize)
     {    
+    if (m_lastClipSet && m_lastClipID == id)
+        {
+        m_lastClipValue.resize(clipSize);
+        memcpy(&m_lastClipValue[0], clip, clipSize*sizeof(DPoint3d));
+        }
     ISM3DPtDataStorePtr dataStore;
     m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
     dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);

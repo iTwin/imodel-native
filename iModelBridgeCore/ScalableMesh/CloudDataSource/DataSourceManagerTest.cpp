@@ -59,7 +59,7 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
             bufferSource[t] = t;
         }
                                                             // Write some data and close
-        status = dataSource->open(url, DataSourceMode_Write);
+        status = dataSource->open(url, DataSourceMode_Write_Segmented);
         if (status.isFailed())
             return status;
 

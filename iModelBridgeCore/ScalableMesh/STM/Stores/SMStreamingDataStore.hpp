@@ -10,70 +10,145 @@
 #pragma once
 
 #include "SMStreamingDataStore.h"
+#include "SMSQLiteStore.h"
 #include "../Threading\LightThreadPool.h"
-#include <curl/curl.h>
 #include <condition_variable>
 #include <CloudDataSource/DataSourceAccount.h>
+#include <CloudDataSource\DataSourceBuffered.h>
 
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
+#include "ScalableMesh/ScalableMeshLib.h"
 
 USING_NAMESPACE_IMAGEPP
 
-#ifdef VANCOUVER_API
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
-#else
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#endif
-
-extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
-extern bool s_stream_from_grouped_store;
-extern bool s_stream_enable_caching;
-extern bool s_is_virtual_grouping;
 
 
-
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress, bool areNodeHeadersGrouped, WString headers_path)
-    :m_rootDirectory(path),     
-     m_pathToHeaders(headers_path),
-     m_use_node_header_grouping(areNodeHeadersGrouped)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
+    : SMSQLiteSisterFile(nullptr),
+     m_pathToHeaders(headers_path.c_str()),
+     m_use_node_header_grouping(areNodeHeadersGrouped),
+     m_use_virtual_grouping(isVirtualGrouping)
     {
-    SetDataSourceAccount(dataSourceAccount);            
-       
+    InitializeDataSourceAccount(dataSourceManager, path);
+
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
-        m_pathToHeaders = m_rootDirectory + L"headers/";
+        m_pathToHeaders = L"headers";
 
-        if (m_use_node_header_grouping && s_is_virtual_grouping)
+        if (m_use_node_header_grouping && m_use_virtual_grouping)
             {
             m_NodeHeaderFetchDistributor = new SMNodeDistributor<SMNodeGroup::DistributeData>();
             SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
             }
         }
 
+    m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
+
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    //                           and do this in the Cloud API...
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW(m_rootDirectory.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
-        
-        if (0 == CreateDirectoryW(m_pathToHeaders.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
+        BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_pathToHeaders.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
 
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
+    }
+
+template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory)
+    {
+    DataSourceStatus                            status;
+    if (s_stream_from_disk)
+        {
+        DataSourceAccount                       *   accountLocalFile;
+        DataSourceService                       *   serviceLocalFile;
+
+        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the file service streaming
+        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountLocalFile);
+        }
+    else if (s_stream_from_wsg)
+        {
+        Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
+        assert(!tokenUtf8.empty());
+
+        Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
+        assert(!sslCertificatePath.empty());
+
+        DataSourceService                       *   serviceWSG;
+        DataSourceAccount                       *   accountWSG;
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server
+        DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token?
+
+        serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
+        if (serviceWSG == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
+        if (accountWSG == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+
+        this->SetDataSourceAccount(accountWSG);
+        }
+    else
+        {
+        // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
+        // NEEDS_WORK_SM_STREAMING: How to specify identifier and key?
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
+        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+        DataSourceService                       *   serviceAzure;
+        DataSourceAccount                       *   accountAzure;
+        DataSourceAccount                       *   accountCaching;
+        DataSourceService                       *   serviceFile;
+        //  DataSourceAccount                       *   accountCaching;
+
+        // Setup Azure account
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (accountAzure == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        this->SetDataSourceAccount(accountAzure);
+
+        // Setup Caching service
+        if ((serviceFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+
+        //  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+        // Set up local file based caching
+        accountAzure->setCaching(*accountCaching, DataSourceURL());
+
+        // Set up default container
+        accountAzure->setPrefixPath(DataSourceURL(directory.c_str()));
+        }
+
+    return DataSourceStatus();
     }
 
 template <class EXTENT> uint64_t SMStreamingStore<EXTENT>::GetNextID() const
@@ -97,33 +172,34 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
         masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
         masterHeader["singleFile"] = false;
         masterHeader["isTerrain"] = true;
-    
-        // Write to file
-        auto filename = (m_rootDirectory + L"MasterHeader.sscm").c_str();
-        BeFile file;
-        uint64_t buffer_size;
-        auto jsonWriter = [&file, &indexHeader, &buffer_size](BeFile& file, Json::Value& object) {
-    
-            Json::StyledWriter writer;
-            auto buffer = writer.write(object);
-            buffer_size = buffer.size();
-            file.Write(NULL, buffer.c_str(), buffer_size);
-            };
-        if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))//file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
+
+        auto buffer = Json::StyledWriter().write(masterHeader);
+        uint64_t buffer_size = buffer.size();
+
+        DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
+
+        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+        assert(dataSource != nullptr);
+
+        if (dataSource->open(dataSourceURL, DataSourceMode_Write).isFailed())
             {
-            jsonWriter(file, masterHeader);
+            assert(false); // could not open master header data source!
+            return false;
             }
-        else if (BeFileStatus::Success == file.Create(filename))
+
+        if (dataSource->write((const DataSource::Buffer*)buffer.c_str(), buffer_size).isFailed())
             {
-            jsonWriter(file, masterHeader);
+            assert(false); // error writing to master header data source!
+            return false;
             }
-        else
+
+        if (dataSource->close().isFailed())
             {
-            assert(!"Problem creating master header file");
+            assert(false); // error closing master header data source!
+            return false;
             }
-        file.Close();
         }
-    
+
     return true;
     }
     
@@ -140,7 +216,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             {
             wchar_t buffer[10000];
 
-            swprintf(buffer, L"%sMasterHeaderWithGroups.bin", m_rootDirectory.c_str());
+            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", (m_use_virtual_grouping ? L"Virtual" : L""));
+            //swprintf(buffer, L"Production_Graz_3MX.3mx");
 
             DataSourceURL    dataSourceURL(buffer);
                                 
@@ -183,8 +260,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
                 indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-                memcpy(&s_is_virtual_grouping, reinterpret_cast<char *>(dest.get()) + position, sizeof(s_is_virtual_grouping));
-                position += sizeof(s_is_virtual_grouping);
+                short groupMode = m_use_virtual_grouping;
+                memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
+                assert((groupMode == SMNodeGroup::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+                position += sizeof(groupMode);
 
 
                 // Parse rest of file -- group information
@@ -195,7 +274,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     position += sizeof(group_id);
 
                     uint64_t group_totalSizeOfHeaders(0);
-                    if (s_is_virtual_grouping)
+                    if (groupMode == SMNodeGroup::VIRTUAL)
                         {
                         memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
                         position += sizeof(group_totalSizeOfHeaders);
@@ -204,11 +283,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     size_t group_numNodes;
                     memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(size_t));
                     position += sizeof(size_t);
-                    //assert(group_size <= s_max_number_nodes_in_group);
 
-                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
+                                                                     group_id, 
+                                                                     SMNodeGroup::Mode(groupMode),
+                                                                     group_numNodes, 
+                                                                     group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_");
+                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 
@@ -219,7 +301,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     group->GetHeader()->resize(group_numNodes);
                     transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
                         {
-                        return SMNodeHeader    { nodeId, 0, 0     };
+                        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
                         });
                     }
                 }
@@ -229,19 +311,26 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             Json::Reader    reader;
             Json::Value     masterHeader;
 
-            DataSourceURL dataSourceURL(m_rootDirectory.data());
+            DataSourceURL dataSourceURL(L"MasterHeader.sscm");
             
-            dataSourceURL.append(L"MasterHeader.sscm");
-
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
+                {
+                assert(false); // problem initializing a datasource
                 return 0;
+                }
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                assert(false); // problem opening a datasource
                 return 0;
+                }
 
             if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                {
+                assert(false); // problem reading a datasource
                 return 0;
+                }
 
             dataSource->close();
 
@@ -252,7 +341,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
             indexHeader->m_balanced = masterHeader["balanced"].asBool();
             indexHeader->m_depth = masterHeader["depth"].asUInt();
-            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+            // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
+            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool(); 
 
             auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
             indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
@@ -380,6 +470,12 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
             po_pDataSize += sizeof(nodeId);
             }
         }
+    auto nbDataSizes = pi_pHeader->m_blockSizes.size();
+    memcpy(po_pBinaryData.get() + po_pDataSize, &nbDataSizes, sizeof(nbDataSizes));
+    po_pDataSize += sizeof(nbDataSizes);
+
+    memcpy(po_pBinaryData.get() + po_pDataSize, pi_pHeader->m_blockSizes.data(), nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
+    po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
 
@@ -533,23 +629,43 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     SerializeHeaderToBinary(header, headerData, headerSize);
     //SerializeHeaderToJSON(header, blockID, block);
 
-    wchar_t buffer[10000];
-    swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
-    std::wstring filename(buffer);
-    BeFile file;
-    if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write) || BeFileStatus::Success == file.Create(filename.c_str()))
+    DataSourceURL dataSourceURL = m_pathToHeaders;
+    dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin"));
+
+    bool created = false;
+    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
+    if (dataSource == nullptr)
         {
-        //    Json::StyledWriter writer;
-        //    auto buffer = writer.write(object);
-        //    buffer_size = buffer.size();
-        //    file.Write(NULL, buffer.c_str(), buffer_size);
-        file.Write(NULL, headerData.get(), headerSize);
+        assert(false); // problem creating new datasource
+        return 0;
         }
-    else
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+    //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+    //}
+
+    if (dataSource->open(dataSourceURL, DataSourceMode_Write).isFailed())
         {
-        assert(!"Problem opening/creating header file");
+        assert(false); // problem opening a datasource
+        return 0;
         }
-    file.Close();
+
+    if (dataSource->write(headerData.get(), headerSize).isFailed())
+        {
+        assert(false); // problem writing a datasource
+        return 0;
+        }
+
+    if (dataSource->close().isFailed())
+        {
+        assert(false); // problem closing a datasource
+        return 0;
+        }
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+    //}
 
     return 1;
     }
@@ -561,6 +677,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         auto group = this->GetGroup(blockID);
         auto node_header = group->GetNodeHeader(blockID.m_integerID);
         ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+        header->m_id = blockID;
         //group->removeNodeData(blockID.m_integerID);
         }
     else {
@@ -569,6 +686,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         uint64_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
+        if (!headerData && headerSize == 0) return 0;
         ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
         }
     return 1;
@@ -576,8 +694,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    assert(!"Should be handled by local file");
-    return false;
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
@@ -597,11 +714,21 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
     {
     auto group = this->FindGroup(blockID);
-    assert(group != nullptr);
+    if (group == nullptr) return group;
     if (!group->IsLoaded())
         {
         group->Load(blockID.m_integerID);
         }
+#ifdef DEBUG_STREAMING_DATA_STORE
+    else {
+        static std::atomic<uint64_t> s_NbAlreadyLoadedNodes = 0;
+        s_NbAlreadyLoadedNodes += 1;
+        {
+        std::lock_guard<mutex> clk(s_consoleMutex);
+        std::cout << "[" << blockID.m_integerID << ", " << group->GetID() << "] already loaded in temporary streaming data cache!" << std::endl;
+        }
+        }
+#endif
     return group;
     }
 
@@ -662,8 +789,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
 
     if (header->m_isTextured)
         {
-        header->m_textureID.resize(1);
-        header->m_textureID[0] = ISMStore::GetNullNodeID();
+        header->m_textureID = ISMStore::GetNullNodeID();
         header->m_ptsIndiceID.resize(2);
         header->m_ptsIndiceID[1] = (int)idx;
         header->m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;
@@ -732,6 +858,18 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
             header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != ISMStore::GetNullNodeID() ? HPMBlockID(neighborId) : ISMStore::GetNullNodeID());
             }
         }
+    if (dataIndex == maxCountData)
+        {
+        return;
+        }
+    uint64_t nbDataSizes;
+    memcpy(&nbDataSizes, headerData + dataIndex, sizeof(nbDataSizes));
+    dataIndex += sizeof(nbDataSizes);
+
+    header->m_blockSizes.resize(nbDataSizes);
+    memcpy(header->m_blockSizes.data(), headerData + dataIndex, nbDataSizes* sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
+    dataIndex += nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize);
+
     assert(dataIndex == maxCountData);
     }
 
@@ -742,11 +880,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
     DataSource::DataSize                           readSize;
-    wchar_t                                        buffer[10000];
 
-    swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
-
-    DataSourceURL    dataSourceURL(buffer);
+    DataSourceURL    dataSourceURL(m_pathToHeaders);
+    dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -782,8 +918,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
-    assert(!"Should not be called");
-    return false;    
+    if (!IsProjectFilesPathSet())
+        return false;
+
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
+    assert(sqliteFilePtr.IsValid() == true);
+
+    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
+
+    return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
@@ -793,11 +936,18 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
-    {    
-    //NEW_SSTORE_RB : Need to be implement
-    assert(dataType != SMStoreDataType::Skirt && dataType != SMStoreDataType::ClipDefinition);
-
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
+    {
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
+        {
+        SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType);
+        assert(sqlFilePtr.IsValid());
+        dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+        }
+    else
+        {
+        auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
+        }
 
     return true;    
     }
@@ -806,21 +956,21 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32
     {                
     assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
         
-    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, dataType, nodeHeader);
                     
     return true;    
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
-    dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, m_rootDirectory, nodeHeader);
+    dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, nodeHeader);
     
     return true;    
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
-    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::UvCoords, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, SMStoreDataType::UvCoords, nodeHeader);
 
     return true;    
     }
@@ -830,7 +980,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoo
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
-    //dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
+    //dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, SMStoreDataType::TriPtIndices, nodeHeader);
     assert(!"Not supported yet");
 
     return false;    
@@ -864,10 +1014,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
-     m_pathToNodeData(path),
-     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
+     m_nodeGroup(nodeGroup)
     {       
     m_nodeHeader = nodeHeader;
     m_dataType = type;
@@ -875,36 +1024,36 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     switch (type)
         {
         case SMStoreDataType::Points: 
-            m_pathToNodeData += L"points/";
+            m_pathToNodeData = L"points";
             break;
         case SMStoreDataType::TriPtIndices:
-            m_pathToNodeData += L"indices/";
+            m_pathToNodeData = L"indices";
             break;
         case SMStoreDataType::UvCoords:
-            m_pathToNodeData += L"uvs/";
+            m_pathToNodeData = L"uvs";
             break;
         case SMStoreDataType::TriUvIndices:
-            m_pathToNodeData += L"uvindices/";
+            m_pathToNodeData = L"uvindices";
             break;
         default:
             assert(!"Unkown data type for streaming");
         }
 
+    m_pathToNodeData.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
-        if (0 == CreateDirectoryW(m_pathToNodeData.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }        
+        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_pathToNodeData.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
-    else
-        {
-        // stream from azure
-        }
+    //else
+    //    {
+    //    // stream from azure
+    //    }
     }
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
@@ -919,18 +1068,28 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
     if (NULL != DataTypeArray && countData > 0)
         {
-        wchar_t buffer[10000];
-        swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
-        std::wstring filename(buffer);
-        BeFile file;
-        auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
-        if (BeFileStatus::Success != fileOpened)
-            {
-            auto fileCreated = file.Create(filename.c_str());
-            assert(BeFileStatus::Success == fileCreated);
-            fileOpened = fileCreated;
-            }
-        assert(BeFileStatus::Success == fileOpened);
+        DataSourceStatus writeStatus;
+
+        DataSourceURL url = m_pathToNodeData;
+        url.append(L"p_" + std::to_wstring(blockID.m_integerID) + L".bin");
+
+        //bool created = false;
+        //DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
+        //{
+        //std::lock_guard<mutex> clk(s_consoleMutex);
+        //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+        //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+        //}
+        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+        assert(dataSource != nullptr); // problem creating a new DataSource
+
+        //dataSource->setSegmentSize(1024 * 32);
+        //
+        //// Time I/O operation timeouts for threading
+        //dataSource->setTimeout(DataSource::Timeout(10000));
+
+        writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
+        assert(writeStatus.isOK()); // problem opening a DataSource
 
         HCDPacket uncompressedPacket, compressedPacket;
         size_t bufferSize = countData * sizeof(DATATYPE);
@@ -951,9 +1110,20 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
             }
 
+        m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
+
         memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
-        file.Write(NULL, data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
-        file.Close();
+
+        writeStatus = dataSource->write(data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
+        assert(writeStatus.isOK()); // problem writing a DataSource
+
+        writeStatus = dataSource->close();
+        assert(writeStatus.isOK()); // problem closing a DataSource
+
+        //{
+        //std::lock_guard<mutex> clk(s_consoleMutex);
+        //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+        //}
         delete[] data;
         delete[] dataArrayTmp;
         }
@@ -1037,9 +1207,11 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
     if (!block.IsLoaded())
         {
+        auto blockSize = m_nodeHeader->GetBlockSize((short)m_dataType);
+        //assert(blockSize != uint64_t(-1));
         block.SetID(blockID.m_integerID);
         block.SetDataSource(m_pathToNodeData);        
-        block.Load(m_dataSourceAccount);
+        block.Load(m_dataSourceAccount, blockSize);
         }
     assert(block.GetID() == blockID.m_integerID);
     assert(block.IsLoaded() && !block.empty());
@@ -1085,7 +1257,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     return dataSource;
     }
     
-void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
+void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize)
     {
     if (!IsLoaded())
         {
@@ -1094,26 +1266,26 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
                 LockAndWait();
             }
         else
-            {
-                wchar_t buffer[10000];
-                swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
-            
+            {           
                 std::unique_ptr<DataSource::Buffer[]>        dest;
                 DataSource                                *  dataSource;
                 DataSource::DataSize                         readSize;
 
-                DataSourceURL    dataSourceURL(buffer);
+                DataSourceURL    dataSourceURL(m_pDataSource);
+                dataSourceURL.append(L"p_" + std::to_wstring(m_pID) + L".bin");
 
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
                 dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+                assert(dest != nullptr);
                 if (dataSource == nullptr)
                     return;
 
                 if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
                     return;
 
-                if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                if (dataSize == uint64_t(-1)) dataSize = 0;
+                if (dataSource->read(dest.get(), destSize, readSize, dataSize).isFailed())
                     return;
 
                 if (dataSource->close().isFailed())
@@ -1126,6 +1298,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
                     m_pIsLoaded = true;
 
                     uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+                    //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
                     uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
                     DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
                 }
@@ -1157,7 +1330,7 @@ uint64_t StreamingDataBlock::GetID()
     return m_pID; 
     }
 
-void StreamingDataBlock::SetDataSource(const WString& pi_DataSource)
+void StreamingDataBlock::SetDataSource(const DataSourceURL& pi_DataSource)
     {
     m_pDataSource = pi_DataSource;
     }
@@ -1177,94 +1350,6 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
 
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-//    {
-//    size_t realsize = size * nmemb;
-//    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-//
-//    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-//
-//    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-//    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
-//
-//    return realsize;
-//    }
-//
-//// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
-//    {
-//    CURL *curl_handle;
-//    bool retCode = true;
-//    struct MemoryStruct chunk;
-//    const int maxCountData = 100000;
-//    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
-//    Utf8String name;
-//    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
-//    blockUrl += name;
-//
-//    chunk.memory = this;
-//    chunk.memory->reserve(maxCountData);
-//    chunk.size = 0;
-//    curl_global_init(CURL_GLOBAL_ALL);
-//    curl_handle = curl_easy_init();
-//
-//    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
-//    //std::lock_guard<std::mutex> lock(fileMutex);
-//    //BeFile file;
-//    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
-//    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
-//    //    {
-//    //    file.SetPointer(0, BeFileSeekOrigin::End);
-//    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
-//    //    Utf8String utf8_node_location;
-//    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-//    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
-//    //    }
-//    //else
-//    //    {
-//    //    assert(!"Problem creating nodes file");
-//    //    }
-//    //
-//    //file.Close();
-//
-//    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-//    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-//
-//    /* get it! */
-//    CURLcode res = curl_easy_perform(curl_handle);
-//    /* check for errors */
-//    if (CURLE_OK != res)
-//        {
-//        retCode = false;
-//        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//        assert(false);
-//        }
-//
-//    curl_easy_cleanup(curl_handle);
-//    curl_global_cleanup();
-//
-//    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
-//
-//    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
-//    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
-//
-//    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
-//    }
-
-
-void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)    
-    {
-    wchar_t buffer[10000];
-    swprintf(buffer, L"%st_%llu.bin", path.c_str(), blockID.m_integerID);
-    std::wstring filename(buffer);
-    auto fileOpenedOrCreated = BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write)
-        || BeFileStatus::Success == file.Create(filename.c_str());
-    assert(fileOpenedOrCreated);
-    }
-
 template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
@@ -1280,9 +1365,11 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
             }
         else
             {
-            texture.SetDataSource(m_path);
+            auto blockSize = m_nodeHeader->GetBlockSize(5);
+            texture.SetDataSourceAccount(this->GetDataSourceAccount());
+            texture.SetDataSourceURL(m_path);
             texture.SetID(blockID.m_integerID);
-            texture.Load(this->GetDataSourceAccount());
+            texture.Load(blockSize);
             }
         }
     assert(texture.IsLoaded() && !texture.empty());
@@ -1290,22 +1377,22 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
     }
 
 
-template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const WString& directory, SMIndexNodeHeader<EXTENT>* nodeHeader)        
-: m_path(directory)
+template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    : m_path(L"textures"),
+      m_nodeHeader(nodeHeader)
     {
-    m_path += L"textures/";
-    
     this->SetDataSourceAccount(dataSourceAccount);
-    
+
+    m_path.setSeparator(dataSourceAccount->getPrefixPath().getSeparator());
+
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW(m_path.c_str(), NULL))
-            {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
-            }
+        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+        path.AppendToPath(m_path.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
 
@@ -1326,7 +1413,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
 
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
     Texture texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
-    texture.SetDataSource(m_path);
+    texture.SetDataSourceAccount(m_dataSourceAccount);
+    texture.SetDataSourceURL(m_path);
     texture.SavePixelDataToDisk(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
 
     return blockID;
@@ -1335,10 +1423,33 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
 template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DATATYPE, EXTENT>::StoreCompressedBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     assert(blockID.IsValid());
-    BeFile file;
-    OpenOrCreateBeFile(file, m_path, blockID);
-    file.Write(NULL, DataTypeArray, (uint32_t)countData);
-    file.Close();
+
+    DataSourceStatus writeStatus;
+    DataSourceURL    url(m_path);
+    url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
+
+    bool created = false;
+    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
+    assert(dataSource != nullptr);
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+    //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+    //}
+
+    writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
+    assert(writeStatus.isOK());
+
+    writeStatus = dataSource->write(DataTypeArray, (uint32_t)countData);
+    assert(writeStatus.isOK());
+
+    writeStatus = dataSource->close();
+    assert(writeStatus.isOK());
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+    //}
+
     return HPMBlockID(blockID.m_integerID);
     }
 

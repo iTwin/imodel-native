@@ -54,6 +54,7 @@ extern bool   GET_HIGHEST_RES;
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
+extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
 
@@ -107,7 +108,7 @@ bool s_useSQLFormat = true;
 
 #define USE_CODE_FOR_ERROR_DETECTION
 
-
+ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
 
 namespace {
 
@@ -369,9 +370,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& pi_pOutputDirPath) const
+int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const
     {
-    return _ConvertToCloud(pi_pOutputDirPath);
+    return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -385,11 +386,24 @@ int IScalableMesh::LoadAllNodeData(size_t& nbLoadedNodes, int level) const
     return _LoadAllNodeData(nbLoadedNodes, level);
 }
 
-int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
-    return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath, pi_pGroupMode);
     }
 #endif
+
+void IScalableMesh::SetUserFilterCallback(MeshUserFilterCallback callback)
+    {
+   // return _SetUserFilterCallback(callback);
+#ifdef WIP_MESH_IMPORT
+    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>*)s_filterClass)->SetCallback(callback);
+#endif
+    }
+void IScalableMesh::ReFilter()
+    {
+    return _ReFilter();
+    }
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh Method Definition Section - End
@@ -576,82 +590,6 @@ bool ScalableMeshBase::LoadGCSFrom()
     return true;
 }
 
-
-/*----------------------------------------------------------------------------+
-|ScalableMesh::ScalableMesh
-+----------------------------------------------------------------------------*/
-DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
-{
-    DataSourceStatus                            status;
-    if (s_stream_from_disk)
-    {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-
-        this->SetDataSourceAccount(accountLocalFile);
-    }
-    else
-    {
-        // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
-    DataSourceAccount::AccountIdentifier    accountIdentifier(L"pcdsustest");
-    DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-    DataSourceService                       *   serviceAzure;
-    DataSourceAccount                       *   accountAzure;
-    DataSourceAccount                       *   accountCaching;
-    DataSourceService                       *   serviceFile;
-
-//  DataSourceAccount                       *   accountCaching;
-//  DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
-
-                                                            // Get the Azure service
-    serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-    if(serviceAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Create an account on Azure
-    accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-    if (accountAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Set ScalableMesh's DataSource
-        this->SetDataSourceAccount(accountAzure);
-
-        /*
-                                                            // Create an Azure specific DataSource
-    dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
-    if (dataSourceAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                            // Blobs will be split up into segments of this size
-    dataSourceAzure->setSegmentSize(1024 * 64);
-                                                            // Time I/O operation timeouts for threading
-    dataSourceAzure->setTimeout(DataSource::Timeout(100000));
-        */
-
-                                                            // Get the file service
-        if ((serviceFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Create an account on the file service for caching
-    if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-                                                            // Set prefix for caching account data sources
-    accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-
-//  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-                                                            // Set up local file based caching
-    accountAzure->setCaching(*accountCaching, DataSourceURL());
-                                                            // Set up default container
-    accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
-    }
-
-    return status;
-}
-
-
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
@@ -819,30 +757,47 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
          //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
-            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
+            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(s_filterClass != nullptr ? (ISMMeshIndexFilter<POINT, Extent3dType>*)s_filterClass : new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
 
                 if (!isSingleFile)
                     {
-                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    auto position = m_path.find_last_of(L".stm");
-                    auto filenameWithoutExtension = m_path.substr(0, position - 3);
-                    // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"quebeccityvg\\");
-                    // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
+                    bool isVirtualGroups = false; // Streaming without node grouping by default
+                    isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
 
-                    if (this->InitializeAzureTest().isFailed())
+                    // NEEDS_WORK_SM - Check existence of the following directories
+                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
+                    WString streamingSourcePath;
+                    WString cloudIndicator(L"_cloud");
+                    WString datasetName; // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
+                    assert(false);
+                    if (datasetName.Contains(cloudIndicator))
                         {
-                        return BSIERROR; // Error loading layer gcs
+                        datasetName.resize(datasetName.length() - cloudIndicator.length());
                         }
-                        
+
+                    if (s_stream_from_disk)
+                        {
+                        // NEEDS_WORK_STREAMING: make this build on topaz 
+                        //streamingSourcePath = BeFileName(m_path).GetDirectoryName();
+                        assert(false);
+                        streamingSourcePath += L"cloud\\";
+                        streamingSourcePath += datasetName;
+                        }
+                    else if (s_stream_from_wsg)
+                        {
+                        streamingSourcePath = L"scalablemesh" + (L"~2F" + datasetName);
+                        }
+                    else
+                        {
+                        streamingSourcePath = L"scalablemeshtest" + (L"/" + datasetName);
+                        }
+
 #ifndef VANCOUVER_API                                       
-                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
 #else
-                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);
 #endif
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
@@ -874,8 +829,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
-            if (isSingleFile && m_scmIndexPtr->IsTerrain())
+            if (m_scmIndexPtr->IsTerrain())
                 {
 
                 BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
@@ -1143,7 +1097,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         double flatAreaTile = 0;
         double slopeAreaTile = 0;
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+        if (dtmP != nullptr) 
+#ifdef VANCOUVER_API
+            dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+#else
+            dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1210,7 +1169,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     {
                     if (dtmP != nullptr)
                         {
+#ifdef VANCOUVER_API
                         if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+#else
+                        if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+#endif
                             {
                             flatAreaTile += flat;
                             slopeAreaTile += slope;
@@ -1219,7 +1182,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     }
             }
         else
+#ifdef VANCOUVER_API
           if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile,  0, 0);
+#else
+            if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0, 0);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1275,7 +1242,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                             {
                             if (dtmP != nullptr)
                                 {
+                                #ifdef VANCOUVER_API
                                 if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+                                #else
+                                if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                                #endif
                                     {
                                     retval = DTM_SUCCESS;
                                     flatAreaTile += flat;
@@ -1286,7 +1257,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     
                     }
                 else
+                #ifdef VANCOUVER_API
                 if (dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #else
+                if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #endif
                 
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;
@@ -1421,7 +1396,8 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     if (m_scmIndexPtr != 0)
         {
-        return m_scmIndexPtr->IsTerrain();
+        return true;
+        //return m_scmIndexPtr->IsTerrain();
         }
     return false;
 
@@ -1871,6 +1847,7 @@ template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggl
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
+    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;
     if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
     }
 
@@ -1979,9 +1956,8 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-        //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-        return false;
-
+    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
+    return false;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2058,14 +2034,51 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ConvertToCloud
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& pi_pOutputDirPath) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    s_stream_from_disk = true;
-    s_stream_from_grouped_store = false;
+    WString path;
+    if (server == SMCloudServerType::Azure)
+        {
+        // Setup streaming stores to use Azure
+        s_stream_from_disk = false; 
+        s_stream_from_wsg = false;
 
-    return m_scmIndexPtr->SaveMeshToCloud(this->GetDataSourceAccount(), pi_pOutputDirPath, false);
+        path += outContainerName + L"/" + outDatasetName;
+        }
+    else if (server == SMCloudServerType::WSG)
+        {
+        // Setup streaming stores to use WSG
+        s_stream_from_disk = false;
+        s_stream_from_wsg = true;
+
+        path += outContainerName + L"~2F" + outDatasetName;
+        }
+    else
+        {
+        assert(server == SMCloudServerType::LocalDisk);
+
+        // Setup streaming stores to use local disk (relative to attached stm file location)
+        s_stream_from_disk = true;
+
+        const auto smFileName = BeFileName(this->GetPath());
+        #ifndef VANCOUVER_API
+        path += smFileName.GetDirectoryName();
+        #else
+        BeFileName dirName;
+        dirName = BeFileName(BeFileName::GetDirectoryName(smFileName).c_str());
+        path += dirName;
+        #endif
+        path += L"cloud\\";
+        //NEEDS_WORK_STREAMING: make this work on topaz
+        assert(false);
+        //path += smFileName.GetFileNameWithoutExtension();
+        }
+    
+    //s_stream_from_grouped_store = false;
+
+    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -2090,18 +2103,39 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoade
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
+    s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
 
-    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, true);
+    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMNodeGroup::VIRTUAL);
+
+    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
     return SUCCESS;
     }
 #endif
+
+
+template <class POINT> void ScalableMesh<POINT>::_SetUserFilterCallback(MeshUserFilterCallback callback)
+    {/*
+#ifdef WIP_MESH_IMPORT
+    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
+#endif*/
+    }
+template <class POINT> void ScalableMesh<POINT>::_ReFilter()
+    {
+    size_t depth = m_scmIndexPtr->GetDepth();
+    for (int level = (int)depth-1; level >= 0; level--)
+        {
+        m_scmIndexPtr->Filter(level);
+        }
+    m_scmIndexPtr = 0;
+    }
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin
 +----------------------------------------------------------------------------*/

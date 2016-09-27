@@ -471,10 +471,10 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
 BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix)
     {
     // Testfile.stm will become TestFileSuffix.stm.
-    // Could be used to create a file like "TestFile_Add.stm"
+    // Could be used to create a file like "TestFile_Add.3sm"
     // to specify that the file is the result of a partial update of type "Add".
 
-    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".stm");
+    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".3sm");
     BENTLEY_NAMESPACE_NAME::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
 
     bvector<Utf8CP> newPathStrings;

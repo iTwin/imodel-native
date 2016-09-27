@@ -79,6 +79,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
+DataSourceManager IScalableMeshCreator::Impl::s_dataSourceManager;
+
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -121,11 +123,6 @@ inline const GCS& GetDefaultGCS ()
 
 
 }
-
-
-//NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
-std::atomic<uint64_t> s_nextNodeID = 0;
-
 
 
 /*==================================================================*/
@@ -380,8 +377,7 @@ template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
     {
     WString filterTypeStr;
-
-    //NEEDS_WORK_SM : Document all environments variable like this one somewhere (e.g. : pw:\\Alpo.bentley.com:alpo-bentleygeospatial\Documents\Raster Products\General\environment variables.doc)
+    
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
         {
         ScalableMeshFilterType filterTypeOverwrite = (ScalableMeshFilterType)_wtoi(filterTypeStr.c_str());
@@ -455,9 +451,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
     }
 
 ScalableMeshFilterType scm_getFilterType ()
-    {
-    //NEEDS_WORK_SM - No progressive for mesh
-    //return SCM_FILTER_PROGRESSIVE_DUMB;    
+    {    
     //return SCM_FILTER_CGAL_SIMPLIFIER;
     return SCM_FILTER_DUMB_MESH;
     }
@@ -490,13 +484,13 @@ bool scm_isCompressed ()
 
 
 bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
-            {
-            BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
-            //stmFilename
-            size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
-            assert(size==1);
-            return true;
-            }
+    {
+    BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
+    //stmFilename
+    size_t size = stmFilename.ReplaceAll(L".3sm", L".dgndb");
+    assert(size==1);
+    return true;
+    }
 
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
@@ -511,8 +505,6 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
@@ -536,23 +528,23 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
-        
-
-    // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
-
+            
     if (!isSingleFile)
         {
-        auto position = m_scmFileName.find_last_of(L".stm");
+        // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?
+        auto position = m_scmFileName.find_last_of(L".3sm");
         WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
-        if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
+        BeFileName path(streamingFilePath.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)
             {
-            assert(ERROR_PATH_NOT_FOUND != GetLastError());
+            return ERROR;
             }
 
-        // Pip ToDo: Create account?
-        DataSourceAccount *account = nullptr;                                    
+        // Pip ToDo: Create manager?
+            DataSourceManager *manager = &s_dataSourceManager;                                    
         
-        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

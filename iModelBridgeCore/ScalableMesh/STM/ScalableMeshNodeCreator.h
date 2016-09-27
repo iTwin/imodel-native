@@ -44,6 +44,8 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
         void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
                                     StatusInt&                  status);
 
+        int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
+
         virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true) override;
 
     };

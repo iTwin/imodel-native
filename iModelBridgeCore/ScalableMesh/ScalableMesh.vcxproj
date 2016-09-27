@@ -539,11 +539,10 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="STM\SMPointTileStore.h" />
     <ClInclude Include="stm\SMSQLiteUVIndiceTileStore.h" />
     <ClInclude Include="stm\SMSQLiteUVStore.h" />
-    <ClInclude Include="STM\SMStreamingTextureTileStore.h" />
-    <ClInclude Include="STM\SMStreamingTileStore.h" />
     <ClInclude Include="STM\SMTextureTileStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
     <ClInclude Include="STM\Stores\SMStoreUtils.h" />
@@ -695,7 +694,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
-    <ClCompile Include="STM\SMStreamingTileStore.cpp" />
+    <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />

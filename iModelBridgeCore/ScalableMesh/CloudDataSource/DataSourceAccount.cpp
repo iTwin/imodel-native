@@ -116,13 +116,23 @@ const DataSourceAccount::AccountKey DataSourceAccount::getAccountKey(void) const
     return accountKey;
     }
 
-DataSource * DataSourceAccount::createDataSource(DataSourceManager::DataSourceName &name)
+void DataSourceAccount::setAccountSSLCertificatePath(const AccountSSLCertificatePath & path)
+    {
+    accountSSLCertificatePath = path;
+    }
+
+const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccountSSLCertificatePath(void) const
+    {
+    return accountSSLCertificatePath;
+    }
+
+DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
     {
     return getDataSourceManager().createDataSource(name, *this);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSourceName &name, bool *created)
+DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, bool *created)
     {
     return getDataSourceManager().getOrCreateDataSource(name, *this, created);
     }
@@ -166,7 +176,7 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    return buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
+    return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
@@ -179,11 +189,30 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, Dat
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(const DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
     (void)segmentName;
     (void)dest;
     (void)readSize;
+    (void)size;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
+DataSourceStatus DataSourceAccount::uploadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    (void)dataSource;
+    (void)source;
+    (void)size;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
+DataSourceStatus DataSourceAccount::uploadBlobSync(DataSourceURL & url, const std::wstring & filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    (void)url;
+    (void)filename;
+    (void)source;
     (void)size;
 
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
@@ -245,4 +274,27 @@ DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, Dat
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for specified timeout
     return buffer->waitForSegments(dataSource.getTimeout());
+    }
+
+DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
+    {
+    DataSourceBuffered  *        dataSourceBuffered;
+    DataSourceBuffer    *        buffer;
+
+    (void)dest;
+    (void)readSize;
+    (void)destSize;
+                                                            // Only buffered datasources are supported, so downcast
+    if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Transfer ownership of the DataSource's buffer
+    if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Transfer the buffer to the upload scheduler, where it will eventually be deleted
+    getTransferScheduler().addBuffer(*buffer);
+                                                            // Wait for specified timeout
+    DataSourceStatus status =  buffer->waitForSegments(dataSource.getTimeout());
+    readSize = buffer->getReadSize();
+
+    return status;
     }

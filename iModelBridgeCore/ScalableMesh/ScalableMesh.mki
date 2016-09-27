@@ -36,9 +36,10 @@ nameToDefine = NO_IODEFS
 nameToDefine = NOMINMAX
 %include cdefapnd.mki
 
-#NEEDS_WORK_SM : TEMP_SM_ATP For ATP purpose
-nameToDefine=SCALABLE_MESH_ATP
-%include cdefapnd.mki
+%ifdef SCALABLE_MESH_ATP_COMPILE
+    nameToDefine=SCALABLE_MESH_ATP
+    %include cdefapnd.mki
+%endif
 
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED

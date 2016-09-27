@@ -87,6 +87,15 @@
     <ClCompile Include="ActivitySemaphore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DataSourceAccountWSG.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSourceWSG.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSourceServiceWSG.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ActivitySemaphore.h">
@@ -177,6 +186,15 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\DataSourceDefs.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceAccountWSG.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceWSG.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DataSourceServiceWSG.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>

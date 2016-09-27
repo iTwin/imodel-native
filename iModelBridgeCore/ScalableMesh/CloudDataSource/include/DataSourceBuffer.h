@@ -17,6 +17,10 @@ public:
     typedef ActivitySemaphore::Timeout  Timeout;
     typedef ActivitySemaphore::Status   TimeoutStatus;
 
+private:
+    bool m_isSegmented = false;
+    BufferSize m_totalReadSize = 0;
+
 protected:
     typedef std::vector<BufferData>     Buffer;
 
@@ -28,6 +32,7 @@ protected:
     ActivitySemaphore                   activitySemaphore;
 
     Buffer                              buffer;
+    std::mutex                          mutex;
 
     BufferData                        * externalBuffer;
     BufferSize                          externalBufferSize;
@@ -46,8 +51,6 @@ protected:
     void                                setCurrentSegmentIndex              (SegmentIndex index);
     SegmentIndex                        getCurrentSegmentIndex              (void);
 
-    BufferData                        * getSegment                          (SegmentIndex index);
-
     void                                setExternalBuffer                   (BufferData *extBuffer);
 
     void                                setExternalBufferSize               (BufferSize size);
@@ -64,26 +67,36 @@ public:
                                         DataSourceBuffer                    (void);
                                         DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
 
+                                        ~DataSourceBuffer                   ();
+
+    bool                                isSegmented                         (void);
+
     void                                initializeSegments                  (void);
     void                                initializeSegments                  (BufferSize segmentSize);
 
     void                                setLocator                          (const DataSourceLocator &newLocator);
     DataSourceLocator                &  getLocator                          (void);
 
-    BufferSize                          getSize                             (void);
+    CLOUD_EXPORT BufferSize             getSize                             (void);
     SegmentIndex                        getNumSegments                      (void);
 
     DataSourceStatus                    clear                               (void);
-    DataSourceStatus                    append                              (BufferData *source, BufferSize size);
+    DataSourceStatus                    append                              (const BufferData *source, BufferSize size);
     DataSourceStatus                    expand                              (BufferSize size);
+
+    void                                setSegmented                        (const bool& value);
+    BufferData                        * getSegment                          (SegmentIndex index);
 
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
     void                                signalCancelled                     (void);
-    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds);
+    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds, int numRetries = 1);
 
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);
+
+    void                                updateReadSize                      (DataSourceBuffer::BufferSize readSize);
+    DataSourceBuffer::BufferSize        getReadSize                         (void);
 
 };
 

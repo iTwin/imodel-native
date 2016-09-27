@@ -161,7 +161,7 @@ inline bool Manager<T>::destroyAll(bool deleteItems)
 
     itemMutex.unlock();
 
-    return false;
+    return true;
 }
 
 template<typename T>
@@ -172,9 +172,10 @@ bool typename Manager<T>::apply(ApplyFunction f)
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return false;
                                                             // Iterate over items
-    for (auto it = items.begin(); traverse && it != items.end(); it++)
+    for (auto it = items.begin(); traverse && it != items.end();)
     {
-        traverse = f(it);
+        auto current = it++;
+        traverse = f(current);
     }
 
     itemMutex.unlock();

@@ -5,6 +5,11 @@
 #include "include\DataSourceBuffer.h"
 
 
+bool DataSourceBuffer::isSegmented(void)
+    {
+    return m_isSegmented;
+    }
+
 void DataSourceBuffer::setSegmentSize(BufferSize size)
 {
     segmentSize = size;
@@ -43,6 +48,11 @@ DataSourceBuffer::SegmentIndex DataSourceBuffer::getCurrentSegmentIndex(void)
 {
     return currentSegmentIndex;
 }
+
+void DataSourceBuffer::setSegmented(const bool & value)
+    {
+    m_isSegmented = value;
+    }
 
 DataSourceBuffer::BufferData * DataSourceBuffer::getSegment(SegmentIndex index)
 {
@@ -86,6 +96,16 @@ DataSourceBuffer::BufferSize DataSourceBuffer::getExternalBufferSize(void)
     return externalBufferSize;
 }
 
+void DataSourceBuffer::updateReadSize(DataSourceBuffer::BufferSize readSize)
+    {
+    m_totalReadSize += readSize;
+    }
+
+DataSourceBuffer::BufferSize DataSourceBuffer::getReadSize(void)
+    {
+    return m_totalReadSize;
+    }
+
 DataSourceBuffer::DataSourceBuffer(void)
 {
     clear();
@@ -97,12 +117,22 @@ DataSourceBuffer::DataSourceBuffer(BufferSize size, BufferData * extBuffer)
 {
     initializeSegments(0);
 
-    if (externalBuffer)
+    if (extBuffer)
     {
         setExternalBuffer(extBuffer);
         setExternalBufferSize(size);
     }
+    else
+        {
+        setExternalBuffer(nullptr);
+        setExternalBufferSize(0);
+        }
 }
+
+DataSourceBuffer::~DataSourceBuffer()
+    {
+    std::unique_lock<std::mutex> lock(mutex);
+    }
 
 ActivitySemaphore &DataSourceBuffer::getActivitySemaphore(void)
 {
@@ -155,7 +185,7 @@ DataSourceStatus DataSourceBuffer::clear(void)
     return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceBuffer::append(BufferData *source, BufferSize size)
+DataSourceStatus DataSourceBuffer::append(const BufferData *source, BufferSize size)
 {
     if (getExternalBuffer())
     {
@@ -289,13 +319,20 @@ DataSourceStatus DataSourceBuffer::getTransferStatus(void)
     return transferStatus;
 }
 
-DataSourceStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds)
+DataSourceStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds, int numRetries)
 {
-    TimeoutStatus   timeoutStatus;
-                                                            // Wait for all segments to be processed
-    timeoutStatus = getActivitySemaphore().waitFor(timeoutMilliseconds);
+    std::unique_lock<std::mutex> lock(mutex);
+    TimeoutStatus   timeoutStatus = TimeoutStatus::Status_Error;
+                                                            // Retry after timeout exceeded until activity ceased or numRetries reached
+    int retry = 0;
+    do
+        {
+        // Wait for all segments to be processed
+        timeoutStatus = getActivitySemaphore().waitFor(timeoutMilliseconds);
+        } 
+    while (getDataSourceStatus(timeoutStatus).isFailed() && ++retry < numRetries);
 
-                                                            // If the transfer failed, return an error
+    // TODO: Is transfer status being set in the transfer scheduler?      // If the transfer failed, return an error
     if (getTransferStatus().isFailed())
         return getTransferStatus();
                                                             // If the wait timed out, return a timeout

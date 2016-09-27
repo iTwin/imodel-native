@@ -27,7 +27,7 @@
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
-#include "Stores\SMStreamingDataStore.h"
+#include "SMNodeGroup.h"
 
 class DataSourceAccount;
 
@@ -145,7 +145,8 @@ public:
     typedef std::map<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
    
-    SMPointIndexNode(size_t pi_SplitTreshold,
+    SMPointIndexNode(uint64_t nodeInd, 
+                      size_t pi_SplitTreshold,
                       const EXTENT& pi_rExtent,                                            
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
@@ -203,15 +204,12 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SetParentNode(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
 
-#ifdef SCALABLE_MESH_ATP
     /**----------------------------------------------------------------------------
     Returns the next available node ID
 
     @return next available node ID
     -----------------------------------------------------------------------------*/
     uint64_t GetNextID() const;
-#endif
-
 
     virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true);
             
@@ -567,9 +565,9 @@ public:
     virtual void         AddOpenGroup(const size_t&, SMNodeGroup* pi_pNodeGroup) const;
 
     virtual void         SaveAllOpenGroups() const;
-    
-    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+
+    void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1051,7 +1049,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
+    void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1205,6 +1203,11 @@ public:
     ISMDataStoreTypePtr<EXTENT> GetDataStore();
 
     /**----------------------------------------------------------------------------
+     Returns the next node id available
+    -----------------------------------------------------------------------------*/
+    uint64_t GetNextNodeId();
+
+    /**----------------------------------------------------------------------------
      Forces an immmediate store (to minimize the chances of corruption
     -----------------------------------------------------------------------------*/
     virtual bool        Store();
@@ -1289,10 +1292,10 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
-    
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
+    StatusInt           SavePointsToCloud(DataSourceManager *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
+    StatusInt           SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
+
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
 #endif
@@ -1303,10 +1306,11 @@ public:
 
 #ifdef SCALABLE_MESH_ATP
     unsigned __int64    m_nbInputPoints;
+#endif    
 
     void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
-#endif    
+
 
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
@@ -1468,7 +1472,8 @@ protected:
 #endif
         };
        
-    ISMDataStoreTypePtr<EXTENT>              m_dataStore;
+    ISMDataStoreTypePtr<EXTENT> m_dataStore;
+    std::atomic<uint64_t>       m_nextNodeID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;

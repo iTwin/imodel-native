@@ -30,6 +30,7 @@ protected:
     AzureBlobClient                         blobClient;
     AzureConnectionString                   connectionString;
     DataSourceBuffer::BufferSize            defaultSegmentSize;
+    DataSourceBuffer::Timeout               defaultTimeout;
 
 protected:
 
@@ -54,6 +55,9 @@ public:
         void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
         DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);
 
+        void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
+        DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
+
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
         DataSource                   *      createDataSource                    (void);
@@ -62,6 +66,7 @@ public:
         AzureContainer                      initializeContainer                 (const DataSourceURL &containerName, DataSourceMode mode);
 
         DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-        DataSourceStatus                    downloadBlobSync                    (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 };

@@ -14,8 +14,8 @@ WString GetHeaderForTestType(TestType t)
     {
     switch (t)
         {
-        case TEST_GENERATION:
-            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),GroundDetection (%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GD Accelerator, GD Seed Creation, GD Params Estimation, GD Filter Ground, Ground Duration (minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";            
+        case TEST_GENERATION:            
+            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),Accelerator Used,GroundDetection: Time for seeds(s),GroundDetection: Time for Params Estimation (s), GroundDetection: Time for TIN growing (s),GroundDetection (s),GroundDetection(%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GroundDetection(minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
             break;
         case TEST_PARTIAL_UPDATE:
             return L"";
@@ -62,8 +62,11 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
-        case TEST_SCM_TO_CLOUD:
+        case TEST_SM_TO_CLOUD:
             return L"File Name Original, Directory Name Cloud, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time load all node headers, points Node Pass\n";
+            break;
+        case TEST_CLOUD:
+            return L"Container Name Cloud, Directory Name Cloud, AllTestPass, time process cloud\n";
             break;
         case TEST_RANDOM_DRAPE:
             return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
@@ -144,8 +147,10 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
-        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"scmToCloud"))
-            t = TEST_SCM_TO_CLOUD;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"smToCloud"))
+            t = TEST_SM_TO_CLOUD;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"cloud"))
+            t = TEST_CLOUD;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
             t = TEST_RANDOM_DRAPE;
         //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
@@ -305,8 +310,11 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
                 break;
-            case TEST_SCM_TO_CLOUD:
-                PerformSCMToCloud(pTestNode, pResultFile);
+            case TEST_SM_TO_CLOUD:
+                PerformSMToCloud(pTestNode, pResultFile);
+                break;
+            case TEST_CLOUD:
+                PerformCloudTests(pTestNode, pResultFile);
                 break;
             case TEST_RANDOM_DRAPE:
                 PerformTestDrapeRandomLines(pTestNode, pResultFile);

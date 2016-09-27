@@ -7,6 +7,7 @@
 #include "DataSourceServiceFile.h"
 #include "DataSourceServiceAzure.h"
 #include "include\DataSourceManager.h"
+#include <assert.h>
 
 
 
@@ -62,6 +63,7 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
         if (created)
             *created = false;
                                                             // Return the found DataSource
+        assert(!dataSource->isValid() || dataSource->isEmpty());
         return dataSource;
     }
                                                             // If requested, flag that the DataSource was created

@@ -8,12 +8,14 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
+#undef static_assert
 
 #ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
 namespace BENTLEY_NAMESPACE_NAME
@@ -34,6 +36,8 @@ namespace BENTLEY_NAMESPACE_NAME
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+typedef std::function<bool(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshPts, bvector<bvector<int32_t>>& newMeshIndexes, bvector<Utf8String>& newMeshMetadata, bvector<bvector<DPoint2d>>& newMeshUvs, bvector<bvector<uint8_t>>& newMeshTex, const bvector<IScalableMeshMeshPtr>& submeshes, const bvector<Utf8String>& meshMetadata, DRange3d nodeExt)> MeshUserFilterCallback;
+
 struct IScalableMesh;
 typedef RefCountedPtr<IScalableMesh> IScalableMeshPtr;
 
@@ -53,6 +57,13 @@ enum DTMAnalysisType
     Precise =0,
     Fast,
     Qty
+    };
+
+enum SMCloudServerType
+    {
+    LocalDisk = 0,
+    Azure,
+    WSG
     };
 
 /*=================================================================================**//**
@@ -130,13 +141,17 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _ConvertToCloud(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
-        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
+
+        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) = 0;
+        virtual void _ReFilter() = 0;
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
@@ -272,7 +287,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const;
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
@@ -296,7 +311,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
-        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
+
+        BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        BENTLEY_SM_EXPORT void ReFilter();
 
     };
 

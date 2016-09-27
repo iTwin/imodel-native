@@ -2,6 +2,7 @@
 #include "DataSourceBuffered.h"
 #include "DataSourceAccount.h"
 #include <assert.h>
+#include "include\DataSourceBuffered.h"
 
 
 DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
@@ -61,6 +62,10 @@ bool DataSourceBuffered::isValid(void)
     return (getBuffer() != nullptr);
 }
 
+bool DataSourceBuffered::isEmpty(void)
+    {
+    return (0 == getBuffer()->getSize());
+    }
 
 DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
@@ -79,7 +84,7 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     if(size > 0)
     {
                                                                 // Size the buffer ready to read segmented data into it
-        if ((status = initializeBuffer(size, dest)).isFailed())
+        if ((status = initializeBuffer(size, dest, true)).isFailed())
             return status;
 
                                                                 // Download segments to the buffer
@@ -93,15 +98,19 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     else
     {
                                                                 // Download unknown size
-        status = account->downloadBlobSync(*this, dest, destSize, readSize);
-    }
+        if ((status = initializeBuffer(destSize, dest, false)).isFailed())
+            return status;
+
+        status = account->download(*this, dest, destSize, readSize);
+        assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
+     }
 
     assert(status.isOK());
                                                                 // Return status
     return status;
 }
 
-DataSourceStatus DataSourceBuffered::write(Buffer * source, DataSize size)
+DataSourceStatus DataSourceBuffered::write(const Buffer * source, DataSize size)
 {
     DataSourceStatus    status;
                                                                 // If buffer is not defined, initialize one
@@ -118,7 +127,7 @@ DataSourceStatus DataSourceBuffered::write(Buffer * source, DataSize size)
 
 
 
-DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSize size, DataSource::Buffer *existingBuffer)
+DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSize size, DataSource::Buffer *existingBuffer, bool sizeKnown)
 {
     if (getBuffer())
     {
@@ -129,8 +138,17 @@ DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSi
 
     if (getBuffer())
     {
-        getBuffer()->initializeSegments(getSegmentSize());
-
+        if (sizeKnown)
+            {
+            getBuffer()->setSegmented(true);
+            getBuffer()->initializeSegments(getSegmentSize());
+            }
+        else
+            {
+            getBuffer()->setSegmented(false);
+                                                    // this will likely create only one segment (if size if large enough)
+            getBuffer()->initializeSegments(size);
+            }
         return DataSourceStatus();
     }
 
@@ -145,19 +163,26 @@ DataSourceStatus DataSourceBuffered::open(const DataSourceURL & sourceURL, DataS
 
 DataSourceStatus DataSourceBuffered::flush(void)
 {
-    DataSourceStatus          status;
     DataSourceAccount    *    account;
 
     if ((account = getAccount()) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
 
-    if (getMode() == DataSourceMode_Write)
+    if (getMode() == DataSourceMode_Write_Segmented)
     {
         account->uploadSegments(*this);
     }
+    else if (getMode() == DataSourceMode_Write)
+        {
+        auto buffer = this->getBuffer();
 
+        account->uploadBlobSync(*this, buffer->getSegment(0), buffer->getSize());
+                          // Upload of this buffer is complete, delete it
+        delete buffer;
+        setBuffer(nullptr);
+        }
 
-    return status;
+    return DataSourceStatus();
 }
 
 DataSourceStatus DataSourceBuffered::close(void)
