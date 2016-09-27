@@ -28,8 +28,6 @@
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
-        
-        <!-- Changing this SubPart? Please update the same SubPart in DgnClientFx:DgnClientFx:DgnClientSdk-Tested. -->
         <SubPart LibType="Static" PartName="UnitTests_Documents" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     </Product>
 
