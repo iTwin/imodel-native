@@ -6,6 +6,8 @@
 |
 +-------------------------------------------------------------------------------------*/
 
+#define BBOXQUERY
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -93,12 +95,19 @@ namespace IndexECPlugin.Source.Helpers
 
                 string columnName = columnNamePropVal.StringValue;
 
-                if ((prop.GetCustomAttributes("DBColumn") != null) && 
-                    (prop.GetCustomAttributes("DBColumn")["IsSpatial"] != null) &&
-                     (!prop.GetCustomAttributes("DBColumn")["IsSpatial"].IsNull) &&
-                     (prop.GetCustomAttributes("DBColumn")["IsSpatial"].StringValue.ToLower() == "true") )
+                if ( prop.IsSpatial() )
                     {
                     sqlInsertQueryBuilder.AddSpatialColumnName(columnName);
+                    
+#if (BBOXQUERY)
+                    if(prop.GetCustomAttributes("SpatialBBox") != null)
+                        {
+                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].Type);
+                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].Type);
+                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].Type);
+                        sqlInsertQueryBuilder.AddColumnName(prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].StringValue, prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].Type);
+                        }
+#endif
                     }
                 else
                     {
@@ -153,7 +162,7 @@ namespace IndexECPlugin.Source.Helpers
                         }
                     string columnName = columnNamePropVal.StringValue;
                     IECPropertyValue propValue = instance.GetPropertyValue(prop.Name);
-                    if(propValue == null || propValue.IsNull)
+                    if ( propValue == null || propValue.IsNull )
                         {
                         row.Add(columnName, null);
                         }
@@ -161,7 +170,33 @@ namespace IndexECPlugin.Source.Helpers
                         {
                         row.Add(columnName, propValue.StringValue);
                         }
+#if (BBOXQUERY)
+                    if ( prop.IsSpatial() )
+                        {
+                        if ( prop.GetCustomAttributes("SpatialBBox") != null )
+                            {
+                            if ( propValue == null || propValue.IsNull )
+                                {
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, null);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].StringValue, null);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].StringValue, null);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].StringValue, null);
+                                }
+                            else
+                                {
+                                string WKT = DbGeometryHelpers.CreateWktPolygonString(DbGeometryHelpers.CreatePolygonModelFromJson(propValue.StringValue).points);
+                                BBox bbox = DbGeometryHelpers.ExtractBboxFromWKTPolygon(WKT);
+
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MinXColumnName"].StringValue, bbox.minX);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MaxXColumnName"].StringValue, bbox.maxX);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MinYColumnName"].StringValue, bbox.minY);
+                                row.Add(prop.GetCustomAttributes("SpatialBBox")["MaxYColumnName"].StringValue, bbox.maxY);
+                                }
+                            }
+                        }
+#endif
                     }
+
                 if ( additionalColumns != null )
                     {
                     foreach ( Tuple<string, IECType, Func<IECInstance, string>> additionalColumn in additionalColumns )

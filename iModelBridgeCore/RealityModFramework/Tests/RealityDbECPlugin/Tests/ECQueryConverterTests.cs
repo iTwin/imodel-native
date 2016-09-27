@@ -1,4 +1,6 @@
-﻿using Bentley.EC.Persistence.Query;
+﻿#define BBOXQUERY
+
+using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
 using Bentley.ECObjects.XML;
@@ -374,8 +376,11 @@ namespace IndexECPlugin.Tests
             string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE tab0.Footprint.STIntersects(geometry::STGeomFromText('POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))',4326)) = 'true' ;
-
+#if (BBOXQUERY)
+            Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(fromTableString) + @".*WHERE(.*(MinX|MaxX|MinY|MaxY)){4}.*");
+#else
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(fromTableString) + @".*WHERE.*STIntersects.*\('POLYGON \(\(30 10, 40 40, 20 40, 10 20, 30 10\)\)',4326\).*");
+#endif
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             }
 

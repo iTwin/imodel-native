@@ -52,6 +52,46 @@ namespace IndexECPlugin.Source
         }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public class BBox
+        {
+        /// <summary>
+        /// 
+        /// </summary>
+        public double minX
+            {
+            get;
+            set;
+            }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double maxX
+            {
+            get;
+            set;
+            }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double minY
+            {
+            get;
+            set;
+            }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double maxY
+            {
+            get;
+            set;
+            }
+
+        }
+
+    /// <summary>
     /// TO BE DONE
     /// </summary>
     public class PolygonDescriptor

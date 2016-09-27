@@ -165,13 +165,6 @@ namespace IndexECPlugin.Source.Helpers
                             if ( ecClass.Contains(prop.Name) )
                                 {
                                 IECPropertyValue instancePropertyValue = instance[prop.Name];
-                                IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
-
-                                //if ( dbColumn == null )
-                                //    {
-                                //    //This is not a column in the sql table. We skip it...
-                                //    continue;
-                                //    }
 
                                 int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
 
@@ -182,8 +175,7 @@ namespace IndexECPlugin.Source.Helpers
                                     //throw new ProgrammerException("There should have been a column number.");
                                     }
 
-                                IECPropertyValue isSpatial = dbColumn != null ? dbColumn["IsSpatial"] : null;
-                                if ( isSpatial == null || isSpatial.IsNull || isSpatial.StringValue.ToLower() == "false" )
+                                if ( !prop.IsSpatial() )
                                     {
 
                                     if ( !reader.IsDBNull(columnNumber.Value) )

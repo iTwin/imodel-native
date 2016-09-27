@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
+#define BBOXQUERY
 
 using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.Query;
@@ -168,11 +169,10 @@ namespace IndexECPlugin.Source.Helpers
 
                 TableDescriptor tempTable2 = JoinInternalColumn(tempTable1, dbColumn);
                 string columnName = dbColumn["ColumnName"].StringValue;
-                var isSpatialProperty = dbColumn["IsSpatial"];
 
                 ColumnCategory columnCategory = ColumnCategory.spatialInstanceData;
 
-                if ( isSpatialProperty.IsNull || isSpatialProperty.StringValue.ToLower() == "false" )
+                if ( !property.IsSpatial() )
                     {
                     columnCategory = ColumnCategory.instanceData;
                     }
@@ -669,9 +669,6 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 m_sqlQueryBuilder.AddOperatorToWhereClause(LogicalOperator.AND);
                 }
-
-            TableDescriptor propertyTable = tableToJoin;
-            string columnName = null;
             foreach ( var prop in queriedClass )
                 {
                 IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
@@ -680,10 +677,11 @@ namespace IndexECPlugin.Source.Helpers
                     //This is not a column in the sql table. We skip it...
                     continue;
                     }
-                var isSpatialProperty = dbColumn["IsSpatial"];
-                if ( !isSpatialProperty.IsNull && isSpatialProperty.StringValue.ToLower() == "true" )
+
+                if ( prop.IsSpatial() )
                     {
-                    columnName = dbColumn.GetPropertyValue("ColumnName").StringValue;
+                    string columnName = dbColumn.GetPropertyValue("ColumnName").StringValue;
+                    TableDescriptor propertyTable = tableToJoin;
 
                     if ( queriedClass != prop.ClassDefinition )
                         {
@@ -691,21 +689,25 @@ namespace IndexECPlugin.Source.Helpers
                         }
 
                     propertyTable = JoinInternalColumn(propertyTable, dbColumn);
-                    break;
+
+#if (BBOXQUERY)
+                    IECInstance spatialBBox = prop.GetCustomAttributes("SpatialBBox");
+                    if(spatialBBox == null)
+                        {
+                        throw new ProgrammerException("The SpatialBBox attribute should be set on the spatial property.");
+                        }
+                    string minXCol = spatialBBox["MinXColumnName"].StringValue;
+                    string maxXCol = spatialBBox["MaxXColumnName"].StringValue;
+                    string minYCol = spatialBBox["MinYColumnName"].StringValue;
+                    string maxYCol = spatialBBox["MaxYColumnName"].StringValue;
+                    m_sqlQueryBuilder.AddBBoxIntersectsWhereClause(propertyTable.Alias, minXCol, maxXCol, minYCol, maxYCol, DbGeometryHelpers.ExtractBboxFromWKTPolygon(m_polygonDescriptor.WKT));
+#else
+                    m_sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, m_polygonDescriptor.WKT, m_polygonDescriptor.SRID);
+#endif
+                    return;
                     }
                 }
-            if ( String.IsNullOrWhiteSpace(columnName) )
-                {
                 throw new UserFriendlyException("The class for which you requested a spatial query does not have any spatial property.");
-                }
-
-            m_sqlQueryBuilder.AddSpatialIntersectsWhereClause(propertyTable.Alias, columnName, m_polygonDescriptor.WKT, m_polygonDescriptor.SRID);
-
             }
-
-        //private string GetNewTableAlias ()
-        //    {
-        //    return String.Format("tab{0}", m_tabNumber++);
-        //    }
         }
     }
