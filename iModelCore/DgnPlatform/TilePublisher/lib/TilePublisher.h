@@ -77,6 +77,7 @@ protected:
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual TileGenerationCacheCR _GetCache() const = 0;
+    virtual bool _OmitFromTileset(TileNodeCR) const { return false; }
 
     TILEPUBLISHER_EXPORT Status Setup();
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);

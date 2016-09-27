@@ -191,7 +191,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 PublisherContext::Status TilePublisher::Publish()
     {
     if (m_meshes.empty())
-        return PublisherContext::Status::Success;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     
@@ -952,6 +952,12 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
+    if (_OmitFromTileset(tile))
+        {
+        range = DRange3d::NullRange();
+        return;
+        }
+
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
