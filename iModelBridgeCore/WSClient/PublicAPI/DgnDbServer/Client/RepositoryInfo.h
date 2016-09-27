@@ -35,14 +35,14 @@ public:
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr ReadFromDb(Dgn::DgnDbCR db);
 
     //__PUBLISH_SECTION_END__
-    static DgnDbServerStatusResult ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db);
-    static DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId const& briefcaseId);
     bool operator==(RepositoryInfoCR rhs) const;
     static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
     //__PUBLISH_SECTION_START__
+
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult ReadRepositoryInfo(Dgn::DgnDbCR db);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId = false) const;
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const;
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetServerURL() const;

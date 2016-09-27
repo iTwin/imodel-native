@@ -45,17 +45,6 @@ RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8Stri
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             09/2016
-//---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::ReadFromDb(Dgn::DgnDbCR db)
-    {
-    RepositoryInfoPtr repositoryInfo = std::make_shared<RepositoryInfo>();
-    if (ReadRepositoryInfo(*repositoryInfo, db).IsSuccess())
-        return repositoryInfo;
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 Utf8StringCR RepositoryInfo::GetDescription() const
@@ -114,7 +103,7 @@ DateTimeCR RepositoryInfo::GetCreatedDate() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db)
+DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
     {
     const Utf8String methodName = "RepositoryInfo::ReadRepositoryInfo";
     Utf8String serverUrl;
@@ -125,7 +114,8 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repos
         status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryId, id);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         {
-        repositoryInfo = RepositoryInfo(serverUrl, id);
+        m_serverUrl = serverUrl;
+        m_id        = id;
         return DgnDbServerStatusResult::Success();
         }
     auto error = DgnDbServerError(db, status);
@@ -136,18 +126,18 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repos
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId const& briefcaseId)
+DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId) const
     {
     const Utf8String methodName = "RepositoryInfo::WriteRepositoryInfo";
     BeSQLite::DbResult status;
-    Utf8String parentRevisionId = db.Revisions().GetParentRevisionId();
+    Utf8String parentRevisionId = clearLastPulledRevisionId ? "" : db.Revisions().GetParentRevisionId();
     status = db.ChangeBriefcaseId(briefcaseId);
 
     //Write the RepositoryInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryURL, repositoryInfo.GetServerURL());
+        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryURL, GetServerURL());
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, repositoryInfo.GetId());
+        status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, GetId());
 
     //ParentRevisionId is reset when changing briefcase Id
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
