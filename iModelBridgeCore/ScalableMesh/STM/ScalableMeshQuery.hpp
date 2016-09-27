@@ -1924,6 +1924,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                  assert(status == SUCCESS);
                  }*/
+                if (!IsHeaderLoaded()) LoadNodeHeader();
                 texLoaded = GetOrLoadAllTextureData(displayCacheManagerPtr);
                 }
 

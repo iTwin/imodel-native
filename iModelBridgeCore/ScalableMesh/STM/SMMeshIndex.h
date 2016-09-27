@@ -670,7 +670,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
      uint64_t GetSingleTextureID()
          {
-         return m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+         return m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
          }
 
      bool GetAllDisplayTextures(bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>>& textures)
