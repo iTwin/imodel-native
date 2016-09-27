@@ -97,13 +97,20 @@ bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elemId) const
+GeometrySourceCP TileGenerationCache::AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        m_geometrySources.insert(GeometrySourceMap::value_type(elemId, source));
-        }
+    if (!WantCacheGeometrySources())
+        return source.get();
+
+    BeMutexHolder lock(m_mutex);
+
+    // May already exist in cache...if so we've moved from it and it will be destroyed...otherwise it's now owned by cache
+    m_geometrySources.insert(GeometrySourceMap::value_type(elemId, std::move(source)));
+
+    // Either way, we know an now exists in cache for this element
+    auto existing = GetCachedGeometrySource(elemId);
+    BeAssert(nullptr != existing);
+    return existing;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,15 +118,12 @@ void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        auto iter = m_geometrySources.find(elemId);
-        if (m_geometrySources.end() != iter)
-            return iter->second.get();
-        }
+    if (!WantCacheGeometrySources())
+        return nullptr;
 
-    return nullptr;
+    BeMutexHolder lock(m_mutex);
+    auto iter = m_geometrySources.find(elemId);
+    return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
 //=======================================================================================
@@ -1248,9 +1252,9 @@ private:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
-    static std::shared_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
-        std::shared_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        std::unique_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
         if (!pSrc->IsValid())
             return nullptr;
 
@@ -1345,9 +1349,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
         stmt.Reset();
         m_cache.GetDbMutex().Leave();
 
-        pSrc = geomSrcPtr.get();
-        if (m_cache.WantCacheGeometrySources())
-            m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
+        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
 
         if (nullptr != pSrc)
             status = VisitGeometry(*pSrc);
