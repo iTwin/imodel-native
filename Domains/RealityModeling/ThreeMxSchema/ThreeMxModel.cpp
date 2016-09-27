@@ -381,7 +381,7 @@ struct  PublishTileNode : TileNode
     ClipVectorCPtr      m_clip;
 
     PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
-        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent), m_scene(&scene), m_node(&node), m_clip(clip) { }
+        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
 
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
