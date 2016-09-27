@@ -1116,7 +1116,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
     Status                  status;
-    static size_t           s_maxPointsPerTile = 20000;
+    static size_t           s_maxPointsPerTile = 200000;
 
     if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
         return status;

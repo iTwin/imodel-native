@@ -599,11 +599,9 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
-    static size_t           s_maxPointsPerTile = 20000;
-
     TileModelCategoryFilter filter(GetDgnDb(), &m_allModels, &m_allCategories);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), s_maxPointsPerTile, &filter, &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), &filter, &progressMeter);
 
     DRange3d            range;
 

@@ -160,7 +160,7 @@ DRange3d TileGenerationCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter)
+void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
     static const Utf8CP s_sql =
@@ -887,15 +887,15 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
+TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb),
-    m_maxPointsPerTile(maxPointsPerTile), m_cache(TileGenerationCache::Options::CacheGeometrySources)
+    m_cache(TileGenerationCache::Options::CacheGeometrySources)
     {
     StopWatch timer(true);
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
     m_progressMeter._IndicateProgress(0, 1);
 
-    m_cache.Populate(m_dgndb, maxPointsPerTile, nullptr != filter ? *filter : s_defaultFilter);
+    m_cache.Populate(m_dgndb, nullptr != filter ? *filter : s_defaultFilter);
 
     m_progressMeter._IndicateProgress(1, 1);
 
@@ -1071,8 +1071,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t max
 
     // Collect the tiles
     static const double s_leafTolerance = 0.01;
-    double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
-    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
+    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
     root->ComputeTiles(s_leafTolerance, maxPointsPerTile, m_cache);
 
     m_statistics.m_collectionTime = timer.GetCurrentSeconds();
@@ -1113,44 +1112,50 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t TileNode::ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cache) const
+    {
+    ComputeFacetCountTreeHandler handler(range);
+
+    cache.GetTree().Traverse(handler);
+
+    return handler.m_facetCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache)
     {
-    static const size_t s_depthLimit = 0xffff;
-    static const double s_targetChildCount = 5.0;
+    static const double s_minToleranceRatio = 100.0;
 
-    ComputeFacetCountTreeHandler handler(GetDgnRange());
-    cache.GetTree().Traverse(handler);
+    m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
 
-
-    size_t facetCount = handler.m_facetCount;
-    if (facetCount < maxPointsPerTile)
+    if (m_tolerance < chordTolerance || ComputeFacetCount (GetDgnRange(), cache) < maxPointsPerTile)
         {
         m_tolerance = chordTolerance;
+        return;
         }
-    else if (m_depth < s_depthLimit)
+
+    bvector<DRange3d>           subRanges;
+    size_t                      siblingIndex = 0;
+    static const size_t         s_splitCount = 3;       // OctTree.
+
+    ComputeChildTileRanges (subRanges, m_dgnRange, s_splitCount);
+    for (auto& subRange : subRanges)
         {
-        bvector<DRange3d> subRanges;
-        size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
-        size_t siblingIndex = 0;
+        TileNodePtr    child = TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, this);
 
-        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, cache);
-        for (auto& subRange : subRanges)
-            {
-            double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, childTolerance, this));
-            }
-
-        for (auto& child : m_children)
-            child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        m_children.push_back(child);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache)
+void TileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR range, size_t splitCount)
     {
     bvector<DRange3d> bisectRanges;
     DVec3d diagonal = range.DiagonalVector();
@@ -1177,21 +1182,13 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
         bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, bisectValue, range.high.x, range.high.y, range.high.z));
         }
 
+    splitCount--;
     for (auto& bisectRange : bisectRanges)
         {
-        ComputeFacetCountTreeHandler handler(bisectRange);
-        cache.GetTree().Traverse(handler);
-
-        size_t facetCount = handler.m_facetCount;
-        if (facetCount < maxPointsPerSubTile)
-            {
-            if (facetCount != 0)
-                subRanges.push_back(bisectRange);
-            }
+        if (0 == splitCount)
+            subRanges.push_back (bisectRange);
         else
-            {
-            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, cache);
-            }
+            ComputeChildTileRanges(subRanges, bisectRange, splitCount);
         }
     }
 
