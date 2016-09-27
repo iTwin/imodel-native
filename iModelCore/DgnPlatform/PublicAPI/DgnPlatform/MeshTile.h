@@ -388,7 +388,7 @@ struct TileGenerationCache
     };
 private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
-    typedef std::map<DgnElementId, std::shared_ptr<GeometrySource>> GeometrySourceMap;
+    typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
     XYZRangeTreeRoot*           m_tree;
     mutable GeometryListMap     m_geometry;
@@ -408,7 +408,7 @@ public:
 
     bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
     GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
-    void AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elementId) const;
+    GeometrySourceCP AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elementId) const;
 
     bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
