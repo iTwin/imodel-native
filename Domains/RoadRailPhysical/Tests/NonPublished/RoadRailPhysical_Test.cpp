@@ -44,11 +44,15 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
 
     // Create RoadSegment #1
     auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(0), DistanceExpression(50));
-    ASSERT_TRUE(roadSegment1Ptr->Insert().IsValid());
+    auto roadSegment1CPtr = roadSegment1Ptr->Insert();
+    ASSERT_TRUE(roadSegment1CPtr.IsValid());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment
     auto transitionPtr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(50), DistanceExpression(100));
-    ASSERT_TRUE(transitionPtr->Insert().IsValid());
+    auto transitionCPtr = transitionPtr->Insert();
+    ASSERT_TRUE(transitionCPtr.IsValid());
+    ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
 
     // Create RoadSegment #2
     auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(100), DistanceExpression(150));
@@ -61,7 +65,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
     ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
 
-    auto transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
+    transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
     ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromToLocation()->GetFromPosition().GetDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
 #pragma endregion
