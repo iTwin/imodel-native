@@ -1087,15 +1087,19 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 {
     DRange3d        m_range;
     size_t          m_facetCount = 0;
+    size_t          m_maxFacetCount;
 
-    ComputeFacetCountTreeHandler(DRange3dCR range) : m_range(range) { }
+    ComputeFacetCountTreeHandler(DRange3dCR range, size_t maxFacetCount) : m_range(range), m_maxFacetCount(maxFacetCount) { }
 
     virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
         {
-        return pInterior->Range().IntersectsWith(m_range);
+        return !Exceeded() && pInterior->Range().IntersectsWith(m_range);
         }
     virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
         {
+        if (Exceeded())
+            return false;
+
         DRange3d intersection;
         intersection.IntersectionOf(pLeaf->Range(), m_range);
         if (!intersection.IsNull())
@@ -1109,18 +1113,20 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 
         return true;
         }
+
+    bool Exceeded() const { return m_facetCount >= m_maxFacetCount; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t TileNode::ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cache) const
+bool TileNode::ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const
     {
-    ComputeFacetCountTreeHandler handler(range);
+    ComputeFacetCountTreeHandler handler(GetDgnRange(), maxFacetCount);
 
     cache.GetTree().Traverse(handler);
 
-    return handler.m_facetCount;
+    return handler.Exceeded();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1132,7 +1138,7 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Tile
 
     m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
 
-    if (m_tolerance < chordTolerance || ComputeFacetCount (GetDgnRange(), cache) < maxPointsPerTile)
+    if (m_tolerance < chordTolerance || !ExceedsFacetCount(maxPointsPerTile, cache))
         {
         m_tolerance = chordTolerance;
         return;

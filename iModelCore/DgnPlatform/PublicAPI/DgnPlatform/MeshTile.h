@@ -435,7 +435,7 @@ private:
     Transform           m_transformFromDgn;
     mutable DRange3d    m_publishedRange;
 
-    size_t ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cach) const;
+    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
 
 protected:
     TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
