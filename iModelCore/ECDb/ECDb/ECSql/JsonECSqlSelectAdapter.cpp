@@ -9,6 +9,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -601,6 +602,14 @@ bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue co
     const Byte* data = (const Byte *)ecsqlValue.GetBinary(&size);
     ECValue ecValue;
     ecValue.SetBinary(data, (size_t) size, false);
+
+    if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
+        {
+        Utf8String encoded;
+        Base64Utilities::Encode(encoded, data, size);
+        jsonValue = encoded;
+        return true;
+        }
     return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     // TODO: Raw binary values needs to be Base64 encoded here
     }
