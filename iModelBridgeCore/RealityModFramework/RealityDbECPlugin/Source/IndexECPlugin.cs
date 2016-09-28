@@ -279,7 +279,14 @@ namespace IndexECPlugin.Source
             catch ( Exception e )
                 {
                 Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
-                throw;
+                if ( e is UserFriendlyException )
+                    {
+                    throw;
+                    }
+                else
+                    {
+                    throw new Exception("Internal Error.");
+                    }
                 }
             }
 
@@ -335,7 +342,14 @@ namespace IndexECPlugin.Source
             catch ( Exception e )
                 {
                 Log.Logger.error(String.Format("Aborting retrieval of instance {0}. Error message : {1}", instance.InstanceId, e.Message));
-                throw;
+                if ( e is UserFriendlyException )
+                    {
+                    throw;
+                    }
+                else
+                    {
+                    throw new Exception("Internal Error.");
+                    }
                 }
             }
 
@@ -372,7 +386,14 @@ namespace IndexECPlugin.Source
             catch ( Exception e )
                 {
                 Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}", e.Message, instance.InstanceId));
-                throw;
+                if ( e is UserFriendlyException )
+                    {
+                    throw;
+                    }
+                else
+                    {
+                    throw new Exception("Internal Error.");
+                    }
                 }
 
             }

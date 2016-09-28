@@ -48,6 +48,7 @@ namespace IndexECPlugin.Source.QueryProviders
         Dictionary<IECClass, List<IECInstance>> m_storageForCaching;
         Dictionary<string, IECInstance> m_storedParents;
 
+        const string termsOfUse = "https://www2.usgs.gov/laws/info_policies.html";
         const string legalString = " courtesy of the U.S. Geological Survey";
         const string subAPIString = "USGS";
         const string rawMetadataFormatString = "FGDC";
@@ -631,6 +632,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["Legal"].StringValue = instanceMetadata["Legal"].StringValue;
                 }
 
+            instance["TermsOfUse"].StringValue = instanceMetadata["TermsOfUse"].StringValue;
+
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
             instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
             instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
@@ -742,6 +745,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
                 }
+
             //AccessConstraints
 
             instance["AccessConstraints"].SetToNull();
@@ -947,6 +951,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
                 }
+
+            instance["TermsOfUse"].StringValue = termsOfUse;
 
             //Lineage
 
@@ -1342,6 +1348,8 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         instance["Legal"].StringValue = item.Title + legalString;
 
+                        instance["TermsOfUse"].StringValue = termsOfUse;
+
                         var bbox = jtoken["boundingBox"];
 
                         if ( bbox != null )
@@ -1497,6 +1505,9 @@ namespace IndexECPlugin.Source.QueryProviders
             SEBInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
 
             metadataInstance["Legal"].StringValue = item.Title + legalString;
+
+            metadataInstance["TermsOfUse"].StringValue = termsOfUse;
+
             metadataInstance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
 
             if ( item.Date.HasValue )
