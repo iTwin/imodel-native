@@ -222,7 +222,7 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 static bool s_waitCheckStop = false;
 static Byte s_transparency = 100;
-static bool s_applyClip = true;
+static bool s_applyClip = false;
 static bool s_dontShowMesh = false;
 
 
