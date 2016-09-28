@@ -336,7 +336,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
 
     if (!isImportingSchemas && isJoinedTableMapping)
         parentClassMap = nullptr;
-    
+
 
     std::vector<ECPropertyCP> propertiesToCreatePropMapsFor;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
@@ -414,7 +414,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
                 ctx.EndSaving(*this);
                 //!WIP save this property map
                 //BeAssert(false);
-        
+
                 //we need to save this map
                 }
             }
@@ -638,45 +638,43 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
+BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
-    if (!mapInfo.HasMappedProperties())
+    if (!dbLoadCtx.HasMappedProperties())
         {
         SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
-    else
+
+    for (auto const& propMapping : dbLoadCtx.GetPropertyMaps())
         {
-        for (auto const& propMapping : mapInfo.GetPropertyMaps())
+        std::vector<DbColumn const*> const& columns = propMapping.second;
+        for (DbColumn const* column : columns)
             {
-            std::vector<DbColumn const*> const& columns = propMapping.second;
-            for (DbColumn const* column : columns)
+            if (column->GetTable().GetType() == DbTable::Type::Joined)
+                joinedTables.insert(&column->GetTableR());
+            else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
                 {
-                if (column->GetTable().GetType() == DbTable::Type::Joined)
-                    joinedTables.insert(&column->GetTableR());
-                else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
-                    {
-                    tables.insert(&column->GetTableR());
-                    }
+                tables.insert(&column->GetTableR());
                 }
             }
-
-        for (DbTable* table : tables)
-            SetTable(*table, true);
-
-        for (DbTable* table : joinedTables)
-            SetTable(*table, true);
-
-        BeAssert(!GetTables().empty());
         }
 
+    for (DbTable* table : tables)
+        SetTable(*table, true);
+
+    for (DbTable* table : joinedTables)
+        SetTable(*table, true);
+
+    BeAssert(!GetTables().empty());
+        
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
-    std::vector<DbColumn const*> const* mapColumnsList = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    std::vector<DbColumn const*> const* mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
     if (mapColumnsList == nullptr)
         return ERROR;
 
@@ -687,14 +685,14 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
         return ERROR;
 
-    mapColumnsList = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
     if (mapColumnsList == nullptr)
         return ERROR;
 
     if (ConfigureECClassId(*mapColumnsList, true) != SUCCESS)
         return ERROR;
 
-	return AddPropertyMaps(ctx, nullptr, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
+    return AddPropertyMaps(ctx, nullptr, &dbLoadCtx, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

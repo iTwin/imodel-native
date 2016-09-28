@@ -291,6 +291,79 @@ TEST_F(ECSqlStatementTestFixture, IntersectTests)
     ASSERT_EQ(1, rowCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
+    {
+    const int rowCountPerClass = 3;
+    ECDbCR ecdb = SetupECDb("nullliteralpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(PRIMITIVETYPE_Point3D, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+    }
+
+    bmap<Utf8CP, bool> ecsqls;
+    ecsqls["SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT P3D FROM ecsql.P"] = true;
+
+    ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT P3D FROM ecsql.P"] = false;
+
+    ecsqls["SELECT CAST(NULL AS Point2D) FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT P3D FROM ecsql.P"] = false;
+
+    ecsqls["SELECT P3D FROM ecsql.P "
+        "UNION ALL "
+        "SELECT NULL FROM ecsql.PASpatial"] = true;
+
+    ecsqls["SELECT NULL FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT P3D FROM ecsql.P"] = false;
+
+    ecsqls["SELECT P3D FROM ecsql.P "
+        "UNION ALL "
+        "SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial"] = true;
+
+    ecsqls["SELECT P3D FROM ecsql.P "
+        "UNION ALL "
+        "SELECT CAST(NULL AS Double) FROM ecsql.PASpatial"] = false;
+
+    ecsqls["SELECT P3D FROM ecsql.P "
+        "UNION ALL "
+        "SELECT CAST(NULL AS Point2D) FROM ecsql.PASpatial"] = false;
+
+    for (bpair<Utf8CP, bool> const& kvPair : ecsqls)
+        {
+        Utf8CP ecsql = kvPair.first;
+        const bool expectedToSucceed = kvPair.second;
+
+        if (!expectedToSucceed)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql)) << ecsql;
+            continue;
+            }
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << ecsql;
+
+        int actualRowCount = 0;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            ASSERT_EQ(PRIMITIVETYPE_Point3D, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType()) << ecsql;
+            actualRowCount++;
+            }
+        ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2638,7 +2711,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     ECDbIssue lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.IsIssue()) << "After preparing invalid ECSQL.";
     Utf8String actualLastStatusMessage = lastIssue.GetMessage();
-    ASSERT_STREQ(actualLastStatusMessage.c_str(), "ECClass 'blablabla' does not exist. Try using fully qualified class name: <schema name>.<class name>.");
+    ASSERT_STREQ(actualLastStatusMessage.c_str(), "Invalid ECClass expression 'blablabla'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>");
 
     stmt.Finalize();
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Finalize";

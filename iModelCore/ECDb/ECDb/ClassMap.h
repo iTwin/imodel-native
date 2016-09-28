@@ -122,6 +122,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
+
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 

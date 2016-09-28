@@ -185,6 +185,9 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& curr
     if (currentProfileVersion < SchemaVersion(3, 7, 3, 1))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3731()));
 
+    if (currentProfileVersion < SchemaVersion(3, 7, 3, 2))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3732()));
+
     for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(ecdb);

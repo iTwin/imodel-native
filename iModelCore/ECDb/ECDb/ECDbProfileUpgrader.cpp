@@ -13,6 +13,41 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    09/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3732::_Upgrade(ECDbCR ecdb) const
+    {
+    Utf8String sql;
+    sql.Sprintf("SELECT NULL FROM ec_ClassHasBaseClasses bc JOIN ec_Class c ON bc.ClassId = c.Id "
+                "JOIN ec_ClassMap cm ON cm.ClassId = c.Id WHERE c.Type = %d AND cm.MapStrategy IN (%d,%d)",
+                Enum::ToInt(ECClassType::Relationship),
+                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable), Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Preparing SQL '%s' failed. %s", sql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    const DbResult stat = stmt.Step();
+    switch (stat)
+        {
+            case BE_SQLITE_DONE:
+                return BE_SQLITE_OK;
+
+            case BE_SQLITE_ROW:
+                LOG.errorv("Cannot open file '%s'. It contains ECRelationshipClass inheritance for foreign-key mapped ECRelationshipClasses. Therefore the file cannot be auto-upgraded.",
+                           ecdb.GetDbFileName());
+                return BE_SQLITE_ERROR_ProfileTooOld;
+
+            default:
+                LOG.errorv("ECDb profile upgrade failed: Executing the SQL '%s' failed. %s", sql.c_str(), ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                     Affan.Khan     08/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3731::_Upgrade(ECDbCR ecdb) const

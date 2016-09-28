@@ -389,7 +389,6 @@ MappingStatus ECDbMap::DoMapSchemas()
     BeMutexHolder lock(m_mutex);
     classMap = nullptr;
 
-
     DbClassMapLoadContext classMapLoadContext;
     if (DbClassMapLoadContext::Load(classMapLoadContext, GetECDb(), ecClass.GetId()) != SUCCESS)
         {
@@ -397,11 +396,10 @@ MappingStatus ECDbMap::DoMapSchemas()
         return SUCCESS;
         }
 
-
     const bool isJoinedTableMapping = Enum::Contains(classMapLoadContext.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     if (classMapLoadContext.GetBaseClassId().IsValid() && !isJoinedTableMapping)
         {
-        ECClassCP baseClass =  GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
+        ECClassCP baseClass = GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
         if (baseClass != nullptr)
             {
             ClassMapPtr baseClassMapPtr = nullptr;

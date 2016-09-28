@@ -392,7 +392,7 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
 
     GetConstraintMapR(GetReferencedEnd()).SetECClassIdPropMap(fkClassIdPropertyMap.get());
 
-    //add non-system property maps
+    //map non-system properties
     AddPropertyMaps(ctx.GetClassMapLoadContext(), baseClassMap, nullptr, &classMapInfo);
     AddIndexToRelationshipEnd(ctx, classMapInfo);
     return MappingStatus::Success;

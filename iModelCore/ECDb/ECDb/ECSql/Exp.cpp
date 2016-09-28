@@ -556,16 +556,16 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
         return ERROR;
         }
 
-    auto& schemaName = subParts.at(0);
-    auto& className = subParts.at(1);
-    auto& propertyPath = subParts.at(2);
+    Utf8StringCR schemaName = subParts.at(0);
+    Utf8StringCR className = subParts.at(1);
+    Utf8StringCR propertyPath = subParts.at(2);
 
     bvector<Utf8String> propertyNames;
     BeStringUtilities::Split(propertyPath.c_str(), ".", nullptr, propertyNames);
     for (Utf8StringCR propertyName : propertyNames)
         resolvedPropertyPath.Push(propertyName.c_str());
 
-    ECClassCP targetClass = ecdb.Schemas().GetECClass(schemaName.c_str(), className.c_str(), ResolveSchema::AutoDetect);
+    ECClassCP targetClass = ecdb.Schemas().GetECClass(schemaName, className, ResolveSchema::AutoDetect);
     if (targetClass == nullptr)
         {
         BeAssert(false && "Failed to find ECClass");

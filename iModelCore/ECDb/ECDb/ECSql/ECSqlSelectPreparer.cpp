@@ -8,35 +8,86 @@
 #include "ECDbPch.h"
 #include "ECSqlSelectPreparer.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    01/2016
+// @bsimethod                                    Krischan.Eberle                    09/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp const* exp)
+//static
+ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
     {
-    if (exp == nullptr)
-        return;
-
-    if (exp->GetType() == Exp::Type::PropertyName && !static_cast<PropertyNameExp const*>(exp)->IsPropertyRef())
-        {
-        auto propertyName = static_cast<PropertyNameExp const*>(exp);
-        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap().GetPropertyAccessString());
-        }
-
-    for (auto child : exp->GetChildren())
-        {
-        ExtractPropertyRefs(ctx, child);
-        }
+    return Prepare(ctx, exp, nullptr);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    04/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts)
+    {
+    NativeSqlBuilder::ListOfLists selectClauseSqlSnippetList;
+    ECSqlStatus st = Prepare(ctx, selectClauseSqlSnippetList, exp.GetFirstStatement(), referenceSelectClauseSqlSnippetCounts);
+    if (st != ECSqlStatus::Success || !exp.IsCompound())
+        return st;
+
+    ctx.PushScope(exp);
+    switch (exp.GetOperator())
+        {
+            case SelectStatementExp::CompoundOperator::Except:
+                ctx.GetSqlBuilderR().Append(" EXCEPT "); break;
+            case SelectStatementExp::CompoundOperator::Intersect:
+                ctx.GetSqlBuilderR().Append(" INTERSECT "); break;
+            case SelectStatementExp::CompoundOperator::Union:
+                ctx.GetSqlBuilderR().Append(" UNION "); break;
+            default:
+                BeAssert(false && "Error");
+                return ECSqlStatus::InvalidECSql;
+        }
+
+    if (exp.IsAll())
+        ctx.GetSqlBuilderR().Append("ALL ");
+
+    SelectStatementExp const& rhsStatement = *exp.GetRhsStatement();
+    //generate list of sql snippet counts per select clause item as this is needed to prepare
+    //the RHS select clause (in case of NULL literals)
+    std::vector<size_t> selectClauseSqlSnippetCounts;
+    for (NativeSqlBuilder::List const& selectClauseItemSqlSnippets : selectClauseSqlSnippetList)
+        {
+        selectClauseSqlSnippetCounts.push_back(selectClauseItemSqlSnippets.size());
+        }
+
+    st = Prepare(ctx, rhsStatement, &selectClauseSqlSnippetCounts);
+
+    SelectClauseExp const* lhs = exp.GetSelection();
+    SelectClauseExp const* rhs = rhsStatement.GetSelection();
+    if (rhs->GetChildrenCount() != lhs->GetChildrenCount())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    for (size_t i = 0; i < rhs->GetChildrenCount(); i++)
+        {
+        DerivedPropertyExp const* rhsDerivedPropExp = rhs->GetChildren().Get<DerivedPropertyExp>(i);
+        DerivedPropertyExp const* lhsDerivedPropExp = lhs->GetChildren().Get<DerivedPropertyExp>(i);
+
+        if (!rhsDerivedPropExp->GetExpression()->GetTypeInfo().CanCompare(lhsDerivedPropExp->GetExpression()->GetTypeInfo()))
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
+    ctx.PopScope();
+    return st;
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectStatementExp const& exp)
+ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuilder::ListOfLists& selectClauseSqlSnippetList, SingleSelectStatementExp const& exp, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts)
     {
     BeAssert(exp.IsComplete());
 
@@ -49,9 +100,19 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
         sqlGenerator.Append(exp.GetSelectionType()).AppendSpace();
 
     // Append selection.
-    ECSqlStatus status = ECSqlExpPreparer::PrepareSelectClauseExp(ctx, exp.GetSelection());
+    ECSqlStatus status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);
     if (!status.IsSuccess())
         return status;
+
+    bool isFirstItem = true;
+    for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+        {
+        if (!isFirstItem)
+            sqlGenerator.AppendComma();
+
+        sqlGenerator.Append(list);
+        isFirstItem = false;
+        }
 
     ExtractPropertyRefs(ctx, &exp);
 
@@ -109,58 +170,120 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
     return ECSqlStatus::Success;
     }
 
-
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
+ECSqlStatus ECSqlSelectPreparer::PrepareSelectClauseExp(NativeSqlBuilder::ListOfLists& selectClauseSnippetsList, ECSqlPrepareContext& ctx, SelectClauseExp const& selectClauseExp, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts)
     {
-    ECSqlStatus st = Prepare(ctx, exp.GetCurrent());
-    if (st != ECSqlStatus::Success || !exp.IsCompound())
-        return st;
-
-    SelectClauseExp const* lhs = exp.GetSelection();
-    ctx.PushScope(exp);
-    switch (exp.GetOperator())
+    Exp::Collection const& selectClauseItemExpList = selectClauseExp.GetChildren();
+    if (referenceSelectClauseSqlSnippetCounts != nullptr && selectClauseItemExpList.size() != referenceSelectClauseSqlSnippetCounts->size())
         {
-            case SelectStatementExp::Operator::Except:
-                ctx.GetSqlBuilderR().Append(" EXCEPT "); break;
-            case SelectStatementExp::Operator::Intersect:
-                ctx.GetSqlBuilderR().Append(" INTERSECT "); break;
-            case SelectStatementExp::Operator::Union:
-                ctx.GetSqlBuilderR().Append(" UNION "); break;
-            default:
-                BeAssert(false && "Error");
-                return ECSqlStatus::Error;
-        }
-
-    if (exp.IsAll())
-        ctx.GetSqlBuilderR().Append("ALL ");
-
-    st = Prepare(ctx, *exp.GetNext());
-
-    SelectClauseExp const* rhs = exp.GetNext()->GetSelection();
-    if (rhs->GetChildrenCount() != lhs->GetChildrenCount())
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
+        BeAssert(false);
         return ECSqlStatus::Error;
         }
 
-    for (size_t i = 0; i < rhs->GetChildrenCount(); i++)
+    for (size_t i = 0; i < selectClauseItemExpList.size(); i++)
         {
-        DerivedPropertyExp const* rhsDerivedPropExp = rhs->GetChildren().Get<DerivedPropertyExp>(i);
-        DerivedPropertyExp const* lhsDerivedPropExp = lhs->GetChildren().Get<DerivedPropertyExp>(i);
+        NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
+        DerivedPropertyExp const* selectClauseItemExp = selectClauseItemExpList.Get<DerivedPropertyExp>(i);
+        //if no reference select clause was passed, use 1 as default count (i.e. in case of NULL literals one column is assumed)
+        const size_t referenceSelectClauseItemSqlSnippetCount = referenceSelectClauseSqlSnippetCounts == nullptr ? 1 : referenceSelectClauseSqlSnippetCounts->at(i);
+        ECSqlStatus status = PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, *selectClauseItemExp, referenceSelectClauseItemSqlSnippetCount);
+        if (!status.IsSuccess())
+            return status;
 
-        if (!rhsDerivedPropExp->GetExpression()->GetTypeInfo().CanCompare(lhsDerivedPropExp->GetExpression()->GetTypeInfo()))
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
-            return ECSqlStatus::Error;
-            }
+        selectClauseSnippetsList.push_back(selectClauseItemNativeSqlSnippets);
         }
 
-    ctx.PopScope();
-    return st;
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, DerivedPropertyExp const& exp, size_t referenceSqliteSnippetCount)
+    {
+    ValueExp const* innerExp = exp.GetExpression();
+    if (innerExp == nullptr)
+        {
+        BeAssert(false && "DerivedPropertyExp::GetExpression is not expected to return null during preparation.");
+        return ECSqlStatus::Error;
+        }
+
+    const int startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount();
+
+    size_t snippetCountBefore = nativeSqlSnippets.size();
+    if (ECSqlExpPreparer::IsNullExp(*innerExp))
+        { 
+        ECSqlStatus status = ECSqlExpPreparer::PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (innerExp), referenceSqliteSnippetCount);
+        if (!status.IsSuccess())
+            return status;
+        }
+    else
+        {
+        ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, innerExp);
+        if (!status.IsSuccess())
+            return status;
+        }
+
+    if (!ctx.GetCurrentScope().IsRootScope())
+        {
+        Utf8String alias = exp.GetColumnAlias();
+        if (alias.empty())
+            alias = exp.GetNestedAlias();
+
+        if (!alias.empty())
+            {
+            if (nativeSqlSnippets.size() == 1LL)
+                {
+                nativeSqlSnippets.front().AppendSpace().AppendEscaped(alias.c_str());
+                }
+            else
+                {
+                int idx = 0;
+                Utf8String postfix;
+                for (NativeSqlBuilder& snippet : nativeSqlSnippets)
+                    {
+                    postfix.clear();
+                    postfix.Sprintf("%s_%d", alias.c_str(), idx);
+                    idx++;
+                    snippet.AppendSpace().AppendEscaped(postfix.c_str());
+                    }
+                }
+            }
+        }
+    else if (ctx.GetCurrentScope().IsRootScope())
+        {
+        ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
+        ECSqlStatus status = ECSqlFieldFactory::CreateField(ctx, &exp, startColumnIndex);
+        if (!status.IsSuccess())
+            return status;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    01/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp const* exp)
+    {
+    if (exp == nullptr)
+        return;
+
+    if (exp->GetType() == Exp::Type::PropertyName && !static_cast<PropertyNameExp const*>(exp)->IsPropertyRef())
+        {
+        PropertyNameExp const* propertyName = static_cast<PropertyNameExp const*>(exp);
+        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap().GetPropertyAccessString());
+        }
+
+    for (Exp const* child : exp->GetChildren())
+        {
+        ExtractPropertyRefs(ctx, child);
+        }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
