@@ -36,7 +36,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
+    <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke" WipPartEnable="SM">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>     
