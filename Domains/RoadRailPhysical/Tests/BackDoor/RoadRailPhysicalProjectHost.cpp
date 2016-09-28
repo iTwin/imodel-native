@@ -171,6 +171,16 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
         return nullptr;
 
+    BeFileName costSchemaFileName = schemaRootDir;
+    costSchemaFileName.AppendToPath(BCST_SCHEMA_FILE);
+    if (DgnDbStatus::Success != (status = Costing::CostingDomain::GetDomain().ImportSchema(*projectPtr, costSchemaFileName)))
+        return nullptr;
+
+    BeFileName bridgeSchemaFileName = schemaRootDir;
+    bridgeSchemaFileName.AppendToPath(BBP_SCHEMA_FILE);
+    if (DgnDbStatus::Success != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr, bridgeSchemaFileName)))
+        return nullptr;
+
     BeFileName roadRailSchemaFileName = schemaRootDir;
     roadRailSchemaFileName.AppendToPath(BRRP_SCHEMA_FILE);
     if (DgnDbStatus::Success != (status = RoadRailPhysical::RoadRailPhysicalDomain::GetDomain().ImportSchema(*projectPtr, roadRailSchemaFileName)))
