@@ -152,7 +152,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static int countSheets(DgnDbR db)
+static int countSheetModels(DgnDbR db)
     {
     int count = 0;
     auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
@@ -187,7 +187,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
         }
 
     DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementId().IsValid() );
+    ASSERT_EQ(expectSuccess, newElem.IsValid() && newElem->GetElementId().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -197,60 +197,49 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     {
     SetupSeedProject();
 
-    static Utf8CP s_sheet1Name = "Sheet1";
-    static Utf8CP s_sheet1NameUPPER = "SHEET1";
-    static Utf8CP s_sheet2Name = "Sheet2";
+    static Utf8CP s_sheetModel1Name = "SheetModel1";
+    static Utf8CP s_sheetModel1NameUPPER = "SHEETMODEL1";
+    static Utf8CP s_sheetModel2Name = "SheetModel2";
     
     DPoint2d sheet1Size;
     BeFileName dbFileName;
+    
     if (true)
         {
         DgnDbPtr db = m_db;
+        ASSERT_EQ(0, countSheetModels(*db));
 
-        ASSERT_EQ( 0 , countSheets(*db) );
-
-        //  Create a sheet
+        // Create a sheet
+        DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, DgnModel::CreateModelCode("SheetListModel"));
         DPoint2d sheetSize = DPoint2d::From(.100, .100);
-        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
-                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
-        SheetModelPtr sheet1 = SheetModel::Create(params);
-        ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert() );
-        ASSERT_TRUE( sheet1->GetModelId().IsValid() );
+        SheetPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet1");
+        SheetModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1, DgnModel::CreateModelCode(s_sheetModel1Name), sheetSize);
 
-        ASSERT_EQ( 1 , countSheets(*db) );
+        ASSERT_EQ(1, countSheetModels(*db));
+        ASSERT_NE(DgnDbStatus::Success, sheetModel1->Insert()) << "Should be illegal to INSERT a SheetModel that is already persistent";
 
-        //  Test some insert errors
-        ASSERT_NE( DgnDbStatus::Success, sheet1->Insert() ) << "Should be illegal to add sheet that is already persistent";
+        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
+        ASSERT_EQ(modelId, sheetModel1->GetModelId());
+        ASSERT_EQ(modelId, db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1NameUPPER))) << "Sheet model names should be case-insensitive";
+        ASSERT_EQ(sheetModel1.get(), db->Models().Get<SheetModel>(modelId).get());
 
-        SheetModelPtr sheetSameName = SheetModel::Create(params);
-        ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert() ) << "Should be illegal to add a second sheet with the same name";
+        DgnCode modelCode;
+        db->Models().GetModelCode(modelCode, modelId);
+        ASSERT_STREQ(sheetModel1->GetCode().GetValueCP(), modelCode.GetValueCP());
 
-        //  Create a second sheet
-        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
-                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
-        SheetModelPtr sheet2 = SheetModel::Create(params2);
-        ASSERT_TRUE(sheet2.IsValid());
-        ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert() );
-        ASSERT_TRUE( sheet2->GetModelId().IsValid() );
-        ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
-
-        ASSERT_EQ( 2 , countSheets(*db) );
-        ASSERT_TRUE( db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet2Name)).IsValid() );
-
-        //  Look up a sheet     ... by name
-        DgnModelId mid = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet1Name));
-        ASSERT_EQ( mid , sheet1->GetModelId() );
-        ASSERT_EQ( mid , db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet1NameUPPER)) ) << "Sheet model names should be case-insensitive";
-        //                      ... by id
-        ASSERT_EQ( sheet1.get() , db->Models().Get<SheetModel>(mid).get() );
-        DgnCode mcode;
-        // Look up a sheet's name by id
-        db->Models().GetModelCode(mcode, mid);
-        ASSERT_STREQ( sheet1->GetCode().GetValueCP() , mcode.GetValueCP());
-
-        sheet1Size = sheet1->GetSize();
+        sheet1Size = sheetModel1->GetSize();
         ASSERT_TRUE(sheet1Size.IsEqual(sheetSize));
+
+        // Create a second sheet
+        SheetPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "Sheet2");
+        SheetModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2, DgnModel::CreateModelCode(s_sheetModel2Name), sheetSize);
+
+        ASSERT_EQ(2, countSheetModels(*db));
+        ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name)).IsValid());
+        ASSERT_NE(sheetModel2->GetModelId(), sheetModel1->GetModelId());
+
+        sheet1 = nullptr;
+        sheet2 = nullptr;
 
         dbFileName = db->GetFileName();   
         db->SaveChanges();
@@ -261,23 +250,23 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     if (true)
         {
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE( db.IsValid() );
+        ASSERT_TRUE(db.IsValid());
 
-        DgnModelId mid = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet1Name));
-        SheetModelPtr sheet1 = db->Models().Get<SheetModel>(mid);
-        ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( mid , sheet1->GetModelId() );
-        ASSERT_STREQ( s_sheet1Name , sheet1->GetCode().GetValueCP() );
+        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
+        SheetModelPtr sheetModel1 = db->Models().Get<SheetModel>(modelId);
+        ASSERT_TRUE(sheetModel1.IsValid());
+        ASSERT_EQ(modelId, sheetModel1->GetModelId());
+        ASSERT_STREQ(s_sheetModel1Name, sheetModel1->GetCode().GetValueCP());
 
-        ASSERT_EQ( sheet1Size.x , sheet1->GetSize().x );
-        ASSERT_EQ( sheet1Size.y , sheet1->GetSize().y );
+        ASSERT_EQ(sheet1Size.x, sheetModel1->GetSize().x);
+        ASSERT_EQ(sheet1Size.y, sheetModel1->GetSize().y);
 
         // Delete Sheet2
-        ASSERT_EQ( 2 , countSheets(*db) );
-        auto sheet2Id = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet2Name));
-        DgnModelPtr sheet2Model = db->Models().GetModel(sheet2Id);
-        ASSERT_EQ( DgnDbStatus::Success, sheet2Model->Delete());
-        ASSERT_EQ( 1 , countSheets(*db) );
+        ASSERT_EQ(2, countSheetModels(*db));
+        DgnModelId sheetModel2Id = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel2Name));
+        DgnModelPtr sheet2Model = db->Models().GetModel(sheetModel2Id);
+        ASSERT_EQ(DgnDbStatus::Success, sheet2Model->Delete());
+        ASSERT_EQ(1, countSheetModels(*db));
         db->SaveChanges();
         db->CloseDb();
         }        
@@ -285,15 +274,14 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     if (true)
         {
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE( db.IsValid() );
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, countSheetModels(*db));
 
-        ASSERT_EQ( 1 , countSheets(*db) );
-
-        DgnModelId mid = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet1Name));
+        DgnModelId modelId = db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheetModel1Name));
 
         // Verify that we can only place drawing elements in a sheet
-        InsertElement(*db, mid, false, true);
-        InsertElement(*db, mid, true, false);
+        InsertElement(*db, modelId, false, true);
+        InsertElement(*db, modelId, true, false);
         db->SaveChanges();
         db->CloseDb();
         }
@@ -364,8 +352,6 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (6, iter.QueryCount ()); // including the RepositoryModel and DictionaryModel
-    DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
         {
@@ -376,6 +362,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (true, entry.GetInGuiList ());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
+            i++;
             }
         else if (entry.GetModelId () == m2id)
             {
@@ -384,6 +371,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
+            i++;
             }
         else if (entry.GetModelId () == m3id)
             {
@@ -392,10 +380,11 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
+            i++;
             }
-        i++;
         }
-    iter.end ();
+
+    EXPECT_EQ(3, i);
     }
 
 /*---------------------------------------------------------------------------------**//**

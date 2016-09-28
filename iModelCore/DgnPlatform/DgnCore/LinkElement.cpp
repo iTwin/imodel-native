@@ -345,6 +345,25 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Shaun.Sewall                       09/2016
+//---------------------------------------------------------------------------------------
+RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP label, Utf8CP description)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    CreateParams createParams(model, url, label, description);
+    createParams.m_classId = classId;
+    return new RepositoryLink(createParams);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
 EmbeddedFileLink::CreateParams::CreateParams(LinkModelR linkModel, Utf8CP name, Utf8CP label /*=nullptr*/, Utf8CP description /*= nullptr*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), EmbeddedFileLink::QueryClassId(linkModel.GetDgnDb()), DgnCode(), label), name, description)

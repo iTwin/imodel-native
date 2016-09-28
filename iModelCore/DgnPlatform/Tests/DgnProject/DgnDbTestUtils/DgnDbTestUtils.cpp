@@ -74,10 +74,63 @@ DrawingPtr DgnDbTestUtils::InsertDrawing(DocumentListModelCR model, DgnCodeCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
+SectionDrawingPtr DgnDbTestUtils::InsertSectionDrawing(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SectionDrawingPtr drawing = SectionDrawing::Create(model, code, label);
+    EXPECT_TRUE(drawing.IsValid());
+    EXPECT_TRUE(drawing->Insert().IsValid());
+    return drawing;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+SheetPtr DgnDbTestUtils::InsertSheet(DocumentListModelCR model, DgnCodeCR code, Utf8CP label)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SheetPtr sheet = Sheet::Create(model, code, label);
+    EXPECT_TRUE(sheet.IsValid());
+    EXPECT_TRUE(sheet->Insert().IsValid());
+    return sheet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
 DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);
     DrawingModelPtr model = DrawingModel::Create(drawing, modelCode);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode, DPoint2dCR sheetSize)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SheetModelPtr model = SheetModel::Create(sheet, modelCode, sheetSize);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           09/2016
+//---------------------------------------------------------------------------------------
+LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, modelSubject->GetElementId(), modelCode));
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
@@ -95,22 +148,6 @@ PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelC
     EXPECT_TRUE(modelSubject.IsValid());
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, modelCode);
     EXPECT_TRUE(model.IsValid());
-    return model;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                           Umar.Hayat             08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr DgnDbTestUtils::InsertSheetModel(DgnDbR db, DgnCode modelCode)
-    {
-    MUST_HAVE_HOST(nullptr);
-    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
-    SheetModelPtr model = new SheetModel(SheetModel::CreateParams(db, mclassId, modelSubject->GetElementId(), modelCode, DPoint2d::From(2.0, 2.0)));
-    DgnDbStatus status = model->Insert();
-    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
     return model;
     }
 

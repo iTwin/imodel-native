@@ -853,9 +853,10 @@ TEST_F(SqlFunctionsTest, bbox_union) // FIXME: Hard-coded DgnModelId
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement3d) 
-                    " AS g WHERE e.ModelId=18 AND e.id=g.ElementId");
+                    " AS g WHERE e.ModelId=? AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
-    auto rc = stmt.Step();
+    stmt.BindId(1, DgnDbTestUtils::QueryFirstGeometricModelId(*dgndb));
+    DbResult rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);
 
     int resultSize = stmt.GetColumnBytes(0);

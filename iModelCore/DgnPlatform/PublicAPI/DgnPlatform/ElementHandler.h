@@ -159,6 +159,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Drawing, Dgn::Drawing, Drawing, Document, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for SectionDrawing
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Dgn::SectionDrawing, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for Sheet
     struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
     {

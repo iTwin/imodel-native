@@ -301,16 +301,16 @@
         <BaseClass>GeometricModel2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialModel" displayLabel="Spatial Model" modifier="Abstract">
+        <BaseClass>GeometricModel3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model">
+        <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>SpatialModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model">
         <BaseClass>GraphicalModel2d</BaseClass>
@@ -319,29 +319,29 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel" displayLabel="Section Drawing Model">
+        <BaseClass>DrawingModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DrawingModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel" displayLabel="Sheet Model">
+        <BaseClass>GraphicalModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>GraphicalModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="ComponentModel" displayLabel="Component Model">
+        <BaseClass>GeometricModel3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="RoleModel" displayLabel="Role Model">
+        <BaseClass>Model</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
         <BaseClass>Model</BaseClass>
@@ -350,10 +350,10 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel" displayLabel="Definition Model">
+        <BaseClass>InformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="RepositoryModel" modifier="Sealed" displayLabel="Repository Model">
         <BaseClass>DefinitionModel</BaseClass>
@@ -368,28 +368,28 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="LinkModel" displayLabel="Link Model">
+        <BaseClass>InformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model">
+        <BaseClass>DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel" displayLabel="Web Mercator Model">
+        <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>SpatialModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="StreetMapModel" displayLabel="Street Map Model">
+        <BaseClass>WebMercatorModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>WebMercatorModel</BaseClass>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
@@ -753,6 +753,12 @@
     </ECEntityClass>
     <ECEntityClass typeName="Drawing">
         <BaseClass>Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="SectionDrawing">
+        <BaseClass>Drawing</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

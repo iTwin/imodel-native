@@ -1150,8 +1150,9 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
+RedlineModelPtr RedlineModel::Create(SheetCR sheet, Utf8CP name, DgnModelId templateModelId)
     {
+    DgnDbR markupProject = sheet.GetDgnDb();
     if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
         BeAssert(false && "Must have Markup domain registered in order to create a redline model");
@@ -1159,7 +1160,7 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
         }
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
-    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name), DPoint2d::FromZero()));
+    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, sheet.GetElementId(), CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
         return nullptr;
 
@@ -1731,6 +1732,20 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentListModelPtr DgnMarkupProject::GetSheetListModel()
+    {
+    DgnCode modelCode = DgnModel::CreateModelCode("SheetList", MARKUP_SCHEMA_NAME);
+    DgnModelId modelId = Models().QueryModelId(modelCode);
+
+    if (modelId.IsValid())
+        return Models().Get<DocumentListModel>(modelId);
+
+    return DocumentListModel::CreateAndInsert(*Elements().GetRootSubject(), modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, Utf8CP name, DgnModelId templateModel)
@@ -1750,7 +1765,21 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, 
         return nullptr;
         }
 
-    RedlineModelPtr rdlModel = RedlineModel::Create(*this, name, templateModel);
+    DocumentListModelPtr sheetListModel = GetSheetListModel();
+    if (!sheetListModel.IsValid())
+        {
+        createStatus = DgnDbStatus::WriteError;
+        return nullptr;
+        }
+
+    SheetPtr sheet = Sheet::Create(*sheetListModel, DgnCode(), name);
+    if (!sheet.IsValid() || !sheet->Insert().IsValid())
+        {
+        createStatus = DgnDbStatus::WriteError;
+        return nullptr;
+        }
+
+    RedlineModelPtr rdlModel = RedlineModel::Create(*sheet, name, templateModel);
     if (!rdlModel.IsValid())
         {
         createStatus = DgnDbStatus::BadArg; // must be a bad name

@@ -391,6 +391,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryLink : UrlLink
 
 protected:
     explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(LinkModelR model, Utf8CP url, Utf8CP label, Utf8CP description = nullptr);
 };
 
 //=======================================================================================
