@@ -380,8 +380,8 @@ struct  PublishTileNode : TileNode
     NodePtr             m_node;
     ClipVectorCPtr      m_clip;
 
-    PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
-        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transformDbToTile, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
+        : TileNode(dgnRange, transformDbToTile, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip) { }
 
 
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
@@ -416,9 +416,20 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
 
     for (auto& child : *m_node->_GetChildren(true))
         {
-        NodeR       node = (NodeR) *child;
-        bool        clipRequired = m_clip.IsValid() && ClipPlaneContainment_StronglyInside != m_clip->ClassifyRangeContainment(node.GetRange());
+        NodeR                   node = (NodeR) *child;
+        ClipPlaneContainment    clipContainment = ClipPlaneContainment_StronglyInside;
 
+        if (m_clip.IsValid())
+            {
+            DRange3d    tileRange;
+
+            sceneToTile.Multiply (tileRange, node.GetRange());
+            if (ClipPlaneContainment_StronglyOutside == (clipContainment = m_clip->ClassifyRangeContainment(tileRange)))
+                {
+                BeAssert (false);
+                continue;
+                }
+            }
 
         for (auto& geometry : node.GetGeometry())
             {
@@ -457,7 +468,7 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
                     }
                 }
 
-            if (clipRequired)
+            if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
                 ClipOutputCollector clipOutputCollector(*builder, twoSidedTriangles);
 
@@ -481,7 +492,7 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
 
 //=======================================================================================                                                             
 // @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
+//=======================================================================================
 struct Publish3mxScene : Scene
 {
     using Scene::Scene;
@@ -495,24 +506,24 @@ typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR transformFromDgn, ClipVectorCPtr& dgnClip, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
+static T_PublishTilePtr tileFromNode(NodeR node, SceneR scene, TransformCR transformDbToTile, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    TransformCR sceneToDgn = scene.GetLocation();
-    double   tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    Transform       sceneToTile = Transform::FromProduct(transformDbToTile, scene.GetLocation());
+    double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    DRange3d        tileRange, dgnRange;
 
-    range = node.GetRange();
-    sceneToDgn.Multiply(range, range);
+    scene.GetLocation().Multiply (dgnRange, node.GetRange());
+    sceneToTile.Multiply(tileRange, node.GetRange());
 
-    if (dgnClip.IsValid() &&
-        ClipPlaneContainment_StronglyOutside == dgnClip->ClassifyRangeContainment(range))
+    if (nullptr != tileClip &&
+        ClipPlaneContainment_StronglyOutside == tileClip->ClassifyRangeContainment(tileRange))
         return nullptr;
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
 
-    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
-    DRange3d                        childrenRange = DRange3d::NullRange();
-    T_PublishTilePtr  tileNode = new PublishTileNode(scene, node, transformFromDgn, range, depth, siblingIndex, tolerance, parent, tileClip);
+    static size_t       s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    T_PublishTilePtr    tileNode = new PublishTileNode(scene, node, transformDbToTile, dgnRange, depth, siblingIndex, tolerance, parent, tileClip);
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
@@ -525,26 +536,13 @@ static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, 
 
             if (childNode._HasChildren())
                 {
-                DRange3d            childRange;
                 T_PublishTilePtr    childTile;
 
-                if ((childTile = tileFromNode(childRange, (NodeR) *child, scene, transformFromDgn, dgnClip, tileClip, depth, childIndex++, tileNode.get())).IsValid())
-                    {
+                if ((childTile = tileFromNode((NodeR) *child, scene, transformDbToTile, tileClip, depth, childIndex++, tileNode.get())).IsValid())
                     tileNode->GetChildren().push_back(childTile);
-                    childrenRange.Extend(childRange);
-                    }
-                }
-            else
-                {
-                for (auto& geometry : childNode.GetGeometry())
-                    for (auto& point : geometry->GetPoints())
-                        childrenRange.Extend(point.x, point.y, point.z);
                 }
             }
         }
-
-    if (!childrenRange.IsNull())
-        tileNode->SetDgnRange(range = childrenRange);
 
     return tileNode;
     }
@@ -560,8 +558,6 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    DRange3d            range = DRange3d::NullRange();             
-
     ClipVectorPtr       tileClip;
 
     if (m_clip.IsValid())
@@ -570,7 +566,7 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
         tileClip->TransformInPlace(transformDbToTile);
         }
 
-    rootTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, m_clip, tileClip.get(), 0, 0, nullptr).get();
+    rootTile = tileFromNode((NodeR) *scene->GetRootTile(), *scene, transformDbToTile, tileClip.get(), 0, 0, nullptr).get();
 
     return TileGenerator::Status::Success;
     }
