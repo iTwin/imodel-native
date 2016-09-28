@@ -449,6 +449,8 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
+    <ClInclude Include="STM\SharedTextureManager.h" />
+    <ClInclude Include="STM\SmCachedDisplayData.h" />
     <ClInclude Include="STM\SMDataSourceParams.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
     <ClInclude Include="STM\SMNodeGroup.h" />

@@ -23,6 +23,7 @@
 #include "Stores\SMSQLiteStore.h"
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include "SharedTextureManager.h"
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -71,178 +72,9 @@ enum ClipAction
     ACTION_MODIFY
     };
 
-struct SmCachedDisplayData 
-    {
-    private : 
-
-        SmCachedDisplayMesh*                m_cachedDisplayMesh;
-        SmCachedDisplayTexture*             m_cachedDisplayTexture;
-        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-        size_t                              m_memorySize;
-        bvector<uint64_t>                   m_appliedClips; 
-
-    public : 
-    
-        SmCachedDisplayData(SmCachedDisplayMesh*                 cachedDisplayMesh,
-                            SmCachedDisplayTexture*              cachedDisplayTexture,
-                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
-                            size_t                               memorySize, 
-                            const bvector<uint64_t>&             appliedClips)
-            {
-            m_cachedDisplayMesh = cachedDisplayMesh;
-            m_cachedDisplayTexture = cachedDisplayTexture; 
-            m_displayCacheManagerPtr = displayCacheManagerPtr;
-            m_memorySize = memorySize;
-            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
-            }
-
-        virtual ~SmCachedDisplayData()
-            {
-            if (m_cachedDisplayMesh != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
-                assert(status == SUCCESS);                    
-                }
-
-            if (m_cachedDisplayTexture != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
-                assert(status == SUCCESS);                    
-                }
-            }
-
-        size_t GetMemorySize() const
-            {
-            return m_memorySize;
-            }                
-
-        SmCachedDisplayMesh* GetCachedDisplayMesh() const
-            {
-            return m_cachedDisplayMesh; 
-            }
-
-        SmCachedDisplayTexture* GetCachedDisplayTexture() const
-            {
-            return m_cachedDisplayTexture;
-            }
-
-        const bvector<uint64_t>& GetAppliedClips()
-            {
-            return m_appliedClips;
-            }
-    };
-
-struct SmCachedDisplayMeshData
-    {
-    private:
-
-        SmCachedDisplayMesh*                m_cachedDisplayMesh;
-        uint64_t                             m_textureID;
-        bool                                 m_isTextured;
-        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-        size_t                              m_memorySize;
-        bvector<uint64_t>                   m_appliedClips;
-
-    public:
-        SmCachedDisplayMeshData()
-            {}
-
-        SmCachedDisplayMeshData(SmCachedDisplayMesh*                 cachedDisplayMesh,
-                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
-                            uint64_t                             textureID,
-                             bool                                isTextured,
-                            size_t                               memorySize,
-                            const bvector<uint64_t>&             appliedClips)
-            {
-            m_cachedDisplayMesh = cachedDisplayMesh;
-            m_textureID = textureID;
-            m_isTextured = isTextured;
-            m_displayCacheManagerPtr = displayCacheManagerPtr;
-            m_memorySize = memorySize;
-            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
-            }
-
-        virtual ~SmCachedDisplayMeshData()
-            {
-            if (m_cachedDisplayMesh != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
-                assert(status == SUCCESS);
-                }
-            }
-
-        size_t GetMemorySize() const
-            {
-            return m_memorySize;
-            }
-
-        SmCachedDisplayMesh* GetCachedDisplayMesh() const
-            {
-            return m_cachedDisplayMesh;
-            }
-
-        const bvector<uint64_t>& GetAppliedClips()
-            {
-            return m_appliedClips;
-            }
-
-        bool GetTextureInfo(uint64_t& textureID) const
-            {
-            if (!m_isTextured) return false;
-            textureID = m_textureID;
-            return true;
-            }
-    };
-
-struct SmCachedDisplayTextureData
-    {
-
-    private:
-        SmCachedDisplayTexture*             m_cachedDisplayTexture;
-        uint64_t m_textureID;
-        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-        size_t                              m_memorySize;
-
-
-    public:
-
-        SmCachedDisplayTextureData(SmCachedDisplayTexture*             cachedDisplayTexture,
-                                   uint64_t textureID,
-                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
-                            size_t                               memorySize)
-            {
-            m_cachedDisplayTexture = cachedDisplayTexture;
-            m_textureID = textureID;
-            m_displayCacheManagerPtr = displayCacheManagerPtr;
-            m_memorySize = memorySize;
-            }
-
-        virtual ~SmCachedDisplayTextureData()
-            {
-            if (m_cachedDisplayTexture != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture);
-                assert(status == SUCCESS);
-                }
-            }
-
-        size_t GetMemorySize() const
-            {
-            return m_memorySize;
-            }
-
-        uint64_t GetTextureID() const
-            {
-            return m_textureID;
-            }
-
-    SmCachedDisplayTexture* GetCachedDisplayTexture() const
-        {
-        return m_cachedDisplayTexture;
-        }
-    };
-
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#include "SmCachedDisplayData.h"
 
 //extern size_t nGraphPins;
 //extern size_t nGraphReleases;
@@ -320,17 +152,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual void Unload() override;
 
     virtual bool IsGraphLoaded() const;
-
-    void CreateGraph(bool shouldPinGraph = false) const {}
-
-    virtual void LoadGraph(bool shouldPinGraph = false) const {}
-
-
-    void ReleaseGraph()
-        {
- //       nGraphReleases++;
- //       m_graphVec.UnPin();
-        }
 
     void LockGraph()
         {
@@ -628,7 +449,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         auto displayTexDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
         assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
         return customGenericBlobItemPtr;
         }
@@ -654,7 +475,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> GetDisplayTexture(uint64_t texID)
         {
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
-        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT,EXTENT>*)m_SMIndex)->GetPoolIdForTexture(texID);
+        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }
@@ -663,7 +484,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         uint64_t texID = GetSingleTextureID();
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
-        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->GetPoolIdForTexture(texID);
+        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
         GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
         return cachedDisplayDataItemPtr;
         }
@@ -933,31 +754,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
 #endif
 
-        SMMemoryPoolItemId GetPoolIdForTexture(uint64_t texID)
-            {
-            std::lock_guard<std::mutex> lock(m_texMutex);
-            if (m_texMap.count(texID) == 0) return SMMemoryPool::s_UndefinedPoolItemId;
-            return m_texMap[texID];
-            }
-
-        SMMemoryPoolItemId GetPoolIdForTextureData(uint64_t texID)
-            {
-            std::lock_guard<std::mutex> lock(m_texMutex);
-            if (m_texDataMap.count(texID) == 0) return SMMemoryPool::s_UndefinedPoolItemId;
-            return m_texDataMap[texID];
-            }
-
-        void SetPoolIdForTexture(uint64_t texID, SMMemoryPoolItemId id)
-            {
-            std::lock_guard<std::mutex> lock(m_texMutex);
-            m_texMap[texID] = id;
-            }
-
-        void SetPoolIdForTextureData(uint64_t texID, SMMemoryPoolItemId id)
-            {
-            std::lock_guard<std::mutex> lock(m_texMutex);
-            m_texDataMap[texID] = id;
-            }
+        SharedTextureManager* TextureManager() { return &m_texMgr; }
 
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
@@ -978,9 +775,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         size_t m_texId = 0;
 
-        bmap<uint64_t, SMMemoryPoolItemId> m_texMap;
-        bmap<uint64_t, SMMemoryPoolItemId> m_texDataMap;
-        std::mutex m_texMutex;
+        SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
 
@@ -1000,15 +795,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             m_nodeHeader.m_IsUnSplitSubLevel = true;
             m_nodeHeader.m_contentExtentDefined = true;
             }
-        virtual bool IsGraphLoaded() const override
-            {
-            return (dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr()))->IsGraphLoaded();
-            };
 
-        virtual void LoadGraph(bool shouldPinGraph = false) const override
-            {
-            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->LoadGraph();
-            };
         virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true) override
             {
             return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);

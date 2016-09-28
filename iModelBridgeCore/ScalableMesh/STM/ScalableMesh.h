@@ -309,6 +309,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual IScalableMeshNodePtr               _GetRootNode() override;
 
+#ifdef WIP_MESH_IMPORT
+        virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override;
+#endif
+
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
@@ -422,6 +426,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ScalableMeshNode<POINT>::CreateItem(ptr);
             #endif
             }
+
+#ifdef WIP_MESH_IMPORT
+        virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override
+            {}
+#endif
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}

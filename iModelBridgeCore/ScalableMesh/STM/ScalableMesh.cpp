@@ -358,6 +358,13 @@ IScalableMeshNodePtr IScalableMesh::GetRootNode()
     return _GetRootNode();
     }
 
+#ifdef WIP_MESH_IMPORT
+void  IScalableMesh::GetAllTextures(bvector<IScalableMeshTexturePtr>& textures)
+    {
+    return _GetAllTextures(textures);
+    }
+#endif
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -1901,6 +1908,28 @@ return  ScalableMeshNode<POINT>::CreateItem(nodeP);
 
     }
 
+
+#ifdef WIP_MESH_IMPORT
+template <class POINT> void ScalableMesh<POINT>::_GetAllTextures(bvector<IScalableMeshTexturePtr>& textures)
+    {
+    size_t nTextures = m_smSQLitePtr->CountTextures();
+    textures.resize(nTextures);
+
+    auto meshNode = dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>(m_scmIndexPtr->GetRootNode().GetPtr());
+    for (size_t i = 1; i <= nTextures; ++i)
+        {
+        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTexturePtr(i));
+
+        if (texPtr.IsValid())
+            {
+            ScalableMeshTexturePtr textureP(ScalableMeshTexture::Create(texPtr));
+
+            if (textureP->GetSize() != 0)
+                textures[i-1] = IScalableMeshTexturePtr(textureP.get());
+            }
+        }
+    }
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_RemoveClip

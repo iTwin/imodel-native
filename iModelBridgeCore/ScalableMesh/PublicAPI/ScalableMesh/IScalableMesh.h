@@ -179,6 +179,11 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
+
+#ifdef WIP_MESH_IMPORT
+        virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
+#endif
+
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -307,6 +312,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
+
+#ifdef WIP_MESH_IMPORT
+        BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
+#endif
 
         BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
         BENTLEY_SM_EXPORT void ReFilter();

@@ -1413,6 +1413,16 @@ size_t SMSQLiteFile::GetSkirtPolygonByteCount(int64_t clipID)
     }
 
 #ifdef WIP_MESH_IMPORT
+size_t SMSQLiteFile::CountTextures()
+    {
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMTexture LIMIT 1"); 
+    DbResult status = stmt->Step();
+    assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
+    int texCount = stmt->GetValueInt(0);
+    return (size_t) texCount;
+    }
+
 size_t SMSQLiteFile::GetNumberOfMeshParts(int64_t nodeId)
     {
     std::lock_guard<std::mutex> lock(dbLock);

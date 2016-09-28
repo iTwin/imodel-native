@@ -168,7 +168,9 @@ public:
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
     size_t GetSkirtPolygonByteCount(int64_t skirtID);
+
 #ifdef WIP_MESH_IMPORT
+    size_t CountTextures();
     size_t GetNumberOfMeshParts(int64_t nodeId);
     size_t GetNumberOfMetadataChars(int64_t nodeId);
 #endif

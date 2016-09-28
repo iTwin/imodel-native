@@ -963,6 +963,12 @@
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h">
       <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
+    <ClInclude Include="STM\SmCachedDisplayData.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SharedTextureManager.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

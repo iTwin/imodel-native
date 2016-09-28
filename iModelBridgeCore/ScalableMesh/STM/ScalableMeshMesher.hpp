@@ -881,8 +881,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     bvector<int> componentPointsId;
     if (faceIndices.size() > 0 && geometryData.size() > 0)
         CreateGraphFromIndexBuffer(graphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
-    //node->SetGraphDirty();
-    //node->ReleaseGraph();
+
     graphPtr->SetData(graphP);
     graphPtr->SetDirty();    
     assert(faceIndices.size() % 3 == 0);
@@ -1357,7 +1356,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         if (s_useThreadsInStitching) node->UnlockGraph();
         }
 
-    //node->ReleaseGraph();
+    
     
     size_t neighborIndices[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
     size_t nodeIndicesInNeighbor[26] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };
@@ -1422,17 +1421,14 @@ for (size_t& neighborInd : neighborIndices)
                 meshGraphNeighbor = MTGGraph();
                 if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
                     {
-                   // if (NULL == meshNode->GetGraphPtr()) meshNode->LoadGraph(s_useThreadsInStitching);
-                    //if (NULL == meshNode->GetGraphPtr()) continue;
-                   // if (s_useThreadsInStitching)    meshNode->LockGraph();
+
                     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphNeighborPtr(meshNode->GetGraphPtr());
                         {
                         if (s_useThreadsInStitching)    meshNode->LockGraph();
                         if (graphNeighborPtr->GetData() != nullptr) meshGraphNeighbor = *(graphNeighborPtr->GetData());
                         if (s_useThreadsInStitching)    meshNode->UnlockGraph();
                         }
-                   // if (s_useThreadsInStitching)  meshNode->UnlockGraph();
-                    //meshNode->ReleaseGraph();
+
                     }
                /* s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
                 s += " ADDING NEIGHBOR AT POS " + std::to_string(neighborInd) + " IDX " + std::to_string(neighborSubInd) + "\n";
@@ -2422,7 +2418,7 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     {
     return true; //deactivated for now
 
-    if (NULL == node->GetGraphPtr()) node->LoadGraph();
+
     MTGGraph* meshGraph = node->GetGraphPtr();
     size_t neighborIndices[27] = { 0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };//{ 1, 3, 4, 6, 12, 21 }; //only neighbors that share a face at the moment
     size_t nodeIndicesInNeighbor[27] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };//{ 6, 4, 3, 1, 21, 12 };

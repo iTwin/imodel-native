@@ -2687,10 +2687,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
     if (flags->ShouldLoadGraph())
         {
         auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-        if (m_meshNode->GetGraphPtr() == NULL)
-            {
-            m_meshNode->LoadGraph();
-            }
+
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
 
