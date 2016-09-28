@@ -267,12 +267,12 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingBac
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -588,12 +588,12 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -642,12 +642,12 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
