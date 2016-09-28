@@ -52,7 +52,7 @@ void HttpTraversalObserverWrapper::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-void HttpTraversalObserverWrapper::OnDataExtracted(HttpDataCR data)
+void HttpTraversalObserverWrapper::OnDataExtracted(WebResourceDataCR data)
     {
     marshal_context ctx;
 
@@ -238,7 +238,7 @@ HttpClientWrapper::HttpClientWrapper(String^ serverUrl, String^ serverName)
     BeStringUtilities::WCharToUtf8(urlUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(serverUrl).ToPointer()));
     BeStringUtilities::WCharToUtf8(nameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(serverName).ToPointer()));
 
-    m_pClient = new HttpClientPtr(HttpClient::ConnectTo(urlUtf8.c_str(), nameUtf8.c_str()));
+    m_pClient = new WebResourceClientPtr(HttpClient::ConnectTo(urlUtf8.c_str(), nameUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------
@@ -498,7 +498,7 @@ void HttpDataWrapper::SetFootprint(List<double>^ footprint)
 HttpThumbnailWrapper^ HttpDataWrapper::GetThumbnail()
     {
     marshal_context ctx;
-    HttpThumbnailCR nativeThumbnail = (*m_pData)->GetThumbnail();
+    WebResourceThumbnailCR nativeThumbnail = (*m_pData)->GetThumbnail();
 
     // Convert native to managed.
     HttpThumbnailWrapper^ managedThumbnail = HttpThumbnailWrapper::Create();
@@ -526,7 +526,7 @@ HttpThumbnailWrapper^ HttpDataWrapper::GetThumbnail()
 //-------------------------------------------------------------------------------------
 void HttpDataWrapper::SetThumbnail(HttpThumbnailWrapper^ thumbnail)
     {
-    HttpThumbnailPtr nativeThumbnail = HttpThumbnail::Create();
+    WebResourceThumbnailPtr nativeThumbnail = WebResourceThumbnail::Create();
 
     // Convert managed to native.
     Utf8String provenance;
@@ -567,7 +567,7 @@ void HttpDataWrapper::SetThumbnail(HttpThumbnailWrapper^ thumbnail)
 HttpMetadataWrapper^ HttpDataWrapper::GetMetadata()
     {
     marshal_context ctx;
-    HttpMetadataCR nativeMetadata = (*m_pData)->GetMetadata();
+    WebResourceMetadataCR nativeMetadata = (*m_pData)->GetMetadata();
 
     // Convert native to managed.
     HttpMetadataWrapper^ managedMetadata = HttpMetadataWrapper::Create();
@@ -586,7 +586,7 @@ HttpMetadataWrapper^ HttpDataWrapper::GetMetadata()
 //-------------------------------------------------------------------------------------
 void HttpDataWrapper::SetMetadata(HttpMetadataWrapper^ metadata)
     {
-    HttpMetadataPtr nativeMetadata = HttpMetadata::Create();
+    WebResourceMetadataPtr nativeMetadata = WebResourceMetadata::Create();
 
     // Convert managed to native
     Utf8String provenance;
@@ -622,7 +622,7 @@ void HttpDataWrapper::SetMetadata(HttpMetadataWrapper^ metadata)
 HttpServerWrapper^ HttpDataWrapper::GetServer()
     {
     marshal_context ctx;
-    HttpServerCR nativeServer = (*m_pData)->GetServer();
+    WebResourceServerCR nativeServer = (*m_pData)->GetServer();
 
     // Convert native to managed.
     HttpServerWrapper^ managedServer = HttpServerWrapper::Create();
@@ -646,7 +646,7 @@ HttpServerWrapper^ HttpDataWrapper::GetServer()
 //-------------------------------------------------------------------------------------
 void HttpDataWrapper::SetServer(HttpServerWrapper^ server)
     {
-    HttpServerPtr nativeServer = HttpServer::Create("");
+    WebResourceServerPtr nativeServer = WebResourceServer::Create("");
 
     // Convert managed to native
     Utf8String protocol;
@@ -701,7 +701,7 @@ void HttpDataWrapper::SetServer(HttpServerWrapper^ server)
 //-------------------------------------------------------------------------------------
 HttpDataWrapper::HttpDataWrapper()
     {
-    m_pData = new HttpDataPtr(HttpData::Create());
+    m_pData = new WebResourceDataPtr(WebResourceData::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -886,7 +886,7 @@ void HttpThumbnailWrapper::SetGenerationDetails(System::String^ details)
 //-------------------------------------------------------------------------------------
 HttpThumbnailWrapper::HttpThumbnailWrapper()
     {
-    m_pThumbnail = new HttpThumbnailPtr(HttpThumbnail::Create());
+    m_pThumbnail = new WebResourceThumbnailPtr(WebResourceThumbnail::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -1043,7 +1043,7 @@ void HttpMetadataWrapper::SetData(System::String^ data)
 //-------------------------------------------------------------------------------------
 HttpMetadataWrapper::HttpMetadataWrapper()
     {
-    m_pMetadata = new HttpMetadataPtr(HttpMetadata::Create());
+    m_pMetadata = new WebResourceMetadataPtr(WebResourceMetadata::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ void HttpServerWrapper::SetServerType(System::String^ type)
 //-------------------------------------------------------------------------------------
 HttpServerWrapper::HttpServerWrapper()
     {
-    m_pServer = new HttpServerPtr(HttpServer::Create(""));
+    m_pServer = new WebResourceServerPtr(WebResourceServer::Create(""));
     }
 
 //-------------------------------------------------------------------------------------

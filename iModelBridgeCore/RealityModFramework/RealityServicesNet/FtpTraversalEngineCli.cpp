@@ -52,7 +52,7 @@ void FtpTraversalObserverWrapper::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-void FtpTraversalObserverWrapper::OnDataExtracted(FtpDataCR data)
+void FtpTraversalObserverWrapper::OnDataExtracted(WebResourceDataCR data)
     {
     marshal_context ctx;
 
@@ -498,7 +498,7 @@ void FtpDataWrapper::SetFootprint(List<double>^ footprint)
 FtpThumbnailWrapper^ FtpDataWrapper::GetThumbnail()
     {
     marshal_context ctx;
-    FtpThumbnailCR nativeThumbnail = (*m_pData)->GetThumbnail();
+    WebResourceThumbnailCR nativeThumbnail = (*m_pData)->GetThumbnail();
 
     // Convert native to managed.
     FtpThumbnailWrapper^ managedThumbnail = FtpThumbnailWrapper::Create();
@@ -526,7 +526,7 @@ FtpThumbnailWrapper^ FtpDataWrapper::GetThumbnail()
 //-------------------------------------------------------------------------------------
 void FtpDataWrapper::SetThumbnail(FtpThumbnailWrapper^ thumbnail)
     {
-    FtpThumbnailPtr nativeThumbnail = FtpThumbnail::Create();
+    WebResourceThumbnailPtr nativeThumbnail = WebResourceThumbnail::Create();
 
     // Convert managed to native.
     Utf8String provenance;
@@ -567,7 +567,7 @@ void FtpDataWrapper::SetThumbnail(FtpThumbnailWrapper^ thumbnail)
 FtpMetadataWrapper^ FtpDataWrapper::GetMetadata()
     {
     marshal_context ctx;
-    FtpMetadataCR nativeMetadata = (*m_pData)->GetMetadata();
+    WebResourceMetadataCR nativeMetadata = (*m_pData)->GetMetadata();
 
     // Convert native to managed.
     FtpMetadataWrapper^ managedMetadata = FtpMetadataWrapper::Create();
@@ -586,7 +586,7 @@ FtpMetadataWrapper^ FtpDataWrapper::GetMetadata()
 //-------------------------------------------------------------------------------------
 void FtpDataWrapper::SetMetadata(FtpMetadataWrapper^ metadata)
     {
-    FtpMetadataPtr nativeMetadata = FtpMetadata::Create();
+    WebResourceMetadataPtr nativeMetadata = WebResourceMetadata::Create();
 
     // Convert managed to native
     Utf8String provenance;
@@ -622,7 +622,7 @@ void FtpDataWrapper::SetMetadata(FtpMetadataWrapper^ metadata)
 FtpServerWrapper^ FtpDataWrapper::GetServer()
     {
     marshal_context ctx;
-    FtpServerCR nativeServer = (*m_pData)->GetServer();
+    WebResourceServerCR nativeServer = (*m_pData)->GetServer();
 
     // Convert native to managed.
     FtpServerWrapper^ managedServer = FtpServerWrapper::Create();
@@ -646,7 +646,7 @@ FtpServerWrapper^ FtpDataWrapper::GetServer()
 //-------------------------------------------------------------------------------------
 void FtpDataWrapper::SetServer(FtpServerWrapper^ server)
     {
-    FtpServerPtr nativeServer = FtpServer::Create("");
+    WebResourceServerPtr nativeServer = WebResourceServer::Create("");
 
     // Convert managed to native
     Utf8String protocol;
@@ -701,7 +701,7 @@ void FtpDataWrapper::SetServer(FtpServerWrapper^ server)
 //-------------------------------------------------------------------------------------
 FtpDataWrapper::FtpDataWrapper()
     {
-    m_pData = new FtpDataPtr(FtpData::Create());
+    m_pData = new WebResourceDataPtr(WebResourceData::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -886,7 +886,7 @@ void FtpThumbnailWrapper::SetGenerationDetails(System::String^ details)
 //-------------------------------------------------------------------------------------
 FtpThumbnailWrapper::FtpThumbnailWrapper()
     {
-    m_pThumbnail = new FtpThumbnailPtr(FtpThumbnail::Create());
+    m_pThumbnail = new WebResourceThumbnailPtr(WebResourceThumbnail::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -1043,7 +1043,7 @@ void FtpMetadataWrapper::SetData(System::String^ data)
 //-------------------------------------------------------------------------------------
 FtpMetadataWrapper::FtpMetadataWrapper()
     {
-    m_pMetadata = new FtpMetadataPtr(FtpMetadata::Create());
+    m_pMetadata = new WebResourceMetadataPtr(WebResourceMetadata::Create());
     }
 
 //-------------------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ void FtpServerWrapper::SetServerType(System::String^ type)
 //-------------------------------------------------------------------------------------
 FtpServerWrapper::FtpServerWrapper()
     {
-    m_pServer = new FtpServerPtr(FtpServer::Create(""));
+    m_pServer = new WebResourceServerPtr(WebResourceServer::Create(""));
     }
 
 //-------------------------------------------------------------------------------------

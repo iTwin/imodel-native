@@ -46,14 +46,14 @@ namespace RealityServicesCli
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              5/2016
     //=====================================================================================
-    class HttpTraversalObserverWrapper : public RealityPlatform::IHttpTraversalObserver
+    class HttpTraversalObserverWrapper : public RealityPlatform::IWebResourceTraversalObserver
         {
         public:
             HttpTraversalObserverWrapper(gcroot<IHttpTraversalObserverWrapper^> managedHttpObserver);
 
             virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
             virtual void OnFileDownloaded(Utf8CP file);
-            virtual void OnDataExtracted(RealityPlatform::HttpDataCR data);
+            virtual void OnDataExtracted(RealityPlatform::WebResourceDataCR data);
 
         private:
             gcroot<IHttpTraversalObserverWrapper^> m_managedHttpObserver;
@@ -98,7 +98,7 @@ namespace RealityServicesCli
             ~HttpClientWrapper();
             !HttpClientWrapper();
 
-            RealityPlatform::HttpClientPtr* m_pClient;
+            RealityPlatform::WebResourceClientPtr* m_pClient;
         };
 
 
@@ -168,7 +168,7 @@ namespace RealityServicesCli
             ~HttpDataWrapper();
             !HttpDataWrapper();
 
-            RealityPlatform::HttpDataPtr* m_pData;
+            RealityPlatform::WebResourceDataPtr* m_pData;
         };
 
     //=====================================================================================
@@ -213,7 +213,7 @@ namespace RealityServicesCli
             ~HttpThumbnailWrapper();
             !HttpThumbnailWrapper();
 
-            RealityPlatform::HttpThumbnailPtr* m_pThumbnail;
+            RealityPlatform::WebResourceThumbnailPtr* m_pThumbnail;
         };
 
     //=====================================================================================
@@ -254,7 +254,7 @@ namespace RealityServicesCli
             ~HttpMetadataWrapper();
             !HttpMetadataWrapper();
 
-            RealityPlatform::HttpMetadataPtr* m_pMetadata;
+            RealityPlatform::WebResourceMetadataPtr* m_pMetadata;
         };
 
     //=====================================================================================
@@ -315,6 +315,6 @@ namespace RealityServicesCli
             ~HttpServerWrapper();
             !HttpServerWrapper();
 
-            RealityPlatform::HttpServerPtr* m_pServer;
+            RealityPlatform::WebResourceServerPtr* m_pServer;
         };
     }
