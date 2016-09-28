@@ -1149,39 +1149,15 @@ void DgnViewport::SaveViewUndo()
     if (!m_undoActive)
         return;
 
-    DgnEditElementCollector const& curr = m_viewController->GetDefinitionR();
-
-    if (0 == m_currentBaseline.size())
+    auto curr = m_viewController->CloneState();
+    if (!m_currentBaseline.IsValid())
         {
         m_currentBaseline = curr;
         return;
         }
 
-#ifdef DEBUG_VIEW_UNDO
-    bset<Utf8String> ignore;
-    ignore.insert("LastMod");
-    ignore.insert("CodeValue");
-    ignore.insert("CodeNameSpace");
-    ignore.insert("CodeAuthorityId");
-    ignore.insert("ModelId");
-    ignore.insert("ParentId");
-    ignore.insert("UserLabel");
-    ignore.insert("Descr");
-    ignore.insert("Source");
-    Utf8String currStr, newStr;
-    m_currentBaseline.DumpTwo(currStr, curr, ignore);
-    puts("DgnViewport::SaveViewUndo\n");
-    puts(currStr.c_str());
-    puts("------------------\n");
-#endif
-
     if (curr.Equals(m_currentBaseline))
-        {
-#ifdef DEBUG_VIEW_UNDO
-        puts("---- No change ----");
-#endif
         return; // nothing changed
-        }
 
     if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();
@@ -1207,7 +1183,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ClearUndo()
     {
-    m_currentBaseline = DgnEditElementCollector();
+    m_currentBaseline = ViewController::State();
     m_forwardStack.clear();
     m_backStack.clear();
     }

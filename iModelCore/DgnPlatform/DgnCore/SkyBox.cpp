@@ -326,25 +326,25 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
 //=======================================================================================
 namespace EnvironmentJson
 {
-    static Utf8CP Display()     {return "display";}
-    static Utf8CP Ground()      {return "ground";}
-    static Utf8CP Sky()         {return "sky";}
+    static Utf8CP str_Display()     {return "display";}
+    static Utf8CP str_Ground()      {return "ground";}
+    static Utf8CP str_Sky()         {return "sky";}
 
     namespace GroundPlaneJson
     {
-        static Utf8CP Elevation()   {return "elevation";}
-        static Utf8CP AboveColor()  {return "aboveColor";}
-        static Utf8CP BelowColor()  {return "belowColor";}
+        static Utf8CP str_Elevation()   {return "elevation";}
+        static Utf8CP str_AboveColor()  {return "aboveColor";}
+        static Utf8CP str_BelowColor()  {return "belowColor";}
     };
     namespace SkyBoxJson
     {
-        static Utf8CP Filename()    {return "file";}
-        static Utf8CP SkyColor()    {return "skyColor";}
-        static Utf8CP ZenithColor() {return "zenithColor";}
-        static Utf8CP NadirColor()  {return "nadirColor";}
-        static Utf8CP GroundColor() {return "groundColor";}
-        static Utf8CP SkyExponent() {return "skyExponent";}
-        static Utf8CP GroundExponent() {return "groundExponent";}
+        static Utf8CP str_Filename()    {return "file";}
+        static Utf8CP str_SkyColor()    {return "skyColor";}
+        static Utf8CP str_ZenithColor() {return "zenithColor";}
+        static Utf8CP str_NadirColor()  {return "nadirColor";}
+        static Utf8CP str_GroundColor() {return "groundColor";}
+        static Utf8CP str_SkyExponent() {return "skyExponent";}
+        static Utf8CP str_GroundExponent() {return "groundExponent";}
     };
 
     static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
@@ -358,28 +358,28 @@ using namespace EnvironmentJson;
 void SpatialViewController::LoadEnvironment()
     {
     Json::Value env(Json::objectValue);
-    Json::Reader::Parse(GetDisplayStyle().GetEnvironment(), env);
+    Json::Reader::Parse(m_viewState.GetDisplayStyle()->GetEnvironment(), env);
 
-    m_environment.m_enabled = env[Display()].asBool();
+    m_environment.m_enabled = env[str_Display()].asBool();
     
-    JsonValueCR ground = env[Ground()];
-    JsonValueCR elevationJson = ground[GroundPlaneJson::Elevation()];
+    JsonValueCR ground = env[str_Ground()];
+    JsonValueCR elevationJson = ground[GroundPlaneJson::str_Elevation()];
 
-    m_environment.m_groundPlane.m_enabled = ground[Display()].asBool();
+    m_environment.m_groundPlane.m_enabled = ground[str_Display()].asBool();
     m_environment.m_groundPlane.m_elevation = elevationJson.isNull() ? -DgnUnits::OneCentimeter() : elevationJson.asDouble();
-    m_environment.m_groundPlane.m_aboveColor = GetColor(ground, GroundPlaneJson::AboveColor(), ColorDef::DarkGreen());
-    m_environment.m_groundPlane.m_belowColor = GetColor(ground, GroundPlaneJson::BelowColor(), ColorDef::DarkBrown());
+    m_environment.m_groundPlane.m_aboveColor = GetColor(ground, GroundPlaneJson::str_AboveColor(), ColorDef::DarkGreen());
+    m_environment.m_groundPlane.m_belowColor = GetColor(ground, GroundPlaneJson::str_BelowColor(), ColorDef::DarkBrown());
 
-    JsonValueCR sky = env[Sky()];
+    JsonValueCR sky = env[str_Sky()];
 
-    m_environment.m_skybox.m_enabled = sky[Display()].asBool();
-    m_environment.m_skybox.m_jpegFile = sky[SkyBoxJson::Filename()].asString();
-    m_environment.m_skybox.m_groundExponent = GetDouble(sky, SkyBoxJson::GroundExponent(), 4.0);
-    m_environment.m_skybox.m_skyExponent = GetDouble(sky, SkyBoxJson::SkyExponent(), 4.0);
-    m_environment.m_skybox.m_groundColor = GetColor(sky, SkyBoxJson::GroundColor(), ColorDef(120,143,125));
-    m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::ZenithColor(), ColorDef(54,117,255));
-    m_environment.m_skybox.m_nadirColor  = GetColor(sky, SkyBoxJson::NadirColor(), ColorDef(40,15,0));
-    m_environment.m_skybox.m_skyColor    = GetColor(sky, SkyBoxJson::SkyColor(), ColorDef(143,205,255));
+    m_environment.m_skybox.m_enabled = sky[str_Display()].asBool();
+    m_environment.m_skybox.m_jpegFile = sky[SkyBoxJson::str_Filename()].asString();
+    m_environment.m_skybox.m_groundExponent = GetDouble(sky, SkyBoxJson::str_GroundExponent(), 4.0);
+    m_environment.m_skybox.m_skyExponent = GetDouble(sky, SkyBoxJson::str_SkyExponent(), 4.0);
+    m_environment.m_skybox.m_groundColor = GetColor(sky, SkyBoxJson::str_GroundColor(), ColorDef(120,143,125));
+    m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::str_ZenithColor(), ColorDef(54,117,255));
+    m_environment.m_skybox.m_nadirColor  = GetColor(sky, SkyBoxJson::str_NadirColor(), ColorDef(40,15,0));
+    m_environment.m_skybox.m_skyColor    = GetColor(sky, SkyBoxJson::str_SkyColor(), ColorDef(143,205,255));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,28 +388,26 @@ void SpatialViewController::LoadEnvironment()
 void SpatialViewController::SaveEnvironment()
     {
     Json::Value env;
-    env[Display()] = m_environment.m_enabled;
+    env[str_Display()] = m_environment.m_enabled;
     
     Json::Value ground;
-    ground[Display()] = m_environment.m_groundPlane.m_enabled;
-    ground[GroundPlaneJson::Elevation()] = m_environment.m_groundPlane.m_elevation;
-    ground[GroundPlaneJson::AboveColor()] = m_environment.m_groundPlane.m_aboveColor.GetValue();
-    ground[GroundPlaneJson::BelowColor()] = m_environment.m_groundPlane.m_belowColor.GetValue();
-    env[Ground()] = ground;
+    ground[str_Display()] = m_environment.m_groundPlane.m_enabled;
+    ground[GroundPlaneJson::str_Elevation()] = m_environment.m_groundPlane.m_elevation;
+    ground[GroundPlaneJson::str_AboveColor()] = m_environment.m_groundPlane.m_aboveColor.GetValue();
+    ground[GroundPlaneJson::str_BelowColor()] = m_environment.m_groundPlane.m_belowColor.GetValue();
+    env[str_Ground()] = ground;
 
-    Json::Value sky = env[Sky()];
-    sky[Display()] = m_environment.m_skybox.m_enabled;
-    sky[SkyBoxJson::Filename()] = m_environment.m_skybox.m_jpegFile;
-    sky[SkyBoxJson::GroundExponent()] = m_environment.m_skybox.m_groundExponent;
-    sky[SkyBoxJson::SkyExponent()] = m_environment.m_skybox.m_skyExponent;
+    Json::Value sky = env[str_Sky()];
+    sky[str_Display()] = m_environment.m_skybox.m_enabled;
+    sky[SkyBoxJson::str_Filename()] = m_environment.m_skybox.m_jpegFile;
+    sky[SkyBoxJson::str_GroundExponent()] = m_environment.m_skybox.m_groundExponent;
+    sky[SkyBoxJson::str_SkyExponent()] = m_environment.m_skybox.m_skyExponent;
 
-    sky[SkyBoxJson::GroundColor()] = m_environment.m_skybox.m_groundColor.GetValue();
-    sky[SkyBoxJson::ZenithColor()] = m_environment.m_skybox.m_zenithColor.GetValue();
-    sky[SkyBoxJson::NadirColor()] = m_environment.m_skybox.m_nadirColor.GetValue();
-    sky[SkyBoxJson::SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
-    env[Sky()] = sky;
+    sky[SkyBoxJson::str_GroundColor()] = m_environment.m_skybox.m_groundColor.GetValue();
+    sky[SkyBoxJson::str_ZenithColor()] = m_environment.m_skybox.m_zenithColor.GetValue();
+    sky[SkyBoxJson::str_NadirColor()] = m_environment.m_skybox.m_nadirColor.GetValue();
+    sky[SkyBoxJson::str_SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
+    env[str_Sky()] = sky;
     
-#ifdef WIP_VIEW_DEFINITION
-    m_settings[Environment()] = env;
-#endif
+    m_viewState.GetDisplayStyle()->SetEnvironment(Json::FastWriter::ToString(env).c_str());
     }

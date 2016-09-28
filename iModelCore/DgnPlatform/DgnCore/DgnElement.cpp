@@ -3292,6 +3292,7 @@ DgnElementPtr DgnEditElementCollector::FindElementByClass(ECN::ECClassCR ecclass
         if (el->GetElementClass()->Is(&ecclass))
             return el;
         }
+
     return nullptr;
     }
 
@@ -3345,7 +3346,7 @@ DgnDbStatus DgnEditElementCollector::Write(bool* anyInserts)
         bool needsInsert = !el->GetElementId().IsValid();
         if (anyInserts)
             *anyInserts |= needsInsert;
-        DgnElementCPtr updatedEl = !needsInsert? el->Update(&status): el->Insert(&status);
+        DgnElementCPtr updatedEl = !needsInsert ? el->Update(&status) : el->Insert(&status);
         if (!updatedEl.IsValid())
             return status;
         if (needsInsert)

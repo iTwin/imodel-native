@@ -52,6 +52,10 @@ Frustum::Frustum(DRange3dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewController::SpatialViewController(SpatialViewDefinition const& def) : T_Super(def)
     {
+    auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(GetSpatialViewDefinition().GetModelSelectorId());
+    if (modelSelector.IsValid())
+        m_viewState.m_modelSelector = modelSelector->MakeCopy<ModelSelector>();
+
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
     m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
 
@@ -111,10 +115,8 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
         textBottomRight.y -= (textHeight + padding);
         }
 
-    ColorDef bgColor = ColorDef::White();
     static int const FILL_TRANSPARENCY = 128;
-    bgColor = vp.MakeColorTransparency(bgColor, FILL_TRANSPARENCY);
-    
+    ColorDef bgColor = vp.MakeColorTransparency(ColorDef::White(), FILL_TRANSPARENCY);
     graphic->SetBlankingFill(bgColor);
     
     DPoint3d textShape[4];

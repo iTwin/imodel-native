@@ -13,6 +13,7 @@
 #include "ViewContext.h"
 #include "SectionClip.h"
 #include "UpdatePlan.h"
+#include "DgnView.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 
@@ -64,17 +65,17 @@ private:
 
 public:
     static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
-    void     InvalidateFocus() {m_focusDistance=-1.0;}
-    bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
-    double   GetFocusDistance() const {return m_focusDistance;}
-    void     SetFocusDistance(double dist) {m_focusDistance = dist;}
-    bool     IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
-    void     ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::PiOver2();}
-    double   GetLensAngle() const {return m_lensAngle;}
-    void     SetLensAngle(double angle) {m_lensAngle = angle;}
+    void InvalidateFocus() {m_focusDistance=-1.0;}
+    bool IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
+    double GetFocusDistance() const {return m_focusDistance;}
+    void SetFocusDistance(double dist) {m_focusDistance = dist;}
+    bool IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
+    void ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::PiOver2();}
+    double GetLensAngle() const {return m_lensAngle;}
+    void SetLensAngle(double angle) {m_lensAngle = angle;}
     DPoint3dCR GetEyePoint() const {return m_eyePoint;}
-    void     SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
-    bool     IsValid() const {return IsLensValid() && IsFocusValid();}
+    void SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
+    bool IsValid() const {return IsLensValid() && IsFocusValid();}
 };
 
 //=======================================================================================
@@ -102,6 +103,33 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct State
+    {
+        friend struct ViewController;
+        friend struct SpatialViewController;
+    private:
+        ViewDefinitionPtr   m_definition;
+        CategorySelectorPtr m_categorySelector;
+        DisplayStylePtr     m_displayStyle;
+        ModelSelectorPtr    m_modelSelector;
+
+    public:
+        ViewDefinitionP GetViewDefinition() const {return m_definition.get();}
+        DisplayStyleP GetDisplayStyle() const {return m_displayStyle.get();}
+        CategorySelectorP GetCategorySelector() const {return m_categorySelector.get();}
+        ModelSelectorP GetModelSelector() const {return m_modelSelector.get();}
+
+        bool IsValid() const {return m_definition.IsValid();}
+        bool Equals(State const&other) const;
+        State() {}
+        State(ViewDefinition const& definition);
+        DGNPLATFORM_EXPORT State Clone() const;
+        DGNPLATFORM_EXPORT DgnDbStatus Write();
+    };
+
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
@@ -115,7 +143,6 @@ protected:
     friend struct ViewContext;
     friend struct DgnViewport;
     friend struct ViewManager;
-    friend struct SpatialRedlineViewController;
     friend struct IACSManager;
     friend struct IAuxCoordSys;
     friend struct ToolAdmin;
@@ -125,9 +152,9 @@ protected:
     DgnClassId     m_classId;
     DgnModelId     m_targetModelId;
     DgnModelIdSet  m_viewedModels;
-    DgnCategoryIdSet  m_viewedCategories;
+    DgnCategoryIdSet m_viewedCategories;
     DgnDbR         m_dgndb;
-    mutable DgnEditElementCollector m_definitionElements;
+    State          m_viewState;
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
@@ -161,6 +188,7 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
     virtual double _GetAspectRatioSkew() const {return 1.0;}
+    virtual bool _Is3d() const {return false;}
 
     DGNPLATFORM_EXPORT virtual void _FillModels();
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
@@ -178,12 +206,12 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const;
 
     //! Store the controller's state back to its underlying definition elements. The caller may persist the definition elements in the database and in the undo stack.
-    //! Note that if you override _StoreToDefinition, you must call T_Super::_StoreToDefinition!
-    DGNPLATFORM_EXPORT virtual void _StoreToDefinition() const;
+    //! Note that if you override _StoreState, you must call T_Super::_StoreState!
+    DGNPLATFORM_EXPORT virtual void _StoreState() const;
 
     //! Load the controller's state from its definition elements. These definition elements may have been persisted in the database or in the undo stack.
-    //! Note that if you override _LoadFromDefinition, you must call T_Super::_LoadFromDefinition!
-    DGNPLATFORM_EXPORT virtual void _LoadFromDefinition();
+    //! Note that if you override _LoadState, you must call T_Super::_LoadState!
+    DGNPLATFORM_EXPORT virtual void _LoadState();
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
@@ -282,21 +310,8 @@ protected:
     //! @return true to close this viewport
     DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
 
-    ECN::ECClassCP GetDisplayStyleClass()     const {return GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "DisplayStyle");}
-    ECN::ECClassCP GetCategorySelectorClass() const {return GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CategorySelector");}
-    ECN::ECClassCP GetViewDefinitionClass()   const {return GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ViewDefinition");}
-
-    //! Get the editable DisplayStyle used by this ViewController
-    DGNPLATFORM_EXPORT DisplayStyleR GetDisplayStyle() const;
-
-    //! Get the editable CategorySelector used by this ViewController
-    DGNPLATFORM_EXPORT CategorySelectorR GetCategorySelector() const;
-
-    //! Get the editable ViewDefinition used by this ViewController
-    DGNPLATFORM_EXPORT ViewDefinitionR GetViewDefinition() const;
-
-    //! Make sure that all definition element relationships are persistent. Called as part of SaveDefinition. 
-    DGNPLATFORM_EXPORT virtual void _FixUpDefinitionRelationships();
+    State CloneState() {StoreState(); return m_viewState.Clone();}
+    void ChangeState(State const& newState) {m_viewState=newState.Clone(); LoadState();}
 
 public:
     /*=================================================================================**//**
@@ -350,36 +365,33 @@ public:
 
     //! Read the state of this controller from its definition elements.
     //! @see GetDefinitionR
-    DGNPLATFORM_EXPORT void LoadFromDefinition();
+    DGNPLATFORM_EXPORT void LoadState();
 
     //! Store the state of this controller to its definition elements. @note It is up to the caller to write the definition elements to the database if that is the goal.
     //! @see SaveDefinition
-    DGNPLATFORM_EXPORT void StoreToDefinition();
+    DGNPLATFORM_EXPORT void StoreState();
 
-    //! Save this controller's definition elements to the bim. @note Use this method instead of GetDefinitionR().Write() in order to ensure that all needed relationships are created.
+    //! Save this controller's definition elements to the bim.
     //! @see GetDefinitionR
-    DGNPLATFORM_EXPORT DgnDbStatus SaveDefinition();
+    DgnDbStatus SaveState() {return m_viewState.Write();}
 
     //! Save the state of this controller to its definitions elements and then write them to the Db.
-    DgnDbStatus Save() {StoreToDefinition(); return SaveDefinition();}
+    DgnDbStatus Save() {StoreState(); return SaveState();}
 
-    //! Get copies of the definition elements used by this controller. You may store these definition elements in an undo stack or write them to the database. 
-    //! Or, you may modify these elements and then call Load.
-    DgnEditElementCollector& GetDefinitionR() {StoreToDefinition(); return m_definitionElements;}
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
     //! directed at the new view, and the previous view's state is unchanged.
     //! @param[in] newName The name for the new view. Must be unique.
-    //! @return BE_SQLITE_OK if the view was successfully saved, error code otherwise.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveAs(Utf8CP newName);
+    //! @return SUCCESS if the view was successfully saved, error code otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus SaveAs(Utf8CP newName);
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, the new view will exist in the
     //! database with this ViewController's state, but this ViewController remains directed at the existing view (future calls to Save
     //! will be written to the existing not new view). However, the current state will not have been saved.
     //! @param[in] newName The name for the new view. Must be unique.
     //! @param[out] newId On success, the DgnViewId of the newly created view.
-    //! @return BE_SQLITE_OK if the view was successfully saved, error code otherwise.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveTo(Utf8CP newName, DgnViewId& newId);
+    //! @return SUCCESS if the view was successfully saved, error code otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus SaveTo(Utf8CP newName, DgnViewId& newId);
 
     //! perform the equivalent of a dynamic_cast to a SpatialViewController.
     //! @return a valid SpatialViewControllerCP, or nullptr if this is not a physical view
@@ -533,10 +545,6 @@ public:
     //! if the view is a physical view.
     bool Allow3dManipulations() const {return _Allow3dManipulations();}
     
-    //! @return a value used to offset patterns in the Z direction.  Typically used only in a physical view used to display map content. Expect Allow3dManipulations to be false when this is non-zero 
-    // WIP_MERGE_John_Patterns - DGNPLATFORM_EXPORT double GetPatternZOffset(ViewContextR, ElementHandleCR) const;
-
-
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
     //! @note The order of the points in the frustum is defined by the NpcCorners enum.
@@ -577,11 +585,16 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController3d : ViewController
 {
+    DEFINE_T_SUPER(ViewController);
+
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
     DVec3d m_delta;                    //!< The extent of the view frustum.
     RotMatrix m_rotation;              //!< Rotation of the view frustum.
 
+    virtual bool _Is3d() const override {return true;}
+    DGNPLATFORM_EXPORT virtual void _StoreState() const override;
+    DGNPLATFORM_EXPORT virtual void _LoadState() override;
     DPoint3d _GetOrigin() const override {return m_origin;}
     DVec3d _GetDelta() const override {return m_delta;}
     RotMatrix _GetRotation() const override {return m_rotation;}
@@ -813,9 +826,8 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT BentleyStatus _SetTargetModel(GeometricModelP target) override;
-    DGNPLATFORM_EXPORT void _LoadFromDefinition() override; // reads things like modelselector that is common to all 3d views
-    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
-    DGNPLATFORM_EXPORT void _FixUpDefinitionRelationships() override;
+    DGNPLATFORM_EXPORT void _LoadState() override; // reads things like modelselector that is common to all spatial views
+    DGNPLATFORM_EXPORT void _StoreState() const override;
     virtual void _OnTransform(TransformCR) = 0;
 
     //! Determine whether the eyepoint is above or below an elevation (postion along world-z axis).
@@ -824,16 +836,10 @@ protected:
     virtual bool _IsEyePointAbove(double elevation) const {return GetZVector().z > 0;}
     DGNPLATFORM_EXPORT virtual DPoint3d _ComputeEyePoint(Frustum const&) const;
 
-
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinition const& definition);
     ~SpatialViewController() {RequestAbort(true);}
-
-    ECN::ECClassCP GetModelSelectorClass() const {return GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ModelSelector");}
-
-    //! Get the editable ModelSelector used by this ViewController
-    DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector() const;
 
     void LoadEnvironment();
     DGNPLATFORM_EXPORT void SaveEnvironment();
@@ -935,8 +941,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewControlle
     friend struct OrthographicViewDefinition;
 
 protected:
-    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
-    DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
+    DGNPLATFORM_EXPORT void _LoadState() override;
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     OrthographicViewControllerCP _ToOrthographicView() const override {return this;}
@@ -1029,8 +1034,8 @@ protected:
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
-    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
-    DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
+    DGNPLATFORM_EXPORT void _StoreState() const override;
+    DGNPLATFORM_EXPORT void _LoadState() override;
 
     bool _IsEyePointAbove(double elevation) const override {return GetEyePoint().z > elevation;}
     DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
@@ -1235,8 +1240,8 @@ protected:
     DGNPLATFORM_EXPORT void _SetOrigin(DPoint3dCR org) override;
     DGNPLATFORM_EXPORT void _SetDelta(DVec3dCR delta) override;
     DGNPLATFORM_EXPORT void _SetRotation(RotMatrixCR rot) override;
-    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
-    DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
+    DGNPLATFORM_EXPORT void _StoreState() const override;
+    DGNPLATFORM_EXPORT void _LoadState() override;
 
     DGNPLATFORM_EXPORT ViewController2d(ViewDefinition2d const& def);
 

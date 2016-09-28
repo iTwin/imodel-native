@@ -406,9 +406,9 @@ void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_StoreToDefinition() const 
+void SpatialRedlineViewController::_StoreState() const 
     {
-    m_subjectView._StoreToDefinition();
+    m_subjectView._StoreState();
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
@@ -447,9 +447,9 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_LoadFromDefinition()
+void SpatialRedlineViewController::_LoadState()
     {
-    T_Super::_LoadFromDefinition();
+    T_Super::_LoadState();
     SynchWithSubjectViewController();
     }
 

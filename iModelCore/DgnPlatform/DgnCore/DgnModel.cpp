@@ -1355,22 +1355,6 @@ void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
         }        
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GeometricModel::DisplayInfo::GetMillimetersPerMaster() const
-    {
-    return GetMasterUnits().IsLinear() ? GetMasterUnits().ToMillimeters() : 1000.;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GeometricModel::DisplayInfo::GetSubPerMaster() const
-    {
-    return GetSubUnits().ConvertDistanceFrom(1.0, GetMasterUnits());
-    }
-
 struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
