@@ -21,7 +21,7 @@ BEGIN_BENTLEY_NAMESPACE
 * @bsiclass                                                     Keith.Bentley   09/07
 +===============+===============+===============+===============+===============+======*/
 struct  IRefCounted
-    {
+{
 protected:
     virtual ~IRefCounted() {}         // force virtual destructor for subclasses
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -29,7 +29,7 @@ protected:
 public:
     virtual uint32_t AddRef() const = 0;
     virtual uint32_t Release() const = 0;
-    };
+};
 
 // define this macro to catch calls to Release without matching calls to AddRef
 #define DEBUG_REF_COUNTING
@@ -84,7 +84,7 @@ struct MyClass : RefCounted<ISomeInterface> {...};
 * @bsiclass                                                     Keith.Bentley   09/07
 +===============+===============+===============+===============+===============+======*/
 template <class Base> class RefCounted : public Base
-    {
+{
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
 protected:
@@ -95,7 +95,7 @@ public:
     RefCounted(RefCounted const& rhs) {m_refCount.store(0);} // Initialize my ref count to zero. Adopting rhs' data does not add a *reference* to me.
     RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Copying rhs' data to me does not add a *reference* to me.
     uint32_t GetRefCount() const {return m_refCount.load();}
-    };
+};
 
 /*=================================================================================**//**
 * Concrete class that can be used to implement the reference-counting pattern.
@@ -103,8 +103,8 @@ public:
 * @bsiclass                                                     Keith.Bentley   09/07
 +===============+===============+===============+===============+===============+======*/
 class RefCountedBase : public RefCounted<IRefCounted>
-    {
-    };
+{
+};
 
 //=======================================================================================
 //! A shared pointer template for reference-counted objects.
