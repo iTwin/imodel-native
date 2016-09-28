@@ -15,13 +15,6 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-Json::Value ReadInstance(IDataSourceCachePtr cache, ObjectIdCR objectId)
-    {
-    Json::Value instanceJson;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadInstance(objectId, instanceJson));
-    return instanceJson;
-    }
-
 template<typename T>
 std::set<T> ToStdSet(const bset<T>& bset)
     {
@@ -2134,7 +2127,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdAndSomeProperiesForFull
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2158,7 +2151,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsSomeProperiesAndIdForFull
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2182,7 +2175,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsOnlyIdForFullyCachedInsta
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2401,7 +2394,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsId
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
-    EXPECT_EQ("OldValue", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsFull_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
@@ -2495,8 +2488,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAll
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "B"} }));
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
@@ -2530,9 +2523,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     ObjectId c("TestSchema.TestClass", "C");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { b, c }));
 
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("FullC", ReadInstance(cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("FullC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2566,9 +2559,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
 
     EXPECT_EQ(0, rejected.size());
 
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("NewB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("NewC", ReadInstance(cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("NewB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("NewC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2602,8 +2595,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     ObjectId b("TestSchema.TestClass", "B");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { a, b }));
 
-    EXPECT_EQ("FullA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("FullA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
