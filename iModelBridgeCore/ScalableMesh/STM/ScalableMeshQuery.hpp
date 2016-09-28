@@ -1845,7 +1845,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                                                                                       );
                     displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
                     }
-
+                else assert(false);
 
                 }
             m_cachedDisplayTextureData.push_back(displayTextureDataPtr);

@@ -935,23 +935,27 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SMMemoryPoolItemId GetPoolIdForTexture(uint64_t texID)
             {
+            std::lock_guard<std::mutex> lock(m_texMutex);
             if (m_texMap.count(texID) == 0) return SMMemoryPool::s_UndefinedPoolItemId;
             return m_texMap[texID];
             }
 
         SMMemoryPoolItemId GetPoolIdForTextureData(uint64_t texID)
             {
+            std::lock_guard<std::mutex> lock(m_texMutex);
             if (m_texDataMap.count(texID) == 0) return SMMemoryPool::s_UndefinedPoolItemId;
             return m_texDataMap[texID];
             }
 
         void SetPoolIdForTexture(uint64_t texID, SMMemoryPoolItemId id)
             {
+            std::lock_guard<std::mutex> lock(m_texMutex);
             m_texMap[texID] = id;
             }
 
         void SetPoolIdForTextureData(uint64_t texID, SMMemoryPoolItemId id)
             {
+            std::lock_guard<std::mutex> lock(m_texMutex);
             m_texDataMap[texID] = id;
             }
 
@@ -976,6 +980,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         bmap<uint64_t, SMMemoryPoolItemId> m_texMap;
         bmap<uint64_t, SMMemoryPoolItemId> m_texDataMap;
+        std::mutex m_texMutex;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
 

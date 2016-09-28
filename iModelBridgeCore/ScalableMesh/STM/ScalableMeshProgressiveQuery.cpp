@@ -79,7 +79,7 @@ static Logger logger;
 
 #endif
 
-//#define DEACTIVATE_THREADING
+#define DEACTIVATE_THREADING
 
 /*==================================================================*/
 /*                   IScalableMeshProgressiveQueryEngine            */
@@ -424,7 +424,11 @@ private:
             bvector<SmCachedDisplayTexture*> nodeTex;
             bvector<uint64_t> texIDs;
             meshNode->GetCachedTextures(nodeTex, texIDs);
-            if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities) || (loadTexture ==( nodeTex.empty())))
+            bool areTexMissing = false;
+            for (auto& cachedTex : nodeTex)
+                if (cachedTex == nullptr)areTexMissing = true;
+            if (nodeTex.empty()) areTexMissing = true;
+            if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities) || (loadTexture ==( areTexMissing)))
                 {
                 meshNode->ApplyAllExistingClips();
                 meshNode->RemoveDisplayDataFromCache();                    
@@ -1011,7 +1015,11 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     bvector<SmCachedDisplayTexture*> nodeTex;
     bvector<uint64_t> texIDs;
     meshNodePtr->GetCachedTextures(nodeTex, texIDs);
-    if (!meshNodePtr->IsLoaded() || (loadTexture == (nodeTex.empty()) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
+    bool areTexMissing = false;
+    for (auto& cachedTex : nodeTex)
+        if (cachedTex == nullptr)areTexMissing = true;
+    if (nodeTex.empty()) areTexMissing = true;
+    if (!meshNodePtr->IsLoaded() || (loadTexture == (areTexMissing) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {        
         FindOverview(lowerResOverviewNodes, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities);
         }
@@ -1127,7 +1135,11 @@ class NewQueryStartingNodeProcessor
                 bvector<SmCachedDisplayTexture*> nodeTex;
                 bvector<uint64_t> texIDs;
                 meshNodePtr->GetCachedTextures(nodeTex, texIDs);
-                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture == (nodeTex.empty()) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                bool areTexMissing = false;
+                for (auto& cachedTex : nodeTex)
+                    if (cachedTex == nullptr)areTexMissing = true;
+                if (nodeTex.empty()) areTexMissing = true;
+                if (!meshNodePtr->IsLoaded() || (m_newQuery->m_loadTexture == (areTexMissing) && meshNodePtr->IsTextured()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {            
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
