@@ -53,7 +53,7 @@ FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName) : WebResourceClient(se
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-WebResourceStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
+WebResourceStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
     // Create request to get a list of all the files from the given path.
     FtpRequestPtr pRequest = FtpRequest::Create(url);
@@ -79,7 +79,7 @@ WebResourceStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileLi
             subPath.append(content);
             subPath.append("/");
 
-            GetFileList(subPath.c_str(), fileList);
+            _GetFileList(subPath.c_str(), fileList);
             }
         else
             {

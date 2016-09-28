@@ -67,7 +67,7 @@ HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName) : WebResourceClient(
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-WebResourceStatus HttpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
+WebResourceStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
     // Create request to get page content.
     HttpRequestPtr pRequest = HttpRequest::Create(url);
@@ -112,7 +112,7 @@ WebResourceStatus HttpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileL
             subPath = url;
             subPath.append(link);
 
-            GetFileList(subPath.c_str(), fileList);
+            _GetFileList(subPath.c_str(), fileList);
             }            
         else
             {  

@@ -30,7 +30,7 @@ struct HttpClient : public WebResourceClient
         HttpClient(Utf8CP serverUrl, Utf8CP serverName);
 
         //! Recurse into sub directories and create a list of all files.
-        WebResourceStatus GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const override;
+        WebResourceStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const override;
 
         WebResourceDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const override;
         

@@ -111,7 +111,7 @@ WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceClient::GetFileList(bvector<Utf8String>& fileList) const
 {
-    return GetFileList(m_pServer->GetUrl().c_str(), fileList);
+    return _GetFileList(m_pServer->GetUrl().c_str(), fileList);
 }
 
 //-------------------------------------------------------------------------------------

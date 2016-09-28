@@ -108,7 +108,7 @@ protected:
     ~WebResourceClient();
 
     //! Recurse into sub directories and create a list of all files.
-    virtual WebResourceStatus GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const = 0;
+    virtual WebResourceStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const = 0;
 
     virtual WebResourceDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const = 0;
 

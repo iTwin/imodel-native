@@ -53,7 +53,7 @@ namespace RealityServicesCli
 
             virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
             virtual void OnFileDownloaded(Utf8CP file);
-            virtual void OnDataExtracted(RealityPlatform::FtpDataCR data);
+            virtual void OnDataExtracted(RealityPlatform::WebResourceDataCR data);
 
         private:
             gcroot<IFtpTraversalObserverWrapper^> m_managedFtpObserver;
@@ -168,7 +168,7 @@ namespace RealityServicesCli
             ~FtpDataWrapper();
             !FtpDataWrapper();
 
-            RealityPlatform::FtpDataPtr* m_pData;
+            RealityPlatform::WebResourceDataPtr* m_pData;
         };
 
     //=====================================================================================
@@ -213,7 +213,7 @@ namespace RealityServicesCli
             ~FtpThumbnailWrapper();
             !FtpThumbnailWrapper();
 
-            RealityPlatform::FtpThumbnailPtr* m_pThumbnail;
+            RealityPlatform::WebResourceThumbnailPtr* m_pThumbnail;
         };
 
     //=====================================================================================
@@ -254,7 +254,7 @@ namespace RealityServicesCli
             ~FtpMetadataWrapper();
             !FtpMetadataWrapper();
 
-            RealityPlatform::FtpMetadataPtr* m_pMetadata;
+            RealityPlatform::WebResourceMetadataPtr* m_pMetadata;
         };
 
     //=====================================================================================
@@ -315,6 +315,6 @@ namespace RealityServicesCli
             ~FtpServerWrapper();
             !FtpServerWrapper();
 
-            RealityPlatform::FtpServerPtr* m_pServer;
+            RealityPlatform::WebResourceServerPtr* m_pServer;
         };
     }
