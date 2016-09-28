@@ -1217,14 +1217,14 @@ protected:
     DgnCategoryId           m_categoryId;
     GeometryStream          m_geom;
     DgnDbR                  m_db;
-    bool                    m_valid;
+    bool                    m_isGeometryValid;
 
     TileGeometrySource(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob) : m_categoryId(categoryId), m_db(db)
         {
-        m_valid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
+        m_isGeometryValid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
         }
 public:
-    bool IsValid() const { return m_valid; }
+    bool IsGeometryValid() const { return m_isGeometryValid; }
 };
 
 //=======================================================================================
@@ -1251,8 +1251,8 @@ private:
 public:
     static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
-        std::unique_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
-        if (!pSrc->IsValid())
+        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        if (!static_cast<TileGeometrySource3d const&>(*pSrc).IsGeometryValid())
             return nullptr;
 
         return pSrc;
