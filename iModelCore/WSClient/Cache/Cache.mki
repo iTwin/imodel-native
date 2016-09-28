@@ -95,6 +95,8 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV9.h            \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV9ToV10.h           \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.h          \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.h          \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV12ToV13.h          \
     $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
     $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
@@ -217,6 +219,8 @@ $(o)UpgraderFromV9ToV10$(oext)                  : $(CacheMkiSourceDir)Persistenc
 $(o)UpgraderFromV10ToV11$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)UpgraderFromV11ToV12$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV12ToV13$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV12ToV13.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
