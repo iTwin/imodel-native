@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct GraphicalType2d; struct Subject; struct Role;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct SectionDrawing; struct Sheet; struct Definition; struct PhysicalType; struct GraphicalType2d; struct Subject; struct Role;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -2150,8 +2150,24 @@ protected:
     explicit Drawing(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a new Drawing in the specified InformationModel
+    //! Creates a new Drawing in the specified DocumentListModel
     DGNPLATFORM_EXPORT static DrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing: Drawing
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SectionDrawing, Drawing)
+    friend struct dgn_ElementHandler::SectionDrawing;
+
+protected:
+    explicit SectionDrawing(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Creates a new SectionDrawing in the specified DocumentListModel
+    DGNPLATFORM_EXPORT static SectionDrawingPtr Create(DocumentListModelCR model, DgnCodeCR code=DgnCode(), Utf8CP userLabel=nullptr);
 };
 
 //=======================================================================================

@@ -191,7 +191,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 PublisherContext::Status TilePublisher::Publish()
     {
     if (m_meshes.empty())
-        return PublisherContext::Status::Success;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     
@@ -217,9 +217,9 @@ PublisherContext::Status TilePublisher::Publish()
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
-    // B3DM header = 5 32-bit values
+    // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 20;
+    static const size_t s_b3dmHeaderSize = 24;
     static const char s_b3dmMagic[] = "b3dm";
     static const uint32_t s_b3dmVersion = 1;
     uint32_t b3dmNumBatches = m_batchIds.Count();
@@ -228,8 +228,9 @@ PublisherContext::Status TilePublisher::Publish()
     std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
     AppendUInt32(s_b3dmVersion);
     AppendUInt32(b3dmLength);
-    AppendUInt32(b3dmNumBatches);
     AppendUInt32(batchTableStrLen);
+    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+    AppendUInt32(b3dmNumBatches);
     std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
 
     std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
@@ -952,12 +953,22 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
+    if (_OmitFromTileset(tile))
+        {
+        range = DRange3d::NullRange();
+        return;
+        }
+
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
     DRange3d        contentRange;
 
-    contentRange.IntersectionOf (tile.GetTileRange(), tile.GetPublishedRange());
+    DRange3d publishedRange = tile.GetPublishedRange();
+    if (publishedRange.IsNull())
+        publishedRange = tile.GetTileRange();
+
+    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
     range = contentRange;
 
     if (!tile.GetChildren().empty())
@@ -1019,7 +1030,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     
     // The content bounding box represents the actual 
     if (!contentRange.IsNull())
-        TilePublisher::WriteBoundingVolume (root[JSON_Content], tile.GetPublishedRange());
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], publishedRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1105,7 +1116,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
     Status                  status;
-    static size_t           s_maxPointsPerTile = 20000;
+    static size_t           s_maxPointsPerTile = 200000;
 
     if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
         return status;
@@ -1181,3 +1192,115 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     return Status::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
+    {
+    Json::Value     modelJson (Json::objectValue);
+    
+    for (auto& modelId : modelIds)
+        {
+        auto const&  model = GetDgnDb().Models().GetModel (modelId);
+        if (model.IsValid())
+            modelJson[modelId.ToString()] = model->GetName();
+        }
+
+    return modelJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
+    {
+    Json::Value categoryJson (Json::objectValue); 
+    
+    for (auto& categoryId : categoryIds)
+        {
+        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
+
+        if (category.IsValid())
+            categoryJson[categoryId.ToString()] = category->GetCategoryName();
+        }
+
+    return categoryJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+    {
+    OrthographicViewDefinitionCP    orthographicView;
+    CameraViewDefinitionCP          cameraView;
+    DVec3d                          xVec, yVec, zVec;
+    RotMatrix                       rotation;
+    DPoint3d                        eyePoint;
+
+    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
+        {
+        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
+        // Simulate by pointing the camera toward the center of the viewed volume.
+        eyePoint = cameraView->GetEyePoint();
+        rotation =  cameraView->GetViewDirection().ToRotMatrix();
+
+        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
+
+        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
+        rotation.Multiply(viewEyePoint, eyePoint);
+
+        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
+        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
+        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
+
+        rotation.MultiplyTranspose (target, viewTarget);
+
+        rotation.GetRows(xVec, yVec, zVec);
+        zVec.NormalizedDifference (eyePoint, target);
+
+        xVec.NormalizedCrossProduct (yVec, zVec);
+        yVec.NormalizedCrossProduct (zVec, xVec);
+
+        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
+        }
+    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
+        {
+        // Simulate orthographic with a small field of view.
+        static const    double s_orthographicFieldOfView = .01;
+        DVec3d          extents = orthographicView->GetExtents();
+        DPoint3d        backCenter;
+
+        rotation = orthographicView->GetViewDirection().ToRotMatrix();
+        rotation.GetRows(xVec, yVec, zVec);
+
+        rotation.Multiply (backCenter, orthographicView->GetOrigin());
+        backCenter.SumOf (backCenter, extents, .5);
+        rotation.MultiplyTranspose (backCenter);
+
+        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
+
+        eyePoint.SumOf (backCenter, zVec, zDistance);
+        json["fov"] = s_orthographicFieldOfView;
+        }
+    else
+        {
+        BeAssert (false && "unsuppored view type");
+        }
+
+    transform.Multiply(eyePoint);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    // View orientation
+    json["dest"] = PointToJson(eyePoint);
+    json["dir"] = PointToJson(zVec);
+    json["up"] = PointToJson(yVec);
+    }
+
+

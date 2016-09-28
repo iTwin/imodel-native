@@ -14,23 +14,8 @@ struct LinkElementTest : public GenericDgnModel2dTestFixture
 {
 protected:
     DgnElementCPtr InsertAnnotationElement();
-    LinkModelPtr InsertLinkModel(DgnDbR dgndb, Utf8CP modelName);
-    DgnModelId              GetModelId()            { return GetDgnDb()->Models().QueryModelId(DgnModel::CreateModelCode(TEST_MODEL2D_NAME)); }
+    DgnModelId GetModelId() { return GetDgnDb()->Models().QueryModelId(DgnModel::CreateModelCode(TEST_MODEL2D_NAME)); }
 }; // LinkElementTest
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Ramanujam.Raman   05/2016
-//---------------------------------------------------------------------------------------
-LinkModelPtr LinkElementTest::InsertLinkModel(DgnDbR dgndb, Utf8CP modelName)
-    {
-    SubjectCPtr rootSubject = dgndb.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelName); // create a placeholder Subject for the DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, modelSubject->GetElementId(), DgnModel::CreateModelCode(modelName)));
-    EXPECT_TRUE(model.IsValid());
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Umar.Hayat     02/2016
@@ -69,9 +54,7 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
     DgnElementCPtr annotation = InsertAnnotationElement();
     ASSERT_TRUE(annotation.IsValid());
     
-    LinkModelPtr linkModel = InsertLinkModel(db, "TestLinkModel");
-    ASSERT_TRUE(linkModel.IsValid());
-
+    LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(db, DgnModel::CreateModelCode("TestLinkModel"));
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
     static const Utf8CP LINK1_URL = "http://www.google.com";
     static const Utf8CP LINK2_DISPLAY_LABEL = "Url Link 2";
@@ -125,9 +108,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result->GetElementId().IsValid());
 
-    LinkModelPtr linkModel = InsertLinkModel(db, "TestLinkModel");
-    ASSERT_TRUE(linkModel.IsValid());
-
+    LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(db, DgnModel::CreateModelCode("TestLinkModel"));
     int modelLinkCount = (int) UrlLink::QueryByModel(db, linkModel->GetModelId()).size();
     ASSERT_EQ(0, modelLinkCount);
 
@@ -219,8 +200,7 @@ TEST_F(LinkElementTest, OtherIterators)
     DgnElementCPtr result2 = InsertAnnotationElement();
     ASSERT_TRUE(result2.IsValid());
 
-    LinkModelPtr linkModel = InsertLinkModel(db, "TestLinkModel");
-    ASSERT_TRUE(linkModel.IsValid());
+    LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(db, DgnModel::CreateModelCode("TestLinkModel"));
 
     EmbeddedFileLinkPtr link1 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName1")); link1->SetUserLabel("link1"); link1->Insert();
     EmbeddedFileLinkPtr link2 = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName2")); link2->SetUserLabel("link2"); link2->Insert();
@@ -263,8 +243,7 @@ TEST_F(LinkElementTest, Update)
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result.IsValid());
 
-    LinkModelPtr linkModel = InsertLinkModel(db, "TestLinkModel");
-    ASSERT_TRUE(linkModel.IsValid());
+    LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(db, DgnModel::CreateModelCode("TestLinkModel"));
 
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
     static const Utf8CP LINK1_URL = "http://www.google.com";
@@ -304,4 +283,40 @@ TEST_F(LinkElementTest, Update)
     link1E->SetName("UpdatedEmbeddedDocumentName1");
     link1E->Update();
     EXPECT_STREQ(link1E->GetName(), "UpdatedEmbeddedDocumentName1");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Shaun.Sewall    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(LinkElementTest, RepositoryLinkCRUD)
+    {
+    DgnDbR db = *GetDgnDb(L"RepositoryLinkCRUD");
+    DgnElementId linkElementId;
+    Utf8CP testUrl = "http://www.outlook.com";
+    Utf8CP testLabel = "TestLabel";
+    Utf8CP testDescription = "TestDescription";
+
+    // Insert test RepositoryLink
+        {
+        LinkModelPtr model = DgnDbTestUtils::InsertLinkModel(db, DgnModel::CreateModelCode("TestLinkModel"));
+        RepositoryLinkPtr link = RepositoryLink::Create(*model, testUrl, testLabel, testDescription);
+        EXPECT_TRUE(link.IsValid());
+        EXPECT_TRUE(link->Insert().IsValid());
+        linkElementId = link->GetElementId();
+
+        EXPECT_STREQ(link->GetUrl(), testUrl);
+        EXPECT_STREQ(link->GetUserLabel(), testLabel);
+        EXPECT_STREQ(link->GetDescription(), testDescription);
+        }
+
+    // Flush cache and re-check element
+        {
+        db.Memory().PurgeUntil(0);
+        RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId);
+        EXPECT_TRUE(link.IsValid());
+
+        EXPECT_STREQ(link->GetUrl(), testUrl);
+        EXPECT_STREQ(link->GetUserLabel(), testLabel);
+        EXPECT_STREQ(link->GetDescription(), testDescription);
+        }
     }

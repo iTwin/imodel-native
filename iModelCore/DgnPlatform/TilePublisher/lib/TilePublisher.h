@@ -77,6 +77,7 @@ protected:
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual TileGenerationCacheCR _GetCache() const = 0;
+    virtual bool _OmitFromTileset(TileNodeCR) const { return false; }
 
     TILEPUBLISHER_EXPORT Status Setup();
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
@@ -85,8 +86,8 @@ protected:
     Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
     Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
 
-    void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
-    void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
+    TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
+    TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
 
 
 public:
@@ -105,6 +106,27 @@ public:
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TileGenerationCacheCR GetCache() const { return _GetCache(); }
+
+    TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
+    TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
+    TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
+
+    template<typename T> static Json::Value IdSetToJson(T const& ids)
+        {
+        Json::Value json(Json::arrayValue);
+        for (auto const& id : ids)
+            json.append(id.ToString());
+        return json;
+
+        }
+    static Json::Value PointToJson(DPoint3dCR pt)
+        {
+        Json::Value json(Json::objectValue);
+        json["x"] = pt.x;
+        json["y"] = pt.y;
+        json["z"] = pt.z;
+        return json;
+        }
 };
 
 //=======================================================================================
@@ -150,15 +172,14 @@ private:
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 
 public:
-
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
 
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
-    static void WriteBoundingVolume(Json::Value&, DRange3dCR);
-    static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
+    TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
+    TILEPUBLISHER_EXPORT static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 
 

@@ -41,6 +41,7 @@ enum class ParamId
     GroundPoint,
     Tolerance,
     Depth,
+    Polylines,
     Invalid,
 };
 
@@ -69,6 +70,7 @@ static CommandParam s_paramTable[] =
         { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t", L"tolerance",L"Tolerance (meters).", false},
         { L"d", L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
+        { L"p", L"polylines", L"Publish poly-lines", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -138,6 +140,7 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
+    bool            m_polylines = false;
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -151,6 +154,7 @@ public:
     DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
+    bool WantPolylines() const { return m_polylines; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -273,6 +277,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     return false;
                     }
                 break;
+            case ParamId::Polylines:
+                m_polylines = true;
+                break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -306,15 +313,15 @@ private:
     DgnCategoryIdSet            m_allCategories;
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
+    BeMutex                     m_mutex;
+    bvector<TileNodeCP>         m_emptyNodes;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
     virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
+    virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
-    Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
-    Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
-    void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint);
 
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
@@ -340,8 +347,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth)
-        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
+        : PublisherContext(viewController, outputDir, tilesetName, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -388,7 +395,15 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
     switch (publisherStatus)
         {
         case Status::Success:
-        case Status::NoGeometry:    // ok for tile to have no geometry
+            break;
+        case Status::NoGeometry:    // ok for tile to have no geometry - but mark as empty so we avoid including in json
+            if (tile.GetChildren().empty())
+                {
+                // Leaf nodes with no children should not be published.
+                // Reality models often contain empty parents with non-empty children - they must be published.
+                BeMutexHolder lock(m_mutex);
+                m_emptyNodes.push_back(&tile);
+                }
             break;
         default:
             m_acceptTileStatus = publisherStatus;
@@ -396,140 +411,6 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
         }
 
     return ConvertStatus(publisherStatus);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value pointToJson(DPoint3dCR pt)
-    {
-    Json::Value json(Json::objectValue);
-    json["x"] = pt.x;
-    json["y"] = pt.y;
-    json["z"] = pt.z;
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static Json::Value idSetToJson(T const& ids)
-    {
-    Json::Value json(Json::arrayValue);
-    for (auto const& id : ids)
-        json.append(id.ToString());
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetModelsJson (DgnModelIdSet const& modelIds)
-    {
-    Json::Value     modelJson (Json::objectValue);
-    
-    for (auto& modelId : modelIds)
-        {
-        auto const&  model = GetDgnDb().Models().GetModel (modelId);
-        if (model.IsValid())
-            modelJson[modelId.ToString()] = model->GetName();
-        }
-
-    return modelJson;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value TilesetPublisher::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
-    {
-    Json::Value categoryJson (Json::objectValue); 
-    
-    for (auto& categoryId : categoryIds)
-        {
-        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
-
-        if (category.IsValid())
-            categoryJson[categoryId.ToString()] = category->GetCategoryName();
-        }
-
-    return categoryJson;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilesetPublisher::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform, DPoint3dCR groundPoint)
-    {
-    OrthographicViewDefinitionCP    orthographicView;
-    CameraViewDefinitionCP          cameraView;
-    DVec3d                          xVec, yVec, zVec;
-    RotMatrix                       rotation;
-    DPoint3d                        eyePoint;
-
-    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
-        {
-        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
-        // Simulate by pointing the camera toward the center of the viewed volume.
-        eyePoint = cameraView->GetEyePoint();
-        rotation =  cameraView->GetViewDirection().ToRotMatrix();
-
-        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
-
-        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
-        rotation.Multiply(viewEyePoint, eyePoint);
-
-        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
-        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
-        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
-
-        rotation.MultiplyTranspose (target, viewTarget);
-
-        rotation.GetRows(xVec, yVec, zVec);
-        zVec.NormalizedDifference (eyePoint, target);
-
-        xVec.NormalizedCrossProduct (yVec, zVec);
-        yVec.NormalizedCrossProduct (zVec, xVec);
-
-        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
-        }
-    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
-        {
-        // Simulate orthographic with a small field of view.
-        static const    double s_orthographicFieldOfView = .01;
-        DVec3d          extents = orthographicView->GetExtents();
-        DPoint3d        viewOrigin, backCenter;
-
-        rotation = orthographicView->GetViewDirection().ToRotMatrix();
-        rotation.GetRows(xVec, yVec, zVec);
-
-        rotation.Multiply (backCenter, orthographicView->GetOrigin());
-        backCenter.SumOf (backCenter, extents, .5);
-        rotation.MultiplyTranspose (backCenter);
-
-        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
-
-        eyePoint.SumOf (backCenter, zVec, zDistance);
-        json["fov"] = s_orthographicFieldOfView;
-        }
-    else
-        {
-        BeAssert (false && "unsuppored view type");
-        }
-
-    transform.Multiply(eyePoint);
-    transform.MultiplyMatrixOnly(yVec);
-    transform.MultiplyMatrixOnly(zVec);
-
-    yVec.Normalize();
-    zVec.Normalize();
-    zVec.Negate();      // Towards target.
-
-    // View orientation
-    json["dest"] = pointToJson(eyePoint);
-    json["dir"] = pointToJson(zVec);
-    json["up"] = pointToJson(yVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -544,6 +425,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
     tilesetUrl.append(rootNameUtf8);
     tilesetUrl.append(".json");
     json["tilesetUrl"] = tilesetUrl;
+    json["name"] = rootNameUtf8;
 
     // Geolocation
     bool geoLocated = !m_tileToEcef.IsIdentity();
@@ -553,7 +435,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
         transform.Multiply (groundEcefPoint, groundPoint);
         json["geolocated"] = true;
-        json["groundPoint"] = pointToJson(groundEcefPoint);
+        json["groundPoint"] = PointToJson(groundEcefPoint);
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
@@ -572,16 +454,16 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         if (nullptr != view.GetName())
             entry["name"] = view.GetName();
 
-        GetSpatialViewJson (entry, *spatialView, transform, groundPoint);
+        GetSpatialViewJson (entry, *spatialView, transform);
         auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
 
         if (modelSelector.IsValid())
-            entry["models"] = idSetToJson(modelSelector->GetModelIds());
+            entry["models"] = IdSetToJson(modelSelector->GetModelIds());
 
         auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
 
         if (categorySelector.IsValid())
-            entry["categories"] = idSetToJson (categorySelector->GetCategoryIds());
+            entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
 
         viewsJson[view.GetId().ToString()] = entry;
         }
@@ -717,11 +599,9 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
-    static size_t           s_maxPointsPerTile = 20000;
-
     TileModelCategoryFilter filter(GetDgnDb(), &m_allModels, &m_allCategories);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), s_maxPointsPerTile, &filter, &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), &filter, &progressMeter);
 
     DRange3d            range;
 
@@ -846,7 +726,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

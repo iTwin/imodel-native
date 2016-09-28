@@ -22,8 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 struct ViewAttachmentTest : public DgnDbTestFixture
 {
 protected:
-    DgnModelId m_drawingId;
-    DgnModelId m_sheetId;
+    DgnModelId m_drawingModelId;
+    DgnModelId m_sheetModelId;
     DgnCategoryId m_attachmentCatId;
     DgnViewId m_viewId;
     DgnElementId m_textStyleId;
@@ -86,12 +86,13 @@ public:
 void ViewAttachmentTest::SetUp()
     {
     SetupSeedProject();
+    DgnDbR db = GetDgnDb();
+
     // Set up a sheet to hold attachments
-    auto& db = GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
-    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
-    ASSERT_EQ(DgnDbStatus::Success, sheet->Insert());
-    m_sheetId = sheet->GetModelId();
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("SheetListModel"));
+    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "MySheet");
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"), DPoint2d::From(10,10));
+    m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
     DgnCategory cat(DgnCategory::CreateParams(db, "Attachments", DgnCategory::Scope::Annotation));
@@ -100,13 +101,13 @@ void ViewAttachmentTest::SetUp()
     ASSERT_TRUE(m_attachmentCatId.IsValid());
 
     // Set up a viewed model
-    classId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawingModel));
-    RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MyDrawing")));
-    ASSERT_EQ(DgnDbStatus::Success, drawing->Insert());
-    m_drawingId = drawing->GetModelId();
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("MyDrawingListModel"));
+    SectionDrawingPtr drawing = DgnDbTestUtils::InsertSectionDrawing(*drawingListModel, DgnCode(), "MySectionDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode("MyDrawingModel"));
+    m_drawingModelId = drawing->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(db, "MyDrawingView", m_drawingId);
+    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId);
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -200,17 +201,17 @@ TEST_F(ViewAttachmentTest, CRUD)
     // Test some invalid CreateParams
 
     // Invalid view id
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(DgnViewId(),0,0,1,1,1), m_sheetId, m_attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(DgnViewId(),0,0,1,1,1), m_sheetModelId, m_attachmentCatId, MakePlacement())));
     // Invalid category
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_sheetId, DgnCategoryId(), MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_sheetModelId, DgnCategoryId(), MakePlacement())));
     // Not a sheet model
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_drawingId, m_attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_drawingModelId, m_attachmentCatId, MakePlacement())));
     // Negative scale
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,-1), m_sheetId, m_attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,-1), m_sheetModelId, m_attachmentCatId, MakePlacement())));
 
     // Create a valid view attachment
     auto data = MakeData(m_viewId, -5.0, 2.5, 1.0, 0.5, 3.0);
-    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetId, m_attachmentCatId, MakePlacement()));
+    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetModelId, m_attachmentCatId, MakePlacement()));
     EXPECT_TRUE(cpAttach.IsValid());
 
     // Confirm data as expected
@@ -243,13 +244,13 @@ TEST_F(ViewAttachmentTest, Geom)
     // Add some geometry to the drawing and regenerate attachment geometry
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
 
-    AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
-    AddBoxToDrawing(m_drawingId, 5, 10, drawingViewRot);
+    AddTextToDrawing(m_drawingModelId, "Text", drawingViewRot);
+    AddBoxToDrawing(m_drawingModelId, 5, 10, drawingViewRot);
 
     // Create an attachment
     static const double scale = 2.0;
     ViewAttachment::Data data(m_viewId, scale);
-    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetId, m_attachmentCatId, MakePlacement()));
+    auto cpAttach = InsertAttachment(MakeParams(data, m_sheetModelId, m_attachmentCatId, MakePlacement()));
     ASSERT_TRUE(cpAttach.IsValid());
 
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
@@ -258,11 +259,11 @@ TEST_F(ViewAttachmentTest, Geom)
     cpAttach = pAttach->Update();
     EXPECT_TRUE(cpAttach.IsValid());
 
-    SheetViewDefinition sheetView(db, "MySheetView", m_sheetId);
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId);
     sheetView.Insert();
 
     SheetViewControllerPtr viewController = sheetView.LoadViewController();
-    SetupAndSaveViewController(*viewController, *cpAttach, m_sheetId);
+    SetupAndSaveViewController(*viewController, *cpAttach, m_sheetModelId);
 
     db.SaveChanges();
     }

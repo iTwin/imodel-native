@@ -108,16 +108,16 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
     {
     SetupSeedProject();
 
-    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*m_db, DgnModel::CreateModelCode("TestModel2d"));
-    ASSERT_TRUE(sheetModel.IsValid());
-    DgnModelId modelId = sheetModel->GetModelId();
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, DgnModel::CreateModelCode("SheetListModel"));
+    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "TestSheet");
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("TestSheetModel"));
+    DgnModelId sheetModelId = sheetModel->GetModelId();
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, modelId, m_defaultCategoryId, DgnCode(), 100);
+    DgnElementPtr el = TestElement2d::Create(*m_db, sheetModelId, m_defaultCategoryId, DgnCode(), 100);
 
-    DgnModelP model = m_db->Models().GetModel(modelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*sheetModel, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
     textStringElem.SetText("If we have no text we have no range and insert fails");
     EXPECT_TRUE(builder->Append(textStringElem));

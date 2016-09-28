@@ -134,7 +134,6 @@ struct DgnViewProperty
     struct ViewProperty : Spec {ViewProperty(Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
     struct ViewSetting  : Spec {ViewSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
-    static ViewSetting Settings()     {return ViewSetting("Settings");}
     static ViewSetting DefaultView()  {return ViewSetting("DefaultView");}
     static ViewProperty Thumbnail()   {return ViewProperty("Thumbnail", DbPropSpec::Compress::No);}
 };
