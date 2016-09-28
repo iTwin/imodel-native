@@ -872,6 +872,13 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
         return ERROR;
         }
 
+    if (m_ecClass.HasBaseClasses())
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It implies the ForeignKey type mapping but also has base classes. This is not supported in this version of the software. Consider mapping it as a link table using the LinkTableRelationshipMap custom attribute.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     const StrengthType strength = relClass->GetStrength();
     const ECRelatedInstanceDirection strengthDirection = relClass->GetStrengthDirection();
