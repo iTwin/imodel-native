@@ -1248,11 +1248,12 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
 
         DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
 
-        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
+        rotation.Multiply(viewOrigin, cameraView->GetOrigin());
         rotation.Multiply(viewEyePoint, eyePoint);
 
-        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
-        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
+        auto extents = cameraView->GetExtents();
+        viewTarget.x = viewOrigin.x + extents.x/2.0;
+        viewTarget.y = viewOrigin.y + extents.y/2.0;
         viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
 
         rotation.MultiplyTranspose (target, viewTarget);
@@ -1263,7 +1264,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         xVec.NormalizedCrossProduct (yVec, zVec);
         yVec.NormalizedCrossProduct (zVec, xVec);
 
-        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
+        json["fov"]   =  2.0 * atan2 (extents.x/2.0, cameraView->GetFocusDistance());
         }
     else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
         {
