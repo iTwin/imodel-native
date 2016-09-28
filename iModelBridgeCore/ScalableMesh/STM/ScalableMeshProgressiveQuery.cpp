@@ -79,7 +79,7 @@ static Logger logger;
 
 #endif
 
-#define DEACTIVATE_THREADING
+//#define DEACTIVATE_THREADING
 
 /*==================================================================*/
 /*                   IScalableMeshProgressiveQueryEngine            */
