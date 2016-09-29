@@ -1903,6 +1903,11 @@
         <ECNavigationProperty propertyName="TargetModel" relationshipName="TargetModelForView3d" direction="Backward"/>
         <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
         <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
+        <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
+        <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
+        <ECProperty propertyName="DirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="DirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="DirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
     </ECEntityClass>
     <!-- A view of an area defined in the bim's coordinate system. -->
     <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract">
@@ -1914,16 +1919,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="BackOrigin" typeName="Point3d" displayLabel="Origin of the focus plane projected to the back plane"></ECProperty>
-        <ECProperty propertyName="Width" typeName="double" displayLabel="Extent in X on the focus plane in meters"></ECProperty>
-        <ECProperty propertyName="Height" typeName="double" displayLabel="Extent in Y on the focus plane in meters"></ECProperty>
-        <ECProperty propertyName="Depth" typeName="double" displayLabel="Distance between front and back planes in meters"></ECProperty>
         <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Camera eye point"></ECProperty>
         <ECProperty propertyName="LensAngle" typeName="double" displayLabel="Camera lens angle in degrees"></ECProperty>
         <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Camera focus distance"></ECProperty>
-        <ECProperty propertyName="DirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
     </ECEntityClass>
     <!-- A spatial view that shows an orthographic parallel projection -->
     <ECEntityClass typeName="OrthographicViewDefinition">
@@ -1931,11 +1929,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
-        <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
-        <ECProperty propertyName="DirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
     </ECEntityClass>
     <!-- A view of a 2D model that has its own local coordinate system. -->
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract">

@@ -435,7 +435,7 @@ private:
     Transform           m_transformFromDgn;
     mutable DRange3d    m_publishedRange;
 
-    size_t ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cach) const;
+    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
 
 protected:
     TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
@@ -471,6 +471,7 @@ public:
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
     DGNPLATFORM_EXPORT TileNodePList GetTiles();
     DGNPLATFORM_EXPORT WString GetNameSuffix() const;
+    DGNPLATFORM_EXPORT size_t   GetNameSuffixId() const;
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 

@@ -396,7 +396,7 @@ public:
 
     void SetSAESNpcSq(double v) { m_saesNpcSq = v; }
     double GetSAESNpcSq() const { return m_saesNpcSq; }
-    };
+};
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext

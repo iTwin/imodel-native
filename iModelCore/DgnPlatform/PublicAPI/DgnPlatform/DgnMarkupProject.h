@@ -374,8 +374,8 @@ protected:
 
     bool                    m_targetModelIsInSubjectView;
 
-    void _StoreToDefinition() const override;
-    void _LoadFromDefinition() override;
+    void _StoreState() const override;
+    void _LoadState() override;
     void _DrawView(ViewContextR) override;
     DPoint3d _GetOrigin() const override;
     DVec3d _GetDelta() const override;

@@ -303,8 +303,6 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
         }
 
     m_range.InitFrom(m_corners.m_pts, 4);
-    m_range.low.z = -1.0;
-    m_range.high.z = 1.0;
 
     if (parent)
         parent->ExtendRange(m_range);

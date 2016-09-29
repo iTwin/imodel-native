@@ -33,6 +33,7 @@ struct RangeTreeNode
 };
 
 static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -215,7 +216,7 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_textureImage.get(), rhs.m_textureImage.get());
+    // No need to compare textures -- if materials match then textures must too.
 
     return false;
     }
@@ -628,9 +629,11 @@ struct MeshBuilderKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
     {
-    IFacetOptionsPtr opts = IFacetOptions::Create();
+    static double       s_defaultAngleTolerance = msGeomConst_piOver2;
+    IFacetOptionsPtr    opts = IFacetOptions::Create();
 
     opts->SetChordTolerance(chordTolerance);
+    opts->SetAngleTolerance(s_defaultAngleTolerance);
     opts->SetMaxPerFace(3);
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
@@ -928,6 +931,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     host.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
+    // Same deal with line styles.
+    // NEEDSWORK: Line styles are a much bigger problem...and still WIP...need John's input
+    LsCache::GetDgnDbCache(GetDgnDb(), true);
+
     if (!tiles.empty())
         {
         // For now, we can cross our fingers and hope that processing one tile before entering multi-threaded context
@@ -1087,15 +1094,19 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 {
     DRange3d        m_range;
     size_t          m_facetCount = 0;
+    size_t          m_maxFacetCount;
 
-    ComputeFacetCountTreeHandler(DRange3dCR range) : m_range(range) { }
+    ComputeFacetCountTreeHandler(DRange3dCR range, size_t maxFacetCount) : m_range(range), m_maxFacetCount(maxFacetCount) { }
 
     virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
         {
-        return pInterior->Range().IntersectsWith(m_range);
+        return !Exceeded() && pInterior->Range().IntersectsWith(m_range);
         }
     virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
         {
+        if (Exceeded())
+            return false;
+
         DRange3d intersection;
         intersection.IntersectionOf(pLeaf->Range(), m_range);
         if (!intersection.IsNull())
@@ -1109,18 +1120,20 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 
         return true;
         }
+
+    bool Exceeded() const { return m_facetCount >= m_maxFacetCount; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t TileNode::ComputeFacetCount (DRange3dCR range, TileGenerationCacheCR cache) const
+bool TileNode::ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const
     {
-    ComputeFacetCountTreeHandler handler(range);
+    ComputeFacetCountTreeHandler handler(GetDgnRange(), maxFacetCount);
 
     cache.GetTree().Traverse(handler);
 
-    return handler.m_facetCount;
+    return handler.Exceeded();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1132,7 +1145,7 @@ void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, Tile
 
     m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
 
-    if (m_tolerance < chordTolerance || ComputeFacetCount (GetDgnRange(), cache) < maxPointsPerTile)
+    if (m_tolerance < chordTolerance || !ExceedsFacetCount(maxPointsPerTile, cache))
         {
         m_tolerance = chordTolerance;
         return;
@@ -1597,7 +1610,19 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
     GatherGeometryHandler handler(m_range, *this, context);
     m_cache.GetTree().Traverse(handler);
-    std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs) { return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity(); });
+
+    // We sort by size in order to ensure the largest geometries are assigned batch IDs
+    // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
+    if (m_geometries.size() > s_maxGeometryIdCount)
+        {
+        std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
+            {
+            DRange3d lhsRange, rhsRange;
+            lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
+            rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
+            return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
+            });
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1607,12 +1632,11 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
-    static const size_t s_maxGeometryIdCount = 0xffff;
 
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
 
-    // Collect geometry from elements in this node, sorted by facet count density
+    // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
     TileGeometryProcessorContext context(processor, db, cache);
@@ -1688,11 +1712,14 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
         }
 
     TileMeshList meshes;
+    size_t       triangleCount = 0;
+       
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
+            {
             meshes.push_back (builder.second->GetMesh());
-
-    // ###TODO: statistics: record empty node...
+            triangleCount += builder.second->GetMesh()->Triangles().size();
+            }
 
     return meshes;
     }

@@ -624,8 +624,7 @@ public:
     //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @return the copied model
     //! @see ImportModel
-    template<typename T>
-    static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
+    template<typename T> static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
 
     //! Returns the DgnModelId used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() {return DgnModelId((uint64_t)1LL);}
@@ -684,7 +683,7 @@ public:
 
     private:
         struct FormatterFlags
-            {
+        {
             uint32_t m_linearUnitMode : 2;
             uint32_t m_linearPrecType : 4;
             uint32_t m_linearPrecision : 8;
@@ -694,7 +693,7 @@ public:
             uint32_t m_directionClockwise : 1;
             void FromJson(Json::Value const& inValue);
             void ToJson(Json::Value& outValue) const;
-            };
+        };
 
         FormatterFlags m_formatterFlags;               //!< format flags
         UnitDefinition m_masterUnit;                   //!< Master Unit information
@@ -748,23 +747,24 @@ public:
         double GetRoundoffRatio() const {return m_roundoffRatio;}
         FormatterFlags GetFormatterFlags() const {return m_formatterFlags;}
 
-        //! Get the master units for this DgnModel.
-        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
+        //! Get the Master units for this DgnModel.
+        //! Master units are the major display units for coordinates in this DgnModel (e.g. "Meters", or "Feet").
         //! @see SetUnits, GetSubUnits
+        //! @note Coordinate values are always stored as distance from the BIM global origin in Meters. Master Units may be used to display values in some other unit system.
         UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
 
-        //! Get the sub-units for this DgnModel.
-        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
+        //! Get the Sub-units for this DgnModel.
+        //! Sub units are the minor readout units for coordinates in this DgnModel (e.g. "Centimeters, or "Inches").
         //! @see SetUnits, GetMasterUnits
         UnitDefinitionCR GetSubUnits() const {return m_subUnit;}
 
-        //! Get the number of millimeters per master unit.
+        //! Get the number of Meters per Master unit.
         //! @see GetMasterUnits
-        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
+        double GetMetersPerMaster() const {return m_masterUnit.ToMeters();}
 
-        //! Get the number of sub units per master unit.
+        //! Get the number of Sub units per Master unit.
         //! @see GetSubUnits
-        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
+        double GetSubPerMaster() const {return m_subUnit.GetConversionFactorFrom(m_masterUnit);}
     };
 
     struct CreateParams : T_Super::CreateParams
@@ -1375,9 +1375,7 @@ public:
     DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
   
     ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth, TsComponentParameterSet const& params = TsComponentParameterSet())
-        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth), m_params(params)
-        {
-        }
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth), m_params(params) {}
 
     //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
     void SetModelName(Utf8StringCR n) {m_modelName=n;}
@@ -1462,8 +1460,7 @@ public:
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
         CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
-            T_Super(dgndb, classId, modeledElementId, code, displayInfo, inGuiList), m_size(size)
-            {}
+            T_Super(dgndb, classId, modeledElementId, code, displayInfo, inGuiList), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
 

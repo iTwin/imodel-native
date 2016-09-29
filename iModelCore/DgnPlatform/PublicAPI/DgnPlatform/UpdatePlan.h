@@ -39,7 +39,7 @@ public:
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class UpdateAbort : int
-    {
+{
     None          = 0,
     BadView       = 1,
     Motion        = 2,
@@ -56,7 +56,7 @@ enum class UpdateAbort : int
     Command       = 13,
     Sensor        = 14,
     Unknown       = 15
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
@@ -73,7 +73,7 @@ struct ProgressiveTask : RefCounted<NonCopyableClass>
 * @bsiclass                                                     Keith.Bentley   02/04
 +===============+===============+===============+===============+===============+======*/
 struct StopEvents
-    {
+{
     bool m_keystrokes;
     bool m_wheel;
     bool m_button;
@@ -148,7 +148,7 @@ struct StopEvents
 
     // Stop when the ctrl or shift key is pressed or released.
     void SetStopOnModifierKey(bool stop) {m_modifierKeyTransition = stop;}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12
