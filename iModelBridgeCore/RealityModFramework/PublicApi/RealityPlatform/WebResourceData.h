@@ -414,8 +414,11 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetDate(DateTimeCR date);
 
     //! Get/Set
-    REALITYDATAPLATFORM_EXPORT DRange2dCR GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(DRange2dCR footprint);
+    REALITYDATAPLATFORM_EXPORT const bvector<DPoint2d>& GetFootprint() const;
+    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<DPoint2d>& footprint);
+
+    REALITYDATAPLATFORM_EXPORT DRange2dCR GetFootprintExtents() const;
+    REALITYDATAPLATFORM_EXPORT void SetFootprintExtents(DRange2dCR footprintExtents);
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT WebResourceThumbnailCR GetThumbnail() const;
@@ -441,7 +444,8 @@ protected:
     Utf8String m_dataType;
     Utf8String m_locationInCompound;
     DateTime m_date;
-    DRange2d m_footprint;
+    bvector<DPoint2d> m_footprint;
+    DRange2d m_footprintExtents;
     WebResourceThumbnailPtr m_pThumbnail;
     WebResourceMetadataPtr m_pMetadata;
     WebResourceServerPtr m_pServer;

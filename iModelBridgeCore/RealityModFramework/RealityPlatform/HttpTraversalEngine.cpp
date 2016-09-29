@@ -287,12 +287,14 @@ WebResourceDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf
         }
   
     // Footprint.
-    DRange2d shape = DRange2d::NullRange();
-    if (SUCCESS != pData->GetFootprint(&shape))
-        {
-        }
+    bvector<DPoint2d> shape = bvector<DPoint2d>();
+    DRange2d extents = DRange2d();
+    if (SUCCESS != pData->GetFootprint(&shape, &extents))
+    {
+    }
     pExtractedData->SetFootprint(shape);
-
+    pExtractedData->SetFootprintExtents(extents);
+    
     // Server.
     WebResourceServerPtr pServer = WebResourceServer::Create();
     if (pServer != NULL)

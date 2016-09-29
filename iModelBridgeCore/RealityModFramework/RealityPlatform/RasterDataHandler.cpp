@@ -191,8 +191,9 @@ const Utf8String RasterData::ComputeResolutionInMeters()
     try
         {
         // Get extent.
-        DRange2d footprint = DRange2d::NullRange();
-        if (SUCCESS != ExtractFootprint(&footprint) || footprint.IsNull())
+        bvector<DPoint2d> footprint = bvector<DPoint2d>();
+        DRange2d footprintExtents = DRange2d();
+        if (SUCCESS != ExtractFootprint(&footprint, &footprintExtents) || footprint.size() > 0)
             return NULL;
 
         // Get width and height.
@@ -214,12 +215,12 @@ const Utf8String RasterData::ComputeResolutionInMeters()
         double degreeToMeterRatio = 40075000.0 / 360.0;
         
         // Compute yRes.
-        double deltaYInMeter = footprint.YLength() * degreeToMeterRatio;
+        double deltaYInMeter = footprintExtents.YLength() * degreeToMeterRatio;
         double yRes = deltaYInMeter / imageHeight;
 
         // Compute xRes.
-        double yMedInRadian = (footprint.low.y + footprint.high.y) / 2 * M_PI / 180;
-        double deltaXInMeter = footprint.XLength() * cos(yMedInRadian) * degreeToMeterRatio;
+        double yMedInRadian = (footprintExtents.low.y + footprintExtents.high.y) / 2 * M_PI / 180;
+        double deltaXInMeter = footprintExtents.XLength() * cos(yMedInRadian) * degreeToMeterRatio;
         double xRes = deltaXInMeter / imageWidth;
 
         // Convert to string. Format is "widthxheight" with 3 digit precision.
@@ -238,15 +239,15 @@ const Utf8String RasterData::ComputeResolutionInMeters()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterData::_GetFootprint(DRange2dP pFootprint) const
+StatusInt RasterData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
-    return ExtractFootprint(pFootprint);
+    return ExtractFootprint(pFootprint, pFootprintExtents);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterData::ExtractFootprint(DRange2dP pFootprint) const
+StatusInt RasterData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     // Get the rasterFile 
     HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
@@ -327,7 +328,9 @@ StatusInt RasterData::ExtractFootprint(DRange2dP pFootprint) const
             }
 
         HGF2DExtent extent = pPixelShape->GetExtent();
-        pFootprint->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
+        pFootprintExtents->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
+        pFootprint->push_back(DPoint2d::From(extent.GetXMin(), extent.GetYMin()));
+        pFootprint->push_back(DPoint2d::From(extent.GetXMax(), extent.GetYMax()));
 
         return SUCCESS;
         }
@@ -444,7 +447,7 @@ StatusInt RasterData::ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RasterData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
+StatusInt RasterData::_SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const
     {
     bvector<Utf8String> buffer;
 
@@ -453,15 +456,15 @@ StatusInt RasterData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) 
 
     // Convert double to string.
     char buf[32];
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data.low.x, data.low.y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data.low.x, data.high.y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data.high.x, data.high.y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f \n", data.high.x, data.low.y);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data[0].x, data[0].y);
     buffer.push_back(buf);
-    BeStringUtilities::Snprintf(buf, "%f %f", data.low.x, data.low.y);
+    BeStringUtilities::Snprintf(buf, "%f %f", data[0].x, data[0].y);
     buffer.push_back(buf);
     
     BeFile file;

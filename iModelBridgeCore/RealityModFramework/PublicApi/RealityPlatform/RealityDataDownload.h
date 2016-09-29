@@ -31,6 +31,7 @@ typedef std::function<void(int index, void *pClient, int ErrorCode, const char* 
 
 //Special Error codes
 #define REALITYDATADOWNLOAD_RETRY_TENTATIVE   -2
+#define REALITYDATADOWNLOAD_MIRROR_CHANGE     -3
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

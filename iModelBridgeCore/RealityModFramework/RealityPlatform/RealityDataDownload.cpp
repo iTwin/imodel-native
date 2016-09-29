@@ -513,7 +513,7 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
             m_pEntries[index].mirrors[0].filename.c_str(),
             errorCode,
             m_pEntries[index].mirrors[1].filename.c_str());
-        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_RETRY_TENTATIVE, errorMsg);
+        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_MIRROR_CHANGE, errorMsg);
         }
 
     m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
@@ -614,9 +614,8 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
         sprintf(fullpath, "%s%s", pi_strDest,filename);
 
         const size_t fullpath_length = strlen(fullpath);
-        std::string fp = std::string(fullpath);
-        size_t lastOf = fp.find_last_of("//");
-        if( lastOf != fp.size() - 1 ) //skip folders
+        WString pathString(fullpath, BentleyCharEncoding::Utf8);
+        if(!pathString.EndsWithI(L"/")) //a file
             {
             if(unzOpenCurrentFile( uf ) != UNZ_OK)
                 return false;
@@ -635,6 +634,11 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
                     fwrite( read_buffer, status, 1, out );
                 } while (status > 0 );
             fclose( out );
+            }
+        else // a folder
+            {
+            if(!BeFileName::DoesPathExist(pathString.c_str()) && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(pathString.c_str()))
+                return false;
             }
         unzCloseCurrentFile( uf );
     
