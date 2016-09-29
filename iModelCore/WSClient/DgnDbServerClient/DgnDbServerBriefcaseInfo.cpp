@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/DgnDbBriefcaseInfo.cpp $
+|     $Source: DgnDbServerClient/DgnDbServerBriefcaseInfo.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbBriefcaseInfo.h>
+#include <DgnDbServer/Client/DgnDbServerBriefcaseInfo.h>
 #include <DgnPlatform/TxnManager.h>
 #include "DgnDbServerUtils.h"
 
@@ -14,14 +14,14 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfo::DgnDbBriefcaseInfo()
+DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo()
     {
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id)
+DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id)
     : m_id(id)
     {
     }
@@ -29,15 +29,15 @@ DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfo::DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeGuid fileId)
-    : m_id(id), m_userOwned(userOwned), m_fileId(fileId)
+DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeGuid fileId, bool isReadOnly)
+    : m_id(id), m_userOwned(userOwned), m_fileId(fileId), m_isReadOnly(isReadOnly)
     {
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-BeSQLite::BeBriefcaseId DgnDbBriefcaseInfo::GetId() const
+BeSQLite::BeBriefcaseId DgnDbServerBriefcaseInfo::GetId() const
     {
     return m_id;
     }
@@ -45,7 +45,7 @@ BeSQLite::BeBriefcaseId DgnDbBriefcaseInfo::GetId() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-Utf8StringCR DgnDbBriefcaseInfo::GetUserOwned() const
+Utf8StringCR DgnDbServerBriefcaseInfo::GetUserOwned() const
     {
     return m_userOwned;
     }
@@ -53,9 +53,33 @@ Utf8StringCR DgnDbBriefcaseInfo::GetUserOwned() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis           09/2016
 //---------------------------------------------------------------------------------------
-BeGuid DgnDbBriefcaseInfo::GetFileId() const
+BeGuid DgnDbServerBriefcaseInfo::GetFileId() const
     {
     return m_fileId;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                09/2016
+//---------------------------------------------------------------------------------------
+BeFileName DgnDbServerBriefcaseInfo::GetLocalPath() const
+    {
+    return m_localPath;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                09/2016
+//---------------------------------------------------------------------------------------
+void DgnDbServerBriefcaseInfo::SetLocalPath(BeFileName localPath) 
+    {
+    m_localPath = localPath;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                09/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbServerBriefcaseInfo::GetIsReadOnly() const
+    {
+    return m_isReadOnly;
     }
 
 //---------------------------------------------------------------------------------------
@@ -73,7 +97,7 @@ bool GuidFromJson(BeGuid& guid, JsonValueCR json)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfoPtr DgnDbBriefcaseInfo::FromJson(JsonValueCR json)
+DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::FromJson(JsonValueCR json)
     {
     JsonValueCR properties      = json[ServerSchema::Properties];  
 
@@ -82,14 +106,15 @@ DgnDbBriefcaseInfoPtr DgnDbBriefcaseInfo::FromJson(JsonValueCR json)
     Utf8String  userOwned = properties[ServerSchema::Property::UserOwned].asString();
     BeGuid fileId;
     GuidFromJson(fileId, properties[ServerSchema::Property::FileId]);
+    bool isReadOnly = properties[ServerSchema::Property::IsReadOnly].asBool();
 
-    return std::make_shared<DgnDbBriefcaseInfo>(id, userOwned, fileId);
+    return std::make_shared<DgnDbServerBriefcaseInfo>(id, userOwned, fileId, isReadOnly);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbBriefcaseInfo::operator==(DgnDbBriefcaseInfoCR briefcase) const
+bool DgnDbServerBriefcaseInfo::operator==(DgnDbServerBriefcaseInfoCR briefcase) const
     {
     if (briefcase.GetId() == GetId())
         return true;

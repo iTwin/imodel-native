@@ -33,7 +33,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                          \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcaseInfo.h
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -51,7 +51,7 @@ $(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)Dgn
 
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbBriefcaseInfo$(oext)              : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)DgnDbServerBriefcaseInfo$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

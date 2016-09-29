@@ -23,38 +23,12 @@ USING_NAMESPACE_BENTLEY_DGN
 
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbClient);
-struct DgnDbServerBriefcaseInfo;
 DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
-DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfo, DgnDbServerBriefcaseInfo);
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryManagerPtr, DgnDbRepositoryManager);
 
 typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, RepositoryInfoCR, FileInfoCR)> BriefcaseFileNameCallback;
-
-//=======================================================================================
-//! DgnDbServerBriefcaseInfo results.
-//@bsiclass                                       Andrius.Zonys                  06/2016
-//=======================================================================================
-struct DgnDbServerBriefcaseInfo
-{
-//__PUBLISH_SECTION_END__
-private:
-    BeFileName  m_filePath;
-    bool        m_isReadOnly;
-
-public:
-    DgnDbServerBriefcaseInfo() {};
-    DgnDbServerBriefcaseInfo(BeFileName filePath, bool isReadOnly);
-
-//__PUBLISH_SECTION_START__
-public:
-    //! Returns the briefcase file path.
-    DGNDBSERVERCLIENT_EXPORT BeFileName FilePath() const;
-
-    //! Returns true if briefcase can't be modified.
-    DGNDBSERVERCLIENT_EXPORT bool       IsReadOnly() const;
-};
 
 //=======================================================================================
 //! Client of DgnDbServer.
@@ -166,7 +140,7 @@ public:
     //! @param[in] doSync If set to true, it will download all of the revisions that have not been merged on server and merge locally.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
+    //! @return Asynchronous task that has briefcase info as the result.
     //! @note If localFileName is an existing file, this method will fail. If it is an existing directory, file name retrieved from server will be appended.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcase(RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync = true,
                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -178,7 +152,7 @@ public:
     //! @param[in] fileNameCallback Callback function, that takes baseDirectory, briefcase Id and repository info as arguments and returns full filename.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
+    //! @return Asynchronous task that has briefcase info as the result.
     //! @note Default callback will save repository at baseDirectory\\repositoryId\\briefcaseId\\fileName
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcaseToDir(RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
                                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
@@ -212,7 +186,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase manager as result. See DgnDbRepositoryManager.
     //! @note Should use DgnDbRepositoryAdmin provided by DgnDbClient::GetRepositoryAdmin.
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryManagerTaskPtr CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbBriefcaseInfoCR briefcaseInfo,
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryManagerTaskPtr CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbServerBriefcaseInfoCR briefcaseInfo,
         ICancellationTokenPtr cancellationToken = nullptr);
 };
 

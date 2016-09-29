@@ -29,25 +29,6 @@ BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName b
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfo::DgnDbServerBriefcaseInfo(BeFileName filePath, bool isReadOnly)
-    : m_filePath(filePath), m_isReadOnly(isReadOnly)
-    {
-    };
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  06/2016
-//---------------------------------------------------------------------------------------
-BeFileName DgnDbServerBriefcaseInfo::FilePath()     const { return m_filePath; }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  06/2016
-//---------------------------------------------------------------------------------------
-bool       DgnDbServerBriefcaseInfo::IsReadOnly()   const { return m_isReadOnly; }
-
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
 void DgnDbClient::Initialize()
@@ -431,9 +412,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
 
-    Utf8String dbFileName = tempdb->GetDbFileName();
-    BeFileName fileName = tempdb->GetFileName();
-    Utf8String dbFileId = tempdb->GetDbGuid().ToString();
     FileInfo fileInfo = FileInfo(*tempdb, description);
     BeFileName filePath = tempdb->GetFileName();
     tempdb->CloseDb();
@@ -807,14 +785,12 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
                 }
 
             JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            JsonValueCR properties = instance[ServerSchema::Properties];
-            uint32_t briefcaseId = properties[ServerSchema::Property::BriefcaseId].asUInt();
-            bool isReadOnly = properties[ServerSchema::Property::IsReadOnly].asBool();
+            DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::FromJson(instance);
             FileInfoPtr fileInfo = FileInfo::FromJson(instance);
 
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseId);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
-            BeFileName filePath = fileNameCallback(baseDirectory, BeBriefcaseId(briefcaseId), connection->GetRepositoryInfo(), *fileInfo);
+            BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), connection->GetRepositoryInfo(), *fileInfo);
             if (filePath.DoesPathExist())
                 {
                 finalResult->SetError(DgnDbServerError::Id::FileAlreadyExists);
@@ -826,12 +802,13 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
                 BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
                 }
 
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId);
-            DownloadBriefcase(connection, filePath, BeBriefcaseId(briefcaseId), *fileInfo, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseInfo->GetId());
+            DownloadBriefcase(connection, filePath, briefcaseInfo->GetId(), *fileInfo, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     {
-                    finalResult->SetSuccess(DgnDbServerBriefcaseInfo(filePath, isReadOnly));
+                    briefcaseInfo->SetLocalPath(filePath);
+                    finalResult->SetSuccess(briefcaseInfo);
                     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
                     }
@@ -912,7 +889,7 @@ DgnPlatformLib::Host::RepositoryAdmin* DgnDbClient::GetRepositoryAdmin()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             09/2016
 //---------------------------------------------------------------------------------------
-DgnDbRepositoryManagerTaskPtr DgnDbClient::CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbBriefcaseInfoCR briefcaseInfo, ICancellationTokenPtr cancellationToken)
+DgnDbRepositoryManagerTaskPtr DgnDbClient::CreateRepositoryManager(RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo, DgnDbServerBriefcaseInfoCR briefcaseInfo, ICancellationTokenPtr cancellationToken)
     {
     DgnDbRepositoryManagerResultPtr finalResult = std::make_shared<DgnDbRepositoryManagerResult>();
     return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
