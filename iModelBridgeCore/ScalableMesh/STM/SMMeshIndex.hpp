@@ -783,22 +783,23 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
     boundariesToRemoveWithin->GetRange(range, nullptr);
     if (m_nodeHeader.m_contentExtentDefined && !range.IntersectsWith(m_nodeHeader.m_contentExtent)) return;
     if (m_nodeHeader.m_nodeCount < 3) return;
-
-    bset<int32_t> removedPts;
+    /*
+    bset<int32_t> removedPts;*/
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr = GetPointsPtr();
-
+    /*
     for (size_t i = 0; i < ptsPtr->size(); ++i)
         {
         if (boundariesToRemoveWithin->PointInside((*ptsPtr)[i], 1e-8))
             removedPts.insert((int)i);
-        }
+        }*/
     bvector<DPoint3d> clearedPts;
     bvector<int32_t> clearedIndices;
     bmap<int32_t, int32_t> oldToNewIndices;
 
     bvector<int32_t> newUvsIndices;
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvsIndicePtr = GetUVsIndicesPtr();
+    bvector<DPoint2d> newUvs;
+   /* RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvsIndicePtr = GetUVsIndicesPtr();
 
     for (size_t i = 0; i < ptsIndicePtr->size(); i += 3)
         {
@@ -817,11 +818,40 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
                     newUvsIndices.push_back((*uvsIndicePtr)[i + j]);
                 }
             }
+        }*/
+
+    bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
+    auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+        new ScalableMeshNode<POINT>(nodePtr)
+#else
+        ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+        );
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    flags->SetLoadTexture(true);
+    IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+    if (meshP.get() != nullptr)
+        GetRegionsFromClipVector3D(polyfaces, boundariesToRemoveWithin, meshP->GetPolyfaceQuery());
+
+    map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+    if (polyfaces[0][0]->GetPointCount() > 0)
+        {
+        DifferenceSet clipped = DifferenceSet::FromPolyfaceSet(polyfaces[0], mapOfPoints, 1);
+        clearedPts = clipped.addedVertices;
+        clearedIndices = clipped.addedFaces;
+        newUvsIndices = clipped.addedUvIndices;
+        newUvs = clipped.addedUvs;
         }
     ptsPtr->clear();
     ptsIndicePtr->clear();
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvsIndicePtr = GetUVsIndicesPtr();
     if (uvsIndicePtr.IsValid())
         uvsIndicePtr->clear();
+    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvsPts = GetUVCoordsPtr();
+    if (uvsPts.IsValid())
+        uvsPts->clear();
     if (!clearedPts.empty())
         {
         ptsPtr->push_back(&clearedPts[0], clearedPts.size());
@@ -829,6 +859,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
             ptsIndicePtr->push_back(&clearedIndices[0], clearedIndices.size());
         if (!newUvsIndices.empty())
             uvsIndicePtr->push_back(&newUvsIndices[0], newUvsIndices.size());
+        if (!newUvs.empty())
+            uvsPts->push_back(&newUvs[0], newUvs.size());
         }
 
     //mark data not up to date
