@@ -146,23 +146,3 @@ CsvFileTests.GetRowAndMaxColumnCount
     #   Actual: false
     # Expected: true
     # [  FAILED  ] CsvFileTests.GetRowAndMaxColumnCount (0 ms)
-
-DgnProjectPackageTest.EnforceLinkTableFor11Relationship
-    # DgnDb61-16Q4, x64 & x86, DEBUG
-    # [ RUN      ] DgnProjectPackageTest.EnforceLinkTableFor11Relationship
-    # 2016-09-28 12:26:29,949 ERROR [0x00002f18] ECObjectsNative - Unable to locate referenced schema ECDbMap.02.00.00
-    # 2016-09-28 12:26:29,949 ERROR [0x00002f18] ECObjectsNative - Failed to read XML file: F:\DgnDb61-16Q4\out\Winx64\Product\DgnPlatform-Gtest\Assets\Documents\DgnDb\Schemas\SampleDgnDbEditor.01.00.ecschema.xml
-    # F:\DgnDb61-16Q4\src\DgnPlatform\Tests\DgnProject\NonPublished\DgnProject_Test.cpp(585): error: Value of: schema.IsValid()
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] DgnProjectPackageTest.EnforceLinkTableFor11Relationship (293 ms)
-
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-    # DgnDb61-16Q4, x64 & x86, DEBUG
-    # [ RUN      ] ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-    # 2016-09-28 12:28:15,754 ERROR [0x00002f18] ECObjectsNative - Unable to locate referenced schema ECDbMap.02.00.00
-    # 2016-09-28 12:28:15,754 ERROR [0x00002f18] ECObjectsNative - Failed to read XML file: F:\DgnDb61-16Q4\out\Winx64\Product\DgnPlatform-Gtest\Assets\Documents\DgnDb\Schemas\StartupCompany.02.00.ecschema.xml
-    # F:\DgnDb61-16Q4\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(669): error: Value of: startupSchema.IsValid()
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction (350 ms)
