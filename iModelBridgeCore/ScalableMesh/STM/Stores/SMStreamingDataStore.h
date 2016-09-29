@@ -168,46 +168,47 @@ protected:
 
 template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
     {        
-    private:
-        
-        SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
-        HFCPtr<SMNodeGroup>           m_nodeGroup;
-        DataSourceAccount*            m_dataSourceAccount;
-        DataSourceURL                 m_pathToNodeData;
-        SMStoreDataType               m_dataType;
-
-        // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
-        mutable std::mutex m_pointCacheLock;
-
-        uint64_t GetBlockSizeFromNodeHeader() const;
-
-    protected: 
-
-        StreamingDataBlock    & GetBlock(HPMBlockID blockID) const;
 
     public:
-       
+
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
-            
-        virtual ~SMStreamingNodeDataStore();                      
-            
+
+        virtual ~SMStreamingNodeDataStore();
+
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
-            
+
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const override;
 
         virtual size_t GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const override;
-                    
+
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
-            
-        virtual bool DestroyBlock(HPMBlockID blockID) override;         
+
+        virtual bool DestroyBlock(HPMBlockID blockID) override;
 
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;
 
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) override;
+
+    protected:
+
+        SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        DataSourceAccount*            m_dataSourceAccount;
+        DataSourceURL                 m_dataSourceURL;
+
+        // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
+        typedef std::map<ISMStore::NodeID, StreamingDataBlock*> DataCache;
+        mutable DataCache m_dataCache;
+        mutable std::mutex m_dataCacheMutex;
+
+        StreamingDataBlock &   GetBlock(HPMBlockID blockID) const;
+
+    private:
+        
+        HFCPtr<SMNodeGroup>           m_nodeGroup;
+        SMStoreDataType               m_dataType;
+
+        uint64_t GetBlockSizeFromNodeHeader() const;
     };
-
-
 
 
 struct StreamingTextureBlock : public StreamingDataBlock
@@ -240,26 +241,15 @@ struct StreamingTextureBlock : public StreamingDataBlock
         int m_Format = 0;     // could be useful in the future
     };
     
-template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public ISMNodeDataStore<DATATYPE> 
+template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public SMStreamingNodeDataStore<DATATYPE, EXTENT>
     {
-    private:
 
-        DataSourceURL m_path;
-        // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        mutable map<uint32_t, StreamingTextureBlock> m_textureCache;
-        mutable std::mutex m_textureCacheLock;
-
-        SMIndexNodeHeader<EXTENT>* m_nodeHeader;
-        DataSourceAccount *        m_dataSourceAccount;
-
-    public:              
+    public:
 
         StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
             
         StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
-        virtual ~StreamingNodeTextureStore();
-            
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;        
@@ -280,5 +270,8 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
             
         void                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount);
         DataSourceAccount * GetDataSourceAccount    (void) const;
-    
+
+    private:
+
+        typedef SMStreamingNodeDataStore<DATATYPE, EXTENT> Super;
     };

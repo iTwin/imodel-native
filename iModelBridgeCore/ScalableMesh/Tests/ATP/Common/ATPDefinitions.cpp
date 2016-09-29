@@ -4505,8 +4505,9 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString smFileName, cloudContainer, cloudName, result;
-    bool uploadToAzure = false;
+    WString smFileName, cloudContainer, cloudName, server_type, result;
+    SMCloudServerType server(SMCloudServerType::LocalDisk);
+
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
@@ -4514,11 +4515,22 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
-    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(server_type, "server") != BEXML_Success)
         {
         printf("Saving cloud format to local directory ");
         }
-    if (uploadToAzure)
+    else
+        {
+        if (server_type == L"azure")
+            {
+            server = SMCloudServerType::Azure;
+            }
+        else if (server_type == L"wsg")
+            {
+            server = SMCloudServerType::WSG;
+            }
+        }
+    if (server == SMCloudServerType::Azure || server == SMCloudServerType::WSG)
         {
         if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
             {
@@ -4530,7 +4542,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             printf("ERROR : name attribute not found\r\n");
             return;
             }
-        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
+        printf("Saving to server type (%ls)... container: %ls  name: %ls\n", server_type.c_str(), cloudContainer.c_str(), cloudName.c_str());
         }
     else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
@@ -4554,7 +4566,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, server);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }

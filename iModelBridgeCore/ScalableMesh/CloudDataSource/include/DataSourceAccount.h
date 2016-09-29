@@ -66,6 +66,8 @@ public:
     CLOUD_EXPORT    void                setAccountSSLCertificatePath    (const AccountSSLCertificatePath &path);
     const AccountSSLCertificatePath     getAccountSSLCertificatePath    (void) const;
 
+    CLOUD_EXPORT virtual void           setWSGTokenGetterCallback      (const std::function<std::string(void)>& tokenGetter);
+
     virtual      DataSource       *     createDataSource                (void) = 0;
     CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name);
 

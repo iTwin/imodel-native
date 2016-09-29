@@ -91,8 +91,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         DataSourceService                       *   serviceWSG;
         DataSourceAccount                       *   accountWSG;
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server
-        DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token?
+        //DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server 
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"dev-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
+        DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
 
         serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
         if (serviceWSG == nullptr)
@@ -105,6 +106,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
 
         accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+
+        accountWSG->setWSGTokenGetterCallback([]() -> std::string
+            {
+            return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
+            });
 
         this->SetDataSourceAccount(accountWSG);
         }
@@ -171,7 +177,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
         masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
         masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
         masterHeader["singleFile"] = false;
-        masterHeader["isTerrain"] = true;
+        masterHeader["isTerrain"] = indexHeader->m_isTerrain;
 
         auto buffer = Json::StyledWriter().write(masterHeader);
         uint64_t buffer_size = buffer.size();
@@ -342,6 +348,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
 
+            if (!masterHeader.isMember("rootNodeBlockID"))
+                {
+                assert(false); // error reading Master Header
+                return 0;
+                }
             indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
             indexHeader->m_balanced = masterHeader["balanced"].asBool();
             indexHeader->m_depth = masterHeader["depth"].asUInt();
@@ -1020,38 +1031,40 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
-    :m_dataSourceAccount(dataSourceAccount),     
-     m_nodeGroup(nodeGroup)
-    {       
-    m_nodeHeader = nodeHeader;
-    m_dataType = type;
-
-    switch (type)
+    : m_dataSourceAccount(dataSourceAccount),
+      m_nodeHeader(nodeHeader),
+      m_nodeGroup(nodeGroup),
+      m_dataType(type)
+    {
+    switch (m_dataType)
         {
         case SMStoreDataType::Points: 
-            m_pathToNodeData = L"points";
+            m_dataSourceURL = L"points";
             break;
         case SMStoreDataType::TriPtIndices:
-            m_pathToNodeData = L"indices";
+            m_dataSourceURL = L"indices";
             break;
         case SMStoreDataType::UvCoords:
-            m_pathToNodeData = L"uvs";
+            m_dataSourceURL = L"uvs";
             break;
         case SMStoreDataType::TriUvIndices:
-            m_pathToNodeData = L"uvindices";
+            m_dataSourceURL = L"uvindices";
+            break;
+        case SMStoreDataType::Texture:
+            m_dataSourceURL = L"textures";
             break;
         default:
             assert(!"Unkown data type for streaming");
         }
 
-    m_pathToNodeData.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
+    m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
         BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_pathToNodeData.c_str());
+        path.AppendToPath(m_dataSourceURL.c_str());
         BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
         assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
@@ -1063,8 +1076,11 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
     {            
-    for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
-    m_pointCache.clear();
+    for (auto it = m_dataCache.begin(); it != m_dataCache.end(); ++it)
+        {
+        delete it->second;
+        }
+    m_dataCache.clear();
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
@@ -1075,7 +1091,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         {
         DataSourceStatus writeStatus;
 
-        DataSourceURL url = m_pathToNodeData;
+        DataSourceURL url (m_dataSourceURL);
         url.append(L"p_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
         //bool created = false;
@@ -1107,12 +1123,12 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         Byte* data = new Byte[compressedPacket.GetDataSize() + sizeof(uint32_t)];
         auto UncompressedSize = (uint32_t)uncompressedPacket.GetDataSize();
         reinterpret_cast<uint32_t&>(*data) = UncompressedSize;
-        if (m_pointCache.count(blockID.m_integerID) > 0)
+        if (m_dataCache.count(blockID.m_integerID) > 0)
             {
             // must update data count
-            auto& points = this->m_pointCache[blockID.m_integerID];
-            points.resize(UncompressedSize);
-            memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+            auto& points = this->m_dataCache[blockID.m_integerID];
+            points->resize(UncompressedSize);
+            memcpy(points->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
             }
 
         m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
@@ -1190,10 +1206,10 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
     assert(block.size() <= maxCountData * sizeof(DATATYPE));
     memmove(DataTypeArray, block.data(), block.size());
 
-    m_pointCacheLock.lock();
+    m_dataCacheMutex.lock();
     block.UnLoad();
-    m_pointCache.erase(block.GetID());
-    m_pointCacheLock.unlock();
+    m_dataCache.erase(block.GetID());
+    m_dataCacheMutex.unlock();
 
     return blockSize;
     }
@@ -1206,21 +1222,22 @@ template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, 
 template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_pointCacheLock.lock();
-    StreamingDataBlock& block = m_pointCache[blockID.m_integerID];
-    m_pointCacheLock.unlock();
-    assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
-    if (!block.IsLoaded())
+    m_dataCacheMutex.lock();
+    StreamingDataBlock* block = m_dataCache[blockID.m_integerID];
+    if (!block) block = new StreamingDataBlock();
+    m_dataCacheMutex.unlock();
+    assert((block->GetID() != uint64_t(-1) ? block->GetID() == blockID.m_integerID : true));
+    if (!block->IsLoaded())
         {
         auto blockSize = m_nodeHeader->GetBlockSize((short)m_dataType);
         //assert(blockSize != uint64_t(-1));
-        block.SetID(blockID.m_integerID);
-        block.SetDataSourceURL(m_pathToNodeData);        
-        block.Load(m_dataSourceAccount, blockSize);
+        block->SetID(blockID.m_integerID);
+        block->SetDataSourceURL(m_dataSourceURL);
+        block->Load(m_dataSourceAccount, blockSize);
         }
-    assert(block.GetID() == blockID.m_integerID);
-    assert(block.IsLoaded() && !block.empty());
-    return block;
+    assert(block->GetID() == blockID.m_integerID);
+    assert(block->IsLoaded() && !block->empty());
+    return *block;
     }
 
 
@@ -1373,52 +1390,26 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
 template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_textureCacheLock.lock();
-    StreamingTextureBlock& texture = m_textureCache[blockID.m_integerID];
-    m_textureCacheLock.unlock();
-    assert((texture.GetID() != uint64_t(-1) ? texture.GetID() == blockID.m_integerID : true));
-    if (!texture.IsLoaded())
+    m_dataCacheMutex.lock();
+    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache[blockID.m_integerID]);
+    if (!texture) texture = new StreamingTextureBlock();
+    m_dataCacheMutex.unlock();
+    assert((texture->GetID() != uint64_t(-1) ? texture->GetID() == blockID.m_integerID : true));
+    if (!texture->IsLoaded())
         {
-        if (texture.IsLoading())
-            {
-            texture.LockAndWait();
-            }
-        else
-            {
             auto blockSize = m_nodeHeader->GetBlockSize(5);
-            texture.SetDataSourceURL(m_path);
-            texture.SetID(blockID.m_integerID);
-            texture.Load(this->GetDataSourceAccount(), blockSize);
-            }
+            texture->SetID(blockID.m_integerID);
+            texture->SetDataSourceURL(m_dataSourceURL);
+            texture->Load(this->GetDataSourceAccount(), blockSize);
         }
-    assert(texture.IsLoaded() && !texture.empty());
-    return texture;
+    assert(texture->IsLoaded() && !texture->empty());
+    return *texture;
     }
 
 
 template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    : m_path(L"textures"),
-      m_nodeHeader(nodeHeader)
+    : Super(dataSourceAccount, SMStoreDataType::Texture, nodeHeader)
     {
-    this->SetDataSourceAccount(dataSourceAccount);
-
-    m_path.setSeparator(dataSourceAccount->getPrefixPath().getSeparator());
-
-    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
-    if (s_stream_from_disk)
-        {
-        // Create base directory structure to store information if not already done
-        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_path.c_str());
-        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
-        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
-        }
-    }
-
-template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::~StreamingNodeTextureStore()
-    {
-    for (auto it = m_textureCache.begin(); it != m_textureCache.end(); ++it) it->second.clear();
-    m_textureCache.clear();
     }
 
 template <class DATATYPE, class EXTENT> bool StreamingNodeTextureStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
@@ -1432,7 +1423,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
 
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
     StreamingTextureBlock texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
-    texture.SetDataSourceURL(m_path);
+    texture.SetDataSourceURL(m_dataSourceURL);
     texture.Store(m_dataSourceAccount, DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
 
     return blockID;
@@ -1443,7 +1434,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     assert(blockID.IsValid());
 
     DataSourceStatus writeStatus;
-    DataSourceURL    url(m_path);
+    DataSourceURL    url(m_dataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
     bool created = false;
@@ -1501,14 +1492,15 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
     assert(maxCountData >= texture.size());
     memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
-    m_textureCacheLock.lock();
-    texture.UnLoad();
-    m_textureCache.erase(texture.GetID());
-    m_textureCacheLock.unlock();
+    m_dataCacheMutex.lock();
+    auto textureID = texture.GetID();
+    delete m_dataCache[textureID];
+    m_dataCache.erase(textureID);
+    m_dataCacheMutex.unlock();
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
     }
 
-template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  
+template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)  
     {
     m_dataSourceAccount = dataSourceAccount;
     }
@@ -1524,7 +1516,7 @@ StreamingTextureBlock::StreamingTextureBlock(void)
     }
 
 inline StreamingTextureBlock::StreamingTextureBlock(const int & width, const int & height, const int & numChannels)
-    : m_Width{ width }, m_Height{ height }, m_NbChannels(numChannels)
+    : m_Width{ width }, m_Height{ height }, m_NbChannels{ numChannels }
     {
     this->SetDataSourcePrefix(L"t_");
     }

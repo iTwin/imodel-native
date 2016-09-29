@@ -132,6 +132,11 @@ const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccount
     return accountSSLCertificatePath;
     }
 
+CLOUD_EXPORT void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::string(void)>& )
+    {
+    // Nothing to do
+    }
+
 DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
     {
     return getDataSourceManager().createDataSource(name, *this);

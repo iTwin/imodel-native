@@ -47,6 +47,7 @@ DataSourceStatus DataSourceAccountWSG::destroyDataSource(DataSource *dataSource)
 
 DataSourceAccountWSG::~DataSourceAccountWSG(void)
     {
+    m_isValid = false;
     }
 
 DataSourceStatus DataSourceAccountWSG::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
@@ -55,9 +56,6 @@ DataSourceStatus DataSourceAccountWSG::setAccount(const AccountName & account, c
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
                                                             // Set details in base class
     DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceWSG"), account, identifier, key);
-
-    this->wsgToken = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->getAccountKey());
-    
 
     return DataSourceStatus();
 }
@@ -152,8 +150,8 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSourceURL &url, const 
         curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
         curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);        // &&RB TODO : Ask Francis.Boily about his server certificate
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
         curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
         curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, CURLDummyWriteDataCallback);
@@ -259,9 +257,14 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, 
     return DataSourceStatus();
 }
 
+void DataSourceAccountWSG::setWSGTokenGetterCallback(const std::function<std::string(void)>& tokenGetter)
+    {
+    m_getWSGToken = tokenGetter;
+    }
+
 DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken()
     {
-    return DataSourceAccountWSG::WSGToken("Authorization: Token " + this->wsgToken);
+    return DataSourceAccountWSG::WSGToken("Authorization: Token " + this->m_getWSGToken());
     }
 
 DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSourceURL & url, const DataSourceURL & filename, DataSourceBuffer::BufferSize size)
@@ -311,4 +314,9 @@ DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSo
     curl_easy_cleanup(curl_handle);
    
     return DataSourceAccountWSG::WSGEtag(response_header.data["ETag"]);
+    }
+
+bool DataSourceAccountWSG::isValid(void)
+    {
+    return m_isValid;
     }

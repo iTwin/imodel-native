@@ -143,8 +143,6 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 }
 
 DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
-{
-    try
     {
     struct CURLDataMemoryBuffer buffer;
     //struct CURLDataResponseHeader response_header;
@@ -168,20 +166,15 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     if (CURLE_OK != res)
         {
         //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        throw;
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
     assert(buffer.size <= size);
     readSize = buffer.size;
     (void)size;
-    }
-    catch (...)
-    {
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
-    }
 
     return DataSourceStatus();
-}
+    }
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {

@@ -45,9 +45,9 @@ protected:
     WSGServer::repository                   wsgRepository       = L"S3MXECPlugin--Server";
     WSGServer::schema                       wsgSchema           = L"S3MX";
     WSGServer::class_name                   wsgClassName        = L"Document";
-    WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544";
-    WSGServer::token                        wsgToken            = "";
-
+    //WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544"; // Dev Bentley org id
+    WSGServer::organizationID               wsgOrganizationID = L"e82a584b-9fae-409f-9581-fd154f7b9ef9"; // Connect Bentley org id
+    
 
 public:
                                             DataSourceAccountWSG                (void) = delete;
@@ -67,7 +67,14 @@ public:
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
+        virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater);
+
 private :
-       WSGToken                             getWSGToken                         ();
+       std::function<std::string (void)>    m_getWSGToken;
+       bool                                 m_isValid = true;
+
+       WSGToken                             getWSGToken                         (void);
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
+
+       bool                                 isValid                             (void);
     };
