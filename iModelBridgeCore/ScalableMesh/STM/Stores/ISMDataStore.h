@@ -121,7 +121,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
         to loading the block, the method GetBlockDataCount() can be used. No decompression
         prior to loading will be performed before loading the block.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadCompressedBlock(bvector<DataType>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             HASSERT(false); // Not implemented;
             return 0;

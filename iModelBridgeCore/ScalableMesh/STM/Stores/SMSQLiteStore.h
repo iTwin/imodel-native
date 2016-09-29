@@ -81,7 +81,7 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
             
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
 
-        virtual size_t LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+        virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 

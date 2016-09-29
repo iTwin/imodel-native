@@ -654,15 +654,12 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
         }
     }
 
-template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
-    bvector<uint8_t> nodeData;
     size_t uncompressedSize = 0;
-    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+    this->GetCompressedBlock(DataTypeArray, uncompressedSize, blockID);
     assert(uncompressedSize <= maxCountData*sizeof(DATATYPE));
-    assert(nodeData.size() <= maxCountData*sizeof(DATATYPE));
-    memcpy(DataTypeArray.data(), nodeData.data(), nodeData.size()*sizeof(DATATYPE));
-    return nodeData.size();
+    return DataTypeArray.size();
     }
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
