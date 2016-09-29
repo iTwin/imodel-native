@@ -1605,13 +1605,16 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     GatherGeometryHandler handler(m_range, *this, context);
     m_cache.GetTree().Traverse(handler);
 
-    // We sort by facet count density in order to ensure the most prominent geometries are assigned batch IDs
+    // We sort by size in order to ensure the largest geometries are assigned batch IDs
     // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
     if (m_geometries.size() > s_maxGeometryIdCount)
         {
         std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
             {
-            return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity();
+            DRange3d lhsRange, rhsRange;
+            lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
+            rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
+            return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
             });
         }
     }
@@ -1627,7 +1630,7 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
 
-    // Collect geometry from elements in this node, sorted by facet count density
+    // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
     TileGeometryProcessorContext context(processor, db, cache);
