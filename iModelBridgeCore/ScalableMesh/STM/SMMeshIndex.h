@@ -136,6 +136,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       CreatedNodeMap*                      createdNodeMap);
     
     virtual ~SMMeshIndexNode<POINT, EXTENT>();
+
+    void Init();
     
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
