@@ -27,6 +27,7 @@
 #include "SyncCachedInstancesTask.h"
 #include "SyncLocalChangesTask.h"
 #include "Util/StringHelper.h"
+#include "FileDownloadManager.h"
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -52,8 +53,10 @@ m_infoStore(infoStore),
 m_sessionInfo(new SessionInfo()),
 m_cacheAccessThread(cacheAccessThread),
 m_cancellationToken(SimpleCancellationToken::Create()),
-m_temporaryDir(temporaryDir)
-    {}
+m_temporaryDir(temporaryDir),
+m_fileDownloadManager(new FileDownloadManager(*this))
+    {
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
@@ -1089,6 +1092,7 @@ ICancellationTokenPtr ct
     {
     auto task = std::make_shared<DownloadFilesTask>(
         shared_from_this(), 
+        m_fileDownloadManager,
         std::move(filesToDownload), 
         fileCacheLocation, 
         std::move(onProgress), 
@@ -1097,13 +1101,9 @@ ICancellationTokenPtr ct
     m_cacheAccessThread->Push(task);
 
     auto result = std::make_shared <BatchResult>();
-    return task->Then(m_cacheAccessThread, [=]
+    return task->Then<BatchResult>(m_cacheAccessThread, [=]
         {
-        *result = task->GetResult();
-        })
-   ->Then<BatchResult>([=]
-        {
-        return *result;
+        return task->GetResult();
         });
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/AsyncTestCheckpoint.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,12 @@ struct AsyncTestCheckpoint
             {
             m_reached = true;
             while (m_wait);
+            }
+
+        //! Call in async code to mark that checkpoint is reached.
+        void Checkin()
+            {
+            m_reached = true;
             }
 
         //! Call in controlling code to make async code continue from checkpoint.
