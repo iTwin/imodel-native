@@ -106,6 +106,31 @@ public:
     ROADRAILPHYSICAL_EXPORT static TransitionSegmentPtr Create(RoadRangeCR roadRange, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
 }; // TransitionSegment
 
+//=======================================================================================
+//! Physical segment of a road supported by a bridge.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct RoadSegmentOnBridge : RoadSegmentElement, BridgePhysical::IPhysicalElementOnBridge
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadSegmentOnBridge, RoadSegmentElement);
+    friend struct RoadSegmentOnBridgeHandler;
+
+protected:
+    //! @private
+    explicit RoadSegmentOnBridge(CreateParams const& params) : T_Super(params) {}
+
+    explicit RoadSegmentOnBridge(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+
+    virtual Dgn::PhysicalElementCR _IPhysicalElementOnBridgeToPhysicalElement() const override { return *this; }
+    virtual LinearReferencing::ILinearlyLocatedElementCR _IPhysicalElementOnBridgeToLinearlyLocated() const override { return *this; }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegmentOnBridge)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadSegmentOnBridge)
+
+    ROADRAILPHYSICAL_EXPORT static RoadSegmentOnBridgePtr Create(RoadRangeCR roadRange, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+}; // RoadSegmentOnBridge
+
 
 //=================================================================================
 //! ElementHandler for Segment Elements
@@ -142,5 +167,14 @@ struct EXPORT_VTABLE_ATTRIBUTE TransitionSegmentHandler : RoadSegmentElementHand
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TransitionSegment, TransitionSegment, TransitionSegmentHandler, RoadSegmentElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TransitionSegmentHandler
+
+//=================================================================================
+//! ElementHandler for RoadSegmentOnBridge Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RoadSegmentOnBridgeHandler : RoadSegmentElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadSegmentOnBridge, RoadSegmentOnBridge, RoadSegmentOnBridgeHandler, RoadSegmentElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // RoadSegmentOnBridgeHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

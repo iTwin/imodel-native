@@ -68,6 +68,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_RailRange                                        "RailRange"
 #define BRRP_CLASS_RoadRange                                        "RoadRange"
 #define BRRP_CLASS_RoadSegment                                      "RoadSegment"
+#define BRRP_CLASS_RoadSegmentOnBridge                              "RoadSegmentOnBridge"
 #define BRRP_CLASS_RoadSegmentElement                               "RoadSegmentElement"
 #define BRRP_CLASS_SegmentElement                                   "SegmentElement"
 #define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
@@ -138,6 +139,7 @@ ROADRAILPHYSICAL_TYPEDEFS(RailSegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(RoadRange)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegment)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentElement)
+ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentOnBridge)
 ROADRAILPHYSICAL_TYPEDEFS(SegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(SegmentRangeElement)
 ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
@@ -149,6 +151,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR(RailSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentOnBridge)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(SegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(TransitionSegment)

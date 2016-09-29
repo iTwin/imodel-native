@@ -70,3 +70,79 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
 #pragma endregion
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
+    {
+#pragma region SetUp
+    DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeWithBridgeTest.bim");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
+    auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
+
+    // Create Alignment
+    auto alignmentPtr = Alignment::Create(*alignModelPtr);
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
+    ASSERT_TRUE(alignmentPtr->Insert().IsValid());
+
+    // Create Horizontal 
+    DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
+    CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
+    auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
+    ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
+
+    // Create Vertical
+    DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
+    CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
+    auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
+    ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
+#pragma endregion
+
+#pragma region Create Road Elements
+    DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
+    auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
+
+    // Create RoadRange
+    auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
+    StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
+    auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
+    ASSERT_TRUE(roadRangeCPtr.IsValid());    
+    ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
+
+    // Create RoadSegment #1
+    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(0), DistanceExpression(10));
+    auto roadSegment1CPtr = roadSegment1Ptr->Insert();
+    ASSERT_TRUE(roadSegment1CPtr.IsValid());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
+
+    // Create TransitionSegment #1
+    auto transition1Ptr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(10), DistanceExpression(20));
+    auto transition1CPtr = transition1Ptr->Insert();
+    ASSERT_TRUE(transition1CPtr.IsValid());
+    ASSERT_EQ(alignmentPtr->GetElementId(), transition1CPtr->GetLinearElementId());
+
+    // Create RoadSegmentOnBridge
+    auto roadOnBridgePtr = RoadSegmentOnBridge::Create(*roadRangeCPtr, DistanceExpression(20), DistanceExpression(120));
+    auto roadOnBridgeCPtr = roadOnBridgePtr->Insert();
+    ASSERT_TRUE(roadOnBridgeCPtr.IsValid());
+
+    // Create Bridge
+    auto bridgePtr = Bridge::Create(*roadOnBridgeCPtr);
+    auto bridgeCPtr = bridgePtr->Insert();
+    ASSERT_TRUE(bridgeCPtr.IsValid());
+
+    // Create TransitionSegment #2
+    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(1), DistanceExpression(2));
+    auto transition2CPtr = transition2Ptr->Insert();
+    ASSERT_TRUE(transition2CPtr.IsValid());
+    ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
+
+    // Create RoadSegment #2
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(100), DistanceExpression(150));
+    ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
+#pragma endregion
+    }

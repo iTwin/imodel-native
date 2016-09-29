@@ -231,6 +231,7 @@ RoadRailPhysicalProjectHostImpl::RoadRailPhysicalProjectHostImpl() : m_isInitial
     DgnPlatformLib::Initialize(*this, false);
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain());
     DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain());
+    DgnDomains::RegisterDomain(BridgePhysicalDomain::GetDomain());
     DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain());
     m_isInitialized = true;
     }

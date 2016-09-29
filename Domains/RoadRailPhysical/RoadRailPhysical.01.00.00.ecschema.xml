@@ -132,6 +132,22 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="RoadSegmentOnBridge" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
+        <BaseClass>RoadSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <!--ECNavigationProperty propertyName="RoadBridgeCrossSectionDefinitionId" relationshipName="RoadCrossSectionReferencesDefinition" direction="forward"/-->
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
+        <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="RoadSegmentOnBridge"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="bphys:Bridge"/>
+        </Target>
+    </ECRelationshipClass>
     <!-- END RoadSegmentElement Class Hierarchy -->
 
     <!-- BEGIN IntersectionElement Class Hierarchy -->
