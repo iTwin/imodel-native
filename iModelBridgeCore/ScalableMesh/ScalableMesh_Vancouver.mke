@@ -364,7 +364,7 @@ $(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  $
 
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------
@@ -462,7 +462,6 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)RasterCore.lib \
-    $(ContextSubpartsLibs)TerrainModelElementHandler.lib \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)CloudDataSource.lib \
