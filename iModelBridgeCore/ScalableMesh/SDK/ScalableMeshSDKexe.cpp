@@ -220,6 +220,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     static DRange3d s_importRange;
     HFCPtr<HGF2DCoordSys>      s_dumpCoordSys(new HGF2DCoordSys()); 
     HFCPtr<HVEShape>           s_importClipShape2D;
+
     
     inline bool IsPointInClipShape(const DPoint3d& point)
         {
@@ -1030,6 +1031,7 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
             }
         return SUCCESS;
         }
+
 
     BentleyStatus ScalableMeshSDKexe::DoImportSTM(const ImportParameters& params)
         {               
