@@ -66,9 +66,11 @@ $(o)GroundDetectionGrid$(oext) : $(groundDetectSrcDir)GroundDetectionGrid.cpp $(
 
 $(o)GroundDetectionManagerDc$(oext) : $(groundDetectSrcDir)GroundDetectionManagerDc.cpp $(groundDetectSrcDir)GroundDetectionManagerDc.h  ${MultiCompileDepends}
 
-#$(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
+$(o)GroundDetectionParameters$(oext) : $(groundDetectSrcDir)GroundDetectionParameters.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
 
-#$(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
+$(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
+
+$(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
 
 #$(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
 
@@ -80,14 +82,34 @@ cppObjects =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
-DLM_OBJECT_PCH      = $(o)AutomaticGroundDetectionPch$(oext)
+#DLM_OBJECT_PCH      = $(o)AutomaticGroundDetectionPch$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
 
-LINKER_LIBRARIES_DELAYLOADED  = \    
-    $(ContextSubpartsLibs)$(BaseGeocoordLib) \
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)BaseGeoCoord.lib \
+	$(ContextSubpartsLibs)Bentley.lib \
+	$(ContextSubpartsLibs)BentleyGeom.lib \
     ws2_32.lib \
-    $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
-    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+    $(ContextSubpartsLibs)TerrainModelCore.lib \
+	$(ContextSubpartsLibs)TerrainModelFormats.lib
+	
+	
+	# \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)
 
 #LINKER_LIBRARIES            = 
 

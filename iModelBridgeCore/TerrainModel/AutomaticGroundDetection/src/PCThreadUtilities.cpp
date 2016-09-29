@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DcPointCloudCorePch.h"
+#include "AutomaticGroundDetectionPch.h"
 #include "PCThreadUtilities.h"
 
 USING_NAMESPACE_BENTLEY_LOGGING

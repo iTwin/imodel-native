@@ -9,6 +9,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
 
+#include "GroundDetectionMacros.h"
 
 GROUND_DETECTION_TYPEDEF(IPointsProvider)
 

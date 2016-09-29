@@ -101,18 +101,24 @@ struct GroundDetectionParameters : public RefCountedBase
 {
 public:
   
-     static GroundDetectionParametersPtr Create();     
+    typedef enum
+        {
+        NO_DTM_REQUIRED=0,
+        CREATE_NEW_DTM,
+        USE_EXISTING_DTM
+        } DTMFileOptions;
+
+    static GroundDetectionParametersPtr Create();     
 
 
     //General options     
      Transform const&     GetMetersToUors() const;
      void            SetMetersToUors(Transform const& metersToUors);
      bool            GetUseMultiThread() const;
-     void            SetUseMultiThread(bool value);     
-     bool            GetUseViewFilters() const;
-     void            SetUseViewFilters(bool useFilters);
+     void            SetUseMultiThread(bool value);          
 
     //DTM file options          
+     DTMFileOptions  GetCreateDtmFile() const;
      double          GetLargestStructureSize() const;
      void            SetLargestStructureSize(double value);
      bool            GetExpandTinToRange() const;
@@ -127,6 +133,12 @@ public:
      void            SetAnglePercentileFactor(double value);
      double          GetHeightPercentileFactor() const;        //We will use this histogram percentile height threshold for densification
      void            SetHeightPercentileFactor(double value);    
+
+	 //Classification options    
+    double          GetClassificationTolerance() const;
+    void            SetClassificationTolerance(double value);
+    bool            GetClassificationTolEstimateState() const;
+    void            SetClassificationTolEstimateState(bool value);
 
     //solution parameters
      Angle     GetAngleThreshold() const;
@@ -167,6 +179,13 @@ private:
     double      m_triangleEdgeThreshold;
     double      m_anglePercentileFactor;
     double      m_heightPercentileFactor;
+
+	//Dtm file options
+    DTMFileOptions  m_createDtmFile;	
+
+	//Classification options    
+    bool        m_classificationTolEstimateState;
+    double      m_classificationTolerance; //Height above ground TIN that is considered to be ground point 
     
     //Processing strategy
     bool                m_useMultiThread;

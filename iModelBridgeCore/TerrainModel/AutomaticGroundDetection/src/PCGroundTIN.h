@@ -280,7 +280,7 @@ struct	PCGroundTIN : public RefCountedBase,
                       public IDPoint3dCriteria
 {
 static const size_t CONTAINER_MAX_SIZE;
-static const double HISTO_STEP_PRECISION_FACTOR;
+static const double HISTO_STEP_PRECISION_FACTOR;					
 static const size_t MAX_HISTO_STEP;
 static const size_t MAX_NB_SEEDPOINTS_TO_ADD;
 static const double SEED_BORDER_FACTOR;

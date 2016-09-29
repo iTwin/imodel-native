@@ -14,7 +14,6 @@
 #include "PCGroundTIN.h"
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_POINTCLOUDAPP
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -23,15 +22,17 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 
 
 const size_t PCGroundTIN::CONTAINER_MAX_SIZE = 400000;
-const double PCGroundTIN::HISTO_STEP_PRECISION_FACTO& = 0.010; //default precision in meters
-const size_t PCGroundTIN::MAX_HISTO_STE* = 100000;
+const double PCGroundTIN::HISTO_STEP_PRECISION_FACTOR = 0.010; //default precision in meters
+const size_t PCGroundTIN::MAX_HISTO_STEP = 100000;
 const uint64_t PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD = 1; //Number of point that will be add as seed points
-const double PCGroundTIN::SEED_BORDER_FACTO& = 1.0; //the percentage of the max grid size we will use around the border -> help add seed points near the border
-const double Triangle::TOLERANCE_FACTO& = 0.001; //One millimeter
+const double PCGroundTIN::SEED_BORDER_FACTOR = 1.0; //the percentage of the max grid size we will use around the border -> help add seed points near the border
+const double Triangle::TOLERANCE_FACTOR = 0.001; //One millimeter
 const unsigned int PCGroundTINMT::MAX_NUMBER_THREAD = 8;
+/*
 BeCriticalSection PCGroundTINMT::s_CSPCGroundTIN;
 BeCriticalSection PCGroundTINMT::s_newPointToAddCS;
 BeCriticalSection PCGroundTINMT::s_dtmLibCS;
+*/
 static const uint32_t PROGESS_UPDATE_TIME = 2000;
 
 /*=================================================================================**//**
@@ -63,19 +64,19 @@ class  ProgressMonitor
         //return true if process should continue (was not canceled)
         static bool UpdateProgressInThread()
             {
-            BeCriticalSectionHolder lk(s_CSProgress);
+            //BeCriticalSectionHolder lk(s_CSProgress);
             bool shouldContinue = UpdateProgress();
             return shouldContinue;
             }
         static bool CheckContinueInThread()
             {
-            BeCriticalSectionHolder lk(s_CSProgress);
+            //BeCriticalSectionHolder lk(s_CSProgress);
             return !s_process_canceled;
             }
 
         static void SignalErrorInThread()
             {
-            BeCriticalSectionHolder lk(s_CSProgress);
+            //BeCriticalSectionHolder lk(s_CSProgress);
             SignalError();
             }
 
@@ -95,7 +96,7 @@ class  ProgressMonitor
 
         static size_t GetWorkDoneMT()
             {
-            BeCriticalSectionHolder lk(s_CSProgress);
+            //BeCriticalSectionHolder lk(s_CSProgress);
             return s_workDone;
             }
 
@@ -135,8 +136,10 @@ class  ProgressMonitor
         static bool WasError()       { return s_errorOccured; }
 
     private:
+		/*GDZERO
         static BeCriticalSection        s_CSProgress;
         static BeCriticalSection        s_reportCS;
+		*/
 
         static size_t       s_workDone;
         static bool         s_process_canceled;
@@ -163,13 +166,13 @@ class  ProgressMonitor
             {
             double accomplishmentRatio = (static_cast<double>(workDone) / static_cast<double>(m_processSize));
             {
-            BeCriticalSectionHolder lk(s_reportCS);
+            //BeCriticalSectionHolder lk(s_reportCS);
             m_pReport->SetWorkDone(accomplishmentRatio);
             }
 
             if (s_errorOccured)
                 {
-                BeCriticalSectionHolder lk(s_reportCS);
+                //BeCriticalSectionHolder lk(s_reportCS);
                 m_pReport->OnSignalError();
                 }
 
@@ -188,7 +191,7 @@ class  ProgressMonitor
         bool CheckContinueMT()
             {
                 {
-                BeCriticalSectionHolder lk(s_reportCS);
+                //BeCriticalSectionHolder lk(s_reportCS);
                 s_process_canceled = !m_pReport->CheckContinueOnProgress();
                 }
 
@@ -201,7 +204,7 @@ class  ProgressMonitor
             }
         void RefreshMSViewMT(bool incremental)
             {
-            BeCriticalSectionHolder lk(s_reportCS);
+            //BeCriticalSectionHolder lk(s_reportCS);
 
             m_pReport->RefreshMSView(incremental);
             }
@@ -212,8 +215,10 @@ class  ProgressMonitor
 size_t      ProgressMonitor::s_workDone = 0;
 bool        ProgressMonitor::s_process_canceled = (false);
 bool        ProgressMonitor::s_errorOccured     = (false);
+/*GDZERO
 BeCriticalSection   ProgressMonitor::s_CSProgress;
 BeCriticalSection   ProgressMonitor::s_reportCS;
+*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
@@ -229,6 +234,7 @@ bool CheckProcessNotAborted()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawingFacility::DrawTriangle(DPoint3d const& pt1, DPoint3d const& pt2, DPoint3d const& pt3, Transform const& metersToUors)
     {
+	/*
     MSElement lineElm;
     PointCollection pointArray;
 
@@ -242,7 +248,7 @@ void DrawingFacility::DrawTriangle(DPoint3d const& pt1, DPoint3d const& pt2, DPo
     MSElementDescr* pElmDscr;
     mdlElmdscr_createFromVertices(&pElmDscr, NULL, &pointArray[0], pointArray.size(), TRUE, 0);
     EditElementHandle eeh(pElmDscr, true, false, ACTIVEMODEL);
-    eeh.AddToModel();
+    eeh.AddToModel();*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,6 +256,7 @@ void DrawingFacility::DrawTriangle(DPoint3d const& pt1, DPoint3d const& pt2, DPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawingFacility::DrawPoint(DPoint3d const& pt, Transform const& metersToUors)
     {
+	/*
     double uorPerMetersScale = mdlModelRef_getUorPerMeter(ACTIVEMODEL);
     double AxisLengthUor = 1 * uorPerMetersScale;
 
@@ -260,7 +267,7 @@ void DrawingFacility::DrawPoint(DPoint3d const& pt, Transform const& metersToUor
     int status = mdlEllipse_create(&ellipseElm, 0, &PointInUors, AxisLengthUor, AxisLengthUor, NULL, 1);
 
     EditElementHandle ellipseElement(&ellipseElm, ACTIVEMODEL);
-    ellipseElement.AddToModel();
+    ellipseElement.AddToModel();*/
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2015
@@ -268,6 +275,7 @@ void DrawingFacility::DrawPoint(DPoint3d const& pt, Transform const& metersToUor
 void DrawingFacility::DrawBoundingBox(DRange3d const& boundingBox, Transform const& metersToUors)
     {
     // Create a new US element from the vertices.
+	/*
     PointCollection pointArray;
     DPoint3d point;
     point.x = boundingBox.low.x;
@@ -324,6 +332,7 @@ void DrawingFacility::DrawBoundingBox(DRange3d const& boundingBox, Transform con
     mdlElmdscr_createFromVertices(&pElmDscr, NULL, &pointArray[0], pointArray.size(), TRUE, 0);
     EditElementHandle eeh2(pElmDscr,true,false,ACTIVEMODEL);
     eeh2.AddToModel();
+	*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +434,8 @@ m_pAcceptedPointCollection(TINPointContainer::Create())
     {
     DRange3d boundingBoxMeters = ComputeBoundingBox(pcGroundTIN.GetParamR());
     pcGroundTIN.GetParam().GetMetersToUors().Multiply(m_boundingBoxUors, boundingBoxMeters);
-    m_pPointsProvider = IPointsProvider::CreateFrom(pcGroundTIN.GetParam().GetElementHandle(), &m_boundingBoxUors);    
+	//GDZERO
+    m_pPointsProvider = IPointsProvider::CreateFrom(/*pcGroundTIN.GetParam().GetElementHandle(),*/ &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(pcGroundTIN.GetParam().GetUseMultiThread());
     m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...        
     }
@@ -711,8 +721,7 @@ bool PCGroundTriangle::IsAccepted(DPoint3d const& point, bool isClassification) 
     {
     double distanceThreshold = isClassification ? m_PCGroundTin.GetParam().GetClassificationTolerance()
         : m_PCGroundTin.GetParam().GetHeightThreshold();
-    bool isProjectedPointInsideTriangle(false);
-    bool isAngleThresholdAccepted(false);
+    bool isProjectedPointInsideTriangle(false);    
     DPlane3d planeFromTriangle;
     double distanceFound;
     if (!IsAcceptedFromDistanceCriteria(distanceFound,point, planeFromTriangle, distanceThreshold))
@@ -742,7 +751,7 @@ bool PCGroundTriangle::IsAccepted(DPoint3d const& point, bool isClassification) 
         //Now check angle threshold
         DVec3d v0p(DVec3d::FromStartEnd(m_triangle.GetPoint(0), point));//Vector from coordinate 0 to input point p.
         DVec3d v0Pp(DVec3d::FromStartEnd(m_triangle.GetPoint(0), projectedPoint));//Vector from coordinate 0 to projected input point Pp.
-        double alpha = v0Pp.angleTo(&v0p); //Angle in Radian between 0 and pi
+        double alpha = v0Pp.AngleTo(v0p); //Angle in Radian between 0 and pi
         if (alpha > m_PCGroundTin.GetParam().GetAngleThreshold().Radians())
             {
             return false;
@@ -750,7 +759,7 @@ bool PCGroundTriangle::IsAccepted(DPoint3d const& point, bool isClassification) 
 
         DVec3d v1p(DVec3d::FromStartEnd(m_triangle.GetPoint(1), point));//Vector from coordinate 1 to input point p.
         DVec3d v1Pp(DVec3d::FromStartEnd(m_triangle.GetPoint(1), projectedPoint));//Vector from coordinate 1 to projected input point Pp.
-        double beta  = v1Pp.angleTo(&v1p); //Angle in Radian between 0 and pi
+        double beta  = v1Pp.AngleTo(v1p); //Angle in Radian between 0 and pi
         if (beta > m_PCGroundTin.GetParam().GetAngleThreshold().Radians())
             {
             return false;
@@ -758,7 +767,7 @@ bool PCGroundTriangle::IsAccepted(DPoint3d const& point, bool isClassification) 
 
         DVec3d v2p(DVec3d::FromStartEnd(m_triangle.GetPoint(2), point));//Vector from coordinate 2 to input point p.
         DVec3d v2Pp(DVec3d::FromStartEnd(m_triangle.GetPoint(2), projectedPoint));//Vector from coordinate 2 to projected input point Pp.
-        double gamma = v2Pp.angleTo(&v2p); //Angle in Radian between 0 and pi
+        double gamma = v2Pp.AngleTo(v2p); //Angle in Radian between 0 and pi
         if (gamma > m_PCGroundTin.GetParam().GetAngleThreshold().Radians())
             {
             return false;
@@ -779,7 +788,7 @@ bool PCGroundTrianglePointSorterPredicat::operator()(const DPoint3d& a, const DP
     DVec3d vbc(DVec3d::FromStartEnd(b, m_PCGroundTriangle.GetCentroid()));
     double aLength = vac.Magnitude();
     double bLength = vbc.Magnitude();
-    if (DOUBLE_EQUAL(aLength, bLength, Triangle::TOLERANCE_FACTOR))
+    if (DOUBLE_EQUAL_TOL(aLength, bLength, Triangle::TOLERANCE_FACTOR))
         return a.z < b.z;
     return (aLength < bLength);
     }
@@ -806,9 +815,7 @@ void PCGroundTriangle::PrefetchPoints()
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PCGroundTriangle::QueryPointToAddToTin()
-    {
-    bool      isPtFound(false);
-
+    {    
     for (auto itr = m_pPointsProvider->begin(); itr != m_pPointsProvider->end(); ++itr)
         {
         DPoint3d ptIndex(*itr);
@@ -836,6 +843,7 @@ size_t  PCGroundTriangle::GetMemorySize() const
     }
 
 
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -952,7 +960,7 @@ void ClassifyPointCloudWork::_DoWork()
         ProgressMonitor::SignalErrorInThread();
         }
     }
-
+#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1091,8 +1099,6 @@ bool PCGroundTIN::PrepareNextIteration()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PCGroundTIN::CreateInitialTIN()
     {
-    DgnPlatform::SuspendProgressiveDisplayGuard __SuspendProgressiveDisplay;
-
     StatusInt status = _CreateInitialTIN();
 
 #if defined(DEBUG_GROUND_DETECTION)
@@ -1115,9 +1121,7 @@ void PCGroundTIN::GetDTMPoints(bvector<DPoint3d>& points)
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PCGroundTIN::DensifyTIN()
-    {
-    DgnPlatform::SuspendProgressiveDisplayGuard __SuspendProgressiveDisplay;
-
+    {    
     StatusInt status = _DensifyTIN();
     DrawTriangles();
     return status;
@@ -1127,9 +1131,7 @@ StatusInt PCGroundTIN::DensifyTIN()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PCGroundTIN::Classify()
-    {
-    DgnPlatform::SuspendProgressiveDisplayGuard __SuspendProgressiveDisplay;
-
+    {    
     StatusInt status = _Classify();
     return status;
     }
@@ -1198,15 +1200,10 @@ StatusInt  PCGroundTIN::_DensifyTIN()
         {
         m_pReport->StartCurrentIteration(currentIteration);
 
-        //Special case for first iteration
-        size_t trianglesToProcess(m_trianglesToProcess.size());
+        //Special case for first iteration        
         //Assume every triangle to process will add one point -> and thus create three new triangles
         //thus this triangle will be replaced by three -> -1 + 3 = 2
-        size_t expectedNewTriangles = trianglesToProcess * 2;
-        size_t actualTriangleCount = m_pBcDtm->GetTriangleCount();
-        size_t TotalTrianglesExpected = actualTriangleCount + expectedNewTriangles;
-        double accomplishmentRatio = ((static_cast<double>(actualTriangleCount) / static_cast<double>(TotalTrianglesExpected)));
-        
+                        
         if (!m_pReport->CheckContinueOnProgress())
             {
             StopIteration();
@@ -1231,9 +1228,11 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                 AddPoint(*itr);
 
             //Display some stat while processing to help debug
+/*
             WChar tmpMessage[200];
             WString formatStr;
             double accomplishmentRatioItr = (static_cast<double>(actualTriangleCount) / static_cast<double>(TotalTrianglesExpected));
+
 #if !defined (NDEBUG)
             GetResourceHandle()->GetString(formatStr, DCPCMISC_PointCloudGroundDetectionStatisticDebug, STRINGID_DCPCMISC_Messages);
             BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), actualTriangleCount, trianglesToProcess, accomplishmentRatioItr * 100.0, m_pParams->GetHeightThreshold(), m_pParams->GetAngleThreshold().Degrees());
@@ -1241,7 +1240,9 @@ StatusInt  PCGroundTIN::_DensifyTIN()
             GetResourceHandle()->GetString(formatStr, DCPCMISC_PointCloudGroundDetectionStatistic, STRINGID_DCPCMISC_Messages);
             BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), accomplishmentRatioItr * 100.0);
 #endif
+
             m_pReport->OutputMessage(tmpMessage);
+*/
             }
         progressMonitor.FinalStageProcessing();
         if (progressMonitor.WasCanceled() || progressMonitor.WasError())
@@ -1254,12 +1255,14 @@ StatusInt  PCGroundTIN::_DensifyTIN()
         m_pReport->EndCurrentIteration();
         }
     //Display some stat while processing to help debug
+	/*
     double elapsedSecond = m_pReport->GetTimerR().GetCurrentSeconds();
     long hours = (long) (elapsedSecond / 60 / 60);
     long minutes = (long) (elapsedSecond / 60) % 60;
     long seconds = (long) elapsedSecond % 60;
     WChar tmpMessage[200];
     WString formatStr;
+	
 #if !defined (NDEBUG)
     GetResourceHandle()->GetString(formatStr, DCPCMISC_PointCloudGroundDetectionStatisticFinalDebug, STRINGID_DCPCMISC_Messages);
     BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), m_pBcDtm->GetTriangleCount(), hours, minutes, seconds, currentIteration, m_pParams->GetHeightThreshold(), m_pParams->GetAngleThreshold().Degrees());
@@ -1267,7 +1270,9 @@ StatusInt  PCGroundTIN::_DensifyTIN()
     GetResourceHandle()->GetString(formatStr, DCPCMISC_PointCloudGroundDetectionStatisticFinal, STRINGID_DCPCMISC_Messages);
     BeStringUtilities::Snwprintf(&tmpMessage[0], 200, formatStr.c_str(), m_pBcDtm->GetTriangleCount(), hours, minutes, seconds, currentIteration);
 #endif
+	
     m_pReport->OutputMessage(tmpMessage);
+	*/
     m_pReport->EndPhase(L"END - Densification of TIN");
     return SUCCESS;
     }
@@ -1314,12 +1319,9 @@ void PCGroundTIN::_IncrementWorkDone()
 * @bsimethod                                    Marc.Bedard                     08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t PCGroundTIN::_ComputeTriangulation()
-    {
-    DTMStatusInt dtmStatus;
+    {    
     bool needToSave(m_newPointToAdd.size() > 0);
-
-    size_t previousTrianglesCount(m_pBcDtm->GetTriangleCount());
-
+    
     if (m_newPointToAdd.size() > 0)
         {
         for (auto itr = m_newPointToAdd.begin(); itr != m_newPointToAdd.end(); ++itr)
@@ -1464,6 +1466,7 @@ void PCGroundTIN::_ComputeTrianglesToProcess()
 void PCGroundTIN::DrawTriangles() const
     {
     //Draw result if ask to
+	/*
     if (m_pParams->GetDrawTriangles())
         {
         for (auto itr = m_pBcDtm->begin(); itr != m_pBcDtm->end(); ++itr)
@@ -1477,6 +1480,7 @@ void PCGroundTIN::DrawTriangles() const
             }
         m_pReport->RefreshMSView(true);
         }
+		*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1484,6 +1488,7 @@ void PCGroundTIN::DrawTriangles() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  PCGroundTIN::DrawSeedPoints() const
     {
+	/*
     if (m_pParams->GetDrawSeeds())
         {
         // Create a new US element from the vertices.
@@ -1494,6 +1499,7 @@ void  PCGroundTIN::DrawSeedPoints() const
             }
         m_pReport->RefreshMSView(true);
         }
+		*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1501,11 +1507,13 @@ void  PCGroundTIN::DrawSeedPoints() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  PCGroundTIN::DrawGrid() const
     {
+	/*
     if (m_pParams->GetDrawGrid())
         {
         m_pGDGrid->Draw();
         m_pReport->RefreshMSView(true);
         }
+		*/
     }
 
 
@@ -1600,7 +1608,7 @@ PCGroundTINPtr PCGroundTINMT::Create(GroundDetectionParameters& params, Progress
 * @bsimethod                                    Marc.Bedard                     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 PCGroundTINMT::PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& report)
-:PCGroundTIN(params, report), m_mainThreadID(BeThreadUtilities::GetCurrentThreadId())
+:PCGroundTIN(params, report)/*, m_mainThreadID(BeThreadUtilities::GetCurrentThreadId())*/
     {
     }
 
@@ -1609,7 +1617,8 @@ PCGroundTINMT::PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 PCGroundTINMT::~PCGroundTINMT()
     {
-    FlushThreadPoolWork();
+	//GDZERO
+    //FlushThreadPoolWork();
     }
 
 //GDZERO
