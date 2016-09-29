@@ -33,6 +33,7 @@ struct RangeTreeNode
 };
 
 static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -1603,7 +1604,16 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
     GatherGeometryHandler handler(m_range, *this, context);
     m_cache.GetTree().Traverse(handler);
-    std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs) { return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity(); });
+
+    // We sort by facet count density in order to ensure the most prominent geometries are assigned batch IDs
+    // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
+    if (m_geometries.size() > s_maxGeometryIdCount)
+        {
+        std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
+            {
+            return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity();
+            });
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1613,7 +1623,6 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
-    static const size_t s_maxGeometryIdCount = 0xffff;
 
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
