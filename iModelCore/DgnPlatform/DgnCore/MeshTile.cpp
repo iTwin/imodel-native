@@ -216,7 +216,7 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_textureImage.get(), rhs.m_textureImage.get());
+    // No need to compare textures -- if materials match then textures must too.
 
     return false;
     }
@@ -629,9 +629,11 @@ struct MeshBuilderKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
     {
-    IFacetOptionsPtr opts = IFacetOptions::Create();
+    static double       s_defaultAngleTolerance = msGeomConst_piOver2;
+    IFacetOptionsPtr    opts = IFacetOptions::Create();
 
     opts->SetChordTolerance(chordTolerance);
+    opts->SetAngleTolerance(s_defaultAngleTolerance);
     opts->SetMaxPerFace(3);
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
@@ -1710,11 +1712,14 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
         }
 
     TileMeshList meshes;
+    size_t       triangleCount = 0;
+       
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
+            {
             meshes.push_back (builder.second->GetMesh());
-
-    // ###TODO: statistics: record empty node...
+            triangleCount += builder.second->GetMesh()->Triangles().size();
+            }
 
     return meshes;
     }

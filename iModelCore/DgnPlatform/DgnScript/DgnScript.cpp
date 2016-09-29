@@ -540,9 +540,11 @@ static bool isNonEmptyString(ECN::ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-static bvector<Utf8String> parseCDL(Utf8StringCR cdl)
+static bvector<Utf8String> parseCDL(Utf8StringCR cdlIn)
     {
     bvector<Utf8String> items;
+
+    Utf8String cdl = cdlIn.substr(0, cdlIn.find(')'));
 
     size_t offset = 0;
     Utf8String arg;
