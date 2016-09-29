@@ -185,7 +185,7 @@ AuthenticationHandlerPtr authenticationHandler
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::ValidateBriefcase(BeGuidCR fileId, BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
-    return QueryBriefcaseInfo(briefcaseId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbBriefcaseInfoResultCR result)
+    return QueryBriefcaseInfo(briefcaseId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbServerBriefcaseInfoResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -1256,7 +1256,7 @@ ICancellationTokenPtr                   cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
+DgnDbServerBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryAllBriefcasesInfo";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1268,7 +1268,7 @@ DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICa
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfo";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1279,25 +1279,25 @@ DgnDbBriefcaseInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
     query.SetFilter(filter);
 
-    return QueryBriefcaseInfoInternal(query, cancellationToken)->Then<DgnDbBriefcaseInfoResult>([=] (DgnDbBriefcasesInfoResultCR briefcasesResult)
+    return QueryBriefcaseInfoInternal(query, cancellationToken)->Then<DgnDbServerBriefcaseInfoResult>([=] (DgnDbServerBriefcasesInfoResultCR briefcasesResult)
         {
         if (!briefcasesResult.IsSuccess())
             {
-            return DgnDbBriefcaseInfoResult::Error(briefcasesResult.GetError());
+            return DgnDbServerBriefcaseInfoResult::Error(briefcasesResult.GetError());
             }
         auto briefcasesInfo = briefcasesResult.GetValue();
         if (briefcasesInfo.empty())
             {
-            return DgnDbBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidBriefcase);
+            return DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidBriefcase);
             }
-        return DgnDbBriefcaseInfoResult::Success(briefcasesResult.GetValue()[0]);
+        return DgnDbServerBriefcaseInfoResult::Success(briefcasesResult.GetValue()[0]);
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcasesInfo
+DgnDbServerBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcasesInfo
 (
 bvector<BeSQLite::BeBriefcaseId>& briefcaseIds,
 ICancellationTokenPtr cancellationToken
@@ -1314,7 +1314,7 @@ ICancellationTokenPtr cancellationToken
         queryIds.push_back(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, idString));
         }
 
-    bset<DgnDbBriefcasesInfoTaskPtr> tasks;
+    bset<DgnDbServerBriefcasesInfoTaskPtr> tasks;
     while (!queryIds.empty())
         {
         WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
@@ -1324,46 +1324,46 @@ ICancellationTokenPtr cancellationToken
         tasks.insert(task);
         }
 
-    auto finalValue = std::make_shared<bvector<std::shared_ptr<DgnDbBriefcaseInfo>>>();
+    auto finalValue = std::make_shared<bvector<std::shared_ptr<DgnDbServerBriefcaseInfo>>>();
 
     return AsyncTask::WhenAll(tasks)
-        ->Then<DgnDbBriefcasesInfoResult>([=]
+        ->Then<DgnDbServerBriefcasesInfoResult>([=]
         {
         for (auto& task : tasks)
             {
             if (!task->GetResult().IsSuccess())
-                return DgnDbBriefcasesInfoResult::Error(task->GetResult().GetError());
+                return DgnDbServerBriefcasesInfoResult::Error(task->GetResult().GetError());
 
             auto briefcaseInfo = task->GetResult().GetValue();
             finalValue->insert(finalValue->end(), briefcaseInfo.begin(), briefcaseInfo.end());
             }
 
-        return DgnDbBriefcasesInfoResult::Success(*finalValue);
+        return DgnDbServerBriefcasesInfoResult::Success(*finalValue);
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
+DgnDbServerBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryBriefcaseInfoInternal";
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
-        ->Then<DgnDbBriefcasesInfoResult>([=] (const WSObjectsResult& result)
+        ->Then<DgnDbServerBriefcasesInfoResult>([=] (const WSObjectsResult& result)
         {
         if (!result.IsSuccess())
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return DgnDbBriefcasesInfoResult::Error(result.GetError());
+            return DgnDbServerBriefcasesInfoResult::Error(result.GetError());
             }
 
-        bvector<std::shared_ptr<DgnDbBriefcaseInfo>> briefcases;
+        bvector<std::shared_ptr<DgnDbServerBriefcaseInfo>> briefcases;
         for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
             {
-            briefcases.push_back(DgnDbBriefcaseInfo::FromJson(value));
+            briefcases.push_back(DgnDbServerBriefcaseInfo::FromJson(value));
             }
 
-        return DgnDbBriefcasesInfoResult::Success(briefcases);
+        return DgnDbServerBriefcasesInfoResult::Success(briefcases);
         });
     }
 
@@ -1592,9 +1592,9 @@ void AddCodeLock(DgnDbCodeLockSetResultInfo& codesLocksSet, JsonValueCR codeLock
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLocks
 (
-    const BeBriefcaseId   briefcaseId,
-    Utf8StringCR lastRevisionId,
-    ICancellationTokenPtr cancellationToken
+const BeBriefcaseId   briefcaseId,
+Utf8StringCR          lastRevisionId,
+ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryUnavailableCodesLocks";
@@ -1672,8 +1672,8 @@ Json::Value GetChangedInstances(Utf8String response)
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumIndex
 (
-    DgnDbCodeTemplateSet codeTemplates,
-    ICancellationTokenPtr cancellationToken
+DgnDbCodeTemplateSet codeTemplates,
+ICancellationTokenPtr cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodeMaximumIndex";
@@ -1797,18 +1797,18 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::GetBriefcaseFileInfo(BeBriefca
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             09/2016
 //---------------------------------------------------------------------------------------
-DgnDbBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(ICancellationTokenPtr cancellationToken) const
+DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(ICancellationTokenPtr cancellationToken) const
     {
-    return CreateBriefcaseInstance(cancellationToken)->Then<DgnDbBriefcaseInfoResult>([=] (const WSCreateObjectResult& result)
+    return CreateBriefcaseInstance(cancellationToken)->Then<DgnDbServerBriefcaseInfoResult>([=] (const WSCreateObjectResult& result)
         {
         if (!result.IsSuccess())
             {
-            return DgnDbBriefcaseInfoResult::Error(result.GetError());
+            return DgnDbServerBriefcaseInfoResult::Error(result.GetError());
             }
 
         JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
         JsonValueCR properties = instance[ServerSchema::Properties];
-        return DgnDbBriefcaseInfoResult::Success(DgnDbBriefcaseInfo::FromJson(properties));
+        return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::FromJson(properties));
         });
     }
 
@@ -1862,7 +1862,7 @@ ICancellationTokenPtr cancellationToken
     BeAssert(DgnDbServerHost::IsInitialized());
     if (revisionId.empty())
         {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid revision.");
+        // Don't log error here since this is a valid case then there are no revisions locally.
         return CreateCompletedAsyncTask<DgnDbServerRevisionResult>(DgnDbServerRevisionResult::Error(DgnDbServerError::Id::InvalidRevision));
         }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -2420,16 +2420,16 @@ ICancellationTokenPtr cancellationToken
         RevisionsFromQuery(query, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
             {
             if (revisionsResult.IsSuccess())
-                    {
-                    finalResult->SetSuccess(revisionsResult.GetValue());
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                    }
+                {
+                finalResult->SetSuccess(revisionsResult.GetValue());
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                }
             else
-                    {
-                    finalResult->SetError(revisionsResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
-                    }
+                {
+                finalResult->SetError(revisionsResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
+                }
             });
         })->Then<DgnDbServerRevisionsResult>([=] ()
         {

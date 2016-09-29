@@ -27,7 +27,7 @@ IRepositoryManagerP DgnDbRepositoryAdmin::_GetRepositoryManager(DgnDbR db) const
     {
     RepositoryInfo repositoryInfo;
     repositoryInfo.ReadRepositoryInfo(db);
-    DgnDbBriefcaseInfo briefcase(db.GetBriefcaseId());
+    DgnDbServerBriefcaseInfo briefcase(db.GetBriefcaseId());
     Utf8String repositoryId = repositoryInfo.GetId();
     if (nullptr == (*m_managers)[repositoryId])
         {

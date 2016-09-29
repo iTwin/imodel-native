@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbServer/Client/DgnDbBriefcaseInfo.h $
+|     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerBriefcaseInfo.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,34 +11,40 @@
 #include <DgnDbServer/Client/DgnDbServerResult.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-typedef std::shared_ptr<struct DgnDbBriefcaseInfo> DgnDbBriefcaseInfoPtr;
-DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcaseInfo);
-DEFINE_TASK_TYPEDEFS(DgnDbBriefcaseInfoPtr, DgnDbBriefcaseInfo);
-DEFINE_TASK_TYPEDEFS(bvector<DgnDbBriefcaseInfoPtr>, DgnDbBriefcasesInfo);
+typedef std::shared_ptr<struct DgnDbServerBriefcaseInfo> DgnDbServerBriefcaseInfoPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerBriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfoPtr, DgnDbServerBriefcaseInfo);
+DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerBriefcaseInfoPtr>, DgnDbServerBriefcasesInfo);
 
 //=======================================================================================
 //! Information about briefcase.
 //@bsiclass                                      julius.cepukenas               08/2015
 //=======================================================================================
-struct DgnDbBriefcaseInfo
+struct DgnDbServerBriefcaseInfo
     {
     //__PUBLISH_SECTION_END__
     private:
         BeSQLite::BeBriefcaseId m_id;
         BeSQLite::BeGuid m_fileId;
         Utf8String m_userOwned;
+        BeFileName m_localPath;
+        bool m_isReadOnly;
+
         //__PUBLISH_SECTION_START__
     public:
-        DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo();
-        DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id);
-        DGNDBSERVERCLIENT_EXPORT DgnDbBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfo();
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfo(BeSQLite::BeBriefcaseId id, Utf8StringCR userOwned, BeSQLite::BeGuid fileId, bool isReadOnly);
 
         //__PUBLISH_SECTION_END__
-        bool operator==(DgnDbBriefcaseInfoCR briefcase) const;
-        static DgnDbBriefcaseInfoPtr FromJson(JsonValueCR json);
+        bool operator==(DgnDbServerBriefcaseInfoCR briefcase) const;
+        static DgnDbServerBriefcaseInfoPtr FromJson(JsonValueCR json);
+        void SetLocalPath(BeFileName localPath);
         //__PUBLISH_SECTION_START__
         DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetId() const;
         DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserOwned() const;
         DGNDBSERVERCLIENT_EXPORT BeSQLite::BeGuid GetFileId() const;
+        DGNDBSERVERCLIENT_EXPORT BeFileName GetLocalPath() const;
+        DGNDBSERVERCLIENT_EXPORT bool GetIsReadOnly() const;
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
