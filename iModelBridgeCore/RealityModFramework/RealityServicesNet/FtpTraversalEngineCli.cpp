@@ -72,7 +72,7 @@ void FtpTraversalObserverWrapper::OnDataExtracted(WebResourceDataCR data)
     // Convert DRange2d to List<double>.
     List<double>^ ptList = gcnew List<double>();
     DPoint2d footprintPts[4];
-    data.GetFootprint().Get4Corners(footprintPts);
+    data.GetFootprintAABB().Get4Corners(footprintPts);
     for (size_t i = 0; i < 4; ++i)
         {
         ptList->Add(footprintPts[i].x);
@@ -455,7 +455,7 @@ void FtpDataWrapper::SetDate(System::String^ date)
 List<double>^ FtpDataWrapper::GetFootprint()
     {
     List<double>^ ptList = gcnew List<double>();
-    DRange2d footprint = (*m_pData)->GetFootprint();
+    DRange2d footprint = (*m_pData)->GetFootprintAABB();
 
     DPoint2d footprintPts[4];
     footprint.Get4Corners(footprintPts);

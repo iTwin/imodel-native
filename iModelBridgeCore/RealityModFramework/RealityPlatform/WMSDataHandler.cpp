@@ -153,15 +153,15 @@ StatusInt WmsData::ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsData::_GetFootprint(DRange2dP pFootprint) const
+StatusInt WmsData::_GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
-    return ExtractFootprint(pFootprint);
+    return ExtractFootprint(pFootprint, pFootprintExtents);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsData::ExtractFootprint(DRange2dP pFootprint) const
+StatusInt WmsData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     WString url;
     BeStringUtilities::Utf8ToWChar(url, m_url.c_str());
@@ -214,7 +214,9 @@ StatusInt WmsData::ExtractFootprint(DRange2dP pFootprint) const
     baseGeoCoord_reproject(&lowerX, &lowerY, minX, minY, &*pSrcGcs, &*pDestGcs);
     baseGeoCoord_reproject(&upperX, &upperY, maxX, maxY, &*pSrcGcs, &*pDestGcs);
 
-    pFootprint->InitFrom(lowerX, lowerY, upperX, upperY);
+    pFootprintExtents->InitFrom(lowerX, lowerY, upperX, upperY);
+    pFootprint->push_back(DPoint2d::From(lowerX, lowerY));
+    pFootprint->push_back(DPoint2d::From(upperX, upperY));
 
     return SUCCESS;
     }
@@ -271,7 +273,7 @@ StatusInt WmsData::GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
+StatusInt WmsData::_SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const
     {
     return SUCCESS;
     }

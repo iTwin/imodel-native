@@ -28,22 +28,22 @@ enum class PointCloudView
 struct RealityData : public RefCountedBase
 {
 public:
-    REALITYDATAPLATFORM_EXPORT StatusInt GetFootprint(DRange2dP pFootprint) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const;
     REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
     REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
-    REALITYDATAPLATFORM_EXPORT StatusInt SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const;
     REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const;
     REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const;
 
 protected:
     virtual ~RealityData() {};
 
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const = 0;
+    virtual StatusInt _GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const = 0;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const = 0;
     virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const = 0;
 
-    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const = 0;
+    virtual StatusInt _SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const = 0;
     virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const = 0;
     virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const = 0;
 };
@@ -63,16 +63,16 @@ protected:
     RasterData(Utf8CP filename);
     virtual ~RasterData();
 
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
     virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
-    StatusInt ExtractFootprint(DRange2dP pFootprint) const;
+    StatusInt ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const;
     StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
     StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
@@ -95,16 +95,16 @@ protected:
     PointCloudData(Utf8CP filename, PointCloudView view);
     virtual ~PointCloudData();
 
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
     virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
-    StatusInt ExtractFootprint(DRange2dP pFootprint) const;
+    StatusInt ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const;
     StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
     StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
@@ -130,16 +130,16 @@ protected:
     WmsData(Utf8CP url);
     virtual ~WmsData();
 
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const override;
     virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
     virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
-    StatusInt ExtractFootprint(DRange2dP pFootprint) const;
+    StatusInt ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const;
     StatusInt ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const;
     StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
