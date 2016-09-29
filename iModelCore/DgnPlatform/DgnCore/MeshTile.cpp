@@ -929,6 +929,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     host.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
+    // Same deal with line styles.
+    // NEEDSWORK: Line styles are a much bigger problem...and still WIP...need John's input
+    LsCache::GetDgnDbCache(GetDgnDb(), true);
+
     if (!tiles.empty())
         {
         // For now, we can cross our fingers and hope that processing one tile before entering multi-threaded context
