@@ -598,6 +598,7 @@ public:
     //! Append a DgnGeometryPartId with relative placement supplied as a Transform.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
     DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement);
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement, DRange3dCR range, size_t facets); //!< @private Supply information from DgnGeometryPart::QueryGeometryPartRangeAndFacetCount directly.
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint3d and optional YawPitchRollAngles.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.

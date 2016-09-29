@@ -3926,7 +3926,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement, DRange3dCR localRange, size_t facets)
     {
     if (m_isPartCreate)
         {
@@ -3937,18 +3937,29 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     if (!m_havePlacement)
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
-    DRange3d partRange;
-    size_t partFacets;
-    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(partRange, partFacets, m_dgnDb, geomPartId))
-        return false; // part probably doesn't exist...
+    DRange3d    partRange = localRange;
 
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(partRange, false, partFacets); // Parts are already handled as sub-graphics...
+    OnNewGeom(partRange, false, facets); // Parts are already handled as sub-graphics...
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
+    {
+    size_t      facets;
+    DRange3d    localRange;
+
+    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(localRange, facets, m_dgnDb, geomPartId))
+        return false; // part probably doesn't exist...
+
+    return Append(geomPartId, geomToElement, localRange, facets);
     }
 
 /*---------------------------------------------------------------------------------**//**
