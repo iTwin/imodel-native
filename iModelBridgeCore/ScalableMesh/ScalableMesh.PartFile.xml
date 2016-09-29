@@ -45,15 +45,15 @@
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
         <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
-        <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource" />
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <!-- For Importer-->
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
-        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  
+        <!--<SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>-->
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    

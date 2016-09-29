@@ -311,19 +311,19 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
-$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -346,9 +346,9 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 
 
 #   Importer from DcStmCore
-$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -358,7 +358,7 @@ $(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDep
 
 $(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -457,15 +457,16 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)PointCloud.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
-    $(ContextSubpartsLibs)DgnView.lib \
-    $(ContextSubpartsLibs)RasterCore.lib \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib 
+
+#    $(ContextSubpartsLibs)DgnView.lib \
+#    $(ContextSubpartsLibs)RasterCore.lib \
+#    $(ContextSubpartsLibs)PointCloud.lib \
 
 %include $(sharedMki)LinkLibrary.mki
 
