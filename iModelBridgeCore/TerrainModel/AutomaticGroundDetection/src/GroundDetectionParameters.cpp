@@ -8,7 +8,7 @@
 #include "AutomaticGroundDetectionPch.h"
 
 #include <AutomaticGroundDetection\GroundDetectionMacros.h>
-#include "IPointsProvider.h"
+#include <AutomaticGroundDetection\IPointsProvider.h>
 #include <AutomaticGroundDetection\IGroundDetectionServices.h>
 
 USING_NAMESPACE_BENTLEY

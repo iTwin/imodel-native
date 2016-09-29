@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AutomaticGroundDetection/src/IPointsProvider.h $
+|     $Source: AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/IPointsProvider.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -8,7 +8,7 @@
 #include "AutomaticGroundDetectionPch.h"
 
 #include <AutomaticGroundDetection\GroundDetectionMacros.h>
-#include "IPointsProvider.h"
+#include <AutomaticGroundDetection\IPointsProvider.h>
 
 /*
 #include "PCPointsProvider.h"

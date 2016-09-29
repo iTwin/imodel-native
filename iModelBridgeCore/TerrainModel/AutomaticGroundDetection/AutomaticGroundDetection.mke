@@ -72,7 +72,7 @@ $(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSr
 
 $(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
 
-$(o)IPointsProvider$(oext) : $(groundDetectSrcDir)IPointsProvider.cpp $(groundDetectSrcDir)IPointsProvider.h  ${MultiCompileDepends}
+$(o)IPointsProvider$(oext) : $(groundDetectSrcDir)IPointsProvider.cpp $(groundDetectPublicApiDir)IPointsProvider.h  ${MultiCompileDepends}
 
 $(o)DiscreetHistogram$(oext) : $(groundDetectSrcDir)DiscreetHistogram.cpp $(groundDetectSrcDir)DiscreetHistogram.h  ${MultiCompileDepends}
 

@@ -14,11 +14,8 @@
 #MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
 #IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
-#dirToSearch     = $(BuildContext)PublicAPI/
-#%include cincapnd.mki
-
-
 groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
+groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/
 
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
