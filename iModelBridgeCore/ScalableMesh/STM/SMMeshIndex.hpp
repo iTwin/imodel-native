@@ -462,12 +462,27 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         SetThreadAvailableAsync(threadId);
         }, this, std::placeholders::_1));
 
+    auto loadNodeHelper = [](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+        {
+        //node->LoadTreeNode(nLoaded, level, headersOnly);
+        if (!node->IsLoaded())
+            node->Load();
+        SetThreadAvailableAsync(threadId);
+        };
     if (m_pSubNodeNoSplit != nullptr)
         {
+        RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
         static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(pi_pDataStore);
         }
     else
         {
+        for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+            {
+            if (m_apSubNodes[indexNode] != nullptr)
+                {
+                RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNode], std::placeholders::_1));
+                }
+            }
         for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
             {
             if (m_apSubNodes[indexNode] != nullptr)
@@ -2927,8 +2942,8 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
-   // if (m_SMIndex->IsTerrain() == false) 
-   //     return poolMemItemPtr;
+   if (m_SMIndex->IsTerrain() == false) 
+       return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
