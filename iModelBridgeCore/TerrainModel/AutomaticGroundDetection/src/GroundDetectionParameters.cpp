@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include "GroundDetectionMacros.h"
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "IPointsProvider.h"
 #include <AutomaticGroundDetection\IGroundDetectionServices.h>
 
@@ -297,6 +297,9 @@ double    GroundDetectionParameters::GetAnglePercentileFactor() const { return m
 void      GroundDetectionParameters::SetAnglePercentileFactor(double value) { m_anglePercentileFactor = value; }
 double    GroundDetectionParameters::GetHeightPercentileFactor() const { return m_heightPercentileFactor; }
 void      GroundDetectionParameters::SetHeightPercentileFactor(double value) { m_heightPercentileFactor = value; }
+
+		  GroundDetectionParameters::DTMFileOptions GroundDetectionParameters::GetCreateDtmFile() const                { return m_createDtmFile; }
+void	  GroundDetectionParameters::SetCreateDtmFile(GroundDetectionParameters::DTMFileOptions createDtmFile)    { m_createDtmFile = createDtmFile; }
 
 double    GroundDetectionParameters::GetLargestStructureSize() const    { return m_largestStructSize; }
 void      GroundDetectionParameters::SetLargestStructureSize(double value){ m_largestStructSize = value; }

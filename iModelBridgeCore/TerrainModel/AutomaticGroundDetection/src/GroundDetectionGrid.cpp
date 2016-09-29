@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include "GroundDetectionMacros.h"
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "PCGroundTIN.h"
 
 USING_NAMESPACE_BENTLEY

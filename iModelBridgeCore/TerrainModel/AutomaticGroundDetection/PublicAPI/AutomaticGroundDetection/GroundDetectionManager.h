@@ -22,10 +22,10 @@ struct GroundDetectionManager : NonCopyableClass
 {
 public:
     //we can dynamically provide an implementation
-     static void Register(IGroundDetectionServices* pGroundDetectionServicesImpl);
-     static void UnRegister(IGroundDetectionServices* pGroundDetectionServicesImpl);
+     GROUND_DETECTION_EXPORT static void Register(IGroundDetectionServices* pGroundDetectionServicesImpl);
+     GROUND_DETECTION_EXPORT static void UnRegister(IGroundDetectionServices* pGroundDetectionServicesImpl);
 
-     static IGroundDetectionServices*   GetServices();
+     GROUND_DETECTION_EXPORT static IGroundDetectionServices*   GetServices();
 };  // GeoCoordinationManager
 
 END_GROUND_DETECTION_NAMESPACE

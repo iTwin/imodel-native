@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AutomaticGroundDetection/src/GroundDetectionMacros.h $
+|     $Source: AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/GroundDetectionMacros.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@
 		typedef RefCountedPtr<_sname_> _sname_##Ptr; \
 	END_GROUND_DETECTION_NAMESPACE
 
-#if defined (__GROUND_DETECTION_BUILD__)
+#if defined (__BENTLEY_GROUND_DETECT_BUILD__)
 #    define GROUND_DETECTION_EXPORT           EXPORT_ATTRIBUTE
 #else
 #    define GROUND_DETECTION_EXPORT           IMPORT_ATTRIBUTE

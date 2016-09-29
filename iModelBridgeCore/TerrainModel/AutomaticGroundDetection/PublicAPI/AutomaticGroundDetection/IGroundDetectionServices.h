@@ -108,47 +108,48 @@ public:
         USE_EXISTING_DTM
         } DTMFileOptions;
 
-    static GroundDetectionParametersPtr Create();     
+    GROUND_DETECTION_EXPORT static GroundDetectionParametersPtr Create();     
 
 
     //General options     
-     Transform const&     GetMetersToUors() const;
-     void            SetMetersToUors(Transform const& metersToUors);
-     bool            GetUseMultiThread() const;
-     void            SetUseMultiThread(bool value);          
+     GROUND_DETECTION_EXPORT Transform const&     GetMetersToUors() const;
+     GROUND_DETECTION_EXPORT void            SetMetersToUors(Transform const& metersToUors);
+     GROUND_DETECTION_EXPORT bool            GetUseMultiThread() const;
+     GROUND_DETECTION_EXPORT void            SetUseMultiThread(bool value);          
 
-    //DTM file options          
-     DTMFileOptions  GetCreateDtmFile() const;
-     double          GetLargestStructureSize() const;
-     void            SetLargestStructureSize(double value);
-     bool            GetExpandTinToRange() const;
-     void            SetExpandTinToRange(bool value);     
+    //DTM file options        	     
+     GROUND_DETECTION_EXPORT DTMFileOptions  GetCreateDtmFile() const;
+	 GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
+     GROUND_DETECTION_EXPORT double          GetLargestStructureSize() const;
+     GROUND_DETECTION_EXPORT void            SetLargestStructureSize(double value);
+     GROUND_DETECTION_EXPORT bool            GetExpandTinToRange() const;
+     GROUND_DETECTION_EXPORT void            SetExpandTinToRange(bool value);     
           
     //Dtm TIN densification options
-     bool            GetDensifyTin() const;
-     void            SetDensifyTin(bool value);
-     double          GetTriangleEdgeThreshold() const;
-     void            SetTriangleEdgeThreshold(double value);
-     double          GetAnglePercentileFactor() const;         //We will use this histogram percentile angle threshold for densification
-     void            SetAnglePercentileFactor(double value);
-     double          GetHeightPercentileFactor() const;        //We will use this histogram percentile height threshold for densification
-     void            SetHeightPercentileFactor(double value);    
+     GROUND_DETECTION_EXPORT bool            GetDensifyTin() const;
+     GROUND_DETECTION_EXPORT void            SetDensifyTin(bool value);
+     GROUND_DETECTION_EXPORT double          GetTriangleEdgeThreshold() const;
+     GROUND_DETECTION_EXPORT void            SetTriangleEdgeThreshold(double value);
+     GROUND_DETECTION_EXPORT double          GetAnglePercentileFactor() const;         //We will use this histogram percentile angle threshold for densification
+     GROUND_DETECTION_EXPORT void            SetAnglePercentileFactor(double value);
+     GROUND_DETECTION_EXPORT double          GetHeightPercentileFactor() const;        //We will use this histogram percentile height threshold for densification
+     GROUND_DETECTION_EXPORT void            SetHeightPercentileFactor(double value);    
 
 	 //Classification options    
-    double          GetClassificationTolerance() const;
-    void            SetClassificationTolerance(double value);
-    bool            GetClassificationTolEstimateState() const;
-    void            SetClassificationTolEstimateState(bool value);
+    GROUND_DETECTION_EXPORT double          GetClassificationTolerance() const;
+    GROUND_DETECTION_EXPORT void            SetClassificationTolerance(double value);
+    GROUND_DETECTION_EXPORT bool            GetClassificationTolEstimateState() const;
+    GROUND_DETECTION_EXPORT void            SetClassificationTolEstimateState(bool value);
 
     //solution parameters
-     Angle     GetAngleThreshold() const;
-     void      SetAngleThreshold(const Angle& value);
-     double    GetHeightThreshold() const;
-     void      SetHeightThreshold(double value);
-     float     GetDensity() const;
-     void      SetDensity(float value);
-     double    GetSensitivityFactor() const;
-     void      SetSensitivityFactor(double value);
+     GROUND_DETECTION_EXPORT Angle     GetAngleThreshold() const;
+     GROUND_DETECTION_EXPORT void      SetAngleThreshold(const Angle& value);
+     GROUND_DETECTION_EXPORT double    GetHeightThreshold() const;
+     GROUND_DETECTION_EXPORT void      SetHeightThreshold(double value);
+     GROUND_DETECTION_EXPORT float     GetDensity() const;
+     GROUND_DETECTION_EXPORT void      SetDensity(float value);
+     GROUND_DETECTION_EXPORT double    GetSensitivityFactor() const;
+     GROUND_DETECTION_EXPORT void      SetSensitivityFactor(double value);
 
     //DEBUG options
 	 /*
@@ -171,6 +172,7 @@ private:
     Transform                           m_metersToUors;
    
     //Dtm file options                
+	DTMFileOptions  m_createDtmFile;
     double          m_largestStructSize;
     bool            m_expandTinToRange;       //If true, will create TIN points on range border     
 
@@ -179,9 +181,7 @@ private:
     double      m_triangleEdgeThreshold;
     double      m_anglePercentileFactor;
     double      m_heightPercentileFactor;
-
-	//Dtm file options
-    DTMFileOptions  m_createDtmFile;	
+	
 
 	//Classification options    
     bool        m_classificationTolEstimateState;

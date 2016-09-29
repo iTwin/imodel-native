@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include "GroundDetectionMacros.h"
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "GroundDetectionManagerDc.h"
 #include "BcDtmProvider.h"
 
@@ -1320,7 +1320,7 @@ void PCGroundTIN::_IncrementWorkDone()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t PCGroundTIN::_ComputeTriangulation()
     {    
-    bool needToSave(m_newPointToAdd.size() > 0);
+    //bool needToSave(m_newPointToAdd.size() > 0);
     
     if (m_newPointToAdd.size() > 0)
         {
@@ -1333,9 +1333,11 @@ size_t PCGroundTIN::_ComputeTriangulation()
 
     long newTrianglesCount(m_pBcDtm->ComputeTriangulation());
 
-    //Will create/save dtm TIN file 
+    //Will create/save dtm TIN file
+	/*GDZERO
     if (needToSave)
         SaveDtmFile();
+		*/
 
     return newTrianglesCount;
     }

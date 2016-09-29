@@ -9,7 +9,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
 
-#include "GroundDetectionMacros.h"
+#include <AutomaticGroundDetection\GroundDetectionMacros.h>
 
 GROUND_DETECTION_TYPEDEF(IPointsProvider)
 
@@ -97,15 +97,15 @@ public :
     typedef IPointsProviderIterator<IPointsProviderIteratorImpl> const_iterator;
 
 protected:
-    IPointsProvider(DRange3d&boundingBoxInUors);
-    IPointsProvider(IPointsProvider&object);
+    IPointsProvider(DRange3d const& boundingBoxInUors);
+    IPointsProvider(IPointsProvider const& object);
     IPointsProvider();
 
     size_t          ComputeMemorySize() const { return _ComputeMemorySize(); }
 
     virtual IPointsProviderPtr _Clone() const=0;
     virtual DRange3d        _GetBoundingBox() const;
-    virtual void            _SetBoundingBox(DRange3d&boundingBoxInUors);    
+    virtual void            _SetBoundingBox(DRange3d const& boundingBoxInUors);    
     virtual size_t          _GetMemorySize() const;
     virtual size_t          _ComputeMemorySize() const;
     virtual const_iterator  _begin() const = 0;
@@ -125,6 +125,8 @@ protected:
     virtual bool            _GetUseMultiThread() const;    
     virtual void            _SetUseMeterUnit(bool value); 
     virtual bool            _GetUseMeterUnit() const;
+
+	Transform GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ bool useGlobalOrigin);
     
     DRange3d                            m_boundingBoxInUors;
     mutable bool                        m_prefetchPoints;
@@ -153,7 +155,7 @@ public:
     //Point always returned in meters, you can set this to false if you want otherwise and point will be transformed to UORs
     //before being returned
     void        SetUseMeterUnit(bool value) { _SetUseMeterUnit(value); }
-    bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }
+    bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }	
     Transform   GetUorToMeterTransform(bool useGlobalOrigin) const { return _GetUorToMeterTransform(useGlobalOrigin); }
     Transform   GetMeterToNativeTransform() const { return _GetMeterToNativeTransform(); }
 

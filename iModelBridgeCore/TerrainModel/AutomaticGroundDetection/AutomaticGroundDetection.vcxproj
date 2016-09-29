@@ -51,7 +51,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection  -s</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainModel re  AutomaticGroundDetection  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -129,13 +129,13 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\AutomaticGroundDetection\GroundDetectionMacros.h" />
     <ClInclude Include="PublicAPI\AutomaticGroundDetection\GroundDetectionManager.h" />
     <ClInclude Include="PublicAPI\AutomaticGroundDetection\IGroundDetectionServices.h" />
     <ClInclude Include="src\AutomaticGroundDetectionPCH.h" />
     <ClInclude Include="src\BcDtmProvider.h" />
     <ClInclude Include="src\DiscreetHistogram.h" />
     <ClInclude Include="src\GroundDetectionGrid.h" />
-    <ClInclude Include="src\GroundDetectionMacros.h" />
     <ClInclude Include="src\GroundDetectionManagerDc.h" />
     <ClInclude Include="src\GroundDetectionTypes.h" />
     <ClInclude Include="src\IDtmProvider.h" />
@@ -145,10 +145,12 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
   <ItemGroup>
     <ClCompile Include="src\AutomaticGroundDetectionPCH.cpp" />
     <ClCompile Include="src\BcDtmProvider.cpp" />
+    <ClCompile Include="src\DiscreetHistogram.cpp" />
     <ClCompile Include="src\GroundDetectionGrid.cpp" />
     <ClCompile Include="src\GroundDetectionManagerDc.cpp" />
     <ClCompile Include="src\GroundDetectionParameters.cpp" />
     <ClCompile Include="src\IDtmProvider.cpp" />
+    <ClCompile Include="src\IPointsProvider.cpp" />
     <ClCompile Include="src\PCGroundTIN.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -26,4 +26,5 @@ groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
 # PreCompiledHeader.mki uses CCompPDBName
 appName     = AutomaticGroundDetection
 DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
