@@ -564,21 +564,23 @@ static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8Strin
     std::string s (textIn);
     while (std::regex_search(s, sm, re))
         {
-        s = sm.suffix().str();
-
         if (3 != sm.size())
+            {
+            s = sm.suffix();
             continue;
+            }
 
         auto name = sm[1].str();
         if (name != entryPoint)
+            {
+            s = sm.suffix();
             continue;
+            }
 
-#ifdef NEEDS_WORK // regex problem - I seem to get the rest of the function along with the args...
         auto haveArgs = parseCDL(sm[2].str().c_str());
         auto wantArgs = parseCDL(args);
         if (haveArgs.size() != wantArgs.size())
             return BSIERROR;
-#endif
 
         return BSISUCCESS;
         }
@@ -596,12 +598,10 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
     std::string s(textIn);
     while (std::regex_search(s, sm, re))
         {
+        if (3 == sm.size())
+            entryPoint = sm[1].str().c_str();
+
         s = sm.suffix().str();
-
-        if (3 != sm.size())
-            continue;
-
-        entryPoint = sm[1].str().c_str();
         }
     }
 
