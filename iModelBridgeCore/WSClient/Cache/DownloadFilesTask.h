@@ -9,6 +9,7 @@
 #pragma once
 
 #include "CachingTaskBase.h"
+#include "FileDownloadManager.h"
 #include <WebServices/Cache/CachingDataSource.h>
 #include <atomic>
 
@@ -41,17 +42,19 @@ struct DownloadFilesTask : public CachingTaskBase
         std::atomic<uint64_t>           m_totalBytesToDownload;
         std::atomic<uint64_t>           m_totalBytesDownloaded;
 
+        std::shared_ptr<FileDownloadManager> m_fileDownloadManager;
+
     private:
         virtual void _OnExecute();
 
         void ContinueDownloadingFiles();
-        AsyncTaskPtr<void> DownloadFile(DownloadFileProperties& file);
         void ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file);
 
     public:
         DownloadFilesTask
             (
             CachingDataSourcePtr cachingDataSource,
+            std::shared_ptr<FileDownloadManager> fileDownloadManager,
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
             CachingDataSource::LabeledProgressCallback onProgress,

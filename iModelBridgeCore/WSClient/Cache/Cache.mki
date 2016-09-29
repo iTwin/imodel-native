@@ -58,6 +58,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)CachingTaskBase.h                                   \
     $(CacheMkiSourceDir)ChangesGraph.h                                      \
     $(CacheMkiSourceDir)DownloadFilesTask.h                                 \
+    $(CacheMkiSourceDir)FileDownloadManager.h                               \
     $(CacheMkiSourceDir)Examples/CachingExample.h                           \
     $(CacheMkiSourceDir)ICachingDataSource.xliff.h                          \
     $(CacheMkiSourceDir)Logging.h                                           \
@@ -112,6 +113,8 @@ $(o)CachingTaskBase$(oext)                      : $(CacheMkiSourceDir)CachingTas
 $(o)ChangesGraph$(oext)                         : $(CacheMkiSourceDir)ChangesGraph.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DownloadFilesTask$(oext)                    : $(CacheMkiSourceDir)DownloadFilesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileDownloadManager$(oext)                  : $(CacheMkiSourceDir)FileDownloadManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ICachingDataSource$(oext)                   : $(CacheMkiSourceDir)ICachingDataSource.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

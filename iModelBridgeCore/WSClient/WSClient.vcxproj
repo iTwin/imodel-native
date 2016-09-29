@@ -64,6 +64,7 @@
     <ClCompile Include="Cache\ChangesGraph.cpp" />
     <ClCompile Include="Cache\DownloadFilesTask.cpp" />
     <ClCompile Include="Cache\Examples\CachingExample.cpp" />
+    <ClCompile Include="Cache\FileDownloadManager.cpp" />
     <ClCompile Include="Cache\ICachingDataSource.cpp" />
     <ClCompile Include="Cache\IQueryProvider.cpp" />
     <ClCompile Include="Cache\NavigationCachingOptions.cpp" />
@@ -181,6 +182,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
+    <ClInclude Include="Cache\FileDownloadManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
     <ClInclude Include="Cache\ChangesGraph.h" />
