@@ -2,12 +2,15 @@
 |
 |     $Source: RealityPackage/RealitySerialization.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if !defined(ANDROID)
 #pragma once
+#endif
 
 #include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/RealityDataPackage.h>
 #include <RealityPackage/RealityDataSource.h>
 #include <BeXml/BeXml.h>
 #include "RealitySerialization.h"
@@ -15,65 +18,159 @@
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
-#define REGISTER_REALITY_SOURCE(name, ElementName) \
-    static struct name##Creator : public IDataSourceCreate \
-        {\
-        virtual RealityDataSourcePtr Create() const override {return new name();} \
-        }s_reality##name; \
-        m_creators.Insert(ElementName, &s_reality##name);
 
 //=======================================================================================
-//                              RealityDataSourceSerializer
+//                              RealityDataSerializer
 //=======================================================================================
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-RealityDataSourceSerializer::RealityDataSourceSerializer()
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::Read(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
-    REGISTER_REALITY_SOURCE(RealityDataSource, PACKAGE_ELEMENT_Source);
-    REGISTER_REALITY_SOURCE(WmsDataSource, PACKAGE_ELEMENT_WmsSource);
-    REGISTER_REALITY_SOURCE(OsmDataSource, PACKAGE_ELEMENT_OsmSource);
+    return _Read(package, xmlDom);
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const
+    {
+    return _Write(xmlDom, package);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSourceSerializer::Load(RealityPackageStatus& status, BeXmlNodeR node)
+bool RealityDataSerializer::IsValidLongLat(double longitude, double latitude)
     {
-    auto iterator = m_creators.find(node.GetName());
-    if(iterator == m_creators.end())
-        {
-        status = RealityPackageStatus::UnknownElementType;
-        //We don't know this kind of source. Or maybe it's not a source at all.
-        //If the node hold a PACKAGE_SOURCE_ATTRIBUTE_Uri and PACKAGE_SOURCE_ATTRIBUTE_Type we might load 
-        // it as generic source. Will it does more harm then good?
-        return NULL;
-        }
+    if (IN_RANGE(longitude, -180, 180) && IN_RANGE(latitude, -90, 90))
+        return true;
 
-    RealityDataSourcePtr pSource = iterator->second->Create();
-    
-    status = pSource->_Read(node);
+    return false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName)
+    {
+    DPoint2d longLat;
+    RealityPackageStatus status = ReadDPoint2d(longLat, parent, childName);
     if(RealityPackageStatus::Success != status)
-        return NULL;
+        return status;
 
-    return pSource;
+    if(!IsValidLongLat(longLat.x, longLat.y))
+        return RealityPackageStatus::InvalidLongitudeLatitude;
+
+    longitude = longLat.x;
+    latitude = longLat.y;
+
+    return RealityPackageStatus::Success;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSourceSerializer::Store(RealityDataSourceCR source, BeXmlNodeR parentNode)
+RealityPackageStatus RealityDataSerializer::WriteLongLat(BeXmlNodeR parent, Utf8CP childName, double longitude, double latitude)
     {
-    BeXmlNodeP pSourceNode = parentNode.AddEmptyElement(source._GetElementName());
-    if(NULL == pSourceNode)
+    if(!IsValidLongLat(longitude, latitude))
+        return RealityPackageStatus::InvalidLongitudeLatitude;
+
+    DPoint2d longLat = {longitude, latitude};
+
+    return WriteDPoint2d(parent, childName, longLat);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName)
+    {
+    // Use UTF8 since it is the native format.
+    Utf8String pointStr;
+    if(BEXML_Success != parent.GetContent(pointStr, childName))
+        return RealityPackageStatus::UnknownError;  
+
+    Utf8StringTokenizer tokenizer(pointStr, SPACE_DELIMITER);
+
+    if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
+        return RealityPackageStatus::UnknownError;  
+
+    return RealityPackageStatus::Success;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializer::WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point)
+    {
+    WString pointString;
+    pointString.Sprintf (LATLONG_PRINT_FORMAT, point.x, point.y);
+    if(NULL == parent.AddElementStringValue(childName, pointString.c_str()))
         return RealityPackageStatus::UnknownError;
 
-    RealityPackageStatus status = source._Write(*pSourceNode);
-    if(RealityPackageStatus::Success != status)
-        parentNode.RemoveChildNode(pSourceNode);
-        
-    return status;      
+    return RealityPackageStatus::Success;
     }
+
+
+//=======================================================================================
+//                              RealityDataSerializer - Factory
+//=======================================================================================
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityDataSerializerPtr RealityDataSerializerFactory::CreateSerializer(BeXmlDomR xmlDom)
+    {
+    // Read version.
+    uint32_t majorVersion, minorVersion;
+    if (RealityPackageStatus::Success != RealityDataSerializerFactory::ReadVersion(majorVersion, minorVersion, xmlDom))
+        return NULL;
+
+    // Create proper serializer.
+    return RealityDataSerializerFactory::CreateSerializer(majorVersion);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityDataSerializerPtr RealityDataSerializerFactory::CreateSerializer(uint32_t majorVersion)
+    {
+    // Create proper serializer.
+    switch (majorVersion)
+        {
+        case 1:
+            return RealityDataSerializerV1::Create();
+        case 2:
+            return RealityDataSerializerV2::Create();
+        default:
+            return NULL;
+        }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataSerializerFactory::ReadVersion(uint32_t& majorVersion, uint32_t& minorVersion, BeXmlDomR xmlDom)
+    {  
+    BeXmlNodeP pRootNode = xmlDom.GetRootElement();
+    if (NULL == pRootNode)
+        return RealityPackageStatus::XmlReadError;
+
+    // Get version.
+    Utf8String version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, PACKAGE_ATTRIBUTE_Version))
+        return RealityPackageStatus::XmlReadError;
+
+    // Parse.
+    if (2 != BE_STRING_UTILITIES_UTF8_SSCANF(version.c_str(), "%u.%u", &majorVersion, &minorVersion))
+        return RealityPackageStatus::XmlReadError;
+
+    return RealityPackageStatus::Success;
+    }
+
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

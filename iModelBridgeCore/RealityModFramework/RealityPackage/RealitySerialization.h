@@ -28,10 +28,11 @@
 // Major version upgrade should occurs when the change would be incompatible with the current implementation. 
 // Namespace change occurs only when the major version changes.  
 #define PACKAGE_PREFIX              "rdp"
-#define PACKAGE_CURRENT_MAJOR_VERSION 1
+#define PACKAGE_CURRENT_MAJOR_VERSION 2
 #define PACKAGE_CURRENT_MINOR_VERSION 0
 #define PACKAGE_CURRENT_VERSION       (WIDEN(STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)) L"." WIDEN(STRINGIFY(PACKAGE_CURRENT_MINOR_VERSION)))
 #define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
+#define PACKAGE_V1_NAMESPACE          "http://www.bentley.com/RealityDataServer/v1"
 
 #define PACKAGE_ELEMENT_Root                "RealityDataPackage"
 #define PACKAGE_ATTRIBUTE_Version           "version"
@@ -43,6 +44,8 @@
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
 #define PACKAGE_ELEMENT_PackageId           "PackageId"
 #define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
+#define PACKAGE_ELEMENT_PackageOrigin       "PackageOrigin"
+#define PACKAGE_ELEMENT_Origin              "Origin"
 
 // RealityData
 #define PACKAGE_ELEMENT_ImageryGroup        "ImageryGroup"
@@ -59,26 +62,42 @@
 #define PACKAGE_ELEMENT_PinnedGroup         "PinnedGroup"
 #define PACKAGE_ELEMENT_PinnedData          "PinnedData"
 #define PACKAGE_ELEMENT_Position            "Position"
+#define PACKAGE_ELEMENT_Area                "Area"
 
 #define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
 #define PACKAGE_ELEMENT_TerrainData         "TerrainData"
 
-// RealityDataSources
+#define PACKAGE_ELEMENT_Sources             "Sources"
+
+// RealityDataSource
 #define PACKAGE_ELEMENT_Source              "Source"
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
 #define PACKAGE_ELEMENT_Id                  "Id"
 #define PACKAGE_ELEMENT_Provider            "Provider"
+#define PACKAGE_ELEMENT_Size                "Size"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
 #define PACKAGE_ELEMENT_Metadata            "Metadata"
+#define PACKAGE_ELEMENT_GeoCS               "GeoCS"
+#define PACKAGE_ELEMENT_NoDataValue         "NoDataValue"
 #define PACKAGE_ELEMENT_SisterFiles         "SisterFiles"
+#define PACKAGE_ELEMENT_File                "File"
 
+// WmsSource
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"
 #define WMS_SOURCE_TYPE                     "wms"
 
+// OsmSource
 #define PACKAGE_ELEMENT_OsmSource           "OsmSource"
 #define OSM_SOURCE_TYPE                     "osm"
+
+// MultiBandSource
+#define PACKAGE_ELEMENT_MultiBandSource     "MultiBandSource"
+#define PACKAGE_ELEMENT_RedBand             "Red"
+#define PACKAGE_ELEMENT_GreenBand           "Green"
+#define PACKAGE_ELEMENT_BlueBand            "Blue"
+#define PACKAGE_ELEMENT_PanchromaticBand    "Panchromatic"
 
 #define SPACE_DELIMITER    " "
 #define SPACE_DELIMITER_U L" "
@@ -164,146 +183,119 @@ struct StringTokenizer
 typedef StringTokenizer<WString>    WStringTokenizer;
 typedef StringTokenizer<Utf8String> Utf8StringTokenizer;
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-struct RealityDataSourceSerializer
-{
-    //----------------------------------------------------------------------------------------
-    // @bsiclass
-    //----------------------------------------------------------------------------------------
-    struct IDataSourceCreate
-        {
-        virtual RealityDataSourcePtr Create() const = 0;
-        };
-
-    static RealityDataSourceSerializer& Get() {static RealityDataSourceSerializer s_instance; return s_instance;}
-
-    RealityDataSourceSerializer();
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    RealityDataSourcePtr Load(RealityPackageStatus& status, BeXmlNodeR node);
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    RealityPackageStatus Store(RealityDataSourceCR source, BeXmlNodeR parentNode);
-
-    bmap<Utf8String, IDataSourceCreate*> m_creators;
-};
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-struct RealityDataSerializer
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote              6/2016
+//=====================================================================================
+struct RealityDataSerializer : public RefCountedBase
     {
+    public:
+        // Serialize/Deserialize methods.
+        RealityPackageStatus Read(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const;
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    static bool IsValidLongLat(double longitude, double latitude)
-        {
-        if (IN_RANGE(longitude, -180, 180) && IN_RANGE(latitude, -90, 90))
-            return true;
+        // Utility methods.
+        static bool IsValidLongLat(double longitude, double latitude);
+        static RealityPackageStatus ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName);
+        static RealityPackageStatus WriteLongLat(BeXmlNodeR parent, Utf8CP childName, double longitude, double latitude);
+        static RealityPackageStatus ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName);
+        static RealityPackageStatus WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point);
 
-        return false;
-        }
+    protected:
+        virtual ~RealityDataSerializer() {};
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    static RealityPackageStatus ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName)
-        {
-        DPoint2d longLat;
-        RealityPackageStatus status = ReadDPoint2d(longLat, parent, childName);
-        if(RealityPackageStatus::Success != status)
-            return status;
+        virtual RealityPackageStatus _Read(RealityDataPackageR package, BeXmlDomR xmlDom) = 0;
+        virtual RealityPackageStatus _Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const = 0;
+    };
 
-        if(!IsValidLongLat(longLat.x, longLat.y))
-            return RealityPackageStatus::InvalidLongitudeLatitude;
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote              6/2016
+//=====================================================================================
+struct RealityDataSerializerV1 : public RealityDataSerializer
+    {
+    public:
+        //! Create serializer for a version 1 package.
+        static RealityDataSerializerV1Ptr Create();
 
-        longitude = longLat.x;
-        latitude = longLat.y;
+    protected:
+        RealityDataSerializerV1();
+        virtual ~RealityDataSerializerV1() {}
 
-        return RealityPackageStatus::Success;
-        }
+        virtual RealityPackageStatus _Read(RealityDataPackageR package, BeXmlDomR xmlDom);
+        virtual RealityPackageStatus _Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const;
 
-     //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    static RealityPackageStatus WriteLongLat(BeXmlNodeR parent, Utf8CP childName, double longitude, double latitude)
-        {
-        if(!IsValidLongLat(longitude, latitude))
-            return RealityPackageStatus::InvalidLongitudeLatitude;
+    private:
+        // Read.
+        RealityPackageStatus ReadPackageInfo(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadImageryGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
+        RealityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
 
-        DPoint2d longLat = {longitude, latitude};
 
-        return WriteDPoint2d(parent, childName, longLat);
-        }
+        // Write.
+        RealityPackageStatus WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+    };
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    static RealityPackageStatus ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName)
-        {
-        // Use UTF8 since it is the native format.
-        Utf8String pointStr;
-        if(BEXML_Success != parent.GetContent(pointStr, childName))
-            return RealityPackageStatus::UnknownError;  
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote              6/2016
+//=====================================================================================
+struct RealityDataSerializerV2 : public RealityDataSerializer
+    {
+    public:
+        //! Create serializer for a version 2 package.
+        static RealityDataSerializerV2Ptr Create();
 
-        Utf8StringTokenizer tokenizer(pointStr, SPACE_DELIMITER);
+    protected:
+        RealityDataSerializerV2();
+        virtual ~RealityDataSerializerV2() {}
 
-        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
-            return RealityPackageStatus::UnknownError;  
+        virtual RealityPackageStatus _Read(RealityDataPackageR package, BeXmlDomR xmlDom);
+        virtual RealityPackageStatus _Write(BeXmlDomR xmlDom, RealityDataPackageCR package) const;
 
-        return RealityPackageStatus::Success;
-        }
+    private:
+        // Read.
+        RealityPackageStatus ReadPackageInfo(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadImageryGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadPinnedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
+        RealityPackageStatus ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
+        
+        RealityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
+        MultiBandSourcePtr   ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    static RealityPackageStatus WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point)
-        {
-        WString pointString;
-        pointString.Sprintf (LATLONG_PRINT_FORMAT, point.x, point.y);
-        if(NULL == parent.AddElementStringValue(childName, pointString.c_str()))
-            return RealityPackageStatus::UnknownError;
+        // Write.
+        RealityPackageStatus WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
+        RealityPackageStatus WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+        RealityPackageStatus WriteMultiBandSource(BeXmlNodeR node, MultiBandSourceCR source) const;
+    };
 
-        return RealityPackageStatus::Success;
-        }
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote              6/2016
+//=====================================================================================
+struct RealityDataSerializerFactory : RefCountedBase
+    {
+    public:
+        //! Create proper serializer according to package major version.
+        static RealityDataSerializerPtr CreateSerializer(BeXmlDomR xmlDom);
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    template<class RefCountedData_T>
-    static RefCountedData_T TryLoad(RealityPackageStatus& status, BeXmlNodeR node)
-        {
-        status = RealityPackageStatus::UnknownElementType; 
-        if(0 != BeStringUtilities::Stricmp(node.GetName(), RefCountedData_T::element_type::ElementName))
-            return NULL;
+        //! Create proper serializer according to package major version.
+        static RealityDataSerializerPtr CreateSerializer(uint32_t majorVersion);
 
-        RefCountedData_T pData = new RefCountedData_T::element_type();
-
-        if(RealityPackageStatus::Success != (status = pData->_Read(node)))
-            return NULL;
-
-        return pData;
-        }
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  3/2015
-    //----------------------------------------------------------------------------------------
-    template<class Data_T>
-    static RealityPackageStatus Store(Data_T const& data, BeXmlNodeR parentNode)
-        {
-        BeXmlNodeP pDataNode = parentNode.AddEmptyElement(Data_T::ElementName);
-        if(NULL == pDataNode)
-            return RealityPackageStatus::UnknownError;
-
-        return data._Write(*pDataNode);
-        }
+    private:
+        //! Read package version.
+        static RealityPackageStatus ReadVersion(uint32_t& majorVersion, uint32_t& minorVersion, BeXmlDomR xmlDom);
     };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

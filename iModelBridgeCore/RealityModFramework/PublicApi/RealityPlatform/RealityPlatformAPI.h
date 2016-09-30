@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityPlatformAPI.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Bentley/Bentley.h>
+#include <Bentley/BeFileName.h>
 #include <Bentley/bvector.h>
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
@@ -41,12 +42,6 @@ REALITYPLATFORM_REF_COUNTED_PTR(PointCloudData)
 
 REALITYPLATFORM_TYPEDEFS(WmsData)
 REALITYPLATFORM_REF_COUNTED_PTR(WmsData)
-
-REALITYPLATFORM_TYPEDEFS(WmsMapSettings)
-REALITYPLATFORM_REF_COUNTED_PTR(WmsMapSettings)
-
-REALITYPLATFORM_TYPEDEFS(OsmResource)
-REALITYPLATFORM_REF_COUNTED_PTR(OsmResource)
 
 REALITYPLATFORM_TYPEDEFS(RealityDataDownload)
 REALITYPLATFORM_REF_COUNTED_PTR(RealityDataDownload)

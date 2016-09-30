@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPackage/RealityPackage.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,8 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/WString.h>
+#include <Geom/GeomApi.h>
 
 #if defined (__REALITYPACKAGE_BUILD__)
 #   define REALITYPACKAGE_EXPORT EXPORT_ATTRIBUTE
@@ -34,14 +36,22 @@ REALITYPACKAGE_TYPEDEFS(RealityDataPackage)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataPackage)
 REALITYPACKAGE_TYPEDEFS(BoundingPolygon)
 REALITYPACKAGE_REF_COUNTED_PTR(BoundingPolygon)
+REALITYPACKAGE_TYPEDEFS(Uri)
+REALITYPACKAGE_REF_COUNTED_PTR(Uri)
 
 // RealiteSources
 REALITYPACKAGE_TYPEDEFS(RealityDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSource)
 REALITYPACKAGE_TYPEDEFS(WmsDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(WmsDataSource)
+REALITYPACKAGE_TYPEDEFS(WmsMapSettings)
+REALITYPACKAGE_REF_COUNTED_PTR(WmsMapSettings)
 REALITYPACKAGE_TYPEDEFS(OsmDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(OsmDataSource)
+REALITYPACKAGE_TYPEDEFS(OsmResource)
+REALITYPACKAGE_REF_COUNTED_PTR(OsmResource)
+REALITYPACKAGE_TYPEDEFS(MultiBandSource)
+REALITYPACKAGE_REF_COUNTED_PTR(MultiBandSource)
 
 // RealityData
 REALITYPACKAGE_TYPEDEFS(RealityData)
@@ -54,6 +64,16 @@ REALITYPACKAGE_TYPEDEFS(PinnedData)
 REALITYPACKAGE_REF_COUNTED_PTR(PinnedData)
 REALITYPACKAGE_TYPEDEFS(TerrainData)
 REALITYPACKAGE_REF_COUNTED_PTR(TerrainData)
+
+// RealitySerializers
+REALITYPACKAGE_TYPEDEFS(RealityDataSerializerFactory)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerFactory)
+REALITYPACKAGE_TYPEDEFS(RealityDataSerializer)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializer)
+REALITYPACKAGE_TYPEDEFS(RealityDataSerializerV1)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerV1)
+REALITYPACKAGE_TYPEDEFS(RealityDataSerializerV2)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerV2)
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 

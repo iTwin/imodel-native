@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -46,8 +46,15 @@ $(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)
 
 $(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
 
+$(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
+
+$(o)OsmSource$(oext) : $(baseDir)OsmSource.cpp $(PublicApiDir)OsmSource.h ${MultiCompileDepends}
+
 $(o)RealitySerialization$(oext) : $(baseDir)RealitySerialization.cpp $(baseDir)RealitySerialization.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
 
+$(o)RealitySerializationV1$(oext) : $(baseDir)RealitySerializationV1.cpp ${MultiCompileDepends}
+
+$(o)RealitySerializationV2$(oext) : $(baseDir)RealitySerializationV2.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -59,7 +66,6 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
