@@ -2218,7 +2218,7 @@ ICancellationTokenPtr cancellationToken
 DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceResponse
 (
 	int numOfRetries, 
-	bool longpolling = true
+	bool longpolling
 )
 {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceResponse";
