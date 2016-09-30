@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class for physical Road and Rail segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement
+struct EXPORT_VTABLE_ATTRIBUTE SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_SegmentElement, Dgn::PhysicalElement);
     friend struct SegmentElementHandler;
@@ -49,7 +49,7 @@ public:
 //! Base class for physical Road segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadSegmentElement : SegmentElement
+struct EXPORT_VTABLE_ATTRIBUTE RoadSegmentElement : SegmentElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadSegmentElement, SegmentElement);
     friend struct RoadSegmentElementHandler;
@@ -69,7 +69,7 @@ public:
 //! Physical segment of a road, with a constant cross-section.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadSegment : RoadSegmentElement
+struct EXPORT_VTABLE_ATTRIBUTE RoadSegment : RoadSegmentElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadSegment, RoadSegmentElement);
     friend struct RoadSegmentHandler;
@@ -91,7 +91,7 @@ public:
 //! Physical segment of a road, with a variable cross-section.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct TransitionSegment : RoadSegmentElement
+struct EXPORT_VTABLE_ATTRIBUTE TransitionSegment : RoadSegmentElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TransitionSegment, RoadSegmentElement);
     friend struct TransitionSegmentHandler;
@@ -113,7 +113,7 @@ public:
 //! Physical segment of a road supported by a bridge.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadSegmentOnBridge : RoadSegmentElement, BridgePhysical::IPhysicalElementOnBridge
+struct EXPORT_VTABLE_ATTRIBUTE RoadSegmentOnBridge : RoadSegmentElement, BridgePhysical::IPhysicalElementOnBridge
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadSegmentOnBridge, RoadSegmentElement);
     friend struct RoadSegmentOnBridgeHandler;

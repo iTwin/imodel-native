@@ -134,6 +134,8 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     auto bridgePtr = Bridge::Create(*roadOnBridgeCPtr);
     auto bridgeCPtr = bridgePtr->Insert();
     ASSERT_TRUE(bridgeCPtr.IsValid());
+    ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
+    ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), bridgeCPtr->GetIPhysicalElementOnBridge()->GetElementId());
 
     // Create Abutment - Pier - Abutment
     auto abutment1Ptr = BridgeAbutment::Create(*bridgeCPtr, 0);
@@ -146,13 +148,47 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_TRUE(abutment2Ptr->Insert().IsValid());
 
     // Create TransitionSegment #2
-    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 1, 2);
+    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 120, 140);
     auto transition2CPtr = transition2Ptr->Insert();
     ASSERT_TRUE(transition2CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150);
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 140, 150);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
+#pragma endregion
+
+#pragma region Station-change Cascading shrinking Bridge
+    transition1Ptr->SetToDistanceAlong(35);
+    transition1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
+    ASSERT_TRUE(transition1Ptr->Update().IsValid());
+    ASSERT_DOUBLE_EQ(35, transition1Ptr->GetToDistanceAlong());
+
+    roadOnBridgeCPtr = RoadSegmentOnBridge::Get(*projectPtr, roadOnBridgePtr->GetElementId());
+    ASSERT_DOUBLE_EQ(35, roadOnBridgeCPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(120, roadOnBridgeCPtr->GetToDistanceAlong());
+
+    bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
+    ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
+
+    auto abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
+    ASSERT_DOUBLE_EQ(85, abutment2CPtr->GetDistanceAlongBridge());
+#pragma endregion
+
+#pragma region Station-change Cascading enlarging Bridge
+    transition2Ptr->SetFromDistanceAlong(130);
+    transition2Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
+    ASSERT_TRUE(transition2Ptr->Update().IsValid());
+    ASSERT_DOUBLE_EQ(130, transition2Ptr->GetToDistanceAlong());
+
+    roadOnBridgeCPtr = RoadSegmentOnBridge::Get(*projectPtr, roadOnBridgePtr->GetElementId());
+    ASSERT_DOUBLE_EQ(35, roadOnBridgeCPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(130, roadOnBridgeCPtr->GetToDistanceAlong());
+
+    bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
+    ASSERT_DOUBLE_EQ(95, bridgeCPtr->GetLength());
+
+    abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
+    ASSERT_DOUBLE_EQ(95, abutment2CPtr->GetDistanceAlongBridge());
 #pragma endregion
     }
