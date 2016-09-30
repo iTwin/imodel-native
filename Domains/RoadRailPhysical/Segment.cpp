@@ -24,28 +24,45 @@ SegmentElement::SegmentElement(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SegmentElement::SegmentElement(CreateParams const& params, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
+SegmentElement::SegmentElement(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
     T_Super(params)
     {
-    m_unpersistedFromToLocationPtr = LinearlyReferencedFromToLocation::Create(fromPosition, toPosition);
+    m_unpersistedFromToLocationPtr = LinearlyReferencedFromToLocation::Create(DistanceExpression(fromDistanceAlong), DistanceExpression(toDistanceAlong));
     _AddLinearlyReferencedLocation(*m_unpersistedFromToLocationPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationCP SegmentElement::GetFromToLocation() const
+double SegmentElement::GetFromDistanceAlong() const
     {
-    return const_cast<SegmentElementP>(this)->GetFromToLocationP();
+    if (!GetElementId().IsValid())
+        return m_unpersistedFromToLocationPtr->GetFromPosition().GetDistanceAlongFromStart();
+
+    if (!m_fromToLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_fromToLocationAspectId = aspectIds.front();
+        }
+
+    auto locationCP = GetLinearlyReferencedFromToLocation(m_fromToLocationAspectId);
+    BeAssert(locationCP);
+
+    return locationCP->GetFromPosition().GetDistanceAlongFromStart();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationP SegmentElement::GetFromToLocationP()
+void SegmentElement::SetFromDistanceAlong(double newFrom)
     {
     if (!GetElementId().IsValid())
-        return m_unpersistedFromToLocationPtr.get();
+        {
+        m_unpersistedFromToLocationPtr->GetFromPositionR().SetDistanceAlongFromStart(newFrom);
+        return;
+        }
 
     if (!m_fromToLocationAspectId.IsValid())
         {
@@ -58,29 +75,76 @@ LinearlyReferencedFromToLocationP SegmentElement::GetFromToLocationP()
     auto locationP = GetLinearlyReferencedFromToLocationP(m_fromToLocationAspectId);
     BeAssert(locationP);
 
-    return locationP;
+    return locationP->GetFromPositionR().SetDistanceAlongFromStart(newFrom);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegmentElement::RoadSegmentElement(CreateParams const& params, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-    T_Super(params, fromPosition, toPosition)
+double SegmentElement::GetToDistanceAlong() const
+    {
+    if (!GetElementId().IsValid())
+        return m_unpersistedFromToLocationPtr->GetToPosition().GetDistanceAlongFromStart();
+
+    if (!m_fromToLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_fromToLocationAspectId = aspectIds.front();
+        }
+
+    auto locationCP = GetLinearlyReferencedFromToLocation(m_fromToLocationAspectId);
+    BeAssert(locationCP);
+
+    return locationCP->GetToPosition().GetDistanceAlongFromStart();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SegmentElement::SetToDistanceAlong(double newFrom)
+    {
+    if (!GetElementId().IsValid())
+        {
+        m_unpersistedFromToLocationPtr->GetToPositionR().SetDistanceAlongFromStart(newFrom);
+        return;
+        }
+
+    if (!m_fromToLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_fromToLocationAspectId = aspectIds.front();
+        }
+
+    auto locationP = GetLinearlyReferencedFromToLocationP(m_fromToLocationAspectId);
+    BeAssert(locationP);
+
+    return locationP->GetToPositionR().SetDistanceAlongFromStart(newFrom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RoadSegmentElement::RoadSegmentElement(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
+    T_Super(params, fromDistanceAlong, toDistanceAlong)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegment::RoadSegment(CreateParams const& params, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-    T_Super(params, fromPosition, toPosition)
+RoadSegment::RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
+    T_Super(params, fromDistanceAlong, toDistanceAlong)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition)
+RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong)
     {
     if (!roadRange.GetElementId().IsValid())
         return nullptr;
@@ -92,7 +156,7 @@ RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, DistanceExpressionCR f
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()), roadRange.GetCategoryId());
     params.SetParentId(roadRange.GetElementId());
 
-    auto retVal = new RoadSegment(params, fromPosition, toPosition);
+    auto retVal = new RoadSegment(params, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
     }
@@ -100,15 +164,15 @@ RoadSegmentPtr RoadSegment::Create(RoadRangeCR roadRange, DistanceExpressionCR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransitionSegment::TransitionSegment(CreateParams const& params, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-    T_Super(params, fromPosition, toPosition)
+TransitionSegment::TransitionSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
+    T_Super(params, fromDistanceAlong, toDistanceAlong)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransitionSegmentPtr TransitionSegment::Create(RoadRangeCR roadRange, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition)
+TransitionSegmentPtr TransitionSegment::Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong)
     {
     if (!roadRange.GetElementId().IsValid())
         return nullptr;
@@ -120,7 +184,7 @@ TransitionSegmentPtr TransitionSegment::Create(RoadRangeCR roadRange, DistanceEx
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()), roadRange.GetCategoryId());
     params.SetParentId(roadRange.GetElementId());
 
-    auto retVal = new TransitionSegment(params, fromPosition, toPosition);
+    auto retVal = new TransitionSegment(params, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
     }
@@ -128,15 +192,15 @@ TransitionSegmentPtr TransitionSegment::Create(RoadRangeCR roadRange, DistanceEx
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegmentOnBridge::RoadSegmentOnBridge(CreateParams const& params, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-    T_Super(params, fromPosition, toPosition)
+RoadSegmentOnBridge::RoadSegmentOnBridge(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong):
+    T_Super(params, fromDistanceAlong, toDistanceAlong)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadSegmentOnBridgePtr RoadSegmentOnBridge::Create(RoadRangeCR roadRange, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition)
+RoadSegmentOnBridgePtr RoadSegmentOnBridge::Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong)
     {
     if (!roadRange.GetElementId().IsValid())
         return nullptr;
@@ -148,7 +212,7 @@ RoadSegmentOnBridgePtr RoadSegmentOnBridge::Create(RoadRangeCR roadRange, Distan
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()), roadRange.GetCategoryId());
     params.SetParentId(roadRange.GetElementId());
 
-    auto retVal = new RoadSegmentOnBridge(params, fromPosition, toPosition);
+    auto retVal = new RoadSegmentOnBridge(params, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
     }

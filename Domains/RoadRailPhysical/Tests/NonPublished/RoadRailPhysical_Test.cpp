@@ -43,31 +43,31 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(0), DistanceExpression(50));
+    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment
-    auto transitionPtr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(50), DistanceExpression(100));
+    auto transitionPtr = TransitionSegment::Create(*roadRangeCPtr, 50, 100);
     auto transitionCPtr = transitionPtr->Insert();
     ASSERT_TRUE(transitionCPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(100), DistanceExpression(150));
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
 #pragma endregion
 
 #pragma region Station-change Cascading
-    roadSegment1Ptr->GetFromToLocationP()->GetToPositionR().SetDistanceAlongFromStart(35);
+    roadSegment1Ptr->SetToDistanceAlong(35);
     roadSegment1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
-    ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
+    ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetToDistanceAlong());
 
     transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
-    ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromToLocation()->GetFromPosition().GetDistanceAlongFromStart());
-    ASSERT_DOUBLE_EQ(100, transitionCPtr->GetFromToLocation()->GetToPosition().GetDistanceAlongFromStart());
+    ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromDistanceAlong());
+    ASSERT_DOUBLE_EQ(100, transitionCPtr->GetToDistanceAlong());
 #pragma endregion
     }
 
@@ -114,19 +114,19 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
     // Create RoadSegment #1
-    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(0), DistanceExpression(10));
+    auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 10);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
     ASSERT_TRUE(roadSegment1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
 
     // Create TransitionSegment #1
-    auto transition1Ptr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(10), DistanceExpression(20));
+    auto transition1Ptr = TransitionSegment::Create(*roadRangeCPtr, 10, 20);
     auto transition1CPtr = transition1Ptr->Insert();
     ASSERT_TRUE(transition1CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition1CPtr->GetLinearElementId());
 
     // Create RoadSegmentOnBridge
-    auto roadOnBridgePtr = RoadSegmentOnBridge::Create(*roadRangeCPtr, DistanceExpression(20), DistanceExpression(120));
+    auto roadOnBridgePtr = RoadSegmentOnBridge::Create(*roadRangeCPtr, 20, 120);
     auto roadOnBridgeCPtr = roadOnBridgePtr->Insert();
     ASSERT_TRUE(roadOnBridgeCPtr.IsValid());
 
@@ -135,14 +135,24 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     auto bridgeCPtr = bridgePtr->Insert();
     ASSERT_TRUE(bridgeCPtr.IsValid());
 
+    // Create Abutment - Pier - Abutment
+    auto abutment1Ptr = BridgeAbutment::Create(*bridgeCPtr, 0);
+    ASSERT_TRUE(abutment1Ptr->Insert().IsValid());
+
+    auto pierPtr = BridgePier::Create(*bridgeCPtr, 50);
+    ASSERT_TRUE(pierPtr->Insert().IsValid());
+
+    auto abutment2Ptr = BridgeAbutment::Create(*bridgeCPtr, 100);
+    ASSERT_TRUE(abutment2Ptr->Insert().IsValid());
+
     // Create TransitionSegment #2
-    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, DistanceExpression(1), DistanceExpression(2));
+    auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 1, 2);
     auto transition2CPtr = transition2Ptr->Insert();
     ASSERT_TRUE(transition2CPtr.IsValid());
     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
 
     // Create RoadSegment #2
-    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, DistanceExpression(100), DistanceExpression(150));
+    auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150);
     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
 #pragma endregion
     }

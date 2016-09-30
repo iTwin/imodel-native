@@ -23,7 +23,7 @@ struct SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocate
     friend struct SegmentElementHandler;
 
 private:
-    LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
+    mutable LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
     LinearReferencing::LinearlyReferencedFromToLocationPtr m_unpersistedFromToLocationPtr;
 
 protected:
@@ -31,15 +31,18 @@ protected:
     explicit SegmentElement(CreateParams const& params);
 
     //! @private
-    explicit SegmentElement(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    explicit SegmentElement(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentElement)
 
-    ROADRAILPHYSICAL_EXPORT LinearReferencing::LinearlyReferencedFromToLocationCP GetFromToLocation() const;
-    ROADRAILPHYSICAL_EXPORT LinearReferencing::LinearlyReferencedFromToLocationP GetFromToLocationP();
+    ROADRAILPHYSICAL_EXPORT double GetFromDistanceAlong() const;
+    ROADRAILPHYSICAL_EXPORT void SetFromDistanceAlong(double newFrom);
+
+    ROADRAILPHYSICAL_EXPORT double GetToDistanceAlong() const;
+    ROADRAILPHYSICAL_EXPORT void SetToDistanceAlong(double newFrom);
 }; // SegmentElement
 
 //=======================================================================================
@@ -56,7 +59,7 @@ protected:
     explicit RoadSegmentElement(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit RoadSegmentElement(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    explicit RoadSegmentElement(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegmentElement)
@@ -75,13 +78,13 @@ protected:
     //! @private
     explicit RoadSegment(CreateParams const& params) : T_Super(params) {}
 
-    explicit RoadSegment(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    explicit RoadSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegment)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadSegment)
 
-    ROADRAILPHYSICAL_EXPORT static RoadSegmentPtr Create(RoadRangeCR roadRange, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    ROADRAILPHYSICAL_EXPORT static RoadSegmentPtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadSegment
 
 //=======================================================================================
@@ -97,13 +100,13 @@ protected:
     //! @private
     explicit TransitionSegment(CreateParams const& params) : T_Super(params) {}
 
-    explicit TransitionSegment(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    explicit TransitionSegment(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TransitionSegment)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TransitionSegment)
 
-    ROADRAILPHYSICAL_EXPORT static TransitionSegmentPtr Create(RoadRangeCR roadRange, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    ROADRAILPHYSICAL_EXPORT static TransitionSegmentPtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong);
 }; // TransitionSegment
 
 //=======================================================================================
@@ -119,7 +122,7 @@ protected:
     //! @private
     explicit RoadSegmentOnBridge(CreateParams const& params) : T_Super(params) {}
 
-    explicit RoadSegmentOnBridge(CreateParams const& params, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    explicit RoadSegmentOnBridge(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
     virtual Dgn::PhysicalElementCR _IPhysicalElementOnBridgeToPhysicalElement() const override { return *this; }
     virtual LinearReferencing::ILinearlyLocatedElementCR _IPhysicalElementOnBridgeToLinearlyLocated() const override { return *this; }
@@ -128,7 +131,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegmentOnBridge)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadSegmentOnBridge)
 
-    ROADRAILPHYSICAL_EXPORT static RoadSegmentOnBridgePtr Create(RoadRangeCR roadRange, LinearReferencing::DistanceExpressionCR fromPosition, LinearReferencing::DistanceExpressionCR toPosition);
+    ROADRAILPHYSICAL_EXPORT static RoadSegmentOnBridgePtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadSegmentOnBridge
 
 
