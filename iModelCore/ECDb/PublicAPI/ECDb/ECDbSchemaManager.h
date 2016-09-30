@@ -189,8 +189,8 @@ private:
 
 public:
     ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8CP schemaName, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8CP schemaName, Utf8CP className);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8StringCR schemaName, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8StringCR schemaName, Utf8StringCR className);
     };
 
 #endif

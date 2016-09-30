@@ -127,9 +127,9 @@ BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, b
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, Utf8CP schemaName, bool skipUnmappedClasses)
+BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, Utf8StringCR schemaName, bool skipUnmappedClasses)
     {
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema(schemaName);
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema(schemaName.c_str());
     if (schema == nullptr)
         return ERROR;
 
@@ -143,7 +143,7 @@ BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, U
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Utf8CP schemaName, Utf8CP className)
+BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Utf8StringCR schemaName, Utf8StringCR className)
     {
     ECClassCP ecClass = ecdb.Schemas().GetECClass(schemaName, className);
     if (ecClass == nullptr)

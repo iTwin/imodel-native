@@ -19,7 +19,7 @@ DbResult ECDbProfileUpgrader_3732::_Upgrade(ECDbCR ecdb) const
     {
     Utf8String sql;
     sql.Sprintf("SELECT NULL FROM ec_ClassHasBaseClasses bc JOIN ec_Class c ON bc.ClassId = c.Id "
-                "JOIN ec_ClassMap cm ON cm.ClassId = c.Id WHERE c.Type = 1 AND cm.MapStrategy IN (%d,%d)",
+                "JOIN ec_ClassMap cm ON cm.ClassId = c.Id WHERE c.Type = %d AND cm.MapStrategy IN (%d,%d)",
                 Enum::ToInt(ECClassType::Relationship),
                 Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable), Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
 
