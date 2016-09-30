@@ -513,7 +513,7 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
             m_pEntries[index].mirrors[0].filename.c_str(),
             errorCode,
             m_pEntries[index].mirrors[1].filename.c_str());
-        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_RETRY_TENTATIVE, errorMsg);
+        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_MIRROR_CHANGE, errorMsg);
         }
 
     m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
