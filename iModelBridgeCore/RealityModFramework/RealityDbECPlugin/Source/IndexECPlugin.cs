@@ -278,7 +278,7 @@ namespace IndexECPlugin.Source
                 }
             catch ( Exception e )
                 {
-                Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
+                Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}. Stack trace : {2}", query.ID, e.Message, e.StackTrace));
                 if ( e is UserFriendlyException )
                     {
                     throw;

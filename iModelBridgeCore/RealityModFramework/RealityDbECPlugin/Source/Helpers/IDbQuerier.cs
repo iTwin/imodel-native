@@ -93,6 +93,8 @@ namespace IndexECPlugin.Source.Helpers
             IEnumerable<string> nonInstanceDataColumnList = null,
             bool createDefaultThumbnail = true)
             {
+            Log.Logger.info("Querying database.");
+
             List<IECInstance> instanceList = new List<IECInstance>();
 
             dbConnection.Open();
