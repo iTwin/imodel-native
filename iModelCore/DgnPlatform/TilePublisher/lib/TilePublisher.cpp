@@ -959,15 +959,17 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
         return;
         }
 
+    DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
+
+    // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
+    // In that case we can trust the published ranges and use them to only write non-empty nodes and branches.
+    // In the server case we don't have this information and have to trust the tile ranges.  
+    if (!_AllTilesPublished() && publishedRange.IsNull())
+        publishedRange = tile.GetTileRange();
+    
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
-    DRange3d        contentRange;
-
-    DRange3d publishedRange = tile.GetPublishedRange();
-    if (publishedRange.IsNull())
-        publishedRange = tile.GetTileRange();
-
     contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
     range = contentRange;
 
@@ -1022,15 +1024,18 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         }
+    if (range.IsNull())
+        return;
+
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
-    root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
-    
-    // The content bounding box represents the actual 
     if (!contentRange.IsNull())
-        TilePublisher::WriteBoundingVolume (root[JSON_Content], publishedRange);
+        {
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
