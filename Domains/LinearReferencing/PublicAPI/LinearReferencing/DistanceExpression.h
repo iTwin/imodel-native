@@ -15,6 +15,12 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 
 typedef Nullable<double> NullableDouble;
 
+inline bool Compare(const NullableDouble& lhs, const NullableDouble& rhs)
+    {
+    return (lhs.IsNull() == rhs.IsNull() ||
+        (lhs.IsValid() && rhs.IsValid() && fabs(lhs.Value() - rhs.Value()) < DBL_EPSILON));
+    }
+
 //=======================================================================================
 //! Data structure used as a data-holder of a measured value which defines 
 //! the location along the linear element, and optionally offset from it.
@@ -53,19 +59,19 @@ public:
 
 inline bool operator==(const DistanceExpression& lhs, const DistanceExpression& rhs) 
     {
-    return (lhs.GetDistanceAlongFromStart() == rhs.GetDistanceAlongFromStart() && 
-        lhs.GetLateralOffsetFromILinearElement() == rhs.GetLateralOffsetFromILinearElement() &&
-        lhs.GetVerticalOffsetFromILinearElement() == rhs.GetVerticalOffsetFromILinearElement() &&
-        lhs.GetDistanceAlongFromReferent() == rhs.GetDistanceAlongFromReferent() &&
+    return (fabs(lhs.GetDistanceAlongFromStart() - rhs.GetDistanceAlongFromStart()) < DBL_EPSILON && 
+        Compare(lhs.GetLateralOffsetFromILinearElement(), rhs.GetLateralOffsetFromILinearElement()) &&
+        Compare(lhs.GetVerticalOffsetFromILinearElement(), rhs.GetVerticalOffsetFromILinearElement()) &&
+        Compare(lhs.GetDistanceAlongFromReferent(), rhs.GetDistanceAlongFromReferent()) &&
         lhs.GetFromReferentId() == rhs.GetFromReferentId());
     }
 
 inline bool operator!=(const DistanceExpression& lhs, const DistanceExpression& rhs)
     {
-    return (lhs.GetDistanceAlongFromStart() != rhs.GetDistanceAlongFromStart() ||
-        lhs.GetLateralOffsetFromILinearElement() != rhs.GetLateralOffsetFromILinearElement() ||
-        lhs.GetVerticalOffsetFromILinearElement() != rhs.GetVerticalOffsetFromILinearElement() ||
-        lhs.GetDistanceAlongFromReferent() != rhs.GetDistanceAlongFromReferent() ||
+    return (fabs(lhs.GetDistanceAlongFromStart() - rhs.GetDistanceAlongFromStart()) > DBL_EPSILON ||
+        !Compare(lhs.GetLateralOffsetFromILinearElement(), rhs.GetLateralOffsetFromILinearElement()) ||
+        !Compare(lhs.GetVerticalOffsetFromILinearElement(), rhs.GetVerticalOffsetFromILinearElement()) ||
+        !Compare(lhs.GetDistanceAlongFromReferent(), rhs.GetDistanceAlongFromReferent()) ||
         lhs.GetFromReferentId() != rhs.GetFromReferentId());
     }
 
