@@ -229,7 +229,7 @@ private:
     DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
-    DgnDbServerEventReponseTaskPtr GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
+    DgnDbServerEventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true);
 
     //Returns birefcases information for given query. Query should have its filter already set.
     DgnDbServerBriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;

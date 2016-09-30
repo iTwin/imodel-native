@@ -2217,8 +2217,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceResponse
 (
-    bool longpolling,
-    int numOfRetries
+	int numOfRetries, 
+	bool longpolling = true
 )
 {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceResponse";
@@ -2248,7 +2248,7 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
             {
                 if (SetEventSASToken())
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-                return GetEventServiceResponse(longpolling, numOfRetries--)->GetResult();
+                return GetEventServiceResponse(numOfRetries--, longpolling)->GetResult();
             }
             else
             {
@@ -2282,7 +2282,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return GetEventServiceResponse()->Then<DgnDbServerEventResult>
+    return GetEventServiceResponse(longPolling, 3)->Then<DgnDbServerEventResult>
         ([=] (DgnDbServerEventReponseResult& result)
         {
         if (result.IsSuccess())
