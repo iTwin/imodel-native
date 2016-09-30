@@ -540,7 +540,7 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*schema);
 
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(*schemaCache));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
 
     ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
     ASSERT_TRUE(ecclass != nullptr) << "Class with the specified name doesn't exist :- ecclass is empty";
@@ -1356,7 +1356,7 @@ TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
     ecdb.ClearECDbCache();
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
-    ASSERT_EQ(BentleyStatus::ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

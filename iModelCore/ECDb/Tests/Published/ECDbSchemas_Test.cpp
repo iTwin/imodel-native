@@ -478,7 +478,7 @@ TEST_F(ECDbSchemaTests, ImportECSchemaWithSameVersionAndSameContentTwice)
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
     auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
-    ASSERT_EQ(ERROR, schemaStatus);
+    ASSERT_EQ(SUCCESS, schemaStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
