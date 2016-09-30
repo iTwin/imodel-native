@@ -4493,17 +4493,7 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 return false; // Nested parts are invalid...
 
             case GeometryStreamIO::OpCode::BasicSymbology:
-                {
-                if (ignoreSymbology)
-                    break;
-
-                basicSymbCount++;
-
-                if (1 == basicSymbCount && ignoreInitialSymbology)
-                    break;
-
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
-                }
+                basicSymbCount++; // Increment symbology change count and fall through...
 
             case GeometryStreamIO::OpCode::LineStyleModifiers:
             case GeometryStreamIO::OpCode::AreaFill:
@@ -4516,7 +4506,7 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 if (1 == basicSymbCount && ignoreInitialSymbology)
                     break;
 
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
+                return false; // NOTE: Don't need to support this currently...V8 converter doesn't need to post-instance GeometryStreams with symbology changes...
                 }
 
             default:
@@ -4534,8 +4524,9 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 if (partEgOp.m_dataSize != egOp.m_dataSize)
                     return false;
 
-                // NEEDSWORK: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
-                break;
+                basicSymbCount++; // Want to return false if a symbology change is encountered AFTER the first geometric primitive.
+
+                break; // NOTE: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
                 }
             }
         }
