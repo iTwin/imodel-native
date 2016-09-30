@@ -276,7 +276,7 @@ public:
     bool IsStandaloneId() const {return Standalone()==m_id;} //!< Determine whether this is the id of a standalone briefcase not associated with any master briefcase (special id==1)
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
-    bool operator!=(BeBriefcaseId const& rhs) const { return !(*this == rhs); }
+    bool operator!=(BeBriefcaseId const& rhs) const {return !(*this == rhs);}
 };
 
 //=======================================================================================
@@ -1641,7 +1641,7 @@ enum class BeSQLiteTxnMode : int {None=0, Deferred=1, Immediate=2, Exclusive=3,}
 
 //! Determines whether and how the default transaction should be started when a Db is created or opened.
 enum class DefaultTxn : int
-    {
+{
     //! Do not start a default transaction. This is generally not a good idea except for very specialized cases. All access to a database requires a transaction.
     //! So, unless you start a "default" transaction, you must wrap all SQL statements with a \ref Savepoint.
     No = (int) BeSQLiteTxnMode::None,
@@ -1655,7 +1655,7 @@ enum class DefaultTxn : int
     //! gain access (and thereby block access from this connection) to the file when the default transaction is committed. Use of DefaultTxn_Exclusive requires
     //! that the database be opened for read+write access and the open will fail if you attempt to use it on a readonly connection.
     Exclusive = (int) BeSQLiteTxnMode::Exclusive
-    };
+};
 
 //=======================================================================================
 //! Savepoint encapsulates SQLite transactions against a BeSQLite::Db. Savepoint is implemented using
@@ -1764,7 +1764,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
 struct PropertySpec
-    {
+{
 public:
     //! Determine whether a property's data may be compressed.
     enum class Compress
@@ -1807,10 +1807,9 @@ public:
     bool IsCached()  const {return Mode::Cached == m_mode;}     //!< Determine whether this PropertySpec is cached or not.
     bool SaveIfNull() const {return m_saveIfNull;}              //!< Determine whether this PropertySpec saves NULL values or not.
     bool IsCompress() const {return Compress::Yes==m_compress;} //!< Determine whether this PropertySpec requests to compress or not.
-    };
+};
 
 typedef PropertySpec const& PropertySpecCR;
-
 
 //=======================================================================================
 //! Supply a BusyRetry handler to BeSQLite (see https://www.sqlite.org/c3ref/busy_handler.html).
@@ -1856,7 +1855,7 @@ public:
 // @bsiclass                                                    Krischan.Eberle     07/14
 //=======================================================================================
 struct BriefcaseLocalValueCache : NonCopyableClass
-    {
+{
 private:
     friend struct DbFile;
     friend struct Db;
@@ -1906,7 +1905,7 @@ public:
     //!         the BriefcaseLocalValue does not exist, and error code is returned.
     //! @see RegisterBriefcaseLocalValue
     BE_SQLITE_EXPORT DbResult IncrementValue(uint64_t& newValue, size_t rlvIndex);
-    };
+};
 
 //=======================================================================================
 //! A physical Db file.
@@ -1967,7 +1966,7 @@ public:
     bool UseSettingsTable(PropertySpecCR spec) const;
 #endif
     void OnSettingsDirtied() {m_settingsDirty=true;}
-    bool CheckImplicitTxn() const { return m_allowImplicitTxns || m_txns.size() > 0; }
+    bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
     SqlDbP GetSqlDb() const {return m_sqlDb;}
 
 protected:
@@ -1997,7 +1996,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Db : NonCopyableClass
 public:
     enum class Encoding {Utf8=0, Utf16=1};
     enum class PageSize : int
-        {
+    {
         PAGESIZE_1K  = 1024,
         PAGESIZE_512 = PAGESIZE_1K / 2,
         PAGESIZE_2K  = PAGESIZE_1K * 2,
@@ -2006,7 +2005,7 @@ public:
         PAGESIZE_16K = PAGESIZE_1K * 16,
         PAGESIZE_32K = PAGESIZE_1K * 32,
         PAGESIZE_64K = PAGESIZE_1K * 64
-        };
+    };
 
     //! Whether to open an BeSQLite::Db readonly or readwrite.
     enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), SharedCache = 1<<17, };
@@ -2658,12 +2657,12 @@ struct SnappyToBlob
 {
 private:
     struct SnappyChunk
-        {
+    {
         uint16_t*  m_data;
         SnappyChunk(uint32_t size) {m_data = (uint16_t*) BeSQLiteLib::MallocMem(size + 2);} // 2 bytes for compressed size at start of data
         uint16_t GetChunkSize() {return m_data[0];}
         ~SnappyChunk() {BeSQLiteLib::FreeMem(m_data);}
-        };
+    };
 
     bvector<SnappyChunk*> m_chunks;
     Byte*   m_rawBuf;
@@ -2866,7 +2865,7 @@ public:
 // @bsiclass                                                    John.Gooding    01/13
 //=======================================================================================
 struct LzmaEncoder
-    {
+{
 private:
     CLzma2EncProps* m_enc2Props;
 
@@ -2879,20 +2878,20 @@ public:
     BE_SQLITE_EXPORT ZipErrors CompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress, bool supportRandomAccess);
     BE_SQLITE_EXPORT ZipErrors Compress(ILzmaOutputStream& out, ILzmaInputStream& in, ICompressProgressTracker* progress, bool supportRandomAccess);
     BE_SQLITE_EXPORT ZipErrors Compress(bvector<Byte>& out, void const *input, uint32_t sizeInput, ICompressProgressTracker* progress, bool supportRandomAccess);
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    01/13
 //=======================================================================================
 struct LzmaDecoder
-    {
+{
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* progress);
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress);
     BE_SQLITE_EXPORT ZipErrors Uncompress(ILzmaOutputStream& out, ILzmaInputStream& in, bool isLzma2, ICompressProgressTracker* progress = nullptr);
     BE_SQLITE_EXPORT ZipErrors Uncompress(bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize);
     //! Use this method to decompress a blob of an embedded file. It is assumed that the blob does not have its own header and trailer.
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDbBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize);
-    };
+};
 
 #define SQLITE_FORMAT_SIGNATURE     "SQLite format 3"
 #define DOWNLOAD_FORMAT_SIGNATURE   "Download SQLite"
@@ -2909,9 +2908,9 @@ struct LzmaDecoder
 // @bsiclass                                                    Keith.Bentley   03/11
 //=======================================================================================
 struct PropSpec : PropertySpec
-    {
+{
     PropSpec(Utf8CP name, PropertySpec::Compress compress = PropertySpec::Compress::Yes) : PropertySpec(name, BEDB_PROPSPEC_NAMESPACE, Mode::Normal, compress) {}
-    };
+};
 
 //=======================================================================================
 //! The names of properties in the "be_Db" namespace. These properties are
@@ -2920,7 +2919,7 @@ struct PropSpec : PropertySpec
 // @bsiclass                                                    Keith.Bentley   03/11
 //=======================================================================================
 struct Properties
-    {
+{
     static PropSpec DbGuid()            {return PropSpec("DbGuid");}
     static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
     static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
@@ -2930,6 +2929,6 @@ struct Properties
 
     //! Build version of BeSqlite (e.g. 06.10.00.00) used to create this database; useful for diagnostics.
     static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
-    };
+};
 
 END_BENTLEY_SQLITE_NAMESPACE
