@@ -221,7 +221,7 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         ECSchemaComparer::Options options = ECSchemaComparer::Options(ECSchemaComparer::AppendDetailLevel::Partial, ECSchemaComparer::AppendDetailLevel::Partial);
         if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList, options) != SUCCESS)
             return ERROR;
-        
+       
 #if 0
         Utf8String str;
         m_changes.WriteToString(str);
@@ -241,7 +241,19 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         while (importItor != m_importedSchemaList.end())
             {
             if (schemaOfInterest.find((*importItor)->GetName().c_str()) == schemaOfInterest.end())
+                {
+#if 0
+                //Standard ecschema are skipped 
+                if (!ECSchema::IsStandardSchema((*importItor)->GetName()))
+                    {
+                    schemaManager.GetECDb().GetECDbImplR().GetIssueReporter().Report(
+                        ECDbIssueSeverity::Error,
+                        "Found another copy of existing ECSchema '%s' in imported schema list. ECDb expect client to use ECDb::GetSchemaLocater() to ensure any existing ecschemas are loaded from ECDb and not from anyother source.", (*importItor)->GetName().c_str());
+                    return ERROR;
+                    }
+#endif
                 importItor = m_importedSchemaList.erase(importItor);
+                }
             else
                 ++importItor;
             }

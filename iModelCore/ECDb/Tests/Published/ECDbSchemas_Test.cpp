@@ -478,7 +478,7 @@ TEST_F(ECDbSchemaTests, ImportECSchemaWithSameVersionAndSameContentTwice)
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
     auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
-    ASSERT_EQ(SUCCESS, schemaStatus);
+    ASSERT_EQ(ERROR, schemaStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -490,11 +490,13 @@ TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
     ECDbR db = saveTestProject.Create("MultipleSchemas.ecdb", L"BaseSchemaA.01.00.ecschema.xml", false);
 
     ECSchemaPtr ecSchema = nullptr;
-    ECSchemaReadContextPtr schemaContext = nullptr;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"SchoolSchema.01.00.ecschema.xml");
     auto schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
     ASSERT_EQ(SUCCESS, schemaStatus);
+    schemaContext->GetCache().Clear();
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"TestSchema.01.00.ecschema.xml");
     schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache());
