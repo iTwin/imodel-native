@@ -352,7 +352,6 @@ DbResult    Statement::BindDouble(int col, double val)  {return (DbResult)sqlite
 DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob(int col, int size) {return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
 DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
-DbResult    Statement::BindGuid(int col, BeGuidCR guid) {return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
@@ -367,6 +366,17 @@ Utf8CP      Statement::GetValueText(int col)    {return (Utf8CP) sqlite3_column_
 int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stmt, col);}
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Statement::BindGuid(int col, BeGuidCR guid) 
+    {
+    if (guid.IsValid())
+        return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);
+
+    return BindNull(col);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
