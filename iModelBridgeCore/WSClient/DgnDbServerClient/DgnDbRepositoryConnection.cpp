@@ -2220,10 +2220,10 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
 	int numOfRetries, 
 	bool longpolling
 )
-{
+    {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceResponse";
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
-        ->Then<DgnDbServerEventReponseResult>([=, &numOfRetries](const EventServiceResult& result)
+        ->Then<DgnDbServerEventReponseResult>([=](const EventServiceResult& result)
     {
         if (result.IsSuccess())
         {
@@ -2248,7 +2248,8 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
             {
                 if (SetEventSASToken())
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-                return GetEventServiceResponse(numOfRetries--, longpolling)->GetResult();
+                int nextLoopValue = numOfRetries - 1;
+                return GetEventServiceResponse(nextLoopValue, longpolling)->GetResult();
             }
             else
             {
