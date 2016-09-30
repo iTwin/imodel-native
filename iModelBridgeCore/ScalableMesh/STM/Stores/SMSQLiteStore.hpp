@@ -148,8 +148,15 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {                        
-    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, m_smSQLiteFile);
+    {                    
+    SMSQLiteFilePtr sqliteFilePtr;
+
+
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph);
+        assert(sqliteFilePtr.IsValid() == true);
+
+
+        dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
                     
     return true;    
     }

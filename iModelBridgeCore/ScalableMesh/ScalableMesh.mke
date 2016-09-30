@@ -284,6 +284,12 @@ $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
 
+$(o)SMSQLiteDiffsetFile$(oext) : $(stmDir)SMSQLiteDiffsetFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteDiffsetFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteClipDefinitionsFile$(oext) : $(stmDir)SMSQLiteClipDefinitionsFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteClipDefinitionsFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteFeatureFile$(oext) : $(stmDir)SMSQLiteFeatureFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFeatureFile.h ${MultiCompileDepends}
+
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}

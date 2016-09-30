@@ -827,7 +827,7 @@ void RunIntersectRayMetadata(WString& stmFileName)
                 }
             }
         }
-    std::cout << elementId << std::endl;
+    //std::cout << elementId << std::endl;
     }
 
 void RunClipPlaneTest()
@@ -911,8 +911,18 @@ void RunClipMeshTest()
         }
     }
 
+void RunUpdateTest(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
+_set_error_mode(_OUT_TO_MSGBOX);
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
 
@@ -1097,7 +1107,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     RunWriteTileTest(stmFileName, argv[2]);*/
 
    // RunClipPlaneTest();
-    RunClipMeshTest();
+   // RunClipMeshTest();
+    WString stmFileName(argv[1]);
+    RunUpdateTest(stmFileName);
     std::cout << "THE END" << std::endl;
     return 0;
 }

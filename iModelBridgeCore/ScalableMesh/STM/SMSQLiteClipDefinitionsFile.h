@@ -1,0 +1,42 @@
+#pragma once
+
+#include <Bentley/RefCounted.h>
+#include <BeSQLite\BeSQLite.h>
+#include <ScalableMesh/Import/DataSQLite.h>
+#include "ScalableMeshDb.h"
+#include "SMSQLiteFile.h"
+
+USING_NAMESPACE_BENTLEY_SQLITE
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
+    {
+    public:
+    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+    virtual void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions);
+    virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
+    virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+
+    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+    virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+
+    virtual size_t GetClipPolygonByteCount(int64_t clipID);
+    virtual size_t GetSkirtPolygonByteCount(int64_t skirtID);
+
+    static const SchemaVersion CURRENT_VERSION;
+
+    protected:
+        virtual SchemaVersion GetCurrentVersion() override
+            {
+            return SMSQLiteClipDefinitionsFile::CURRENT_VERSION;
+            }
+    virtual DbResult CreateTables() override;
+
+    virtual size_t GetNumberOfReleasedSchemas() override;
+    virtual const SchemaVersion* GetListOfReleasedVersions() override;
+    virtual double* GetExpectedTimesForUpdateFunctions() override;
+    virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate() override;
+
+    private:
+    };
