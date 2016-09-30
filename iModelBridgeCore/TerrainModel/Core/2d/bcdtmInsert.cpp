@@ -3577,6 +3577,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP
       for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
         {
          bcdtmFind_closestPointDtmObject(dtmP,p3dP->x,p3dP->y,&point) ;
+         if (point == dtmP->nullPnt) continue;
          if( bcdtmList_countNumberOfDtmFeaturesForPointDtmObject(dtmP,point,&numFeatures)) goto errexit ;
          if( numFeatures == 0 ) bcdtmFlag_setInsertPoint(dtmP,point) ;
         }
