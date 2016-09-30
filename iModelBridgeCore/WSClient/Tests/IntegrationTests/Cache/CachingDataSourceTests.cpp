@@ -9,6 +9,7 @@
 #include "CachingDataSourceTests.h"
 
 #include <WebServices/Cache/CachingDataSource.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
@@ -148,6 +149,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// Does not work on DgnDb0601-16Q2 as it does not have appropriate changes
 TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFile_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -419,9 +421,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
         auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
         for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
             {
+            auto schemaName = uploadedInstanceNavNode["Key_SchemaName"].asString();
+
+            // Trim away version
+            auto pos = schemaName.find('.');
+            if (pos != Utf8String::npos)
+                schemaName = schemaName.substr(0, pos);
+
             ObjectId uploadedInstanceId
                 (
-                uploadedInstanceNavNode["Key_SchemaName"].asString(),
+                schemaName,
                 uploadedInstanceNavNode["Key_ClassName"].asString(),
                 uploadedInstanceNavNode["Key_InstanceId"].asString()
                 );
@@ -533,8 +542,6 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
     auto result = ds->GetObjects(resultsKey, *query, ICachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
-    }
-
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -618,3 +625,48 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
         BeDebugLog(jsonStr.c_str());
         }
     }
+    
+TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
+    {
+    auto schemaPath = GetTestsAssetsDir();
+    schemaPath.AppendToPath(LR"(\ECSchemas\WSClient\Cache\DSCacheSchema.01.05.ecschema.xml)");
+
+    // Setup ECDb
+    ECDb db;
+    ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    // Setup Schema
+    auto context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(context->GetCache()));
+
+    ECClassCP rootClass = db.GetClassLocater().LocateClass("DSCacheSchema", "Root");
+    ASSERT_NE(nullptr, rootClass);
+
+    // Names
+    Utf8String rootName = "Foo";
+
+    // Test quety for same instance
+    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    // Insert one instnace
+    Json::Value rootInstance;
+    rootInstance["Name"] = rootName;
+    rootInstance["Persistence"] = 0;
+
+    JsonInserter inserter(db, *rootClass);
+    ASSERT_EQ(SUCCESS, inserter.Insert(rootInstance));
+
+    // Try again
+    statement.Reset();
+    statement.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+    EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
+    }
+
