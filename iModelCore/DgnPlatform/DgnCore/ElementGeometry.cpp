@@ -4666,11 +4666,22 @@ GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId catego
     if (nullptr == geomModel)
         return nullptr;
 
-    DPoint3d origin;
-    YawPitchRollAngles angles;
+    DPoint3d            origin;
+    RotMatrix           rMatrix;
+    YawPitchRollAngles  angles;
 
-    if (!YawPitchRollAngles::TryFromTransform(origin, angles, transform))
-        return nullptr;
+    transform.GetTranslation(origin);
+    transform.GetMatrix(rMatrix);
+
+    // NOTE: YawPitchRollAngles::TryFromRotMatrix compares against Angle::SmallAngle, which after
+    //       consulting with Earlin is too strict for our purposes and shouldn't be considered a failure.
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
+        {
+        RotMatrix   resultMatrix = angles.ToRotMatrix();
+
+        if (rMatrix.MaxDiff(resultMatrix) > 1.0e-5)
+            return nullptr;
+        }
 
     if (geomModel->Is3d())
         {
