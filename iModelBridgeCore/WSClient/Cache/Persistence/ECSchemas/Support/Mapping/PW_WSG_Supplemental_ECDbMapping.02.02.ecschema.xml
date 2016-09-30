@@ -96,18 +96,6 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="SavedSearchDirectParent" >
-        <ECCustomAttributes>
-            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="SpatialObjectLocation" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
