@@ -466,6 +466,17 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         if (categorySelector.IsValid())
             entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
 
+        auto displayStyle = GetDgnDb().Elements().Get<DisplayStyle>(spatialView->GetDisplayStyleId());
+
+        if (displayStyle.IsValid())
+            {
+            ColorDef    backgroundColor = displayStyle->GetBackgroundColor();
+            auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
+            colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
+            colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
+            colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
+            }
+
         viewsJson[view.GetId().ToString()] = entry;
         }
 
