@@ -320,6 +320,7 @@ private:
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
     virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
     virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
+    virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
 
@@ -464,6 +465,17 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
         if (categorySelector.IsValid())
             entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
+
+        auto displayStyle = GetDgnDb().Elements().Get<DisplayStyle>(spatialView->GetDisplayStyleId());
+
+        if (displayStyle.IsValid())
+            {
+            ColorDef    backgroundColor = displayStyle->GetBackgroundColor();
+            auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
+            colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
+            colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
+            colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
+            }
 
         viewsJson[view.GetId().ToString()] = entry;
         }
