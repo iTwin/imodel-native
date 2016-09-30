@@ -23,7 +23,9 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
         return ERROR;
 
     if (3 == sceneInfo.SRSOrigin.size())
-        transform = Transform::From (DPoint3d::FromXYZ (sceneInfo.SRSOrigin[0], sceneInfo.SRSOrigin[1], sceneInfo.SRSOrigin[2]));
+		{		
+        transform = Transform::From (DPoint3d::FromXYZ (sceneInfo.SRSOrigin[0], sceneInfo.SRSOrigin[1], sceneInfo.SRSOrigin[2]));		
+		}
 
     if (sceneInfo.SRS.empty())
         {
@@ -60,6 +62,12 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
         return ERROR;
         }
 
+	//Scale 3MX to UORS
+	DPoint3d uorScales(DPoint3d::From(1, 1, 1));
+    acute3dGCS->UorsFromCartesian(uorScales, uorScales);
+    Transform uorsTransform(Transform::FromScaleFactors(uorScales.x, uorScales.y, uorScales.z));        
+    transform = Transform::FromProduct (uorsTransform, transform);      
+
     transform.Multiply (sourceRange, range);
     
     DPoint3d        extent;
@@ -73,14 +81,7 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
     // 0 == SUCCESS, 1 == Wajrning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
         {        
-        transform = Transform::FromProduct (localTransform, transform);
-
-        DPoint3d uorScales(DPoint3d::From(1, 1, 1));
-        databaseGCS->UorsFromCartesian(uorScales, uorScales);
-        Transform uorsTransform(Transform::FromScaleFactors(uorScales.x, uorScales.y, uorScales.z));        
-
-        transform = Transform::FromProduct (uorsTransform, transform);        
-
+        transform = Transform::FromProduct (localTransform, transform);         
         return SUCCESS;
         }
 
