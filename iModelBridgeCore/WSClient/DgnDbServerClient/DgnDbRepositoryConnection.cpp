@@ -2282,7 +2282,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return GetEventServiceResponse(longPolling, 3)->Then<DgnDbServerEventResult>
+    return GetEventServiceResponse(3, longPolling)->Then<DgnDbServerEventResult>
         ([=] (DgnDbServerEventReponseResult& result)
         {
         if (result.IsSuccess())
