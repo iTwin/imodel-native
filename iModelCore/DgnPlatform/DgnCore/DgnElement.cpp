@@ -3985,6 +3985,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
+#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
     // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     IdSet<DgnGeometryPartId> parts;
@@ -3994,6 +3995,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
         if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
+#endif
 
     return status;
     }
@@ -4007,6 +4009,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
+#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
     // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     DgnElementId elementId = GetElementId();
@@ -4053,6 +4056,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
         if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, elementId, partId))
             status = DgnDbStatus::WriteError;
         }
+#endif
 
     return status;
     }
