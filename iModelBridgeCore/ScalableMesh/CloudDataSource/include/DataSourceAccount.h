@@ -80,6 +80,7 @@ public:
             DataSourceStatus            uploadSegments                  (DataSource &dataSource);
             DataSourceStatus            downloadSegments                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
+            DataSourceStatus            upload                          (DataSource & dataSource);
             DataSourceStatus            download                        (DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize);
 
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);

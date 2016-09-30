@@ -254,7 +254,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 buffer->updateReadSize(readSize);
                 }
             else
-                if (locator.getMode() == DataSourceMode_Write_Segmented)
+                if (locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
                     {
                                                             // Attempt to upload a single segment
                     std::wstring filename = locator.getSubPath() + L"-" + std::to_wstring(segmentIndex);
@@ -276,7 +276,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 
                 // TODO: if the transfer scheduler has full ownership of the buffer, then it should be deleted. 
                 //       For now, this is not the case and the buffer is deleted by the thread that asked the transfer.
-                if(locator.getMode() == DataSourceMode_Write_Segmented)
+                if(locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
                 {
                                                             // Upload of this buffer is complete, delete it
                     delete buffer;

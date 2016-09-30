@@ -36,19 +36,62 @@ class DataSourceAccountCURL : public DataSourceAccountCached
 
 protected:
 
-    class CURLHandleManager : public Manager<CURL*>
+    struct CURLHandle
+        {
+        private:
+        CURL*              m_curl    = nullptr;
+        struct curl_slist* m_headers = nullptr;
+        public:
+            CURLHandle() = delete;
+            CURLHandle(CURL* curl) : m_curl(curl)
+                {
+                }
+            CURL*    get(void)
+                {
+                return m_curl;
+                }
+            struct curl_slist* get_headers(void)
+                {
+                return m_headers;
+                }
+            void add_item_to_header(const char* item)
+                {
+                m_headers = curl_slist_append(m_headers, item);
+                }
+            void free_header_list(void)
+                {
+                curl_slist_free_all(m_headers);
+                m_headers = nullptr;
+                }
+
+            struct CURLDataMemoryBuffer {
+                DataSourceBuffer::BufferData* data;
+                size_t                        size;
+                };
+            struct CURLDataResponseHeader {
+                std::map<std::string, std::string> data;
+                };
+
+            static size_t CURLWriteHeaderCallback(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLDummyWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLReadDataCallback(char *bufptr, size_t size, size_t nitems, void *userp);
+            static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
+        };
+
+    class CURLHandleManager : public Manager<CURLHandle>
         {
         public:
             typedef std::wstring                            HandleName;
 
         public:
 
-            CURL *     getOrCreateCURLHandle(const HandleName &name, bool *created = nullptr);
-            CURL *     getOrCreateThreadCURLHandle(bool *created = nullptr);
+            CURLHandle*     getOrCreateCURLHandle(const HandleName &name, bool *created = nullptr);
+            CURLHandle*     getOrCreateThreadCURLHandle(bool *created = nullptr);
 
         private:
 
-            CURL *  createCURLHandle(const HandleName &name);
+            CURLHandle*     createCURLHandle(const HandleName &name);
 
 
         };
@@ -81,20 +124,4 @@ public:
         DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
-protected :
-
-       struct CURLDataMemoryBuffer {
-           DataSourceBuffer::BufferData* data;
-           size_t                        size;
-           };
-       struct CURLDataResponseHeader {
-           std::map<std::string, std::string> data;
-           };
-    
-       static size_t CURLWriteHeaderCallback        (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLWriteDataCallback          (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLDummyWriteDataCallback     (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLReadDataCallback           (char *bufptr,   size_t size, size_t nitems, void *userp);
-
-       static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
     };

@@ -54,7 +54,7 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
 
     OpenSSLMutexes::CreateInstance(CRYPTO_num_locks());
 
-    CRYPTO_set_locking_callback(DataSourceAccountCURL::OpenSSLLockingFunction);
+    CRYPTO_set_locking_callback(CURLHandle::OpenSSLLockingFunction);
 
     }
 
@@ -144,26 +144,23 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 
 DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
-    struct CURLDataMemoryBuffer buffer;
-    //struct CURLDataResponseHeader response_header;
+    struct CURLHandle::CURLDataMemoryBuffer buffer;
+    struct CURLHandle::CURLDataResponseHeader response_header;
 
     buffer.data = dest;
     buffer.size = 0;
 
     std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
 
-    CURL* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
-    curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&buffer);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, this->CURLWriteDataCallback);
-    //curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &response_header); // &&RB TODO : check for valid response header??
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header); // &&RB TODO : check for valid response header??
 
-    /* get it! */
-    CURLcode res = curl_easy_perform(curl_handle);
-
-    /* check for errors */
-    if (CURLE_OK != res)
+    if (CURLE_OK != curl_easy_perform(curl))
         {
         //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
@@ -178,63 +175,54 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
-    try
+    struct CURLHandle::CURLDataMemoryBuffer buffer;
+    buffer.data = source;
+    buffer.size = size;
+    struct CURLHandle::CURLDataResponseHeader response_header;
+
+    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    std::string contentLength = "Content-Length " + std::to_string(size);
+    std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
+    contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
+    contentDisposition += "\"";
+
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+
+    curl_handle->add_item_to_header("Content-Type: text/plain");
+    curl_handle->add_item_to_header(contentLength.c_str());
+    curl_handle->add_item_to_header(contentDisposition.c_str());
+
+
+    curl_easy_setopt(curl, CURLOPT_URL,        utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT,  CURLHEADER_SEPARATE);
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_easy_setopt(curl, CURLOPT_UPLOAD,           1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,    CURLHandle::CURLDummyWriteDataCallback);
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION,     CURLHandle::CURLReadDataCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION,   CURLHandle::CURLWriteHeaderCallback);
+    curl_easy_setopt(curl, CURLOPT_READDATA,         buffer);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA,       &response_header);
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, size);
+
+    /* put it! */
+    CURLcode res = curl_easy_perform(curl);
+
+    /* check for errors */
+    if (CURLE_OK != res)
         {
-        CURL *curl_handle;
-        curl_handle = curl_easy_init();
-
-        struct CURLDataMemoryBuffer buffer;
-        buffer.data = source;
-        buffer.size = size;
-
-        struct CURLDataResponseHeader header;
-
-        std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
-
-        std::string contentLength = "Content-Length " + std::to_string(size);
-        std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-        contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
-        contentDisposition += "\"";
-
-
-        struct curl_slist *headers = NULL;
-        headers = curl_slist_append(headers, "Content-Type: text/plain");
-        headers = curl_slist_append(headers, contentLength.c_str());
-        headers = curl_slist_append(headers, contentDisposition.c_str());
-
-        curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
-        curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
-        curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, CURLDummyWriteDataCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, CURLReadDataCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_READDATA, buffer);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &header);
-        curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, size);
-
-        /* put it! */
-        CURLcode res = curl_easy_perform(curl_handle);
-
-        /* check for errors */
-        if (CURLE_OK != res)
-            {
-            //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            throw;
-            }
-
-        curl_easy_cleanup(curl_handle);
-        }
-    catch (...)
-        {
+        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
         }
+
+    //curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L);
     //DataSourceBuffer::BufferData * download_buffer = new DataSourceBuffer::BufferData[size];
     //DataSourceBuffer::BufferSize readSize;
-    //downloadBlobSync(url, download_buffer, readSize, size);
+    //DataSourceAccountCURL::downloadBlobSync(url, download_buffer, readSize, size);
+
+    curl_handle->free_header_list();
 
     return DataSourceStatus();
     }
@@ -247,7 +235,7 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSource &dataSource, D
     return uploadBlobSync(url, dataSource.getSubPath().c_str(), source, size);
     }
 
-size_t DataSourceAccountCURL::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
+size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     struct CURLDataResponseHeader *header = (struct CURLDataResponseHeader *)userp;
 
@@ -271,7 +259,7 @@ size_t DataSourceAccountCURL::CURLWriteHeaderCallback(void * contents, size_t si
     return size * nmemb;
     }
 
-size_t DataSourceAccountCURL::CURLWriteDataCallback(void * contents, size_t size, size_t nmemb, void * userp)
+size_t DataSourceAccountCURL::CURLHandle::CURLWriteDataCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     size_t realsize = size * nmemb;
     struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
@@ -287,14 +275,14 @@ size_t DataSourceAccountCURL::CURLWriteDataCallback(void * contents, size_t size
     return realsize;
     }
 
-size_t DataSourceAccountCURL::CURLDummyWriteDataCallback(void * , size_t size, size_t nmemb, void * )
+size_t DataSourceAccountCURL::CURLHandle::CURLDummyWriteDataCallback(void * , size_t size, size_t nmemb, void * )
     {
     size_t realsize = size * nmemb;
 
     return realsize;
     }
 
-size_t DataSourceAccountCURL::CURLReadDataCallback(char * bufptr, size_t size, size_t nitems, void * userp)
+size_t DataSourceAccountCURL::CURLHandle::CURLReadDataCallback(char * bufptr, size_t size, size_t nitems, void * userp)
     {
     struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
     size_t sizeToRead = std::min(mem->size, size * nitems);
@@ -311,7 +299,7 @@ size_t DataSourceAccountCURL::CURLReadDataCallback(char * bufptr, size_t size, s
     return 0;
     }
 
-void DataSourceAccountCURL::OpenSSLLockingFunction(int mode, int n, const char * /*file*/, int /*line*/)
+void DataSourceAccountCURL::CURLHandle::OpenSSLLockingFunction(int mode, int n, const char * /*file*/, int /*line*/)
     {
     auto mutexes = OpenSSLMutexes::Instance()->GetMutexes();
     if (mode & CRYPTO_LOCK)
@@ -320,12 +308,12 @@ void DataSourceAccountCURL::OpenSSLLockingFunction(int mode, int n, const char *
         mutexes[n].unlock();
     }
 
-CURL * DataSourceAccountCURL::CURLHandleManager::getOrCreateCURLHandle(const HandleName & name, bool * created)
+DataSourceAccountCURL::CURLHandle* DataSourceAccountCURL::CURLHandleManager::getOrCreateCURLHandle(const HandleName & name, bool * created)
     {
-    CURL **    curl_handle = nullptr;
+    CURLHandle *    curl_handle = nullptr;
 
     // Attempt to get the named CURL handle
-    curl_handle = Manager<CURL*>::get(name);
+    curl_handle = Manager<DataSourceAccountCURL::CURLHandle>::get(name);
     if (curl_handle)
         {
         // If requested, flag that the DataSource existed and was not created
@@ -333,7 +321,7 @@ CURL * DataSourceAccountCURL::CURLHandleManager::getOrCreateCURLHandle(const Han
             *created = false;
         // Return the found DataSource
         assert(curl_handle != nullptr);
-        return *curl_handle;
+        return curl_handle;
         }
 
     // If requested, flag that the DataSource was created
@@ -344,7 +332,7 @@ CURL * DataSourceAccountCURL::CURLHandleManager::getOrCreateCURLHandle(const Han
     return createCURLHandle(name);
     }
 
-CURL * DataSourceAccountCURL::CURLHandleManager::getOrCreateThreadCURLHandle(bool * created)
+DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::getOrCreateThreadCURLHandle(bool * created)
     {
     std::wstringstream      name;
     DataSourceAccountCURL::CURLHandleManager::HandleName        handleName;
@@ -358,18 +346,20 @@ CURL * DataSourceAccountCURL::CURLHandleManager::getOrCreateThreadCURLHandle(boo
     return this->getOrCreateCURLHandle(handleName, created);
     }
 
-CURL * DataSourceAccountCURL::CURLHandleManager::createCURLHandle(const HandleName & name)
+DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::createCURLHandle(const HandleName & name)
     {
-    CURL* curl_handle = curl_easy_init();
+    CURL* curl = curl_easy_init();
 
-    curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
     //curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
     //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
     //curl_easy_setopt(curl_handle, CURLOPT_STDERR, std::cout);
-    if (Manager<CURL*>::create(name, new CURL*(curl_handle)) == NULL)
+    CURLHandle* curl_handle = new CURLHandle(curl);
+    if (Manager<DataSourceAccountCURL::CURLHandle>::create(name, curl_handle) == NULL)
         {
+        delete curl_handle;
         return nullptr;
         }
 

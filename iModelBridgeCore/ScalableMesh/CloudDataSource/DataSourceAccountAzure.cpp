@@ -283,3 +283,13 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
     return SuperCURL::downloadBlobSync(url, source, readSize, size);
     }
+
+DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+    return SuperCURL::uploadBlobSync(url, filename, source, size);
+    }

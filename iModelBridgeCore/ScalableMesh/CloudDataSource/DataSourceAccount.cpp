@@ -190,6 +190,25 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
     return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
     }
 
+DataSourceStatus DataSourceAccount::upload(DataSource &dataSource)
+    {
+
+    DataSourceBuffered      *       dataSourceBuffered;
+    DataSourceBuffer        *       buffer;
+                                                            // Only buffered datasources are supported, so downcast
+    if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Transfer ownership of the DataSource's buffer
+    if ((buffer = dataSourceBuffered->transferBuffer()) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+
+    buffer->setSegmented(false);
+                                                            // Transfer the buffer to the upload scheduler, where it will eventually be deleted
+    getTransferScheduler().addBuffer(*buffer);
+                                                            // Wait for all segments to complete
+    return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
+    }
+
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
     {
     (void)dataSource;

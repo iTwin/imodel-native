@@ -647,8 +647,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     DataSourceURL dataSourceURL = m_pathToHeaders;
     dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin"));
 
-    bool created = false;
-    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
+    DataSource *dataSource = this->GetDataSourceAccount()->createDataSource();
     if (dataSource == nullptr)
         {
         assert(false); // problem creating new datasource
@@ -677,6 +676,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         assert(false); // problem closing a datasource
         return 0;
         }
+
+    this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
     //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
@@ -1101,7 +1103,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
         //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
         //}
-        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+        DataSource *dataSource = m_dataSourceAccount->createDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
 
         //dataSource->setSegmentSize(1024 * 32);
@@ -1147,6 +1149,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         //}
         delete[] data;
         delete[] dataArrayTmp;
+
+        m_dataSourceAccount->destroyDataSource(dataSource);
         }
 
     return blockID;   
@@ -1437,8 +1441,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     DataSourceURL    url(m_dataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
-    bool created = false;
-    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
+    DataSource *dataSource = this->GetDataSourceAccount()->createDataSource();
     assert(dataSource != nullptr);
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -1458,6 +1461,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     //std::lock_guard<mutex> clk(s_consoleMutex);
     //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
     //}
+    this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
     return HPMBlockID(blockID.m_integerID);
     }
@@ -1545,7 +1549,7 @@ inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, 
     DataSourceURL    url(m_pDataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
-    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource(/*&created*/);
+    DataSource *dataSource = dataSourceAccount->createDataSource();
     assert(dataSource != nullptr);
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -1565,6 +1569,7 @@ inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, 
                                 //std::lock_guard<mutex> clk(s_consoleMutex);
                                 //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
                                 //}
+    dataSourceAccount->destroyDataSource(dataSource);
     }
 
 inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, uint64_t blockSizeKnown)

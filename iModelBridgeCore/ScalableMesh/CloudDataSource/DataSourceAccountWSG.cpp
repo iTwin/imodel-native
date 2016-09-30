@@ -97,14 +97,14 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, 
 
 DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-    CURL* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, this->getWSGToken().c_str());
+    CURL* curl = curl_handle->get();
 
+    curl_handle->add_item_to_header(this->getWSGToken().c_str());
 
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
+    curl_easy_setopt(curl, CURLOPT_CAINFO,     this->getAccountSSLCertificatePath().c_str());
 
     // indicate that we want to download the data (instead of just information about the data)
     url += L"/$file";
@@ -122,66 +122,14 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSourceURL &url, const 
 
     return uploadBlobSync(url, etag, source, size);
 #else
-    try
-        {
-        CURL *curl_handle;
-        curl_handle = curl_easy_init();
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
-        struct CURLDataMemoryBuffer buffer;
-        buffer.data = source;
-        buffer.size = size;
+    CURL* curl = curl_handle->get();
+    curl_handle->add_item_to_header(this->getWSGToken().c_str());
 
-        struct CURLDataResponseHeader header;
+    curl_easy_setopt(curl, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
 
-        std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
-
-        std::string contentLength = "Content-Length " + std::to_string(size);
-        std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-        contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
-        contentDisposition += "\"";
-
-
-        struct curl_slist *headers = NULL;
-        headers = curl_slist_append(headers, this->getWSGToken().c_str());
-        headers = curl_slist_append(headers, "Content-Type: text/plain");
-        headers = curl_slist_append(headers, contentLength.c_str());
-        headers = curl_slist_append(headers, contentDisposition.c_str());
-
-        curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);        // &&RB TODO : Ask Francis.Boily about his server certificate
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
-        curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, CURLDummyWriteDataCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, CURLReadDataCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_READDATA, buffer);
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &header);
-        curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, size);
-
-        /* put it! */
-        CURLcode res = curl_easy_perform(curl_handle);
-
-        /* check for errors */
-        if (CURLE_OK != res)
-            {
-            //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            throw;
-            }
-
-        curl_easy_cleanup(curl_handle);
-        }
-    catch (...)
-        {
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-        }
-    //DataSourceBuffer::BufferData * download_buffer = new DataSourceBuffer::BufferData[size];
-    //DataSourceBuffer::BufferSize readSize;
-    //downloadBlobSync(url, download_buffer, readSize, size);
-
-    return DataSourceStatus();
+    return Super::uploadBlobSync(url, filename, source, size);
 #endif
     }
 
@@ -195,64 +143,68 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSource &dataSource, Da
 
 DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
 {
-    try
-    {
-    CURL *curl_handle;
-    curl_handle = curl_easy_init();
-
-    struct CURLDataMemoryBuffer buffer;
-    buffer.data = source;
-    buffer.size = size;
-
-    struct CURLDataResponseHeader header;
-
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
-
-    std::string ETag = "If-Match: " + etag;
-    std::string contentRange = "Content-Range: bytes 0-";
-    contentRange += std::to_string(size - 1) + "/" + std::to_string(size);
-    std::string contentLength = "Content-Length " + std::to_string(size);
-    
-
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, this->getWSGToken().c_str());
-    headers = curl_slist_append(headers, "Content-Type: text/plain");
-    headers = curl_slist_append(headers, ETag.c_str());
-    headers = curl_slist_append(headers, contentRange.c_str());
-    headers = curl_slist_append(headers, contentLength.c_str());
-
-    curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
-    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, CURLReadDataCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_READDATA, buffer);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &header);
-    curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, size);
-
-    /* put it! */
-    CURLcode res = curl_easy_perform(curl_handle);
-
-    /* check for errors */
-    if (CURLE_OK != res)
-        {
-        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        throw;
-        }
-
-    curl_easy_cleanup(curl_handle);
-        }
-    catch (...)
-    {
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-    }
-    //DataSourceBuffer::BufferData * download_buffer = new DataSourceBuffer::BufferData[size];
-    //DataSourceBuffer::BufferSize readSize;
-    //downloadBlobSync(url, download_buffer, readSize, size);
+(void)url;
+(void)etag;
+(void)source;
+(void)size;
+    //try
+    //{
+    //CURL *curl_handle;
+    //curl_handle = curl_easy_init();
+    //
+    //struct CURLDataMemoryBuffer buffer;
+    //buffer.data = source;
+    //buffer.size = size;
+    //
+    //struct CURLDataResponseHeader header;
+    //
+    //std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    //
+    //std::string ETag = "If-Match: " + etag;
+    //std::string contentRange = "Content-Range: bytes 0-";
+    //contentRange += std::to_string(size - 1) + "/" + std::to_string(size);
+    //std::string contentLength = "Content-Length " + std::to_string(size);
+    //
+    //
+    //struct curl_slist *headers = NULL;
+    //headers = curl_slist_append(headers, this->getWSGToken().c_str());
+    //headers = curl_slist_append(headers, "Content-Type: text/plain");
+    //headers = curl_slist_append(headers, ETag.c_str());
+    //headers = curl_slist_append(headers, contentRange.c_str());
+    //headers = curl_slist_append(headers, contentLength.c_str());
+    //
+    //curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
+    //curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
+    //curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
+    //curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
+    //curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, CURLReadDataCallback);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl_handle, CURLOPT_READDATA, buffer);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &header);
+    //curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, size);
+    //
+    ///* put it! */
+    //CURLcode res = curl_easy_perform(curl_handle);
+    //
+    ///* check for errors */
+    //if (CURLE_OK != res)
+    //    {
+    //    //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    //    throw;
+    //    }
+    //
+    //curl_easy_cleanup(curl_handle);
+    //    }
+    //catch (...)
+    //{
+    //    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+    //}
+    ////DataSourceBuffer::BufferData * download_buffer = new DataSourceBuffer::BufferData[size];
+    ////DataSourceBuffer::BufferSize readSize;
+    ////downloadBlobSync(url, download_buffer, readSize, size);
 
     return DataSourceStatus();
 }
@@ -269,51 +221,55 @@ DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken()
 
 DataSourceAccountWSG::WSGEtag DataSourceAccountWSG::getWSGHandshake(const DataSourceURL & url, const DataSourceURL & filename, DataSourceBuffer::BufferSize size)
     {
-    CURL *curl_handle;
-    curl_handle = curl_easy_init();
-
-    struct CURLDataResponseHeader response_header;
-
-    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
-
-    std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
-    contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
-    contentDisposition += "\"";
-
-    std::string contentRange = "Content-Range: bytes */" + std::to_string(size);
-
-
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, this->getWSGToken().c_str());
-    headers = curl_slist_append(headers, contentDisposition.c_str());
-    headers = curl_slist_append(headers, contentRange.c_str());
-    headers = curl_slist_append(headers, "Content-Length: 0");
-
-    curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
-    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &response_header);
-
-    /* perform handshake */
-    CURLcode res = curl_easy_perform(curl_handle);
-
-    /* check for errors */
-    if (CURLE_OK != res)
-        {
-        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        throw;
-        }
-
-    assert(1 == response_header.data.count("ETag")); // ETag not returned by handshake
-
-    curl_easy_cleanup(curl_handle);
-   
-    return DataSourceAccountWSG::WSGEtag(response_header.data["ETag"]);
+    (void)url;
+    (void)filename;
+    (void)size;
+    //CURL *curl_handle;
+    //curl_handle = curl_easy_init();
+    //
+    //struct CURLDataResponseHeader response_header;
+    //
+    //std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+    //
+    //std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
+    //contentDisposition += std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(filename);
+    //contentDisposition += "\"";
+    //
+    //std::string contentRange = "Content-Range: bytes */" + std::to_string(size);
+    //
+    //
+    //struct curl_slist *headers = NULL;
+    //headers = curl_slist_append(headers, this->getWSGToken().c_str());
+    //headers = curl_slist_append(headers, contentDisposition.c_str());
+    //headers = curl_slist_append(headers, contentRange.c_str());
+    //headers = curl_slist_append(headers, "Content-Length: 0");
+    //
+    //curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
+    //curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
+    //curl_easy_setopt(curl_handle, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
+    //curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, &response_header);
+    //
+    ///* perform handshake */
+    //CURLcode res = curl_easy_perform(curl_handle);
+    //
+    ///* check for errors */
+    //if (CURLE_OK != res)
+    //    {
+    //    //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    //    throw;
+    //    }
+    //
+    //assert(1 == response_header.data.count("ETag")); // ETag not returned by handshake
+    //
+    //curl_easy_cleanup(curl_handle);
+    //
+    //return DataSourceAccountWSG::WSGEtag(response_header.data["ETag"]);
+    return DataSourceAccountWSG::WSGEtag();
     }
 
 bool DataSourceAccountWSG::isValid(void)
