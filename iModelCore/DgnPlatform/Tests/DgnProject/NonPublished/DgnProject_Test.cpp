@@ -997,6 +997,7 @@ TEST_F(ImportTests, simpleSchemaImport)
     BeFileName searchDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
     searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     schemaContext->AddSchemaPath(searchDir.GetName());
 
     ECN::ECSchemaPtr schema = nullptr;
