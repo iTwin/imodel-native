@@ -73,7 +73,7 @@ protected:
     size_t              m_maxTilesPerDirectory;
     bool                m_publishPolylines;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines = false, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual TileGenerationCacheCR _GetCache() const = 0;
@@ -98,9 +98,10 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
     ViewControllerCR GetViewController() const { return m_viewController; }
-    DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
+    DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
+
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
@@ -111,6 +112,7 @@ public:
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
+    TILEPUBLISHER_EXPORT bool IsGeolocated () const;
 
     template<typename T> static Json::Value IdSetToJson(T const& ids)
         {
