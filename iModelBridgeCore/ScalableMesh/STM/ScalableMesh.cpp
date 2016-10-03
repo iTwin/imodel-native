@@ -59,13 +59,6 @@ extern bool s_is_virtual_grouping;
 
 ScalableMeshScheduler* s_clipScheduler = nullptr;
 std::mutex s_schedulerLock;
-/*
-#include <msoutput.fdf>
-#include <mstypes.h>
-*/
-/*------------------------------------------------------------------+
-| Include COGO definitions                                          |
-+------------------------------------------------------------------*/
 
 /*----------------------------------------------+
 | Constant definitions                          |
