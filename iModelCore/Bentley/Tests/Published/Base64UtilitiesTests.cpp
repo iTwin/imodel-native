@@ -142,7 +142,8 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeByteStream)
 
     ByteStream decodedStream;
     EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedStream, encoded.c_str(), encoded.size()));
-    ASSERT_STREQ(expectedString.c_str(), (CharCP)decodedStream.GetData());
+    Utf8String decodedString((CharCP)decodedStream.GetData(), expectedString.size());
+    ASSERT_STREQ(expectedString.c_str(), decodedString.c_str());
 
     // Decode empty
     ByteStream decodedEmpty;
@@ -152,7 +153,8 @@ TEST_F(Base64UtilitiesTests, EncodeDecodeByteStream)
     // Decode partial
     ByteStream decodedPartial;
     EXPECT_TRUE(BentleyStatus::SUCCESS == Base64Utilities::Decode(decodedPartial, "Rm9vMTIzIQ==Garbage", 12));
-    ASSERT_STREQ(expectedString.c_str(), (CharCP)decodedPartial.GetData());
+    Utf8String decodedPartialString((CharCP)decodedPartial.GetData(), expectedString.size());
+    ASSERT_STREQ(expectedString.c_str(), decodedPartialString.c_str());
 
     }
 
