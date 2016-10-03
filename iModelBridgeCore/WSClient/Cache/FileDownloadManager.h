@@ -27,20 +27,12 @@ struct FileDownloadManager
         struct PromiseAsyncTask : PackagedAsyncTask<T>
             {
             public:
-                PromiseAsyncTask()
-                    : PackagedAsyncTask<T>(nullptr)
-                    {
-                    }
-
-                virtual void _OnExecute()
-                    {
-                    // Do Nothing
-                    }
-
+                PromiseAsyncTask() : PackagedAsyncTask<T>(nullptr) {}
+                virtual void _OnExecute() {}
                 void SetValue(const T& value)
                     {
-                    m_result = value;
-                    Execute();
+                    PackagedAsyncTask<T>::m_result = value;
+                    PackagedAsyncTask<T>::Execute();
                     }
             };
 
@@ -88,7 +80,12 @@ struct FileDownloadManager::FileDownloadListener : ICancellationListener, std::e
         FileDownloadListener(HttpRequest::ProgressCallbackCR onProgress, std::shared_ptr<FileDownload> fileDownload);
 
     public:
-        static std::shared_ptr<FileDownloadListener> Create(ICancellationTokenPtr ct, HttpRequest::ProgressCallbackCR onProgress, std::shared_ptr<FileDownload> fileDownload);
+        static std::shared_ptr<FileDownloadListener> Create
+            (
+            ICancellationTokenPtr ct,
+            HttpRequest::ProgressCallbackCR onProgress,
+            std::shared_ptr<FileDownload> fileDownload
+            );
 
         AsyncTaskPtr<ICachingDataSource::Result> GetAsyncTask();
 
