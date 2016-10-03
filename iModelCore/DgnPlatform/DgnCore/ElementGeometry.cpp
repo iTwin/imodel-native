@@ -3615,10 +3615,16 @@ void GeometryCollection::Iterator::ToNext()
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                {
+                reader.Get(m_egOp, m_state->m_localRange);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 DgnGeometryPartId geomPartId;
-                Transform     geomToSource;
+                Transform         geomToSource;
 
                 m_state->m_geomStreamEntryId.Increment();
 
@@ -3627,6 +3633,7 @@ void GeometryCollection::Iterator::ToNext()
 
                 m_state->m_geomStreamEntryId.SetActiveGeometryPart(geomPartId);
                 m_state->m_geomToSource = geomToSource;
+                m_state->m_localRange = DRange3d::NullRange();
                 m_state->m_geometry = nullptr;
 
                 if (m_state->m_geomParams.GetCategoryId().IsValid())
@@ -3665,10 +3672,12 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb) : m_state(dgnDb)
+GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId, TransformCR sourceToWorld) : m_state(dgnDb)
     {
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
+    m_state.m_geomParams.SetCategoryId(categoryId);
+    m_state.m_sourceToWorld = sourceToWorld;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4628,6 +4637,55 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(DgnDbR db, bool is3d)
         return new GeometryBuilder(db, DgnCategoryId(), Placement3d());
 
     return new GeometryBuilder(db, DgnCategoryId(), Placement2d());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStreamCR stream)
+    {
+    DgnCategoryId categoryId = source.GetCategoryId();
+
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    GeometryBuilderPtr builder;
+
+    if (nullptr != source.ToGeometrySource3d())
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
+    else
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
+
+    if (!builder.IsValid())
+        return nullptr;
+    
+    GeometryCollection collection(stream, source.GetSourceDgnDb(), source.GetCategoryId(), source.GetPlacementTransform());
+
+    for (auto iter : collection)
+        {
+        builder->Append(iter.GetGeometryParams());
+
+        DgnGeometryPartId partId = iter.GetGeometryPartId();
+
+        if (partId.IsValid())
+            {
+            builder->Append(partId, iter.GetGeometryToSource());
+            continue;
+            }
+
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+
+        BeAssert(geom.IsValid());
+        if (!geom.IsValid())
+            continue;
+
+        if (!iter.GetSubGraphicLocalRange().IsNull())
+            builder->SetAppendAsSubGraphics();
+
+        builder->Append(*geom);
+        }
+
+    return builder;
     }
 
 /*---------------------------------------------------------------------------------**//**
