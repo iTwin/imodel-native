@@ -631,6 +631,7 @@ TEST_F (CategoryTests, QueryByElementId)
 //    //EXPECT_TRUE(overrides == overridesFromJson);
 //
 //    }
+#ifdef WIP_MERGE
 TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     {
     SetupSeedProject();
@@ -712,3 +713,4 @@ TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     EXPECT_TRUE(1 == appearance2.GetTransparency());
     EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
     }
+#endif
