@@ -55,7 +55,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
     EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
-TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_CallsBuddiToGetUrlEveryTime)
+TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlButAlsoCallBuddiGet)
     {
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
@@ -64,12 +64,15 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_CallsBuddiToGetUrlE
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("B"))));
-    EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("C"))));
-    EXPECT_EQ("C", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
     }
 
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddiCannotConnect_ReturnsLastCachedUrl)
@@ -95,10 +98,15 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBu
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
 
     BeThreadUtilities::BeSleep(10);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("B"))));
+    EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+
+    ON_CALL(*client, GetUrl(_, _)).WillByDefault(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error({}))));
     EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
@@ -136,21 +144,6 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
 
     EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(newValue));
     EXPECT_EQ("NewUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    }
-
-TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsStringAndBuddiConnectionError_ReturnsOldUrl)
-    {
-    auto client = std::make_shared<MockBuddiClient>();
-    MockLocalState localState;
-    ON_CALL(localState, GetValue(_, _)).WillByDefault(Return(Json::Value::null));
-    ON_CALL(localState, SaveValue(_, _, _)).WillByDefault(Return());
-
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
-
-    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return("OldUrl"));
-
-    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error(BuddiError::Status::ConnectionError))));
-    EXPECT_EQ("OldUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
 TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
