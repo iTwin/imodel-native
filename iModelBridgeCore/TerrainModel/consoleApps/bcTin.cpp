@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcTin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/terrainimporter.h"
@@ -15,6 +15,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
+BENTLEYDTM_EXPORT bool sOutputToConsole;
 
 static long numDtmFeatures=0 ;
 //XM--static DTM_DAT_OBJ *dataP=NULL ;
@@ -178,6 +179,7 @@ int wmain(int argc, wchar_t *argv[])
 ** Initialise DTM
 */
  bcdtmInitialise() ;
+ sOutputToConsole = true;
  //test ();
  if( fpLOG != NULL ) { fclose(fpLOG) ; fpLOG = NULL ; }
  bcdtmInitialise_openLogFile(L"bcTin.log") ;
