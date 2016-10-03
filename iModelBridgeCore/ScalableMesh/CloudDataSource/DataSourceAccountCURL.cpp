@@ -196,11 +196,11 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
 
     curl_easy_setopt(curl, CURLOPT_URL,        utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
-    curl_easy_setopt(curl, CURLOPT_HEADEROPT,  CURLHEADER_SEPARATE);
+    //curl_easy_setopt(curl, CURLOPT_HEADEROPT,  CURLHEADER_SEPARATE); // This is for connections with a proxy
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
     curl_easy_setopt(curl, CURLOPT_UPLOAD,           1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,    CURLHandle::CURLDummyWriteDataCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,    CURLHandle::CURLDummyWriteDataCallback); // No output to console
     curl_easy_setopt(curl, CURLOPT_READFUNCTION,     CURLHandle::CURLReadDataCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION,   CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_READDATA,         buffer);
