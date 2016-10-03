@@ -16,16 +16,16 @@ using namespace BentleyApi::Dgn::Render::Tile3d;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchIdMap::BatchIdMap()
+BatchIdMap::BatchIdMap(TileSource source) : m_source(source)
     {
-    // "no element" always maps to the first batch table index
-    GetBatchId(DgnElementId());
+    // Invalid ID always maps to the first batch table index
+    GetBatchId(BeInt64Id());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
+uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
     {
     auto found = m_map.find(elemId);
     if (m_map.end() == found)
@@ -35,7 +35,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
             return 0;   // ###TODO: avoid hitting this limit...
 
         m_list.push_back(elemId);
-        found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
+        found = m_map.insert(bmap<BeInt64Id, uint16_t>::value_type(elemId, batchId)).first;
         }
 
     return found->second; 
@@ -46,53 +46,70 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
     {
-    // ###TODO: Assumes 3d-only...
-    // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                                "WHERE e.Id=? AND g.ElementId=e.Id";
-
-    BeSQLite::Statement stmt;
-    stmt.Prepare(db, s_sql);
-
-    Json::Value elementIds(Json::arrayValue);
-    Json::Value modelIds(Json::arrayValue);
-    Json::Value categoryIds(Json::arrayValue);
-
-    for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+    switch (m_source)
         {
-        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-        DgnModelId modelId;
-        DgnCategoryId categoryId;
-
-        stmt.BindId(1, *elemIter);
-        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+        case TileSource::None:
+            return;
+        case TileSource::Model:
             {
-            modelId = stmt.GetValueId<DgnModelId>(0);
-            categoryId = stmt.GetValueId<DgnCategoryId>(1);
+            Json::Value modelIds(Json::arrayValue);
+            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
+                modelIds.append(idIter->ToString());
+
+            value["model"] = modelIds;
+            return;
             }
+        case TileSource::Element:
+            {
+            // ###TODO: Assumes 3d-only...
+            // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
+            static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+                "WHERE e.Id=? AND g.ElementId=e.Id";
 
-        modelIds.append(modelId.ToString());
-        categoryIds.append(categoryId.ToString());
-        stmt.Reset();
+            BeSQLite::Statement stmt;
+            stmt.Prepare(db, s_sql);
+
+            Json::Value elementIds(Json::arrayValue);
+            Json::Value modelIds(Json::arrayValue);
+            Json::Value categoryIds(Json::arrayValue);
+
+            for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+                {
+                elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+                DgnModelId modelId;
+                DgnCategoryId categoryId;
+
+                stmt.BindId(1, *elemIter);
+                if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+                    {
+                    modelId = stmt.GetValueId<DgnModelId>(0);
+                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
+                    }
+
+                modelIds.append(modelId.ToString());
+                categoryIds.append(categoryId.ToString());
+                stmt.Reset();
+                }
+
+            value["element"] = elementIds;
+            value["model"] = modelIds;
+            value["category"] = categoryIds;
+            }
         }
-
-    value["element"] = elementIds;
-    value["model"] = modelIds;
-    value["category"] = categoryIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,7 +208,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 PublisherContext::Status TilePublisher::Publish()
     {
     if (m_meshes.empty())
-        return PublisherContext::Status::Success;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     
@@ -217,9 +234,9 @@ PublisherContext::Status TilePublisher::Publish()
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
-    // B3DM header = 5 32-bit values
+    // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 20;
+    static const size_t s_b3dmHeaderSize = 24;
     static const char s_b3dmMagic[] = "b3dm";
     static const uint32_t s_b3dmVersion = 1;
     uint32_t b3dmNumBatches = m_batchIds.Count();
@@ -228,8 +245,9 @@ PublisherContext::Status TilePublisher::Publish()
     std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
     AppendUInt32(s_b3dmVersion);
     AppendUInt32(b3dmLength);
-    AppendUInt32(b3dmNumBatches);
     AppendUInt32(batchTableStrLen);
+    AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+    AppendUInt32(b3dmNumBatches);
     std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
 
     std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
@@ -757,8 +775,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     if (mesh.ValidIdsPresent())
         {
-        batchIds.reserve(mesh.ElementIds().size());
-        for (auto const& elemId : mesh.ElementIds())
+        batchIds.reserve(mesh.EntityIds().size());
+        for (auto const& elemId : mesh.EntityIds())
             batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
         attr["attributes"]["BATCHID"] = accBatchId;
@@ -849,11 +867,48 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint3d  cartesianFromRadians (double longitude, double latitude, double height = 0.0)
+    {
+    DPoint3d    s_wgs84RadiiSquared = DPoint3d::From (6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+    double      cosLatitude = cos(latitude);
+    DPoint3d    normal, scratchK;
+
+    normal.x = cosLatitude * cos(longitude);
+    normal.y = cosLatitude * sin(longitude);
+    normal.z = sin(latitude);
+
+    normal.Normalize();
+    scratchK.x = normal.x * s_wgs84RadiiSquared.x;
+    scratchK.y = normal.y * s_wgs84RadiiSquared.y;
+    scratchK.z = normal.z * s_wgs84RadiiSquared.z;
+
+    double  gamma = sqrt(normal.DotProduct (scratchK));
+
+    DPoint3d    earthPoint = DPoint3d::FromScale(scratchK, 1.0 / gamma);
+    DPoint3d    heightDelta = DPoint3d::FromScale (normal, height);
+
+    return DPoint3d::FromSumOf (earthPoint, heightDelta);
+    };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::IsGeolocated () const
+    {
+    return nullptr != GetDgnDb().Units().GetDgnGCS();
+    }
+    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
     : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
@@ -867,15 +922,24 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+    DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
         {
-        m_tileToEcef    = Transform::FromIdentity ();   
+        double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
+
+        if (nullptr != geoLocation)
+            {
+            longitude = geoLocation->longitude;
+            latitude  = geoLocation->latitude;
+            }
+        ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }
     else
         {
         GeoPoint        originLatLong, northLatLong;
-        DPoint3d        ecfOrigin, ecfNorth, north = origin;
+        DPoint3d        north = origin;
     
         north.y += 100.0;
 
@@ -884,19 +948,20 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 
         dgnGCS->LatLongFromUors (northLatLong, north);
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
-
-        DVec3d      zVector, yVector;
-        RotMatrix   rMatrix;
-
-        zVector.Normalize ((DVec3dCR) ecfOrigin);
-        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
-
-        rMatrix.SetColumn (yVector, 1);
-        rMatrix.SetColumn (zVector, 2);
-        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
-
-        m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
         }
+
+
+    DVec3d      zVector, yVector;
+    RotMatrix   rMatrix;
+
+    zVector.Normalize ((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+    rMatrix.SetColumn (yVector, 1);
+    rMatrix.SetColumn (zVector, 2);
+    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+
+    m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -952,12 +1017,24 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
+    if (_OmitFromTileset(tile))
+        {
+        range = DRange3d::NullRange();
+        return;
+        }
+
+    DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
+
+    // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
+    // In that case we can trust the published ranges and use them to only write non-empty nodes and branches.
+    // In the server case we don't have this information and have to trust the tile ranges.  
+    if (!_AllTilesPublished() && publishedRange.IsNull())
+        publishedRange = tile.GetTileRange();
+    
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
-    DRange3d        contentRange;
-
-    contentRange.IntersectionOf (tile.GetTileRange(), tile.GetPublishedRange());
+    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
     range = contentRange;
 
     if (!tile.GetChildren().empty())
@@ -1011,15 +1088,18 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         }
+    if (range.IsNull())
+        return;
+
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
-    root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
-    
-    // The content bounding box represents the actual 
     if (!contentRange.IsNull())
-        TilePublisher::WriteBoundingVolume (root[JSON_Content], tile.GetPublishedRange());
+        {
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1105,7 +1185,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
     Status                  status;
-    static size_t           s_maxPointsPerTile = 20000;
+    static size_t           s_maxPointsPerTile = 200000;
 
     if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
         return status;
@@ -1181,3 +1261,116 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     return Status::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
+    {
+    Json::Value     modelJson (Json::objectValue);
+    
+    for (auto& modelId : modelIds)
+        {
+        auto const&  model = GetDgnDb().Models().GetModel (modelId);
+        if (model.IsValid())
+            modelJson[modelId.ToString()] = model->GetName();
+        }
+
+    return modelJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
+    {
+    Json::Value categoryJson (Json::objectValue); 
+    
+    for (auto& categoryId : categoryIds)
+        {
+        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
+
+        if (category.IsValid())
+            categoryJson[categoryId.ToString()] = category->GetCategoryName();
+        }
+
+    return categoryJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+    {
+    OrthographicViewDefinitionCP    orthographicView;
+    CameraViewDefinitionCP          cameraView;
+    DVec3d                          xVec, yVec, zVec;
+    RotMatrix                       rotation;
+    DPoint3d                        eyePoint;
+
+    if (nullptr != (cameraView = dynamic_cast <CameraViewDefinitionCP> (&view)))
+        {
+        // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
+        // Simulate by pointing the camera toward the center of the viewed volume.
+        eyePoint = cameraView->GetEyePoint();
+        rotation =  cameraView->GetViewDirection().ToRotMatrix();
+
+        DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
+
+        rotation.Multiply(viewOrigin, cameraView->GetOrigin());
+        rotation.Multiply(viewEyePoint, eyePoint);
+
+        auto extents = cameraView->GetExtents();
+        viewTarget.x = viewOrigin.x + extents.x/2.0;
+        viewTarget.y = viewOrigin.y + extents.y/2.0;
+        viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
+
+        rotation.MultiplyTranspose (target, viewTarget);
+
+        rotation.GetRows(xVec, yVec, zVec);
+        zVec.NormalizedDifference (eyePoint, target);
+
+        xVec.NormalizedCrossProduct (yVec, zVec);
+        yVec.NormalizedCrossProduct (zVec, xVec);
+
+        json["fov"]   =  2.0 * atan2 (extents.x/2.0, cameraView->GetFocusDistance());
+        }
+    else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
+        {
+        // Simulate orthographic with a small field of view.
+        static const    double s_orthographicFieldOfView = .01;
+        DVec3d          extents = orthographicView->GetExtents();
+        DPoint3d        backCenter;
+
+        rotation = orthographicView->GetViewDirection().ToRotMatrix();
+        rotation.GetRows(xVec, yVec, zVec);
+
+        rotation.Multiply (backCenter, orthographicView->GetOrigin());
+        backCenter.SumOf (backCenter, extents, .5);
+        rotation.MultiplyTranspose (backCenter);
+
+        double  zDistance = extents.x / tan (s_orthographicFieldOfView / 2.0);
+
+        eyePoint.SumOf (backCenter, zVec, zDistance);
+        json["fov"] = s_orthographicFieldOfView;
+        }
+    else
+        {
+        BeAssert (false && "unsuppored view type");
+        }
+
+    transform.Multiply(eyePoint);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    // View orientation
+    json["dest"] = PointToJson(eyePoint);
+    json["dir"] = PointToJson(zVec);
+    json["up"] = PointToJson(yVec);
+    }
+
+

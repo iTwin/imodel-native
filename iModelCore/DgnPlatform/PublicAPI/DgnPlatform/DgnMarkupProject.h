@@ -214,7 +214,7 @@ protected:
     void _WriteJsonProperties(Json::Value&) const override;
     void _ReadJsonProperties(Json::Value const&) override;
 
-    static RedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
+    static RedlineModelPtr Create(SheetCR sheet, Utf8CP name, DgnModelId templateModel);
 
 public:
     explicit RedlineModel(CreateParams const& params): T_Super(params) {}
@@ -374,8 +374,8 @@ protected:
 
     bool                    m_targetModelIsInSubjectView;
 
-    void _StoreToDefinition() const override;
-    void _LoadFromDefinition() override;
+    void _StoreState() const override;
+    void _LoadState() override;
     void _DrawView(ViewContextR) override;
     DPoint3d _GetOrigin() const override;
     DVec3d _GetDelta() const override;
@@ -514,6 +514,7 @@ private:
     BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
     void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id = 0);
     DgnDbStatus ImportMarkupSchema();
+    DocumentListModelPtr GetSheetListModel();
 
 public:
     BentleyStatus CheckIsOpen();

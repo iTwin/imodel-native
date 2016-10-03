@@ -15,8 +15,7 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! A unit can be categorized according to its system.  The system has no mathematical
-//! significance.
+//! A unit can be categorized according to its system.  The system has no mathematical significance.
 //=======================================================================================
 enum class UnitSystem
     {
@@ -65,48 +64,48 @@ protected:
 public:
 //__PUBLISH_SECTION_END__
     //! Make this unit larger by a scale factor.
-    void Scale (double by);
-    void Square ();
-    void Cube ();
+    void Scale(double by);
+    void Square();
+    void Cube();
 //__PUBLISH_SECTION_START__
 
     //! Construct an invalid UnitDefinition.
-    DGNPLATFORM_EXPORT UnitDefinition ();
+    UnitDefinition() {SetInvalid();}
 
     //! Construct a fully initialized UnitDefinition.
-    DGNPLATFORM_EXPORT UnitDefinition (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
+    DGNPLATFORM_EXPORT UnitDefinition(UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
 
     //! Initialize a UnitDefinition from data.
-    DGNPLATFORM_EXPORT void Init (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
+    DGNPLATFORM_EXPORT void Init(UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
 
     //! Initialize a UnitDefinition from another UnitDefinition
-    DGNPLATFORM_EXPORT void Init (UnitDefinitionCR source);
+    DGNPLATFORM_EXPORT void Init(UnitDefinitionCR source);
 
-    DGNPLATFORM_EXPORT static UnitBase BaseFromInt (uint32_t base);
-    DGNPLATFORM_EXPORT static UnitSystem SystemFromInt (uint32_t system);
-    DGNPLATFORM_EXPORT static int CompareRatios (double num1, double den1, double num2, double den2);
+    DGNPLATFORM_EXPORT static UnitBase BaseFromInt(uint32_t base);
+    DGNPLATFORM_EXPORT static UnitSystem SystemFromInt(uint32_t system);
+    DGNPLATFORM_EXPORT static int CompareRatios(double num1, double den1, double num2, double den2);
 
     //! Test if the unit contains valid data.
-    DGNPLATFORM_EXPORT bool IsValid () const;
+    DGNPLATFORM_EXPORT bool IsValid() const;
 
     //! Make this unit invalid
-    DGNPLATFORM_EXPORT void SetInvalid ();
+    DGNPLATFORM_EXPORT void SetInvalid();
 
 //__PUBLISH_SECTION_END__
     //! Test if two units are identical.  This equality check can fail even if the units are the same size.
     //! See #CompareByScale for a less strict equality test.
 //__PUBLISH_SECTION_START__
-    DGNPLATFORM_EXPORT bool IsEqual (UnitDefinitionCR other) const;
+    DGNPLATFORM_EXPORT bool IsEqual(UnitDefinitionCR other) const;
 
     //! Test if two units are identical.  This equality check can fail even if the units are the same size.
     //! See #CompareByScale for a less strict equality test.
-    DGNPLATFORM_EXPORT bool operator==(UnitDefinitionCR) const;
+    bool operator==(UnitDefinitionCR other) const {return IsEqual(other);}
 
     //! Test if two units are not identical.
-    DGNPLATFORM_EXPORT bool operator!=(UnitDefinitionCR other) const {return !(*this == other);}
+    bool operator!=(UnitDefinitionCR other) const {return !(*this == other);}
 
     //! Test if the sizes of two units can be compared.  Only units with a common base can be compared.
-    DGNPLATFORM_EXPORT bool AreComparable (UnitDefinitionCR other) const;
+    DGNPLATFORM_EXPORT bool AreComparable(UnitDefinitionCR other) const;
 
     //! Test if two units are the same size.  See #IsEqual for a more strict equality test.
     //! @return an integer i, such that:
@@ -114,7 +113,7 @@ public:
     //!  - i < 0 if this unit is larger than other.
     //!  - i > 0 if other unit is larger than this unit.
     //!  - i == 0 if the two units are the same size.
-    DGNPLATFORM_EXPORT int CompareByScale (UnitDefinitionCR other) const;
+    DGNPLATFORM_EXPORT int CompareByScale(UnitDefinitionCR other) const;
 
     //! Compute the scale factor used to convert distance from the input unit to this unit.
     //! The factor is defined by the equation: distInA = distInB * factorFromBtoA.  The
@@ -124,7 +123,7 @@ public:
 
     //! Convert a distance expressed in the input unit to this unit.
     //! @return the distance in this units. If units are not compareable, return inputVal.
-    DGNPLATFORM_EXPORT double ConvertDistanceFrom (double inputVal, UnitDefinitionCR fromUnit) const;
+    DGNPLATFORM_EXPORT double ConvertDistanceFrom(double inputVal, UnitDefinitionCR fromUnit) const;
 
     bool IsLinear() const {return m_base == UnitBase::Meter;}
     UnitBase GetBase() const { return m_base; };
@@ -136,52 +135,52 @@ public:
     double ToMeters(double val=1.0) const {return val / (GetNumerator()/GetDenominator());}
     double ToMillimeters(double val=1.0) const {return 1000.0 * ToMeters(val);}
 
-    DGNPLATFORM_EXPORT void SetLabel (Utf8CP val);
+    DGNPLATFORM_EXPORT void SetLabel(Utf8CP val);
 
     //! Get the definition for a standard unit.
-    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnit (StandardUnit iUnit);
+    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnit(StandardUnit iUnit);
 
     //! Find the definition of a standard unit from its name in the current language.
-    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnitByName (Utf8CP name);
+    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnitByName(Utf8CP name);
 
     //! Determine if a unit definition is the same size as a standard unit.
     //! @return StandardUnit::None if the input does not match a standard unit.
-    DGNPLATFORM_EXPORT StandardUnit IsStandardUnit () const;
+    DGNPLATFORM_EXPORT StandardUnit IsStandardUnit() const;
 
     //! Get the label of a standard unit in the current language.
-    DGNPLATFORM_EXPORT static Utf8String GetStandardLabel (StandardUnit iUnit);
+    DGNPLATFORM_EXPORT static Utf8String GetStandardLabel(StandardUnit iUnit);
 
     //! Get the name of a standard unit in the current language.
-    DGNPLATFORM_EXPORT static Utf8String GetStandardName (StandardUnit iUnit, bool singular=false);
+    DGNPLATFORM_EXPORT static Utf8String GetStandardName(StandardUnit iUnit, bool singular=false);
 
     //! Get the name of a unit from the user's workspace.
-    DGNPLATFORM_EXPORT Utf8String GetName (bool singular=false, bool alsoStandard=false) const;
+    DGNPLATFORM_EXPORT Utf8String GetName(bool singular=false, bool alsoStandard=false) const;
 
     //! Get the number of a unit from the user's workspace.
-    DGNPLATFORM_EXPORT int GetNumber (bool alsoStandard=false) const;
+    DGNPLATFORM_EXPORT int GetNumber(bool alsoStandard=false) const;
 
     //! Get the next larger unit from the user's workspace.  The returned unit will have the same base and system as the search unit.
     //! If a larger unit cannot be found, the search unit is returned.
-    DGNPLATFORM_EXPORT UnitDefinition GetNextLarger () const;
+    DGNPLATFORM_EXPORT UnitDefinition GetNextLarger() const;
 
     //! Get the next smaller unit from the user's workspace.  The returned unit will have the same base and system as the search unit.
     //! If a smaller unit cannot be found, the search unit is returned.
-    DGNPLATFORM_EXPORT UnitDefinition GetNextSmaller () const;
+    DGNPLATFORM_EXPORT UnitDefinition GetNextSmaller() const;
 
     //! Find the definition of a unit from the user's workspace by matching its name in the current language.
-    DGNPLATFORM_EXPORT static UnitDefinition GetByName (Utf8CP unitName, bool alsoStandard=false);
+    DGNPLATFORM_EXPORT static UnitDefinition GetByName(Utf8CP unitName, bool alsoStandard=false);
 
     //! Find the definition of a unit from the user's workspace by matching the number assigned to it in the current session.
-    DGNPLATFORM_EXPORT static UnitDefinition GetByNumber (int unitNumber, bool alsoStandard=false);
+    DGNPLATFORM_EXPORT static UnitDefinition GetByNumber(int unitNumber, bool alsoStandard=false);
 
     //! Find the definition of a unit from the user's workspace by matching one of its labels.
-    DGNPLATFORM_EXPORT static UnitDefinition GetByLabel (Utf8CP label, bool alsoStandard=false);
+    DGNPLATFORM_EXPORT static UnitDefinition GetByLabel(Utf8CP label, bool alsoStandard=false);
 
 //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT static void    BackDoor_ResetUserUnitsForTest();
+    DGNPLATFORM_EXPORT static void BackDoor_ResetUserUnitsForTest();
 
     DGNPLATFORM_EXPORT void FromJson(Json::Value const& inValue);
-    DGNPLATFORM_EXPORT void ToJson (Json::Value& outValue) const;
+    DGNPLATFORM_EXPORT void ToJson(Json::Value& outValue) const;
 
 //__PUBLISH_SECTION_START__
 };
@@ -219,48 +218,48 @@ private:
     bool                m_allowSmaller;
     bool                m_allowEqual;
 
-    void    DisallowAllBases    ();
-    void    DisallowAllSystems  ();
+    void    DisallowAllBases();
+    void    DisallowAllSystems();
 
 public:
 //__PUBLISH_SECTION_END__
-    bool IsOrderAscending () const { return m_orderAscending; }
-    DGNPLATFORM_EXPORT bool IsBaseAllowed (UnitBase base) const;
-    DGNPLATFORM_EXPORT bool IsSystemAllowed (UnitSystem system) const;
-    UnitDefinitionCR GetCompareUnit () const { return m_compareUnit; };
-    bool GetCompareAllowLarger () const { return m_allowLarger; }
-    bool GetCompareAllowSmaller () const { return m_allowSmaller; }
-    bool GetCompareAllowEqual () const { return m_allowEqual; }
+    bool IsOrderAscending() const { return m_orderAscending; }
+    DGNPLATFORM_EXPORT bool IsBaseAllowed(UnitBase base) const;
+    DGNPLATFORM_EXPORT bool IsSystemAllowed(UnitSystem system) const;
+    UnitDefinitionCR GetCompareUnit() const { return m_compareUnit; };
+    bool GetCompareAllowLarger() const { return m_allowLarger; }
+    bool GetCompareAllowSmaller() const { return m_allowSmaller; }
+    bool GetCompareAllowEqual() const { return m_allowEqual; }
 
 //__PUBLISH_SECTION_START__
     //! Construct a default set of options that will iterate from smallest
     //! to largest and include all units in the list.
-    DGNPLATFORM_EXPORT UnitIteratorOptions ();
+    DGNPLATFORM_EXPORT UnitIteratorOptions();
 
     //! Set the iteration order from smallest to largest.
-    DGNPLATFORM_EXPORT void SetOrderAscending ();
+    DGNPLATFORM_EXPORT void SetOrderAscending();
 
     //! Set the iteration order from largest to smallest.
-    DGNPLATFORM_EXPORT void SetOrderDescending ();
+    DGNPLATFORM_EXPORT void SetOrderDescending();
 
     //! Set the iteration to include only the specified base.
-    DGNPLATFORM_EXPORT void SetAllowSingleBase (UnitBase base);
+    DGNPLATFORM_EXPORT void SetAllowSingleBase(UnitBase base);
 
     //! Set the iteration to include the specified base in addition to the ones already allowed.
-    DGNPLATFORM_EXPORT void SetAllowAdditionalBase (UnitBase base);
+    DGNPLATFORM_EXPORT void SetAllowAdditionalBase(UnitBase base);
 
     //! Set the iteration to include only the specified system.
-    DGNPLATFORM_EXPORT void SetAllowSingleSystem (UnitSystem system);
+    DGNPLATFORM_EXPORT void SetAllowSingleSystem(UnitSystem system);
 
     //! Set the iteration to include the specified system in addition to the ones already allowed.
-    DGNPLATFORM_EXPORT void SetAllowAdditionalSystem (UnitSystem system);
+    DGNPLATFORM_EXPORT void SetAllowAdditionalSystem(UnitSystem system);
 
     //! Set the iteration to filter units according to size.  Since size comparison
     //! is only valid within a single #UnitBase, this method will restrict the iteration
     //! to only those units with the same base as the specified unit.
     //! @param [in] unitDef  The unit on which to base the filtering.
     //! @param [in] method   The method used to compare candidate units to the specified unit.
-    DGNPLATFORM_EXPORT void SetSizeCriteria (UnitDefinitionCR unitDef, UnitCompareMethod method);
+    DGNPLATFORM_EXPORT void SetSizeCriteria(UnitDefinitionCR unitDef, UnitCompareMethod method);
 
 }; // UnitIteratorOptions
 
@@ -278,7 +277,7 @@ public:
 
     //!   Intialize a collection with options
     //! @param options The options that control the iteration of this collection
-    DGNPLATFORM_EXPORT StandardUnitCollection (UnitIteratorOptionsCR options);
+    DGNPLATFORM_EXPORT StandardUnitCollection(UnitIteratorOptionsCR options);
 
     //=======================================================================================
     //! Entry in the StandardUnitCollection
@@ -292,13 +291,13 @@ public:
 
     public:
         //! Get information about the iterator's current unit.
-        DGNPLATFORM_EXPORT UnitDefinition GetUnitDef () const;
+        DGNPLATFORM_EXPORT UnitDefinition GetUnitDef() const;
 
         //! Get information about the iterator's current unit.
-        DGNPLATFORM_EXPORT StandardUnit GetNumber () const;
+        DGNPLATFORM_EXPORT StandardUnit GetNumber() const;
 
         //! Get information about the iterator's current unit.
-        DGNPLATFORM_EXPORT Utf8String GetName (bool singular=false) const;
+        DGNPLATFORM_EXPORT Utf8String GetName(bool singular=false) const;
     };
 
     //=======================================================================================
@@ -312,10 +311,10 @@ public:
         UnitIteratorOptionsCP           m_options;
         Entry                           m_entry;
 
-        bool UnitValidForIterator (StandardUnitTableEntry const* tableEntry);
+        bool UnitValidForIterator(StandardUnitTableEntry const* tableEntry);
 
-        const_iterator (UnitIteratorOptionsCR options);
-        const_iterator ();
+        const_iterator(UnitIteratorOptionsCR options);
+        const_iterator();
 
     public:
         //! Advances the iterator to the next in collection.
@@ -334,10 +333,10 @@ public:
     typedef const_iterator iterator;    //!< only const iteration is possible
 
     //! Returns an iterator addressing the first element in the collection
-    DGNPLATFORM_EXPORT const_iterator begin () const;
+    DGNPLATFORM_EXPORT const_iterator begin() const;
 
     //! Returns an iterator that addresses the location succeeding the last element in collection
-    DGNPLATFORM_EXPORT const_iterator end () const;
+    DGNPLATFORM_EXPORT const_iterator end() const;
 };
 
 struct UserUnitTableEntry;
@@ -349,14 +348,14 @@ struct UserUnitCollection
 private:
     UnitIteratorOptionsCR   m_options;
 
-    static bool IndexIsValid (size_t tableIndex);
+    static bool IndexIsValid(size_t tableIndex);
 
 public:
     struct const_iterator;
 
     //! Intialize a collection with options
     //! @param options The options that control the iteration of this collection
-    DGNPLATFORM_EXPORT UserUnitCollection (UnitIteratorOptionsCR options);
+    DGNPLATFORM_EXPORT UserUnitCollection(UnitIteratorOptionsCR options);
 
     //======================================================================================
     //! Entry in the UserUnitCollection
@@ -390,10 +389,10 @@ public:
         UnitIteratorOptionsCP           m_options;
         Entry                           m_entry;
 
-        bool    UnitValidForIterator (size_t tableIndex);
+        bool    UnitValidForIterator(size_t tableIndex);
 
-        const_iterator (UnitIteratorOptionsCR options);
-        const_iterator (bool ascending);
+        const_iterator(UnitIteratorOptionsCR options);
+        const_iterator(bool ascending);
 
     public:
         //! Advances the iterator to the next in collection.
@@ -410,10 +409,10 @@ public:
     }; // UnitIterator
 
     //!  Returns an iterator addressing the first element in the collection
-    DGNPLATFORM_EXPORT const_iterator begin () const;
+    DGNPLATFORM_EXPORT const_iterator begin() const;
 
     //!  Returns an iterator that addresses the location succeeding the last element in collection
-    DGNPLATFORM_EXPORT const_iterator end () const;
+    DGNPLATFORM_EXPORT const_iterator end() const;
 };
 
 /** @endcond */

@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<DgnEditElementCollector> ViewUndoStack;
+    typedef std::deque<ViewController::State> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -138,7 +138,7 @@ protected:
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
-    DgnEditElementCollector m_currentBaseline;
+    ViewController::State m_currentBaseline;
     ViewUndoStack   m_forwardStack;
     ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;
@@ -220,12 +220,12 @@ public:
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
+    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SetupFromViewController(); SaveViewUndo();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(DgnEditElementCollector const& val, int animationTime);
+    void ApplyViewState(ViewController::State const& val, int animationTime);
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);

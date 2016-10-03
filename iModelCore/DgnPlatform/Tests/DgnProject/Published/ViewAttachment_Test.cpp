@@ -86,12 +86,13 @@ public:
 void ViewAttachmentTest::SetUp()
     {
     SetupSeedProject();
+    DgnDbR db = GetDgnDb();
+
     // Set up a sheet to hold attachments
-    auto& db = GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
-    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
-    ASSERT_EQ(DgnDbStatus::Success, sheet->Insert());
-    m_sheetModelId = sheet->GetModelId();
+    DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(db, DgnModel::CreateModelCode("SheetListModel"));
+    SheetPtr sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, DgnCode(), "MySheet");
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet, DgnModel::CreateModelCode("MySheetModel"), DPoint2d::From(10,10));
+    m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
     DgnCategory cat(DgnCategory::CreateParams(db, "Attachments", DgnCategory::Scope::Annotation));

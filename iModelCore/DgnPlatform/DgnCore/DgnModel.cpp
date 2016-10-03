@@ -515,7 +515,21 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
+DgnDbStatus SheetModel::_OnInsert()
+    {
+    if (!GetModeledElementId().IsValid() || !GetDgnDb().Elements().Get<Sheet>(GetModeledElementId()).IsValid())
+        {
+        BeAssert(false && "A SheetModel should be modeling a Sheet element");
+        return DgnDbStatus::BadElement;
+        }
+
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code, DPoint2dCR sheetSize)
     {
     DgnDbR db = sheet.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Sheet::GetHandler();
@@ -534,7 +548,9 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
         return nullptr;
         }
 
-    return dynamic_cast<SheetModelP>(model.get());
+    SheetModelPtr sheetModel = dynamic_cast<SheetModelP>(model.get());
+    sheetModel->m_size = sheetSize;
+    return sheetModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1367,22 +1383,6 @@ void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
         if(iter.second.IsValid())
             iter.second->_DropGraphicsForViewport(viewport);
         }        
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GeometricModel::DisplayInfo::GetMillimetersPerMaster() const
-    {
-    return GetMasterUnits().IsLinear() ? GetMasterUnits().ToMillimeters() : 1000.;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GeometricModel::DisplayInfo::GetSubPerMaster() const
-    {
-    return GetSubUnits().ConvertDistanceFrom(1.0, GetMasterUnits());
     }
 
 struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};

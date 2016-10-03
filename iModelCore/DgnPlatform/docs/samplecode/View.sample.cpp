@@ -44,7 +44,7 @@ DisplayStyleCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
     {
     // DisplayStyle is a definition element that is normally shared by many ViewDefinitions.
     DisplayStyle dstyle(db, name);
-    Render::ViewFlags viewFlags = dstyle.GetViewFlags();
+    Render::ViewFlags viewFlags = dstyle.GetViewFlags(true);
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
     return db.Elements().Insert(dstyle);
     }

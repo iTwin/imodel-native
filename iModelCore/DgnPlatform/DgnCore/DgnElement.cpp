@@ -3309,6 +3309,7 @@ DgnElementPtr DgnEditElementCollector::FindElementByClass(ECN::ECClassCR ecclass
         if (el->GetElementClass()->Is(&ecclass))
             return el;
         }
+
     return nullptr;
     }
 
@@ -3362,7 +3363,7 @@ DgnDbStatus DgnEditElementCollector::Write(bool* anyInserts)
         bool needsInsert = !el->GetElementId().IsValid();
         if (anyInserts)
             *anyInserts |= needsInsert;
-        DgnElementCPtr updatedEl = !needsInsert? el->Update(&status): el->Insert(&status);
+        DgnElementCPtr updatedEl = !needsInsert ? el->Update(&status) : el->Insert(&status);
         if (!updatedEl.IsValid())
             return status;
         if (needsInsert)
@@ -3984,6 +3985,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
+#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
     // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     IdSet<DgnGeometryPartId> parts;
@@ -3993,6 +3995,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
         if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
+#endif
 
     return status;
     }
@@ -4006,6 +4009,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
+#if defined (NOT_NOW_TOO_EXPENSIVE_FOR_BENEFIT)
     // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     DgnElementId elementId = GetElementId();
@@ -4052,6 +4056,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
         if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, elementId, partId))
             status = DgnDbStatus::WriteError;
         }
+#endif
 
     return status;
     }

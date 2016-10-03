@@ -54,8 +54,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DefinitionElement);
     friend struct dgn_ElementHandler::DisplayStyleDef;
+
 protected:
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+    static Utf8CP str_BackgroundColor() {return "BackgroundColor";}
+    static Utf8CP str_Environment() {return "Environment";}
 
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
@@ -63,14 +66,14 @@ public:
 
     Utf8String GetName() const {return GetCode().GetValue();} //!< The name of the view definition
 
-    DGNPLATFORM_EXPORT DgnDbStatus SetViewFlags(Render::ViewFlags const&); //!< Set the ViewFlags
-    DGNPLATFORM_EXPORT Render::ViewFlags GetViewFlags() const; //!< Get the ViewFlags
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewFlags(Render::ViewFlags const&, bool is3d); //!< Set the ViewFlags
+    DGNPLATFORM_EXPORT Render::ViewFlags GetViewFlags(bool is3d) const; //!< Get the ViewFlags
 
-    ColorDef GetBackgroundColor() const {return ColorDef((uint32_t)GetPropertyValueInt32("BackgroundColor"));} //!< Get background color
-    DgnDbStatus SetBackgroundColor(ColorDef const& cdef) {return SetPropertyValue("BackgroundColor", (int32_t)cdef.GetValue());} //!< Set background color
+    ColorDef GetBackgroundColor() const {return ColorDef((uint32_t)GetPropertyValueInt32(str_BackgroundColor()));} //!< Get background color
+    DgnDbStatus SetBackgroundColor(ColorDef const& cdef) {return SetPropertyValue(str_BackgroundColor(), (int32_t)cdef.GetValue());} //!< Set background color
 
-    Utf8String GetEnvironment() const {return GetPropertyValueString("Environment");} //!< Get Environment
-    DgnDbStatus SetEnvironment(Utf8StringCR value) {return SetPropertyValue("Environment", value.c_str());} //!< Set Environment
+    Utf8String GetEnvironment() const {return GetPropertyValueString(str_Environment());} //!< Get Environment
+    DgnDbStatus SetEnvironment(Utf8StringCR value) {return SetPropertyValue(str_Environment(), value.c_str());} //!< Set Environment
 
     static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle);}
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}
@@ -107,7 +110,7 @@ public:
     //! Set the list of models to be just one model. This method does not write to the bim but merely caches the list in memory.
     DGNPLATFORM_EXPORT void SetModelId(DgnModelId mid);
     //! Set the list of models. This method does not write to the bim but merely caches the list in memory.
-    DGNPLATFORM_EXPORT void SetModelIds(DgnModelIdSet const& models) {m_modelIds.assign(models.begin(), models.end()); m_isLoaded=true;}
+    void SetModelIds(DgnModelIdSet const& models) {m_modelIds.assign(models.begin(), models.end()); m_isLoaded=true;}
     //! Query the DgnModelIds that are in this selector
     DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
     //! Query if the specified DgnModelId is in this selector
@@ -125,7 +128,7 @@ public:
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
-    {
+{
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
 protected:
@@ -228,22 +231,22 @@ public:
         Yes=1 //!< Fill models
     };
 
-    //! Instantiate a ViewController for this ViewDefinition in order to render the view
+    //! Instantiate a ViewController for this ViewDefinition to render the view
     DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(FillModels fillModels=FillModels::No) const;
 
-    //! Instantiate a ViewController for the ViewDefinition with the specified ID in order to render the view
+    //! Instantiate a ViewController for the ViewDefinition with the specified Id to render the view
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 
     //! Create a DgnCode for a view with the specified name
     static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition);}
 
-    //! Look up the ID of the view with the specified DgnCode
+    //! Look up the Id of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
 
-    //! Look up the ID of the view with the specified name
+    //! Look up the Id of the view with the specified name
     static DgnViewId QueryViewId(Utf8StringCR name, DgnDbR db) {return QueryViewId(CreateCode(name), db);}
 
-    //! Look up a view by ID
+    //! Look up a view by Id
     static ViewDefinitionCPtr QueryView(DgnViewId viewId, DgnDbR db) {return db.Elements().Get<ViewDefinition>(viewId);}
 
     //! Look up a view by name
@@ -410,6 +413,13 @@ public:
     DgnDbStatus SetModelSelectorId(DgnElementId id) {return SetPropertyValue("ModelSelector", id);} //!< Set the ID of the element that holds the ModelSelector used by this view.
     DgnDbStatus SetModelSelector(ModelSelectorCR modSel) {return SetModelSelectorId(modSel.GetElementId());} //!< Set the ModelSelector used by this view. Note that the modelselector must be persistent.
     DgnDbStatus SetClipVolumeId(DgnElementId id) {return SetPropertyValue("ClipVolume", id);} //!< Set the ID of the element that holds the ClipVolume used by this view
+    DPoint3d GetOrigin() const {return GetPropertyValueDPoint3d("Origin");} //!< Get the origin of the viewed volume on the lower, back, rear
+    DVec3d GetExtents() const {DPoint3d pt = GetPropertyValueDPoint3d("Extents"); return *(DVec3d*)(&pt);} //!< Get the size of the view diagonal
+    YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
+
+    DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
+    DgnDbStatus SetExtents(DVec3dCR vec) {return SetPropertyValue("Extents", (DPoint3dCR)vec);} //!< Set the size of the view diagonal
+    DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
 };
 
 //=======================================================================================
@@ -464,13 +474,6 @@ public:
     //! Look up the ECClass ID used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
 
-    DGNPLATFORM_EXPORT DPoint3d GetOrigin() const {return GetPropertyValueDPoint3d("Origin");} //!< Get the origin of the viewed volume on the lower, back, rear
-    DGNPLATFORM_EXPORT DVec3d GetExtents() const {DPoint3d pt = GetPropertyValueDPoint3d("Extents"); return *(DVec3d*)(&pt);} //!< Get the size of the view diagonal
-    DGNPLATFORM_EXPORT YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
-
-    DGNPLATFORM_EXPORT DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
-    DGNPLATFORM_EXPORT DgnDbStatus SetExtents(DVec3dCR vec) {return SetPropertyValue("Extents", (DPoint3dCR)vec);} //!< Set the size of the view diagonal
-    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
 
     //! Set the view direction to one of the standard rotations
     DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
@@ -514,23 +517,13 @@ public:
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
 
-    DGNPLATFORM_EXPORT DPoint3d GetBackOrigin() const {return GetPropertyValueDPoint3d("BackOrigin");} //!< Get the origin of the focus plane projected to the back plane
-    DGNPLATFORM_EXPORT double GetWidth() const {return GetPropertyValueDouble("Width");} //!< Get the extent in x on the focus plane in meters
-    DGNPLATFORM_EXPORT double GetHeight() const {return GetPropertyValueDouble("Height");} //!< Get the extent in y on the focus plane in meters
-    DGNPLATFORM_EXPORT double GetDepth() const {return GetPropertyValueDouble("Depth");} //!< Get the distance between front and back planes in meters
-    DGNPLATFORM_EXPORT DPoint3d GetEyePoint() const {return GetPropertyValueDPoint3d("EyePoint");}  //!< Get the camera eye point
-    DGNPLATFORM_EXPORT double GetLensAngle() const {return GetPropertyValueDouble("LensAngle");} //!< Get the camera lens angle in degrees
-    DGNPLATFORM_EXPORT double GetFocusDistance() const {return GetPropertyValueDouble("FocusDistance");} //!< Get the camera focus distance in meters
-    DGNPLATFORM_EXPORT YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
+    DPoint3d GetEyePoint() const {return GetPropertyValueDPoint3d("EyePoint");}  //!< Get the camera eye point
+    double GetLensAngle() const {return GetPropertyValueDouble("LensAngle");} //!< Get the camera lens angle in degrees
+    double GetFocusDistance() const {return GetPropertyValueDouble("FocusDistance");} //!< Get the camera focus distance in meters
 
-    DGNPLATFORM_EXPORT DgnDbStatus SetBackOrigin(DPoint3dCR pt) {return SetPropertyValue("BackOrigin", pt);} //!< Set the origin of the focus plane projected to the back plane
-    DGNPLATFORM_EXPORT DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);} //!< Set the extent in x on the focus plane in meters
-    DGNPLATFORM_EXPORT DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);} //!< Set the extent in y on the focus plane in meters
-    DGNPLATFORM_EXPORT DgnDbStatus SetDepth(double v) {return SetPropertyValue("Depth", v);} //!< Set the distance between front and back planes in meters
-    DGNPLATFORM_EXPORT DgnDbStatus SetEyePoint(DPoint3dCR pt) {return SetPropertyValue("EyePoint", pt);} //!< Set the camera eye point
-    DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
-    DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
-    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+    DgnDbStatus SetEyePoint(DPoint3dCR pt) {return SetPropertyValue("EyePoint", pt);} //!< Set the camera eye point
+    DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
+    DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
                                                                                                                                                                           //! Set the view direction to one of the standard rotations
     DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };

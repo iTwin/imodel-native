@@ -33,6 +33,7 @@ struct RangeTreeNode
 };
 
 static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -97,13 +98,20 @@ bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elemId) const
+GeometrySourceCP TileGenerationCache::AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        m_geometrySources.insert(GeometrySourceMap::value_type(elemId, source));
-        }
+    if (!WantCacheGeometrySources())
+        return source.get();
+
+    BeMutexHolder lock(m_mutex);
+
+    // May already exist in cache...if so we've moved from it and it will be destroyed...otherwise it's now owned by cache
+    m_geometrySources.insert(GeometrySourceMap::value_type(elemId, std::move(source)));
+
+    // Either way, we know an now exists in cache for this element
+    auto existing = GetCachedGeometrySource(elemId);
+    BeAssert(nullptr != existing);
+    return existing;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,15 +119,12 @@ void TileGenerationCache::AddCachedGeometrySource(std::shared_ptr<GeometrySource
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemId) const
     {
-    if (WantCacheGeometrySources())
-        {
-        BeMutexHolder lock(m_mutex);
-        auto iter = m_geometrySources.find(elemId);
-        if (m_geometrySources.end() != iter)
-            return iter->second.get();
-        }
+    if (!WantCacheGeometrySources())
+        return nullptr;
 
-    return nullptr;
+    BeMutexHolder lock(m_mutex);
+    auto iter = m_geometrySources.find(elemId);
+    return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
 //=======================================================================================
@@ -156,7 +161,7 @@ DRange3d TileGenerationCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter)
+void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
     static const Utf8CP s_sql =
@@ -211,7 +216,7 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
-    COMPARE_VALUES (m_textureImage.get(), rhs.m_textureImage.get());
+    // No need to compare textures -- if materials match then textures must too.
 
     return false;
     }
@@ -281,12 +286,12 @@ bool TileMesh::HasNonPlanarNormals() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId elemId)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(point);
-    m_elementIds.push_back(elemId);
+    m_entityIds.push_back(entityId);
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
@@ -294,7 +299,7 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
-    m_validIdsPresent |= (elemId.IsValid());
+    m_validIdsPresent |= (entityId.IsValid());
     return index;
     }
 
@@ -306,7 +311,7 @@ bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, Ve
     static const double s_normalTolerance = 1.0E-6;
     static const double s_paramTolerance  = 1.0E-6;
 
-    COMPARE_VALUES (lhs.m_elementId, rhs.m_elementId);
+    COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
 
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
@@ -405,7 +410,7 @@ bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
     {
     BeAssert(3 == visitor.Point().size());
 
@@ -418,7 +423,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(visitor.Point().at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), elemId);
+        VertexKey vertex(visitor.Point().at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
         newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -438,7 +443,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(visitor.Point().at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), elemId);
+            VertexKey vertex(visitor.Point().at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
             dupTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -450,13 +455,13 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId elemId, bool doVertexClustering)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id entityId, bool doVertexClustering)
     {
     TilePolyline    newPolyline;
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, elemId);
+        VertexKey vertex(point, nullptr, nullptr, entityId);
 
         newPolyline.m_indices.push_back (doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
@@ -472,7 +477,7 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
     for (size_t i = 0; i < 3; i++)
         {
         uint32_t index = triangle.m_indices[i];
-        VertexKey vertex(*mesh.GetPoint(index), mesh.GetNormal(index), mesh.GetParam(index), mesh.GetElementId(index));
+        VertexKey vertex(*mesh.GetPoint(index), mesh.GetNormal(index), mesh.GetParam(index), mesh.GetEntityId(index));
         newTriangle.m_indices[i] = AddVertex(vertex);
         }
 
@@ -482,10 +487,10 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnElementId elementId, bool twoSidedTriangles)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, BeInt64Id entityId, bool twoSidedTriangles)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, elementId, false, twoSidedTriangles);
+        AddTriangle(*visitor, entityId, false, twoSidedTriangles);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -507,7 +512,7 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
-    return m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_elementId);
+    return m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -624,9 +629,11 @@ struct MeshBuilderKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
     {
-    IFacetOptionsPtr opts = IFacetOptions::Create();
+    static double       s_defaultAngleTolerance = msGeomConst_piOver2;
+    IFacetOptionsPtr    opts = IFacetOptions::Create();
 
     opts->SetChordTolerance(chordTolerance);
+    opts->SetAngleTolerance(s_defaultAngleTolerance);
     opts->SetMaxPerFace(3);
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
@@ -687,8 +694,8 @@ TileNodePList TileNode::GetTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
-    : m_params(params), m_transform(tf), m_tileRange(range), m_elementId(elemId), m_isCurved(isCurved), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
+TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db)
+    : m_params(params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())
     {
     //
     }
@@ -711,7 +718,7 @@ struct PrimitiveTileGeometry : TileGeometry
 private:
     IGeometryPtr        m_geometry;
 
-    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
+    PrimitiveTileGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry)
         {
         FacetCounter counter(facetOptions);
@@ -721,7 +728,7 @@ private:
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
 public:
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
         {
         return new PrimitiveTileGeometry(geometry, tf, range, elemId, params, facetOptions, isCurved, db);
         }
@@ -736,7 +743,7 @@ private:
     ISolidKernelEntityPtr   m_entity;
     BeMutex                 m_mutex;
 
-    SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+    SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
 #if defined (BENTLEYCONFIG_OPENCASCADE)
@@ -750,7 +757,7 @@ private:
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
     virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
 public:
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         {
         return new SolidKernelTileGeometry(solid, tf, range, elemId, params, facetOptions, db);
         }
@@ -759,17 +766,17 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
     {
-    return PrimitiveTileGeometry::Create(geometry, tf, range, elemId, params, facetOptions, isCurved, db);
+    return PrimitiveTileGeometry::Create(geometry, tf, range, entityId, params, facetOptions, isCurved, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
+TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
     {
-    return SolidKernelTileGeometry::Create(solid, tf, range, elemId, params, facetOptions, db);
+    return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, facetOptions, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -883,15 +890,15 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
+TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb),
-    m_maxPointsPerTile(maxPointsPerTile), m_cache(TileGenerationCache::Options::CacheGeometrySources)
+    m_cache(TileGenerationCache::Options::CacheGeometrySources)
     {
     StopWatch timer(true);
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
     m_progressMeter._IndicateProgress(0, 1);
 
-    m_cache.Populate(m_dgndb, maxPointsPerTile, nullptr != filter ? *filter : s_defaultFilter);
+    m_cache.Populate(m_dgndb, nullptr != filter ? *filter : s_defaultFilter);
 
     m_progressMeter._IndicateProgress(1, 1);
 
@@ -923,6 +930,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     auto& host = T_HOST;
     host.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
+
+    // Same deal with line styles.
+    // NEEDSWORK: Line styles are a much bigger problem...and still WIP...need John's input
+    LsCache::GetDgnDbCache(GetDgnDb(), true);
 
     if (!tiles.empty())
         {
@@ -1051,8 +1062,6 @@ void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t maxPointsPerTile)
     {
-    root = TileNode::Create(GetTransformFromDgn());
-
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
     StopWatch timer(true);
@@ -1060,6 +1069,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t max
     DRange3d viewRange = m_cache.GetRange();
     if (viewRange.IsNull())
         {
+        root = ElementTileNode::Create(GetTransformFromDgn());
         m_statistics.m_collectionTime = timer.GetCurrentSeconds();
         m_progressMeter._IndicateProgress(1, 1);
         return Status::NoGeometry;
@@ -1067,13 +1077,13 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t max
 
     // Collect the tiles
     static const double s_leafTolerance = 0.01;
-    double tolerance = pow(viewRange.Volume()/maxPointsPerTile, 1.0/3.0);
-    root = TileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, tolerance, nullptr);
-    root->ComputeTiles(s_leafTolerance, maxPointsPerTile, m_cache);
+    auto elementRoot = ElementTileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
+    elementRoot->ComputeTiles(s_leafTolerance, maxPointsPerTile, m_cache);
 
     m_statistics.m_collectionTime = timer.GetCurrentSeconds();
     m_progressMeter._IndicateProgress(1, 1);
 
+    root = elementRoot;
     return Status::Success;
     }
 
@@ -1084,15 +1094,19 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 {
     DRange3d        m_range;
     size_t          m_facetCount = 0;
+    size_t          m_maxFacetCount;
 
-    ComputeFacetCountTreeHandler(DRange3dCR range) : m_range(range) { }
+    ComputeFacetCountTreeHandler(DRange3dCR range, size_t maxFacetCount) : m_range(range), m_maxFacetCount(maxFacetCount) { }
 
     virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
         {
-        return pInterior->Range().IntersectsWith(m_range);
+        return !Exceeded() && pInterior->Range().IntersectsWith(m_range);
         }
     virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
         {
+        if (Exceeded())
+            return false;
+
         DRange3d intersection;
         intersection.IntersectionOf(pLeaf->Range(), m_range);
         if (!intersection.IsNull())
@@ -1106,47 +1120,55 @@ struct ComputeFacetCountTreeHandler : XYZRangeTreeHandler
 
         return true;
         }
+
+    bool Exceeded() const { return m_facetCount >= m_maxFacetCount; }
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache)
+bool ElementTileNode::ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const
     {
-    static const size_t s_depthLimit = 0xffff;
-    static const double s_targetChildCount = 5.0;
+    ComputeFacetCountTreeHandler handler(GetDgnRange(), maxFacetCount);
 
-    ComputeFacetCountTreeHandler handler(GetDgnRange());
     cache.GetTree().Traverse(handler);
 
+    return handler.Exceeded();
+    }
 
-    size_t facetCount = handler.m_facetCount;
-    if (facetCount < maxPointsPerTile)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementTileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache)
+    {
+    static const double s_minToleranceRatio = 100.0;
+
+    m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
+
+    if (m_tolerance < chordTolerance || !ExceedsFacetCount(maxPointsPerTile, cache))
         {
         m_tolerance = chordTolerance;
+        return;
         }
-    else if (m_depth < s_depthLimit)
+
+    bvector<DRange3d>           subRanges;
+    size_t                      siblingIndex = 0;
+    static const size_t         s_splitCount = 3;       // OctTree.
+
+    ComputeChildTileRanges (subRanges, m_dgnRange, s_splitCount);
+    for (auto& subRange : subRanges)
         {
-        bvector<DRange3d> subRanges;
-        size_t targetChildFacetCount = static_cast<size_t>(static_cast<double>(facetCount) / s_targetChildCount);
-        size_t siblingIndex = 0;
+        ElementTileNodePtr    child = ElementTileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, this);
 
-        ComputeSubTiles(subRanges, m_dgnRange, targetChildFacetCount, cache);
-        for (auto& subRange : subRanges)
-            {
-            double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode::Create(subRange, m_transformFromDgn, m_depth+1, siblingIndex++, childTolerance, this));
-            }
-
-        for (auto& child : m_children)
-            child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        child->ComputeTiles(chordTolerance, maxPointsPerTile, cache);
+        m_children.push_back(child);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
+* @bsimethod                                                    Ray.Bentley     10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache)
+void ElementTileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR range, size_t splitCount)
     {
     bvector<DRange3d> bisectRanges;
     DVec3d diagonal = range.DiagonalVector();
@@ -1173,21 +1195,13 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subRanges, DRange3dCR range, s
         bisectRanges.push_back (DRange3d::From (range.low.x, range.low.y, bisectValue, range.high.x, range.high.y, range.high.z));
         }
 
+    splitCount--;
     for (auto& bisectRange : bisectRanges)
         {
-        ComputeFacetCountTreeHandler handler(bisectRange);
-        cache.GetTree().Traverse(handler);
-
-        size_t facetCount = handler.m_facetCount;
-        if (facetCount < maxPointsPerSubTile)
-            {
-            if (facetCount != 0)
-                subRanges.push_back(bisectRange);
-            }
+        if (0 == splitCount)
+            subRanges.push_back (bisectRange);
         else
-            {
-            ComputeSubTiles(subRanges, bisectRange, maxPointsPerSubTile, cache);
-            }
+            ComputeChildTileRanges(subRanges, bisectRange, splitCount);
         }
     }
 
@@ -1216,14 +1230,14 @@ protected:
     DgnCategoryId           m_categoryId;
     GeometryStream          m_geom;
     DgnDbR                  m_db;
-    bool                    m_valid;
+    bool                    m_isGeometryValid;
 
     TileGeometrySource(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob) : m_categoryId(categoryId), m_db(db)
         {
-        m_valid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
+        m_isGeometryValid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
         }
 public:
-    bool IsValid() const { return m_valid; }
+    bool IsGeometryValid() const { return m_isGeometryValid; }
 };
 
 //=======================================================================================
@@ -1248,10 +1262,10 @@ private:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
-    static std::shared_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
-        std::shared_ptr<TileGeometrySource3d> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
-        if (!pSrc->IsValid())
+        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        if (!static_cast<TileGeometrySource3d const&>(*pSrc).IsGeometryValid())
             return nullptr;
 
         return pSrc;
@@ -1345,9 +1359,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
         stmt.Reset();
         m_cache.GetDbMutex().Leave();
 
-        pSrc = geomSrcPtr.get();
-        if (m_cache.WantCacheGeometrySources())
-            m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
+        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
 
         if (nullptr != pSrc)
             status = VisitGeometry(*pSrc);
@@ -1598,22 +1610,33 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
     GatherGeometryHandler handler(m_range, *this, context);
     m_cache.GetTree().Traverse(handler);
-    std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs) { return lhs->GetFacetCountDensity() < rhs->GetFacetCountDensity(); });
+
+    // We sort by size in order to ensure the largest geometries are assigned batch IDs
+    // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
+    if (m_geometries.size() > s_maxGeometryIdCount)
+        {
+        std::sort(m_geometries.begin(), m_geometries.end(), [&](TileGeometryPtr const& lhs, TileGeometryPtr const& rhs)
+            {
+            DRange3d lhsRange, rhsRange;
+            lhsRange.IntersectionOf(lhs->GetTileRange(), m_range);
+            rhsRange.IntersectionOf(rhs->GetTileRange(), m_range);
+            return lhsRange.DiagonalDistance() < rhsRange.DiagonalDistance();
+            });
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
+TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
-    static const size_t s_maxGeometryIdCount = 0xffff;
 
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
 
-    // Collect geometry from elements in this node, sorted by facet count density
+    // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
     TileGeometryProcessorContext context(processor, db, cache);
@@ -1658,9 +1681,9 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
                 {
                 if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                     {
-                    DgnElementId elemId;
+                    BeInt64Id elemId;
                     if (!maxGeometryCountExceeded)
-                        elemId = geom->GetElementId();
+                        elemId = geom->GetEntityId();
 
                     meshBuilder->AddTriangle (*visitor, elemId, doVertexClustering, twoSidedTriangles);
                     }
@@ -1679,9 +1702,9 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
                     continue;
                     }
 
-                DgnElementId elemId;
+                BeInt64Id elemId;
                 if (!maxGeometryCountExceeded)
-                    elemId = geom->GetElementId();
+                    elemId = geom->GetEntityId();
 
                 meshBuilder->AddPolyline (*lineString, elemId, doVertexClustering);
                 }
@@ -1689,11 +1712,14 @@ TileMeshList TileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, T
         }
 
     TileMeshList meshes;
+    size_t       triangleCount = 0;
+       
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
+            {
             meshes.push_back (builder.second->GetMesh());
-
-    // ###TODO: statistics: record empty node...
+            triangleCount += builder.second->GetMesh()->Triangles().size();
+            }
 
     return meshes;
     }

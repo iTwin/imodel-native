@@ -22,6 +22,8 @@ BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
 BENTLEY_RENDER_TYPEDEFS(TileMeshBuilder);
 BENTLEY_RENDER_TYPEDEFS(TileNode);
+BENTLEY_RENDER_TYPEDEFS(ElementTileNode);
+BENTLEY_RENDER_TYPEDEFS(ModelTileNode);
 BENTLEY_RENDER_TYPEDEFS(TileGenerator);
 BENTLEY_RENDER_TYPEDEFS(TileGeometry);
 BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
@@ -32,6 +34,8 @@ BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
+BENTLEY_RENDER_REF_COUNTED_PTR(ElementTileNode);
+BENTLEY_RENDER_REF_COUNTED_PTR(ModelTileNode);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
@@ -43,6 +47,18 @@ typedef bvector<TileMeshPtr> TileMeshList;
 typedef bvector<TileNodePtr> TileNodeList;
 typedef bvector<TileNodeP>   TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
+
+//=======================================================================================
+//! Describes the type of entity from which a tile node or mesh was produced.
+//! The IDs of the source entities are recorded in the TileMesh as BeInt64Ids.
+// @bsistruct                                                   Paul.Connelly   10/16
+//=======================================================================================
+enum class TileSource
+{
+    Element,    //!< Geometry in the tile is associated with DgnElementIds
+    Model,      //!< Geometry in the tile is associated with DgnModelIds
+    None,       //!< No IDs are associated with geometry in the tile
+};
 
 //=======================================================================================
 // ! Holds a texture image.
@@ -141,7 +157,7 @@ private:
     bvector<DPoint3d>       m_points;
     bvector<DVec3d>         m_normals;
     bvector<DPoint2d>       m_uvParams;
-    bvector<DgnElementId>   m_elementIds;   // invalid IDs for clutter geometry
+    bvector<BeInt64Id>      m_entityIds;   // invalid IDs for clutter geometry
     bool                    m_validIdsPresent;
 
     explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params), m_validIdsPresent (false) { }
@@ -161,20 +177,20 @@ public:
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<DgnElementId> const& ElementIds() const { return m_elementIds; } //!< Vertex attribute array specifying the ID of the element from which the vertex was produced
+    bvector<BeInt64Id> const& EntityIds() const { return m_entityIds; } //!< Vertex attribute array specifying the ID of the entity (element or model) from which the vertex was produced
 
     TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
     DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
-    DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
+    BeInt64Id GetEntityId(uint32_t index) const { auto pId = GetMember(m_entityIds, index); return nullptr != pId ? *pId : BeInt64Id(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     DRange3d GetRange() { return DRange3d::From (m_points); }
     bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId elemId);
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId);
 };
 
 //=======================================================================================
@@ -189,12 +205,12 @@ struct TileMeshBuilder : RefCountedBase
         DPoint3d        m_point;
         DVec3d          m_normal;
         DPoint2d        m_param;
-        DgnElementId    m_elementId;
+        BeInt64Id       m_entityId;
         bool            m_normalValid = false;
         bool            m_paramValid = false;
 
         VertexKey() { }
-        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId elemId) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_elementId(elemId)
+        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, BeInt64Id entityId) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_entityId(entityId)
             {
             if (m_normalValid) m_normal = *normal;
             if (m_paramValid) m_param = *param;
@@ -236,9 +252,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance) { return new TileMeshBuilder(params, tolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
-    DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnElementId elementId, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -265,14 +281,14 @@ private:
     TileDisplayParamsPtr    m_params;
     Transform               m_transform;
     DRange3d                m_tileRange;
-    DgnElementId            m_elementId;
+    BeInt64Id               m_entityId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
     bool                    m_isCurved;
     bool                    m_hasTexture;
 
 protected:
-    TileGeometry(TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
+    TileGeometry(TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
@@ -283,7 +299,7 @@ public:
     TileDisplayParamsPtr GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
-    DgnElementId GetElementId() const { return m_elementId; } //!< The ID of the element from which this geometry was produced
+    BeInt64Id GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
 
     size_t GetFacetCount() const { return m_facetCount; }
     double GetFacetCountDensity() const { return m_facetCountDensity; }
@@ -295,9 +311,9 @@ public:
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db);
 };
 
 //=======================================================================================
@@ -388,7 +404,7 @@ struct TileGenerationCache
     };
 private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
-    typedef std::map<DgnElementId, std::shared_ptr<GeometrySource>> GeometrySourceMap;
+    typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
     XYZRangeTreeRoot*           m_tree;
     mutable GeometryListMap     m_geometry;
@@ -399,7 +415,7 @@ private:
 
     friend struct TileGenerator; // Invokes Populate() from ctor
     TileGenerationCache(Options options = Options::CacheGeometrySources);
-    void Populate(DgnDbR db, size_t maxPointsPerTile, ITileGenerationFilterR filter);
+    void Populate(DgnDbR db, ITileGenerationFilterR filter);
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
@@ -408,7 +424,7 @@ public:
 
     bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
     GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
-    void AddCachedGeometrySource(std::shared_ptr<GeometrySource>& source, DgnElementId elementId) const;
+    GeometrySourceCP AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elementId) const;
 
     bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
@@ -424,7 +440,7 @@ public:
 //=======================================================================================
 struct TileNode : RefCountedBase
 {
-private:
+protected:
     DRange3d            m_dgnRange;
     TileNodeList        m_children;
     size_t              m_depth;
@@ -435,17 +451,15 @@ private:
     Transform           m_transformFromDgn;
     mutable DRange3d    m_publishedRange;
 
-protected:
-    TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, 0.0, nullptr) { }
-    TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
+    TileNode(TransformCR transformFromDgn) : TileNode(DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
+    TileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn), m_publishedRange(DRange3d::NullRange()) { }
 
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
-public:
-    static TileNodePtr Create(TransformCR transformFromDgn) { return new TileNode(transformFromDgn); }
-    static TileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent)
-        { return new TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent); }
 
+    virtual TileSource _GetSource() const = 0;
+    virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const = 0;
+public:
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
     DPoint3d GetTileCenter() const { DRange3d range = GetTileRange(); return DPoint3d::FromInterpolate (range.low, .5, range.high); }
@@ -469,12 +483,52 @@ public:
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
     DGNPLATFORM_EXPORT TileNodePList GetTiles();
     DGNPLATFORM_EXPORT WString GetNameSuffix() const;
+    DGNPLATFORM_EXPORT size_t   GetNameSuffixId() const;
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
+    TileSource GetSource() const { return _GetSource(); }
+    TileMeshList GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
+        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles); }
+};
+
+//=======================================================================================
+//! A TileNode generated from a set of elements.
+// @bsistruct                                                   Paul.Connelly   10/16
+//=======================================================================================
+struct ElementTileNode : TileNode
+{
+protected:
+    ElementTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn) { }
+    ElementTileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
+        : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
+
+    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
+
+    virtual TileSource _GetSource() const override final { return TileSource::Element; }
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry::NormalMode, bool, bool) const override;
+public:
+    static ElementTileNodePtr Create(TransformCR transformFromDgn) { return new ElementTileNode(transformFromDgn); }
+    static ElementTileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
+        { return new ElementTileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
+
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
-    DGNPLATFORM_EXPORT static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t maxPointsPerSubTile, TileGenerationCacheCR cache);
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const;
+    DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
+};
+
+//=======================================================================================
+//! A TileNode generated from a model implementing IGenerateMeshTiles.
+//! This does not include geometry of elements within the model.
+// @bsistruct                                                   Paul.Connelly   10/16
+//=======================================================================================
+struct ModelTileNode : TileNode
+{
+protected:
+    ModelTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn) { }
+    ModelTileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
+        : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
+
+    virtual TileSource _GetSource() const override final { return TileSource::Model; }
 };
 
 //=======================================================================================
@@ -532,11 +586,10 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
-    size_t                          m_maxPointsPerTile;
 
     static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, size_t maxPointsPerTile, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);

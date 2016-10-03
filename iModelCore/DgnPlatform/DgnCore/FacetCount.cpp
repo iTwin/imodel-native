@@ -369,6 +369,15 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
     }
 
 #ifdef BENTLEYCONFIG_OPENCASCADE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool uvInvalid(DRange2d uvs)
+    {
+    return (Precision::IsInfinite(uvs.low.x) || Precision::IsInfinite(uvs.high.x) || Precision::IsInfinite(uvs.low.y) || Precision::IsInfinite(uvs.high.y));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -376,55 +385,73 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
     {
     size_t facetCount = 0;
 
-    for (TopExp_Explorer faceExplorer (shape, TopAbs_FACE); faceExplorer.More(); faceExplorer.Next())
+    try
         {
-        TopLoc_Location location;
-        Handle(Geom_Surface) faceSurf = BRep_Tool::Surface((const TopoDS_Face&)faceExplorer.Current(), location);
-
-        GeomLib_IsPlanarSurface isPlanar(faceSurf);
-        if (isPlanar.IsPlanar())
+        for (TopExp_Explorer faceExplorer (shape, TopAbs_FACE); faceExplorer.More(); faceExplorer.Next())
             {
-           CurveVectorPtr curveVector;
-            if (SUCCESS == OCBRep::CurveVectorFromPlanarFace(curveVector, (const TopoDS_Face&)faceExplorer.Current()))
+            TopLoc_Location location;
+            Handle(Geom_Surface) faceSurf = BRep_Tool::Surface((const TopoDS_Face&)faceExplorer.Current(), location);
+
+            GeomLib_IsPlanarSurface isPlanar(faceSurf);
+            if (isPlanar.IsPlanar())
                 {
-                size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
-                facetCount += multiplier * GetFacetCount(*curveVector);
-                }
-            continue;
-            }
-
-        DRange2d uvRange;
-        BRepTools::UVBounds((const TopoDS_Face&)faceExplorer.Current(), uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
-
-        size_t uStrokeMax = 0, vStrokeMax = 0;
-        double stepSize = 1.0/3;
-        for (double i = 0.0; i <= 1.0; i+=stepSize)
-            {
-            double currentU = i * (uvRange.high.x - uvRange.low.x) + uvRange.low.x;
-            double currentV = i * (uvRange.high.y - uvRange.low.y) + uvRange.low.y;
-            Handle(Geom_Curve) uCurve = faceSurf->UIso(currentU);
-            Handle(Geom_Curve) vCurve = faceSurf->VIso(currentV);
-
-            ICurvePrimitivePtr uPrimitive = OCBRep::ToCurvePrimitive(uCurve, uCurve->FirstParameter(), uCurve->LastParameter()),
-                               vPrimitive = OCBRep::ToCurvePrimitive(vCurve, vCurve->FirstParameter(), vCurve->LastParameter());
-
-            if (uPrimitive.IsValid())
-                {
-                CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, uPrimitive);
-                size_t strokeCount = GetFacetCount(*curveVector);
-                uStrokeMax = uStrokeMax < strokeCount ? strokeCount : uStrokeMax;
+               CurveVectorPtr curveVector;
+                if (SUCCESS == OCBRep::CurveVectorFromPlanarFace(curveVector, (const TopoDS_Face&)faceExplorer.Current()))
+                    {
+                    size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
+                    facetCount += multiplier * GetFacetCount(*curveVector);
+                    }
+                continue;
                 }
 
-            if (vPrimitive.IsValid())
-                {
-                CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, vPrimitive);
-                size_t strokeCount = GetFacetCount(*curveVector);
-                vStrokeMax = vStrokeMax < strokeCount ? strokeCount : vStrokeMax;
-               }
-            }
+            DRange2d uvRange;
+            BRepTools::UVBounds((const TopoDS_Face&)faceExplorer.Current(), uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
 
-        size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
-        facetCount += uStrokeMax * vStrokeMax * multiplier;
+            // Work around bug in OpenCASCADE - they throw exception for offset surface.
+            DRange2d surfUV;
+            faceSurf->Bounds(surfUV.low.x, surfUV.high.x, surfUV.low.y, surfUV.high.y);
+
+            if (uvInvalid(uvRange))
+                continue;
+
+            // Trim infinite surfaces
+            if (uvInvalid(surfUV))
+                faceSurf = new Geom_RectangularTrimmedSurface(faceSurf, uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
+
+            size_t uStrokeMax = 0, vStrokeMax = 0;
+            double stepSize = 1.0/3;
+            for (double i = 0.0; i <= 1.0; i+=stepSize)
+                {
+                double currentU = i * (uvRange.high.x - uvRange.low.x) + uvRange.low.x;
+                double currentV = i * (uvRange.high.y - uvRange.low.y) + uvRange.low.y;
+                Handle(Geom_Curve) uCurve = faceSurf->UIso(currentU);
+                Handle(Geom_Curve) vCurve = faceSurf->VIso(currentV);
+
+                ICurvePrimitivePtr uPrimitive = OCBRep::ToCurvePrimitive(uCurve, uCurve->FirstParameter(), uCurve->LastParameter()),
+                                   vPrimitive = OCBRep::ToCurvePrimitive(vCurve, vCurve->FirstParameter(), vCurve->LastParameter());
+
+                if (uPrimitive.IsValid())
+                    {
+                    CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, uPrimitive);
+                    size_t strokeCount = GetFacetCount(*curveVector);
+                    uStrokeMax = uStrokeMax < strokeCount ? strokeCount : uStrokeMax;
+                    }
+
+                if (vPrimitive.IsValid())
+                    {
+                    CurveVectorPtr curveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, vPrimitive);
+                    size_t strokeCount = GetFacetCount(*curveVector);
+                    vStrokeMax = vStrokeMax < strokeCount ? strokeCount : vStrokeMax;
+                   }
+                }
+
+            size_t multiplier = m_facetOptions->GetMaxPerFace() == 3 ? 2 : 1;
+            facetCount += uStrokeMax * vStrokeMax * multiplier;
+            }
+        }
+    catch (...)
+        {
+        // ###TODO: Figure out why OpenCASCADE is throwing OutOfRange when we give it the range it gave us...
         }
 
     return facetCount;

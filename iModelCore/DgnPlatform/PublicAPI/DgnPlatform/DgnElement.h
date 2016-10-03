@@ -838,7 +838,7 @@ protected:
     //! Return the value of a string ECProperty by name
     DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
     //! Get the 3 property values that back a YPR
-    YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
+    DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
     //! @see SetPropertyValue

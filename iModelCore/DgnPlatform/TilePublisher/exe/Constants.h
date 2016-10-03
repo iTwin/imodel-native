@@ -55,7 +55,6 @@ Cesium.when(viewset.readyPromise).then(function() {
     var tileset = new Bim.Tileset(viewset);
     Cesium.when(tileset.readyPromise).then(function() {
         var viewer = new Bim.Viewer('cesiumContainer', tileset, { 'cesiumViewerOptions': viewset.createCesiumViewerOptions() });
-        viewer.cesiumViewer.extend(Bim.viewerInspectorMixin);
         viewer.createDefaultToolbar();
     });
 });

@@ -77,7 +77,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
     if (!controller.IsValid())
         return nullptr;
 
-    controller->LoadFromDefinition();
+    controller->LoadState();
 
     if (FillModels::Yes == fillModels)
         controller->_FillModels();
@@ -942,7 +942,7 @@ static void initViewOfSpatialModel(SpatialViewDefinition& viewDef, SpatialModelR
     auto& viewFlags = viewController->GetViewFlagsR();
     viewFlags.SetRenderMode(renderMode);
 
-    viewController->StoreToDefinition();
+    viewController->StoreState();
     }
 
 //---------------------------------------------------------------------------------------
@@ -978,7 +978,7 @@ static void initViewOf2dModel(ViewDefinition2d& viewDef, GraphicalModel2dR model
 
     viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
 
-    viewController->StoreToDefinition();
+    viewController->StoreState();
     }
 
 //---------------------------------------------------------------------------------------

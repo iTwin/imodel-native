@@ -195,7 +195,7 @@ DbResult DgnDb::CreateDictionaryModel()
     {
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
-    DgnCode modelCode = DgnModel::CreateModelCode("Dictionary", BIS_ECSCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_DictionaryModel, BIS_ECSCHEMA_NAME);
     return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
     }
 
@@ -302,7 +302,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     CreateAuthorities();
 
     // Every DgnDb has a RepositoryModel and a DictionaryModel
-    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and primary Subject have foreign keys to each other
+    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
     CreateRepositoryModel();
     CreateRootSubject(params);
     ExecuteSql("PRAGMA defer_foreign_keys = false;");

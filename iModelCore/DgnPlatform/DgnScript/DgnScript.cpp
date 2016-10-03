@@ -540,9 +540,11 @@ static bool isNonEmptyString(ECN::ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-static bvector<Utf8String> parseCDL(Utf8StringCR cdl)
+static bvector<Utf8String> parseCDL(Utf8StringCR cdlIn)
     {
     bvector<Utf8String> items;
+
+    Utf8String cdl = cdlIn.substr(0, cdlIn.find(')'));
 
     size_t offset = 0;
     Utf8String arg;
@@ -564,21 +566,23 @@ static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8Strin
     std::string s (textIn);
     while (std::regex_search(s, sm, re))
         {
-        s = sm.suffix().str();
-
         if (3 != sm.size())
+            {
+            s = sm.suffix();
             continue;
+            }
 
         auto name = sm[1].str();
         if (name != entryPoint)
+            {
+            s = sm.suffix();
             continue;
+            }
 
-#ifdef NEEDS_WORK // regex problem - I seem to get the rest of the function along with the args...
         auto haveArgs = parseCDL(sm[2].str().c_str());
         auto wantArgs = parseCDL(args);
         if (haveArgs.size() != wantArgs.size())
             return BSIERROR;
-#endif
 
         return BSISUCCESS;
         }
@@ -596,12 +600,10 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
     std::string s(textIn);
     while (std::regex_search(s, sm, re))
         {
+        if (3 == sm.size())
+            entryPoint = sm[1].str().c_str();
+
         s = sm.suffix().str();
-
-        if (3 != sm.size())
-            continue;
-
-        entryPoint = sm[1].str().c_str();
         }
     }
 
