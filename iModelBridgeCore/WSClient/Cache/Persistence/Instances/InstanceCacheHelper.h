@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -109,9 +109,10 @@ struct InstanceCacheHelper::CachedInstances
         bset<ECInstanceKey>           m_cachedInstances;
         bset<CachedRelationshipKey>   m_cachedRelationships;
         bmap<ObjectId, ECInstanceKey> m_cachedInstancesByObjectId;
+        bool m_hasPartialInstances = false;
 
     public:
-        void AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance);
+        void AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance, bool isFullyCached);
         void AddRelationshipInstance(ObjectIdCR objectId, const CachedRelationshipKey& relationshipInfo);
 
         bool HasCachedInstance(ObjectIdCR objectId) const;
@@ -121,6 +122,8 @@ struct InstanceCacheHelper::CachedInstances
         bset<ObjectId> GetCachedInstanceObjectIds() const;
         const bmap<ObjectId, ECInstanceKey>& GetCachedInstancesByObjectId() const;
         const bset<CachedRelationshipKey> GetCachedRelationshipInfos() const;
+
+        bool HasPartialInstances() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -152,6 +155,8 @@ struct InstanceCacheHelper::PartialCachingState
 
         bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
         bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
+
+        ECInstanceKeyMultiMap m_dataLossInstances;
 
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
@@ -197,6 +202,12 @@ struct InstanceCacheHelper::PartialCachingState
 
         //! Add Object to rejected list.
         void AddRejected(ObjectIdCR objectId);
+
+        //! Register full instance that got overriten with partial
+        void RegisterOverriddenFullInstance(ECInstanceKeyCR instanceKey);
+
+        //! Get registered instances
+        const ECInstanceKeyMultiMap& GetOverriddenFullInstances() const;
     };
 
 /*--------------------------------------------------------------------------------------+

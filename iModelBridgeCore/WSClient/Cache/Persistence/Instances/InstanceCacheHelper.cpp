@@ -131,6 +131,9 @@ ICancellationTokenPtr ct
             {
             if (PartialCachingState::Action::CachePartial == action)
                 {
+                if (info.IsFullyCached() && info.IsInCache())
+                    partialCachingState->RegisterOverriddenFullInstance(info.GetCachedInstanceKey());
+
                 info.SetObjectState(CachedInstanceState::Partial);
                 }
             else if (PartialCachingState::Action::CacheFull == action)
@@ -153,7 +156,7 @@ ICancellationTokenPtr ct
             }
 
         cachedInstance = info.GetCachedInstanceKey();
-        cachedInstancesInOut.AddInstance(instance.GetObjectId(), cachedInstance);
+        cachedInstancesInOut.AddInstance(instance.GetObjectId(), cachedInstance, info.IsFullyCached());
         }
     else
         {
@@ -396,10 +399,13 @@ BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance)
+void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance, bool isFullyCached)
     {
     m_cachedInstances.insert(cachedInstance);
     m_cachedInstancesByObjectId.insert({objectId, cachedInstance});
+
+    if (!isFullyCached)
+        m_hasPartialInstances = true;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -471,6 +477,14 @@ const bset<CachedRelationshipKey> InstanceCacheHelper::CachedInstances::GetCache
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::CachedInstances::HasPartialInstances() const
+    {
+    return m_hasPartialInstances;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceCacheHelper::PartialCachingState::PartialCachingState
@@ -528,7 +542,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
             }
 
         auto it = paths.find(path);
-        if (it == paths.end() || 
+        if (it == paths.end() ||
             SelectType::All == selectType ||
             SelectType::Id == it->second)
             {
@@ -719,6 +733,22 @@ void InstanceCacheHelper::PartialCachingState::AddRejected(ObjectIdCR objectId)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceCacheHelper::PartialCachingState::RegisterOverriddenFullInstance(ECInstanceKeyCR instanceKey)
+    {
+    m_dataLossInstances.Insert(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECInstanceKeyMultiMap& InstanceCacheHelper::PartialCachingState::GetOverriddenFullInstances() const
+    {
+    return m_dataLossInstances;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceCacheHelper::PartialCachingState::Action InstanceCacheHelper::PartialCachingState::GetAction
@@ -790,19 +820,13 @@ const bset<bvector<SelectPathElement>>& matchPaths
 bool InstanceCacheHelper::PartialCachingState::DoesRequireAllProperties(ObjectInfoCR info)
     {
     if (!info.IsInCache())
-        {
         return false;
-        }
 
     if (IChangeManager::ChangeStatus::Modified == info.GetChangeStatus())
-        {
         return true;
-        }
 
     if (IsFullyPersisted(info))
-        {
         return true;
-        }
 
     return false;
     }
@@ -812,9 +836,13 @@ bool InstanceCacheHelper::PartialCachingState::DoesRequireAllProperties(ObjectIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceCacheHelper::PartialCachingState::IsFullyPersisted(ObjectInfoCR info)
     {
-    return
-        info.IsFullyCached() &&
-        ECDbHelper::IsInstanceInMultiMap(info.GetCachedInstanceKey(), m_fullyPersistedInstances);
+    if (!info.IsFullyCached())
+        return false;
+
+    if (!ECDbHelper::IsInstanceInMultiMap(info.GetCachedInstanceKey(), m_fullyPersistedInstances))
+        return false;
+
+    return true;
     }
 
 /*--------------------------------------------------------------------------------------+

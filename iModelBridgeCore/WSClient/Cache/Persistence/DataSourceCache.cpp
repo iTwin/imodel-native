@@ -482,12 +482,12 @@ DateTime DataSourceCache::ReadResponseAccessDate(CachedResponseKeyCR responseKey
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bset<CachedResponseKey> DataSourceCache::GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName)
     {
     bset<CachedResponseKey> keys;
-    if (SUCCESS!= m_state->GetCachedResponseManager().GetResponsesContainingInstance(instance, keys, responseName))
+    if (SUCCESS != m_state->GetCachedResponseManager().GetResponsesContainingInstance(instance, keys, responseName))
         BeAssert(false);
 
     return keys;
@@ -1495,6 +1495,12 @@ ICancellationTokenPtr ct
 
         if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, partialCachingState.get(), nullptr, ct) ||
             SUCCESS != m_state->GetCachedResponseManager().SavePage(responseKey, page, response.GetETag(), cachedInstances))
+            {
+            return ERROR;
+            }
+
+        if (nullptr != partialCachingState &&
+            SUCCESS != m_state->GetCachedResponseManager().DeleteFullResponsesContainingInstances(partialCachingState->GetOverriddenFullInstances()))
             {
             return ERROR;
             }
