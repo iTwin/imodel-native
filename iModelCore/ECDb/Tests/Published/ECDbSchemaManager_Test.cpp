@@ -702,6 +702,7 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
 TEST_F(ECDbSchemaManagerTests, ImportReferenceSchemaReferedByMultipleSchemas)
     {
     ECDbTestFixture::Initialize();
@@ -719,7 +720,8 @@ TEST_F(ECDbSchemaManagerTests, ImportReferenceSchemaReferedByMultipleSchemas)
    
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
     }
-
+#endif
+    
  //---------------------------------------------------------------------------------------
  // @bsimethod                                    Muhammad Hassan                  10/14
  //+---------------+---------------+---------------+---------------+---------------+------
