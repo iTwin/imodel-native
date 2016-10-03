@@ -48,7 +48,7 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! Set new token lifetime and expiration threshold in minutes
         WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
 
-        WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
+        WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
     };
 
