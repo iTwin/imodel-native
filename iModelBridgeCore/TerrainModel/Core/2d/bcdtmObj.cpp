@@ -2271,6 +2271,8 @@ BENTLEYDTM_Public int  bcdtmObject_allocateFeaturesMemoryDtmObject(BC_DTM_OBJ *d
 */
  if( dtmP->memFeatures == 0 )
    {
+     if (dtmP->iniFeatures == 0)
+         dtmP->iniFeatures = dtmP->incFeatures;
     if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Initial Memory For Features Array") ;
     dtmP->memFeatures = dtmP->iniFeatures ;
     if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->memFeatures = %8ld",dtmP->memFeatures) ;
