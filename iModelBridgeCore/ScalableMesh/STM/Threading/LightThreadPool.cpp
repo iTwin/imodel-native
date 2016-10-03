@@ -25,8 +25,8 @@ bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** res
     return isReserved;
     }
 
-std::thread s_threads[8];
-std::atomic<bool> s_areThreadsBusy[8];
+std::thread s_threads[LIGHT_THREAD_POOL_NUMBER_THREADS];
+std::atomic<bool> s_areThreadsBusy[LIGHT_THREAD_POOL_NUMBER_THREADS];
 void SetThreadAvailableAsync(size_t threadId)
     {
     std::atomic<bool>* areThreadsBusy = s_areThreadsBusy;
@@ -47,7 +47,7 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
     bool wait = true;
     while (wait)
         {
-        for (size_t t = 0; t < 8; ++t)
+        for (size_t t = 0; t < LIGHT_THREAD_POOL_NUMBER_THREADS; ++t)
             {
             bool expected = false;
             if (s_areThreadsBusy[t].compare_exchange_weak(expected, true))
@@ -71,14 +71,14 @@ void WaitForThreadStop()
         std::thread* arrayT = s_threads;
         volatile uint64_t ptr = (uint64_t)arrayT;
         ptr = ptr;
-        for (size_t t = 0; t < 8; ++t)
+        for (size_t t = 0; t < LIGHT_THREAD_POOL_NUMBER_THREADS; ++t)
             {
             if (!s_areThreadsBusy[t] || !s_threads[t].joinable()) ++n;
             }
         if (n == 8) notAllThreadsStopped = false;
         else         std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-    for (size_t t = 0; t < 8; ++t)
+    for (size_t t = 0; t < LIGHT_THREAD_POOL_NUMBER_THREADS; ++t)
         {
         s_areThreadsBusy[t] = false;
 
