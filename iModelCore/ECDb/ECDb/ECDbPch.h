@@ -77,3 +77,4 @@
 #include "DbSchemaPersistenceManager.h"
 #include "ECSchemaComparer.h"
 #include "LightweightCache.h"
+#include "WipPropertyMap.h"
