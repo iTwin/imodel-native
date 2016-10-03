@@ -47,6 +47,10 @@ public:
     //! @return Returns shared pointer of the created instance.
     //! @note This method is called by DgnDbClient. See DgnDbClient::OpenBriefcase.
     static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    
+    //! Gets used DgnDbRepositoryConnection
+    //! @returns DgnDbRepositoryConnection
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr(); //!< Connection to a repository on server.
 
 //__PUBLISH_SECTION_START__
 public:

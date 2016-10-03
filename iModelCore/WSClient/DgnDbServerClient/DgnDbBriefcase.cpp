@@ -411,6 +411,14 @@ DgnDbRepositoryConnectionCR DgnDbBriefcase::GetRepositoryConnection() const
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             09/2016
+//---------------------------------------------------------------------------------------
+DgnDbRepositoryConnectionPtr DgnDbBriefcase::GetRepositoryConnectionPtr()
+    {
+    return m_repositoryConnection;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 BeBriefcaseId DgnDbBriefcase::GetBriefcaseId() const

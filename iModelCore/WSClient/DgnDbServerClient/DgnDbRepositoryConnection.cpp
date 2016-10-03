@@ -123,10 +123,10 @@ DgnDbRepositoryConnection::DgnDbRepositoryConnection
 RepositoryInfoCR           repository,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
-AuthenticationHandlerPtr   authenticationHandler
+IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
-    m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, authenticationHandler);
+    m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
     }
 
@@ -147,7 +147,7 @@ RepositoryInfoCR         repository,
 CredentialsCR            credentials,
 ClientInfoPtr            clientInfo,
 ICancellationTokenPtr    cancellationToken,
-AuthenticationHandlerPtr authenticationHandler
+IHttpHandlerPtr          customHandler
 )
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::Create";
@@ -162,14 +162,14 @@ AuthenticationHandlerPtr authenticationHandler
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
-    if (!credentials.IsValid() && !authenticationHandler)
+    if (!credentials.IsValid() && !customHandler)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
+    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, customHandler));
     #ifndef DEBUG
     if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
     #endif
@@ -1206,6 +1206,22 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
 
     return SendChangesetRequest(changeset, options, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             09/2016
+//---------------------------------------------------------------------------------------
+IWSRepositoryClientPtr DgnDbRepositoryConnection::GetRepositoryClient()
+    {
+    return m_wsRepositoryClient;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             09/2016
+//---------------------------------------------------------------------------------------
+void DgnDbRepositoryConnection::SetRepositoryClient(IWSRepositoryClientPtr client)
+    {
+    m_wsRepositoryClient.swap(client);
     }
 
 //---------------------------------------------------------------------------------------

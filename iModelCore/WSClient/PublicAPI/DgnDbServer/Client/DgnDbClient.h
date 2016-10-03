@@ -45,10 +45,10 @@ private:
     Credentials                 m_credentials;
     Utf8String                  m_projectId;
     ClientInfoPtr               m_clientInfo;
-    AuthenticationHandlerPtr    m_authenticationHandler;
+    IHttpHandlerPtr             m_customHandler;
     DgnDbRepositoryAdmin        m_repositoryAdmin;
 
-    DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
+    DgnDbClient(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
     DgnDbServerRepositoryTaskPtr InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
                                                                  ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -58,6 +58,15 @@ private:
                                                ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
+
+public:
+    //! Set custom handler.
+    //! @param[in] customHandler
+    DGNDBSERVERCLIENT_EXPORT void SetHttpHandler(IHttpHandlerPtr customHandler);
+
+    //! Get custom handler.
+    //! @return Returns HttpHandler
+    DGNDBSERVERCLIENT_EXPORT IHttpHandlerPtr GetHttpHandler();
 
 //__PUBLISH_SECTION_START__
 public:
@@ -81,9 +90,9 @@ public:
 
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
-    //! @param[in] authenticationHandler Http handler for connect authentication.
+    //! @param[in] customHandler Http handler for connect authentication.
     //! @return Returns a shared pointer to the created instance.
-    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr Create(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
+    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
 
     //! Address of the server.
     DGNDBSERVERCLIENT_EXPORT void SetServerURL (Utf8StringCR serverUrl);
