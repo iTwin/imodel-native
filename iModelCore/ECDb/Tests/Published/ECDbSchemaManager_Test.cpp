@@ -708,19 +708,15 @@ TEST_F(ECDbSchemaManagerTests, ImportReferenceSchemaReferedByMultipleSchemas)
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"referancedSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
-    ECSchemaReadContextPtr  context = nullptr;
-
+    ECSchemaReadContextPtr  context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(testecdb.GetSchemaLocater());
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
     ECSchemaPtr supplementalSchemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(supplementalSchemaptr, context, L"StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml", nullptr);
     ASSERT_TRUE(supplementalSchemaptr != NULL);
-
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supplementalSchemaptr);
-
+   
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
     }
 
@@ -888,7 +884,8 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
-    ECSchemaReadContextPtr  context = nullptr;
+    ECSchemaReadContextPtr  context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
 
@@ -1248,6 +1245,48 @@ TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(2, 0));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+//                                               Krischan.Eberle                  10/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
+    {
+
+
+    Utf8CP stdXml = 
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' >"
+        "       <ECProperty propertyName='Test' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    Utf8CP usrXml =
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='usr' nameSpacePrefix='usr' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='std' version='01.00.00' prefix='std'/>"
+        "   <ECEntityClass typeName='FooDerive' >"
+        "       <BaseClass>std:Foo</BaseClass>"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' >"
+        "       <ECProperty propertyName='Test' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr std, usr;
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(std, stdXml, *readContext));
+
+
+    ECDb& ecdb = SetupECDb("duplicateInMemorySchemaTest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+    ecdb.ClearECDbCache();
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

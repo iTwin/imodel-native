@@ -424,20 +424,6 @@ MappingStatus ECDbMap::DoMapSchemas()
         BeAssert(false);
         return ERROR;
         }
-    ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
-    // Construct and initialize the class map
-    if (ecRelationshipClass != nullptr)
-        {
-        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
-            {
-            ctx.AddConstraintClass(*endECClassToLoad);
-            }
-
-        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
-            {
-            ctx.AddConstraintClass(*endECClassToLoad);
-            }
-        }
 
     classMap = classMapTmp;
     return SUCCESS;
