@@ -40,6 +40,95 @@ overflow: hidden;
 </style>
 </head>
 <body>
+    <!-- Have to include the SVG filters in the page because Chrome does not load the 
+     filters from and external file.
+     https://bugs.chromium.org/p/chromium/issues/detail?id=109212 -->
+
+<svg id="bim-filters"
+ xmlns:svg="http://www.w3.org/2000/svg"
+ xmlns="http://www.w3.org/2000/svg"
+ version="1.1">
+<filter
+   style="color-interpolation-filters:sRGB"
+   id="bim-filter-icon-normal">
+  <feFlood
+     id="feFlood4720"
+     flood-color="rgb(0,0,0)"
+     result="result1" />
+  <feComposite
+     id="feComposite4722"
+     in2="SourceGraphic"
+     in="result1"
+     operator="in"
+     result="result4" />
+  <feFlood
+     id="feFlood4752"
+     result="result2"
+     in="SourceGraphic"
+     flood-color="rgb(255,255,255)" />
+  <feComposite
+     id="feComposite4756"
+     in2="SourceGraphic"
+     in="result2"
+     operator="in" />
+  <feOffset
+     dx="0"
+     dy="1"
+     id="feOffset4758"
+     result="result3" />
+  <feComposite
+     id="feComposite4760"
+     in2="result3"
+     in="result4" />
+</filter>
+<filter
+   style="color-interpolation-filters:sRGB"
+   id="bim-filter-icon-hover">
+  <feFlood
+     id="feFlood4720"
+     flood-color="rgb(0,139,225)"
+     result="result1" />
+  <feComposite
+     id="feComposite4722"
+     in2="SourceGraphic"
+     in="result1"
+     operator="in"
+     result="result4" />
+  <feFlood
+     id="feFlood4752"
+     result="result2"
+     in="SourceGraphic"
+     flood-color="rgb(255,255,255)" />
+  <feComposite
+     id="feComposite4756"
+     in2="SourceGraphic"
+     in="result2"
+     operator="in" />
+  <feOffset
+     dx="0"
+     dy="1"
+     id="feOffset4758"
+     result="result3" />
+  <feComposite
+     id="feComposite4760"
+     in2="result3"
+     in="result4" />
+</filter>
+<filter
+   style="color-interpolation-filters:sRGB"
+   id="bim-filter-icon-press">
+  <feFlood
+     id="feFlood4732"
+     flood-color="rgb(255,255,255)"
+     result="result1" />
+  <feComposite
+     id="feComposite4734"
+     in2="SourceGraphic"
+     in="result1"
+     operator="in" />
+</filter>
+</svg>
+
 <div id="cesiumContainer"></div>
 
 <script>
