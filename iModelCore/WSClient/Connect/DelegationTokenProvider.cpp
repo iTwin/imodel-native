@@ -41,18 +41,19 @@ void DelegationTokenProvider::Configure(uint32_t tokenLifetime, uint32_t tokenEx
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr DelegationTokenProvider::UpdateToken()
+AsyncTaskPtr<SamlTokenPtr> DelegationTokenProvider::UpdateToken()
     {
-    auto result = RetrieveNewToken()->GetResult();
+    return RetrieveNewToken()->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+        {
+        if (!result.IsSuccess())
+            return SamlTokenPtr();
 
-    if (!result.IsSuccess())
-        return nullptr;
+        m_token = result.GetValue();
+        m_tokenLifetime = m_token->GetLifetime();
+        m_tokenUpdateDate = DateTime::GetCurrentTimeUtc();
 
-    m_token = result.GetValue();
-    m_tokenLifetime = m_token->GetLifetime();
-    m_tokenUpdateDate = DateTime::GetCurrentTimeUtc();
-
-    return m_token;
+        return m_token;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -111,12 +112,15 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
         if (!updateBaseTokenIfFailed)
             return;
 
-        if (nullptr == m_parentTokenProvider->UpdateToken())
-            return;
-
-        RetrieveNewToken(false)->Then([=] (SamlTokenResult result)
+        m_parentTokenProvider->UpdateToken()->Then([=] (SamlTokenPtr token)
             {
-            *finalResult = result;
+            if (nullptr == token)
+                return;
+
+            RetrieveNewToken(false)->Then([=] (SamlTokenResult result)
+                {
+                *finalResult = result;
+                });
             });
         })
             ->Then<SamlTokenResult>([=]
