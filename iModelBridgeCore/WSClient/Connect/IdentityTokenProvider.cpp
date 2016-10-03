@@ -52,9 +52,12 @@ void IdentityTokenProvider::Configure(uint32_t tokenLifetime, uint32_t tokenRefr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr IdentityTokenProvider::UpdateToken()
+AsyncTaskPtr<SamlTokenPtr> IdentityTokenProvider::UpdateToken()
     {
-    return RenewToken()->GetResult().GetValue();
+    return RenewToken()->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+        {
+        return result.GetValue();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+

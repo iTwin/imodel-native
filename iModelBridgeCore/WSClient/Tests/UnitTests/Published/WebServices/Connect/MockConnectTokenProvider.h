@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,8 +17,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct MockConnectTokenProvider : public IConnectTokenProvider
     {
     public:
-        MOCK_METHOD0 (UpdateToken, SamlTokenPtr ());
-        MOCK_METHOD0 (GetToken, SamlTokenPtr ());
+        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<SamlTokenPtr>());
+        MOCK_METHOD0(GetToken, SamlTokenPtr());
     };
 #endif
 
