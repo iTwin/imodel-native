@@ -6,6 +6,8 @@
 #include "DataSourceBuffer.h"
 #include "include\DataSourceTransferScheduler.h"
 #ifndef NDEBUG
+#include <iostream>
+#include <chrono>
 #include <windows.h>
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
 
@@ -195,10 +197,15 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             {
                 std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
                                                             // Wait while queue of DataSourceBuffers is empty or no longer need processing
+#ifndef NDEBUG
+            static std::atomic<int> s_nWorkThreads = 0;
+            static std::atomic<int> s_nTotalTransfers = 0;
+#endif
             while (((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr) && getShutDownFlag() == false)
                 {
-                //static std::atomic<int> s_nWorkThreads = 0;
-                //if (s_nWorkThreads > 0) s_nWorkThreads -= 1;
+#ifndef NDEBUG
+                if (s_nWorkThreads > 0) s_nWorkThreads -= 1;
+#endif
                 //    {
                 //    std::lock_guard<std::mutex> clk(s_consoleMutex);
                 //    //std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
@@ -206,12 +213,25 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 //    }
                                                             // Wait for buffer data. Note: wait() releases the mutex and blocks
                 dataSourceBufferReady.wait(dataSourceBuffersLock);
-                //s_nWorkThreads += 1;
+#ifndef NDEBUG
+                s_nWorkThreads += 1;
+#endif
                 //    //{
                 //    //std::lock_guard<std::mutex> clk(s_consoleMutex);
                 //    //std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
                 //    //}
                 }
+#ifndef NDEBUG
+            s_nTotalTransfers += 1;
+            static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500)
+                {
+                std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
+                start_time = std::chrono::steady_clock::now();
+                }
+
+#endif
             }
                                                             // If shutting down
             if (getShutDownFlag())
@@ -257,7 +277,22 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 if (locator.getMode() == DataSourceMode_Write_Segmented || locator.getMode() == DataSourceMode_Write)
                     {
                                                             // Attempt to upload a single segment
-                    std::wstring filename = locator.getSubPath() + L"-" + std::to_wstring(segmentIndex);
+                    std::wstring filename = locator.getSubPath();
+                    std::size_t found = filename.find_last_of(L"/\\");
+                    if (found != std::wstring::npos)
+                        {
+                        filename = filename.substr(found);
+                        }
+                    found = filename.find(L"~2F");
+                    if (found != std::wstring::npos)
+                        {
+                        filename = filename.substr(found+3);
+                        }
+
+                    if (buffer->isSegmented())
+                        {
+                        filename += L"-" + std::to_wstring(segmentIndex);
+                        }
                     if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
                         {
                         if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
