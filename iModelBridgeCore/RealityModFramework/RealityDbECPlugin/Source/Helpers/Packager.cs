@@ -106,23 +106,23 @@ namespace IndexECPlugin.Source.Helpers
                 }
             // Create data source.
             List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
-            List<Tuple<DataSourceNet, string>> basicSourceList;
+            List<Tuple<RealityDataSourceNet, string>> basicSourceList;
 
             RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem, out basicSourceList, out wmsSourceList);
 
-            List<Tuple<DataSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
+            List<Tuple<RealityDataSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
 
             List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
             if ( osm )
                 osmSourceList.Add(OsmPackager(sender, connection, queryModule, selectedRegion));
 
             // Create data group and package.
-            ImageryGroupNet imgGroup = ImageryGroupNet.Create();
-            ModelGroupNet modelGroup = ModelGroupNet.Create();
-            PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
-            TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
+            List<ImageryDataNet> imgGroup = new List<ImageryDataNet>();
+            List<ModelDataNet> modelGroup = new List<ModelDataNet> ();
+            List<PinnedDataNet> pinnedGroup = new List<PinnedDataNet> ();
+            List<TerrainDataNet> terrainGroup = new List<TerrainDataNet> ();
 
-            foreach ( Tuple<DataSourceNet, string> realityDataSource in basicSourceList )
+            foreach ( Tuple<RealityDataSourceNet, string> realityDataSource in basicSourceList )
                 {
                 SortRealityDataSourceNet(imgGroup, modelGroup, terrainGroup, realityDataSource);
                 }
@@ -130,20 +130,20 @@ namespace IndexECPlugin.Source.Helpers
             foreach ( WmsSourceNet wmsSource in wmsSourceList )
                 {
                 //&&JFC TODO
-                DataGroupNet dataGroup = DataGroupNet.Create ("", "", wmsSource);
-                imgGroup.AddData (dataGroup);
+                ImageryDataNet imgData = ImageryDataNet.Create ("", "", wmsSource, null);
+                imgGroup.Add(imgData);
                 }
 
-            foreach ( Tuple<DataSourceNet, string> usgsSourceTuple in usgsSourceList )
+            foreach ( Tuple<RealityDataSourceNet, string> usgsSourceTuple in usgsSourceList )
                 {
                 SortRealityDataSourceNet(imgGroup, modelGroup, terrainGroup, usgsSourceTuple);
                 }
 
-            foreach ( DataSourceNet osmSource in osmSourceList )
+            foreach ( RealityDataSourceNet osmSource in osmSourceList )
                 {
                 //&&JFC TODO
-                DataGroupNet dataGroup = DataGroupNet.Create ("", "", osmSource);
-                modelGroup.AddData (dataGroup);
+                ModelDataNet modelData = ModelDataNet.Create ("", "", osmSource);
+                modelGroup.Add(modelData);
                 }
 
             // Create package.
@@ -160,9 +160,9 @@ namespace IndexECPlugin.Source.Helpers
             return instance.InstanceId;
             }
 
-        private void RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, out List<Tuple<DataSourceNet, string>> RDSNList, out List<WmsSourceNet> WMSList)
+        private void RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, out List<Tuple<RealityDataSourceNet, string>> RDSNList, out List<WmsSourceNet> WMSList)
             {
-            RDSNList = new List<Tuple<DataSourceNet, string>>();
+            RDSNList = new List<Tuple<RealityDataSourceNet, string>>();
             WMSList = new List<WmsSourceNet>();
             if ( basicRequestedEntities.Count == 0 )
                 {
@@ -257,12 +257,7 @@ namespace IndexECPlugin.Source.Helpers
 
                     GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
-                    string provider = "";
-                    string metadata = "";
-                    string geocs = ""; //&&JFC TODO GeoCS
-                    List<string> sisterFiles = new List<string>();
-
-                    RDSNList.Add(new Tuple<DataSourceNet, string>(DataSourceNet.Create(genericInfo.URI, genericInfo.Type, genericInfo.Copyright, genericInfo.ID, provider, genericInfo.FileSize, genericInfo.FileInCompound, metadata, geocs, sisterFiles), genericInfo.Classification));
+                    RDSNList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(genericInfo.URI, genericInfo.FileInCompound, genericInfo.Type, genericInfo.ID, genericInfo.Copyright, "", genericInfo.FileSize, "", "", "", "", null), genericInfo.Classification));
                     }
                 }
             }
@@ -424,16 +419,18 @@ namespace IndexECPlugin.Source.Helpers
             if ( vendorSpecific.EndsWith("&") )
                 vendorSpecific = vendorSpecific.TrimEnd('&');
 
-            List<string> sisterFiles = new List<string>();
-
             return WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),      // Url
-                                       mapInfo.Legal,                       // Copyright
+                                       "",                                  // File in compound
+                                       "wms",                               // Type
                                        "",                                  // Id
+                                       mapInfo.Legal,                       // Copyright                                       
                                        "",                                  // Provider
-                                       0,                                   // Filesize
+                                       0,                                   // Size
                                        "",                                  // Metadata
-                                       "",                                  //&&JFC TODO GeoCS
-                                       sisterFiles,                         // Sister files
+                                       "",                                  // Metadata type
+                                       "",                                  // GeoCS
+                                       "",                                  // No data value
+                                       null,                                // Sister files
                                        mapInfo.GetMapURL.TrimEnd('?'),      // Url
                                        minX, minY, maxX, maxY,              // Bbox min/max values
                                        mapInfo.Version,                     // Version
@@ -444,7 +441,7 @@ namespace IndexECPlugin.Source.Helpers
                                        mapInfo.SelectedStyle,               // Styles (comma-separated list)
                                        mapInfo.SelectedFormat,              // Format
                                        vendorSpecific,                      // Vendor Specific
-                                       true);                              // Transparency
+                                       true);                               // Transparency
             }
 
         private OsmSourceNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
@@ -499,20 +496,24 @@ namespace IndexECPlugin.Source.Helpers
             alternateUrls.Add(alternateURL2);
 
             return OsmSourceNet.Create(mainURL,                 // Url
-                                       legal,                   // Data copyright
+                                       "",                      // File in compound
+                                       "osm",                   // Type
                                        "",                      // Id
+                                       legal,                   // Data copyright                                       
                                        "",                      // Provider
-                                       0,                       // Data size
+                                       0,                       // Size
                                        "",                      // Metadata
-                                       "",                      //&&JFC TODO GeoCS
-                                       new List<string>(),      // Sister Files 
+                                       "",                      // Metadata type
+                                       "",                      // GeoCS
+                                       "",                      // No data value
+                                       null,                    // Sister Files 
                                        regionOfInterest,        // bbox
                                        alternateUrls);          // Alternate urls        
             }
 
-        private List<Tuple<DataSourceNet, string>> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        private List<Tuple<RealityDataSourceNet, string>> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
             {
-            List<Tuple<DataSourceNet, string>> usgsSourceNetList = new List<Tuple<DataSourceNet, string>>();
+            List<Tuple<RealityDataSourceNet, string>> usgsSourceNetList = new List<Tuple<RealityDataSourceNet, string>>();
 
             if ( usgsRequestedEntities.Count == 0 )
                 {
@@ -596,16 +597,18 @@ namespace IndexECPlugin.Source.Helpers
                     classification = classificationPropValue.StringValue;
                     }
 
-                usgsSourceNetList.Add(new Tuple<DataSourceNet, string>(DataSourceNet.Create(url,                  // Url
-                                                                                                          type,                 // Main file type
-                                                                                                          copyright,            // Data copyright
-                                                                                                          id,                   // Id
-                                                                                                          "usgs",               // Provider
-                                                                                                          uFileSize,            // Data size
+                usgsSourceNetList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(url,                  // Url
                                                                                                           location,             // Main file location
+                                                                                                          type,                 // Main file type
+                                                                                                          id,                   // Id
+                                                                                                          copyright,            // Data copyright                                                                                                          
+                                                                                                          "usgs",               // Provider
+                                                                                                          uFileSize,            // Data size       
                                                                                                           metadata,             // Metadata
-                                                                                                          "",                      //&&JFC TODO GeoCS
-                                                                                                          new List<string>()),  // Sister files                                                                                                      
+                                                                                                          "",                   // Metadata type
+                                                                                                          "",                   // GeoCS
+                                                                                                          "",                   // No data value
+                                                                                                          null),                // Sister files                                                                                                      
                                                                                                           classification));     // Classif
 
                 }
@@ -613,7 +616,7 @@ namespace IndexECPlugin.Source.Helpers
             return usgsSourceNetList;
             }
 
-        private void SortRealityDataSourceNet (ImageryGroupNet imgGroup, ModelGroupNet modelGroup, TerrainGroupNet terrainGroup, Tuple<DataSourceNet, string> sourceTuple)
+        private void SortRealityDataSourceNet (List<ImageryDataNet> imgGroup, List<ModelDataNet> modelGroup, List<TerrainDataNet> terrainGroup, Tuple<RealityDataSourceNet, string> sourceTuple)
             {
             //This switch case is temporary. The best thing we should have done
             //was to create a method for this, but these "sourceNet" will probably
@@ -630,23 +633,23 @@ namespace IndexECPlugin.Source.Helpers
                 case "PointCloud":
                     {
                     //&&JFC TODO
-                    DataGroupNet dataGroup = DataGroupNet.Create ("", "", sourceTuple.Item1);
-                    modelGroup.AddData (dataGroup);
+                    ModelDataNet modelData = ModelDataNet.Create ("", "", sourceTuple.Item1);
+                    modelGroup.Add(modelData);
                     break;
                     }
                 case "Terrain":
                     {
                     //&&JFC TODO
-                    DataGroupNet dataGroup = DataGroupNet.Create ("", "", sourceTuple.Item1);
-                    terrainGroup.AddData (dataGroup);
+                    TerrainDataNet terrainData = TerrainDataNet.Create ("", "", sourceTuple.Item1);
+                    terrainGroup.Add(terrainData);
                     break;
                     }
                 case "Imagery":
                 default:
                     {
                     //&&JFC TODO
-                    DataGroupNet dataGroup = DataGroupNet.Create ("", "", sourceTuple.Item1);
-                    imgGroup.AddData (dataGroup);
+                    ImageryDataNet imgData = ImageryDataNet.Create ("", "", sourceTuple.Item1, null);
+                    imgGroup.Add(imgData);
                     break;
                     }
                 }

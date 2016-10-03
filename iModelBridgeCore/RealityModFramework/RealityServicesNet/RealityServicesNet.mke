@@ -31,7 +31,9 @@ assemDirToSearch = $(o)
 %include cincapnd.mki
 
 objList = $(o)FtpTraversalEngineCli$(oext) \
-          $(o)HttpTraversalEngineCli$(oext)
+          $(o)HttpTraversalEngineCli$(oext) \
+          $(o)RealityDataPackageNet$(oext) \
+          $(o)RealityDataSourceNet$(oext)
 
 
 #---------------------------------------------
@@ -43,12 +45,17 @@ $(o)FtpTraversalEngineCli$(oext):       $(baseDir)FtpTraversalEngineCli.cpp  $(b
 
 $(o)HttpTraversalEngineCli$(oext):      $(baseDir)HttpTraversalEngineNet\HttpTraversalEngineCli.cpp  $(baseDir)HttpTraversalEngineNet\HttpTraversalEngineCli.h
 
+$(o)RealityDataPackageNet$(oext):       $(baseDir)RealityPackageNet\RealityDataPackageNet.cpp  $(baseDir)RealityPackageNet\RealityDataPackageNet.h
+
+$(o)RealityDataSourceNet$(oext):        $(baseDir)RealityPackageNet\RealityDataSourceNet.cpp  $(baseDir)RealityPackageNet\RealityDataSourceNet.h
+
 %include CompileForCLRStop.mki
 
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)RealityPlatform$(libext) \
-                                $(BuildContextSubPartsLibDir)BentleyGeom$(libext)
+                                $(BuildContextSubPartsLibDir)BentleyGeom$(libext) \
+                                $(BuildContextSubPartsLibDir)RealityPackage$(libext)
                                 
 
 #----------------------------------------------------------------------
