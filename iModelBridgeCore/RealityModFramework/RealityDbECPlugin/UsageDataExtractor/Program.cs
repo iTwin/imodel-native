@@ -102,6 +102,9 @@ namespace UsageDataExtractor
 
         private static void PrintUsage()
             {
+            Console.Out.WriteLine("Before using the program, please configure the email entry of the exe.config file.");
+            Console.Out.WriteLine("The password entry is optional. If not set, the program will ask for it when it is needed.");
+            Console.Out.WriteLine(" ");
             Console.Out.WriteLine("Usage 1: UsageDataExtractor.exe fetch [fetchFileName] [Year] [Month]");
             Console.Out.WriteLine("  The fetch mode searches the GCS logs located in the azure table and gets all xrdp GUIDs captured by the logs,");
             Console.Out.WriteLine("  along with the email of the requester.");
