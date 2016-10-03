@@ -187,7 +187,7 @@ TEST(BeDirectoryIterator, FileNamePattern_Parse)
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     BeFileName wildcard (NULL, L"C:\\abc\\bca", L"a*.txt", NULL);
     FileNamePattern::Parse(dir, glob, wildcard);
-    EXPECT_STREQ(L"c:\\abc\\bca\\", dir.c_str()) << "Directory name is incorrectly parsed";
+    EXPECT_STREQ(L"C:\\abc\\bca", dir.c_str()) << "Directory name is incorrectly parsed";
 #else 
     BeFileName wildcard (NULL, L"/var/abc/bca", L"a*.txt", NULL);
     FileNamePattern::Parse(dir, glob, wildcard);
