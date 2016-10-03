@@ -2350,6 +2350,23 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     return &(GetRelationshipClass().GetSchema());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipConstraint::IsValid() const
+    {
+    // Validates everything even if one of the validations fail in order to build up a list of failures. 
+    bool valid = true;
+    if (ECObjectsStatus::Success != ValidateRoleLabel())
+        valid = false;
+    if (ECObjectsStatus::Success != ValidateMultiplicityConstraint())
+        valid = false;
+    if (ECObjectsStatus::Success != ValidateClassConstraint())
+        valid = false;
+    
+    return valid;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Caleb.Shafer                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2401,8 +2418,15 @@ ECEntityClassCR constraintClass
             auto baseConstraintClass = &ecClassIterator->GetClass();
             if (!constraintClass.Is(baseConstraintClass))
                 {
-                LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not nor derived from Class '%s' as speficied in Class '%s'",
-                            constraintClass.GetName().c_str(), (isSourceConstraint) ? "Source" : "Target", m_relClass->GetName().c_str(), baseConstraintClass->GetName().c_str(), relationshipBaseClass->GetName().c_str());
+                Utf8String errorMessage;
+                errorMessage.Sprintf("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not, nor derived from, Class '%s' as specified in Class '%s'",
+                                     constraintClass.GetName().c_str(), (isSourceConstraint) ? EC_SOURCECONSTRAINT_ELEMENT : EC_SOURCECONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                                     baseConstraintClass->GetName().c_str(), relationshipBaseClass->GetFullName());
+
+                if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
+                    LOG.infov(errorMessage.c_str());
+                else
+                    LOG.errorv(errorMessage.c_str());
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
             }
@@ -2442,21 +2466,41 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
         // since the left side is the current multiplicity and the right side the base class, it is expected the baseclass is bigger.
         if (RelationshipMultiplicity::Compare(RelationshipMultiplicity(lowerLimit, upperLimit), baseClassConstraint->GetMultiplicity()) == -1)
             {
-            LOG.errorv("Multiplicity Violation: The Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
-                        lowerLimit, upperLimit, relationshipClass->GetName().c_str(),
-                        relationshipBaseClass->GetName().c_str(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
+            Utf8String errorMessage;
+            errorMessage.Sprintf("Multiplicity Violation: The Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                                  lowerLimit, upperLimit, relationshipClass->GetFullName(),
+                                  relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
-/// CGM - this is not guaranteed to be accurate.  When using the diff tool to merge, it creates a new ECSchemaPtr which defaults to a 3.1 schema.  The constituent schemas,
-/// though, could be 2.0.
-            //if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() != 2)
-            //    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
-            // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
-            LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%u..%u) to (%u..%u) to conform to new relationship constraint rules.",
-                        relationshipClass->GetName().c_str(), relationshipBaseClass->GetName().c_str(), 
-                        baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
-            baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
+            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3)
+                {
+                LOG.errorv(errorMessage.c_str());
+                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                }
+            else
+                {
+                LOG.infov(errorMessage.c_str());
+                // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
+                LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
+                             relationshipClass->GetFullName(), relationshipBaseClass->GetFullName(),
+                             baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
+                baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
+                }
             }
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel() const
+    {
+    if (Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
+        {
+        LOG.infov("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+                   m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
+        return ECObjectsStatus::Error;
         }
 
     return ECObjectsStatus::Success;
@@ -2474,14 +2518,16 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     _SetRoleLabel(roleLabel);
 
     Utf8String value;  // needed for macros.
-    if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() >= 1)
+    uint32_t ecXmlVersionMajor = m_relClass->GetSchema().GetOriginalECXmlVersionMajor();
+    uint32_t ecXmlVersionMinor = m_relClass->GetSchema().GetOriginalECXmlVersionMinor();
+    if ((ecXmlVersionMajor == 3 && ecXmlVersionMinor >= 1) || ecXmlVersionMajor > 3)
         {
         READ_REQUIRED_XML_ATTRIBUTE(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic, constraintNode.GetName());
 
         Utf8String multiplicity;
         if (BEXML_Success != constraintNode.GetAttributeStringValue(multiplicity, MULTIPLICITY_ATTRIBUTE) || Utf8String::IsNullOrEmpty(multiplicity.c_str()))
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, must have a %s attribute.", m_relClass->GetName().c_str(), MULTIPLICITY_ATTRIBUTE);
+            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, must have a %s attribute.", m_relClass->GetFullName(), MULTIPLICITY_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
             
@@ -2581,13 +2627,15 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     
     xmlWriter.WriteElementStart(elementName);
     
-    if (ecXmlVersionMajor >= 3 && ecXmlVersionMinor >= 1)
+    if ((ecXmlVersionMajor == 3 && ecXmlVersionMinor >= 1) || ecXmlVersionMajor > 3)
         xmlWriter.WriteAttribute(MULTIPLICITY_ATTRIBUTE, m_multiplicity->ToString().c_str());
     else
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
     if (IsRoleLabelDefinedLocally())
         xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
+    else if (!IsRoleLabelDefined() && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
+        xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
         
@@ -2815,7 +2863,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraint::IsRoleLabelDefined () const
     {
-    return !Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str());
+    return !Utf8String::IsNullOrEmpty(_GetInvariantRoleLabel().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2836,11 +2884,11 @@ Utf8String const ECRelationshipConstraint::GetRoleLabel () const
     else
         return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipSourceRoleLabel(m_relClass, GetInvariantRoleLabel());
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String const ECRelationshipConstraint::_GetInvariantRoleLabel() const
     {
     if (m_roleLabel.length() > 0)
         return m_roleLabel;
@@ -2848,32 +2896,27 @@ Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     for (auto const& relBaseClass : m_relClass->GetBaseClasses())
         {
         ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
+            : &relBaseClass->GetRelationshipClassCP()->GetTarget();
         return baseClassConstraint->GetInvariantRoleLabel();
         }
 
     return m_roleLabel;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
     {
-    if (!Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
-        return ECObjectsStatus::Success;
+    Utf8String roleLabel = _GetInvariantRoleLabel();
+    if (!Utf8String::IsNullOrEmpty(roleLabel.c_str()))
+        return roleLabel;
 
     if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-        {
-        if (m_isSource)
-            return SetRoleLabel(m_relClass->GetInvariantDisplayLabel());
-        else
-            return SetRoleLabel(m_relClass->GetInvariantDisplayLabel() + " (Reversed)");
-        }
+        return (m_isSource) ? m_relClass->GetInvariantDisplayLabel() : 
+                                m_relClass->GetInvariantDisplayLabel() + " (Reversed)";
 
-    LOG.errorv("Invalid ECSchemaXML: The %s of the ECRelationshipClass, %s, must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
-                m_relClass->GetDisplayLabel().c_str(), ROLELABEL_ATTRIBUTE);
-    return ECObjectsStatus::Error;
+    return m_roleLabel;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3204,8 +3247,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
     {
     if (baseClass.IsRelationshipClass())
         {
-
-        if (validate)
+        if (validate && GetSchema().IsECVersion(3,1))
             {
             // Get the relationship base class and compare it's strength and direction
             ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
@@ -3217,15 +3259,17 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
 
             if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == -1)
                 {
-			    LOG.errorv("Multiplicity Violation: The Source Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
-				    GetSource().GetMultiplicity().GetLowerLimit(), GetSource().GetMultiplicity().GetUpperLimit(), GetName().c_str(), relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetSource().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetSource().GetMultiplicity().GetUpperLimit());
+			    LOG.errorv("Multiplicity Violation: The Source Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+				            GetSource().GetMultiplicity().GetLowerLimit(), GetSource().GetMultiplicity().GetUpperLimit(), GetFullName(), 
+                            relationshipBaseClass->GetFullName(), relationshipBaseClass->GetSource().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetSource().GetMultiplicity().GetUpperLimit());
 			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
 
             if (RelationshipMultiplicity::Compare(GetTarget().GetMultiplicity(), relationshipBaseClass->GetTarget().GetMultiplicity()) == -1)
                 {
-			    LOG.errorv("Multiplicity Violation: The Target Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
-				    GetTarget().GetMultiplicity().GetLowerLimit(), GetTarget().GetMultiplicity().GetUpperLimit(), GetName().c_str(), relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetTarget().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetTarget().GetMultiplicity().GetUpperLimit());
+			    LOG.errorv("Multiplicity Violation: The Target Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+				            GetTarget().GetMultiplicity().GetLowerLimit(), GetTarget().GetMultiplicity().GetUpperLimit(), GetFullName(), 
+                            relationshipBaseClass->GetFullName(), relationshipBaseClass->GetTarget().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetTarget().GetMultiplicity().GetUpperLimit());
 			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
             }
@@ -3239,7 +3283,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipClass::IsValid () const
     {
-    return ValidateMultiplicityConstraint() && ValidateClassConstraint() && ValidateRoleLabels();
+    return GetSource().IsValid() && GetTarget().IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3254,7 +3298,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
-                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than it's baseclass '%s' (%d).",
+                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than it's Base Class '%s' (%d).",
                             GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrength());
                 return false;
                 }
@@ -3276,7 +3320,7 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
-                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different StrengthDirection (%d) than it's baseclass '%s' (%d).",
+                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction (%d) than it's Base Class '%s' (%d).",
                             GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrengthDirection());
                 return false;
                 }
@@ -3284,42 +3328,6 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
         }
 
     return (!compareValue || GetStrengthDirection() == value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Caleb.Shafer                    08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipClass::ValidateMultiplicityConstraint() const
-    {
-    if (ECObjectsStatus::Success != GetSource().ValidateMultiplicityConstraint() || 
-        ECObjectsStatus::Success != GetTarget().ValidateMultiplicityConstraint())
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Caleb.Shafer                    08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipClass::ValidateClassConstraint() const
-    {
-    if (ECObjectsStatus::Success != GetSource().ValidateClassConstraint() || 
-        ECObjectsStatus::Success != GetTarget().ValidateClassConstraint())
-        return false;
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECRelationshipClass::ValidateRoleLabels() const
-    {
-    if (ECObjectsStatus::Success != GetSource().ValidateRoleLabel() ||
-        ECObjectsStatus::Success != GetTarget().ValidateRoleLabel())
-        return false;
-
-    return true;
     }
    
 /*---------------------------------------------------------------------------------**//**

@@ -328,16 +328,8 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-    //for (classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
-    //    {
-    //    ecClass = classesIterator->first;
-    //    if (ecClass->IsRelationshipClass())
-    //        {
-    //        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-    //        if (!relClass->IsValid())
-    //            return SchemaReadStatus::InvalidECSchemaXml;
-    //        }
-    //    }
+    if (!schemaOut->Validate())
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     return status;
     }
@@ -865,7 +857,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     Utf8String alias; 
     // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
-    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
+    if ((ecXmlMajorVersion == 3 && ecXmlMinorVersion >= 1) || ecXmlMajorVersion > 3)
         {
         if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
             {

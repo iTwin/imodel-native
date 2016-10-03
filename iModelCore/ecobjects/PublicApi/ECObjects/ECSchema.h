@@ -26,6 +26,9 @@
 #define DEFAULT_VERSION_WRITE      0
 #define DEFAULT_VERSION_MINOR       0
 
+#define CURRENT_ECXML_VERSION_MAJOR    3
+#define CURRENT_ECXML_VERSION_MINOR    1
+
 EC_TYPEDEFS(QualifiedECAccessor);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -2145,11 +2148,14 @@ private:
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
 
     ECObjectsStatus             _SetRoleLabel(Utf8StringCR value);
-    ECObjectsStatus             ValidateRoleLabel();
+
+    Utf8String const            _GetInvariantRoleLabel() const;
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
+    bool                        IsValid() const;
+    ECObjectsStatus             ValidateRoleLabel() const;
     ECObjectsStatus             ValidateClassConstraint() const;
     ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateMultiplicityConstraint() const;
@@ -3083,6 +3089,8 @@ private:
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
 
+    uint32_t                m_ecVersionMajor;
+    uint32_t                m_ecVersionMinor;
     uint32_t                m_originalECXmlVersionMajor;
     uint32_t                m_originalECXmlVersionMinor;
 
@@ -3187,6 +3195,10 @@ public:
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMajor() const;
     //! Gets the minor version of the original ECXml.
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMinor() const;
+    //! Gets the major EC Version of the schema.
+    ECOBJECTS_EXPORT uint32_t           GetECVersionMajor() const;
+    //! Gets the minor EC Version of the schema.
+    ECOBJECTS_EXPORT uint32_t           GetECVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Returns an iterable container of ECEnumerations sorted by name.
@@ -3232,6 +3244,15 @@ public:
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+
+    //! Returns true if the schema's EC version matches the given EC major and minor version
+    //! @param[in] ecMajorVersion
+    //! @param[in] ecMinorVersion
+    //! @return True if the schema's EC version matches the given major and minor version
+    ECOBJECTS_EXPORT bool               IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion) const;
+
+    //! Validates the schema against the latest version of EC
+    ECOBJECTS_EXPORT bool               Validate();
 
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
@@ -3438,7 +3459,7 @@ public:
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
-    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in] versionWrite    The write compatibility version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor); }
@@ -3448,11 +3469,14 @@ public:
     //! @param[in]  schemaName      Name of the schema to be created.
     //! @param[in]  alias           Alias of the schema to be created
     //! @param[in]  versionMajor    The major version number.
-    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in]  versionWrite    The write compatibility version number
     //! @param[in]  versionMinor    The minor version number.
-    //! @return A status code indicating whether the call was succesfull or not
+    //! @param[in]  ecVersionMajor  The EC major version of the schema to be created.
+    //! @param[in]  ecVersionMinor  The EC minor version of the schema to be created.
+    //! @return A status code indicating whether the call was succesful or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, 
+                                                         uint32_t ecVersionMajor = CURRENT_ECXML_VERSION_MAJOR, uint32_t ecVersionMinor = CURRENT_ECXML_VERSION_MINOR);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number

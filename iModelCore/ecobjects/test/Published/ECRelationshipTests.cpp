@@ -511,11 +511,11 @@ TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
     // won't be assigned.
 
     // #1 Direction same, Strength differs
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass2)) << "Strength was supposed to have different values (Referencing/Holding) so baseclass was rejected";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass2)) << "Strength was supposed to have different values (Referencing/Holding) so base class was rejected";
     // #2 Strength same, Direction differs
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass3)) << "StrengthDirection was supposed to have different values (Forward/Backward) so baseclass was rejected";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass3)) << "Strength Direction was supposed to have different values (Forward/Backward) so base class was rejected";
     // #3 Strength and Direction are same
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass1->AddBaseClass(*relationClass4)) << "Failing with equal StrengthDirection and Strength, so baseclass should have been accepted.";
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass1->AddBaseClass(*relationClass4)) << "Failing with equal Strength Direction and Strength, so baseclass should have been accepted.";
     }
 
 /*---------------------------------------------------------------------------------**//**

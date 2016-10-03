@@ -260,7 +260,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ():m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap), m_originalECXmlVersionMajor(3), m_originalECXmlVersionMinor(1)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap)
     {};
 
 /*---------------------------------------------------------------------------------**//**
@@ -477,6 +477,11 @@ bool ECSchema::GetIsDisplayLabelDefined () const
     return m_hasExplicitDisplayLabel;
     }
 
+bool ECSchema::IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion) const
+    {
+    return m_ecVersionMajor == ecMajorVersion && m_ecVersionMinor == ecMinorVersion;
+    }
+
 static Utf8CP s_standardSchemaNames[] =
     {
     "Bentley_Standard_CustomAttributes",
@@ -671,6 +676,74 @@ uint32_t ECSchema::GetOriginalECXmlVersionMinor
 ) const
     {
     return m_originalECXmlVersionMinor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetECVersionMajor
+(
+) const
+    {
+    return m_ecVersionMajor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetECVersionMinor
+(
+) const
+    {
+    return m_ecVersionMinor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::Validate()
+    {
+    if (GetClassCount() == 0)
+        return true;
+
+    bool isValid = true;
+
+    // Iterates through all classes and checks them against the most up-to-date 
+    for (ECClassP ecClass : GetClasses())
+        {
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (relClass == nullptr)
+            continue;
+
+        // Will validate against the EC3.1 rules.
+        if (!relClass->IsValid())
+            isValid = false;
+        }
+
+    if (!isValid)
+        {
+        // If the validation fails and the schema is read from an ECXML 3.1 or greater, fail to validate.
+        if ((m_originalECXmlVersionMajor == 3 && m_originalECXmlVersionMinor >= 1) || m_originalECXmlVersionMajor > 3)
+            return false;
+
+        if (!IsECVersion(3, 0))
+            {
+            LOG.warningv("ECSchemaXML did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0");
+
+            // Failed to validate for a 3.1 schema. Downgraded to a 3.0 schema in memory.
+            m_ecVersionMajor = 3;
+            m_ecVersionMinor = 0;
+            }
+        else
+            LOG.warningv("ECSchema did not pass EC3.1 validation.");
+        }
+    else
+        {
+        m_ecVersionMajor = 3;
+        m_ecVersionMinor = 1;
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,9 +1293,14 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, uint32_t ecVersionMajor, uint32_t ecVersionMinor)
     {
     schemaOut = new ECSchema();
+
+    schemaOut->m_ecVersionMajor = ecVersionMajor;
+    schemaOut->m_ecVersionMinor = ecVersionMinor;
+    schemaOut->m_originalECXmlVersionMajor = ecVersionMajor;
+    schemaOut->m_originalECXmlVersionMinor = ecVersionMinor;
 
     ECObjectsStatus status;
 
@@ -1249,7 +1327,7 @@ ECSchemaPtr& schemaOut
 ) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
-    status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionMajor(), GetVersionWrite(), GetVersionMinor());
+    status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionMajor(), GetVersionWrite(), GetVersionMinor(), m_ecVersionMajor, m_ecVersionMinor);
     if (ECObjectsStatus::Success != status)
         return status;
 

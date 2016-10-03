@@ -61,6 +61,93 @@ TEST_F(SchemaDeserializationConversionTest, TestMultiplicityConstraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, ExpectSuccessWithViolatedMultiplicityConstraint)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='abstract'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_FALSE(schema->IsECVersion(3,1));
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+
+    EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(UINT_MAX, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, ExpectSuccessWithViolatedClassConstraint)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='abstract'></ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward' modifier='abstract'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_FALSE(schema->IsECVersion(3,1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationConversionTest, TestNamespacePrefixAttribute)
     {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
