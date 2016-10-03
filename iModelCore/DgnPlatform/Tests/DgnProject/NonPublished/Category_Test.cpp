@@ -631,3 +631,84 @@ TEST_F (CategoryTests, QueryByElementId)
 //    //EXPECT_TRUE(overrides == overridesFromJson);
 //
 //    }
+TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
+    {
+    SetupSeedProject();
+    BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
+    Utf8CP name = "TestCategory";
+    Utf8CP desc = "This is a test category.";
+    DgnCategoryId categoryId; 
+
+        {
+        DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+
+        //Appearence properties.
+        uint32_t weight = 10;
+        double trans = 0.5;
+        uint32_t dp = 1;
+
+        DgnSubCategory::Appearance appearence;
+        appearence.SetInvisible(false);
+        appearence.SetColor(ColorDef::DarkRed());
+        appearence.SetWeight(weight);
+        appearence.SetTransparency(trans);
+        appearence.SetDisplayPriority(dp);
+
+        //Insert category
+        EXPECT_TRUE(category.Insert(appearence).IsValid());
+        categoryId = DgnCategory::QueryCategoryId(name, *m_db);
+        EXPECT_TRUE(categoryId.IsValid());
+
+        DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
+        GeometrySourceP geomElem = el->ToGeometrySourceP();
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+            0, 0, 2,
+            0, 3, 0,
+            0.0, Angle::TwoPi());
+        ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+        EXPECT_TRUE(builder->Append(*ellipse));
+        DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+        EXPECT_TRUE(builder->Append(subCategoryId));
+        EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
+        auto elem = m_db->Elements().Insert(*el);
+        EXPECT_TRUE(elem.IsValid());
+        m_db->SaveChanges();
+        builder->GetGeometryParams().GetSubCategoryId();
+       }
+    m_db->CloseDb();
+
+    OpenDb(m_db, outFileName, mode);
+        {
+        //Updates category.
+        DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+        DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
+        DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
+        appearance2.SetColor(ColorDef::Red());
+        appearance2.SetWeight(5);
+        appearance2.SetTransparency(1);
+        appearance2.SetDisplayPriority(2);
+        DgnDbStatus updateStatus;
+        subCat->Update(&updateStatus);
+        EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
+        //Verification of category properties
+        DgnSubCategoryCPtr updatedSubCat = DgnSubCategory::QuerySubCategory(subCategoryId, *m_db);
+        EXPECT_TRUE(updatedSubCat.IsValid());
+
+        EXPECT_TRUE(ColorDef::Red() == appearance2.GetColor());
+        EXPECT_TRUE(5 == appearance2.GetWeight());
+        EXPECT_TRUE(1 == appearance2.GetTransparency());
+        EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
+        m_db->SaveChanges();
+        }
+    m_db->CloseDb();
+    OpenDb(m_db, outFileName, mode);
+    DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+    DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
+    DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
+    EXPECT_TRUE(ColorDef::Red() == appearance2.GetColor());
+    EXPECT_TRUE(5 == appearance2.GetWeight());
+    EXPECT_TRUE(1 == appearance2.GetTransparency());
+    EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
+    }

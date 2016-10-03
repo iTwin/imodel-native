@@ -132,3 +132,5 @@ RealityDataThreadPool.SpawnsThreads
     # Actual: false
     # Expected: true
     # [  FAILED  ] RealityDataThreadPool.SpawnsThreads (5172 ms)
+
+CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
