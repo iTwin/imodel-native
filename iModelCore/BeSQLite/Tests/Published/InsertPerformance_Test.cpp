@@ -7,27 +7,30 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 
-#define TABLE_IntPrimaryKey         "test_IntPrimaryKey"
-#define TABLE_IntPrimaryKeyShared16 "test_IntPrimaryKeyShared16"
-#define TABLE_BlobPrimaryKey        "test_BlobPrimaryKey"
-#define TABLE_StringPrimaryKey      "test_StringPrimaryKey"
+#define TABLE_IntBlob           "test_IntBlob"
+#define TABLE_IntBlobShared16   "test_IntBlobShared16"
+#define TABLE_IntInt            "test_IntInt"
+#define TABLE_IntIntShared16    "test_IntIntShared16"
+#define TABLE_Blob              "test_Blob"
+#define TABLE_BlobShared16      "test_BlobShared16"
+#define TABLE_Text              "test_Text"
+#define TABLE_TextShared16      "test_TextShared16"
 
-#define DDL_SharedColumns16         ", [sc01], [sc02], [sc03], [sc04], [sc05], [sc06], [sc07], [sc08], [sc09], [sc10], [sc11], [sc12], [sc13], [sc14], [sc15], [sc16]"
-#define DDL_ExtraColumns            ", [X] DOUBLE, [Y] DOUBLE, [Z] DOUBLE, [A] TEXT COLLATE NOCASE, [B] TEXT COLLATE NOCASE, [C] TEXT COLLATE NOCASE, [I] INTEGER, [J] INTEGER, [K] INTEGER"
-#define INTO_ExtraColumns           ",[X],[Y],[Z],[A],[B],[C],[I],[J],[K]"
-#define VALUES_ExtraColumns         ",1.1,2.2,3.3,'AAAAAAAAAA','BBBBBBBBBB','CCCCCCCCCC',1,2,3"
+#define DDL_SharedColumns16     ", [sc01], [sc02], [sc03], [sc04], [sc05], [sc06], [sc07], [sc08], [sc09], [sc10], [sc11], [sc12], [sc13], [sc14], [sc15], [sc16]"
+#define DDL_ExtraColumns        ", [X] DOUBLE, [Y] DOUBLE, [Z] DOUBLE, [A] TEXT COLLATE NOCASE, [B] TEXT COLLATE NOCASE, [C] TEXT COLLATE NOCASE, [I] INTEGER, [J] INTEGER, [K] INTEGER"
+#define INTO_ExtraColumns       ",[X],[Y],[Z],[A],[B],[C],[I],[J],[K]"
+#define VALUES_ExtraColumns     ",1.1,2.2,3.3,'AAAAAAAAAA','BBBBBBBBBB','CCCCCCCCCC',1,2,3"
 
 //=======================================================================================
 // @bsiclass                                    Shaun.Sewall                    09/2016
 //=======================================================================================
 struct InsertPerformanceTests : public ::testing::Test
 {
-protected:
+private:
     Db m_db;
     Statement m_statement;
-
-    static uint64_t s_fileSizeNoSharedColumns;
-    static uint64_t s_fileSizeSharedColumns;
+    StopWatch m_timer;
+    static bmap<Utf8String, uint64_t> s_fileSizeMap;
 
 public:
     static void SetUpTestCase();
@@ -35,18 +38,25 @@ public:
 
     void SetUpDb(Utf8CP dbName);
     int GetNumInserts() const {return 500 * 1000;}
-    void SaveChanges(Utf8CP changesetName=nullptr) {m_db.SaveChanges(changesetName);}
+    void StartTest() {m_timer.Start();}
+    void StopTest(Utf8CP testName);
 
-    void CreateTableIntPrimaryKey();
-    void CreateTableIntPrimaryKeyShared16();
-    void CreateTableBlobPrimaryKey();
-    void CreateTableStringPrimaryKey();
+    void CreateTableIntBlob();
+    void CreateTableIntBlobShared16();
+    void CreateTableIntInt();
+    void CreateTableIntIntShared16();
+    void CreateTableBlob();
+    void CreateTableBlobShared16();
+    void CreateTableText();
+    void CreateTableTextShared16();
 
     void InsertRow(int64_t id, BeGuidCR guid, Utf8CP label);
+    void InsertRow(int64_t id, int64_t id2, Utf8CP label);
     void InsertRow(BeGuidCR guid, Utf8CP label);
     void InsertRow(Utf8CP guid, Utf8CP label);
 
     int GetParameterIndexId() {return m_statement.GetParameterIndex(":Id");}
+    int GetParameterIndexId2() {return m_statement.GetParameterIndex(":Id2");}
     int GetParameterIndexGuid() {return m_statement.GetParameterIndex(":Guid");}
     int GetParameterIndexLabel() {return m_statement.GetParameterIndex(":Label");}
 
@@ -56,8 +66,7 @@ public:
     Utf8String GenerateLabel(Utf8CP prefix, int i) {return Utf8PrintfString("%d", i);} // don't include prefix for now so file sizes are comparable
 };
 
-uint64_t InsertPerformanceTests::s_fileSizeNoSharedColumns = 0;
-uint64_t InsertPerformanceTests::s_fileSizeSharedColumns = 0;
+bmap<Utf8String, uint64_t> InsertPerformanceTests::s_fileSizeMap;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
@@ -77,8 +86,8 @@ void InsertPerformanceTests::SetUpTestCase()
 void InsertPerformanceTests::TearDownTestCase()
     {
     LOGTODB("", "", 0);
-    LOGTODB("File Size", "No SharedColumns", 0, "", (int)s_fileSizeNoSharedColumns);
-    LOGTODB("File Size", "16 SharedColumns", 0, "", (int)s_fileSizeSharedColumns);
+    for (auto entry : s_fileSizeMap)
+        LOGTODB("InsertPerformanceTests", entry.first.c_str(), 0, "FileSize:", (int)entry.second);
     }
 
 //---------------------------------------------------------------------------------------
@@ -107,41 +116,101 @@ void InsertPerformanceTests::SetUpDb(Utf8CP dbName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableIntPrimaryKey()
+void InsertPerformanceTests::StopTest(Utf8CP testName)
     {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntPrimaryKey, "[Id] INTEGER PRIMARY KEY, [Guid] BLOB UNIQUE, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntPrimaryKey " ([Id],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Guid,:Label" VALUES_ExtraColumns ")"));
-    SaveChanges("CreateTableIntPrimaryKey");
+    if (m_db.IsDbOpen())
+        m_db.SaveChanges(testName);
+
+    m_timer.Stop();
+    LOGTODB("InsertPerformanceTests", testName, m_timer.GetElapsedSeconds(), "", GetNumInserts());
+
+    if (m_db.IsDbOpen())
+        {
+        uint64_t fileSize;
+        BeFileName dbFileName(m_db.GetDbFileName(), BentleyCharEncoding::Utf8);
+        ASSERT_EQ(BeFileNameStatus::Success, dbFileName.GetFileSize(fileSize));
+        s_fileSizeMap[testName] = fileSize;
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableIntPrimaryKeyShared16()
+void InsertPerformanceTests::CreateTableIntBlob()
     {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntPrimaryKeyShared16, "[Id] INTEGER PRIMARY KEY, [Guid] BLOB UNIQUE, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntPrimaryKeyShared16 " ([Id],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Guid,:Label" VALUES_ExtraColumns ")"));
-    SaveChanges("CreateTableIntPrimaryKeyShared16");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntBlob, "[Id] INTEGER PRIMARY KEY, [Guid] BLOB UNIQUE, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntBlob " ([Id],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntBlob");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableBlobPrimaryKey()
+void InsertPerformanceTests::CreateTableIntBlobShared16()
     {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_BlobPrimaryKey, "[Guid] BLOB UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_BlobPrimaryKey " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
-    SaveChanges("CreateTableBlobPrimaryKey");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntBlobShared16, "[Id] INTEGER PRIMARY KEY, [Guid] BLOB UNIQUE, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntBlobShared16 " ([Id],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntBlobShared16");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableStringPrimaryKey()
+void InsertPerformanceTests::CreateTableIntInt()
     {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_StringPrimaryKey, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_StringPrimaryKey " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
-    SaveChanges("CreateTableStringPrimaryKey");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntInt, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntInt " ([Id],[Id2],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Id2,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntInt");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableIntIntShared16()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntIntShared16, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntIntShared16 " ([Id],[Id2],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Id2,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntIntShared16");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableBlob()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_Blob, "[Guid] BLOB UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_Blob " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableBlob");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableBlobShared16()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_BlobShared16, "[Guid] BLOB UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_BlobShared16 " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableBlobShared16");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableText()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_Text, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_Text " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableText");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableTextShared16()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_TextShared16, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_TextShared16 " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableTextShared16");
     }
 
 //---------------------------------------------------------------------------------------
@@ -159,6 +228,29 @@ void InsertPerformanceTests::InsertRow(int64_t id, BeGuidCR guid, Utf8CP label)
 
     ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId, id));
     ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(parameterIndexGuid, guid));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
+
+    DbResult result = m_statement.Step();
+    ASSERT_EQ(BE_SQLITE_DONE, result);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::InsertRow(int64_t id, int64_t id2, Utf8CP label)
+    {
+    static int parameterIndexId;
+    static int parameterIndexId2;
+    static int parameterIndexLabel;
+
+    if (0 == parameterIndexId) parameterIndexId = GetParameterIndexId();
+    if (0 == parameterIndexId2) parameterIndexId2 = GetParameterIndexId2();
+    if (0 == parameterIndexLabel) parameterIndexLabel = GetParameterIndexLabel();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId, id));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId2, id2));
     ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
 
     DbResult result = m_statement.Step();
@@ -216,228 +308,359 @@ int64_t InsertPerformanceTests::GenerateSnowflakeId(int counter)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeySequentialNoGuids)
+TEST_F(InsertPerformanceTests, IntBlob_SequentialId_NoGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(i, BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeySequentialQuarterGuids)
+TEST_F(InsertPerformanceTests, IntBlob_SequentialId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(i, BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeySequentialAllGuids)
+TEST_F(InsertPerformanceTests, IntBlob_SequentialId_AllGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(i, BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyRandomNoGuids)
+TEST_F(InsertPerformanceTests, IntBlob_RandomId_NoGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateRandomId(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyRandomQuarterGuids)
+TEST_F(InsertPerformanceTests, IntBlob_RandomId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateRandomId(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyRandomAllGuids)
+TEST_F(InsertPerformanceTests, IntBlob_RandomId_AllGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateRandomId(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyAlternatingBriefcaseIdNoGuids)
+TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_NoGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
-    
-    BeFileName dbFileName(m_db.GetDbFileName(), BentleyCharEncoding::Utf8);
-    dbFileName.GetFileSize(s_fileSizeNoSharedColumns);
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyAlternatingBriefcaseIdQuarterGuids)
+TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyAlternatingBriefcaseIdAllGuids)
+TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_AllGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeyAlternatingBriefcaseIdNoGuidsShared16)
+TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_NoGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKeyShared16();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlobShared16();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
-    
-    BeFileName dbFileName(m_db.GetDbFileName(), BentleyCharEncoding::Utf8);
-    dbFileName.GetFileSize(s_fileSizeSharedColumns);
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntPrimaryKeySnowflakeIdNoGuidsShared16)
+TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntPrimaryKeyShared16();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_NoGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(GenerateSnowflakeId(i), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, BlobPrimaryKey)
+TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableBlobPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateSnowflakeId(i), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateSnowflakeId(i), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntInt_SnowflakeId_AllInternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntInt();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllInternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_QuarterExternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        {
+        if (0 == i%4)
+            {
+            BeGuid externalGuid(true); // simulate an external guid being supplied
+            InsertRow(externalGuid.m_guid.u[0], externalGuid.m_guid.u[1], GenerateLabel(TEST_NAME, i).c_str());
+            }
+        else
+            {
+            InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+            }
+        }
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllExternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        {
+        BeGuid externalGuid(true); // simulate an external guid being supplied
+        InsertRow(externalGuid.m_guid.u[0], externalGuid.m_guid.u[1], GenerateLabel(TEST_NAME, i).c_str());
+        }
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, Blob_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableBlob();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, StringPrimaryKey)
+TEST_F(InsertPerformanceTests, BlobShared16_AllGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableStringPrimaryKey();
-    StopWatch timer(TEST_NAME, true);
+    CreateTableBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, Text_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableText();
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(BeGuid(true).ToString().c_str(), GenerateLabel(TEST_NAME, i).c_str());
 
-    SaveChanges(TEST_NAME);
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, TextShared16_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableTextShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(BeGuid(true).ToString().c_str(), GenerateLabel(TEST_NAME, i).c_str());
+
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -445,7 +668,7 @@ TEST_F(InsertPerformanceTests, StringPrimaryKey)
 //---------------------------------------------------------------------------------------
 TEST_F(InsertPerformanceTests, BeGuidCreate)
     {
-    StopWatch timer(TEST_NAME, true);
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         {
@@ -453,8 +676,7 @@ TEST_F(InsertPerformanceTests, BeGuidCreate)
         UNUSED_VARIABLE(guid);
         }
 
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -462,7 +684,7 @@ TEST_F(InsertPerformanceTests, BeGuidCreate)
 //---------------------------------------------------------------------------------------
 TEST_F(InsertPerformanceTests, BeGuidCreateAndToString)
     {
-    StopWatch timer(TEST_NAME, true);
+    StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
         {
@@ -470,6 +692,5 @@ TEST_F(InsertPerformanceTests, BeGuidCreateAndToString)
         UNUSED_VARIABLE(guid);
         }
 
-    timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), TEST_NAME, GetNumInserts());
+    StopTest(TEST_NAME);
     }
