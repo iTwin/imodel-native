@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RasterSchema/RasterSchemaInternal.h $
+|     $Source: RasterSchema/RasterInternal.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifndef __RASTERSCHEMAINTERNAL_H__
-#define __RASTERSCHEMAINTERNAL_H__
+#ifndef __RASTERINTERNAL_H__
+#define __RASTERINTERNAL_H__
 
-#include <RasterSchema/RasterSchemaApi.h>
+#include <Raster/RasterApi.h>
 #include <unordered_map>
 #include <thread>
 #include <mutex>
@@ -66,12 +66,12 @@
 #include <ImagePP/all/h/HGF2DDCTransfoModel.h>
 
 
-#include <RasterSchema/RasterSchemaTypes.h>
-#include <RasterSchema/RasterSchemaCommon.h>
-#include <RasterSchema/ExportMacros.h>
-#include <RasterSchema/RasterHandler.h>
-#include <RasterSchema/RasterFileHandler.h>
-#include <RasterSchema/RasterDomain.h>
+#include <Raster/RasterTypes.h>
+#include <Raster/RasterCommon.h>
+#include <Raster/ExportMacros.h>
+#include <Raster/RasterHandler.h>
+#include <Raster/RasterFileHandler.h>
+#include <Raster/RasterDomain.h>
 
 
 //
@@ -101,7 +101,7 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_IMAGEPP
-USING_NAMESPACE_BENTLEY_RASTERSCHEMA
+USING_NAMESPACE_BENTLEY_RASTER
 
 
-#endif // __RASTERSCHEMAINTERNAL_H__
+#endif // __RASTERINTERNAL_H__

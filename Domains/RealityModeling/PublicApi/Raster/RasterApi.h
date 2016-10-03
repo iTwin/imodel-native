@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RasterSchema/RasterSchemaApi.h $
+|     $Source: PublicApi/Raster/RasterApi.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,10 +11,10 @@
 
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <RasterSchema/ExportMacros.h>
-#include <RasterSchema/RasterSchemaTypes.h>
-#include <RasterSchema/RasterSchemaCommon.h>
-#include <RasterSchema/RasterDomain.h>
+#include <Raster/ExportMacros.h>
+#include <Raster/RasterTypes.h>
+#include <Raster/RasterCommon.h>
+#include <Raster/RasterDomain.h>
 
 
 //-----------------------------------------------------------------------------------------

@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RasterSchemaInternal.h>
-#include <RasterSchema/RasterFileHandler.h>
+#include <RasterInternal.h>
+#include <Raster/RasterFileHandler.h>
 #include "RasterTileTree.h"
 #include "RasterFileSource.h"
 #include "GcsUtils.h"
@@ -14,7 +14,7 @@
 HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_RASTERSCHEMA
+USING_NAMESPACE_BENTLEY_RASTER
 
 
 //----------------------------------------------------------------------------------------

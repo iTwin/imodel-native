@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RasterSchema/RasterSchema.mke $
+#     $Source: RasterSchema/Raster.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,55 +11,55 @@
 #-----------------------------------------------------------
 # Root directory
 #-----------------------------------------------------------
-SrcRasterSchema                 = $(_MakeFilePath)
+SrcRaster                 = $(_MakeFilePath)
 
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-RasterSchemaPublicApiSrc        = $(SrcRasterSchema)../PublicAPI/RasterSchema/
+RasterPublicApiSrc        = $(SrcRaster)../PublicAPI/Raster/
 
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
 #----------------------------------------------------------
-CompileOptionsMki               = $(SrcRasterSchema)RasterSchema.mki
+CompileOptionsMki               = $(SrcRaster)Raster.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
-                                  $(RasterSchemaPublicApiSrc)RasterDomain.h                 \
-                                  $(RasterSchemaPublicApiSrc)RasterSchemaApi.h              \
-                                  $(RasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
-                                  $(RasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
-                                  $(RasterSchemaPublicApiSrc)RasterHandler.h                \
-                                  $(RasterSchemaPublicApiSrc)RasterDomain.h                 \
-                                  $(RasterSchemaPublicApiSrc)RasterFileHandler.h            \
-                                  $(RasterSchemaPublicApiSrc)WmsHandler.h
+rasterDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
+                                  $(RasterPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterPublicApiSrc)RasterApi.h              \
+                                  $(RasterPublicApiSrc)RasterCommon.h           \
+                                  $(RasterPublicApiSrc)RasterTypes.h            \
+                                  $(RasterPublicApiSrc)RasterHandler.h                \
+                                  $(RasterPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterPublicApiSrc)RasterFileHandler.h            \
+                                  $(RasterPublicApiSrc)WmsHandler.h
 
-rasterDisplayDepends =  $(SrcRasterSchema)RasterTileTree.h
+rasterDisplayDepends =  $(SrcRaster)RasterTileTree.h
 
-wmsDepends    = $(rasterSchemaDepends) \
+wmsDepends    = $(rasterDepends) \
                 $(rasterDisplayDepends) \
-                $(SrcRasterSchema)WmsSource.h
+                $(SrcRaster)WmsSource.h
                         
-rasterFileDepends    =  $(rasterSchemaDepends) \
+rasterFileDepends    =  $(rasterDepends) \
                         $(rasterDisplayDepends) \
-                        $(SrcRasterSchema)RasterFile.h \
-                        $(SrcRasterSchema)RasterFileSource.h \
-                        $(SrcRasterSchema)ImagePPAdmin.h
+                        $(SrcRaster)RasterFile.h \
+                        $(SrcRaster)RasterFileSource.h \
+                        $(SrcRaster)ImagePPAdmin.h
 
 always:
     !~@mkdir $(o)
 
 #----------------------------------------------------------------------
-#   Make sure that RasterSchemaInternal.pch is up-to-date.
+#   Make sure that RasterInternal.pch is up-to-date.
 #----------------------------------------------------------------------
-PchCompiland        = $(SrcRasterSchema)RasterSchemaInternal.cpp
+PchCompiland        = $(SrcRaster)RasterInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
-PchExplicitDepends  = $(rasterSchemaDepends)
+PchExplicitDepends  = $(rasterDepends)
 
 %if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Using pch generate a crash in cc1plus.exe. Apparently this is caused by a too large pch. Should be fixed in future android NDK release.
@@ -68,7 +68,7 @@ PchExplicitDepends  = $(rasterSchemaDepends)
 %endif
 
 # Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
-# is defined this step alters the command line to make the line including <RasterSchemaInternal.h>
+# is defined this step alters the command line to make the line including <RasterInternal.h>
 # work properly.
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -81,25 +81,25 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)RasterHandler$(oext)        : $(SrcRasterSchema)RasterHandler.cpp       $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterHandler$(oext)        : $(SrcRaster)RasterHandler.cpp       $(rasterDepends) ${MultiCompileDepends}
 
-$(o)RasterFileHandler$(oext)    : $(SrcRasterSchema)RasterFileHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterFileHandler$(oext)    : $(SrcRaster)RasterFileHandler.cpp   $(rasterDepends) ${MultiCompileDepends}
 
-$(o)RasterDomain$(oext)         : $(SrcRasterSchema)RasterDomain.cpp        $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterDomain$(oext)         : $(SrcRaster)RasterDomain.cpp        $(rasterDepends) ${MultiCompileDepends}
 
-$(o)RasterTileTree$(oext)       : $(SrcRasterSchema)RasterTileTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterTileTree$(oext)       : $(SrcRaster)RasterTileTree.cpp      $(rasterDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
-$(o)WmsHandler$(oext)           : $(SrcRasterSchema)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
+$(o)WmsHandler$(oext)           : $(SrcRaster)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
 
-$(o)WmsSource$(oext)            : $(SrcRasterSchema)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
+$(o)WmsSource$(oext)            : $(SrcRaster)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
 
-$(o)RasterFile$(oext)           : $(SrcRasterSchema)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
+$(o)RasterFile$(oext)           : $(SrcRaster)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)ImagePPAdmin$(oext)         : $(SrcRasterSchema)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
+$(o)ImagePPAdmin$(oext)         : $(SrcRaster)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)RasterFileSource$(oext)     : $(SrcRasterSchema)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
+$(o)RasterFileSource$(oext)     : $(SrcRaster)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)GcsUtils$(oext)             : $(SrcRasterSchema)GcsUtils.cpp            $(SrcRasterSchema)GcsUtils.h ${MultiCompileDepends}
+$(o)GcsUtils$(oext)             : $(SrcRaster)GcsUtils.cpp            $(SrcRaster)GcsUtils.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -117,7 +117,7 @@ CPchOpts =
 #--------------------------------------------------------------------------------------
 DLM_OBJECT_FILES            = $(objs)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)RasterSchemaInternal$(oext) 
+DLM_OBJECT_PCH              = $(o)RasterInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1

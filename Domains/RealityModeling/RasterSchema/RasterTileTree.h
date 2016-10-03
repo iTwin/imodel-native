@@ -16,7 +16,7 @@ struct TileQuery;
 #define TILESIZE_LIMIT 1024
 #define IsPowerOfTwo(X) (((X)&((X)-1))==0)
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -166,4 +166,4 @@ struct RasterProgressive : Dgn::ProgressiveTask
     ~RasterProgressive();
     };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

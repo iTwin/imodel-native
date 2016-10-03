@@ -11,7 +11,7 @@
 
 #include <DgnPlatform/DgnViewport.h>
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 struct PtViewport;
 
@@ -52,4 +52,4 @@ protected:
     virtual ~PointCloudProgressiveDisplay();
     };
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

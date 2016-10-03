@@ -1,13 +1,13 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: PointCloudSchema/PointCloudSchema.prewire.mke $
+#     $Source: PointCloudSchema/PointCloud.prewire.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/PointCloudSchema : $(_MakeFilePath)../PublicAPI/PointCloudSchema
+$(BuildContext)PublicAPI/PointCloud : $(_MakeFilePath)../PublicAPI/PointCloud
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)ECSchemas/Domain/PointCloud.01.00.ecschema.xml : $(_MakeFilePath)PointCloud.01.00.ecschema.xml

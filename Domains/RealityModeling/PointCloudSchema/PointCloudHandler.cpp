@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
-#include <PointCloudSchema/PointCloudHandler.h>
+#include <PointCloudInternal.h>
+#include <PointCloud/PointCloudHandler.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)

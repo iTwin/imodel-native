@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudHandler.h $
+|     $Source: PublicApi/PointCloud/PointCloudHandler.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 struct PointCloudModelHandler;
 struct PtViewport;
@@ -117,37 +117,37 @@ public:
     //! Return true is successful. Will fail if we cannot open the point cloud.
     bool GetRange(DRange3dR, Unit const&) const;
 
-    POINTCLOUDSCHEMA_EXPORT Utf8StringCR GetSpatialReferenceWkt() const;
-    POINTCLOUDSCHEMA_EXPORT void SetSpatialReferenceWkt(Utf8CP wktString);
+    POINTCLOUD_EXPORT Utf8StringCR GetSpatialReferenceWkt() const;
+    POINTCLOUD_EXPORT void SetSpatialReferenceWkt(Utf8CP wktString);
 
     //! Gets the description of the point cloud.
     //! @return         Description of the point cloud.
-    POINTCLOUDSCHEMA_EXPORT Utf8StringCR GetDescription() const;
+    POINTCLOUD_EXPORT Utf8StringCR GetDescription() const;
     
     //! Sets the description of the point cloud.
     //! @param[in]      description     Description of the point cloud.
-    POINTCLOUDSCHEMA_EXPORT void SetDescription(Utf8CP description);
+    POINTCLOUD_EXPORT void SetDescription(Utf8CP description);
 
     //! Gets the transformation matrix. 
     //! @return         A transformation matrix.
-    POINTCLOUDSCHEMA_EXPORT TransformCR GetSceneToWorld() const;
+    POINTCLOUD_EXPORT TransformCR GetSceneToWorld() const;
 
     //! Set the transformation matrix.
-    POINTCLOUDSCHEMA_EXPORT void SetSceneToWorld(TransformCR trans);
+    POINTCLOUD_EXPORT void SetSceneToWorld(TransformCR trans);
 
     //! Gets the density of a point cloud. This represents the density of points displayed for this point cloud.
     //! @return    The density (a float value between 0.0 and 1.0).
-    POINTCLOUDSCHEMA_EXPORT float GetViewDensity() const;
+    POINTCLOUD_EXPORT float GetViewDensity() const;
 
     //! Sets the density of a point cloud. This represents the density of points displayed for this point cloud. Default is 1.0.
     //! @param[in]  density  The view density expressed as percentage (a float value between 0.0 and 1.0).
-    POINTCLOUDSCHEMA_EXPORT void SetViewDensity(float density);
+    POINTCLOUD_EXPORT void SetViewDensity(float density);
 
-    POINTCLOUDSCHEMA_EXPORT ColorDef GetColor() const;
-    POINTCLOUDSCHEMA_EXPORT void SetColor(ColorDef const& newColor);
+    POINTCLOUD_EXPORT ColorDef GetColor() const;
+    POINTCLOUD_EXPORT void SetColor(ColorDef const& newColor);
 
-    POINTCLOUDSCHEMA_EXPORT uint32_t GetWeight() const;
-    POINTCLOUDSCHEMA_EXPORT void SetWeight(uint32_t const& newWeight);
+    POINTCLOUD_EXPORT uint32_t GetWeight() const;
+    POINTCLOUD_EXPORT void SetWeight(uint32_t const& newWeight);
 
     //! Query the DgnClassId of the PointCloudModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the PointCloudModel class - it does @em not return the class of a specific instance.
@@ -161,10 +161,10 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUD_EXPORT)
 
 public:
-    POINTCLOUDSCHEMA_EXPORT static PointCloudModelPtr CreatePointCloudModel(PointCloudModel::CreateParams const& params);
+    POINTCLOUD_EXPORT static PointCloudModelPtr CreatePointCloudModel(PointCloudModel::CreateParams const& params);
 };
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

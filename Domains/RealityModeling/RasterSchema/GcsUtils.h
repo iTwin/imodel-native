@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
@@ -27,4 +27,4 @@ struct GcsUtils
     static StatusInt Reproject(DPoint3dR dest, DgnGCSCR destGcs, DPoint3dCR srcCartesian, GeoCoordinates::BaseGCSCR sourceGcs);
     };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

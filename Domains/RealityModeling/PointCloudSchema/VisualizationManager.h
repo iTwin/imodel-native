@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 struct PerspectiveViewParams;
 
@@ -50,4 +50,4 @@ struct PerspectiveViewParams
     };
 
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

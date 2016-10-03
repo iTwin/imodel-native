@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudRamps.h $
+|     $Source: PublicApi/PointCloud/PointCloudRamps.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 #define INVALID_RAMP_INDEX (UINT_MAX)
 #define BLACK_RAMP L"[__BlackRamp__]"
@@ -49,18 +49,18 @@ struct PointCloudRamps
         ~PointCloudRamps();
 
     public:
-        POINTCLOUDSCHEMA_EXPORT static PointCloudRamps& GetInstance();
+        POINTCLOUD_EXPORT static PointCloudRamps& GetInstance();
 
-        POINTCLOUDSCHEMA_EXPORT uint32_t                GetIntensityRampIndex(WStringCR name) const;
-        POINTCLOUDSCHEMA_EXPORT uint32_t                GetPlaneRampIndex(WStringCR name) const;
+        POINTCLOUD_EXPORT uint32_t                GetIntensityRampIndex(WStringCR name) const;
+        POINTCLOUD_EXPORT uint32_t                GetPlaneRampIndex(WStringCR name) const;
 
-        POINTCLOUDSCHEMA_EXPORT WStringCR               GetIntensityRampName(uint32_t index) const;
-        POINTCLOUDSCHEMA_EXPORT WStringCR               GetPlaneRampName(uint32_t index) const;
+        POINTCLOUD_EXPORT WStringCR               GetIntensityRampName(uint32_t index) const;
+        POINTCLOUD_EXPORT WStringCR               GetPlaneRampName(uint32_t index) const;
 
-        POINTCLOUDSCHEMA_EXPORT RampNameVector const&   GetIntensityRamps () const;
-        POINTCLOUDSCHEMA_EXPORT RampNameVector const&   GetPlaneRamps () const;
+        POINTCLOUD_EXPORT RampNameVector const&   GetIntensityRamps () const;
+        POINTCLOUD_EXPORT RampNameVector const&   GetPlaneRamps () const;
 
 
     };
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

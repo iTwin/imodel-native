@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include <PointCloudInternal.h>
 
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 DOMAIN_DEFINE_MEMBERS(PointCloudDomain)
 

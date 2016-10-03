@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RasterSchema/RasterHandler.h $
+|     $Source: PublicApi/Raster/RasterHandler.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,9 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <RasterSchema/RasterSchemaTypes.h>
+#include <Raster/RasterTypes.h>
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 struct RasterModelHandler;
 
@@ -36,30 +36,30 @@ public:
     Dgn::ClipVectorCP GetClipVector() const;
 
     //! Create an empty clip
-    RASTERSCHEMA_EXPORT RasterClip();
+    RASTER_EXPORT RasterClip();
     
-    RASTERSCHEMA_EXPORT ~RasterClip();
+    RASTER_EXPORT ~RasterClip();
 
-    RASTERSCHEMA_EXPORT void Clear();
+    RASTER_EXPORT void Clear();
 
-    RASTERSCHEMA_EXPORT bool IsEmpty() const { return !HasBoundary() && GetMasks().empty(); }
+    RASTER_EXPORT bool IsEmpty() const { return !HasBoundary() && GetMasks().empty(); }
 
-    RASTERSCHEMA_EXPORT bool HasBoundary() const { return GetBoundaryCP() != nullptr; }
+    RASTER_EXPORT bool HasBoundary() const { return GetBoundaryCP() != nullptr; }
 
     //! Get the clip boundary.  Might be null.
-    RASTERSCHEMA_EXPORT CurveVectorCP GetBoundaryCP() const;
+    RASTER_EXPORT CurveVectorCP GetBoundaryCP() const;
 
     //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of outer type. Use null to remove.
-    RASTERSCHEMA_EXPORT StatusInt SetBoundary(CurveVectorP pBoundary);
+    RASTER_EXPORT StatusInt SetBoundary(CurveVectorP pBoundary);
 
     //! Get the clip mask list.
-    RASTERSCHEMA_EXPORT MaskVector const& GetMasks() const;
+    RASTER_EXPORT MaskVector const& GetMasks() const;
 
     //! Set the clip mask list.  Curve must be of inner type.
-    RASTERSCHEMA_EXPORT StatusInt SetMasks(MaskVector const&);
+    RASTER_EXPORT StatusInt SetMasks(MaskVector const&);
 
     //! Add a single clip mask to the list. Curve is not copied, its refcount will be incremented. Curve must be of inner type.
-    RASTERSCHEMA_EXPORT StatusInt AddMask(CurveVectorR curve);
+    RASTER_EXPORT StatusInt AddMask(CurveVectorR curve);
  };
 
 
@@ -104,10 +104,10 @@ public:
     RasterModel(CreateParams const& params);
     
     //! Get the clips of this RasterModel.
-    RASTERSCHEMA_EXPORT RasterClipCR GetClip() const;
+    RASTER_EXPORT RasterClipCR GetClip() const;
 
     //! Set the clips of this RasterModel.
-    RASTERSCHEMA_EXPORT void SetClip(RasterClipCR);
+    RASTER_EXPORT void SetClip(RasterClipCR);
 };
 
 //=======================================================================================
@@ -117,9 +117,9 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTER_EXPORT)
 
     virtual void _GetClassParams(Dgn::ECSqlClassParamsR params) override;
 };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

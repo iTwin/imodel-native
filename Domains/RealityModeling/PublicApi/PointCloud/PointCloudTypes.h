@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudSchemaTypes.h $
+|     $Source: PublicApi/PointCloud/PointCloudTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,10 +10,10 @@
 /*__PUBLISH_SECTION_START__*/
 #include <DgnPlatform/DgnPlatform.h>
 
-#include <PointCloudSchema/PointCloudSchemaCommon.h>
-#include <PointCloudSchema/ExportMacros.h>
+#include <PointCloud/PointCloudCommon.h>
+#include <PointCloud/ExportMacros.h>
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 struct  IPointCloudViewSettings;
 struct  IPointCloudClassificationViewSettings;
@@ -25,5 +25,5 @@ typedef RefCountedPtr<IPointCloudClassificationViewSettings>    IPointCloudClass
 typedef RefCountedPtr<PointCloudClassificationViewSettings>     PointCloudClassificationViewSettingsPtr;
 typedef RefCountedPtr<PointCloudModel>                          PointCloudModelPtr;
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE
 

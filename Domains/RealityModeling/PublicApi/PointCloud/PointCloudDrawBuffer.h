@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudDrawBuffer.h $
+|     $Source: PublicApi/PointCloud/PointCloudDrawBuffer.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,7 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #if defined (NEEDS_WORK_POINT_CLOUD)
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     John.Gooding    02/2009
@@ -55,7 +55,7 @@ struct PointCloudDrawParams : public Dgn::Render::PointCloudDraw
     }; // PointCloudDrawParams
 
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE
 
 
 #endif

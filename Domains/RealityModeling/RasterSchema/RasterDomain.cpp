@@ -5,10 +5,10 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RasterSchemaInternal.h>
-#include <RasterSchema/WmsHandler.h>        
+#include <RasterInternal.h>
+#include <Raster/WmsHandler.h>        
 
-USING_NAMESPACE_BENTLEY_RASTERSCHEMA
+USING_NAMESPACE_BENTLEY_RASTER
 
 DOMAIN_DEFINE_MEMBERS(RasterDomain)
 

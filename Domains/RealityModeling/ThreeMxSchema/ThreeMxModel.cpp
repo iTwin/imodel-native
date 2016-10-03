@@ -374,25 +374,27 @@ struct Publish3mxTexture : Render::Texture
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     08/2016
 //=======================================================================================
-struct  PublishTileNode : TileNode
+struct  PublishTileNode : ModelTileNode
 {
     ScenePtr            m_scene;
     NodePtr             m_node;
     ClipVectorCPtr      m_clip;
+    DgnModelId          m_modelId;
 
-    PublishTileNode(SceneR scene, NodeR node, TransformCR transformFromDgn, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
-        : TileNode(dgnRange, transformFromDgn, depth, siblingIndex, tolerance, parent), m_scene(&scene), m_node(&node), m_clip(clip) { }
+    PublishTileNode(DgnModelId modelId, SceneR scene, NodeR node, TransformCR transformDbToTile, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
+        : ModelTileNode(dgnRange, transformDbToTile, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip), m_modelId(modelId) { }
 
 
     struct ClipOutputCollector : PolyfaceQuery::IClipToPlaneSetOutput
         {
-        TileMeshBuilderR   m_builder;
+        TileMeshBuilderR    m_builder;
+        DgnModelId          m_modelId;
         bool                m_twoSidedTriangles;
         
-        ClipOutputCollector(TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_twoSidedTriangles(twoSidedTriangles) { }
+        ClipOutputCollector(DgnModelId modelId, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnElementId(), m_twoSidedTriangles); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, m_modelId, m_twoSidedTriangles); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, m_modelId, m_twoSidedTriangles); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
@@ -416,9 +418,20 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
 
     for (auto& child : *m_node->_GetChildren(true))
         {
-        NodeR       node = (NodeR) *child;
-        bool        clipRequired = m_clip.IsValid() && ClipPlaneContainment_StronglyInside != m_clip->ClassifyRangeContainment(node.GetRange());
+        NodeR                   node = (NodeR) *child;
+        ClipPlaneContainment    clipContainment = ClipPlaneContainment_StronglyInside;
 
+        if (m_clip.IsValid())
+            {
+            DRange3d    tileRange;
+
+            sceneToTile.Multiply (tileRange, node.GetRange());
+            if (ClipPlaneContainment_StronglyOutside == (clipContainment = m_clip->ClassifyRangeContainment(tileRange)))
+                {
+                BeAssert (false);
+                continue;
+                }
+            }
 
         for (auto& geometry : node.GetGeometry())
             {
@@ -457,15 +470,15 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
                     }
                 }
 
-            if (clipRequired)
+            if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
-                ClipOutputCollector clipOutputCollector(*builder, twoSidedTriangles);
+                ClipOutputCollector clipOutputCollector(m_modelId, *builder, twoSidedTriangles);
 
                 m_clip->ClipPolyface(*polyface, clipOutputCollector, true);
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnElementId(), twoSidedTriangles);
+                builder->AddPolyface(*polyface, m_modelId, twoSidedTriangles);
                 }
             }
         }                                                                                                                                                                                                                        
@@ -481,7 +494,7 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry
 
 //=======================================================================================                                                             
 // @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
+//=======================================================================================
 struct Publish3mxScene : Scene
 {
     using Scene::Scene;
@@ -495,24 +508,24 @@ typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, TransformCR transformFromDgn, ClipVectorCPtr& dgnClip, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
+static T_PublishTilePtr tileFromNode(DgnModelId modelId, NodeR node, SceneR scene, TransformCR transformDbToTile, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    TransformCR sceneToDgn = scene.GetLocation();
-    double   tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    Transform       sceneToTile = Transform::FromProduct(transformDbToTile, scene.GetLocation());
+    double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    DRange3d        tileRange, dgnRange;
 
-    range = node.GetRange();
-    sceneToDgn.Multiply(range, range);
+    scene.GetLocation().Multiply (dgnRange, node.GetRange());
+    sceneToTile.Multiply(tileRange, node.GetRange());
 
-    if (dgnClip.IsValid() &&
-        ClipPlaneContainment_StronglyOutside == dgnClip->ClassifyRangeContainment(range))
+    if (nullptr != tileClip &&
+        ClipPlaneContainment_StronglyOutside == tileClip->ClassifyRangeContainment(tileRange))
         return nullptr;
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
 
-    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
-    DRange3d                        childrenRange = DRange3d::NullRange();
-    T_PublishTilePtr  tileNode = new PublishTileNode(scene, node, transformFromDgn, range, depth, siblingIndex, tolerance, parent, tileClip);
+    static size_t       s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    T_PublishTilePtr    tileNode = new PublishTileNode(modelId, scene, node, transformDbToTile, dgnRange, depth, siblingIndex, tolerance, parent, tileClip);
 
     if (nullptr != node._GetChildren(false) && depth < s_depthLimit)
         {
@@ -525,26 +538,13 @@ static T_PublishTilePtr tileFromNode(DRange3dR range, NodeR node, SceneR scene, 
 
             if (childNode._HasChildren())
                 {
-                DRange3d            childRange;
                 T_PublishTilePtr    childTile;
 
-                if ((childTile = tileFromNode(childRange, (NodeR) *child, scene, transformFromDgn, dgnClip, tileClip, depth, childIndex++, tileNode.get())).IsValid())
-                    {
+                if ((childTile = tileFromNode(modelId, (NodeR) *child, scene, transformDbToTile, tileClip, depth, childIndex++, tileNode.get())).IsValid())
                     tileNode->GetChildren().push_back(childTile);
-                    childrenRange.Extend(childRange);
-                    }
-                }
-            else
-                {
-                for (auto& geometry : childNode.GetGeometry())
-                    for (auto& point : geometry->GetPoints())
-                        childrenRange.Extend(point.x, point.y, point.z);
                 }
             }
         }
-
-    if (!childrenRange.IsNull())
-        tileNode->SetDgnRange(range = childrenRange);
 
     return tileNode;
     }
@@ -560,8 +560,6 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    DRange3d            range = DRange3d::NullRange();             
-
     ClipVectorPtr       tileClip;
 
     if (m_clip.IsValid())
@@ -570,7 +568,7 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
         tileClip->TransformInPlace(transformDbToTile);
         }
 
-    rootTile = tileFromNode(range, (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, m_clip, tileClip.get(), 0, 0, nullptr).get();
+    rootTile = tileFromNode(GetModelId(), (NodeR) *scene->GetRootTile(), *scene, transformDbToTile, tileClip.get(), 0, 0, nullptr).get();
 
     return TileGenerator::Status::Success;
     }

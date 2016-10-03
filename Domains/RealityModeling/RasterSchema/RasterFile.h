@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
 // This is a wrapper class around a HFCPtr<HRFRasterFile> basically. It is needed because we want to 
@@ -48,6 +48,6 @@ public:
             GeoCoordinates::BaseGCSPtr                      GetBaseGcs() const;
 };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE
 
 

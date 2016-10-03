@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/PointCloudSchema/PointCloudSchemaApi.h $
+|     $Source: PublicApi/PointCloud/PointCloudApi.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,10 +15,10 @@
 #include <ECObjects/ECSchema.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 
-#include <PointCloudSchema/ExportMacros.h>
-#include <PointCloudSchema/PointCloudSchemaTypes.h>
-#include <PointCloudSchema/PointCloudSchemaCommon.h>
-#include <PointCloudSchema/PointCloudDomain.h>
+#include <PointCloud/ExportMacros.h>
+#include <PointCloud/PointCloudTypes.h>
+#include <PointCloud/PointCloudCommon.h>
+#include <PointCloud/PointCloudDomain.h>
 
 #define POINTCLOUD_SCHEMA_NAME "PointCloud"
 #define POINTCLOUD_SCHEMA_FILE L"PointCloud.01.00.ecschema.xml"

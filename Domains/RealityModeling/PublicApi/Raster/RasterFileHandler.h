@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RasterSchema/RasterFileHandler.h $
+|     $Source: PublicApi/Raster/RasterFileHandler.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,11 +8,11 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <RasterSchema/RasterSchemaApi.h>
-#include <RasterSchema/RasterHandler.h>
-#include <RasterSchema/RasterSchemaTypes.h>
+#include <Raster/RasterApi.h>
+#include <Raster/RasterHandler.h>
+#include <Raster/RasterTypes.h>
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 struct RasterFileModelHandler;
 struct RasterRoot;
@@ -104,15 +104,15 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTER_EXPORT)
 private:
 
     static StatusInt ComputeGeoLocationFromFile(DMatrix4dR sourceToWorld, RasterFileR raster, Dgn::DgnDbR dgndb);
 
 public:
-    RASTERSCHEMA_EXPORT static  RasterFileModelPtr CreateRasterFileModel(RasterFileModel::CreateParams const& params);
+    RASTER_EXPORT static  RasterFileModelPtr CreateRasterFileModel(RasterFileModel::CreateParams const& params);
 };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE
 
 

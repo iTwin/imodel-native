@@ -5,11 +5,11 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include <PointCloudInternal.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    01/2009

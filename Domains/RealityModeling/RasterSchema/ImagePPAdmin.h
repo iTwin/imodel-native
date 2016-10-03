@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 struct MyImageppLibHost : ImagePP::ImageppLib::Host
     {
@@ -28,4 +28,4 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
     virtual                                         ~MyImageppLibAdmin() {}
     };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

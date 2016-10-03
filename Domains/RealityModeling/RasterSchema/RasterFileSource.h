@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Mathieu.Marchand  9/2016
@@ -55,4 +55,4 @@ public:
 };
 
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE

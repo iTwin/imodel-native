@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RasterSchemaInternal.h>
-#include <RasterSchema/RasterHandler.h>
+#include <RasterInternal.h>
+#include <Raster/RasterHandler.h>
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 
 #define RASTER_MODEL_PROP_Clip "Clip"
 
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_RASTERSCHEMA
+USING_NAMESPACE_BENTLEY_RASTER
 
 HANDLER_DEFINE_MEMBERS(RasterModelHandler)
 

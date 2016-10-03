@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 #define DRAW_OUTPUTCAPACITY     (1048576)
 #define DRAW_QUERYCAPACITY      (1048576)
@@ -34,4 +34,4 @@ struct PointCloudRenderer
         Dgn::ProgressiveTask::Completion DrawPointCloud(Dgn::ViewContextR context, PointCloudClassificationSettings const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
     };  //  PointCloudRenderer
 
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+END_BENTLEY_POINTCLOUD_NAMESPACE

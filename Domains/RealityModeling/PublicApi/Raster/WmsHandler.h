@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RasterSchema/WmsHandler.h $
+|     $Source: PublicApi/Raster/WmsHandler.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,9 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <RasterSchema/RasterHandler.h>
+#include <Raster/RasterHandler.h>
 
-BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+BEGIN_BENTLEY_RASTER_NAMESPACE
 
 struct WmsModelHandler;
 
@@ -31,16 +31,16 @@ struct WmsMap
 
     //! Construct a a new WmsMap.  csType is deduce from version and format is set to "image/png".
     //! By default a meta raster of 10 resolutions is generated.
-    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csLabel);
+    RASTER_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csLabel);
 
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const;
 
     //! Compute and set metaWidth and metaHeight using the number of requested resolution. Bounding box aspect ratio is preserved.
-    RASTERSCHEMA_EXPORT void SetMetaSizeByResolutionCount(uint32_t count);
+    RASTER_EXPORT void SetMetaSizeByResolutionCount(uint32_t count);
 
     //! Set metaWidth and metaHeight. The largest side of the bounding box is set to pixelCount and the other meta size is computed to preserves bounding box aspect ratio.
-    RASTERSCHEMA_EXPORT void SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount);
+    RASTER_EXPORT void SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount);
 
     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
 
@@ -104,10 +104,10 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTER_EXPORT)
 
 public:
-    RASTERSCHEMA_EXPORT static Dgn::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
+    RASTER_EXPORT static Dgn::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
 };
 
-END_BENTLEY_RASTERSCHEMA_NAMESPACE
+END_BENTLEY_RASTER_NAMESPACE
