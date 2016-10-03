@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)
 
 static Utf8CP JSON_PointCloudModel = "PointCloudModel";
-static Utf8CP PROPERTYJSON_FileId = "FileId";
+static Utf8CP PROPERTYJSON_FileUri = "FileUri";
 static Utf8CP PROPERTYJSON_SceneToWorld = "SceneToWorld";
 static Utf8CP PROPERTYJSON_Description = "Description";
 static Utf8CP PROPERTYJSON_Wkt = "Wkt";
@@ -34,7 +34,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     {
     // Find resolved file name for the point cloud
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
+    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
     if (status != SUCCESS)
         {
         ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
@@ -55,7 +55,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     WString wkt = pPointCloudScene->GetSurveyGeoreferenceMetaTag();
 
     PointCloudModel::Properties props;
-    props.m_fileId = params.m_fileId;
+    props.m_fileUri = params.m_fileUri;
     props.m_wkt.Assign(wkt.c_str());
     
     DRange3d sceneRange;
@@ -184,7 +184,7 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
 
         // Find resolved file name for the point cloud
         BeFileName fileName;
-        BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, m_properties.m_fileId, GetDgnDb());
+        BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, m_properties.m_fileUri, GetDgnDb());
         if (status != SUCCESS)
             {
             ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
@@ -282,7 +282,7 @@ PointCloudModel::Properties::Properties()
 //----------------------------------------------------------------------------------------
 void PointCloudModel::Properties::ToJson(Json::Value& v) const
     {
-    v[PROPERTYJSON_FileId] = m_fileId.c_str();
+    v[PROPERTYJSON_FileUri] = m_fileUri.c_str();
 
     if (!m_description.empty())
         v[PROPERTYJSON_Description] = m_description.c_str();
@@ -303,7 +303,7 @@ void PointCloudModel::Properties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::Properties::FromJson(Json::Value const& v)
     {
-    m_fileId = v[PROPERTYJSON_FileId].asString();
+    m_fileUri = v[PROPERTYJSON_FileUri].asString();
     m_description = v[PROPERTYJSON_Description].asString();
 
     JsonUtils::TransformFromJson(m_sceneToWorld, v[PROPERTYJSON_SceneToWorld]);
