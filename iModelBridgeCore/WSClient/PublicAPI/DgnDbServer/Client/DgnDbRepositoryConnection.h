@@ -157,7 +157,7 @@ private:
     friend struct DgnDbBriefcase;
     friend struct DgnDbRepositoryManager;
 
-    DgnDbRepositoryConnection (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
+    DgnDbRepositoryConnection (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
     //! Sets AzureBlobStorageClient. 
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
@@ -254,11 +254,11 @@ public:
     //! @param[in] credentials Credentials used to authenticate on the repository.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] cancellationToken
-    //! @param[in] authenticationHandler Http handler for connect authentication.
+    //! @param[in] customHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note DgnDbClient is the class that creates this connection. See DgnDbClient::OpenBriefcase.
     static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
-                                                   ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
+                                                   ICancellationTokenPtr cancellationToken = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
     //! Checks whether master file with specified fileId is active.
     //! @param[in] fileId Db guid of the master file.
@@ -288,6 +288,13 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
         BeGuidCR masterFileId, Utf8StringCR lastRevisionId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
+    
+    //!< Gets RepositoryClient.
+    //! @return Returns repository client
+    DGNDBSERVERCLIENT_EXPORT IWSRepositoryClientPtr GetRepositoryClient();
+    //! Sets RepositoryClient.
+    //! @param[in] client
+    DGNDBSERVERCLIENT_EXPORT void  SetRepositoryClient(IWSRepositoryClientPtr client);
 
 //__PUBLISH_SECTION_START__
 public:
