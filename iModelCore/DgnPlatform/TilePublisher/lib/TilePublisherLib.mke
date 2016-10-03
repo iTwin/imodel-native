@@ -25,6 +25,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 
+$(o)resize$(oext)        : $(SrcDir)resize.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \

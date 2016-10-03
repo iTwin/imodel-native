@@ -152,7 +152,7 @@ private:
     uint32_t        m_depth = 0xffffffff;
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
-    bool            m_displayInPlace = false;
+    bool            m_displayInPlace = true;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
 
     DgnViewId GetViewId(DgnDbR db) const;

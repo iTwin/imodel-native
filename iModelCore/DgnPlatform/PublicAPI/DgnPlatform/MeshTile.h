@@ -169,7 +169,8 @@ public:
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
-    DRange3d GetRange() { return DRange3d::From (m_points); }
+    DRange3d GetRange() const { return DRange3d::From (m_points); }
+    DRange3d GetUVRange() const { return DRange3d::From (m_uvParams, 0.0); }
     bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
