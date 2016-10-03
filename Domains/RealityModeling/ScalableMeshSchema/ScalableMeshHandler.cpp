@@ -618,13 +618,14 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
         }
     }
 
-struct  ScalableMeshTileNode : TileNode
+struct  ScalableMeshTileNode : ModelTileNode
     {
-    IScalableMeshNodePtr             m_node;
-    Transform           m_transform;
+    IScalableMeshNodePtr    m_node;
+    Transform               m_transform;
+    DgnModelId              m_modelId;
 
-    ScalableMeshTileNode(IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
-        m_node(node), m_transform(transform), TileNode(transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
+    ScalableMeshTileNode(DgnModelId modelId, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
+        m_modelId(modelId), m_node(node), m_transform(transform), ModelTileNode(transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
         {}
 
 
@@ -666,7 +667,7 @@ struct  ScalableMeshTileNode : TileNode
                 }
             builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
-                builder->AddTriangle(*visitor, DgnElementId(), false, twoSidedTriangles);
+                builder->AddTriangle(*visitor, m_modelId, false, twoSidedTriangles);
 
             tileMeshes.push_back(builder->GetMesh());
             }
@@ -681,7 +682,7 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
     DRange3d transformedRange = node->GetContentExtent();
     if (transformedRange.IsNull() || transformedRange.IsEmpty()) transformedRange = node->GetNodeExtent();
     transformDbToTile.Multiply(transformedRange, transformedRange);
-    rootTile = new ScalableMeshTileNode(node, transformedRange, transformDbToTile, childIndex, parent);
+    rootTile = new ScalableMeshTileNode(GetModelId(), node, transformedRange, transformDbToTile, childIndex, parent);
 
     for (auto& child : node->GetChildrenNodes())
         {
