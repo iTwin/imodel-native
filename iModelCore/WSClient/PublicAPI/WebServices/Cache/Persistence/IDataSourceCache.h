@@ -108,15 +108,21 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Saving data to cache
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        //! Saves query response to cache
-        //! @param[in] responseKey - key used to store response data
-        //! @param[in] response - contains information about instances. Will trim to current page index if response is final.
+        //! Saves query response to cache.
+        //! Cache supports two levels data completeness - full and partial (see CachedObjectInfo::IsFullyCached()).
+        //!     - Full means that all properties for instance were cached. Useful for small sets of data. For large sets you might get 
+        //!       better performance when selecting important properies, see next. 
+        //!     - Partial means that there was custom select for specific properties. Cache only supports one set of properties for given 
+        //!       class, application should never mix multiple select combinations in different requests. Selecting subset of properties is
+        //!       only useful for performance reasons - faster server query and caching time is minimized. Consider this if you need to show
+        //!       large list of items to user.
+        //! @param[in] responseKey - key used indicate response and bind data to it
+        //! @param[in] response - contains information about instances. Will set response as completed if final.
         //! @param[out] rejectedOut - returns ObjectIds that are protected by full persistence and were not updated with partial instances. 
         //! Required when specifying query.
-        //! @param[in] query - when specified, is used to determine instances that are partial and thus not overriding already fully 
-        //! cached instances. Null results in all instances treated as full that overrides existing data.
-        //! FinalizeCachedResponse needs to be called later if non-null value is passed.
-        //! @param[in] page - page index being cached
+        //! @param[in] query - is used to determine instances that are partial and thus not overriding already fully 
+        //! cached instances and marking reponse as partial or not. Null results in all instances treated as full.
+        //! @param[in] page - page index being cache. Always 0 if no paging is used.
         //! @param[in] ct - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
         virtual BentleyStatus CacheResponse
             (

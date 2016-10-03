@@ -15,13 +15,6 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-Json::Value ReadInstance(IDataSourceCachePtr cache, ObjectIdCR objectId)
-    {
-    Json::Value instanceJson;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadInstance(objectId, instanceJson));
-    return instanceJson;
-    }
-
 template<typename T>
 std::set<T> ToStdSet(const bset<T>& bset)
     {
@@ -1426,7 +1419,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CachedInstanceAsParentInCache_Succeed
     auto instance = StubInstanceInCache(*cache);
     CachedResponseKey responseKey(instance, nullptr);
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
@@ -1436,7 +1429,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RootAsParentInCache_Succeeds)
     auto root = cache->FindOrCreateRoot("Foo");
     CachedResponseKey responseKey(root, nullptr);
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
@@ -1447,7 +1440,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NavigationBaseAsParentInCache_Succeed
     auto navigationBase = cache->FindInstance(ObjectId());
     CachedResponseKey responseKey(navigationBase, nullptr);
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
@@ -1458,8 +1451,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentInstanc
     CachedResponseKey key1(parentKey, "A");
     CachedResponseKey key2(parentKey, "B");
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(key1));
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
@@ -1471,8 +1464,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentRoot_Su
     CachedResponseKey key1(parentKey, "A");
     CachedResponseKey key2(parentKey, "B");
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(key1));
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
@@ -1485,8 +1478,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderInstanc
     CachedResponseKey key1(parentKey, "A", holderKey);
     CachedResponseKey key2(parentKey, "B", holderKey);
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(key1));
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
@@ -1499,8 +1492,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderRoot_Su
     CachedResponseKey key1(parentKey, "A", holderKey);
     CachedResponseKey key2(parentKey, "B", holderKey);
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(key1));
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
@@ -1515,7 +1508,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "TestValueA"}});
     instances.Add({"TestSchema.TestClass2", "B"}, {{"TestProperty", "TestValueB"}});
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass2", "B"}).IsFullyCached());
@@ -1541,7 +1534,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPrevi
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "B"});
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
@@ -1559,7 +1552,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameButDifferentParentsC
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "B"});
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
@@ -1721,7 +1714,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCac
     instances.Add({"TestSchema.TestClass", "A"});
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     }
@@ -1737,7 +1730,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_Ca
     instancesRelatedToA.AddRelated({"TestSchema.TestRelationshipClass", "AC"}, {"TestSchema.TestClass", "C"})
         .AddRelated({"TestSchema.TestRelationshipClass", "CD"}, {"TestSchema.TestClass", "D"});
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
@@ -1863,10 +1856,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelatio
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     instances.Clear();
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
@@ -1888,7 +1881,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithoutRelationshipButSameRe
     instances.Add({"TestSchema.TestClass", "A"});
     instances.Add({"TestSchema.TestClass", "B"});
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
 
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
 
@@ -1927,7 +1920,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceNotCachedPreviouslyAndQueryIs
     partialInstances.Add({"TestSchema.TestClass", "Partial"});
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
 
     EXPECT_TRUE(rejected.empty());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Partial"}).IsInCache());
@@ -1951,7 +1944,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     partialInstances.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "NewValue"}});
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
 
     // Assert
     Json::Value instance;
@@ -1980,7 +1973,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     partialInstances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "PartialValue"}});
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse(), &rejected, nullptr));
 
     // Assert
     Json::Value instance;
@@ -2015,7 +2008,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryHasEmptySelectToSelectAllPropert
     WSQuery query("TestSchema", "TestClass");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
@@ -2033,7 +2026,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllProperties_CachesInsta
     query.SetSelect("*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
@@ -2051,7 +2044,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllPropertiesWithDifferen
     query.SetSelect("*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
@@ -2069,7 +2062,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllProperties_CachesIn
     query.SetSelect("TestProperty");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -2088,7 +2081,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProp
     query.SetSelect("TestProperty");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -2107,7 +2100,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaA
     query.SetSelect("$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -2131,10 +2124,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdAndSomeProperiesForFull
     query.SetSelect("$id,TestProperty");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2155,10 +2148,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsSomeProperiesAndIdForFull
     query.SetSelect("TestProperty,$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "Foo"} }));
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2179,10 +2172,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsOnlyIdForFullyCachedInsta
     query.SetSelect("$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
-    EXPECT_EQ("FullValue", ReadInstance(cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
+    EXPECT_EQ("FullValue", ReadInstance(*cache, {"TestSchema.TestClass", "Foo"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -2200,7 +2193,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryDSelectsForwardRelatedInstanceFo
     query.SetSelect("*,TestSchema.TestRelationshipClass-forward-TestSchema.TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2221,7 +2214,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsForwardRelatedInstanceWit
     query.SetSelect("*,TestRelationshipClass-forward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2242,7 +2235,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsBackwardRelatedInstanceWi
     query.SetSelect("*,TestRelationshipClass-backward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2263,7 +2256,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
     query.SetSelect("*,TestRelationshipClass-forward-TestClass!poly.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2284,7 +2277,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
     query.SetSelect("*,TestRelationshipClass-forward-TestClass!poly.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2305,7 +2298,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     query.SetSelect("*,TestRelationshipClass!poly-forward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2326,7 +2319,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     query.SetSelect("*,TestRelationshipClass!poly-forward-TestClass.$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2347,7 +2340,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedFullyWithDefaultRe
     query.SetSelect("*,TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2370,7 +2363,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedPropertyOnlyAndRel
     query.SetSelect("*,TestRelationshipClass-forward-TestClass.TestProperty,TestRelationshipClass-forward-TestClass.$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
     EXPECT_EQ(1, rejected.size());
     EXPECT_CONTAINS(rejected, ObjectId("TestSchema.TestClass", "B"));
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2396,12 +2389,12 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsId
     query.SetSelect("$id,TestRelationshipClass-forward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
-    EXPECT_EQ("OldValue", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsFull_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
@@ -2420,7 +2413,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     query.SetSelect("*,TestRelationshipClass-forward-TestClass.$id");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
@@ -2443,7 +2436,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     query.SetSelect("*,TestRelationshipClass!poly-forward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2464,7 +2457,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithAllPro
     query.SetSelect("*," + query.GetAlias("TestRelationshipClass-backward-TestClass") + ".*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
@@ -2492,11 +2485,11 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAll
     query.SetSelect("*,TestRelationshipClass-forward-TestClass.TestProperty");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { {"TestSchema.TestClass", "B"} }));
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
@@ -2524,15 +2517,15 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     query.SetSelect("*,TestRelationshipClass-forward-TestClass/TestRelationshipClass-forward-TestClass.TestName");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     ObjectId b("TestSchema.TestClass", "B");
     ObjectId c("TestSchema.TestClass", "C");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { b, c }));
 
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("FullC", ReadInstance(cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("FullC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2562,13 +2555,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     query.SetSelect("*,TestRelationshipClass-forward-TestClass.*,TestRelationshipClass-forward-TestClass/TestRelationshipClass-forward-TestClass.*");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     EXPECT_EQ(0, rejected.size());
 
-    EXPECT_EQ("NewA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("NewB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
-    EXPECT_EQ("NewC", ReadInstance(cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
+    EXPECT_EQ("NewA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("NewB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("NewC", ReadInstance(*cache, {"TestSchema.TestClass", "C"})["TestProperty"].asString());
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
@@ -2596,16 +2589,105 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     query.SetSelect("TestProperty,TestRelationshipClass-forward-TestClass.TestProperty");
 
     bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
 
     ObjectId a("TestSchema.TestClass", "A");
     ObjectId b("TestSchema.TestClass", "B");
     EXPECT_THAT(ToStdSet(rejected), ContainerEq(std::set<ObjectId> { a, b }));
 
-    EXPECT_EQ("FullA", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
-    EXPECT_EQ("FullB", ReadInstance(cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    EXPECT_EQ("FullA", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("FullB", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstance_DeletesFullResponsesWhenOverridenWithPartialData)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
+
+    // Arrange
+    auto partialResponseKey = StubCachedResponseKey(*cache, "Partial");
+    auto fullResponseKey = StubCachedResponseKey(*cache, "Full");
+
+    WSQuery partialQuery("TestSchema", "TestClass");
+    partialQuery.SetSelect("TestProperty");
+
+    WSQuery fullQuery("TestSchema", "TestClass");
+    fullQuery.SetSelect("*");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse(), &rejected, &fullQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+
+    ASSERT_TRUE(cache->IsResponseCached(fullResponseKey));
+    ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    // Act
+    auto newResponseKey = StubCachedResponseKey(*cache, "New");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    // Assert
+    EXPECT_TRUE(cache->IsResponseCached(newResponseKey));
+    EXPECT_TRUE(cache->IsResponseCached(partialResponseKey));
+    EXPECT_FALSE(cache->IsResponseCached(fullResponseKey));
+    EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstanceAsParent_DeletesFullResponsesWhenOverridenWithPartialData)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
+    auto parent =  StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+
+    // Arrange
+    auto partialResponseKey = CachedResponseKey(parent, "Partial");
+    auto fullResponseKey = CachedResponseKey(parent, "Full");
+
+    WSQuery partialQuery("TestSchema", "TestClass");
+    partialQuery.SetSelect("TestProperty");
+
+    WSQuery fullQuery("TestSchema", "TestClass");
+    fullQuery.SetSelect("*");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse(), &rejected, &fullQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+
+    ASSERT_TRUE(cache->IsResponseCached(fullResponseKey));
+    ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    // Act
+    auto newResponseKey = StubCachedResponseKey(*cache, "New");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    // Assert
+    EXPECT_TRUE(cache->IsResponseCached(newResponseKey));
+    EXPECT_TRUE(cache->IsResponseCached(partialResponseKey));
+    EXPECT_FALSE(cache->IsResponseCached(fullResponseKey));
+    EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
@@ -2616,9 +2698,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ECInstanceKeyMultiMap parentInstances;
@@ -2635,9 +2715,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
     ECInstanceKeyMultiMap parentInstances, holderInstances;
@@ -2656,9 +2734,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Parent"));
     EXPECT_FALSE(cache->IsResponseCached(key));
@@ -2706,25 +2782,21 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndH
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndHolderIsRemoved_RemovesResults)
     {
     auto cache = GetTestCache();
-    bset<ObjectId> rejected;
 
     StubInstances instances1;
     instances1.Add({"TestSchema.TestClass", "A"});
     CachedResponseKey key1(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances1.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances1.ToWSObjectsResponse()));
 
     StubInstances instances2;
     instances2.Add({"TestSchema.TestClass", "B"});
     CachedResponseKey key2(cache->FindInstance({"TestSchema.TestClass", "A"}), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances2.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances2.ToWSObjectsResponse()));
 
     StubInstances instances3;
     instances3.Add({"TestSchema.TestClass", "C"});
     CachedResponseKey key3(cache->FindInstance({"TestSchema.TestClass", "B"}), "TestQuery", cache->FindOrCreateRoot("Holder"));
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key3, instances3.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key3, instances3.ToWSObjectsResponse()));
 
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Parent"));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
@@ -2745,9 +2817,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
         .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {},
         ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
 
-    bset<ObjectId> rejected;
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, nullptr));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
 
     auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipPropertiesClass");
     auto relationshipKey = cache->FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"});
@@ -2804,16 +2874,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_Ne
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
@@ -2827,16 +2894,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDiffe
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), false);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
@@ -2850,16 +2914,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferent
     StubInstances oldInstances;
     oldInstances.Add({"TestSchema.TestClass", "A"});
 
-    bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, oldInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
 
     StubInstances newInstances;
     newInstances.Add({"TestSchema.TestClass", "B"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse(), &rejected));
-    EXPECT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, newInstances.ToWSObjectsResponse()));
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid(), true);
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
@@ -2873,7 +2934,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_Ca
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, 0, token));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, 0, token));
     EXPECT_THAT(cache->IsResponseCached(responseKey), true);
     }
 
@@ -3868,8 +3929,8 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleRespon
     auto key1 = CachedResponseKey(cache->FindOrCreateRoot(nullptr), "A");
     auto key2 = CachedResponseKey(cache->FindOrCreateRoot(nullptr), "B");
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse("A")));
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse("B")));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse("A")));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse("B")));
 
     EXPECT_EQ("A", cache->ReadResponseCacheTag(key1));
     EXPECT_EQ("B", cache->ReadResponseCacheTag(key2));

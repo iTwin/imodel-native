@@ -79,12 +79,12 @@ struct CachedResponseManager : public IDeleteHandler
 
         BentleyStatus InsertInfo(CachedResponseInfoR info);
         ECInstanceKeyMultiMap FindInfosContainingInstance(ECInstanceKeyCR instance);
-        ECInstanceKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
+        ECInstanceKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial);
         ECInstanceKey FindPage(CachedResponseInfoCR info, uint64_t page);
         bvector<ECInstanceKey> FindPages(ECInstanceKeyCR responseKey);
         bvector<ECInstanceKey> FindPagesContainingInstance(ECInstanceKeyCR instance);
-        ECInstanceKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
-        BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag);
+        ECInstanceKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial);
+        BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag, bool isPartial);
         BentleyStatus UpdatePageCacheDate(ECInstanceId pageId);
         BentleyStatus ClearPageCacheTag(ECInstanceId pageId);
         ECSqlStatementPtr GetSelectPagePropertyStatement
@@ -180,6 +180,8 @@ struct CachedResponseManager : public IDeleteHandler
 
         //! Invalidates cache tag for responses that contain specified instance
         BentleyStatus InvalidateResponsePagesContainingInstance(ECInstanceKeyCR instanceKey);
+
+        BentleyStatus DeleteFullResponsesContainingInstances(const ECInstanceKeyMultiMap& instances);
     };
 
 typedef const CachedResponseManager& QueryManagerCR;

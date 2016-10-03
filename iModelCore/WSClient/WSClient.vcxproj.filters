@@ -378,6 +378,9 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Cache\FileDownloadManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -834,6 +837,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h">
