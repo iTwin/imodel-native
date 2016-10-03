@@ -58,7 +58,7 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="SavedSearchResult" >
+    <ECRelationshipClass typeName="SavedSearchDirectParent" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
@@ -67,7 +67,7 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="SavedSearchDirectParent" >
+    <ECRelationshipClass typeName="SavedSearchResult" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
