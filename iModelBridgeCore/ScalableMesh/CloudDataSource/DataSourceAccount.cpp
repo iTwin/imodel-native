@@ -187,7 +187,8 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
+    //return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
+    return DataSourceStatus();
     }
 
 DataSourceStatus DataSourceAccount::upload(DataSource &dataSource)
@@ -206,7 +207,8 @@ DataSourceStatus DataSourceAccount::upload(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
+    //return buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
+    return DataSourceStatus();
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
