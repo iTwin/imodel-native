@@ -77,7 +77,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
                                 "LastSyncTime INTEGER,"
                                 "CheckTime INTEGER");
         database->ExecuteSql("INSERT INTO SMMasterHeader (MasterHeaderId,Balanced,SplitTreshold,RootNodeId,Depth,IsTextured,SingleFile,MeshDataDepth,IsTerrain,GCS,LastModifiedTime,LastSyncTime,CheckTime)"
-                             " SELECT *"
+                             " SELECT MasterHeaderId,Balanced,SplitTreshold,RootNodeId,Depth,IsTextured,SingleFile,TerrainDepth,IsTerrain,GCS,LastModifiedTime,LastSyncTime,CheckTime"
                              " FROM SMMasterHeader_2");
         s.Commit();
         Savepoint s2(*database, Utf8String("nodeTable").c_str());

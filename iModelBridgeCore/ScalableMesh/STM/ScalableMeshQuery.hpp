@@ -2129,10 +2129,13 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         }
 
                     // Update the pointers passed to QV so that they point to the new arrays
-                    finalPointPtr = (float*)newPoints.data();
-                    finalUVPtr = (float*)newUVs.data();
+                    if (!newPoints.empty()) finalPointPtr = (float*)newPoints.data();
+                    else finalPointPtr = nullptr;
+                    if (!newUVs.empty()) finalUVPtr = (float*)newUVs.data();
+                    else finalUVPtr = nullptr;
                     finalPointNb = newPoints.size();
-                    finalIndexPtr = newIndices.data();
+                    if(!newIndices.empty()) finalIndexPtr = newIndices.data();
+                    else finalIndexPtr = nullptr;
                     finalIndexNb = newIndices.size();
                     }
 
