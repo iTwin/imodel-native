@@ -32,12 +32,13 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 struct BatchIdMap
 {
 private:
-    bmap<DgnElementId, uint16_t> m_map;
-    bvector<DgnElementId>        m_list;
+    bmap<BeInt64Id, uint16_t>   m_map;
+    bvector<BeInt64Id>          m_list;
+    TileSource                  m_source;
 public:
-    BatchIdMap();
+    BatchIdMap(TileSource source);
 
-    uint16_t GetBatchId(DgnElementId elemId);
+    uint16_t GetBatchId(BeInt64Id entityId);
     void ToJson(Json::Value& value, DgnDbR db) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };

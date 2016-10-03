@@ -16,16 +16,16 @@ using namespace BentleyApi::Dgn::Render::Tile3d;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchIdMap::BatchIdMap()
+BatchIdMap::BatchIdMap(TileSource source) : m_source(source)
     {
-    // "no element" always maps to the first batch table index
-    GetBatchId(DgnElementId());
+    // Invalid ID always maps to the first batch table index
+    GetBatchId(BeInt64Id());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
+uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
     {
     auto found = m_map.find(elemId);
     if (m_map.end() == found)
@@ -35,7 +35,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
             return 0;   // ###TODO: avoid hitting this limit...
 
         m_list.push_back(elemId);
-        found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
+        found = m_map.insert(bmap<BeInt64Id, uint16_t>::value_type(elemId, batchId)).first;
         }
 
     return found->second; 
@@ -46,53 +46,70 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
     {
-    // ###TODO: Assumes 3d-only...
-    // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                                "WHERE e.Id=? AND g.ElementId=e.Id";
-
-    BeSQLite::Statement stmt;
-    stmt.Prepare(db, s_sql);
-
-    Json::Value elementIds(Json::arrayValue);
-    Json::Value modelIds(Json::arrayValue);
-    Json::Value categoryIds(Json::arrayValue);
-
-    for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+    switch (m_source)
         {
-        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-        DgnModelId modelId;
-        DgnCategoryId categoryId;
-
-        stmt.BindId(1, *elemIter);
-        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+        case TileSource::None:
+            return;
+        case TileSource::Model:
             {
-            modelId = stmt.GetValueId<DgnModelId>(0);
-            categoryId = stmt.GetValueId<DgnCategoryId>(1);
+            Json::Value modelIds(Json::arrayValue);
+            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
+                modelIds.append(idIter->ToString());
+
+            value["model"] = modelIds;
+            return;
             }
+        case TileSource::Element:
+            {
+            // ###TODO: Assumes 3d-only...
+            // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
+            static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+                "WHERE e.Id=? AND g.ElementId=e.Id";
 
-        modelIds.append(modelId.ToString());
-        categoryIds.append(categoryId.ToString());
-        stmt.Reset();
+            BeSQLite::Statement stmt;
+            stmt.Prepare(db, s_sql);
+
+            Json::Value elementIds(Json::arrayValue);
+            Json::Value modelIds(Json::arrayValue);
+            Json::Value categoryIds(Json::arrayValue);
+
+            for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+                {
+                elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+                DgnModelId modelId;
+                DgnCategoryId categoryId;
+
+                stmt.BindId(1, *elemIter);
+                if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+                    {
+                    modelId = stmt.GetValueId<DgnModelId>(0);
+                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
+                    }
+
+                modelIds.append(modelId.ToString());
+                categoryIds.append(categoryId.ToString());
+                stmt.Reset();
+                }
+
+            value["element"] = elementIds;
+            value["model"] = modelIds;
+            value["category"] = categoryIds;
+            }
         }
-
-    value["element"] = elementIds;
-    value["model"] = modelIds;
-    value["category"] = categoryIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -758,8 +775,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     if (mesh.ValidIdsPresent())
         {
-        batchIds.reserve(mesh.ElementIds().size());
-        for (auto const& elemId : mesh.ElementIds())
+        batchIds.reserve(mesh.EntityIds().size());
+        for (auto const& elemId : mesh.EntityIds())
             batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
         attr["attributes"]["BATCHID"] = accBatchId;
