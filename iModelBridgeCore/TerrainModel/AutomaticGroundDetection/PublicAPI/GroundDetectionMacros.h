@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/GroundDetectionMacros.h $
+|     $Source: AutomaticGroundDetection/PublicAPI/GroundDetectionMacros.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 #include "PCGroundTIN.h"
 
 USING_NAMESPACE_BENTLEY
@@ -121,7 +122,8 @@ m_nbPointToAdd(PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD)
     {
     Transform uorsToMeters;
     uorsToMeters.InverseOf(m_metersToUors);    
-    m_pPointsProvider = IPointsProvider::CreateFrom(&m_boundingBoxUors);    
+	IPointsProviderCreatorPtr ptsProviderCreator(params.GetPointsProviderCreator());
+    m_pPointsProvider = IPointsProvider::CreateFrom(ptsProviderCreator, &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(params.GetUseMultiThread());
     m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...
     uorsToMeters.Multiply(m_boundingBoxMeter, m_boundingBoxUors);        

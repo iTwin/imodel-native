@@ -15,7 +15,7 @@
 #IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
 groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
-groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/
+groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/
 
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.

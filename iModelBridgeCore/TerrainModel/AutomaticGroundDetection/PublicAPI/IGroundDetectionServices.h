@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AutomaticGroundDetection/PublicAPI/AutomaticGroundDetection/IGroundDetectionServices.h $
+|     $Source: AutomaticGroundDetection/PublicAPI/IGroundDetectionServices.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,8 @@
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+
 
 GROUND_DETECTION_TYPEDEF(ProgressReport)
 GROUND_DETECTION_TYPEDEF(GroundDetectionParameters)
@@ -93,7 +95,6 @@ private:
     };
 
 
-
 /*=================================================================================**//**
 * @bsiclass                                     		                    06/2015
 +===============+===============+===============+===============+===============+======*/
@@ -112,11 +113,14 @@ public:
 
 
     //General options     
-     GROUND_DETECTION_EXPORT Transform const&     GetMetersToUors() const;
-     GROUND_DETECTION_EXPORT void            SetMetersToUors(Transform const& metersToUors);
-     GROUND_DETECTION_EXPORT bool            GetUseMultiThread() const;
-     GROUND_DETECTION_EXPORT void            SetUseMultiThread(bool value);          
+     GROUND_DETECTION_EXPORT Transform const& GetMetersToUors() const;
+     GROUND_DETECTION_EXPORT void			  SetMetersToUors(Transform const& metersToUors);
+     GROUND_DETECTION_EXPORT bool             GetUseMultiThread() const;
+     GROUND_DETECTION_EXPORT void             SetUseMultiThread(bool value);        
 
+	 GROUND_DETECTION_EXPORT IPointsProviderCreatorPtr GetPointsProviderCreator() const;        
+	 GROUND_DETECTION_EXPORT void					  SetPointsProviderCreator(IPointsProviderCreatorPtr& creator);        
+	 
     //DTM file options        	     
      GROUND_DETECTION_EXPORT DTMFileOptions  GetCreateDtmFile() const;
 	 GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
@@ -170,6 +174,7 @@ private:
     //General options               
     bool                                m_useViewFilters;
     Transform                           m_metersToUors;
+	IPointsProviderCreatorPtr			m_pointProviderCreator; 
    
     //Dtm file options                
 	DTMFileOptions  m_createDtmFile;

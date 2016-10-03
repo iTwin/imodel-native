@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <AutomaticGroundDetection\IPointsProvider.h>
-#include <AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -321,6 +321,9 @@ void      GroundDetectionParameters::SetUseMultiThread(bool value)      { m_useM
 
 Transform const&  GroundDetectionParameters::GetMetersToUors() const     { return m_metersToUors; }
 void        GroundDetectionParameters::SetMetersToUors(Transform const& metersToUors)      { m_metersToUors.Copy(metersToUors); }
+
+IPointsProviderCreatorPtr GroundDetectionParameters::GetPointsProviderCreator() const     { return m_pointProviderCreator; }
+void					 GroundDetectionParameters::SetPointsProviderCreator(IPointsProviderCreatorPtr& creator)      { m_pointProviderCreator = creator; }
 
 /*
 BeFileName GroundDetectionParameters::GetDtmFilename() const            { return m_dtmFileName; }

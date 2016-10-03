@@ -10,7 +10,7 @@
 #include <TerrainModel/TerrainModel.h>
 #include "GroundDetectionTypes.h"
 #include "GroundDetectionManagerDc.h"
-#include <AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 

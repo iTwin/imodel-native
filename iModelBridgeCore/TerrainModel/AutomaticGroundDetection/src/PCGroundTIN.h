@@ -13,7 +13,7 @@
 #include "GroundDetectionTypes.h"
 #include "GroundDetectionGrid.h"
 #include "IDtmProvider.h"
-#include <AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 #include <Bentley\bset.h>
 
 

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "GroundDetectionManagerDc.h"
 #include "PCGroundTIN.h"
 

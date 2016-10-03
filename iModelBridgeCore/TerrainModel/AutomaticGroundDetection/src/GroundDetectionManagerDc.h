@@ -8,7 +8,7 @@
 #pragma once
 
 //#include "GroundDetectionManager.h"
-#include <AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
 
 GROUND_DETECTION_TYPEDEF(PCGroundTIN)
 

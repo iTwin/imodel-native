@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 
 /*
 #include "PCPointsProvider.h"
@@ -25,18 +25,37 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 
 const uint32_t IPointsProvider::DATA_QUERY_BUFFER_SIZE = 400000;
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IPointsProviderPtr IPointsProviderCreator::CreatePointProvider(DRange3d const& boundingBoxInUors)
+	{
+	return _CreatePointProvider(boundingBoxInUors);
+	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IPointsProviderPtr IPointsProviderCreator::CreatePointProvider()
+	{
+	return _CreatePointProvider();
+	}
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IPointsProviderPtr IPointsProvider::CreateFrom(DRange3d* pRange)
+IPointsProviderPtr IPointsProvider::CreateFrom(IPointsProviderCreatorPtr& pointsProviderCreator, DRange3d* pRange)
     {
-    DRange3d boundingBoxInUors;        
+	assert(pointsProviderCreator.IsValid());
 
-	boundingBoxInUors = *pRange;
-    
-	IPointsProviderPtr provider;
-
-	return provider;
+	if (pRange == nullptr)
+		{
+		return pointsProviderCreator->CreatePointProvider();
+		}
+	
+	return pointsProviderCreator->CreatePointProvider(*pRange); 
 
 	/*
     if (isInputPointCloud)

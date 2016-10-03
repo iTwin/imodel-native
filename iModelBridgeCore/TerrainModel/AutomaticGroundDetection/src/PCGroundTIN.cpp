@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "GroundDetectionManagerDc.h"
 #include "BcDtmProvider.h"
 
@@ -435,7 +435,8 @@ m_pAcceptedPointCollection(TINPointContainer::Create())
     DRange3d boundingBoxMeters = ComputeBoundingBox(pcGroundTIN.GetParamR());
     pcGroundTIN.GetParam().GetMetersToUors().Multiply(m_boundingBoxUors, boundingBoxMeters);
 	//GDZERO
-    m_pPointsProvider = IPointsProvider::CreateFrom(/*pcGroundTIN.GetParam().GetElementHandle(),*/ &m_boundingBoxUors);    
+	IPointsProviderCreatorPtr ptsProviderCreator(pcGroundTIN.GetParam().GetPointsProviderCreator());
+    m_pPointsProvider = IPointsProvider::CreateFrom(ptsProviderCreator, &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(pcGroundTIN.GetParam().GetUseMultiThread());
     m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...        
     }

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
 #include "IDtmProvider.h"
 
 USING_NAMESPACE_BENTLEY
