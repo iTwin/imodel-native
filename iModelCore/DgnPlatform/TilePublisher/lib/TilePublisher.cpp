@@ -850,11 +850,48 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint3d  cartesianFromRadians (double longitude, double latitude, double height = 0.0)
+    {
+    DPoint3d    s_wgs84RadiiSquared = DPoint3d::From (6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+    double      cosLatitude = cos(latitude);
+    DPoint3d    normal, scratchK;
+
+    normal.x = cosLatitude * cos(longitude);
+    normal.y = cosLatitude * sin(longitude);
+    normal.z = sin(latitude);
+
+    normal.Normalize();
+    scratchK.x = normal.x * s_wgs84RadiiSquared.x;
+    scratchK.y = normal.y * s_wgs84RadiiSquared.y;
+    scratchK.z = normal.z * s_wgs84RadiiSquared.z;
+
+    double  gamma = sqrt(normal.DotProduct (scratchK));
+
+    DPoint3d    earthPoint = DPoint3d::FromScale(scratchK, 1.0 / gamma);
+    DPoint3d    heightDelta = DPoint3d::FromScale (normal, height);
+
+    return DPoint3d::FromSumOf (earthPoint, heightDelta);
+    };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::IsGeolocated () const
+    {
+    return nullptr != GetDgnDb().Units().GetDgnGCS();
+    }
+    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
     : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
@@ -868,15 +905,24 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+    DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
         {
-        m_tileToEcef    = Transform::FromIdentity ();   
+        double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
+
+        if (nullptr != geoLocation)
+            {
+            longitude = geoLocation->longitude;
+            latitude  = geoLocation->latitude;
+            }
+        ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }
     else
         {
         GeoPoint        originLatLong, northLatLong;
-        DPoint3d        ecfOrigin, ecfNorth, north = origin;
+        DPoint3d        north = origin;
     
         north.y += 100.0;
 
@@ -885,19 +931,20 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 
         dgnGCS->LatLongFromUors (northLatLong, north);
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
-
-        DVec3d      zVector, yVector;
-        RotMatrix   rMatrix;
-
-        zVector.Normalize ((DVec3dCR) ecfOrigin);
-        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
-
-        rMatrix.SetColumn (yVector, 1);
-        rMatrix.SetColumn (zVector, 2);
-        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
-
-        m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
         }
+
+
+    DVec3d      zVector, yVector;
+    RotMatrix   rMatrix;
+
+    zVector.Normalize ((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+    rMatrix.SetColumn (yVector, 1);
+    rMatrix.SetColumn (zVector, 2);
+    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+
+    m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
