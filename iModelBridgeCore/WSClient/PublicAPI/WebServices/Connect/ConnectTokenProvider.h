@@ -30,7 +30,7 @@ struct ConnectTokenProvider : public IConnectTokenProvider
         //! Set new token lifetime in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);
 
-        WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
+        WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
     };
 

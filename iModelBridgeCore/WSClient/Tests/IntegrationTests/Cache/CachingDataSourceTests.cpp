@@ -9,6 +9,7 @@
 #include "CachingDataSourceTests.h"
 
 #include <WebServices/Cache/CachingDataSource.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
@@ -17,7 +18,6 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
@@ -418,9 +418,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
         auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
         for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
             {
+            auto schemaName = uploadedInstanceNavNode["Key_SchemaName"].asString();
+
+            // Trim away version
+            auto pos = schemaName.find('.');
+            if (pos != Utf8String::npos)
+                schemaName = schemaName.substr(0, pos);
+
             ObjectId uploadedInstanceId
                 (
-                uploadedInstanceNavNode["Key_SchemaName"].asString(),
+                schemaName,
                 uploadedInstanceNavNode["Key_ClassName"].asString(),
                 uploadedInstanceNavNode["Key_InstanceId"].asString()
                 );
