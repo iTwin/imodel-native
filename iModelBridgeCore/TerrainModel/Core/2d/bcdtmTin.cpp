@@ -641,7 +641,7 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
      numThreadPoints = MINIMUM_POINTS_PER_TIN_THREAD;
 
  numThreads = dtmP->numPoints / numThreadPoints;
- 
+
  numThreadPoints = dtmP->numPoints / numThreads;
 
  /*

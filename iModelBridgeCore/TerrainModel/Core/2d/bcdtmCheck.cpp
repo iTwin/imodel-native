@@ -122,7 +122,7 @@ BENTLEYDTM_EXPORT int bcdtmCheck_tinComponentDtmObject(BC_DTM_OBJ *dtmP)
             goto errexit;
             }
         if (nullptr == featurePtsP)
-            goto errexit;
+            continue; //    goto errexit;
         free(featurePtsP);
         }
     /*
