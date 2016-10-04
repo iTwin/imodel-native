@@ -160,7 +160,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
         static Utf8String DetermineRelECClassIdColumnName(ECN::ECRelationshipClassCR, Utf8StringCR fkColumnName);
-        BentleyStatus MapSubClass(RelationshipMappingInfo const&, ClassMap const& baseClassMap);
+        BentleyStatus MapSubClass(RelationshipMappingInfo const&);
 
         //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
         //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.

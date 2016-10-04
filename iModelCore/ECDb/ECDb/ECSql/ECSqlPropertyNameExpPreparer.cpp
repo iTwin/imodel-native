@@ -8,6 +8,8 @@
 #include "ECDbPch.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
@@ -50,12 +52,21 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             if (exp->GetClassRefExp()->GetType() != Exp::Type::ClassName)
                 return ECSqlStatus::Error;
 
-            ClassMap const* parentOfJoinedTableClassMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap().GetParentOfJoinedTable();
-            effectivePropMap = parentOfJoinedTableClassMap->GetPropertyMap(propMap.GetPropertyAccessString());
-            if (effectivePropMap == nullptr)
+            ClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
+            if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
                 {
-                BeAssert(effectivePropMap != nullptr);
-                return ECSqlStatus::Error;
+                ECClassId rootClassId = classMap.GetTphHelper()->DetermineTphRootClassId();
+                BeAssert(rootClassId.IsValid());
+                ECClassCP rootClass = ctx.GetECDb().Schemas().GetECClass(rootClassId);
+                BeAssert(rootClass != nullptr);
+                ClassMap const* rootClassMap = ctx.GetECDb().GetECDbImplR().GetECDbMap().GetClassMap(*rootClass);
+                BeAssert(rootClassMap != nullptr);
+                effectivePropMap = rootClassMap->GetPropertyMap(propMap.GetPropertyAccessString());
+                if (effectivePropMap == nullptr)
+                    {
+                    BeAssert(effectivePropMap != nullptr);
+                    return ECSqlStatus::Error;
+                    }
                 }
             }
         }

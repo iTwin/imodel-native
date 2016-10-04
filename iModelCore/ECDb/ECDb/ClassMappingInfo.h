@@ -63,7 +63,7 @@ protected:
     ECN::ECClassCR m_ecClass;
     MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
-    ClassMap const* m_baseClassMap;
+    ClassMap const* m_tphBaseClassMap;
 
 private:
     MappingStatus EvaluateMapStrategy();
@@ -89,14 +89,13 @@ public:
     MappingStatus Initialize();
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
-
+    ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
     ECDbMap const& GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    ClassMap const* GetBaseClassMap () const { return m_baseClassMap; }
     //! Virtual tables are not persisted   
     bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
     };

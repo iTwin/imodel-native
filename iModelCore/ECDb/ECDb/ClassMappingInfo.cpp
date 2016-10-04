@@ -41,7 +41,7 @@ std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus&
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingInfo::ClassMappingInfo(ECClassCR ecClass, ECDbMap const& ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_mapsToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_baseClassMap(nullptr)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_mapsToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_tphBaseClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -51,10 +51,7 @@ MappingStatus ClassMappingInfo::Initialize()
     {
     if (SUCCESS != _InitializeFromSchema())
         return MappingStatus::Error;
-    if (GetECClass().GetName() == "GeometrySource")
-        {
-        printf("");
-        }
+
     return EvaluateMapStrategy();
     }
 
@@ -192,7 +189,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
     if (!ValidateTablePerHierarchyChildStrategy(baseStrategy, caCache))
         return ERROR;
 
-    m_baseClassMap = &baseClassMap; //only need to hold the base class map for TPH case
+    m_tphBaseClassMap = &baseClassMap; //only need to hold the base class map for TPH case
 
     DbTable const& baseClassJoinedTable = baseClassMap.GetJoinedTable();
     m_tableName = baseClassJoinedTable.GetName();
@@ -205,7 +202,6 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
         return ERROR;
         }
 
-    JoinedTableInfo baseClassJoinedTableInfo = baseClassMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo();
     TablePerHierarchyInfo tphInfo;
     if (SUCCESS != tphInfo.Initialize(caCache.GetShareColumnsCA(), &baseClassMap.GetMapStrategy(), &baseClassCACache->GetShareColumnsCA(),
                                                   caCache.HasJoinedTablePerDirectSubclassOption(), m_ecClass, Issues()))
@@ -213,7 +209,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
 
     if (tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
         {
-        if (baseClassJoinedTableInfo == JoinedTableInfo::ParentOfJoinedTable)
+        if (baseClassMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable)
             {
             //Joined tables are named after the class which becomes the root class of classes in the joined table
             if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
@@ -221,14 +217,16 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
 
             //For classes in the joined table the id column name is determined like this:
             //"<Rootclass name><Rootclass ECInstanceId column name>"
-            ClassMap const* rootClassMap = baseClassMap.FindTablePerHierarchyRootClassMap();
-            if (rootClassMap == nullptr)
+            ECClassId rootClassId = baseClassMap.GetTphHelper()->DetermineTphRootClassId();
+            BeAssert(rootClassId.IsValid());
+            ECClassCP rootClass = m_ecdbMap.GetECDb().Schemas().GetECClass(rootClassId);
+            if (rootClass == nullptr)
                 {
                 BeAssert(false && "There should always be a root class map which defines the TablePerHierarchy strategy");
                 return ERROR;
                 }
 
-            m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
+            m_ecInstanceIdColumnName.Sprintf("%s%s", rootClass->GetName().c_str(), m_ecInstanceIdColumnName.c_str());
             }
         }
 
@@ -676,7 +674,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     ClassMap const* firstBaseClassMap = nullptr;
     if (hasBaseClasses)
         {
-        /*for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -684,15 +682,9 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
             if (firstBaseClassMap == nullptr)
                 firstBaseClassMap = baseClassMap;
-            }*/
-        ECRelationshipClassCP baseClass = m_ecClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-        BeAssert(baseClass != nullptr);
-        firstBaseClassMap = m_ecdbMap.GetClassMap(*baseClass);
-        if (firstBaseClassMap == nullptr)
-            return MappingStatus::BaseClassesNotMapped;
+            }
 
         const MapStrategy baseStrategy = firstBaseClassMap->GetMapStrategy().GetStrategy();
-
         if (baseStrategy == MapStrategy::NotMapped)
             {
             if (caCache->HasMapStrategy())
@@ -720,7 +712,6 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Success;
             }
 
-        m_baseClassMap = firstBaseClassMap;
         if (firstBaseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             if (SUCCESS != EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap))

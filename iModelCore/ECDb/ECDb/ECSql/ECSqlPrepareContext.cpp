@@ -176,26 +176,28 @@ void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (s
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.HasJoinedTable())
+    if (!classMap.GetMapStrategy().IsTablePerHierarchy() || !classMap.GetTphHelper()->HasJoinedTable())
         return nullptr;
+
+    ECClassId parentOfJoinedTableClassId = classMap.GetTphHelper()->DetermineParentOfJoinedTableECClassId();
+    if (!parentOfJoinedTableClassId.IsValid())
+        {
+        BeAssert(false && "Root class for joined table must exist.");
+        return nullptr;
+        }
+
+    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetECClass(parentOfJoinedTableClassId);
+    if (parentOfJoinedTableClass == nullptr)
+        {
+        BeAssert(false && "Root class for joined table must exist.");
+        return nullptr;
+        }
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
-    if (parentOfJoinedTableClassMap == nullptr)
-        {
-        BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined table must exist.");
-        return nullptr;
-        }
 
     DbTable const& primaryTable = classMap.GetPrimaryTable();
     DbTable const& joinedTable = classMap.GetJoinedTable();
-    auto tables = exp.GetReferencedTables();
-    if (tables.size() < 2)
-        {
-        if (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable())
-            return nullptr;
-        }
 
     NativeSqlBuilder::List joinedTableProperties;
     NativeSqlBuilder::List joinedTableValues;
@@ -203,7 +205,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     NativeSqlBuilder::List parentOfJoinedTableProperties;
 
     joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
-    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClassMap->GetClass().GetECSqlName().c_str());
+    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClass->GetECSqlName().c_str());
 
     std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>( new JoinedTableInfo(classMap.GetClass()));
     auto propertyList = exp.GetPropertyNameListExp();
@@ -287,22 +289,28 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.HasJoinedTable())
+    if (!classMap.GetMapStrategy().IsTablePerHierarchy() || !classMap.GetTphHelper()->HasJoinedTable())
         return nullptr;
+
+    ECClassId parentOfJoinedTableClassId = classMap.GetTphHelper()->DetermineParentOfJoinedTableECClassId();
+    if (!parentOfJoinedTableClassId.IsValid())
+        {
+        BeAssert(false && "Root class for joined table must exist.");
+        return nullptr;
+        }
+
+    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetECClass(parentOfJoinedTableClassId);
+    if (parentOfJoinedTableClass == nullptr)
+        {
+        BeAssert(false && "Root class for joined table must exist.");
+        return nullptr;
+        }
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
 
     DbTable const& primaryTable = classMap.GetPrimaryTable();
     DbTable const& joinedTable = classMap.GetJoinedTable();
-    auto tables = exp.GetReferencedTables();
-    if (tables.size() <= 2)
-        {
-        if (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable())
-            return nullptr;
-        }
-
 
     NativeSqlBuilder::List joinedTableProperties;
     NativeSqlBuilder::List joinedTableValues;
@@ -310,7 +318,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     NativeSqlBuilder::List parentOfJoinedTableProperties;
     bool isPolymorphic = exp.GetClassNameExp()->IsPolymorphic();
     joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetClass().GetECSqlName().c_str()).Append(" SET ");
-    parentOfJoinedTableECSQL.Append("UPDATE ").Append(parentOfJoinedTableClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
+    parentOfJoinedTableECSQL.Append("UPDATE ").Append(parentOfJoinedTableClass->GetECSqlName().c_str()).Append(" SET ");
 
     std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>(new JoinedTableInfo(classMap.GetClass()));
     auto assignmentList = exp.GetAssignmentListExp();

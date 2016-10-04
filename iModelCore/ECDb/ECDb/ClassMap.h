@@ -16,14 +16,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
-struct ClassMapId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ClassMapId, BeInt64Id)
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      01/2016
-//+===============+===============+===============+===============+===============+======
 struct ClassMapLoadContext : NonCopyableClass
     {
 private:
@@ -103,9 +95,34 @@ struct ClassMap : RefCountedBase
             NotMapped
             };
 
+        enum class PropertyMapInheritanceMode
+            {
+            New, //!< inherited property maps are never reused or cloned, but always created from scratch in the subclass
+            Reuse, //! inherited property maps are reused by subclasses
+            Clone //! inherited property maps are always cloned from the base class property map
+            };
+
+        struct TablePerHierarchyHelper
+            {
+        private:
+            mutable BeDbMutex m_mutex;
+            ClassMap const& m_classMap;
+            mutable ECN::ECClassId m_parentOfJoinedTableECClassId;
+
+            TablePerHierarchyInfo const& GetTphInfo() const { return m_classMap.GetMapStrategy().GetTphInfo(); }
+        public:
+            explicit TablePerHierarchyHelper(ClassMap const& classMap) : m_classMap(classMap) {}
+
+            bool HasJoinedTable() const { return GetTphInfo().IsValid() && GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable; }
+            bool IsParentOfJoinedTable() const { return GetTphInfo().IsValid() && GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable; }
+
+            ECN::ECClassId DetermineTphRootClassId() const { return m_classMap.GetPrimaryTable().GetExclusiveRootECClassId(); }
+            ECN::ECClassId DetermineParentOfJoinedTableECClassId() const;
+
+            };
+
     private:
         ECDbMap const& m_ecDbMap;
-        ClassMapId m_id;
         Type m_type;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapCollection m_propertyMaps;
@@ -114,22 +131,12 @@ struct ClassMap : RefCountedBase
         bool m_isECInstanceIdAutogenerationDisabled;
         ECN::ECClassCR m_ecClass;
         ColumnFactory m_columnFactory;
+        std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
 
-    protected:
-        ECN::ECClassId m_baseClassId;
-
-    private:
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
-
-        enum class PropertyMapInheritanceMode
-            {
-            New, //!< inherited property maps are never reused or cloned, but always created from scratch in the subclass
-            Reuse, //! inherited property maps are reused by subclasses
-            Clone //! inherited property maps are always cloned from the base class property map
-            };
 
         //! Rules:
         //! If MapStrategy != TPH: New
@@ -153,19 +160,7 @@ struct ClassMap : RefCountedBase
         //! If MapStrategy != TPH: New
         //! If MapStrategy == TPH, but without joined tables: Reuse
         //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
-        PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const
-            {
-            //No TPH
-            if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
-                return PropertyMapInheritanceMode::New;
-
-            //TPH with joined tables
-            if (HasJoinedTable())
-                return PropertyMapInheritanceMode::Clone;
-
-            //TPH without joined tables
-            return PropertyMapInheritanceMode::Reuse;
-            }
+        PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const { return GetPropertyMapInheritanceMode(m_mapStrategyExtInfo); }
 
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, MapStrategyExtendedInfo const&, bool setIsDirty);
@@ -173,7 +168,7 @@ struct ClassMap : RefCountedBase
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
-        MappingStatus MapProperties(SchemaImportContext&, ClassMappingInfo const&);
+        MappingStatus MapProperties(SchemaImportContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
@@ -188,8 +183,7 @@ struct ClassMap : RefCountedBase
         static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(Type::Class, ecClass, ecdbMap, mapStrategy, setIsDirty); }
 
         //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) { return _Load(ctx, mapInfo); }
-
+        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx);
         //! Called during schema import when creating the class map from the imported ECClass 
         MappingStatus Map(SchemaImportContext&, ClassMappingInfo const&);
         BentleyStatus Save(DbMapSaveContext&);
@@ -204,9 +198,6 @@ struct ClassMap : RefCountedBase
 
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-        ClassMapId GetId() const { return m_id; }
-        void SetId(ClassMapId id) { m_id = id; }
-        void SetBaseClassId(ECN::ECClassId id) { m_baseClassId = id; }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
@@ -217,25 +208,18 @@ struct ClassMap : RefCountedBase
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
 
-        ClassMap const* FindTablePerHierarchyRootClassMap() const;
-        ClassMap const* FindClassMapOfParentOfJoinedTable() const;
-        BentleyStatus GetPathToParentOfJoinedTable(std::vector<ClassMap const*>& path) const;
-        ClassMap const* GetParentOfJoinedTable() const;
-
         //! Returns the class maps of the classes derived from this class map's class.
         //! @return Derived classes class maps
         std::vector<ClassMap const*> GetDerivedClassMaps() const;
 
         ECN::ECClassCR GetClass() const { return m_ecClass; }
-        ECN::ECClassId GetBaseClassId() const { return m_baseClassId; }
-
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
+        //!Only call this if the map strategy is TablePerHierarchy
+        TablePerHierarchyHelper const* GetTphHelper() const { BeAssert(m_tphHelper != nullptr); return m_tphHelper.get(); }
         bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-        bool HasJoinedTable() const { return m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable; }
-        bool IsParentOfJoinedTable() const { return m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable; }
 
         ECDbMap const& GetECDbMap() const { return m_ecDbMap; }
 
@@ -248,6 +232,24 @@ struct ClassMap : RefCountedBase
                 return nullptr;
 
             return &GetJoinedTable();
+            }
+
+        //! Rules:
+        //! If MapStrategy != TPH: New
+        //! If MapStrategy == TPH, but without joined tables: Reuse
+        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
+        static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
+            {
+            //No TPH
+            if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+                return PropertyMapInheritanceMode::New;
+
+            //TPH with joined tables
+            //if (mapStrategyExtInfo.GetTphInfo().IsValid() && mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
+                return PropertyMapInheritanceMode::Clone;
+
+            //TPH without joined tables
+            //return PropertyMapInheritanceMode::Reuse;
             }
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);

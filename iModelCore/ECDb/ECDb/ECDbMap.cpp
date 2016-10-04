@@ -371,26 +371,10 @@ MappingStatus ECDbMap::DoMapSchemas()
     classMap = nullptr;
 
     DbClassMapLoadContext classMapLoadContext;
-    if (DbClassMapLoadContext::Load(classMapLoadContext, GetECDb(), ecClass.GetId()) != SUCCESS)
+    if (DbClassMapLoadContext::Load(classMapLoadContext, ctx, GetECDb(), ecClass) != SUCCESS)
         {
         //Failed to find classmap
         return SUCCESS;
-        }
-
-    TablePerHierarchyInfo const& tphInfo = classMapLoadContext.GetMapStrategy().GetTphInfo();
-    const bool isJoinedTableMapping = tphInfo.IsValid() && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
-    if (classMapLoadContext.GetBaseClassId().IsValid() && !isJoinedTableMapping)
-        {
-        ECClassCP baseClass = GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
-        if (baseClass != nullptr)
-            {
-            ClassMapPtr baseClassMapPtr = nullptr;
-            if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
-                return ERROR;
-
-            if (classMapLoadContext.SetBaseClassMap(*baseClassMapPtr) != SUCCESS)
-                return ERROR;
-            }
         }
 
     bool setIsDirty = false;
@@ -411,8 +395,7 @@ MappingStatus ECDbMap::DoMapSchemas()
         else
             classMapTmp = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
         }
-    classMapTmp->SetId(classMapLoadContext.GetClassMapId());
-    classMapTmp->SetBaseClassId(classMapLoadContext.GetBaseClassId());
+
     if (MappingStatus::Error == AddClassMap(classMapTmp))
         {
         BeAssert(false);
@@ -866,8 +849,12 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
 
         for (ClassMap* classMap : classMaps)
             {
-            if (classMap->HasJoinedTable() && table->GetType() == DbTable::Type::Primary)
+            if (classMap->GetMapStrategy().IsTablePerHierarchy() && classMap->GetTphHelper()->HasJoinedTable()
+                && table->GetType() == DbTable::Type::Primary)
+                {
+                //WIP_BASECLASSID_REFACTOR Is this check ever true?
                 continue;
+                }
 
             if (classMap->ConfigureECClassId(*classIdColumn) != SUCCESS)
                 {

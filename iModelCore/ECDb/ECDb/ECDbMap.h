@@ -31,7 +31,6 @@ struct ECDbMap :NonCopyableClass
         DbSchema m_dbSchema;
         SchemaImportContext* m_schemaImportContext;
     private:
-        BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
         ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
         BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
         MappingStatus DoMapSchemas();
@@ -54,6 +53,8 @@ struct ECDbMap :NonCopyableClass
         ~ECDbMap() {}
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
+        BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
+
         std::vector<ECN::ECClassCP> GetFlattenListOfClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         //!Loads the class maps if they were not loaded yet

@@ -581,14 +581,16 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
             itor->second.AddClassMap(*classMap);
         }
 
-    if (m_isPolymorphic && !classMap->IsParentOfJoinedTable() && (classMap->IsRelationshipClassMap() || classMap->GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy) )
+    if (!m_isPolymorphic ||
+        (classMap->GetMapStrategy().IsTablePerHierarchy() && classMap->GetTphHelper()->IsParentOfJoinedTable()) ||
+        (!classMap->IsRelationshipClassMap() && classMap->GetMapStrategy().IsTablePerHierarchy()))
+        return SUCCESS;
+
+    ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? m_map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
+    for (ECClassCP derivedClass : derivedClasses)
         {
-        ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? m_map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
-        for (ECClassCP derivedClass : derivedClasses)
-            {
-            if (SUCCESS != ComputeViewMembers(viewMembers, *derivedClass, ensureDerivedClassesAreLoaded))
-                return ERROR;
-            }
+        if (SUCCESS != ComputeViewMembers(viewMembers, *derivedClass, ensureDerivedClassesAreLoaded))
+            return ERROR;
         }
 
     return SUCCESS;

@@ -19,8 +19,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false)
+    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr)
     {
+    if (m_mapStrategyExtInfo.IsTablePerHierarchy())
+        m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
+
     if (SUCCESS != InitializeDisableECInstanceIdAutogeneration())
         {
         BeAssert(false && "InitializeDisableECInstanceIdAutogeneration failed");
@@ -32,11 +35,6 @@ ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, MapStra
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
-    BeAssert(mapInfo.GetBaseClassMap() == nullptr ||
-             m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy ||
-             m_mapStrategyExtInfo.GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ||
-             m_mapStrategyExtInfo.GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable);
-
     return _Map(schemaImportContext, mapInfo);
     }
 
@@ -58,16 +56,14 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
     {
-    ClassMap const* baseClassMap = mappingInfo.GetBaseClassMap();
-    if (baseClassMap != nullptr && baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-        return MappingStatus::Error;
-
     DbTable::Type tableType = DbTable::Type::Primary;
+    const bool isTph = mappingInfo.GetMapStrategy().IsTablePerHierarchy();
     TablePerHierarchyInfo const& tphInfo = mappingInfo.GetMapStrategy().GetTphInfo();
-    if (tphInfo.IsValid() && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
+    ClassMap const* tphBaseClassMap = isTph ? mappingInfo.GetTphBaseClassMap() : nullptr;
+    if (isTph && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
         {
         tableType = DbTable::Type::Joined;
-        if (baseClassMap == nullptr)
+        if (tphBaseClassMap == nullptr)
             {
             BeAssert(false);
             return MappingStatus::Error;
@@ -77,22 +73,19 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         tableType = DbTable::Type::Existing;
 
     DbTable const* primaryTable = nullptr;
-    bool needsToCreateTable = false;
-    if (baseClassMap == nullptr)
-        needsToCreateTable = true;
-    else
+    bool needsToCreateTable = !isTph || tphBaseClassMap == nullptr;
+    if (tphBaseClassMap != nullptr)
         {
-        m_baseClassId = baseClassMap->GetClass().GetId();
-        SetTable(baseClassMap->GetPrimaryTable());
+        SetTable(tphBaseClassMap->GetPrimaryTable());
         if (tableType == DbTable::Type::Joined)
             {
-            if (baseClassMap->IsParentOfJoinedTable())
+            if (tphBaseClassMap->GetTphHelper()->IsParentOfJoinedTable())
                 {
-                primaryTable = &baseClassMap->GetPrimaryTable();
+                primaryTable = &tphBaseClassMap->GetPrimaryTable();
                 needsToCreateTable = true;
                 }
             else
-                AddTable(baseClassMap->GetJoinedTable());
+                AddTable(tphBaseClassMap->GetJoinedTable());
             }
         }
 
@@ -109,7 +102,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         AddTable(*table);
         }
 
-    if (tphInfo.IsValid() && tphInfo.UseSharedColumns() && tphInfo.GetSharedColumnCount() > 0)
+    if (isTph && tphInfo.UseSharedColumns() && tphInfo.GetSharedColumnCount() > 0)
         {
         if (SUCCESS != GetJoinedTable().SetMinimumSharedColumnCount(tphInfo.GetSharedColumnCount()))
             {
@@ -165,15 +158,14 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
         }
 
     //For subclasses in a TablePerHierarchy, true must be returned for joined table root classes
-    ClassMap const* baseClassMap = mappingInfo.GetBaseClassMap();
-    if (baseClassMap == nullptr) //this is the root of the TablePerHierarchy class hierarchy
+    ClassMap const* tphBaseClassMap = mappingInfo.GetTphBaseClassMap();
+    if (tphBaseClassMap == nullptr) //this is the root of the TablePerHierarchy class hierarchy
         return true;
 
-    //if base class doesn't have TablePerHierarchy, this class is the starting point, and therefore the exclusive root.
-    //if base class has shared table strategy and is the direct parent of the joined table, this class is the
+    //if base class is the direct parent of the joined table, this class is the
     //starting point of the joined table, so also the exclusive root (of the joined table)
-    return baseClassMap->GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy ||
-        baseClassMap->IsParentOfJoinedTable();
+    BeAssert(tphBaseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+    return tphBaseClassMap->GetTphHelper()->IsParentOfJoinedTable();
     }
 
 
@@ -182,7 +174,7 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
     {
-    MappingStatus stat = MapProperties(schemaImportContext, mappingInfo);
+    MappingStatus stat = MapProperties(schemaImportContext);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -197,11 +189,17 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
     bool isJoinedTable = mappingInfo.GetMapStrategy().GetTphInfo().IsValid() && mappingInfo.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
     if (isJoinedTable)
         {
-        ClassMap const* baseClassMap = mappingInfo.GetBaseClassMap();
-        PRECONDITION(baseClassMap != nullptr, MappingStatus::Error);
-        if (&baseClassMap->GetJoinedTable() != &GetJoinedTable())
+        ClassMap const* tphBaseClassMap = mappingInfo.GetTphBaseClassMap();
+        if (tphBaseClassMap == nullptr)
             {
-            DbColumn const* primaryKeyColumn = baseClassMap->GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
+        
+        DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
+        if (&baseClassMapJoinedTable != &GetJoinedTable())
+            {
+            DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
             DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
             PRECONDITION(primaryKeyColumn != nullptr, MappingStatus::Error);
             PRECONDITION(foreignKeyColumn != nullptr, MappingStatus::Error);
@@ -211,7 +209,7 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
                 if (constraint->GetType() == DbConstraint::Type::ForeignKey)
                     {
                     ForeignKeyDbConstraint const* fk = static_cast<ForeignKeyDbConstraint const*>(constraint);
-                    if (&fk->GetReferencedTable() == &baseClassMap->GetJoinedTable())
+                    if (&fk->GetReferencedTable() == &baseClassMapJoinedTable)
                         {
                         if (fk->GetFkColumns().front() == foreignKeyColumn && fk->GetReferencedTableColumns().front() == primaryKeyColumn)
                             {
@@ -351,16 +349,13 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo const& mappingInfo)
+MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     {
-    bvector<ClassMap const*> baseClassMaps;
+    bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
     if (inheritanceMode != PropertyMapInheritanceMode::New)
         {
-        if (mappingInfo.GetBaseClassMap() != nullptr)
-            baseClassMaps.push_back(mappingInfo.GetBaseClassMap());
-
-/*        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -371,8 +366,8 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo
 
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
-                baseClassMaps.push_back(baseClassMap);
-            }*/
+                tphBaseClassMaps.push_back(baseClassMap);
+            }
         }
 
     std::vector<ECPropertyCP> propertiesToMap;
@@ -388,7 +383,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo
 
         //look for the base class' property map as property is inherited and not owned by this prop map
         PropertyMapPtr baseClassPropMap = nullptr;
-        for (ClassMap const* baseClassMap : baseClassMaps)
+        for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
             if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(baseClassPropMap, property->GetName().c_str()))
                 break;
@@ -396,19 +391,23 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo
 
         if (baseClassPropMap == nullptr)
             {
-            //Base class is mapped to virtual table
+            //Property is inherited, but not from a TPH base class, so we have to map the property from scratch
             propertiesToMap.push_back(property);
             continue;
             }
 
-        PropertyMapPtr propertyMap = nullptr;
         //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
         //as the context (table, containing ECClass) is different
         //in all other cases, we can just use the base class' property map
+        PropertyMapPtr propertyMap = nullptr;
         if (inheritanceMode == PropertyMapInheritanceMode::Clone)
-            propertyMap = PropertyMapFactory::ClonePropertyMap(m_ecDbMap, *baseClassPropMap, m_ecClass, nullptr);
+            propertyMap = PropertyMapFactory::ClonePropertyMap(ctx.GetClassMapLoadContext(), *baseClassPropMap, m_ecClass, nullptr);
         else
+            {
+            //WIP_BASECLASSMAPID_REFACTOR
+            BeAssert(false && "should not reach this");
             propertyMap = baseClassPropMap;
+            }
 
         if (GetPropertyMapsR().AddPropertyMap(propertyMap) != SUCCESS)
             return MappingStatus::Error;
@@ -588,53 +587,42 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
     {
-    if (!m_isDirty || ctx.IsAlreadySaved(*this) || GetId().IsValid())
+    if (!m_isDirty || ctx.IsAlreadySaved(*this))
         return SUCCESS;
 
-    ECDbCR ecdb = GetECDbMap().GetECDb();
-    ClassMapId baseClassMapid;
-    std::set<PropertyMapCP> baseProperties;
     ctx.BeginSaving(*this);
-    if (GetBaseClassId().IsValid())
+    if (GetClass().HasBaseClasses())
         {
-        auto baseClass = ecdb.Schemas().GetECClass(GetBaseClassId());
-        if (baseClass == nullptr)
+        for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            BeAssert(false && "Failed to find baseclass");
-            return ERROR;
-            }
+            ClassMap* baseClassMap = (ClassMap*) GetECDbMap().GetClassMap(*baseClass);
+            if (baseClassMap == nullptr)
+                {
+                BeAssert(false && "Failed to find baseClass map");
+                return ERROR;
+                }
 
-        ClassMap* baseClassMap = (ClassMap*) GetECDbMap().GetClassMap(*baseClass);
-        if (baseClassMap == nullptr)
-            {
-            BeAssert(false && "Failed to find baseClass map");
-            return ERROR;
-            }
-        
-        if (!baseClassMap->GetId().IsValid())
-            {
             if (SUCCESS != baseClassMap->Save(ctx))
                 return ERROR;
             }
-
-        for (PropertyMapCP propertyMap : baseClassMap->GetPropertyMaps())
-            baseProperties.insert(propertyMap);
-
-        baseClassMapid = baseClassMap->GetId();
         }
 
-    if (ctx.InsertClassMap(m_id, GetClass().GetId(), GetMapStrategy(), baseClassMapid) != SUCCESS)
+    if (ctx.InsertClassMap(GetClass().GetId(), GetMapStrategy()) != SUCCESS)
         {
-        m_id = ClassMapId();
         BeAssert(false);
         return ERROR;
         }
 
     DbClassMapSaveContext classMapSaveContext(ctx);
+    ECClassId ownerClassMapId = GetClass().GetId();
     for (PropertyMapCP propertyMap : GetPropertyMaps())
         {
-        if (baseProperties.find(propertyMap) != baseProperties.end())
-            continue;
+        if (propertyMap->GetOwnerClassMapId() != ownerClassMapId)
+            {
+            //WIP_BASECLASSMAPID_REFACTOR Is this the correct replacement?
+            BeAssert(false && "Should not be reached anymore");
+            continue; //reused inherited property maps are not saved
+            }
 
         if (SUCCESS != propertyMap->Save(classMapSaveContext))
             return ERROR;
@@ -643,6 +631,14 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
     m_isDirty = false;
     ctx.EndSaving(*this);
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
+    {
+    return _Load(ctx, dbLoadCtx);
     }
 
 //---------------------------------------------------------------------------------------
@@ -674,13 +670,13 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         }
 
     for (DbTable* table : tables)
-            AddTable(*table);
+        AddTable(*table);
 
     for (DbTable* table : joinedTables)
-            AddTable(*table);
+        AddTable(*table);
 
     BeAssert(!GetTables().empty());
-        
+
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
@@ -710,13 +706,11 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbCtx)
     {
-    bvector<ClassMap const*> baseClassMaps;
+    bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
-    if (inheritanceMode == PropertyMapInheritanceMode::Reuse)
+    if (inheritanceMode != PropertyMapInheritanceMode::New)
         {
-        if (dbCtx.GetBaseClassMap() != nullptr)
-            baseClassMaps.push_back(dbCtx.GetBaseClassMap());
-        /*for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
@@ -727,71 +721,78 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
-                baseClassMaps.push_back(baseClassMap);
-            }*/
+                tphBaseClassMaps.push_back(baseClassMap);
+            }
         }
 
-    std::vector<ECPropertyCP> unloadedProperties;
+    std::vector<std::pair<ECPropertyCP, PropertyMapCP>> unloadedProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        if (&property->GetClass() == &m_ecClass ||
-            (inheritanceMode = GetPropertyMapInheritanceMode(*property)) != PropertyMapInheritanceMode::Reuse)
+        if (&property->GetClass() == &m_ecClass || inheritanceMode == PropertyMapInheritanceMode::New)
             {
+
             //Property is not inherited or has not mode reuse -> must be loaded explicitly
-            unloadedProperties.push_back(property);
+            unloadedProperties.push_back(std::make_pair(property, nullptr));
             continue;
             }
 
         //look for the base class' property map as property map is reused from base class map
         PropertyMapPtr baseClassPropMap = nullptr;
-        for (ClassMap const* baseClassMap : baseClassMaps)
+        for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
             if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(baseClassPropMap, property->GetName().c_str()))
                 break;
             }
 
-        if (baseClassPropMap == nullptr)
-            {
-            //base class is mapped to virtual table
-            unloadedProperties.push_back(property);
-            continue;
-            }
-
-        if (GetPropertyMapsR().AddPropertyMap(baseClassPropMap) != SUCCESS)
-            return ERROR;
+        unloadedProperties.push_back(std::make_pair(property, baseClassPropMap.get()));
         }
 
-    for (ECPropertyCP property : unloadedProperties)
+    for (std::pair<ECPropertyCP, PropertyMapCP> const& pair : unloadedProperties)
         {
-        Utf8CP propertyAccessString = property->GetName().c_str();
-        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), GetClass(), *property, propertyAccessString, nullptr);
-        if (propMap == nullptr)
-            return ERROR;
+        ECPropertyCP prop = pair.first;
+        PropertyMapCP tphBasePropMap = pair.second;
 
-        if (ERROR == propMap->Load(dbCtx))
+        PropertyMapPtr propMap = nullptr;
+
+        if (tphBasePropMap == nullptr)
             {
-            //ECSchema Upgrade
-            GetColumnFactoryR().Update();
-            if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
-                {
-                BeAssert(false);
+            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), GetClass(), *prop, prop->GetName().c_str(), nullptr);
+            if (propMap == nullptr)
                 return ERROR;
-                }
-            //! ECSchema update added new property for which we need to save property map
-            DbMapSaveContext ctx(GetECDbMap().GetECDb());
-            //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
-                {
-                BeAssert(false && "Failed to save table");
-                return ERROR;
-                }
 
-            ctx.BeginSaving(*this);
-            DbClassMapSaveContext classMapContext(ctx);
-            propMap->Save(classMapContext);
-            ctx.EndSaving(*this);
+            if (ERROR == propMap->Load(dbCtx))
+                {
+                BeAssert(GetECDbMap().IsImportingSchema() && "This code must only be reached if in schema import");
+
+                //ECSchema Upgrade
+                GetColumnFactoryR().Update();
+                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+                //! ECSchema update added new property for which we need to save property map
+                DbMapSaveContext ctx(m_ecDbMap.GetECDb());
+                //First make sure table is updated on disk. The table must already exist for this operation to work.
+                if (m_ecDbMap.GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+                    {
+                    BeAssert(false && "Failed to save table");
+                    return ERROR;
+                    }
+
+                ctx.BeginSaving(*this);
+                DbClassMapSaveContext classMapContext(ctx);
+                propMap->Save(classMapContext);
+                ctx.EndSaving(*this);
+                }
             }
+        else
+            {
+            propMap = PropertyMapFactory::ClonePropertyMap(ctx, *tphBasePropMap, GetClass(), nullptr);
 
+            if (propMap == nullptr)
+                return ERROR;
+            }
 
         if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
             return ERROR;
@@ -869,123 +870,6 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
         }
 
     return derivedClassMaps;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-ClassMap const* ClassMap::GetParentOfJoinedTable() const
-    {
-    std::vector<ClassMap const*> path;
-    if (GetPathToParentOfJoinedTable(path) != SUCCESS)
-        return nullptr;
-
-    return path.front();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*>& path) const
-    {
-    path.clear();
-    ClassMap const* current = this;
-    if (!current->HasJoinedTable() && !current->IsParentOfJoinedTable())
-        return ERROR;
-
-    path.insert(path.begin(), current);
-    do
-        {
-        ECClassId nextBaseId = current->GetBaseClassId();
-        if (!nextBaseId.IsValid())
-            return SUCCESS;
-
-        ECClassCP nextBaseClass = m_ecDbMap.GetECDb().Schemas().GetECClass(nextBaseId);
-        if (nextBaseClass == nullptr)
-            return ERROR;
-
-        current = GetECDbMap().GetClassMap(*nextBaseClass);
-        if (current == nullptr)
-            {
-            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
-            return ERROR;
-            }
-
-        if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
-            path.insert(path.begin(), current);
-        else
-            return SUCCESS;
-        } while (current != nullptr);
-
-        path.clear();
-        return ERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
-    {
-    ClassMap const* current = this;
-    if (!current->HasJoinedTable())
-        return nullptr;
-
-    do
-        {
-        if (current->IsParentOfJoinedTable())
-            return current;
-
-        ECClassId nextBaseId = current->GetBaseClassId();
-        if (!nextBaseId.IsValid())
-            return nullptr;
-
-        ECClassCP nextBaseClass = GetECDbMap().GetECDb().Schemas().GetECClass(nextBaseId);
-        if (nextBaseClass == nullptr)
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        current = GetECDbMap().GetClassMap(*nextBaseClass);
-        if (current == nullptr)
-            {
-            BeAssert(current != nullptr && "Failed to find base classmap. This should not happen");
-            return nullptr;
-            }
-
-        } while (current != nullptr);
-
-        return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  01/2016
-//---------------------------------------------------------------------------------------
-ClassMap const* ClassMap::FindTablePerHierarchyRootClassMap() const
-    {
-    if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
-        return nullptr;
-
-    ECClassId baseId = GetBaseClassId();
-    if (!baseId.IsValid())
-        return this;
-
-    ECClassCP baseClass = GetECDbMap().GetECDb().Schemas().GetECClass(baseId);
-    if (baseClass == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    ClassMap const* baseClassMap = GetECDbMap().GetClassMap(*baseClass);
-    if (baseClassMap == nullptr)
-        {
-        BeAssert(false && "Failed to find base classmap. This should not happen");
-        return nullptr;
-        }
-
-    return baseClassMap->FindTablePerHierarchyRootClassMap();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1074,6 +958,45 @@ Utf8CP ClassMap::TypeToString(Type type)
                 BeAssert(false && "ClassMap::TypeToString must be extended to handle new ClassMap::Type value");
                 return "";
         }
+    }
+
+//=========================================================================================
+//ClassMap::TablePerHierarchyHelper
+//=========================================================================================
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    09/2016
+//------------------------------------------------------------------------------------------
+ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId() const
+    {
+    BeDbMutexHolder lock(m_mutex);
+
+    if (!HasJoinedTable())
+        {
+        BeAssert(false && "TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId can only be called for class maps that have a joined table.");
+        return ECClassId();
+        }
+
+    if (!m_parentOfJoinedTableECClassId.IsValid())
+        {
+        Utf8String sql;
+        sql.Sprintf("SELECT ch.BaseClassId FROM " ECDB_CACHETABLE_ClassHierarchy " ch "
+                    "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=%d WHERE ch.ClassId=?",
+                    Enum::ToInt(JoinedTableInfo::ParentOfJoinedTable));
+
+        CachedStatementPtr stmt = m_classMap.GetECDbMap().GetECDb().GetCachedStatement(sql.c_str());
+        if (stmt == nullptr ||
+            BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
+            BE_SQLITE_ROW != stmt->Step())
+            {
+            BeAssert(false && "Failed to retrieve parent of joined table ECClassId");
+            return ECClassId();
+            }
+
+        m_parentOfJoinedTableECClassId = stmt->GetValueId<ECClassId>(0);
+        BeAssert(m_parentOfJoinedTableECClassId.IsValid() && "Retrieval failed");
+        }
+
+    return m_parentOfJoinedTableECClassId; 
     }
 
 //=========================================================================================
@@ -1352,9 +1275,6 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 MappingStatus NotMappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {
-    if (classMapInfo.GetBaseClassMap() != nullptr)
-        m_baseClassId = classMapInfo.GetBaseClassMap()->GetBaseClassId();
-
     DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
 

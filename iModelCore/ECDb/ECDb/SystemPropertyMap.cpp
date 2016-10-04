@@ -16,8 +16,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-SystemPropertyMap::SystemPropertyMap(Type type, ECPropertyCR ecProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind)
-    : PropertyMap(type, ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
+SystemPropertyMap::SystemPropertyMap(Type type, ECClassId ownerClassMapId, ECPropertyCR ecProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind)
+    : PropertyMap(type, ownerClassMapId, ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
     {
     BeAssert(!columns.empty());
     std::set<DbTable const*> tables;
@@ -92,7 +92,7 @@ void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList&
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 ECInstanceIdPropertyMap::ECInstanceIdPropertyMap(ECPropertyCR ecInstanceIdProperty, ClassMap const& classMap, std::vector<DbColumn const*> columns)
-    : SystemPropertyMap(Type::ECInstanceId, ecInstanceIdProperty, std::move(columns), ECSqlSystemProperty::ECInstanceId)
+    : SystemPropertyMap(Type::ECInstanceId, classMap.GetClass().GetId(), ecInstanceIdProperty, std::move(columns), ECSqlSystemProperty::ECInstanceId)
     {
     std::vector<DbTable*> tables = classMap.GetTables();
     m_mappedTables.clear();
@@ -137,7 +137,7 @@ PropertyMapPtr ECInstanceIdPropertyMap::Create(ECDbSchemaManagerCR schemaManager
 // @bsimethod                                 Krischan.Eberle                06/2016
 //+---------------+---------------+---------------+---------------+---------------+-
 ECClassIdPropertyMap::ECClassIdPropertyMap(ECPropertyCR ecClassIdProperty, ClassMap const& classMap, std::vector<DbColumn const*> cols)
-    : SystemPropertyMap(Type::ECClassId, ecClassIdProperty, cols, ECSqlSystemProperty::ECClassId), m_defaultConstraintClassId(classMap.GetClass().GetId())
+    : SystemPropertyMap(Type::ECClassId, classMap.GetClass().GetId(), ecClassIdProperty, cols, ECSqlSystemProperty::ECClassId), m_defaultConstraintClassId(classMap.GetClass().GetId())
     {
     std::vector<DbTable*> tables = classMap.GetTables();
     m_mappedTables.clear();
@@ -211,8 +211,8 @@ NativeSqlBuilder::List ECClassIdPropertyMap::_ToNativeSql(Utf8CP classIdentifier
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-RelationshipConstraintPropertyMap::RelationshipConstraintPropertyMap(Type type, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
-    : SystemPropertyMap(type, constraintProperty, std::move(columns), kind), m_viewColumnAlias(endTableColumnAlias)
+RelationshipConstraintPropertyMap::RelationshipConstraintPropertyMap(Type type, ECN::ECClassId ownerClassMapId, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+    : SystemPropertyMap(type, ownerClassMapId, constraintProperty, std::move(columns), kind), m_viewColumnAlias(endTableColumnAlias)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -236,21 +236,21 @@ void RelationshipConstraintPropertyMap::AppendSelectClauseSqlSnippetForView(Nati
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-RelationshipConstraintECInstanceIdPropertyMap::RelationshipConstraintECInstanceIdPropertyMap(ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
-    : RelationshipConstraintPropertyMap(Type::RelConstraintECInstanceId, constraintProperty, columns, kind, endTableColumnAlias)
+RelationshipConstraintECInstanceIdPropertyMap::RelationshipConstraintECInstanceIdPropertyMap(ECN::ECClassId ownerClassMapId, ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+    : RelationshipConstraintPropertyMap(Type::RelConstraintECInstanceId, ownerClassMapId, constraintProperty, columns, kind, endTableColumnAlias)
     {}
 
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<DbColumn const*> columns, Utf8CP endTableColumnAlias)
+PropertyMapPtr RelationshipConstraintECInstanceIdPropertyMap::Create(ECClassId ownerClassMapId, ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<DbColumn const*> columns, Utf8CP endTableColumnAlias)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, kind);
     PRECONDITION(prop != nullptr, nullptr);
 
-    return new RelationshipConstraintECInstanceIdPropertyMap(*prop, columns, kind, endTableColumnAlias);
+    return new RelationshipConstraintECInstanceIdPropertyMap(ownerClassMapId, *prop, columns, kind, endTableColumnAlias);
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ NativeSqlBuilder::List RelationshipConstraintECInstanceIdPropertyMap::_ToNativeS
 //+---------------+---------------+---------------+---------------+---------------+-
 RelConstraintECClassIdPropertyMap::RelConstraintECClassIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns,
     ECSqlSystemProperty kind, ECClassId defaultConstraintECClassId, ClassMap const& classMap, Utf8CP endTableColumnAlias, bool colIsDelayGenerated)
-    : RelationshipConstraintPropertyMap(Type::RelConstraintECClassId, constraintProperty, columns, kind, endTableColumnAlias), m_defaultConstraintClassId(defaultConstraintECClassId), m_isMappedToClassMapTables(false)
+    : RelationshipConstraintPropertyMap(Type::RelConstraintECClassId, classMap.GetClass().GetId(), constraintProperty, columns, kind, endTableColumnAlias), m_defaultConstraintClassId(defaultConstraintECClassId), m_isMappedToClassMapTables(false)
     {
     m_isMappedToClassMapTables = true;
     for (DbColumn const* column : columns)

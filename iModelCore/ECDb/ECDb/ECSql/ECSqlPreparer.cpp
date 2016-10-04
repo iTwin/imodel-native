@@ -410,11 +410,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const& exp)
     {
-    const auto currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
-    auto const& classMap = exp.GetInfo().GetMap();
+    const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
+    ClassMap const& classMap = exp.GetInfo().GetMap();
     if (ctx.IsPrimaryStatement() && !ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
         {
-        auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
+        ECDbPolicy policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage());
@@ -446,13 +446,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
     else
         {
-        if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
+        if (classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetTphHelper()->HasJoinedTable())
             {
-            table = &classMap.GetPrimaryTable();
-            }
-        else if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
-            {
-            table = &classMap.GetJoinedTable();
+            if (currentScopeECSqlType == ECSqlType::Update)
+                table = &classMap.GetJoinedTable();
+            else if (currentScopeECSqlType == ECSqlType::Delete)
+                table = &classMap.GetPrimaryTable();
             }
         else
             {
@@ -465,7 +464,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
                 }
-
 
             Partition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
             table = &partition->GetTable();

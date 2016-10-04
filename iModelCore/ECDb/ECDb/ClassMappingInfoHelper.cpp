@@ -57,9 +57,8 @@ void PropertyMapToString(Json::Value& propMapsJson, PropertyMap const& propMap)
 void ClassMapToString(Json::Value& classMapJson, ClassMap const& classMap)
     {
     classMapJson["Name"] = classMap.GetClass().GetName().c_str();
-    classMapJson["Id"] = classMap.GetId().ToString().c_str();
-    classMapJson["Type"] = ClassMap::TypeToString(classMap.GetType());
     classMapJson["ECClassId"] = classMap.GetClass().GetId().ToString().c_str();
+    classMapJson["Type"] = ClassMap::TypeToString(classMap.GetType());
     classMapJson["MapStrategy"] = MapStrategyExtendedInfo::ToString(classMap.GetMapStrategy().GetStrategy());
 
     Json::Value& tablesJson = classMapJson["Tables"];

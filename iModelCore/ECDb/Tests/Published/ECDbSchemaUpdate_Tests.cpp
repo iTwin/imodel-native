@@ -705,7 +705,6 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Make sure ECClass definition is updated correctly
     ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
@@ -718,6 +717,8 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, L2, S2) VALUES (2, 't2', 3, 't3')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, L2, S2, L3, S3) VALUES (4, 't4', 5, 't5', 6,'t6')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, L2, S2, L3, S3, L4, S4) VALUES (5, 't5', 6, 't6', 7,'t7', 8,'t8')");
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Delete some properties
     SchemaItem editedSchemaItem(

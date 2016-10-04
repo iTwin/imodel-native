@@ -73,7 +73,6 @@ private:
     BeBriefcaseBasedIdSequence m_tableIdSequence;
     BeBriefcaseBasedIdSequence m_columnIdSequence;
     BeBriefcaseBasedIdSequence m_indexIdSequence;
-    BeBriefcaseBasedIdSequence m_classmapIdSequence;
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     ECSqlStatementRegistry m_statementRegistry;
@@ -124,7 +123,6 @@ public:
     BeBriefcaseBasedIdSequence& GetTableIdSequence() { return m_tableIdSequence; }
     BeBriefcaseBasedIdSequence& GetColumnIdSequence() { return m_columnIdSequence; }
     BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
-    BeBriefcaseBasedIdSequence& GetClassMapIdSequence() { return m_classmapIdSequence; }
     BeBriefcaseBasedIdSequence& GetPropertyPathIdSequence() { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;

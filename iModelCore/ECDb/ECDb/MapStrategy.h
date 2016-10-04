@@ -93,7 +93,8 @@ public:
         }
 
     MapStrategy GetStrategy() const { return m_strategy; }
-    TablePerHierarchyInfo const& GetTphInfo() const { return m_tphInfo; }
+    bool IsTablePerHierarchy() const { return m_strategy == MapStrategy::TablePerHierarchy; }
+    TablePerHierarchyInfo const& GetTphInfo() const { BeAssert(IsTablePerHierarchy() == m_tphInfo.IsValid()); return m_tphInfo; }
 
     bool IsValid() const { return m_isValid; }
     static bool IsForeignKeyMapping(MapStrategyExtendedInfo const& strat) { return strat.GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable || strat.GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable; }

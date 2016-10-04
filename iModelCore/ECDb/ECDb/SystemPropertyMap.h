@@ -25,9 +25,9 @@ struct SystemPropertyMap : PropertyMap
         virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
         virtual void _QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const override;
     protected:
-        SystemPropertyMap(Type, ECN::ECPropertyCR, std::vector<DbColumn const*>, ECSqlSystemProperty);
-        SystemPropertyMap(SystemPropertyMap const& proto)
-            :PropertyMap(proto, nullptr), m_kind(proto.m_kind), m_columns(proto.m_columns)
+        SystemPropertyMap(Type, ECN::ECClassId ownerClassMapId, ECN::ECPropertyCR, std::vector<DbColumn const*>, ECSqlSystemProperty);
+        SystemPropertyMap(ECN::ECClassId ownerClassMapId, SystemPropertyMap const& proto)
+            :PropertyMap(ownerClassMapId, proto, nullptr), m_kind(proto.m_kind), m_columns(proto.m_columns)
             {}
 
         DbColumn const& GetColumn() const;
@@ -46,13 +46,13 @@ struct ECInstanceIdPropertyMap : SystemPropertyMap
     {
 private:
     ECInstanceIdPropertyMap(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<DbColumn const*>);
-    ECInstanceIdPropertyMap(ECInstanceIdPropertyMap const& proto) :SystemPropertyMap(proto) {}
+    ECInstanceIdPropertyMap(ECN::ECClassId ownerClassMapId, ECInstanceIdPropertyMap const& proto) :SystemPropertyMap(ownerClassMapId, proto) {}
 
 public:
     ~ECInstanceIdPropertyMap() {}
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&);
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
-    static PropertyMapPtr Clone(ECInstanceIdPropertyMap const& proto) { return new ECInstanceIdPropertyMap(proto); }
+    static PropertyMapPtr Clone(ECN::ECClassId ownerClassMapId, ECInstanceIdPropertyMap const& proto) { return new ECInstanceIdPropertyMap(ownerClassMapId, proto); }
     };
 
 //=======================================================================================
@@ -63,12 +63,12 @@ struct ECClassIdPropertyMap : SystemPropertyMap
 private:
     ECN::ECClassId m_defaultConstraintClassId;
     ECClassIdPropertyMap(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<DbColumn const*>);
-    ECClassIdPropertyMap(ECClassIdPropertyMap const& proto) :SystemPropertyMap(proto), m_defaultConstraintClassId(proto.m_defaultConstraintClassId) {}
+    ECClassIdPropertyMap(ECN::ECClassId ownerClassMapId, ECClassIdPropertyMap const& proto) :SystemPropertyMap(ownerClassMapId, proto), m_defaultConstraintClassId(proto.m_defaultConstraintClassId) {}
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
 public:
     ~ECClassIdPropertyMap() {}
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
-    static PropertyMapPtr Clone(ECClassIdPropertyMap const& proto) { return new ECClassIdPropertyMap(proto); }
+    static PropertyMapPtr Clone(ECN::ECClassId ownerClassMapId, ECClassIdPropertyMap const& proto) { return new ECClassIdPropertyMap(ownerClassMapId, proto); }
     ECN::ECClassId GetDefaultConstraintClassId() const { return m_defaultConstraintClassId; }
     bool IsPersisted() const { return GetSingleColumn()->GetPersistenceType() == PersistenceType::Persisted; }
 
@@ -83,8 +83,8 @@ struct RelationshipConstraintPropertyMap : SystemPropertyMap
         Utf8String m_viewColumnAlias;
 
     protected:
-        RelationshipConstraintPropertyMap(Type, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
-        RelationshipConstraintPropertyMap(RelationshipConstraintPropertyMap const& proto) :SystemPropertyMap(proto), m_viewColumnAlias(proto.m_viewColumnAlias) {}
+        RelationshipConstraintPropertyMap(Type, ECN::ECClassId ownerClassMapId, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+        RelationshipConstraintPropertyMap(ECN::ECClassId ownerClassMapId, RelationshipConstraintPropertyMap const& proto) :SystemPropertyMap(ownerClassMapId, proto), m_viewColumnAlias(proto.m_viewColumnAlias) {}
 
         bool HasViewColumnAlias() const { return !m_viewColumnAlias.empty(); }
         //! In the view generated for select statements, the constraint columns cannot be used directly for end-table mappings
@@ -108,16 +108,16 @@ struct RelationshipConstraintPropertyMap : SystemPropertyMap
 struct RelationshipConstraintECInstanceIdPropertyMap : RelationshipConstraintPropertyMap
     {
     private:
-        RelationshipConstraintECInstanceIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
-        RelationshipConstraintECInstanceIdPropertyMap(RelationshipConstraintECInstanceIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
+        RelationshipConstraintECInstanceIdPropertyMap(ECN::ECClassId ownerClassMapId, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+        RelationshipConstraintECInstanceIdPropertyMap(ECN::ECClassId ownerClassMapId, RelationshipConstraintECInstanceIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(ownerClassMapId, proto) {}
 
         virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
 
     public:
         ~RelationshipConstraintECInstanceIdPropertyMap() {}
 
-        static PropertyMapPtr Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, Utf8CP endTableColumnAlias = nullptr);
-        static PropertyMapPtr Clone(RelationshipConstraintECInstanceIdPropertyMap const& proto) { return new RelationshipConstraintECInstanceIdPropertyMap(proto); }
+        static PropertyMapPtr Create(ECN::ECClassId ownerClassMapId, ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, Utf8CP endTableColumnAlias = nullptr);
+        static PropertyMapPtr Clone(ECN::ECClassId ownerClassMapId, RelationshipConstraintECInstanceIdPropertyMap const& proto) { return new RelationshipConstraintECInstanceIdPropertyMap(ownerClassMapId, proto); }
     };
 
 //=======================================================================================
@@ -130,7 +130,7 @@ struct RelConstraintECClassIdPropertyMap : RelationshipConstraintPropertyMap
         bool m_isMappedToClassMapTables;
 
         RelConstraintECClassIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
-        RelConstraintECClassIdPropertyMap(RelConstraintECClassIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
+        RelConstraintECClassIdPropertyMap(ECN::ECClassId ownerClassMapId, RelConstraintECClassIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(ownerClassMapId, proto) {}
 
         virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
 
@@ -139,16 +139,13 @@ struct RelConstraintECClassIdPropertyMap : RelationshipConstraintPropertyMap
 
         ECN::ECClassId GetDefaultConstraintECClassId() const { return m_defaultConstraintClassId; }
         static RefCountedPtr<RelConstraintECClassIdPropertyMap> Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP endTableColumnAlias = nullptr, bool colIsDelayGenerated = false);
-        static PropertyMapPtr Clone(RelConstraintECClassIdPropertyMap const& proto) { return new RelConstraintECClassIdPropertyMap(proto); }
+        static PropertyMapPtr Clone(ECN::ECClassId ownerClassMapId, RelConstraintECClassIdPropertyMap const& proto) { return new RelConstraintECClassIdPropertyMap(ownerClassMapId, proto); }
 
         //!ConstraintClassId columns are not always created in the table to which the relationship is mapped to. 
         //!If this method returns false, the relationship table doesn't have a constraint class id column, but the class id
         //!column resides elsewhere.
         bool IsMappedToClassMapTables() const { return m_isMappedToClassMapTables; }
-        bool IsMappedToECClassId() const
-            {
-            return Enum::Contains(GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId);
-            }
+        bool IsMappedToECClassId() const { return Enum::Contains(GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

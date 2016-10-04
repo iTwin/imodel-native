@@ -419,9 +419,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
 
     //ec_ClassMap
     stat = ecdb.ExecuteSql("CREATE Table ec_ClassMap("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "BaseId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
+                           "ClassId INTEGER PRIMARY KEY REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (0,1)),"
@@ -431,22 +429,16 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_BaseId ON ec_ClassMap(ClassId, BaseId) WHERE BaseId IS NOT NULL;"
-                           "CREATE INDEX ix_ec_ClassMap_BaseId ON ec_ClassMap(BaseId);"
-                           "CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
     //ec_PropertyMap
     stat = ecdb.ExecuteSql("CREATE Table ec_PropertyMap("
                            "Id INTEGER PRIMARY KEY,"
-                           "ClassMapId INTEGER NOT NULL REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_ClassMap(ClassId) ON DELETE CASCADE,"
                            "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath(Id) ON DELETE CASCADE,"
                            "ColumnId INTEGER NOT NULL REFERENCES ec_Column(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyMap_ClassMapId_PropertyPathId_ColumnId ON ec_PropertyMap(ClassMapId,PropertyPathId,ColumnId);"
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyMap_ClassId_PropertyPathId_ColumnId ON ec_PropertyMap(ClassId,PropertyPathId,ColumnId);"
                            "CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON ec_PropertyMap(PropertyPathId);"
                            "CREATE INDEX ix_ec_PropertyMap_ColumnId ON ec_PropertyMap(ColumnId);");
     if (BE_SQLITE_OK != stat)

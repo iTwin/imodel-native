@@ -70,7 +70,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
     sql.Sprintf("INSERT INTO " ECDB_CACHETABLE_ClassHasTables " "
                 "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
                 "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-                "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+                "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
                 "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
                 "    WHERE ec_ClassMap.MapStrategy <> %d "
                 "          AND ec_ClassMap.MapStrategy <> %d "
