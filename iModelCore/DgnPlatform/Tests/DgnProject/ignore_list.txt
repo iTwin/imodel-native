@@ -21,8 +21,6 @@ UnitIterator.GetName                                    # fails randomonly on 06
 
 ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
-ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
-
 #TFS 492144
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild
 

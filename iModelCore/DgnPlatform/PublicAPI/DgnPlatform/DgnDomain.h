@@ -402,7 +402,6 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
-    friend struct ComponentModel;
 
     DomainList    m_domains;
     Handlers      m_handlers;
