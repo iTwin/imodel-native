@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -626,7 +624,6 @@ bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isF
         }
     }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -671,14 +668,12 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
-#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -715,9 +710,6 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
     AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
 
     return true;
-#else
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,7 +717,6 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -762,9 +753,6 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
     AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
 
     return true;
-#else
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,7 +760,6 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -804,9 +791,6 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
     AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
 
     return true;
-#else
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -814,7 +798,6 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     switch (m_opType)
         {
         case AccumulateLengths:
@@ -852,9 +835,6 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
         }
 
     return true;
-#else
-    return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

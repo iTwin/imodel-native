@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/VecMath.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
@@ -872,7 +870,6 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -914,7 +911,6 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
                 return;
             }
         }
-#endif
     }
 
 BEGIN_UNNAMED_NAMESPACE

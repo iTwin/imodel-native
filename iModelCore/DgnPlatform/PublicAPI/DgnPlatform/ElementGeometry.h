@@ -138,9 +138,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
 
     DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
-#ifdef BENTLEYCONFIG_OPENCASCADE
     DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-#endif
 };
 
 //=======================================================================================
@@ -169,9 +167,7 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
-#endif
     };
 
     //=======================================================================================
