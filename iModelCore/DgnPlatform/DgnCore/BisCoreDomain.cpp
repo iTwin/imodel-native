@@ -21,7 +21,6 @@ namespace dgn_TableHandler
 {
 TABLEHANDLER_DEFINE_MEMBERS(Element)
 TABLEHANDLER_DEFINE_MEMBERS(Model)
-TABLEHANDLER_DEFINE_MEMBERS(ModelDep)
 TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
 TABLEHANDLER_DEFINE_MEMBERS(BeProperties)
 };
@@ -31,7 +30,6 @@ namespace dgn_ModelHandler
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(Physical)
-HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Role)
@@ -83,7 +81,6 @@ HANDLER_DEFINE_MEMBERS(Authority)
 HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
 HANDLER_DEFINE_MEMBERS(Material)
-HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
@@ -110,7 +107,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Component::GetHandler());
     RegisterHandler(dgn_ModelHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
@@ -182,7 +178,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Component::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
@@ -191,7 +186,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
-    RegisterTableHandler(dgn_TableHandler::ModelDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }

@@ -246,7 +246,6 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
                 CodeAuthorityId;NULL;6
                 CodeNamespace;NULL;""
                 CodeValue;NULL;"ChangeSummaryModel"
-                DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:4;dgn:Category:149;Insert;No
@@ -408,7 +407,6 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromSavedTransactions)
                 CodeAuthorityId;NULL;6
                 CodeNamespace;NULL;""
                 CodeValue;NULL;"TestModel"
-                DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
@@ -496,7 +494,6 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromSavedTransactions)
                 CodeAuthorityId;NULL;6
                 CodeNamespace;NULL;""
                 CodeValue;NULL;"TestModel"
-                DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
@@ -584,7 +581,6 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromSavedTransactions)
                 CodeAuthorityId;NULL;6
                 CodeNamespace;NULL;""
                 CodeValue;NULL;"TestModel"
-                DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No

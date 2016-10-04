@@ -244,13 +244,13 @@ private:
     void InvokeHandlerForValidation(Edge const& rh);
     void ReportValidationError (TxnManager::ValidationError&, Edge const*);
 
-    void DiscoverEdges(DgnModelId mid);
+    void DiscoverEdges();
 
     void VerifyOverlappingDependencies();
     void InvokeHandlersInTopologicalOrder();
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
 
-    void InvokeHandlersInDependencyOrder(DgnModelId);
+    void InvokeHandlersInDependencyOrder();
     void InvokeHandlersForDeletedRelationships();
 
     BeSQLite::DbResult SetFailedEdgeStatusInDb(Edge const&, bool failed);
@@ -268,8 +268,6 @@ public:
     //! Txns calls this when closing a txn
     void InvokeAffectedDependencyHandlers();
 
-    //! Txns calls this when validating a txn
-    void UpdateModelDependencyIndex();
 //__PUBLISH_SECTION_START__
 
     //! Get the "Edge" that represents the specified ECRelationship instance

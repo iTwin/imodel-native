@@ -38,12 +38,15 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
     BeFileName seedFilePath;
     BeTest::GetHost().GetOutputRoot(seedFilePath);
+    seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
 
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+        schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
         searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
@@ -51,6 +54,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
         ECN::ECSchemaPtr schema = nullptr;
         ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
+        ASSERT_TRUE(schema != nullptr);
 
         schemaContext->AddSchema(*schema);
         ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
@@ -66,7 +70,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
             ASSERT_EQ (DgnDbStatus::Success, stat);
             }
         m_db->SaveChanges();
-        m_db->CloseDb();
         }
 
     BeFileName dgndbFilePath;
@@ -113,9 +116,21 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element1</BaseClass>"
-        "    <ECProperty propertyName='Prop2_1' typeName='string' />"
-        "    <ECProperty propertyName='Prop2_2' typeName='long' />"
-        "    <ECProperty propertyName='Prop2_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop2_1' typeName='string' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_2' typeName='long' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
+        "    <ECProperty propertyName='Prop2_3' typeName='double' >"
+        "       <ECCustomAttributes>"
+        "              <CustomHandledProperty />"
+        "       </ECCustomAttributes>"
+        "    </ECProperty>"
         "  </ECClass>"
         "  <ECClass typeName='Element3' >"
         "    <ECCustomAttributes>"

@@ -23,8 +23,6 @@
 #define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
 #define BIS_CLASS_Authority                 "Authority"
 #define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
-#define BIS_CLASS_ComponentAuthority        "ComponentAuthority"
-#define BIS_CLASS_ComponentModel            "ComponentModel"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
@@ -92,9 +90,7 @@
 #define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
-#define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
 #define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 #define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
@@ -284,7 +280,6 @@ private:
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
     T_DgnModelMap   m_models;
-    bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
     T_ClassInfoMap  m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -398,12 +393,6 @@ public:
     //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
-
-    //! Query for the dependency index of the specified model
-    //! @param[out] dependencyIndex  The model's DependencyIndex property value
-    //! @param[in] modelId      The model's ID
-    //! @return non-zero if the model does not exist
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndex(uint64_t& dependencyIndex, DgnModelId modelId);
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}

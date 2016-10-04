@@ -20,14 +20,6 @@ DgnDbStatus DgnScript::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName)
-    {
-    return DgnDbStatus::NotEnabled;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
     m_jsenv = nullptr;

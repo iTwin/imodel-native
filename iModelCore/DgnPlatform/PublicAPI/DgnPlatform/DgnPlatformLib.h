@@ -378,20 +378,22 @@ public:
             //Control if raster locate logic can locate raster by its interior or by its border only.
             virtual bool _IsIgnoreInterior() const {return false;}
 
-            //! Resolve the file name that corresponds to the fileId. The fileId is provided by the application, which is responsible to map this fileId to
-            //! a file that the application knows. Generally, the application will override this admin method.
-            //! @param[out]     fileName        Resolved file name. 
-            //! @param[in]      fileId          An id that can be mapped to a file
-            //! @param[in]      db              The current DgnDb file
-            //! @return SUCCESS if the name could be resolved. ERROR otherwise. 
-            virtual BentleyStatus _ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR db) const {return ERROR;}
+            //! Create a portable file URI, to be used with _ResolveFileUri. The default behavior strips the path from fileName and keeps only the file name.
+            //! The host application can override this method to handle particular schemes or create URIs for specific locations.
+            //! @param[out]     fileUri         A portable URI. This should be a name relative to the Bim file or a name with a known scheme ("bim://", ...)
+            //! @param[in]      fileName        File name. The host application can override this method to handle names with a specific scheme. 
+            //! @return SUCCESS if the fileUri could be created. ERROR otherwise. 
+            DGNPLATFORM_EXPORT virtual BentleyStatus _CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const;
 
-            //! Create a standard fileId, to be used with _ResolveFileName.
-            //! @param[out]     fileId          An id created from fullPath and basePath
-            //! @param[in]      fullPath        Full path of the file (including name). 
-            //! @param[in]      basePath        Base path, usually the path of the current DgnDb file. 
-            //! @return SUCCESS if the fileId could be created. ERROR otherwise. 
-            virtual BentleyStatus _CreateLocalFileId(Utf8StringR fileId, BeFileNameCR fullPath, BeFileNameCR basePath) const {return ERROR;}
+            //! Resolve the URI defined by fileUri. The output fileName should define a full path that can be used by RasterFileModelHandler to open the raster file.
+            //! The default behavior assumes that fileUri defines a path relative to the Bim file.
+            //! The host application can override this method to resolve specific file schemes. The host application should call the default _ResolveFileUri
+            //! implementation if its own implementation fails.
+            //! @param[out]     fileName        Resolved file name. 
+            //! @param[in]      fileUri         File URI that needs to be resolved.
+            //! @param[in]      db              The current DgnDb file
+            //! @return SUCCESS if the URI was resolved. ERROR otherwise. 
+            DGNPLATFORM_EXPORT virtual BentleyStatus _ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const;
             };
 
         //! Admin for PointCloud services
@@ -455,20 +457,22 @@ public:
             //! returns whether we should automatically synchronize the spatial reference to the POD file even if it is empty
             virtual bool _GetSyncEmptySpatialReferenceToFile() const {return false;}
 
-            //! Resolve the file name that corresponds to the fileId. The fileId is provided by the application, which is responsible to map this fileId to
-            //! a file that the application knows. Generally, the application will override this admin method.
-            //! @param[out]     fileName        Resolved file name. 
-            //! @param[in]      fileId          An id that can be mapped to a file
-            //! @param[in]      db              The current DgnDb file
-            //! @return SUCCESS if the name could be resolved. ERROR otherwise. 
-            virtual BentleyStatus _ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR db) const {return ERROR;}
+            //! Create a portable file URI, to be used with _ResolveFileUri. The default behavior strips the path from fileName and keeps only the file name.
+            //! The host application can override this method to handle particular schemes or create URIs for specific locations.
+            //! @param[out]     fileUri         A portable URI. This should be a name relative to the Bim file or a name with a known scheme ("bim://", ...)
+            //! @param[in]      fileName        File name. The host application can override this method to handle names with a specific scheme. 
+            //! @return SUCCESS if the fileUri could be created. ERROR otherwise. 
+            DGNPLATFORM_EXPORT virtual BentleyStatus _CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const;
 
-            //! Create a standard fileId, to be used with _ResolveFileName.
-            //! @param[out]     fileId          An id created from fullPath and basePath
-            //! @param[in]      fullPath        Full path of the file (including name). 
-            //! @param[in]      basePath        Base path, usually the path of the current DgnDb file. 
-            //! @return SUCCESS if the fileId could be created. ERROR otherwise. 
-            virtual BentleyStatus _CreateLocalFileId(Utf8StringR fileId, BeFileNameCR fullPath, BeFileNameCR basePath) const {return ERROR;}
+            //! Resolve the URI defined by fileUri. The output fileName should define a full path that can be used by RasterFileModelHandler to open the raster file.
+            //! The default behavior assumes that fileUri defines a path relative to the Bim file.
+            //! The host application can override this method to resolve specific file schemes. The host application should call the default _ResolveFileUri
+            //! implementation if its own implementation fails.
+            //! @param[out]     fileName        Resolved file name. 
+            //! @param[in]      fileUri         File URI that needs to be resolved.
+            //! @param[in]      db              The current DgnDb file
+            //! @return SUCCESS if the URI was resolved. ERROR otherwise. 
+            DGNPLATFORM_EXPORT virtual BentleyStatus _ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const;
             };
 
         //! Receives messages sent to NotificationManager. Hosts can implement this interface to communicate issues to the user.

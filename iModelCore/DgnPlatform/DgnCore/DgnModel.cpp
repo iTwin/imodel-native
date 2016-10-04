@@ -14,7 +14,6 @@
 #define MODEL_PROP_CodeValue "CodeValue"
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
-#define MODEL_PROP_DependencyIndex "DependencyIndex"
 #define MODEL_PROP_FederationGuid "FederationGuid"
 #define MODEL_PROP_IsTemplate "IsTemplate"
 #define SHEET_MODEL_PROP_SheetSize "SheetSize"
@@ -116,29 +115,6 @@ void DgnModels::Empty()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.Wilson                      03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::QueryModelDependencyIndex(uint64_t& didx, DgnModelId mid)
-    {
-    auto i = m_modelDependencyIndices.find(mid);
-    if (i != m_modelDependencyIndices.end())
-        {
-        didx = i->second;
-        return BSISUCCESS;
-        }
-
-    CachedStatementPtr selectDependencyIndex;
-    GetDgnDb().GetCachedStatement(selectDependencyIndex, "SELECT DependencyIndex FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
-    selectDependencyIndex->BindId(1, mid);
-    if (selectDependencyIndex->Step() != BE_SQLITE_ROW)
-        return BSIERROR;
-
-    didx = selectDependencyIndex->GetValueInt64(0);
-    m_modelDependencyIndices[mid] = didx;
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnModels::Iterator::QueryCount() const
@@ -234,7 +210,7 @@ void DgnModel::ReleaseAllElements()
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList),
-    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_dependencyIndex(-1), m_persistent(false), m_filled(false)
+    m_federationGuid(params.m_federationGuid), m_isTemplate(params.m_isTemplate), m_persistent(false), m_filled(false)
     {
     }
 
@@ -595,8 +571,6 @@ DgnDbStatus DgnModel::Read(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
     {
-    m_dependencyIndex = statement.GetValueInt(params.GetSelectIndex(MODEL_PROP_DependencyIndex));
-    
     int propsIndex = params.GetSelectIndex(MODEL_PROP_Properties);
     if (!statement.IsValueNull(propsIndex))
         {
@@ -646,8 +620,6 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
 
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
-
-    statement.BindInt(statement.GetParameterIndex(MODEL_PROP_DependencyIndex), m_dependencyIndex);
 
     Json::Value propJson(Json::objectValue);
     _WriteJsonProperties(propJson);
@@ -1263,7 +1235,6 @@ DgnDbStatus DgnModel::Insert()
 void DgnModel::_InitFrom(DgnModelCR other)
     {
     m_inGuiList = other.m_inGuiList;
-    m_dependencyIndex = other.m_dependencyIndex;
     m_isTemplate = other.m_isTemplate;
 
     m_federationGuid.Invalidate();
@@ -1494,7 +1465,6 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
-    params.Add(MODEL_PROP_DependencyIndex, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_FederationGuid, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }

@@ -138,9 +138,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(TextStringCR) const;
 
     DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
-#ifdef BENTLEYCONFIG_OPENCASCADE
     DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
-#endif
 };
 
 //=======================================================================================
@@ -169,9 +167,7 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
-#endif
     };
 
     //=======================================================================================
@@ -372,12 +368,14 @@ struct GeometryCollection
             Transform               m_geomToWorld;
             GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
+            DRange3d                m_localRange;
 
             CurrentState(DgnDbR dgnDb) : m_dgnDb(dgnDb)
             {
                 m_sourceToWorld = Transform::FromIdentity();
                 m_geomToSource  = Transform::FromIdentity();
                 m_geomToWorld   = Transform::FromIdentity();
+                m_localRange    = DRange3d::NullRange();
             }
         };
 
@@ -404,6 +402,7 @@ struct GeometryCollection
         Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;} //!< Returns GeometryParams for current GeometricPrimitive...
         DgnGeometryPartId GetGeometryPartId() const {return m_state->m_geomStreamEntryId.GetGeometryPartId();} //!< Returns invalid id if not a DgnGeometryPart reference... 
         GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current GeometricPrimitive...
+        DRange3dCR GetSubGraphicLocalRange() const {return m_state->m_localRange;} //!< Returns local range for geometry that was appended with GeometryBuilder::SetAppendAsSubGraphics enabled. 
         
         DGNPLATFORM_EXPORT EntryType GetEntryType() const;  //!< check geometry type to avoid creating GeometricPrimitivePtr for un-desired types.
         DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
@@ -441,7 +440,7 @@ public:
     
     //! Iterate a GeometryStream.
     //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeometryPartPtr, etc. until done iterating.
-    DGNPLATFORM_EXPORT GeometryCollection (GeometryStreamCR geom, DgnDbR dgnDb);
+    DGNPLATFORM_EXPORT GeometryCollection (GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId = DgnCategoryId(), TransformCR sourceToWorld = Transform::FromIdentity());
 
     //! Iterate a GeometrySource.
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
@@ -642,9 +641,14 @@ public:
     //! Append a TextAnnotation to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append (TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
 
+    //! @private Create builder for DgnGeometryPart from an existing GeometricElement's GeometryStream (can't contain parts).
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr);
+
     //! Create a DgnGeometryPart builder for defining a new part that will contain a group of either 2d or 3d GeometricPrimitive.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (DgnDbR db, bool is3d);
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr); //!< @private Create builder for DgnGeometryPart from an existing GeometricElement's GeometryStream (can't contain parts).
+
+    //! @private Create builder using the DgnModel, DgnCategoryId, and Placement2d or Placement3d of the supplied GeometrySource and an existing GeometricElement's GeometryStream.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR, GeometryStreamCR);
 
     //! Create builder from DgnModel and DgnCategoryId. A placement will be computed from the first appended GeometricPrimitive.
     //! @note Only CoordSystem::World is supported for append and it's not possible to append a DgnGeometryPartId as it need to be positioned relative to a known coordinate system.

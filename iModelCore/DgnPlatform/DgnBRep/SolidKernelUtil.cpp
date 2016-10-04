@@ -8,9 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 using namespace flatbuffers;
 
@@ -94,7 +92,6 @@ bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
             m_uv.y             < rhs.m_uv.y);
     }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
 +===============+===============+===============+===============+===============+======*/
@@ -271,23 +268,18 @@ TopoDS_Shape& GetShapeR() {return m_shape;}
 static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape) {return new OpenCascadeEntity(shape);}
 
 }; // OpenCascadeEntity
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
 
     if (!ocEntity)
         return nullptr;
 
     return &ocEntity->GetShape();
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,13 +287,9 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,16 +297,12 @@ bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     OpenCascadeEntity* ocEntity = dynamic_cast <OpenCascadeEntity*> (&entity);
 
     if (!ocEntity)
         return nullptr;
 
     return &ocEntity->GetShapeR();
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,11 +310,7 @@ TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     return OpenCascadeEntity::CreateNewEntity(shape);
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,7 +318,6 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -402,7 +381,4 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
-#else
-    return nullptr;
-#endif
     }
