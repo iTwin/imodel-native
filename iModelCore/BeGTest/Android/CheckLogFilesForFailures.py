@@ -39,6 +39,10 @@ def checkLogFileForFailures(logfilename):
                 report = report + line
                 continue
 
+            if lline.find('instrumentation_result:') != -1 or lline.find('instrumentation_code:') != -1:
+                report = report + line
+                continue
+
             if lline.startswith('test results for beinstrumentationtestrunner'):
                 foundSummary = True
                 continue
@@ -52,6 +56,10 @@ def checkLogFileForFailures(logfilename):
     if lineNo == 0:
         report = report + '\n' + 'Empty test results log. Tests were not run?'
         return 0,report
+
+    if not foundSummary:
+        failureCount = failureCount + 1
+        report = report + '***FAILED TO LOAD OR CRASHED***\n'
 
     # There is no point in printing the log file, as it does not contain any details of the failures.
     # The user must run "adb logcat" in order to see the native code logging output.
