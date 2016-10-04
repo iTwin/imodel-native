@@ -326,7 +326,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
                     {
                     //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-                    bvector<Utf8String> sisterFiles;
+                    bvector<UriPtr> sisterFiles;
                     pDataSource->SetSisterFiles(sisterFiles);
                     }
 
@@ -454,11 +454,10 @@ void RealityDataPackageNet::CreateV1(String^  location,
                 {
                 //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-            bvector<UriPtr> sisterFiles;
+                bvector<UriPtr> sisterFiles;
                 pDataSource->SetSisterFiles(sisterFiles);
                 }
 
-            bvector<Utf8String> sisterFiles;
             RealityPackage::TerrainDataPtr pTerrainData = RealityPackage::TerrainData::Create(*pDataSource);
             pDataPackage->GetTerrainGroupR().push_back(pTerrainData);
             }
