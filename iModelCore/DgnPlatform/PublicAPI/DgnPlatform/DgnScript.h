@@ -59,17 +59,6 @@ struct DgnScript
     **/
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
-    /**
-    Call a ComponentModel element generator function that is implemented in JavaScript.
-
-    @verbatim
-        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
-    @endverbatim
-
-    @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
-    **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, ComponentModelR componentModel, DgnModelR destModel, ECN::IECInstanceR instance, ComponentDefR cdef, Utf8StringCR functionName);
-
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 
     //! Make sure that the script referenced by \a tsFunctionSpec is loaded.

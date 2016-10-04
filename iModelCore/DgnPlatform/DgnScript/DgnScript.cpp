@@ -64,7 +64,6 @@ struct DgnScriptContext : BeJsContext
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec, bool forceReload);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
     DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -244,55 +243,6 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for an DgnDbScript - must return an int", functionName.c_str());
         BeAssert(false && "DgnDbScript has incorrect return type");
-        return DgnDbStatus::NotEnabled;
-        }
-
-    BeJsNumber num(retval);
-    functionReturnStatus = num.GetIntegerValue();
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName)
-    {
-    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.ExecuteComponentGenerateElements(functionReturnStatus, componentModel, destModel, instance, cdef, functionName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR jsFunctionName)
-    {
-    functionReturnStatus = -1;
-
-    DgnDbStatus status = LoadProgram(componentModel.GetDgnDb(), jsFunctionName.c_str(), false);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName.c_str());
-    if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
-        {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName.c_str());
-        BeAssert(false && "model solver not registered");
-        return DgnDbStatus::NotEnabled;
-        }
-
-    BeginCallContext();
-    BeJsObject jsInstance = ObtainProjectedClassInstancePointer(new JsECInstance(const_cast<ECN::IECInstanceR>(instance)), true);
-    BeJsNativePointer jsCompDef = ObtainProjectedClassInstancePointer(new JsComponentDef(cdef), true);
-    BeJsNativePointer jsCompModel = ObtainProjectedClassInstancePointer(new JsComponentModel(componentModel), true);
-    BeJsNativePointer jsDestModel = ObtainProjectedClassInstancePointer(new JsDgnModel(destModel), true);
-    // export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
-    BeJsValue retval = jsfunc(jsCompModel, jsDestModel, jsInstance, jsCompDef);
-    EndCallContext();
-
-    if (!retval.IsNumber())
-        {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName.c_str());
-        BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
 

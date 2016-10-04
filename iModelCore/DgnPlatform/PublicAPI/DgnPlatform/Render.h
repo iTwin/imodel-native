@@ -286,7 +286,7 @@ public:
     //! Create an image by resizing a source image.
     //! @param[in] width the width of the image in pixels
     //! @param[in] height the height of the image in pixels
-    //! @param[in] sourceImage the source image.
+    //! @param[in] sourceImage the source image
     DGNPLATFORM_EXPORT static Image FromResizedImage (uint32_t width, uint32_t height, ImageCR sourceImage);
 
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
