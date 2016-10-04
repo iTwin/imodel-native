@@ -512,7 +512,13 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
-    return m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    auto found = m_unclusteredVertexMap.find(vertex);
+    if (m_unclusteredVertexMap.end() != found)
+        return found->second;
+
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    m_unclusteredVertexMap[vertex] = index;
+    return index;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,12 +526,12 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     {
-    auto found = m_vertexMap.find(vertex);
-    if (m_vertexMap.end() != found)
+    auto found = m_clusteredVertexMap.find(vertex);
+    if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = AddVertex(vertex);
-    m_vertexMap[vertex] = index;
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    m_clusteredVertexMap[vertex] = index;
     return index;
     }
 
