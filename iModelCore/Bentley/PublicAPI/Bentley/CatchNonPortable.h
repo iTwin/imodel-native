@@ -51,7 +51,7 @@
     int swprintf                    (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Snwprintf
     int _swprintf                   (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Snwprintf
     int GetACP                      (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::GetCurrentCodePage
-//    int swscanf                 (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BE_STRING_UTILITIES_SWSCANF
+    int swscanf                 (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BE_STRING_UTILITIES_SWSCANF
     int wcstoul                 (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Wcstoul
     int wtoi                    (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Wtoi
     int wtod                    (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BE_STRING_UTILITIES_SWSCANF
