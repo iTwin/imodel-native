@@ -9,10 +9,7 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #include <Geom/XYZRangeTree.h>
-
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -754,12 +751,8 @@ private:
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
-#else
-        SetFacetCount(0);
-#endif
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
@@ -849,7 +842,6 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -862,9 +854,6 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         }
 
     return polyface;
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
