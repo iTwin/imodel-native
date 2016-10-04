@@ -256,9 +256,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance) { return new TileMeshBuilder(params, tolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool duplicateTwoSidedTriangles);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -593,12 +593,10 @@ private:
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
 
-    static void ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range);
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
-    DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
