@@ -14,9 +14,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RealityData::GetFootprint(DRange2dP pFootprint) const
+StatusInt RealityData::GetFootprint(bvector<DPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
-    return _GetFootprint(pFootprint);
+    return _GetFootprint(pFootprint, pFootprintExtents);
     }
 
 //-------------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ StatusInt RealityData::GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
+StatusInt RealityData::SaveFootprint(bvector<DPoint2d>& data, BeFileNameCR outFilename) const
     {
     return _SaveFootprint(data, outFilename);
     }

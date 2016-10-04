@@ -21,12 +21,11 @@ using namespace System::Collections::Generic;
 
 
 // Forward declaration
-namespace RealityDataPackageWrapper { ref class ImageryGroupNet; }
-namespace RealityDataPackageWrapper { ref class ModelGroupNet; }
-namespace RealityDataPackageWrapper { ref class PinnedGroupNet; }
-namespace RealityDataPackageWrapper { ref class TerrainGroupNet; }
-namespace RealityDataPackageWrapper { ref class DataGroupNet; }
-namespace RealityDataPackageWrapper { ref class DataSourceNet; }
+namespace RealityDataPackageWrapper { ref class ImageryDataNet; }
+namespace RealityDataPackageWrapper { ref class ModelDataNet; }
+namespace RealityDataPackageWrapper { ref class PinnedDataNet; }
+namespace RealityDataPackageWrapper { ref class TerrainDataNet; }
+namespace RealityDataPackageWrapper { ref class RealityDataSourceNet; }
 
 namespace RealityDataPackageWrapper
     {   
@@ -36,6 +35,11 @@ namespace RealityDataPackageWrapper
     public ref class RealityDataPackageNet
         {
         public:
+            typedef List<ImageryDataNet^>   ImageryGroupNet;
+            typedef List<ModelDataNet^>     ModelGroupNet;
+            typedef List<PinnedDataNet^>    PinnedGroupNet;
+            typedef List<TerrainDataNet^>   TerrainGroupNet;
+
             //! Create version 1 package.
             static void CreateV1(System::String^ location,
                                  System::String^ name,
@@ -62,105 +66,21 @@ namespace RealityDataPackageWrapper
                                  TerrainGroupNet^ terrainGroup);
         
         private:
-            RealityDataPackageNet();
-            ~RealityDataPackageNet();
+            RealityDataPackageNet() {};
+            ~RealityDataPackageNet() {};
 
-            static RealityPackage::RealityDataSourcePtr CreateDataSource(DataSourceNet^ source);
-            static RealityPackage::WmsDataSourcePtr CreateWmsDataSource(DataSourceNet^ source);
-            static RealityPackage::OsmDataSourcePtr CreateOsmDataSource(DataSourceNet^ source, RealityPackage::BoundingPolygonPtr boundingPolygon);
+            static RealityPackage::RealityDataSourcePtr CreateDataSource(RealityDataSourceNet^ source);
+            static RealityPackage::WmsDataSourcePtr CreateWmsDataSource(RealityDataSourceNet^ source);
+            static RealityPackage::OsmDataSourcePtr CreateOsmDataSource(RealityDataSourceNet^ source, RealityPackage::BoundingPolygonPtr boundingPolygon);
         };
 
-    //=====================================================================================
-    //! @bsiclass                                   Jean-Francois.Cote               9/2015
-    //=====================================================================================
-    public ref class ImageryGroupNet
-        {
-        public:
-            //! Create imagery group.
-            static ImageryGroupNet^ Create();
-
-            void AddData(DataGroupNet^ imageryData);
-
-            List<DataGroupNet^>^ GetData() { return m_imageryDataList; }
-
-        private:
-            ImageryGroupNet();
-            ~ImageryGroupNet();
-
-            List<DataGroupNet^>^ m_imageryDataList;
-        };
-
-    //=====================================================================================
-    //! @bsiclass                                   Jean-Francois.Cote               9/2015
-    //=====================================================================================
-    public ref class ModelGroupNet
-        {
-        public:
-            //! Create model group.
-            static ModelGroupNet^ Create();
-
-            void AddData(DataGroupNet^ modelData);
-
-            List<DataGroupNet^>^ GetData() { return m_modelDataList; }
-
-        private:
-            ModelGroupNet();
-            ~ModelGroupNet();
-
-            List<DataGroupNet^>^ m_modelDataList;
-        };
-
-    //=====================================================================================
-    //! @bsiclass                                   Jean-Francois.Cote               9/2015
-    //=====================================================================================
-    public ref class PinnedGroupNet
-        {
-        public:
-            //! Create pinned group.
-            static PinnedGroupNet^ Create();
-
-            void AddData(DataGroupNet^ pinnedData);
-
-            List<DataGroupNet^>^ GetData() { return m_pinnedDataList; }
-
-        private:
-            PinnedGroupNet();
-            ~PinnedGroupNet();
-
-            List<DataGroupNet^>^ m_pinnedDataList;
-        };
-
-    //=====================================================================================
-    //! @bsiclass                                   Jean-Francois.Cote               9/2015
-    //=====================================================================================
-    public ref class TerrainGroupNet
-        {
-        public:
-            //! Create terrain group.
-            static TerrainGroupNet^ Create();
-
-            void AddData(DataGroupNet^ terrainData);
-
-            List<DataGroupNet^>^ GetData() { return m_terrainDataList; }
-
-        private:
-            TerrainGroupNet();
-            ~TerrainGroupNet();
-
-            List<DataGroupNet^>^ m_terrainDataList;
-        };
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              7/2016
     //=====================================================================================
-    public ref class DataGroupNet
+    public ref class RealityDataNet
         {
         public:
-            //! Create data group with main source.
-            static DataGroupNet^ Create(System::String^ id,
-                                        System::String^ name,
-                                        DataSourceNet^ source);
-
             //! Get id.
             System::String^ GetId() { return m_id; };
 
@@ -171,113 +91,223 @@ namespace RealityDataPackageWrapper
             int GetNumSources() { return m_sources->Count; }
 
             //! Get the sources.
-            List<DataSourceNet^>^ GetSources() { return m_sources; }
+            List<RealityDataSourceNet^>^ GetSources() { return m_sources; }
 
             //! Adds an alternate source to the data.
-            void AddSource(DataSourceNet^ dataSource);
+            void AddSource(RealityDataSourceNet^ dataSource);
 
         protected:
-            DataGroupNet(System::String^ id,
+            RealityDataNet(System::String^ id,
                            System::String^ name,
-                           DataSourceNet^ source);
+                           RealityDataSourceNet^ source);
 
-            ~DataGroupNet();
+            ~RealityDataNet() {};
 
         private:
             System::String^ m_id;
             System::String^ m_name;
-            List<DataSourceNet^>^ m_sources;
+            List<RealityDataSourceNet^>^ m_sources;
         };
 
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              9/2016
+    //=====================================================================================
+    public ref class ImageryDataNet : public RealityDataNet
+        {
+        public:
+            //! Create data of imagery type with main source.
+            static ImageryDataNet^ Create(System::String^ id,
+                                          System::String^ name,
+                                          RealityDataSourceNet^ dataSource, 
+                                          List<double>^ corners);
+
+            //! Get corners.
+            List<double>^ GetCorners() { return m_corners; }
+
+        protected:
+            ImageryDataNet(System::String^ id, System::String^ name, RealityDataSourceNet^ dataSource, List<double>^ corners);
+            ~ImageryDataNet() {}
+
+        private:
+            List<double>^ m_corners;
+        };
+
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              9/2016
+    //=====================================================================================
+    public ref class ModelDataNet : public RealityDataNet
+        {
+        public:
+            //! Create data of model type.
+            static ModelDataNet^ Create(System::String^ id,
+                                        System::String^ name,
+                                        RealityDataSourceNet^ dataSource);
+
+        protected:
+            ModelDataNet(System::String^ id, System::String^ name, RealityDataSourceNet^ dataSource);
+            ~ModelDataNet() {};
+
+        private:
+
+        };
+
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              9/2016
+    //=====================================================================================
+    public ref class PinnedDataNet : public RealityDataNet
+        {
+        public:
+            //! Create data of pinned type.
+            static PinnedDataNet^ Create(System::String^ id,
+                                         System::String^ name,
+                                         RealityDataSourceNet^ dataSource,
+                                         double longitude,
+                                         double latitude);
+
+            //! Get position.
+            List<double>^ GetPosition() { return m_position; }
+
+            //! Get area.
+            List<double>^ GetArea() { return m_area; }
+
+        protected:
+            PinnedDataNet(System::String^ id, System::String^ name, RealityDataSourceNet^ dataSource, double longitude, double latitude);
+            ~PinnedDataNet() {};
+
+        private:
+            List<double>^ m_position;
+            List<double>^ m_area;
+        };
+
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              9/2016
+    //=====================================================================================
+    public ref class TerrainDataNet : public RealityDataNet
+        {
+    public:
+        //! Create data of imagery type.
+        static TerrainDataNet^ Create(System::String^ id,
+                                      System::String^ name,
+                                      RealityDataSourceNet^ dataSource);
+
+    protected:
+        TerrainDataNet(System::String^ id, System::String^ name, RealityDataSourceNet^ dataSource);
+        ~TerrainDataNet() {};
+
+    private:
+
+        };
+
+    
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote               9/2015
     //=====================================================================================
-    public ref class DataSourceNet
+    public ref class RealityDataSourceNet
         {
         public:
             //! Create generic data source.
-            static DataSourceNet^ Create(System::String^ uri,
-                                         System::String^ type,
-                                         System::String^ copyright,
-                                         System::String^ id,
-                                         System::String^ provider,
-                                         uint64_t size,
-                                         System::String^ fileInCompound,
-                                         System::String^ metadata,
-                                         System::String^ geocs,
-                                         List<System::String^>^ sisterFiles);
+            static RealityDataSourceNet^ Create(System::String^ uri,
+                                                System::String^ fileInCompound,
+                                                System::String^ type,
+                                                System::String^ id,
+                                                System::String^ copyright,                                                
+                                                System::String^ provider,
+                                                uint64_t size,
+                                                System::String^ metadata,
+                                                System::String^ metadataType,
+                                                System::String^ geocs,
+                                                System::String^ nodatavalue,
+                                                List<System::String^>^ sisterFiles);
 
             //! Get the source uri. It could be a full URL or a path relative to the package file.
             System::String^ GetUri() { return m_uri; };
 
+            //! Get main file in compound. Might be empty.
+            System::String^ GetFileInCompound() { return m_fileInCompound; }
+
             //! Get the source type.
             System::String^ GetSourceType() { return m_type; }
 
-            //! Get the copyright. Might be empty.
-            System::String^ GetCopyright() { return m_copyright; }
-
             //! Get the id. Might be empty.
             System::String^ GetId() { return m_id; }
+
+            //! Get the copyright. Might be empty.
+            System::String^ GetCopyright() { return m_copyright; }
 
             //! Get the provider. Might be empty.
             System::String^ GetProvider() { return m_provider; }
 
             //! Get the size in kilobytes. Default is 0. 
-            uint64_t GetSize() { return m_size; }
-
-            //! Get main file in compound. Might be empty.
-            System::String^ GetFileInCompound() { return m_fileInCompound; }
+            uint64_t GetSize() { return m_size; }            
 
             //! Get the metadata. Might be empty.
             System::String^ GetMetadata() { return m_metadata; }
 
+            //! Get the metadata type. Might be empty.
+            System::String^ GetMetadataType() { return m_metadataType; }
+
             //! Get the geocs. Might be empty.
             System::String^ GetGeoCS() { return m_geocs; }
+
+            //! Get the nodata value. Might be empty.
+            System::String^ GetNoDataValue() { return m_nodatavalue; }
 
             //! Get the sister files. Might be empty.
             List<System::String^>^ GetSisterFiles() { return m_sisterFiles; }
 
         protected:
-            DataSourceNet(System::String^ uri,
-                          System::String^ type,
-                          System::String^ copyright,
-                          System::String^ id,
-                          System::String^ provider,
-                          uint64_t size,
-                          System::String^ fileInCompound,
-                          System::String^ metadata,
-                          System::String^ geocs,
-                          List<System::String^>^ sisterFiles);
+            RealityDataSourceNet(System::String^ uri,
+                                 System::String^ fileInCompound,
+                                 System::String^ type,
+                                 System::String^ id,
+                                 System::String^ copyright,
+                                 System::String^ provider,
+                                 uint64_t size,                                 
+                                 System::String^ metadata,
+                                 System::String^ metadataType,
+                                 System::String^ geocs,
+                                 System::String^ nodatavalue,
+                                 List<System::String^>^ sisterFiles);
 
-            ~DataSourceNet();
+            ~RealityDataSourceNet() {};
 
         private:
             System::String^ m_uri;
+            System::String^ m_fileInCompound;
             System::String^ m_type;
             System::String^ m_copyright;
             System::String^ m_id;
             System::String^ m_provider;
-            uint64_t m_size;
-            System::String^ m_fileInCompound;
+            uint64_t m_size;            
             System::String^ m_metadata;
+            System::String^ m_metadataType;
             System::String^ m_geocs;
+            System::String^ m_nodatavalue;
             List<System::String^>^ m_sisterFiles;
         };
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote               5/2015
     //=====================================================================================
-    public ref class WmsSourceNet : public DataSourceNet
+    public ref class WmsSourceNet : public RealityDataSourceNet
         {
         public:
             //! Create WMS data source.
             static WmsSourceNet^ Create(System::String^ uri,
-                                        System::String^ copyright,
+                                        System::String^ fileInCompound,
+                                        System::String^ type,
                                         System::String^ id,
+                                        System::String^ copyright,
                                         System::String^ provider,
-                                        uint64_t filesize,
+                                        uint64_t size,
                                         System::String^ metadata,
+                                        System::String^ metadataType,
                                         System::String^ geocs,
+                                        System::String^ nodatavalue,
                                         List<System::String^>^ sisterFiles,
                                         System::String^ mapUri,
                                         double bboxMinX,
@@ -300,12 +330,16 @@ namespace RealityDataPackageWrapper
 
         private:
             WmsSourceNet(System::String^ uri,
-                         System::String^ copyright,
+                         System::String^ fileInCompound,
+                         System::String^ type,
                          System::String^ id,
+                         System::String^ copyright,
                          System::String^ provider,
-                         uint64_t filesize,
+                         uint64_t size,
                          System::String^ metadata,
+                         System::String^ metadataType,
                          System::String^ geocs,
+                         System::String^ nodatavalue,
                          List<System::String^>^ sisterFiles,
                          System::String^ mapUri,
                          double bboxMinX,
@@ -331,17 +365,21 @@ namespace RealityDataPackageWrapper
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              11/2015
     //=====================================================================================
-    public ref class OsmSourceNet : public DataSourceNet
+    public ref class OsmSourceNet : public RealityDataSourceNet
         {
         public:
             //! Create OSM data source.
             static OsmSourceNet^ Create(System::String^ uri,
-                                        System::String^ copyright,
+                                        System::String^ fileInCompound,
+                                        System::String^ type,
                                         System::String^ id,
+                                        System::String^ copyright,
                                         System::String^ provider,
-                                        uint64_t filesize,
+                                        uint64_t size,
                                         System::String^ metadata,
+                                        System::String^ metadataType,
                                         System::String^ geocs,
+                                        System::String^ nodatavalue,
                                         List<System::String^>^ sisterFiles,
                                         List<double>^ regionOfInterest,
                                         List<System::String^>^ urls);
@@ -351,12 +389,16 @@ namespace RealityDataPackageWrapper
 
         private:
             OsmSourceNet(System::String^ uri,
-                         System::String^ copyright,
+                         System::String^ fileInCompound,
+                         System::String^ type,
                          System::String^ id,
+                         System::String^ copyright,
                          System::String^ provider,
-                         uint64_t filesize,
+                         uint64_t size,
                          System::String^ metadata,
+                         System::String^ metadataType,
                          System::String^ geocs,
+                         System::String^ nodatavalue,
                          List<System::String^>^ sisterFiles,
                          List<double>^ regionOfInterest,
                          List<System::String^>^ urls);

@@ -193,7 +193,7 @@ WebResourceDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8
     // Url.
     pExtractedData->SetUrl(tifFileList[0].GetNameUtf8().c_str());
 
-    // Compound type.
+    // Compound type.Fw
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
     pExtractedData->SetCompoundType(compoundType.c_str());
@@ -250,21 +250,23 @@ WebResourceDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8
         }
 
     // Footprint.
-    DRange2d shape = DRange2d::NullRange();
-    if (SUCCESS != pData->GetFootprint(&shape))
-        {
+    bvector<DPoint2d> shape = bvector<DPoint2d>();
+    DRange2d extents = DRange2d();
+    if (SUCCESS != pData->GetFootprint(&shape, &extents))
+    {
         // File has no geocoding, try to parse metadata and create sister file.
         Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
         if (!geocoding.empty())
-            {
+        {
             // Make sure geocoding is well formatted.
             geocoding.ReplaceAll("::", ":");
             RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-            pData->GetFootprint(&shape);
-            }
-    
+            pData->GetFootprint(&shape, &extents);
         }
+
+    }
     pExtractedData->SetFootprint(shape);
+    pExtractedData->SetFootprintExtents(extents);
 
     // Thumbnail.
     WebResourceThumbnailPtr pThumbnail = WebResourceThumbnail::Create(*pData);

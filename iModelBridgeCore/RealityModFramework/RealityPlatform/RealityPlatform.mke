@@ -77,6 +77,8 @@ $(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDi
 
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
+$(o)ConversionTools$(oext) : $(baseDir)ConversionTools.cpp $(PublicApiDir)ConversionTools.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the

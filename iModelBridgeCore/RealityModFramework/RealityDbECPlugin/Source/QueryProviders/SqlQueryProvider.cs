@@ -165,30 +165,32 @@ namespace IndexECPlugin.Source.QueryProviders
 
             List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_dbConnection);
 
-            #if BBOXQUERY
-
-            DbGeometry poly = DbGeometry.FromText(m_polygonDescriptor.WKT, m_polygonDescriptor.SRID);
-
-            List<IECInstance> instancesToRemove = new List<IECInstance>();
-
-            foreach ( IECInstance instance in instanceList )
+#if BBOXQUERY
+            if ( m_polygonDescriptor != null )
                 {
-                IECPropertyValue spatialProp = instance.First(propVal => propVal.Property.IsSpatial());
-                string jsonPoly = spatialProp.StringValue;
-                PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(jsonPoly);
-                DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.points), model.coordinate_system);
-                if(!instGeom.Intersects(poly))
+                DbGeometry poly = DbGeometry.FromText(m_polygonDescriptor.WKT, m_polygonDescriptor.SRID);
+
+                List<IECInstance> instancesToRemove = new List<IECInstance>();
+
+                foreach ( IECInstance instance in instanceList )
                     {
-                    instancesToRemove.Add(instance);
+                    IECPropertyValue spatialProp = instance.First(propVal => propVal.Property.IsSpatial());
+                    string jsonPoly = spatialProp.StringValue;
+                    PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(jsonPoly);
+                    DbGeometry instGeom = DbGeometry.FromText(DbGeometryHelpers.CreateWktPolygonString(model.points), model.coordinate_system);
+                    if ( !instGeom.Intersects(poly) )
+                        {
+                        instancesToRemove.Add(instance);
+                        }
                     }
-                }
-            foreach (IECInstance instToRemove in instancesToRemove)
-                {
-                instanceList.Remove(instToRemove);
-                }
-            if(removeSpatial)
-                {
-                instanceList.ForEach(inst => inst.First(propVal => propVal.Property.IsSpatial()).SetToNull());
+                foreach ( IECInstance instToRemove in instancesToRemove )
+                    {
+                    instanceList.Remove(instToRemove);
+                    }
+                if ( removeSpatial )
+                    {
+                    instanceList.ForEach(inst => inst.First(propVal => propVal.Property.IsSpatial()).SetToNull());
+                    }
                 }
 #endif
 

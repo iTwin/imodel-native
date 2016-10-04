@@ -493,23 +493,40 @@ void ServerConnection::Save(WebResourceDataCR data, bool dualMode)
         }
     ReleaseStmt();
 
+    DRange2dCR Fpt = data.GetFootprintExtents();
+    double xMin = std::min(Fpt.low.x, Fpt.high.x);
+    double xMax = std::max(Fpt.low.x, Fpt.high.x);
+    double yMin = std::min(Fpt.low.y, Fpt.high.y);
+    double yMax = std::max(Fpt.low.y, Fpt.high.y);
+
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), ?, %d, %d)",
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d)",
         m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
         data.GetProvider().c_str(),
         data.GetProvider().c_str(),
+        xMin,
+        yMin,
+        xMax,
+        yMax,
         metadataId,
         thumbnailId);
 
     SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
 
-    DRange2dCR Fpt = data.GetFootprint();
-    double xMin = std::min(Fpt.low.x, Fpt.high.x);
-    double xMax = std::max(Fpt.low.x, Fpt.high.x);
-    double yMin = std::min(Fpt.low.y, Fpt.high.y);
-    double yMax = std::max(Fpt.low.y, Fpt.high.y);
+    /*bvector<DPoint2d> Fpt = data.GetFootprint();
+    double xMin = DBL_MIN;
+    double xMax = DBL_MAX;
+    double yMin = DBL_MIN;
+    double yMax = DBL_MAX;
+    for (size_t i = 0; i < Fpt.size(); i++)
+    {
+        xMin = std::min(Fpt[i].x, xMin);
+        xMax = std::max(Fpt[i].x, xMax);
+        yMin = std::min(Fpt[i].y, yMin);
+        yMax = std::max(Fpt[i].y, yMax);
+    }*/
     char polygon[2000];
     sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
     retCode = SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
@@ -669,25 +686,42 @@ void ServerConnection::Update(WebResourceDataCR data)
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
     ReleaseStmt();
 
+    DRange2dCR Fpt = data.GetFootprintExtents();
+    double xMin = std::min(Fpt.low.x, Fpt.high.x);
+    double xMax = std::max(Fpt.low.x, Fpt.high.x);
+    double yMin = std::min(Fpt.low.y, Fpt.high.y);
+    double yMax = std::max(Fpt.low.y, Fpt.high.y);
+
     DateTimeCR date = data.GetDate();
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 4326), [Date] = '%d-%d-%d' WHERE [Id] = %d",
+    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 4326), [MinX] = %f, [MinY] = %f, [MaxX] = %f, [MaxY] = %f, [Date] = '%d-%d-%d' WHERE [Id] = %d",
         m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
         data.GetProvider().c_str(),
         data.GetProvider().c_str(),
+        xMin,
+        yMin,
+        xMax,
+        yMax,
         date.GetYear(), 
         date.GetMonth(), 
         date.GetDay(),
         entityId);
     SQLPrepare(hStmt, (SQLCHAR*) entityBaseQuery, SQL_NTS);
     
-    DRange2dCR Fpt = data.GetFootprint();
-    double xMin = std::min(Fpt.low.x, Fpt.high.x);
-    double xMax = std::max(Fpt.low.x, Fpt.high.x);
-    double yMin = std::min(Fpt.low.y, Fpt.high.y);
-    double yMax = std::max(Fpt.low.y, Fpt.high.y);
+    /*bvector<DPoint2d> Fpt = data.GetFootprint();
+    double xMin = DBL_MIN;
+    double xMax = DBL_MAX;
+    double yMin = DBL_MIN;
+    double yMax = DBL_MAX;
+    for (size_t i = 0; i < Fpt.size(); i++)
+    {
+        xMin = std::min(Fpt[i].x, xMin);
+        xMax = std::max(Fpt[i].x, xMax);
+        yMin = std::min(Fpt[i].y, yMin);
+        yMax = std::max(Fpt[i].y, yMax);
+    }*/
     char polygon[2000];
     sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
     SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);

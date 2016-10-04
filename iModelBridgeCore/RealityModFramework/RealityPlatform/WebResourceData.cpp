@@ -25,10 +25,10 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
-{
+    {
     ((Utf8StringP)stream)->append((Utf8CP)buffer, size * nmemb);
     return size * nmemb;
-}
+    }
 
 // Static FtpClient members initialization.
 IWebResourceTraversalObserver* WebResourceClient::m_pObserver = NULL;
@@ -39,23 +39,23 @@ int WebResourceClient::m_retryCount = 0;
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
-{
+    {
     WebResourceStatus status = WebResourceStatus::UnknownError;
 
     // Set working directory.
     Utf8String workingDir = outputDirPath;
     if (workingDir.empty())
-    {
+        {
         // Find temp directory.
         BeFileName tempDirPath;
         BeFileName::BeGetTempPath(tempDirPath);
         if (!tempDirPath.IsEmpty())
-        {
+            {
             tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\WebResourcedata\\");
             BeFileName::CreateNewDirectory(tempDirPath.GetName());
             workingDir = tempDirPath.GetNameUtf8().c_str();
+            }
         }
-    }
 
     // Perform file listing request.
     bvector<Utf8String> fileList;
@@ -69,7 +69,7 @@ WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
                                            // Construct data mapping (FileFullPathAndName, FileNameOnly) for files to download.
     RealityDataDownload::UrlLink_UrlFile urlList;
     for (size_t i = 0; i < fileList.size(); ++i)
-    {
+        {
         // The local filename is created by appending the working dir, the WebResource main url and the filename.        
         WString WebResourceUrl(fileList[i].c_str(), BentleyCharEncoding::Utf8);
         size_t pos = WebResourceUrl.find(L"//") + 2;
@@ -77,10 +77,10 @@ WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
         WebResourceUrl = WebResourceUrl.substr(pos, len);
         WString shortUrl;
         for (wchar_t& car : WebResourceUrl)
-        {
+            {
             if (L'.' != car)
                 shortUrl.push_back(car);
-        }
+            }
 
         WString filename;
         RealityDataDownload::ExtractFileName(filename, fileList[i]);
@@ -89,7 +89,7 @@ WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
         localFilename.append(shortUrl + L'_' + filename);
 
         urlList.push_back(std::make_pair(fileList[i], localFilename));
-    }
+        }
 
     // Download files.
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
@@ -104,21 +104,21 @@ WebResourceStatus WebResourceClient::DownloadContent(Utf8CP outputDirPath) const
         return WebResourceStatus::DownloadError;
 
     return status;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceClient::GetFileList(bvector<Utf8String>& fileList) const
-{
+    {
     return _GetFileList(m_pServer->GetUrl().c_str(), fileList);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceClient::GetData() const
-{
+    {
     WebResourceStatus status = WebResourceStatus::UnknownError;
 
     // Download files from root. Store them in our temp directory.
@@ -129,22 +129,23 @@ WebResourceStatus WebResourceClient::GetData() const
     // Data extraction.
     WebResourceDataPtr pExtractedData = WebResourceData::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
-    {
+        {
         //&&JFC TODO: Can do better ?
         // Construct output path.
         Utf8String outputPath = m_dataRepositories[i].second;
         outputPath.erase(outputPath.find_last_of('.'));
+        outputPath.append("\\");
         WString outputPathW(outputPath.c_str(), BentleyCharEncoding::Utf8);
         BeFileName::CreateNewDirectory(outputPathW.c_str());
 
         // Extract data.
         pExtractedData = ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
         if (pExtractedData == NULL)
-        {
+            {
             // Could not extract data, ignore and continue.
             BeFileName::EmptyAndRemoveDirectory(outputPathW.c_str());
             continue;
-        }
+            }
 
         // Override source url so that it points to the WebResource repository and not the local one.
         pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
@@ -161,74 +162,74 @@ WebResourceStatus WebResourceClient::GetData() const
 
         // Delete working dir and its content.
         BeFileName::EmptyAndRemoveDirectory(outputPathW.c_str());
-    }
+        }
 
     return status;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR WebResourceClient::GetServerUrl() const
-{
+    {
     return m_pServer->GetUrl();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    7/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR WebResourceClient::GetServerName() const
-{
+    {
     return m_pServer->GetName();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 const WebResourceClient::RepositoryMapping& WebResourceClient::GetRepositoryMapping() const
-{
+    {
     return m_dataRepositories;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 void WebResourceClient::SetObserver(IWebResourceTraversalObserver* pObserver)
-{
+    {
     m_pObserver = pObserver;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceClient::WebResourceClient(Utf8CP serverUrl, Utf8CP serverName)
-{
+    {
     m_certificatePath = BeFileName();
     m_pServer = WebResourceServer::Create(serverUrl, serverName);
     m_pObserver = NULL;
     m_dataRepositories = RepositoryMapping();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceClient::~WebResourceClient()
-{
-    if (0 != m_pObserver)
     {
+    if (0 != m_pObserver)
+        {
         delete m_pObserver;
         m_pObserver = 0;
+        }
     }
-}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 void WebResourceClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg)
-{
+    {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
     if (ErrorCode == 0)
-    {
+        {
         // Construct repo mapping (remote location, local location) for downloaded file.
         if (pEntry->mirrors.empty())
             return;
@@ -242,40 +243,40 @@ void WebResourceClient::ConstructRepositoryMapping(int index, void *pClient, int
         // Process downloaded data.
         if (m_pObserver != NULL)
             m_pObserver->OnFileDownloaded(url.c_str());
-    }
+        }
     else
-    {
+        {
         // Download failed. RealityDataDownload will retry 25 times. 
         // Add a longer sleep between each tentative so that the server have a better chance to respond. For example:
         // Retry count: 0,  Sleep time: 0.002 second.
         // Retry count: 4,  Sleep time: 1 second.
         // Retry count: 24, Sleep time: 5 seconds.
         Sleep(++m_retryCount * 200);
+        }
     }
-}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 bool WebResourceClient::IsDirectory(Utf8CP content) const
-{
+    {
     //&&JFC TODO: More robust check.
     Utf8String contentStr(content);
     return (BeStringUtilities::NPOS == contentStr.find("."));
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceRequest::WebResourceRequest(Utf8CP url)
     : m_url(url), m_method("NLST"), m_dirListOnly(false), m_verbose(false)
-{}
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceResponsePtr WebResourceRequest::Perform()
-{
+    {
     Utf8String response;
     CurlHolder curl;
     CURLcode res;
@@ -303,72 +304,72 @@ WebResourceResponsePtr WebResourceRequest::Perform()
         status = WebResourceStatus::CurlError;
 
     return WebResourceResponse::Create(m_url.c_str(), response.c_str(), status);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceResponsePtr WebResourceResponse::Create()
-{
+    {
     return new WebResourceResponse("", "", WebResourceStatus::UnknownError);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceResponsePtr WebResourceResponse::Create(Utf8CP effectiveUrl, Utf8CP m_content, WebResourceStatus traversalStatus)
-{
+    {
     return new WebResourceResponse(effectiveUrl, m_content, traversalStatus);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR WebResourceResponse::GetUrl() const
-{
+    {
     return m_effectiveUrl;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR WebResourceResponse::GetContent() const
-{
+    {
     return m_content;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceResponse::GetStatus() const
-{
+    {
     return m_status;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 bool WebResourceResponse::IsSuccess() const
-{
+    {
     return (!m_effectiveUrl.empty() &&
         !m_content.empty() &&
         (WebResourceStatus::Success == m_status));
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 WebResourceResponse::WebResourceResponse(Utf8CP effectiveUrl, Utf8CP content, WebResourceStatus status)
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
-{}
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceDataPtr WebResourceData::Create()
-{
+    {
     return new WebResourceData();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
@@ -400,8 +401,11 @@ void WebResourceData::SetLocationInCompound(Utf8CP location) { m_locationInCompo
 DateTimeCR WebResourceData::GetDate() const { return m_date; }
 void WebResourceData::SetDate(DateTimeCR date) { m_date = date; }
 
-DRange2dCR WebResourceData::GetFootprint() const { return m_footprint; }
-void WebResourceData::SetFootprint(DRange2dCR footprint) { m_footprint = footprint; }
+const bvector<DPoint2d>& WebResourceData::GetFootprint() const { return m_footprint; }
+void WebResourceData::SetFootprint(bvector<DPoint2d>& footprint) { m_footprint = footprint; }
+
+DRange2dCR WebResourceData::GetFootprintExtents() const { return m_footprintExtents; }
+void WebResourceData::SetFootprintExtents(DRange2dCR footprintExtents) { m_footprintExtents = footprintExtents; }
 
 WebResourceThumbnailCR WebResourceData::GetThumbnail() const { return *m_pThumbnail; }
 void WebResourceData::SetThumbnail(WebResourceThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
@@ -416,31 +420,32 @@ void WebResourceData::SetServer(WebResourceServerR server) { m_pServer = &server
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceData::WebResourceData()
-{
+    {
     m_size = 0;
     m_date = DateTime();
-    m_footprint = DRange2d();
+    m_footprint = bvector<DPoint2d>();
+    m_footprintExtents = DRange2d();
     m_pThumbnail = WebResourceThumbnail::Create();
     m_pMetadata = WebResourceMetadata::Create();
     m_pServer = WebResourceServer::Create();
-}
+    }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceThumbnailPtr WebResourceThumbnail::Create()
-{
+    {
     return new WebResourceThumbnail();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceThumbnailPtr WebResourceThumbnail::Create(RealityDataCR rasterData)
-{
+    {
     return new WebResourceThumbnail(rasterData);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -470,18 +475,18 @@ void WebResourceThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDe
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceThumbnail::WebResourceThumbnail()
-{
+    {
     m_width = THUMBNAIL_WIDTH;
     m_height = THUMBNAIL_HEIGHT;
     m_stamp = DateTime::GetCurrentTimeUtc();
     m_data = bvector<Byte>();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceThumbnail::WebResourceThumbnail(RealityDataCR rasterData)
-{
+    {
     m_provenance = "Created by WebResourceDataHandler tool.";
     m_format = "png";
     m_width = THUMBNAIL_WIDTH;
@@ -490,24 +495,24 @@ WebResourceThumbnail::WebResourceThumbnail(RealityDataCR rasterData)
     m_generationDetails = "Created by WebResourceDataHandler tool.";
 
     rasterData.GetThumbnail(m_data, m_width, m_height);
-}
+    }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceMetadataPtr WebResourceMetadata::Create()
-{
+    {
     return new WebResourceMetadata();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceMetadataPtr WebResourceMetadata::CreateFromFile(Utf8CP filePath)
-{
+    {
     return new WebResourceMetadata(filePath);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -534,13 +539,13 @@ void WebResourceMetadata::SetData(Utf8CP data) { m_data = data; }
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceMetadata::WebResourceMetadata()
-{}
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceMetadata::WebResourceMetadata(Utf8CP filePath)
-{
+    {
     BeFileName metadataFile(filePath);
     Utf8String provenance(metadataFile.GetFileNameAndExtension());
     m_provenance = provenance;
@@ -550,32 +555,32 @@ WebResourceMetadata::WebResourceMetadata(Utf8CP filePath)
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
     if (BEXML_Success == xmlStatus)
-    {
+        {
         BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
         if (NULL != pRootNode)
-        {
+            {
             // Convert to string.
             pRootNode->GetXmlString(m_data);
+            }
         }
     }
-}
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceServerPtr WebResourceServer::Create()
-{
+    {
     return new WebResourceServer();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceServerPtr WebResourceServer::Create(Utf8CP url, Utf8CP name)
-{
+    {
     return new WebResourceServer(url, name);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -617,14 +622,14 @@ void WebResourceServer::SetType(Utf8CP type) { m_type = type; }
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceServer::WebResourceServer()
-{}
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceServer::WebResourceServer(Utf8CP url, Utf8CP name)
     : m_url(url), m_name(name)
-{
+    {
     // Default values.
     m_online = true;
     m_lastCheck = DateTime::GetCurrentTimeUtc();
@@ -632,30 +637,30 @@ WebResourceServer::WebResourceServer(Utf8CP url, Utf8CP name)
     m_latency = 0.0;
 
     if (!m_url.empty())
-    {
+        {
         // Extract protocol and type from url.
         Utf8String protocol(url);
         m_protocol = protocol.substr(0, protocol.find_first_of(":"));
         m_type = m_protocol;
 
         if (m_name.empty())
-        {
+            {
             // No server name was provided, try to extract it from url.
             Utf8String name(url);
             size_t beginPos = name.find_first_of("://") + 3;
             size_t pos = name.find_last_of(".");
             size_t endPos = name.find("/", pos);
             m_name = name.substr(beginPos, endPos - beginPos);
+            }
         }
     }
-}
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 WebResourceStatus WebResourceDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath)
-{
+    {
     // Get a list of zip files to process.
     bvector<BeFileName> fileFoundList;
     BeFileName rootDir(inputDirPath);
@@ -663,7 +668,7 @@ WebResourceStatus WebResourceDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP
 
     // Unzip files.    
     for (size_t i = 0; i < fileFoundList.size(); ++i)
-    {
+        {
         WString outputDirPathW(outputDirPath, BentleyCharEncoding::Utf8);
         AString outputDirPathA(outputDirPath);
 
@@ -676,16 +681,16 @@ WebResourceStatus WebResourceDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP
 
         WString filenameW(fileFoundList[i].GetName());
         RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
-    }
+        }
 
     return WebResourceStatus::Success;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 BeFileName WebResourceDataHandler::BuildMetadataFilename(Utf8CP dirPath)
-{
+    {
     bvector<BeFileName> fileFoundList;
     BeFileName rootDir(dirPath);
     BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, rootDir, L"*.xml", false);
@@ -695,14 +700,14 @@ BeFileName WebResourceDataHandler::BuildMetadataFilename(Utf8CP dirPath)
 
     // Find the xml file corresponding to the metadata.
     for (BeFileNameCR file : fileFoundList)
-    {
+        {
         // Create xmlDom from file.
         BeXmlStatus xmlStatus = BEXML_Success;
         BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, file.GetNameUtf8().c_str());
         if (BEXML_Success != xmlStatus)
-        {
+            {
             return BeFileName();
-        }
+            }
 
         // Make sure the root node is <gmd:MD_Metadata>.
         BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
@@ -711,26 +716,26 @@ BeFileName WebResourceDataHandler::BuildMetadataFilename(Utf8CP dirPath)
 
         if (pRootNode->IsIName("MD_Metadata"))
             return file;
-    }
+        }
 
     // No metadata file found.
     return BeFileName();
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
 Utf8String WebResourceDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR filename)
-{
+    {
     Utf8String geocoding;
 
     // Create xmlDom from metadata file.
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.GetNameUtf8().c_str());
     if (BEXML_Success != xmlStatus)
-    {
+        {
         return NULL;
-    }
+        }
 
     pXmlDom->RegisterNamespace("gmd", "http://www.isotc211.org/2005/gmd");
 
@@ -769,5 +774,5 @@ Utf8String WebResourceDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR fi
         return NULL;
 
     return geocoding.Trim();
-}
+    }
 

@@ -25,13 +25,13 @@
         <ECProperty propertyName="IsSpatial" typeName="boolean" description="If the property is for holding a series of points representing a polygon, switch this to true" />
     </ECClass>
     
-	<ECClass typeName="SpatialBBox" isCustomAttributeClass="true" isDomainClass="false">
-		<ECProperty propertyName="MinXColumnName" typeName="string"/>
-		<ECProperty propertyName="MaxXColumnName" typeName="string"/>
-		<ECProperty propertyName="MinYColumnName" typeName="string"/>
-		<ECProperty propertyName="MaxYColumnName" typeName="string"/>
-	</ECClass>
-	
+    <ECClass typeName="SpatialBBox" isCustomAttributeClass="true" isDomainClass="false">
+        <ECProperty propertyName="MinXColumnName" typeName="string"/>
+        <ECProperty propertyName="MaxXColumnName" typeName="string"/>
+        <ECProperty propertyName="MinYColumnName" typeName="string"/>
+        <ECProperty propertyName="MaxYColumnName" typeName="string"/>
+    </ECClass>
+    
     <ECClass typeName="MimicDBColumn" isCustomAttributeClass="true" isDomainClass ="false">
     <!--<ECClass typeName="MimicDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> -->
     <!--<ECClass typeName="OverrideDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> -->
@@ -121,12 +121,12 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
-				<SpatialBBox>
-					<MinXColumnName>MinX</MinXColumnName>
-					<MaxXColumnName>MaxX</MaxXColumnName>
-					<MinYColumnName>MinY</MinYColumnName>
-					<MaxYColumnName>MaxY</MaxYColumnName>
-				</SpatialBBox>
+                <SpatialBBox>
+                    <MinXColumnName>MinX</MinXColumnName>
+                    <MaxXColumnName>MaxX</MaxXColumnName>
+                    <MinYColumnName>MinY</MinYColumnName>
+                    <MaxYColumnName>MaxY</MaxYColumnName>
+                </SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>Footprint</OverrideColumnName>
                     <CacheColumnName>Footprint</CacheColumnName>
@@ -292,8 +292,8 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
-		<ECProperty propertyName="Occlusion" typeName="double">
+        
+        <ECProperty propertyName="Occlusion" typeName="double">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>Occlusion</ColumnName>
@@ -303,7 +303,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
     </ECClass>
     
     <ECClass typeName="SpatialEntityDataset" isDomainClass="true" baseClass="SpatialEntityBase">
@@ -464,8 +464,8 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
-		<ECProperty propertyName="ThumbnailURL" typeName="string" >
+        
+        <ECProperty propertyName="ThumbnailURL" typeName="string" >
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>ThumbnailURL</ColumnName>
@@ -474,8 +474,8 @@
                     <OverrideColumnName>ThumbnailURL</OverrideColumnName>
                     <CacheColumnName>ThumbnailURL</CacheColumnName>
                 </MimicDBColumn>
-            </ECCustomAttributes>		
-		</ECProperty>
+            </ECCustomAttributes>       
+        </ECProperty>
     </ECClass>
     
      <ECClass typeName="Metadata" isDomainClass="true">
@@ -540,7 +540,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="DisplayStyle" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -597,6 +597,18 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Legal</OverrideColumnName>
                     <CacheColumnName>Legal</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="TermsOfUse" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>TermsOfUse</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>TermsOfUse</OverrideColumnName>
+                    <CacheColumnName>TermsOfUse</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -924,7 +936,7 @@
             </ECCustomAttributes>
         </ECProperty>   
         
-		<ECProperty propertyName="OriginalId" typeName="string">
+        <ECProperty propertyName="OriginalId" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>OriginalId</ColumnName>
@@ -934,7 +946,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="RedBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -946,7 +958,7 @@
             </ECCustomAttributes>
         </ECProperty>
         
-		<ECProperty propertyName="RedBandFileSize" typeName="long">
+        <ECProperty propertyName="RedBandFileSize" typeName="long">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>RedBandFileSize</ColumnName>
@@ -956,7 +968,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="GreenBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -968,7 +980,7 @@
             </ECCustomAttributes>
         </ECProperty>
         
-		<ECProperty propertyName="GreenBandFileSize" typeName="long">
+        <ECProperty propertyName="GreenBandFileSize" typeName="long">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>GreenBandFileSize</ColumnName>
@@ -978,7 +990,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="BlueBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -989,8 +1001,8 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
-		<ECProperty propertyName="BlueBandFileSize" typeName="long">
+        
+        <ECProperty propertyName="BlueBandFileSize" typeName="long">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>BlueBandFileSize</ColumnName>
@@ -1000,7 +1012,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="PanchromaticBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1011,8 +1023,8 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
-		<ECProperty propertyName="PanchromaticBandFileSize" typeName="long">
+        
+        <ECProperty propertyName="PanchromaticBandFileSize" typeName="long">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>PanchromaticBandFileSize</ColumnName>
@@ -1022,7 +1034,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
     </ECClass>
     
     <ECClass typeName="Server" isDomainClass="true">
@@ -1398,12 +1410,12 @@
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
-				<SpatialBBox>
-					<MinXColumnName>MinX</MinXColumnName>
-					<MaxXColumnName>MaxX</MaxXColumnName>
-					<MinYColumnName>MinY</MinYColumnName>
-					<MaxYColumnName>MaxY</MaxYColumnName>
-				</SpatialBBox>
+                <SpatialBBox>
+                    <MinXColumnName>MinX</MinXColumnName>
+                    <MaxXColumnName>MaxX</MaxXColumnName>
+                    <MinYColumnName>MinY</MinYColumnName>
+                    <MaxYColumnName>MaxY</MaxYColumnName>
+                </SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>BoundingBox</OverrideColumnName>
                 </MimicDBColumn>
@@ -1456,12 +1468,12 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
-				<SpatialBBox>
-					<MinXColumnName>MinX</MinXColumnName>
-					<MaxXColumnName>MaxX</MaxXColumnName>
-					<MinYColumnName>MinY</MinYColumnName>
-					<MaxYColumnName>MaxY</MaxYColumnName>
-				</SpatialBBox>
+                <SpatialBBox>
+                    <MinXColumnName>MinX</MinXColumnName>
+                    <MaxXColumnName>MaxX</MaxXColumnName>
+                    <MinYColumnName>MinY</MinYColumnName>
+                    <MaxYColumnName>MaxY</MaxYColumnName>
+                </SpatialBBox>
                 <MimicDBColumn>
                     <OverrideColumnName>Footprint</OverrideColumnName>
                     <CacheColumnName>Footprint</CacheColumnName>
@@ -1528,6 +1540,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>        
+        
+        <ECProperty propertyName="TermsOfUse" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>TermsOfUse</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>TermsOfUse</OverrideColumnName>
+                    <CacheColumnName>TermsOfUse</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
         
         <ECProperty propertyName="ProcessingDescription" typeName="string">
             <ECCustomAttributes>
@@ -1660,7 +1684,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-			
+            
         <ECProperty propertyName="ThumbnailURL" typeName="string" />
         <ECProperty propertyName="MetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
