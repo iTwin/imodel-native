@@ -103,6 +103,9 @@ void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
 Utf8StringCR RealityDataSource::GetCopyright() const { return m_copyright; }
 void RealityDataSource::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
 
+Utf8StringCR RealityDataSource::GetTermOfUse() const { return m_termOfUse; }
+void RealityDataSource::SetTermOfUse(Utf8CP termOfUse) { m_termOfUse = termOfUse; }
+
 Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
 void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
 
@@ -121,8 +124,8 @@ void RealityDataSource::SetGeoCS(Utf8CP geocs) { m_geocs = geocs; }
 Utf8StringCR RealityDataSource::GetNoDataValue() const { return m_nodatavalue; }
 void RealityDataSource::SetNoDataValue(Utf8CP nodatavalue) { m_nodatavalue = nodatavalue; }
 
-const bvector<Utf8String>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
-void RealityDataSource::SetSisterFiles(const bvector<Utf8String>& sisterFiles) { m_sisterFiles = sisterFiles; }
+const bvector<UriPtr>& RealityDataSource::GetSisterFiles() const { return m_sisterFiles; }
+void RealityDataSource::SetSisterFiles(const bvector<UriPtr>& sisterFiles) { m_sisterFiles = sisterFiles; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
@@ -142,7 +145,7 @@ RealityDataSource::RealityDataSource(UriR uri, Utf8CP type)
     m_type = type;
 
     m_size = 0;     // Default.
-    m_sisterFiles = bvector<Utf8String>();      // Create empty.
+    m_sisterFiles = bvector<UriPtr>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------
@@ -155,7 +158,7 @@ RealityDataSource::RealityDataSource(Utf8CP uri, Utf8CP type)
     m_type = type;
 
     m_size = 0;     // Default.
-    m_sisterFiles = bvector<Utf8String>();      // Create empty.
+    m_sisterFiles = bvector<UriPtr>();      // Create empty.
     }
 
 //----------------------------------------------------------------------------------------

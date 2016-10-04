@@ -80,6 +80,10 @@ struct RealityDataSource : public RefCountedBase
         REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
         REALITYPACKAGE_EXPORT void         SetCopyright(Utf8CP copyright);       
 
+        //! Get/Set the term of use. Might be empty.
+        REALITYPACKAGE_EXPORT Utf8StringCR GetTermOfUse() const;
+        REALITYPACKAGE_EXPORT void         SetTermOfUse(Utf8CP termOfUse);   
+
         //! Get/Set the provider. Might be empty.
         REALITYPACKAGE_EXPORT Utf8StringCR GetProvider() const;
         REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
@@ -105,8 +109,8 @@ struct RealityDataSource : public RefCountedBase
         REALITYPACKAGE_EXPORT void         SetNoDataValue(Utf8CP nodatavalue);
 
         //! Get/Set the sister files. Might be empty.
-        REALITYPACKAGE_EXPORT const bvector<Utf8String>& GetSisterFiles() const;
-        REALITYPACKAGE_EXPORT void                       SetSisterFiles(const bvector<Utf8String>& sisterFiles);   
+        REALITYPACKAGE_EXPORT const bvector<UriPtr>&     GetSisterFiles() const;
+        REALITYPACKAGE_EXPORT void                       SetSisterFiles(const bvector<UriPtr>& sisterFiles);   
 
         //! Get the element name.
         REALITYPACKAGE_EXPORT Utf8CP GetElementName() const;
@@ -124,6 +128,7 @@ struct RealityDataSource : public RefCountedBase
         UriPtr m_pUri;
         Utf8String m_type;
         Utf8String m_copyright;
+        Utf8String m_termOfUse;
         Utf8String m_id;
         Utf8String m_provider;
         uint64_t m_size;
@@ -131,7 +136,7 @@ struct RealityDataSource : public RefCountedBase
         Utf8String m_metadataType;
         Utf8String m_geocs;
         Utf8String m_nodatavalue;
-        bvector<Utf8String> m_sisterFiles;
+        bvector<UriPtr> m_sisterFiles;
     };
 
 //=======================================================================================

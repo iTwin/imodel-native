@@ -111,6 +111,13 @@
                 </xs:documentation>
             </xs:annotation>
             </xs:element>
+            <xs:element name="TermOfUse" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>
+                Term of use for data source in the requested language or the default language it is written in. This 'Term of use' text can contain text or links to external documentation or both.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:element>
             <xs:element name="Provider" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -172,10 +179,17 @@
                     <xs:documentation>
                       Sister files are files or documents that are required for the proper interpretation of the
                       source. The source URI indicates the main file while sister files are associated with this main source of data.
-                      Sister files are always to be located in the same directory as the main file. Example of typical sister files
+                      Sister files are ultimately always to be located in the same directory as the main file. Example of typical sister files
                       include ESRI world file or PRJ/WKT geocoding file or the various files associated with a SHP Shape file that contain
                       additional attributes. Documents that are not required for the proper automatic interpretation of the main file such as
                       human readable documentation are not usually listed here.
+                      The sister file location is specified using the same pattern as the URI of the source using the same # separation to indicate the
+                      presence of the file in a compound document. If the compound document is the same as the source URI it is usually omitted (keeping the # marker)
+                      and the download management will make sure not to download the file twice.
+		      Example of valid sister file names are:
+		      http:/toto.com/tata.file.txt
+		      http:/toto.com/tata.zip#MySisterFileInSpecificCompound.txt
+		      #MySisterFileInCompoundOfSourceUri.txt
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -255,7 +269,7 @@
                             </xs:documentation>
                         </xs:annotation>                    
                     </xs:element>   
-                    <xs:element name="Panchromatic" type="BandType" minOccurs="0" maxOccurs="1">
+                    <xs:element name="PanChromatic" type="BandType" minOccurs="0" maxOccurs="1">
                         <xs:annotation>
                             <xs:documentation>
                             The optional panchromatic band.
@@ -470,6 +484,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="Dataset" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The optional name of the dataset this data belong to. The string is informative but may be used to classify
+                    data. It usually contains a simple string such as 'CanImage' or 'SRTM1'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="Sources" type="SourcesType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -665,6 +687,19 @@
                         String that contains the Context Service server that was used in the creation of the package if any.
                         This is the server from which can be obtained additional information concerning the various sources of data
                         in the package.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="RequestingApplication" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        String that contains the textual identifier of the application that requested the package. This field
+                        is important to repertory the client application of Context Services.
+                        The format of this field is conscribe to follow the pattern "Name:version" where version is point separated set of numbers (usually 4 numbers)
+                        The version can be omitted if unknown. Following are examples of valid strings
+                        'ConceptStation:1.2.3.2'
+                        'ConceptStation'
+                        'OpenRoads-Designer:1.4'
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>

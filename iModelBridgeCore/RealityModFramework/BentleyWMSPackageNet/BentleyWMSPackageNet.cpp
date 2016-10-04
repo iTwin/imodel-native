@@ -113,7 +113,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
                 {
                 //List<String^>^ sisterFilesNet = wmsSourceNet->GetSisterFiles();
 
-                bvector<Utf8String> sisterFiles;
+                bvector<UriPtr> sisterFiles;
                 pWmsDataSource->SetSisterFiles(sisterFiles);
                 }
 
@@ -174,7 +174,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
                 {
                 //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-                bvector<Utf8String> sisterFiles;
+                bvector<UriPtr> sisterFiles;
                 pDataSource->SetSisterFiles(sisterFiles);
                 }
 
@@ -260,7 +260,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
                 {
                 //List<String^>^ sisterFilesNet = osmSourceNet->GetSisterFiles();
 
-                bvector<Utf8String> sisterFiles;
+                bvector<UriPtr> sisterFiles;
                 pOsmDataSource->SetSisterFiles(sisterFiles);
                 }
 
@@ -322,7 +322,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
                 {
                 //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-                bvector<Utf8String> sisterFiles;
+                bvector<UriPtr> sisterFiles;
                 pDataSource->SetSisterFiles(sisterFiles);
                 }
 
@@ -383,7 +383,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
             {
             //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-            bvector<Utf8String> sisterFiles;
+            bvector<UriPtr> sisterFiles;
             pDataSource->SetSisterFiles(sisterFiles);
             }
 
@@ -444,7 +444,7 @@ void RealityDataPackageNet::CreateV1(String^  location,
             {
             //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-            bvector<Utf8String> sisterFiles;
+            bvector<UriPtr> sisterFiles;
             pDataSource->SetSisterFiles(sisterFiles);
             }
 
@@ -705,7 +705,7 @@ RealityPackage::RealityDataSourcePtr RealityDataPackageNet::CreateDataSource(Dat
         {
         //List<String^>^ sisterFilesNet = source->GetSisterFiles();
 
-        bvector<Utf8String> sisterFiles;
+        bvector<UriPtr> sisterFiles;
         pDataSource->SetSisterFiles(sisterFiles);
         }
 
@@ -763,7 +763,7 @@ RealityPackage::WmsDataSourcePtr RealityDataPackageNet::CreateWmsDataSource(Data
         {
         //List<String^>^ sisterFilesNet = wmsSourceNet->GetSisterFiles();
 
-        bvector<Utf8String> sisterFiles;
+        bvector<UriPtr> sisterFiles;
         pWmsDataSource->SetSisterFiles(sisterFiles);
         }
 
@@ -851,7 +851,7 @@ RealityPackage::OsmDataSourcePtr RealityDataPackageNet::CreateOsmDataSource(Data
         {
         //List<String^>^ sisterFilesNet = osmSourceNet->GetSisterFiles();
 
-        bvector<Utf8String> sisterFiles;
+        bvector<UriPtr> sisterFiles;
         pOsmDataSource->SetSisterFiles(sisterFiles);
         }
 

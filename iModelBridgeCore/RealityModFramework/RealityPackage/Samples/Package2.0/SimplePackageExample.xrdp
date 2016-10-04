@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../RealityPackage.2.0.xsd" version="2.0">
   <PackageOrigin>dev-ual.contextservices.bentley.com</PackageOrigin>
+  <RequestingApplication>ConceptStation:1.1.32.45</RequestingApplication>
   <Name>7c71c780-8b52-47ba-adac-a29b407c5ac6</Name>
   <Description>This is simple sample package listing typical two groups for terrain and imagery.</Description>
   <CreationDate>2016-02-02T16:28:01.727Z</CreationDate>
@@ -12,6 +13,7 @@
             the id will remain stable over a long period but immediately after reception of the package and for a few hours it will be accessible and consistent with current information. -->
         <Id>412</Id>
         <Name>Canadian Digital Elevation Model Mosaic (CDEM) 014E</Name>
+        <Dataset>CDEM</Dataset>
         <Sources>
             <!-- The URI below indicates the name and location of the compound document to be downloaded as well as the name of the file containing the data separated by a '#' character.
                  Since this portion is a REGEX all '.' characters must be enclosed in brackets! -->
@@ -20,6 +22,7 @@
                 the id will remain stable over a long period but immediately after reception of the package and for a few hours it will be accessible and consistent with current information. -->
                 <Id>6830609</Id>
                 <Copyright>http://open.canada.ca/en/open-government-licence-canada</Copyright>
+                <TermOfUse>You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose.</TermOfUse>
                 <!-- The provider provides a hint to the application for the interpretation of some data such as the internal structure of a compound document
                     It is optional and provides little information -->
                 <Provider>GeoGratis</Provider>
@@ -36,6 +39,7 @@
     <ImageryData>
         <Id>46341</Id>
         <Name>GeoBase Landsat 7 Orthoimagery S4_05230_4828_20060814</Name>
+        <Dataset>Landsat 7</Dataset>
         <Sources>
             <!-- The present of a hash sign # separator inside the uri indicates that the left part is the name of a compound document and the right part
                  (if present) indicates the file within compound of the source of data. The later part can designate more than one file in compound by use of wildcards (* or ?).
@@ -43,6 +47,7 @@
             <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#S4_05230_4828_20060814_m20_1_utm22.tif" type="tif">
                 <Id>545</Id>
                 <Copyright>http://open.canada.ca/en/open-government-licence-canada</Copyright>
+                <TermOfUse>You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose.</TermOfUse>
                 <Provider>GeoGratis</Provider>
                 <Size>437627</Size>
                 <Metadata type="ISO-19115">IMR_S4_05230_4828_20060814_1.0_pna.xml</Metadata>
@@ -76,11 +81,13 @@
       <ImageryData>
           <Id>41342</Id>
           <Name>Canadian Digital Elevation Data (CDED) 001K11</Name>
+          <Dataset>CDED</Dataset>
           <Sources>
               <!-- Compound file contains two dem files representing eastern and western portions of the source. Both files form the source. This is expressed using the regexp located after the # -->
               <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#*.dem" type="dem">
                   <Id>75643</Id>
-                  <Copyright">http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada</Copyright>
+                  <Copyright">http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada</Copyright> 
+                  <TermOfUse>You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose.</TermOfUse>
                   <Provider>GeoGratis</Provider>
                   <Size>43827</Size>
                   <Metadata type="FGDC">cded_001K11_1_0_fgdc_en.xml</Metadata>
@@ -90,6 +97,7 @@
     <ImageryData>
         <Id>341342</Id>
         <Name>UAO2003</Name>
+        <Dataset>NAIP</Dataset>
         <Sources>
             <Source uri="http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.tif" type="tif">
                 <Id>gds:945m393090</Id>
@@ -129,10 +137,12 @@
              For this reason it is imperative that a GCS default be provided in this specific case. As an alternative it is technically
              possible for the application to extract the content of the ISO-19115 metadata tag  <gmd:referenceSystemInfo> if available (which is not the case here) -->
         <Name>USGS: FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923</Name>
+        <Dataset>NAIP</Dataset>
         <Sources>
             <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.jp2" type="jp2">
                 <Id>USGS:55098640e4b02e76d757f634</Id>
                 <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <TermOfUse>There are no limitations for access</TermOfUse>
                 <Provider>usgs</Provider>
                 <Size>25827</Size>
                 <Metadata>https://www.sciencebase.gov/catalog/file/get/55098640e4b02e76d757f634?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
@@ -142,6 +152,7 @@
             <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.cit" type="cit">
                 <Id>44098640e4b02e76d747f323</Id>
                 <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <TermOfUse>There are no limitations for access</TermOfUse>
                 <Provider>usgs</Provider>
                 <Size>34825</Size>
                 <Metadata>https://www.sciencebase.gov/catalog/file/get/44098640e4b02e76d747f323?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
@@ -150,6 +161,7 @@
             <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.png" type="png">
                 <Id>24098640e4b02e76d7475666</Id>
                 <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <TermOfUse>There are no limitations for access</TermOfUse>
                 <Provider>usgs</Provider>
                 <Size>54721</Size>
                 <Metadata>https://www.sciencebase.gov/catalog/file/get/24098640e4b02e76d7475666?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
@@ -164,21 +176,23 @@
     <ImageryData>
         <Id>USGS:55098634e4b02e76d757f5c6</Id>
         <Name>USGS: FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923</Name>
+        <Dataset>NAIP</Dataset>
         <!-- JPEG 2000 file located in a compound. The full name of the raster is provided. -->
         <Sources>
             <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_ne_19_1_20140712_20140923.zip#18TVK470310_201004_0x3000m_CL_1.jp2" type="jp2">
                 <Id>USGS:55098634e4b02e76d757f5c6</Id>
                 <Copyright>FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <TermOfUse>There are no limitations for access</TermOfUse>
                 <Provider>usgs</Provider>
                 <Size>25831</Size>
                 <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
                 <!-- Even though the PRJ sister file specifies the georeference of the JPEG 2000 raster, the default SRS can be specified but should be ignored in this case.-->
                 <GeoCS>EPSG:3857</GeoCS>
-                <!-- Specification of the following sister files is not technically necessary. Both files are included in the compound document and need not be downloaded.
-                 The presence of the entry is only useful in hinting to the fact these files 'should' be present and interpreted. -->
+                <!-- Specification of the following sister files is not technically necessary for the download since these entries indicate they are present in the compound document of the source.
+                 The presence of the entry is only useful in hinting to the fact these files 'should' be present and interpreted by the application. -->
                 <SisterFiles>
-                    <File>18TVK470310_201004_0x3000m_CL_1.j2w</File>
-                    <File>18TVK470310_201004_0x3000m_CL_1.prj</File>
+                    <File>#18TVK470310_201004_0x3000m_CL_1.j2w</File>
+                    <File>#18TVK470310_201004_0x3000m_CL_1.prj</File>
                 </SisterFiles>
             </Source>
         </Sources>
@@ -186,11 +200,12 @@
     <ImageryData>
         <Id>55098634e4b02e76d757f5c6</Id>
         <Name>Landsat 8 multiband raw imagery LC81390452014295LGN00</Name>
+        <Dataset>Landsat 8</Dataset>
         <Sources>
             <!-- The uri of the multiband source can be the panchromatic since it providse something visible in case other bands are absent -->
             <MultiBandSource uri="http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_B8.TIF" type="tif">
                 <Id>55098634e4b02e76d757f5c6</Id>
-                <Copyright>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</Copyright>
+                <TermOfUse>There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS.</TermOfUse>
                 <Provider>Landsat8</Provider>
                 <!-- The size here represents the total size of all bands -->
                 <Size>253831</Size>
@@ -319,9 +334,9 @@
                     <GeoCS>EPSG:4326</GeoCS>
                     <!-- Rarely will pinned data have sister file but it is supported -->
                     <SisterFiles>
-                        <!-- Here the sister file example is a codec file containing the decompression algorithm plug-in.
+                        <!-- Here the sister file example is a codec file containing the decompression algorithm plug-in included in the compound document.
                              Such use is far fetched as this requires complex behavior from the application. -->"
-                        <File>SpecialCodecToReadTheAvi.cod</File>
+                        <File>#SpecialCodecToReadTheAvi.cod</File>
                     </SisterFiles>
                 </Source>
             </Sources>
@@ -351,6 +366,7 @@
         <TerrainData>
             <Id>USGS:53174905e4b0cd4cd83c06a6</Id>
             <Name>USGS NED ned19_n42x50_w071x25_ma_lftne_lot7_2011</Name>
+            <Dataset>NED</Dataset>
             <Sources>
                 <!-- Notice in the URI the absence of indication of the file within compound containing the data. Sometimes
                  this information cannot be known and it is then up to the application to attempt determination of the 
@@ -368,6 +384,7 @@
         <TerrainData>
             <Id>USGS:53174905e4b0cd4cd83c06a6</Id>
             <Name>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree</Name>
+            <Dataset>NED</Dataset>
             <!--  Notice here that there are many sources for the same data. Each source points to a different file stored using different format.
                Some providers will provide many distribution format to accomodate client. Although technically the package should be fully qualified
                source of data including the selected format, the additional sources are provided in case the originally selected source of data
@@ -408,7 +425,6 @@
                     <Size>346171</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
                 </Source>
-
             </Sources>
         </TerrainData>
     </TerrainGroup>

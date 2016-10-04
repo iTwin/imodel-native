@@ -91,6 +91,11 @@ RealityPackageStatus RealityDataSerializerV2::ReadPackageInfo(RealityDataPackage
     xmlDom.SelectNodeContent(origin, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Origin, pContext, BeXmlDom::NODE_BIAS_First);
     package.SetOrigin(origin.c_str());
 
+    // Origin.
+    Utf8String requestingApplication;
+    xmlDom.SelectNodeContent(requestingApplication, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_RequestingApplication, pContext, BeXmlDom::NODE_BIAS_First);
+    package.SetRequestingApplication(requestingApplication.c_str());
+
     // Name.
     Utf8String name;
     xmlDom.SelectNodeContent(name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pContext, BeXmlDom::NODE_BIAS_First);
@@ -166,6 +171,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
 
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -224,6 +235,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
             pImgData = ImageryData::Create(*pSources[0], corners);
             pImgData->SetDataId(id.c_str());
             pImgData->SetDataName(name.c_str());
+            pImgData->SetDataset(dataset.c_str());
             for (size_t i = 1; i < pSources.size(); ++i)
                 {
                 pImgData->AddSource(*pSources[i]);
@@ -234,6 +246,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
             pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
             pImgData->SetDataId(id.c_str());
             pImgData->SetDataName(name.c_str());
+            pImgData->SetDataset(dataset.c_str());
             for (size_t i = 1; i < pMultiBandSources.size(); ++i)
                 {
                 pImgData->AddSource(*pMultiBandSources[i]);
@@ -282,6 +295,13 @@ RealityPackageStatus RealityDataSerializerV2::ReadModelGroup(RealityDataPackageR
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
+
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -350,6 +370,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadPinnedGroup(RealityDataPackage
         BeXmlNodeP pNameNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name);
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
+
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -441,6 +467,12 @@ RealityPackageStatus RealityDataSerializerV2::ReadTerrainGroup(RealityDataPackag
         if (NULL != pNameNode)
             pNameNode->GetContent(name);
 
+        // Dataset.
+        Utf8String dataset;
+        BeXmlNodeP pDatasetNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Dataset);
+        if (NULL != pDatasetNode)
+            pDatasetNode->GetContent(dataset);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -491,6 +523,7 @@ RealityPackageStatus RealityDataSerializerV2::ReadUnknownElements(RealityDataPac
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_CreationDate) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Copyright) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageId) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_BoundingPolygon) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageOrigin) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryGroup) ||
+        0 == pNode->NameStricmp(PACKAGE_ELEMENT_RequestingApplication) ||  0 == pNode->NameStricmp(PACKAGE_ELEMENT_Dataset) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryData) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Corners) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerRight) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperRight) ||
@@ -555,6 +588,11 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
     pSourceNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
     pDataSource->SetCopyright(copyright.c_str());    
 
+    // TermOfUse.
+    Utf8String termOfUse;
+    pSourceNode->GetContent(termOfUse, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TermOfUse);
+    pDataSource->SetTermOfUse(termOfUse.c_str());   
+
     // Provider.
     Utf8String provider;
     pSourceNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
@@ -590,15 +628,21 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
     pDataSource->SetNoDataValue(nodatavalue.c_str());
 
     // &&JFC Sister files.
-    bvector<Utf8String> sisterFiles;
+    bvector<UriPtr> sisterFiles;
+
+ 
+
     BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
         {
         Utf8String file;
-        for (BeXmlNodeP pFileNode = pSisterFilesNode->GetFirstChild(); NULL != pFileNode; pFileNode = pFileNode->GetNextSibling())
+        BeXmlDom::IterableNodeSet fileNodes;
+        pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
+        for (BeXmlNodeP const& pFileNode : fileNodes)
             {
-            pFileNode->GetContent(file, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
-            sisterFiles.push_back(file);
+            Utf8String file;
+            pFileNode->GetContent(file);
+            sisterFiles.push_back(Uri::Create(file.c_str()));
             }
         pDataSource->SetSisterFiles(sisterFiles);
         }   
@@ -639,6 +683,11 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
     pSourceNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
     pDataSource->SetCopyright(copyright.c_str());
 
+    // TermOfUse.
+    Utf8String termOfUse;
+    pSourceNode->GetContent(termOfUse, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TermOfUse);
+    pDataSource->SetTermOfUse(termOfUse.c_str()); 
+
     // Provider.
     Utf8String provider;
     pSourceNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
@@ -674,16 +723,18 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
     pDataSource->SetNoDataValue(nodatavalue.c_str());
 
     // &&JFC Sister files.
-    bvector<Utf8String> sisterFiles;
+    bvector<UriPtr> sisterFiles;
     BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
     {
-        Utf8String file;
-        for (BeXmlNodeP pFileNode = pSisterFilesNode->GetFirstChild(); NULL != pFileNode; pFileNode = pFileNode->GetNextSibling())
-        {
-            pFileNode->GetContent(file, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
-            sisterFiles.push_back(file);
-        }
+        BeXmlDom::IterableNodeSet fileNodes;
+        pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
+        for (BeXmlNodeP const& pFileNode : fileNodes)
+            {
+            Utf8String file;
+            pFileNode->GetContent(file);
+            sisterFiles.push_back(Uri::Create(file.c_str()));
+            }
         pDataSource->SetSisterFiles(sisterFiles);
     }
 
@@ -787,6 +838,9 @@ RealityPackageStatus RealityDataSerializerV2::WritePackageInfo(BeXmlNodeR node, 
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
 
+    if (!package.GetRequestingApplication().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_RequestingApplication, package.GetRequestingApplication().c_str());
+
     if (!package.GetDescription().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Description, package.GetDescription().c_str());
 
@@ -838,6 +892,11 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
         // Name.
         if (!pImgData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pImgData->GetDataName().c_str());
+
+        // Dataset.
+        if (!pImgData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());
+
 
         // Sources.
         for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
@@ -935,6 +994,10 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
         if (!pModelData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pModelData->GetDataName().c_str());
 
+        // Dataset.
+        if (!pModelData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pModelData->GetDataset().c_str());
+
         // Sources.
         for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
             {
@@ -983,6 +1046,11 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
         // Name.
         if (!pPinnedData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pPinnedData->GetDataName().c_str());
+
+        // Dataset.
+        if (!pPinnedData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pPinnedData->GetDataset().c_str());
+
 
         // Sources.
         for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
@@ -1037,6 +1105,11 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
         // Name.
         if (!pTerrainData->GetDataName().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pTerrainData->GetDataName().c_str());
+
+        // Dataset.
+        if (!pTerrainData->GetDataset().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pTerrainData->GetDataset().c_str());
+
 
         // Sources.
         for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)

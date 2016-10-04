@@ -97,6 +97,10 @@ public:
     REALITYPACKAGE_EXPORT Utf8StringCR GetOrigin() const;
     REALITYPACKAGE_EXPORT void SetOrigin(Utf8CP origin);
 
+    //! The requesting application of this package file. 
+    REALITYPACKAGE_EXPORT Utf8StringCR GetRequestingApplication() const;
+    REALITYPACKAGE_EXPORT void SetRequestingApplication(Utf8CP requestingApplication);
+
     //! The name of this package file.
     REALITYPACKAGE_EXPORT Utf8StringCR GetName() const;
     REALITYPACKAGE_EXPORT void SetName(Utf8CP name);
@@ -163,9 +167,11 @@ private:
     uint32_t m_majorVersion;
     uint32_t m_minorVersion;
     Utf8String m_origin;
+    Utf8String m_requestingApplication;
     Utf8String m_name;
     Utf8String m_description;
     Utf8String m_copyright;
+
     Utf8String m_id;
     DateTime m_creationDate;
     BoundingPolygonPtr m_pBoundingPolygon;
@@ -190,6 +196,9 @@ public:
     REALITYPACKAGE_EXPORT Utf8StringCR GetDataName() const;
     REALITYPACKAGE_EXPORT void SetDataName(Utf8CP dataName);
 
+    REALITYPACKAGE_EXPORT Utf8StringCR GetDataset() const;
+    REALITYPACKAGE_EXPORT void SetDataset(Utf8CP dataset);
+
     //! Data can contain many sources (at least one). This returns the number of sources.
     REALITYPACKAGE_EXPORT size_t GetNumSources() const;
 
@@ -208,6 +217,7 @@ private:
     bvector<RealityDataSourcePtr> m_Sources;
     Utf8String m_id;
     Utf8String m_name;
+    Utf8String m_dataset;
 };
 
 //=======================================================================================

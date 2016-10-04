@@ -8,11 +8,15 @@
 #pragma once
 
 #include <Bentley/BeFileName.h>
+#include <RealityPackage/RealityPackage.h>
 #include <RealityPackage/RealityDataPackage.h>
+#include <RealityPackage/RealityDataSource.h>
+
 
 #using  <mscorlib.dll>
 
 using RealityPackage::RealityDataPackage;
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 using namespace System::Collections::Generic;
 
 
