@@ -359,20 +359,6 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx, ClassMappingInfo
         {
         if (mappingInfo.GetBaseClassMap() != nullptr)
             baseClassMaps.push_back(mappingInfo.GetBaseClassMap());
-
-/*        for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
-            {
-            ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
-            if (baseClassMap == nullptr)
-                {
-                BeAssert(false);
-                return MappingStatus::Error;
-                }
-
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
-                baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
-                baseClassMaps.push_back(baseClassMap);
-            }*/
         }
 
     std::vector<ECPropertyCP> propertiesToMap;
@@ -716,19 +702,6 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         {
         if (dbCtx.GetBaseClassMap() != nullptr)
             baseClassMaps.push_back(dbCtx.GetBaseClassMap());
-        /*for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
-            {
-            ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
-            if (baseClassMap == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
-                baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
-                baseClassMaps.push_back(baseClassMap);
-            }*/
         }
 
     std::vector<ECPropertyCP> unloadedProperties;
