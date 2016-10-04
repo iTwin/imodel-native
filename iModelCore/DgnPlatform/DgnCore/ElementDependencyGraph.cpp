@@ -313,8 +313,6 @@ void DgnElementDependencyGraph::WriteDot(BeFileNameCR dotFilename, bvector<bvect
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
     {
-    auto& models = GetDgnDb().Models();
-    uint64_t sidx, tidx;
     /* *** WIP_DEPGRAPH_MODEL_TREE  */
     return BSISUCCESS;
     }
