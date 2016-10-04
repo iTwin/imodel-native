@@ -33,9 +33,15 @@ private:
 
     static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
     static BentleyStatus ECArrayValueFromJson(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
-    static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR, Json::Value const&, ECN::PrimitiveType);
 
 public:
+    //! Populates an ECValue given a Json value and a PrimitiveType
+    //! @param[out] value to populate
+    //! @param[in] json Json value
+    //! @param[in] type primitive value type
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT static BentleyStatus ECPrimitiveValueFromJson(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
+
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR, Json::Value const&);
 
     //! Converts the specified Byte array to a Json value
