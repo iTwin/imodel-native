@@ -1,14 +1,35 @@
-/*----------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
-|   $Source: TilePublisher/lib/resize.cpp $
+|     $Source: DgnCore/ImageResize.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
-+----------------------------------------------------------------------*/
-#include    "TilePublisher.h"
++--------------------------------------------------------------------------------------*/
+#include <DgnPlatformInternal.h>
 
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_RENDER
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*----------------------------------------------------------------------+
@@ -57,18 +78,25 @@ struct Resizer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Resizer (Point2dCR inSize, Point2dCR outSize, int  bytesPerPixel, Byte const* input, ByteStream& output) : 
-    m_inSize(inSize), m_outSize(outSize), m_bytesPerPixel(bytesPerPixel), m_input(input), m_output(output),
-    m_pBuf(bytesPerPixel*outSize.x), m_oBuf1(bytesPerPixel*outSize.x), m_oBuf2(bytesPerPixel*outSize.x),
-    m_currentInputRow(0), m_currentOutputRow (0)
+Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage) : m_output(output), m_currentInputRow(0), m_currentOutputRow (0)
     {
-    m_xMode = BuildSquetchTable (inSize.x, outSize.x, m_xTable);
-    m_yMode = BuildSquetchTable (inSize.y, outSize.y, m_yTable);
+    m_input = sourceImage.GetByteStream().data();
+    m_inSize.x = (int32_t) sourceImage.GetWidth();
+    m_inSize.y = (int32_t) sourceImage.GetHeight();
+    m_outSize.x = (int32_t) targetWidth;
+    m_outSize.y = (int32_t) targetHeight;
+    m_bytesPerPixel = sourceImage.GetBytesPerPixel();
+    m_pBuf.resize (m_bytesPerPixel * targetWidth);
+    m_oBuf1.resize (m_bytesPerPixel * targetWidth);
+    m_oBuf2.resize (m_bytesPerPixel * targetWidth);
+
+    m_xMode = BuildSquetchTable (m_inSize.x, m_outSize.x, m_xTable);
+    m_yMode = BuildSquetchTable (m_inSize.y, m_outSize.y, m_yTable);
 
     LoadLineSquetch (m_oBuf1.data());
     LoadLineSquetch (m_oBuf2.data());
 
-    m_output.Resize(bytesPerPixel * outSize.x * outSize.y);
+    m_output.Resize(m_bytesPerPixel * targetWidth * targetHeight);
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -334,6 +362,17 @@ bool GetRow ()
         }
     return m_currentInputRow < m_inSize.y;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DoResize()
+    {
+    for (m_currentOutputRow=0; m_currentOutputRow < m_outSize.y; m_currentOutputRow++)
+        GetRow ();
+
+    }
+
 };      // Resizer
 
 
@@ -353,22 +392,24 @@ static void writeImageFile (Byte const* data, Point2dCR size, char* name, bool r
     fwrite (byteStream.data(), 1, byteStream.size(), file);
     fclose (file);
     }
-
 #endif
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     01/1990
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus resize_image (ByteStream& outputImage, Point2dCR outputSize, Byte const*  inputImage, Point2dCR  inputSize, bool isRGBA)
-    {
-    Resizer     resizer (inputSize, outputSize, isRGBA ? 4 : 3, inputImage, outputImage);
 
-    for (resizer.m_currentOutputRow=0; resizer.m_currentOutputRow<outputSize.y; resizer.m_currentOutputRow++)
-        resizer.GetRow ();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Image Image::FromResizedImage (uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage)
+    {
+    ByteStream  outputImage;
+    Resizer     resizer (outputImage, targetWidth, targetHeight, sourceImage);
+
+    resizer.DoResize();
 
 #ifdef DEBUG_IMAGES
     writeImageFile (inputImage, inputSize, "d:\\tmp\\inputImage.jpg", isRGBA);
     writeImageFile (outputImage.data(), outputSize, "d:\\tmp\\resizedImage.jpg", isRGBA);
 #endif
 
-    return SUCCESS;
+    return Image (targetWidth, targetHeight, std::move (outputImage), sourceImage.GetFormat());
     }
+
+

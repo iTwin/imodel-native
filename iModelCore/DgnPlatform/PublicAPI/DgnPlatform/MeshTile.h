@@ -293,6 +293,7 @@ protected:
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
+    virtual bool _IsPolyface() const = 0;
 
     void SetFacetCount(size_t numFacets);
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
@@ -309,6 +310,7 @@ public:
     bool HasTexture() const { return m_hasTexture; }
 
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
+    bool IsPolyface() const { return _IsPolyface(); }
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry

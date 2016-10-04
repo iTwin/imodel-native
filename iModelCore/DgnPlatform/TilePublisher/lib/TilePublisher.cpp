@@ -313,6 +313,19 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/02016
++---------------+---------------+---------------+---------------+---------------+------*/
+static int32_t  roundToMultipleOfTwo (int32_t value)
+    {
+    int32_t rounded = 2;
+    
+    while (rounded < value && rounded < 0x01000000)
+        rounded <<= 1;
+
+    return rounded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/02016
 +---------------+---------------+---------------+---------------+---------------+------*/
  Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP  suffix)
@@ -345,27 +358,19 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
     // This calculation should actually be made for each triangle and maximum used. 
-    double      requiredSize = range.DiagonalDistance () / (m_tile.GetTolerance() * uvRange.DiagonalDistance());
+    static      double      s_requiredSizeRatio = 2.0;
+    double      requiredSize = s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * uvRange.DiagonalDistance());
     DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
     static bool s_doResize = true;
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
 
-    if (!s_doResize || requiredSize > imageSize.Magnitude())
-        {
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
-        
-        ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
-        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
 
-        AddBinaryData (imageData.data(), imageData.size());
-        }
-    else
+    Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
+
+    if (requiredSize < std::min (currentImageSize.x, currentImageSize.y))
         {
-        Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
         static      int32_t s_minImageSize = 64;
         static      int     s_imageQuality = 60;
         int32_t     targetImageMin = std::max(s_minImageSize, (int32_t) requiredSize);
@@ -381,10 +386,32 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
             targetImageSize.x = targetImageMin;
             targetImageSize.y = (int32_t) ((double) targetImageSize.x * imageSize.y / imageSize.x);
             }
+        targetImageSize.x = roundToMultipleOfTwo (targetImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (targetImageSize.y);
+        }
+    else
+        {
+        targetImageSize.x = roundToMultipleOfTwo (currentImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
+        }
+
+    if (targetImageSize.x == imageSize.x && targetImageSize.y == imageSize.y)
+        {
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
         
-        resize_image (targetImageData, targetImageSize, image.GetByteStream().data(),  currentImageSize, image.GetFormat() == Image::Format::Rgba);
-    
-        Image       targetImage (targetImageSize.x, targetImageSize.y, std::move (targetImageData), image.GetFormat());
+        ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
+        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+
+        AddBinaryData (imageData.data(), imageData.size());
+        }
+    else
+        {
+        static int      s_imageQuality = 50;
+        Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
+        ByteStream      targetImageData;
+
         ImageSource targetImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
         
         rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;

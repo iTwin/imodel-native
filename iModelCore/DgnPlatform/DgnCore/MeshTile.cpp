@@ -308,8 +308,8 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, VertexKey const& rhs) const
     {
-    static const double s_normalTolerance = 1.0E-6;
-    static const double s_paramTolerance  = 1.0E-6;
+    static const double s_normalTolerance = .1;     
+    static const double s_paramTolerance  = .1;
 
     COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
 
@@ -726,6 +726,8 @@ private:
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
+    virtual bool _IsPolyface () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
+
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
 public:
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
@@ -756,6 +758,8 @@ private:
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
     virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
+    virtual bool _IsPolyface() const override { return false; }
+
 public:
     static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         {
@@ -778,6 +782,7 @@ TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, 
     {
     return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, facetOptions, db);
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -1670,7 +1675,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
             builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance);
 
         bool isContained = geomRange.IsContained(myTileRange);
-        bool doVertexClustering = rangePixels < s_decimateThresholdPixels;
+        bool doVertexClustering = geom->IsPolyface() ||  rangePixels < s_decimateThresholdPixels;
 
         ++geometryCount;
         bool maxGeometryCountExceeded = geometryCount > s_maxGeometryIdCount;

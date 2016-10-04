@@ -319,6 +319,8 @@ $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${M
 
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
+$(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}
+
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 
 $(CoreObjs)stringop$(oext) :                        $(ToolsDir)charutil/stringop.cpp ${MultiCompileDepends}
