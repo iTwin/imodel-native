@@ -191,7 +191,7 @@ TEST(BeDirectoryIterator, FileNamePattern_Parse)
 #else 
     BeFileName wildcard (NULL, L"/var/abc/bca", L"a*.txt", NULL);
     FileNamePattern::Parse(dir, glob, wildcard);
-    EXPECT_STREQ(L"/var/abc/bca/", dir.c_str()) << "Directory name is incorrectly parsed";
+    EXPECT_STREQ(L"/var/abc/bca", dir.c_str()) << "Directory name is incorrectly parsed";
 #endif
     EXPECT_STREQ(L"a*.txt", glob.c_str());
     }
