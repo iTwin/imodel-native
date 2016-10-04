@@ -1380,7 +1380,11 @@ DgnElementPtr DgnElement::CopyForEdit() const
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
+#ifdef __clang__
+    BeAssert(0 == strcmp(typeid(*newEl).name(), typeid(*this).name()));
+#else
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
+#endif
     newEl->_CopyFrom(*this);
     return newEl;
     }
