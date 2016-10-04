@@ -95,6 +95,11 @@
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
         <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false"/>
         <ProductDirectory Name="UnitTests_Documents_DgnDb" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="cpprestsdkAssemblies" Deliver="false"/>
+        <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PlantDomainSchemasDir" Deliver="false"/>
+        <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
+        <ProductDirectory Name="sqlang" Deliver="false"/>
         
     </ProductDirectoryList>
 
