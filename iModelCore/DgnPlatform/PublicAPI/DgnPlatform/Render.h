@@ -283,6 +283,12 @@ public:
     //! @return The decompressed Image, or an invalid Image if decompression failed.
     DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba);
 
+    //! Create an image by resizing a source image.
+    //! @param[in] width the width of the image in pixels
+    //! @param[in] height the height of the image in pixels
+    //! @param[in] sourceImage.  The source image.
+    DGNPLATFORM_EXPORT static Image FromResizedImage (uint32_t width, uint32_t height, ImageCR sourceImage);
+
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
     void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
     uint32_t GetWidth() const {return m_width;} //!< Get the width of this image in pixels

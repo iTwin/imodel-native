@@ -13,6 +13,8 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
+BentleyStatus resize_image (ByteStream&    outputImage, Point2dCR outputSize, Byte const*  inputImage, Point2dCR  inputSize, bool isRGBA);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -109,7 +111,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -311,9 +313,22 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/02016
++---------------+---------------+---------------+---------------+---------------+------*/
+static int32_t  roundToMultipleOfTwo (int32_t value)
+    {
+    int32_t rounded = 2;
+    
+    while (rounded < value && rounded < 0x01000000)
+        rounded <<= 1;
+
+    return rounded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/02016
 +---------------+---------------+---------------+---------------+---------------+------*/
- Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP  suffix)
+ Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP  suffix)
     {
     auto const& found = m_textureImages.find (&textureImage);
 
@@ -321,6 +336,7 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
         return found->second;
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
+
 
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
@@ -332,24 +348,81 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
 
-    Image image (textureImage.GetImageSource());
 
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
 
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
+    DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
+    Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
-    ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
+    // This calculation should actually be made for each triangle and maximum used. 
+    static      double      s_requiredSizeRatio = 2.0;
+    double      requiredSize = s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * uvRange.DiagonalDistance());
+    DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
+    static bool s_doResize = true;
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
 
-    AddBinaryData (imageData.data(), imageData.size());
+
+    Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
+
+    if (requiredSize < std::min (currentImageSize.x, currentImageSize.y))
+        {
+        static      int32_t s_minImageSize = 64;
+        static      int     s_imageQuality = 60;
+        int32_t     targetImageMin = std::max(s_minImageSize, (int32_t) requiredSize);
+        ByteStream  targetImageData;
+
+        if (imageSize.x > imageSize.y)
+            {
+            targetImageSize.y = targetImageMin;
+            targetImageSize.x = (int32_t) ((double) targetImageSize.y * imageSize.x / imageSize.y);
+            }
+        else
+            {
+            targetImageSize.x = targetImageMin;
+            targetImageSize.y = (int32_t) ((double) targetImageSize.x * imageSize.y / imageSize.x);
+            }
+        targetImageSize.x = roundToMultipleOfTwo (targetImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (targetImageSize.y);
+        }
+    else
+        {
+        targetImageSize.x = roundToMultipleOfTwo (currentImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
+        }
+
+    if (targetImageSize.x == imageSize.x && targetImageSize.y == imageSize.y)
+        {
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
+        
+        ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
+        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+
+        AddBinaryData (imageData.data(), imageData.size());
+        }
+    else
+        {
+        static int      s_imageQuality = 50;
+        Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
+        ByteStream      targetImageData;
+
+        ImageSource targetImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
+        
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"]  = targetImageSize.y;
+        
+        ByteStream const& imageData = targetImageSource.GetByteStream();
+        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+
+        AddBinaryData (imageData.data(), imageData.size());
+        }
 
     m_textureImages.Insert (&textureImage, textureId);
 
@@ -555,70 +628,71 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix)
+Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
+    Utf8String      materialName = Utf8String ("Material_") + suffix;
+
+    if (nullptr == displayParams)
+        return materialName;
+
+
     RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
     double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-    uint32_t        rgbInt  = 0xffffff;
+    uint32_t        rgbInt  = displayParams->GetFillColor();
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-    Utf8String      materialName = Utf8String ("Material_") + suffix;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
+    bool            isPolyline = mesh.Triangles().empty();
+    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
-    if (nullptr != displayParams)
+    if (!isPolyline && displayParams->GetMaterialId().IsValid())
         {
-        rgbInt = displayParams->GetFillColor();
-        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+        JsonRenderMaterial  jsonMaterial;
 
-        if (!isPolyline && displayParams->GetMaterialId().IsValid())
+        if (SUCCESS == jsonMaterial.Load (displayParams->GetMaterialId(), m_context.GetDgnDb()))
             {
-            JsonRenderMaterial  jsonMaterial;
+            static double       s_finishScale = 15.0;
 
-            if (SUCCESS == jsonMaterial.Load (displayParams->GetMaterialId(), m_context.GetDgnDb()))
-                {
-                static double       s_finishScale = 15.0;
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
+                specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
-                    specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
+                specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
-                    specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
+                rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
-                    rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
-
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
-                    alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
-                }
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
+                alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
             }
+        }
 
-        TileTextureImageCP      textureImage;
+    TileTextureImageCP      textureImage;
 
-        if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
-            {
-            materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
-            materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, suffix);
-            }
-        else
-            {
-            auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
+    if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
+        {
+        materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
+        materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
+        }
+    else
+        {
+        auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
-            materialColor.append(rgb.red);
-            materialColor.append(rgb.green);
-            materialColor.append(rgb.blue);
-            materialColor.append(alpha);
+        materialColor.append(rgb.red);
+        materialColor.append(rgb.green);
+        materialColor.append(rgb.blue);
+        materialColor.append(alpha);
 
-            materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
-            }
+        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
+        }
 
-        if (!isPolyline && !displayParams->GetIgnoreLighting())
-            {
-            materialValue["values"]["specularExponent"] = specularExponent;
+    if (!isPolyline && !displayParams->GetIgnoreLighting())
+        {
+        materialValue["values"]["specularExponent"] = specularExponent;
 
-            auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
-            materialSpecularColor.append (specularColor.red);
-            materialSpecularColor.append (specularColor.green);
-            materialSpecularColor.append (specularColor.blue);
-            }
+        auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
+        materialSpecularColor.append (specularColor.red);
+        materialSpecularColor.append (specularColor.green);
+        materialSpecularColor.append (specularColor.blue);
         }
     return materialName;
     }
@@ -787,7 +861,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
 
     attr["indices"] = accIndexId;
-    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
+    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh, idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
     attr["attributes"]["POSITION"] = accPositionId;

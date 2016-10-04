@@ -185,7 +185,10 @@ public:
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     BeInt64Id GetEntityId(uint32_t index) const { auto pId = GetMember(m_entityIds, index); return nullptr != pId ? *pId : BeInt64Id(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
-    DRange3d GetRange() { return DRange3d::From (m_points); }
+    DRange3d GetRange() const { return DRange3d::From (m_points); }
+
+    DRange3d GetUVRange() const { return DRange3d::From (m_uvParams, 0.0); }
+
     bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
@@ -201,7 +204,7 @@ public:
 struct TileMeshBuilder : RefCountedBase
 {
     struct VertexKey
-    {
+        {
         DPoint3d        m_point;
         DVec3d          m_normal;
         DPoint2d        m_param;
@@ -220,13 +223,13 @@ struct TileMeshBuilder : RefCountedBase
         DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
 
         struct Comparator
-        {
+            {
             double  m_tolerance;
 
             explicit Comparator(double tolerance) : m_tolerance(tolerance) { }
             bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+            };
         };
-    };
 private:
     struct TriangleKey
     {
@@ -241,13 +244,14 @@ private:
     typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
     typedef bset<TriangleKey> TriangleSet;
 
-    TileMeshPtr         m_mesh;
-    VertexMap           m_vertexMap;
-    TriangleSet         m_triangleSet;
-    double              m_tolerance;
-    size_t              m_triangleIndex;
+    TileMeshPtr             m_mesh;
+    VertexMap               m_clusteredVertexMap;
+    VertexMap               m_unclusteredVertexMap;
+    TriangleSet             m_triangleSet;
+    double                  m_tolerance;
+    size_t                  m_triangleIndex;
 
-    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance) : m_mesh(TileMesh::Create(params)), m_vertexMap(VertexKey::Comparator(tolerance)),
+    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap (VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_triangleIndex(0) { }
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance) { return new TileMeshBuilder(params, tolerance); }
@@ -292,6 +296,7 @@ protected:
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
+    virtual bool _IsPolyface() const = 0;
 
     void SetFacetCount(size_t numFacets);
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
@@ -308,6 +313,7 @@ public:
     bool HasTexture() const { return m_hasTexture; }
 
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
+    bool IsPolyface() const { return _IsPolyface(); }
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
@@ -489,7 +495,7 @@ public:
 
     TileSource GetSource() const { return _GetSource(); }
     TileMeshList GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
-        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles); }
+        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles, doPolylines); }
 };
 
 //=======================================================================================

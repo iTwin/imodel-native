@@ -317,6 +317,8 @@ $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${M
 
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
+$(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}
+
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 
 $(CoreObjs)stringop$(oext) :                        $(ToolsDir)charutil/stringop.cpp ${MultiCompileDepends}
@@ -380,6 +382,8 @@ $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHo
 $(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 $(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+
+$(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 # NEEDSWORK: disabling this until we can settle schema issues
 #

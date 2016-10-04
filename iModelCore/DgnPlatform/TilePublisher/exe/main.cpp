@@ -44,7 +44,7 @@ enum class ParamId
     Polylines,
     GeographicLocation,
     GlobeImagery,
-    DisplayInPlace,
+    Standalone,
     Invalid,
 };
 
@@ -76,7 +76,7 @@ static CommandParam s_paramTable[] =
         { L"pl", L"polylines", L"Publish polylines", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (latitude, longitude)", false },
         { L"ip", L"imageryProvider" L"Imagery Provider", false, false },
-        { L"p",  L"inPlace", L"Display in place (globe, sky etc.)", false, true },
+        { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -152,7 +152,7 @@ private:
     uint32_t        m_depth = 0xffffffff;
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
-    bool            m_displayInPlace = false;
+    bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
 
     DgnViewId GetViewId(DgnDbR db) const;
@@ -250,7 +250,7 @@ Json::Value  PublisherParams::GetViewerOptions () const
     {
     Json::Value viewerOptions;
 
-    viewerOptions["displayInPlace"] = m_displayInPlace;
+    viewerOptions["displayInPlace"] = !m_standalone;
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
@@ -317,13 +317,13 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
-                m_displayInPlace = true;
+                m_standalone = false;
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
                 break;
-            case ParamId::DisplayInPlace:
-                m_displayInPlace = true;
+            case ParamId::Standalone:
+                m_standalone = true;
                 break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
