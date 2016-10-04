@@ -7,14 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 
-#define TABLE_IntBlob           "test_IntBlob"
-#define TABLE_IntBlobShared16   "test_IntBlobShared16"
-#define TABLE_IntInt            "test_IntInt"
-#define TABLE_IntIntShared16    "test_IntIntShared16"
-#define TABLE_Blob              "test_Blob"
-#define TABLE_BlobShared16      "test_BlobShared16"
-#define TABLE_Text              "test_Text"
-#define TABLE_TextShared16      "test_TextShared16"
+#define TABLE_IntBlob               "test_IntBlob"
+#define TABLE_IntBlobShared16       "test_IntBlobShared16"
+#define TABLE_IntIntShared16        "test_IntIntShared16"
+#define TABLE_IntIntUniqueShared16  "test_IntIntUniqueShared16"
+#define TABLE_IntIntBlobShared16    "test_IntIntBlobShared16"
+#define TABLE_BlobShared16          "test_BlobShared16"
+#define TABLE_TextShared16          "test_TextShared16"
 
 #define DDL_SharedColumns16     ", [sc01], [sc02], [sc03], [sc04], [sc05], [sc06], [sc07], [sc08], [sc09], [sc10], [sc11], [sc12], [sc13], [sc14], [sc15], [sc16]"
 #define DDL_ExtraColumns        ", [X] DOUBLE, [Y] DOUBLE, [Z] DOUBLE, [A] TEXT COLLATE NOCASE, [B] TEXT COLLATE NOCASE, [C] TEXT COLLATE NOCASE, [I] INTEGER, [J] INTEGER, [K] INTEGER"
@@ -36,34 +35,37 @@ public:
     static void SetUpTestCase();
     static void TearDownTestCase();
 
+    static int GetNumInserts() {return 500 * 1000;}
+    static int GetNumInsertsPerCommit() {return 500 * 1000;}
+
     void SetUpDb(Utf8CP dbName);
-    int GetNumInserts() const {return 500 * 1000;}
     void StartTest() {m_timer.Start();}
     void StopTest(Utf8CP testName);
 
     void CreateTableIntBlob();
     void CreateTableIntBlobShared16();
-    void CreateTableIntInt();
     void CreateTableIntIntShared16();
-    void CreateTableBlob();
+    void CreateTableIntIntUniqueShared16();
+    void CreateTableIntIntBlobShared16();
     void CreateTableBlobShared16();
-    void CreateTableText();
     void CreateTableTextShared16();
 
-    void InsertRow(int64_t id, BeGuidCR guid, Utf8CP label);
-    void InsertRow(int64_t id, int64_t id2, Utf8CP label);
-    void InsertRow(BeGuidCR guid, Utf8CP label);
-    void InsertRow(Utf8CP guid, Utf8CP label);
+    void InsertRow(int counter, int64_t id, BeGuidCR guid);
+    void InsertRow(int counter, int64_t id, int64_t id2);
+    void InsertRow(int counter, int64_t id, int64_t id2, BeGuidCR guid);
+    void InsertRow(int counter, BeGuidCR guid);
+    void InsertRow(int counter, Utf8CP guid);
+    void CommitAtInsertInterval(int counter, Utf8CP message) {if (0 == counter%GetNumInsertsPerCommit()) m_db.SaveChanges(message);}
 
     int GetParameterIndexId() {return m_statement.GetParameterIndex(":Id");}
     int GetParameterIndexId2() {return m_statement.GetParameterIndex(":Id2");}
     int GetParameterIndexGuid() {return m_statement.GetParameterIndex(":Guid");}
     int GetParameterIndexLabel() {return m_statement.GetParameterIndex(":Label");}
 
-    int64_t GenerateSnowflakeId(int);
+    int64_t GenerateTimeBasedId(int);
     int64_t GenerateRandomId() {int64_t id; BeSQLiteLib::Randomness(sizeof(id), &id); return id;}
     BeBriefcaseBasedId GenerateBriefcaseBasedId(int i) {return BeBriefcaseBasedId(BeBriefcaseId(i%10+2), i);}
-    Utf8String GenerateLabel(Utf8CP prefix, int i) {return Utf8PrintfString("%d", i);} // don't include prefix for now so file sizes are comparable
+    Utf8String GenerateLabel(int i) {return Utf8PrintfString("%d", i);}
 };
 
 bmap<Utf8String, uint64_t> InsertPerformanceTests::s_fileSizeMap;
@@ -78,6 +80,7 @@ void InsertPerformanceTests::SetUpTestCase()
 #else
     LOGTODB("DEBUG Build!!!", "", 0);
 #endif
+    LOGTODB(Utf8PrintfString("NumInsertsPerCommit=%d", GetNumInsertsPerCommit()).c_str(), "", 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -118,9 +121,6 @@ void InsertPerformanceTests::SetUpDb(Utf8CP dbName)
 //---------------------------------------------------------------------------------------
 void InsertPerformanceTests::StopTest(Utf8CP testName)
     {
-    if (m_db.IsDbOpen())
-        m_db.SaveChanges(testName);
-
     m_timer.Stop();
     LOGTODB("InsertPerformanceTests", testName, m_timer.GetElapsedSeconds(), "", GetNumInserts());
 
@@ -156,16 +156,6 @@ void InsertPerformanceTests::CreateTableIntBlobShared16()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableIntInt()
-    {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntInt, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntInt " ([Id],[Id2],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Id2,:Label" VALUES_ExtraColumns ")"));
-    m_db.SaveChanges("CreateTableIntInt");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
 void InsertPerformanceTests::CreateTableIntIntShared16()
     {
     ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntIntShared16, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
@@ -176,11 +166,21 @@ void InsertPerformanceTests::CreateTableIntIntShared16()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableBlob()
+void InsertPerformanceTests::CreateTableIntIntUniqueShared16()
     {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_Blob, "[Guid] BLOB UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_Blob " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
-    m_db.SaveChanges("CreateTableBlob");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntIntUniqueShared16, "[Id] INTEGER, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16 ", PRIMARY KEY ([Id],[Id2])"));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntIntUniqueShared16 " ([Id],[Id2],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Id2,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntIntUniqueShared16");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableIntIntBlobShared16()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntIntBlobShared16, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Guid] BLOB UNIQUE, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntIntBlobShared16 " ([Id],[Id2],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Id2,:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntIntBlobShared16");
     }
 
 //---------------------------------------------------------------------------------------
@@ -196,16 +196,6 @@ void InsertPerformanceTests::CreateTableBlobShared16()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::CreateTableText()
-    {
-    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_Text, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_Text " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
-    m_db.SaveChanges("CreateTableText");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
 void InsertPerformanceTests::CreateTableTextShared16()
     {
     ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_TextShared16, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
@@ -216,183 +206,90 @@ void InsertPerformanceTests::CreateTableTextShared16()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::InsertRow(int64_t id, BeGuidCR guid, Utf8CP label)
+void InsertPerformanceTests::InsertRow(int counter, int64_t id, BeGuidCR guid)
     {
-    static int parameterIndexId;
-    static int parameterIndexGuid;
-    static int parameterIndexLabel;
-
-    if (0 == parameterIndexId) parameterIndexId = GetParameterIndexId();
-    if (0 == parameterIndexGuid) parameterIndexGuid = GetParameterIndexGuid();
-    if (0 == parameterIndexLabel) parameterIndexLabel = GetParameterIndexLabel();
-
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId, id));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(parameterIndexGuid, guid));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
-
-    DbResult result = m_statement.Step();
-    ASSERT_EQ(BE_SQLITE_DONE, result);
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-void InsertPerformanceTests::InsertRow(int64_t id, int64_t id2, Utf8CP label)
-    {
-    static int parameterIndexId;
-    static int parameterIndexId2;
-    static int parameterIndexLabel;
-
-    if (0 == parameterIndexId) parameterIndexId = GetParameterIndexId();
-    if (0 == parameterIndexId2) parameterIndexId2 = GetParameterIndexId2();
-    if (0 == parameterIndexLabel) parameterIndexLabel = GetParameterIndexLabel();
-
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId, id));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(parameterIndexId2, id2));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
-
-    DbResult result = m_statement.Step();
-    ASSERT_EQ(BE_SQLITE_DONE, result);
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-void InsertPerformanceTests::InsertRow(BeGuidCR guid, Utf8CP label)
-    {
-    static int parameterIndexGuid;
-    static int parameterIndexLabel;
-
-    if (0 == parameterIndexGuid) parameterIndexGuid = GetParameterIndexGuid();
-    if (0 == parameterIndexLabel) parameterIndexLabel = GetParameterIndexLabel();
-
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(parameterIndexGuid, guid));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
+    Utf8String label = GenerateLabel(counter);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(GetParameterIndexId(), id));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(GetParameterIndexGuid(), guid));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexLabel(), label, Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, m_statement.Step());
     ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
     ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    CommitAtInsertInterval(counter, label.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-void InsertPerformanceTests::InsertRow(Utf8CP guid, Utf8CP label)
+void InsertPerformanceTests::InsertRow(int counter, int64_t id, int64_t id2)
     {
-    static int parameterIndexGuid;
-    static int parameterIndexLabel;
-
-    if (0 == parameterIndexGuid) parameterIndexGuid = GetParameterIndexGuid();
-    if (0 == parameterIndexLabel) parameterIndexLabel = GetParameterIndexLabel();
-
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexGuid, guid, Statement::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(parameterIndexLabel, label, Statement::MakeCopy::No));
+    Utf8String label = GenerateLabel(counter);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(GetParameterIndexId(), id));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(GetParameterIndexId2(), id2));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexLabel(), label, Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, m_statement.Step());
     ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
     ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    CommitAtInsertInterval(counter, label.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-int64_t InsertPerformanceTests::GenerateSnowflakeId(int counter)
+void InsertPerformanceTests::InsertRow(int counter, int64_t id, int64_t id2, BeGuidCR guid)
+    {
+    Utf8String label = GenerateLabel(counter);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindInt64(GetParameterIndexId(), id));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(GetParameterIndexGuid(), guid));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexLabel(), label, Statement::MakeCopy::No));
+
+    if (0 == id2)
+        m_statement.BindNull(GetParameterIndexId2());
+    else
+        m_statement.BindInt64(GetParameterIndexId2(), id2);
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_statement.Step());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    CommitAtInsertInterval(counter, label.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::InsertRow(int counter, BeGuidCR guid)
+    {
+    Utf8String label = GenerateLabel(counter);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindGuid(GetParameterIndexGuid(), guid));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexLabel(), label, Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, m_statement.Step());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    CommitAtInsertInterval(counter, label.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::InsertRow(int counter, Utf8CP guid)
+    {
+    Utf8String label = GenerateLabel(counter);
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexGuid(), guid, Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.BindText(GetParameterIndexLabel(), label, Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, m_statement.Step());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Reset());
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.ClearBindings());
+    CommitAtInsertInterval(counter, label.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+int64_t InsertPerformanceTests::GenerateTimeBasedId(int counter)
     {
     int64_t part1 = BeTimeUtilities::QueryMillisecondsCounter() << 12;
     int64_t part2 = counter & 0xFFF;
     return part1 + part2;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_SequentialId_NoGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(i, BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_SequentialId_QuarterGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(i, BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_SequentialId_AllGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(i, BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_RandomId_NoGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateRandomId(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_RandomId_QuarterGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateRandomId(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2016
-//---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlob_RandomId_AllGuids)
-    {
-    SetUpDb(TEST_NAME);
-    CreateTableIntBlob();
-    StartTest();
-
-    for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateRandomId(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
-
-    StopTest(TEST_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -405,7 +302,7 @@ TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_NoGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid());
 
     StopTest(TEST_NAME);
     }
@@ -420,7 +317,7 @@ TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_QuarterGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false));
 
     StopTest(TEST_NAME);
     }
@@ -435,7 +332,7 @@ TEST_F(InsertPerformanceTests, IntBlob_AlternatingBriefcaseId_AllGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true));
 
     StopTest(TEST_NAME);
     }
@@ -450,7 +347,7 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_NoGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid());
 
     StopTest(TEST_NAME);
     }
@@ -465,7 +362,7 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_QuarterGui
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid(0 == i%4 ? true : false));
 
     StopTest(TEST_NAME);
     }
@@ -480,7 +377,7 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_AllGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateBriefcaseBasedId(i).GetValue(), BeGuid(true));
 
     StopTest(TEST_NAME);
     }
@@ -488,14 +385,14 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_AlternatingBriefcaseId_AllGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_NoGuids)
+TEST_F(InsertPerformanceTests, IntBlobShared16_SequentialId_NoGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateSnowflakeId(i), BeGuid(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid());
 
     StopTest(TEST_NAME);
     }
@@ -503,14 +400,14 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_NoGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_QuarterGuids)
+TEST_F(InsertPerformanceTests, IntBlobShared16_SequentialId_QuarterGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateSnowflakeId(i), BeGuid(0 == i%4 ? true : false), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid(0 == i%4 ? true : false));
 
     StopTest(TEST_NAME);
     }
@@ -518,14 +415,14 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_QuarterGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_AllGuids)
+TEST_F(InsertPerformanceTests, IntBlobShared16_SequentialId_AllGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateSnowflakeId(i), BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid(true));
 
     StopTest(TEST_NAME);
     }
@@ -533,14 +430,14 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_SnowflakeId_AllGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntInt_SnowflakeId_AllInternalGuids)
+TEST_F(InsertPerformanceTests, IntBlobShared16_RandomId_NoGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableIntInt();
+    CreateTableIntBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateRandomId(), BeGuid());
 
     StopTest(TEST_NAME);
     }
@@ -548,14 +445,89 @@ TEST_F(InsertPerformanceTests, IntInt_SnowflakeId_AllInternalGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllInternalGuids)
+TEST_F(InsertPerformanceTests, IntBlobShared16_RandomId_QuarterGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateRandomId(), BeGuid(0 == i%4 ? true : false));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_RandomId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateRandomId(), BeGuid(true));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_TimeBasedId_NoGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_TimeBasedId_QuarterGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid(0 == i%4 ? true : false));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobShared16_TimeBasedId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid(true));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntShared16_TimeBasedId_AllInternalGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntIntShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateTimeBasedId(i), GenerateRandomId());
 
     StopTest(TEST_NAME);
     }
@@ -563,7 +535,7 @@ TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllInternalGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_QuarterExternalGuids)
+TEST_F(InsertPerformanceTests, IntIntShared16_TimeBasedId_QuarterExternalGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntIntShared16();
@@ -574,11 +546,11 @@ TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_QuarterExternalGuids)
         if (0 == i%4)
             {
             BeGuid externalGuid(true); // simulate an external guid being supplied
-            InsertRow(externalGuid.m_guid.u[0], externalGuid.m_guid.u[1], GenerateLabel(TEST_NAME, i).c_str());
+            InsertRow(i, externalGuid.m_guid.u[0], externalGuid.m_guid.u[1]);
             }
         else
             {
-            InsertRow(GenerateSnowflakeId(i), GenerateRandomId(), GenerateLabel(TEST_NAME, i).c_str());
+            InsertRow(i, GenerateTimeBasedId(i), GenerateRandomId());
             }
         }
 
@@ -588,7 +560,7 @@ TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_QuarterExternalGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllExternalGuids)
+TEST_F(InsertPerformanceTests, IntIntShared16_TimeBasedId_AllExternalGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableIntIntShared16();
@@ -597,7 +569,7 @@ TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllExternalGuids)
     for (int i=1; i<=GetNumInserts(); i++)
         {
         BeGuid externalGuid(true); // simulate an external guid being supplied
-        InsertRow(externalGuid.m_guid.u[0], externalGuid.m_guid.u[1], GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, externalGuid.m_guid.u[0], externalGuid.m_guid.u[1]);
         }
 
     StopTest(TEST_NAME);
@@ -606,14 +578,14 @@ TEST_F(InsertPerformanceTests, IntIntShared16_SnowflakeId_AllExternalGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, Blob_AllGuids)
+TEST_F(InsertPerformanceTests, IntIntUniqueShared16_TimeBasedId_AllInternalGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableBlob();
+    CreateTableIntIntUniqueShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, GenerateTimeBasedId(i), GenerateRandomId());
 
     StopTest(TEST_NAME);
     }
@@ -621,14 +593,102 @@ TEST_F(InsertPerformanceTests, Blob_AllGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, BlobShared16_AllGuids)
+TEST_F(InsertPerformanceTests, IntIntUniqueShared16_TimeBasedId_QuarterExternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntUniqueShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        {
+        if (0 == i%4)
+            {
+            BeGuid externalGuid(true); // simulate an external guid being supplied
+            InsertRow(i, externalGuid.m_guid.u[0], externalGuid.m_guid.u[1]);
+            }
+        else
+            {
+            InsertRow(i, GenerateTimeBasedId(i), GenerateRandomId());
+            }
+        }
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntUniqueShared16_TimeBasedId_AllExternalGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntUniqueShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        {
+        BeGuid externalGuid(true); // simulate an external guid being supplied
+        InsertRow(i, externalGuid.m_guid.u[0], externalGuid.m_guid.u[1]);
+        }
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntBlobShared16_TimeBasedId_NoGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), GenerateRandomId(), BeGuid());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntBlobShared16_TimeBasedId_QuarterGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), 0 == i%4 ? 0 : GenerateRandomId(), BeGuid(0 == i%4 ? true : false));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntIntBlobShared16_TimeBasedId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntIntBlobShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), 0, BeGuid(true));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, BlobShared16_RandomGuid_AllGuids)
     {
     SetUpDb(TEST_NAME);
     CreateTableBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(BeGuid(true), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid(true));
 
     StopTest(TEST_NAME);
     }
@@ -636,14 +696,14 @@ TEST_F(InsertPerformanceTests, BlobShared16_AllGuids)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-TEST_F(InsertPerformanceTests, Text_AllGuids)
+TEST_F(InsertPerformanceTests, BlobShared16_TimeBasedGuid_AllGuids)
     {
     SetUpDb(TEST_NAME);
-    CreateTableText();
+    CreateTableBlobShared16();
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(BeGuid(true).ToString().c_str(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid(GenerateTimeBasedId(i), GenerateRandomId()));
 
     StopTest(TEST_NAME);
     }
@@ -658,7 +718,7 @@ TEST_F(InsertPerformanceTests, TextShared16_AllGuids)
     StartTest();
 
     for (int i=1; i<=GetNumInserts(); i++)
-        InsertRow(BeGuid(true).ToString().c_str(), GenerateLabel(TEST_NAME, i).c_str());
+        InsertRow(i, BeGuid(true).ToString().c_str());
 
     StopTest(TEST_NAME);
     }
