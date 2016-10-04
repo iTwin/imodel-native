@@ -631,7 +631,7 @@ TEST_F (CategoryTests, QueryByElementId)
 //    //EXPECT_TRUE(overrides == overridesFromJson);
 //
 //    }
-#ifdef WIP_MERGE
+
 TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     {
     SetupSeedProject();
@@ -661,9 +661,10 @@ TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
         categoryId = DgnCategory::QueryCategoryId(name, *m_db);
         EXPECT_TRUE(categoryId.IsValid());
 
+        PhysicalModelPtr model = GetDefaultPhysicalModel();
         DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
         GeometrySourceP geomElem = el->ToGeometrySourceP();
-        GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
         DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
             0, 0, 2,
             0, 3, 0,
@@ -713,4 +714,4 @@ TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     EXPECT_TRUE(1 == appearance2.GetTransparency());
     EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
     }
-#endif
+
