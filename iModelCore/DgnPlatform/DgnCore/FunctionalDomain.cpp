@@ -112,7 +112,7 @@ DgnDbStatus FunctionalElement::_OnInsert()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    08/2016
 //---------------------------------------------------------------------------------------
-FunctionalTypeCPtr FunctionalComponentElement::GetFunctionalType() const
+FunctionalTypeCPtr FunctionalElement::GetFunctionalType() const
     {
     return GetDgnDb().Elements().Get<FunctionalType>(GetFunctionalTypeId());
     }

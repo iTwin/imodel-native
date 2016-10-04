@@ -19,6 +19,8 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="FunctionalType" relationshipName="FunctionalElementIsOfType" direction="Forward">
+        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
@@ -33,8 +35,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="FunctionalType" relationshipName="FunctionalComponentIsOfType" direction="Forward">
-        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalType" modifier="Abstract">
@@ -44,9 +44,9 @@
         </ECCustomAttributes>
     </ECEntityClass>
     
-    <ECRelationshipClass typeName="FunctionalComponentIsOfType" strength="referencing">
+    <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
-            <Class class="FunctionalComponentElement" />
+            <Class class="FunctionalElement" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="false">
             <Class class="FunctionalType"/>
