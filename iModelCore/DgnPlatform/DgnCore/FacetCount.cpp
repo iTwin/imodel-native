@@ -452,7 +452,6 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
