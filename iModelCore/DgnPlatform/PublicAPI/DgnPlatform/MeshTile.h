@@ -492,7 +492,7 @@ public:
 
     TileSource GetSource() const { return _GetSource(); }
     TileMeshList GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
-        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles); }
+        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles, doPolylines); }
 };
 
 //=======================================================================================

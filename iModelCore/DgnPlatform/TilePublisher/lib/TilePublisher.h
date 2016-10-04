@@ -102,7 +102,7 @@ public:
     DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
-
+    bool WantPolylines() const { return m_publishPolylines; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
