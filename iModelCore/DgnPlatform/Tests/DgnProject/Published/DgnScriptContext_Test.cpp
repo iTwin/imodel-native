@@ -137,6 +137,8 @@ TEST_F(DgnScriptTest, TestEga)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
+        Bentley.Dgn.Logging.Message('DgnScriptTest', Bentley.Dgn.LoggingSeverity.Info, 'element.CategoryId=' + element.CategoryId.ToString()); \
+        Bentley.Dgn.Logging.Message('DgnScriptTest', Bentley.Dgn.LoggingSeverity.Info, 'element.Model.ModelId=' + element.Model.ModelId.ToString()); \
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
         var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, element.CategoryId, origin, angles); \
