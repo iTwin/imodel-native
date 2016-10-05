@@ -204,7 +204,11 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         WString filename1(sOutputFolder);
         RealityDataDownload::ExtractFileName(filename1, L"can01.zip");
         WString filename2(sOutputFolder);
-        RealityDataDownload::ExtractFileName(filename2, L"badFile.zip");
+        RealityDataDownload::ExtractFileName(filename2, L"can02.zip");
+        WString filename3(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename3, L"can03.zip");
+        WString filename4(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filename4, L"can04.zip");
         WString filename5(sOutputFolder);
         RealityDataDownload::ExtractFileName(filename5, L"can05.zip");
         WString filename6(sOutputFolder);
@@ -213,12 +217,14 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         RealityDataDownload::ExtractFileName(filename7, L"can07.zip");
         WString filename8(sOutputFolder);
         RealityDataDownload::ExtractFileName(filename8, L"can08.zip");
+        WString filenameBad(sOutputFolder);
+        RealityDataDownload::ExtractFileName(filenameBad, L"badFile.zip");
 
         bvector<bvector<std::pair<AString, WString>>> sisterFileTest = 
             {
                 {
                 std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a01_tif.zip", filename1),
-                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_0121_tif.zip", filename2)
+                std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_0121_tif.zip", filenameBad)
                 },
                 {
                 std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a05_tif.zip", filename5),
@@ -227,6 +233,33 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
                 std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a08_tif.zip", filename8)
                 }
             };
+
+        bvector<bvector<std::pair<AString, WString>>> cacheTest1 =
+        {
+            {
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
+            }
+        };
+
+        bvector<bvector<std::pair<AString, WString>>> cacheTest2 =
+        {
+            {
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename3),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename7)
+            }
+        };
+
+        bvector<bvector<std::pair<AString, WString>>> cacheTest3 =
+        {
+            {
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a02_tif.zip", filename2),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a06_tif.zip", filename6),
+            std::make_pair("ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/image/canimage/50k/012/a/canimage_012a07_tif.zip", filename4)
+            }
+        };
 
         bvector<std::pair<AString, WString>> wMirrors;
         bvector<bvector<std::pair<AString, WString>>> wSisters;
@@ -257,6 +290,9 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
             }
 
         urlList.push_back(sisterFileTest); //sister file test
+        urlList.push_back(cacheTest1); //dl first file, other 2 exist
+        urlList.push_back(cacheTest2); //dl second file, other 2 exist
+        urlList.push_back(cacheTest3); //dl last file, other 2 exist
         }
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);

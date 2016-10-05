@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/ConversionTools.cpp $
+|     $Source: RealityPlatform/RealityConversionTools.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <RealityPlatform/ConversionTools.h>
+#include <RealityPlatform/RealityConversionTools.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 * None of these fields are guaranteed, and should be validated by the user 
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt ConversionTools::JsonToWebResourceData(Utf8CP data, bvector<WebResourceDataPtr>* outData)
+StatusInt RealityConversionTools::JsonToWebResourceData(Utf8CP data, bvector<WebResourceDataPtr>* outData)
     {
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
@@ -111,3 +111,76 @@ StatusInt ConversionTools::JsonToWebResourceData(Utf8CP data, bvector<WebResourc
         }
     return SUCCESS;
     }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            9/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageStringToDownloadOrder(Utf8CP pSource, WStringP pParseError)
+    {
+    RealityPackage::RealityPackageStatus status = RealityPackage::RealityPackageStatus::UnknownError;
+
+    RealityPackage::RealityDataPackagePtr package = RealityPackage::RealityDataPackage::CreateFromString(status, pSource, pParseError);
+    BeAssert(status == RealityPackage::RealityPackageStatus::Success);
+    
+    return PackageToDownloadOrder(package);
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            9/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError)
+{
+    RealityPackage::RealityPackageStatus status = RealityPackage::RealityPackageStatus::UnknownError;
+
+    RealityPackage::RealityDataPackagePtr package = RealityPackage::RealityDataPackage::CreateFromFile(status, filename, pParseError);
+    BeAssert(status == RealityPackage::RealityPackageStatus::Success);
+
+    return PackageToDownloadOrder(package);
+}
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            9/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPackage::RealityDataPackagePtr package)
+{
+    bvector<RealityPackage::UriPtr> sisters;
+
+    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
+    
+    RealityPackage::RealityDataPackage::ImageryGroup files = package->GetImageryGroup();
+
+    for (RealityPackage::ImageryDataPtr file : files)
+    {
+        RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
+
+        size_t mirrorCount = file->GetNumSources();
+
+        RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
+
+        WString filename;
+        for (size_t i = 0; i < mirrorCount; ++i)
+        {
+            RealityPackage::RealityDataSourceCR mirror = file->GetSource(i);
+
+            RealityPackage::UriCR mainFile = mirror.GetUri();
+
+            RealityDataDownload::ExtractFileName(filename, mainFile.ToString());
+            sfVector.push_back(std::make_pair(mainFile.ToString(), filename));
+
+            sisters = mirror.GetSisterFiles();
+            for (RealityPackage::UriPtr sister : sisters)
+            {
+                if (sister->GetSource().length() > 0)
+                {
+                    RealityDataDownload::ExtractFileName(filename, sister->ToString());
+                    sfVector.push_back(std::make_pair(sister->ToString(), filename));
+                }
+            }
+            mVector.push_back(sfVector);
+
+        }
+        downloadOrder.push_back(mVector);
+    }
+
+    return downloadOrder;
+}

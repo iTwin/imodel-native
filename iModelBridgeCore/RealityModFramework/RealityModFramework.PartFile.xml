@@ -89,6 +89,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityPlatform\Example\ConversionToolsTester.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/ConversionToolsTester.exe</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform" />
@@ -99,6 +109,7 @@
     
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
+        <SubPart PartName="ConversionToolsTester"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
