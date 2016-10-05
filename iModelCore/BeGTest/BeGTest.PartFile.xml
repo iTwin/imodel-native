@@ -99,7 +99,7 @@
         <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
         <ProductDirectory Name="PlantDomainSchemasDir" Deliver="false"/>
         <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
-        <ProductDirectory Name="sqlang" Deliver="false"/>
+        <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
         
     </ProductDirectoryList>
 
