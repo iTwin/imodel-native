@@ -87,6 +87,8 @@ protected:
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
+
+    bool _IsParallelToGround() const override;
     
 public:
 

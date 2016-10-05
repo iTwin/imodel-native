@@ -273,3 +273,15 @@ void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
     m_fileProperties.FromJson(v);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+bool RasterFileModel::_IsParallelToGround() const
+    {
+    DMatrix4dCR srcToWlrd = GetSourceToWorld();
+    DVec3d uvCross = DVec3d::FromCrossProduct(srcToWlrd.coff[0][0], srcToWlrd.coff[1][0], srcToWlrd.coff[2][0],
+                                              srcToWlrd.coff[0][1], srcToWlrd.coff[1][1], srcToWlrd.coff[2][1]);
+
+    return uvCross.IsParallelTo(DVec3d::From(0, 0, 1));
+    }
+

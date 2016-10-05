@@ -127,7 +127,6 @@ StatusInt RasterClip::SetBoundary(CurveVectorP pBoundary)
         return SUCCESS;
         }
 
-    //&&MM validate. The Z-value?
     if (CurveVector::BOUNDARY_TYPE_Outer != pBoundary->GetBoundaryType()) 
         return ERROR;
 
@@ -144,7 +143,6 @@ StatusInt RasterClip::SetMasks(RasterClip::MaskVector const& masks)
     {
     for (auto const& mask : masks)
         {
-        //&&MM validate. The Z-value?
         if (CurveVector::BOUNDARY_TYPE_Inner != mask->GetBoundaryType())
             return ERROR;
         }
@@ -161,7 +159,6 @@ StatusInt RasterClip::SetMasks(RasterClip::MaskVector const& masks)
 //----------------------------------------------------------------------------------------
 StatusInt RasterClip::AddMask(CurveVectorR curve)
     {
-    //&&MM validate. The Z-value?
     if (CurveVector::BOUNDARY_TYPE_Inner != curve.GetBoundaryType())
         return ERROR;
 
@@ -293,7 +290,6 @@ ClipVectorCP RasterClip::GetClipVector() const
 //----------------------------------------------------------------------------------------
 RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
     {
-    //m_loadStatus = LoadRasterStatus::Unloaded;
     }
 
 //----------------------------------------------------------------------------------------
@@ -301,7 +297,6 @@ RasterModel::RasterModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 RasterModel::~RasterModel()
     {
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -377,8 +372,11 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
+    Transform depthTransfo;
+    ComputeDepthTransformation(depthTransfo, context);
+
     auto now = std::chrono::steady_clock::now();
-    TileTree::DrawArgs args(context, m_root->GetLocation(), now, now - m_root->GetExpirationTime());
+    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), now, now - m_root->GetExpirationTime());
     args.SetClip(GetClip().GetClipVector());
 
     m_root->Draw(args);
@@ -391,10 +389,78 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
         {
         TileTree::TileLoadsPtr loads = std::make_shared<TileTree::TileLoads>();
         args.RequestMissingTiles(*m_root, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads));
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new RasterProgressive(*m_root, args.m_missing, loads, depthTransfo));
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR context) const
+    {
+    BeAssert(m_root.IsValid());
+
+    if (0.0 == GetDepthBias() || context.GetViewport() == nullptr || !IsParallelToGround())
+        {
+        transfo.InitIdentity();
+        return;
+        }
+    
+    static double s_depthFactor = 1.0;
+
+    DVec3d viewZ;
+    context.GetViewport()->GetRotMatrix().GetRow(viewZ, 2);
+
+    DVec3d trans;
+    trans.ScaleToLength(viewZ, GetDepthBias()*s_depthFactor);
+
+    if (!context.IsCameraOn())
+        {
+        transfo.InitFrom(trans);
+        return;
+        }
+
+    CameraInfo const& cam = context.GetViewport()->GetCamera();
+    
+    ElementAlignedBox3d box = m_root->GetRootTile()->GetRange();
+
+    DPoint3d lowerLeft = box.low;
+    DPoint3d lowerRight = DPoint3d::From(box.high.x, box.low.y, box.low.z);
+    DPoint3d topLeft = DPoint3d::From(box.low.x, box.high.y, box.low.z);    
+
+    // Push raster corners toward the back of the viewport. 
+    DPoint3d lowerLeftBias = DPoint3d::FromSumOf(lowerLeft, trans);
+    DPoint3d lowerRightBias = DPoint3d::FromSumOf(lowerRight, trans);
+    DPoint3d topLeftBias = DPoint3d::FromSumOf(topLeft, trans);    
+        
+    DPlane3d biasPlane = DPlane3d::From3Points(lowerLeftBias, lowerRightBias, topLeftBias);
+    
+    // Camera eye to corners rays.
+    DRay3d lowerLeftRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), lowerLeft);
+    DRay3d lowerRightRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), lowerRight);
+    DRay3d topLeftRay = DRay3d::FromOriginAndTarget(cam.GetEyePoint(), topLeft);
+    
+    // Project corners to the bias plane in the eye-corners direction.
+    double intParam;
+    DPoint3d newCorners[3];
+    if (!lowerLeftRay.Intersect(newCorners[0], intParam, biasPlane) ||
+        !lowerRightRay.Intersect(newCorners[1], intParam, biasPlane) ||
+        !topLeftRay.Intersect(newCorners[2], intParam, biasPlane))
+        {
+        transfo.InitIdentity();
+        return;
+        }
+
+    Transform transA;
+    transA.InitFromPlaneOf3Points(lowerLeft, lowerRight, topLeft);
+    Transform transAInverse;
+    transAInverse.InverseOf(transA);
+
+    Transform transB;
+    transB.InitFromPlaneOf3Points(newCorners[0], newCorners[1], newCorners[2]);
+      
+    transfo.InitProduct(transB, transAInverse);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
@@ -489,3 +555,29 @@ void RasterModelHandler::_GetClassParams(ECSqlClassParamsR params)
     T_Super::_GetClassParams(params);
     params.Add(RASTER_MODEL_PROP_Clip, ECSqlClassParams::StatementType::All);
     }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::_WriteJsonProperties(Json::Value& v) const
+    {
+    v["depthBias"] = m_depthBias;
+
+    T_Super::_WriteJsonProperties(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::_ReadJsonProperties(Json::Value const& v)
+    {
+    m_depthBias = v.isMember("depthBias") ? v["depthBias"].asDouble() : 0.0;
+
+    T_Super::_ReadJsonProperties(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+bool RasterModel::IsParallelToGround() const {return _IsParallelToGround();}
