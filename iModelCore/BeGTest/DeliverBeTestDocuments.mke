@@ -7,13 +7,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-thisDir = $(_makeFilePath)
-
-%if defined (CREATE_STATIC_LIBRARIES)
-    ProductRoot = $(OutputRootDir)../Product/
-%else
-    ProductRoot = $(OutputRootDir)Product/
-%endif
+ProductRoot = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/
 
 $(BuildContext)Delivery/UnitTests/Documents : $(ProductRoot)BeTestDocuments/DgnDb
     $(LinkFirstDepToFirstTargetAsDirectory)
