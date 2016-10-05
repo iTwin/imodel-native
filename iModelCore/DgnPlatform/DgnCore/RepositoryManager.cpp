@@ -431,6 +431,7 @@ void BriefcaseManager::InsertCodes(DgnCodeSet const& codes, TableType tableType)
         stmt->BindText(CodeColumn::NameSpace+1, code.GetNamespace(), Statement::MakeCopy::No);
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         stmt->Step();
+        stmt->Reset();
         }
     }
 

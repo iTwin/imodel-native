@@ -2581,6 +2581,7 @@ TEST_F(CodesManagerTest, BatchReserveAndInsert)
         AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
         style->SetName(Utf8PrintfString("Style%u", i).c_str());
         style->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+        elemsToInsert.push_back(style);
         }
 
     EXPECT_EQ(RepositoryStatus::Success, mgr.Acquire(req).Result());
@@ -2588,11 +2589,12 @@ TEST_F(CodesManagerTest, BatchReserveAndInsert)
     for (auto& elem : elemsToInsert)
         {
         DgnDbStatus status;
-        EXPECT_TRUE(elem->Insert().IsValid());
+        EXPECT_TRUE(elem->Insert(&status).IsValid());
         EXPECT_EQ(DgnDbStatus::Success, status);
         }
 
     elemsToInsert.clear();
+    db.SaveChanges();
     }
 
 
