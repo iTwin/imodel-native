@@ -10,7 +10,7 @@
 #include <DgnPlatform/RevisionManager.h>
 #include <DgnDbServer/Client/Logging.h>
 #include "DgnDbServerUtils.h"
-
+#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 #include <thread>
 #include <random>
 
@@ -75,6 +75,10 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return DgnDbServerRevisionMergeResult::Error(result.GetError());
             }
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::AfterDownloadRevisions);
+#endif
+
         auto serverRevisions = result.GetValue();
         RevisionStatus mergeStatus = RevisionStatus::Success;
 
@@ -219,10 +223,17 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
             return;
             }
 
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforeStartCreateRevision);
+#endif
         DgnDbServerHost::Adopt(host);
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to create a new revision.");
         DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
         DgnDbServerHost::Forget(host, false);
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::AfterStartCreateRevision);
+#endif
+
         if (!revision.IsValid())
             {
             // No changes. Return success.
@@ -230,20 +241,31 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
             finalResult->SetSuccess(result.GetValue());
             return;
             }
-
         revision->SetSummary(description);
 
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Created revision with ID %s.", revision->GetId().c_str());
         Utf8String revisionId = revision->GetId();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting push.");
+
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforePushRevisionToServer);
+#endif
         m_repositoryConnection->Push(revision, m_db->GetBriefcaseId(), relinquishCodesLocks, uploadCallback, cancellationToken)->Then
             ([=] (DgnDbServerStatusResultCR pushResult)
             {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::AfterPushRevisionToServer);
+#endif
+
             if (pushResult.IsSuccess())
                 {
                 DgnDbServerHost::Adopt(host);
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Push successful. Finishing creating new revision.");
                 Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
+
+#if defined (ENABLE_BIM_CRASH_TESTS)
+                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::AfterFinishCreateRevision);
+#endif
                 m_db->SaveChanges();
                 DgnDbServerHost::Forget(host);
                 if (RevisionStatus::Success == status)
