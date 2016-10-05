@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
+#ifdef DGNDBSERVER_UNIT_TESTS
 #include "DgnDbServerEventParserTests.h"
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
@@ -497,3 +497,4 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     }
+#endif

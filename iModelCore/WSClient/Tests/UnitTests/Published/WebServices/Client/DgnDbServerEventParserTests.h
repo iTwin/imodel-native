@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+#ifdef DGNDBSERVER_UNIT_TESTS
 #include "../../Utils/WebServicesTestsHelper.h"
 
 //---------------------------------------------------------------------------------------
@@ -142,3 +142,4 @@ class DgnDbServerEventParserTests : public BaseMockHttpHandlerTest
     {
     void SetUp() override;
     };
+#endif
