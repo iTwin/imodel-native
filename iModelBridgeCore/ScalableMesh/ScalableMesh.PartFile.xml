@@ -218,7 +218,8 @@
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
         <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="AutomaticGroundDetection" Path="Dlls"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>    
         <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>

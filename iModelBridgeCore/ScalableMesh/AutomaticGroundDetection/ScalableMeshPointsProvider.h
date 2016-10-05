@@ -21,7 +21,7 @@ USING_NAMESPACE_GROUND_DETECTION
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     12/2015
+* @bsiclass                                             Marc.Bedard     12/2015
 +===============+===============+===============+===============+===============+======*/
 struct ScalableMeshPointsProvider : public IPointsProvider
 {
@@ -29,17 +29,17 @@ public:
 
     static IPointsProviderPtr CreateFrom(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors);
 
-	double    GetMeterToSRSFactor() const;
-	Transform GetRootToNativeTransform() const;
-	
-	BentleyStatus GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const;
+    double    GetMeterToSRSFactor() const;
+    Transform GetRootToNativeTransform() const;
+    
+    BentleyStatus GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const;
 
 private:
     
-	//static BeCriticalSection s_MRMEshQueryCS;
+    //static BeCriticalSection s_MRMEshQueryCS;
 
-	IScalableMeshPtr m_smesh;
-	Transform		 m_transform;
+    IScalableMeshPtr m_smesh;
+    Transform         m_transform;
     
     ScalableMeshPointsProvider(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors);
     ScalableMeshPointsProvider(ScalableMeshPointsProvider const & object);
@@ -65,7 +65,7 @@ private:
             virtual void          _MoveToNext() override;
             virtual ReturnType&   _GetCurrent() const override;
             virtual bool          _IsAtEnd() const override;
-        };	
+        };    
 
     void    InternalQueryPoints() const;
         
@@ -75,7 +75,7 @@ private:
     virtual void           _ClearPrefetchedPoints() override;
     virtual Transform      _GetMeterToNativeTransform() const override;
     virtual double         _GetExportResolution() const override;
-	virtual BeFileName	   _GetFileName() const override;
+    virtual BeFileName       _GetFileName() const override;
     
     virtual  IPointsProvider::const_iterator _begin() const override;
     virtual  IPointsProvider::const_iterator _end() const override;
@@ -87,26 +87,28 @@ typedef RefCountedPtr<ScalableMeshPointsProviderCreator> ScalableMeshPointsProvi
 
 
 struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
-	{
-	private :
+    {
+    private :
 
-		IScalableMeshPtr m_smesh;
+        IScalableMeshPtr m_smesh;
 
-	protected : 
+    protected : 
 
-		virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) override;
+        virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) override;
 
-		virtual IPointsProviderPtr _CreatePointProvider() override;
+        virtual IPointsProviderPtr _CreatePointProvider() override;
 
-	public :
+        virtual void               _GetAvailableRange(DRange3d& availableRange) override;
 
-		ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh);		
+    public :
 
-		virtual ~ScalableMeshPointsProviderCreator();
+        ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh);        
 
-		static ScalableMeshPointsProviderCreatorPtr Create(IScalableMeshPtr& smesh);
+        virtual ~ScalableMeshPointsProviderCreator();
 
-	};
+        static ScalableMeshPointsProviderCreatorPtr Create(IScalableMeshPtr& smesh);
+
+    };
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

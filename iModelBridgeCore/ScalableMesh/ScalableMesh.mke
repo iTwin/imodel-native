@@ -454,8 +454,8 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
-	$(ContextSubpartsLibs)AutomaticGroundDetection.lib
-	
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+    
 
 %include $(sharedMki)LinkLibrary.mki
 

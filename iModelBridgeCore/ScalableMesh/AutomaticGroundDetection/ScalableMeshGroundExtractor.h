@@ -33,21 +33,21 @@ typedef RefCountedPtr<ScalableMeshGroundExtractor> ScalableMeshGroundExtractorPt
 +----------------------------------------------------------------------------*/
 struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtractor>
     {
-	private: 
+    private: 
 
-		IScalableMeshPtr m_scalableMesh;
+        IScalableMeshPtr m_scalableMesh;
 
-    protected:				   
+    protected:                   
 
-		virtual StatusInt					_ExtractAndEmbed() override;     
+        virtual StatusInt                    _ExtractAndEmbed() override;     
 
-		explicit                            ScalableMeshGroundExtractor(IScalableMeshPtr& scalableMesh);
+        explicit                            ScalableMeshGroundExtractor(IScalableMeshPtr& scalableMesh);
 
-		virtual                             ~ScalableMeshGroundExtractor();
+        virtual                             ~ScalableMeshGroundExtractor();
     
 public:
 
-	static ScalableMeshGroundExtractorPtr Create(IScalableMeshPtr& scalableMesh);		
+    static ScalableMeshGroundExtractorPtr Create(IScalableMeshPtr& scalableMesh);        
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

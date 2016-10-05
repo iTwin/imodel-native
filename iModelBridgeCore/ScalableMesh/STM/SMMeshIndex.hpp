@@ -3469,7 +3469,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     delete[] pixelBuffer;
 #endif
     Byte *pPixel = pixelBufferP + 3 * sizeof(int);
-	for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
         {
         *pPixel++ = pixelBufferPRGBA[i * 4];
         *pPixel++ = pixelBufferPRGBA[i * 4 + 1];

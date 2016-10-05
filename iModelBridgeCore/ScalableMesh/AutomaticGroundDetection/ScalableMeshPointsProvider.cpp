@@ -39,13 +39,13 @@ ScalableMeshPointsProvider::ScalableMeshPointsProvider(IScalableMeshPtr& smesh, 
 :IPointsProvider(boundingBoxInUors), 
  m_smesh(smesh)
     {
-	m_transform = Transform::FromIdentity();
+    m_transform = Transform::FromIdentity();
     //BeCriticalSectionHolder lock(s_MRMEshQueryCS);
-	/*
+    /*
     IMRMeshAttachment* pIMRMeshQuery = dynamic_cast<IMRMeshAttachment*>(&eh.GetHandler());
     if (pIMRMeshQuery!=NULL)
         pIMRMeshQuery->_GetAttachmentInfo(m_info, eh);
-		*/
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,13 +54,13 @@ ScalableMeshPointsProvider::ScalableMeshPointsProvider(IScalableMeshPtr& smesh, 
 ScalableMeshPointsProvider::ScalableMeshPointsProvider(ScalableMeshPointsProvider const& object)
 :IPointsProvider(object)
     {
-	/*
+    /*
     BeCriticalSectionHolder lock(s_MRMEshQueryCS);
 
     IMRMeshAttachment* pIMRMeshQuery = dynamic_cast<IMRMeshAttachment*>(&m_eh.GetHandler());
     if (pIMRMeshQuery != NULL)
         pIMRMeshQuery->_GetAttachmentInfo(m_info, m_eh);
-		*/
+        */
     }
 
 
@@ -91,7 +91,7 @@ void ScalableMeshPointsProvider::_PrefetchPoints()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ScalableMeshPointsProvider::_GetExportResolution() const
     {
-	/*
+    /*
     double uorPerMeter(mdlModelRef_getUorPerMeter(mdlModelRef_getActive()));
 
     double resolution((m_info.m_exportResolution / uorPerMeter));
@@ -99,10 +99,10 @@ double ScalableMeshPointsProvider::_GetExportResolution() const
     //Use smallest resolution between expected from caller and what is set in MrMesh info
     if (m_exportResolution>0.0)
         resolution = m_exportResolution < resolution ? m_exportResolution : resolution;
-		-*/
-	assert(!"Not done yet");
+        -*/
+    assert(!"Not done yet");
 
-	double resolution = 1;
+    double resolution = 1;
 
     return resolution;
     }
@@ -112,7 +112,7 @@ double ScalableMeshPointsProvider::_GetExportResolution() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const
     {    
-	assert(m_smesh.IsValid());
+    assert(m_smesh.IsValid());
     
     ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = m_smesh->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
     bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
@@ -173,15 +173,15 @@ void ScalableMeshPointsProvider::InternalQueryPoints() const
         DRange3d rangeNative;   //in SRS
         rootToNativeTransform.Multiply(rangeNative, range);
 
-        //use finer resolution or default				
+        //use finer resolution or default                
         double meterToSRSFactor(GetMeterToSRSFactor());
 
         //Use smallest resolution between expected from caller and what is set in MrMesh info
         double resolution(GetExportResolution()* meterToSRSFactor);
         
-		ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL));
+        ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL));
 
-		GetPoints(m_prefetchedPoints, &resolution, clip.get());
+        GetPoints(m_prefetchedPoints, &resolution, clip.get());
 
         m_prefetchPoints = true;
         Transform transformToApply(nativeToMeter);
@@ -215,17 +215,17 @@ double ScalableMeshPointsProvider::GetMeterToSRSFactor() const
     double meterToSRSFactor(1.0);
     //Find meter to SRS transform
 
-	GeoCoordinates::BaseGCSCPtr baseGcs(m_smesh->GetBaseGCS());
+    GeoCoordinates::BaseGCSCPtr baseGcs(m_smesh->GetBaseGCS());
     
     if (baseGcs->IsValid())
         {
-		WString unitName;		
-		GeoCoordinates::Unit const* gcsUnit = GeoCoordinates::Unit::FindUnit(baseGcs->GetUnits(unitName));
+        WString unitName;        
+        GeoCoordinates::Unit const* gcsUnit = GeoCoordinates::Unit::FindUnit(baseGcs->GetUnits(unitName));
 
-		if (gcsUnit == nullptr)
-			return meterToSRSFactor;
+        if (gcsUnit == nullptr)
+            return meterToSRSFactor;
 
-		meterToSRSFactor = gcsUnit->GetConversionFactor();
+        meterToSRSFactor = gcsUnit->GetConversionFactor();
         }
 
     return meterToSRSFactor;
@@ -237,7 +237,7 @@ double ScalableMeshPointsProvider::GetMeterToSRSFactor() const
 Transform ScalableMeshPointsProvider::GetRootToNativeTransform() const 
     {
     // Get the transformation from the model to the root
-	/**
+    /**
     Transform toRoot;
     toRoot.initIdentity();
     DgnModelRefP model = m_eh.GetModelRef();
@@ -254,10 +254,10 @@ Transform ScalableMeshPointsProvider::GetRootToNativeTransform() const
 
     Transform rootToNative;
     rootToNative.inverseOf(&nativeToRoot);
-	*/
+    */
 
-	assert(!"Not done yet");
-	Transform rootToNative(Transform::FromIdentity());
+    assert(!"Not done yet");
+    Transform rootToNative(Transform::FromIdentity());
 
     return rootToNative;
     }
@@ -276,7 +276,7 @@ Transform ScalableMeshPointsProvider::_GetMeterToNativeTransform() const
     meterToUor.InverseOf(uorToMeters);
 
     Transform meterToNative;
-	meterToNative.InitProduct(rootToNative, meterToUor);
+    meterToNative.InitProduct(rootToNative, meterToUor);
     //meterToNative.ProductOf(rootToNative, meterToUor);
 
     return meterToNative;
@@ -288,9 +288,9 @@ BeFileName ScalableMeshPointsProvider::_GetFileName() const
     {/*
     BeFileName fileName(m_info.m_fileName.c_str());
     return fileName;
-	*/
-	BeFileName fileName(L"");
-	return fileName;
+    */
+    BeFileName fileName(L"");
+    return fileName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,13 +369,13 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
     {
     public:
         friend struct ScalableMeshPointsProvider;
-		friend IPointsProvider;
+        friend IPointsProvider;
 
     private:
 
-		bvector<DPoint3d>							     m_points;
-        bvector<DPoint3d>::const_iterator				 m_endItr;
-        bvector<DPoint3d>::const_iterator				 m_currentItr;
+        bvector<DPoint3d>                                 m_points;
+        bvector<DPoint3d>::const_iterator                 m_endItr;
+        bvector<DPoint3d>::const_iterator                 m_currentItr;
         mutable DPoint3d                                 m_currentPtTransformed;
         Transform                                        m_transformToApply;
         
@@ -392,25 +392,25 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
             DRange3d rangeNative;   //in SRS
             rootToNativeTransform.Multiply(rangeNative, range);
 
-            //use finer resolution or default			
+            //use finer resolution or default            
             double meterToSRSFactor(scalableMeshPointProvider.GetMeterToSRSFactor());
 
             //Use smallest resolution between expected from caller and what is set in MrMesh info
             double resolution(scalableMeshPointProvider.GetExportResolution()* meterToSRSFactor);
 
-			/*
+            /*
             IMRMeshAttachment* pIMRMeshQuery = dynamic_cast<IMRMeshAttachment*>(&scalableMeshPointProvider.m_eh.GetHandler());
             BeAssert(pIMRMeshQuery != NULL);
             if (pIMRMeshQuery != NULL)
                 {
-				*/				
+                */                
 
                 ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL));
-											
-				BentleyStatus status = scalableMeshPointProvider.GetPoints(m_points, &resolution, clip.get());				
-				assert(status == SUCCESS);
-				m_endItr = m_points.end();
-								                
+                                            
+                BentleyStatus status = scalableMeshPointProvider.GetPoints(m_points, &resolution, clip.get());                
+                assert(status == SUCCESS);
+                m_endItr = m_points.end();
+                                                
                 if (isAtEnd)
                     m_currentItr =  m_endItr;
                 else
@@ -490,30 +490,37 @@ IPointsProvider::const_iterator ScalableMeshPointsProvider::_end() const
 * ScalableMeshPointsProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScalableMeshPointsProviderCreatorPtr ScalableMeshPointsProviderCreator::Create(IScalableMeshPtr& smesh)
-	{
-	return new ScalableMeshPointsProviderCreator(smesh);
-	}
+    {
+    return new ScalableMeshPointsProviderCreator(smesh);
+    }
 
 ScalableMeshPointsProviderCreator::ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh)
-	{
-	m_smesh = smesh;
-	}
+    {
+    m_smesh = smesh;
+    }
 
 ScalableMeshPointsProviderCreator::~ScalableMeshPointsProviderCreator()
-	{	
-	}
+    {    
+    }
 
 IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider(DRange3d const& boundingBoxInUors) 
-	{
-	return ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors);
-	}
+    {
+    return ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors);
+    }
 
 IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider() 
-	{	
-	assert(!"Not supported yet");
-	DRange3d range; 
-	return ScalableMeshPointsProvider::CreateFrom(m_smesh, range);
-	}
+    {    
+    assert(!"Not supported yet");
+    DRange3d range; 
+    return ScalableMeshPointsProvider::CreateFrom(m_smesh, range);
+    }
 
-			
+
+void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRange) 
+    {    
+    DTMStatusInt status = m_smesh->GetRange(availableRange);
+
+    assert(status == SUCCESS);           
+    }
+            
 END_BENTLEY_SCALABLEMESH_NAMESPACE

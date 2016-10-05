@@ -2,7 +2,7 @@
 |
 |     $Source: PCLWrapper/NormalCalculator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PCLWrapperPch.h"
@@ -36,12 +36,12 @@ IStatusPtr INormalCalculator::ComputeNormals(DVec3d*        pNormals,
         }
     pcl::search::Search<pcl::PointXYZ>::Ptr searchMethod(/*new pcl::search::KdTree<pcl::PointXYZ>()*/NULL);
     status = ComputePointNormals(normals, points, indices, 10, searchMethod, false);
-	pcl::PointXYZ minP, maxP;
-	pcl::getMinMax3D(*points, minP, maxP);
-	Eigen::Vector3f vp(minP.x + (maxP.x - minP.x) / 2, minP.y + (maxP.y - minP.y) / 2, maxP.z+(maxP.z-minP.z));
+    pcl::PointXYZ minP, maxP;
+    pcl::getMinMax3D(*points, minP, maxP);
+    Eigen::Vector3f vp(minP.x + (maxP.x - minP.x) / 2, minP.y + (maxP.y - minP.y) / 2, maxP.z+(maxP.z-minP.z));
     for (int i = 0; i < normals->points.size(); i++)
         {
-		pcl::flipNormalTowardsViewpoint(points->points[i], vp[0], vp[1], vp[2], normals->points[i].normal_x, normals->points[i].normal_y, normals->points[i].normal_z);
+        pcl::flipNormalTowardsViewpoint(points->points[i], vp[0], vp[1], vp[2], normals->points[i].normal_x, normals->points[i].normal_y, normals->points[i].normal_z);
         pNormals[i].x = normals->points[i].normal_x;
         pNormals[i].y = normals->points[i].normal_y;
         pNormals[i].z = normals->points[i].normal_z;

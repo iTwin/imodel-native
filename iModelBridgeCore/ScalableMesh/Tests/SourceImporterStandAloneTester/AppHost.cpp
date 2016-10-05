@@ -195,7 +195,7 @@ virtual bool                    _IsProgressiveDisplayEnabled() const    {return 
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     02/2011
+* @bsiclass                                             Marc.Bedard     02/2011
 +===============+===============+===============+===============+===============+======*/
 struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Host 
 {
