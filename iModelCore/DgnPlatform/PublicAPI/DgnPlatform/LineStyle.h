@@ -1513,11 +1513,7 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    //! Gets the line style map associated with the specified project.
-    //! @return a A pointer to the map if it is loaded or if not loaded but loadIfNotLoaded is true; NULL otherwise
-    DGNPLATFORM_EXPORT static LsCacheP  GetDgnDbCache             (DgnDbR);
-
-    DGNPLATFORM_EXPORT Utf8String                  GetFileName             () const;    //!< Name of file used to load the map.
+    DGNPLATFORM_EXPORT Utf8String GetFileName() const;    //!< Name of file used to load the map.
 
     //! Searches the set of ID's associated with the LsCache.
     //! @param[in] styleId The ID that is used to associate an element with a line style.
@@ -1537,8 +1533,8 @@ public:
     //! @see LsCache::GetLineStyleP
     DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (DgnStyleId styleId) const;
 
-    //!  Gets a pointer to the associated DgnDb.
-    //!  @remark Use GetDgnDbCache to get a pointer to a DgnDb's LsCache.
+    //!  Gets a reference to the associated DgnDb.
+    //!  @remark Use DgnDb::LineStyles().GetCache() to get a reference to a DgnDb's LsCache.
     DGNPLATFORM_EXPORT DgnDbCR      GetDgnDb  () const;
 
     typedef LsCacheStyleIterator const_iterator;
@@ -1558,9 +1554,12 @@ struct DgnLineStyles : RefCountedBase
 {
     friend struct DgnDb;
 private:
-    DgnDbR                              m_dgndb;
-    LsCachePtr                          m_lineStyleMap;
-    bmap<LsLocation, LsComponentPtr>    m_loadedComponents;
+    typedef bmap<LsLocation, LsComponentPtr> LoadedComponents;
+
+    DgnDbR              m_dgndb;
+    LsCachePtr          m_lineStyleMap;
+    LoadedComponents    m_loadedComponents;
+    BeMutex             m_mutex;
 
     DgnLineStyles(DgnDbR db) : m_dgndb(db) { }
 public:
@@ -1573,7 +1572,7 @@ public:
     //! Updates an a Line Style in the styles table..
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
-    DGNPLATFORM_EXPORT LsCacheP GetLsCacheP ();
+    DGNPLATFORM_EXPORT LsCacheR GetCache();
 };
 
 //__PUBLISH_SECTION_END__

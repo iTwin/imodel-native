@@ -1084,8 +1084,8 @@ LsCacheP LsLocation::GetCacheP () const
     {
     if (GetDgnDb() == nullptr)
         return nullptr;
-
-    return LsCache::GetDgnDbCache(*GetDgnDb());
+    else
+        return &GetDgnDb()->LineStyles().GetCache();
     }
 
 //---------------------------------------------------------------------------------------

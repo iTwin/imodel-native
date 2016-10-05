@@ -404,7 +404,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     if (!styleId.IsValid())
         return;
 
-    LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
+    LsCacheP lsCache = &context.GetDgnDb().LineStyles().GetCache();
     LsDefinitionP nameRec = lsCache->GetLineStyleP(styleId);
 
     if (nullptr == nameRec)
