@@ -97,9 +97,8 @@ struct ClassMap : RefCountedBase
 
         enum class PropertyMapInheritanceMode
             {
-            New, //!< inherited property maps are never reused or cloned, but always created from scratch in the subclass
-            Reuse, //! inherited property maps are reused by subclasses
-            Clone //! inherited property maps are always cloned from the base class property map
+            NotInherited, //!< indicates that base property map is not inherited, but created from scratch
+            Clone //! inherited property maps are cloned from the base class property map
             };
 
         struct TablePerHierarchyHelper
@@ -138,28 +137,6 @@ struct ClassMap : RefCountedBase
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 
-        //! Rules:
-        //! If MapStrategy != TPH: New
-        //! If MapStrategy == TPH, but without joined tables: Reuse
-        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
-        PropertyMapInheritanceMode GetPropertyMapInheritanceMode(ECN::ECPropertyCR prop) const
-            {
-            BeAssert(&prop.GetClass() != &m_ecClass);
-            PropertyMapInheritanceMode perClassMode = GetPropertyMapInheritanceMode();
-            if (perClassMode == PropertyMapInheritanceMode::New) //default mode
-                return perClassMode;
-
-            //If mode is reuse, it must be overwritten for nav props which must always be cloned if not in default mode
-            if (prop.GetIsNavigation())
-                return PropertyMapInheritanceMode::Clone;
-
-            return perClassMode;
-            }
-
-        //! Rules:
-        //! If MapStrategy != TPH: New
-        //! If MapStrategy == TPH, but without joined tables: Reuse
-        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
         PropertyMapInheritanceMode GetPropertyMapInheritanceMode() const { return GetPropertyMapInheritanceMode(m_mapStrategyExtInfo); }
 
     protected:
@@ -235,21 +212,14 @@ struct ClassMap : RefCountedBase
             }
 
         //! Rules:
-        //! If MapStrategy != TPH: New
-        //! If MapStrategy == TPH, but without joined tables: Reuse
-        //! If MapStrategy == TPH either with joined tables or for a navigation property: Clone
+        //! If MapStrategy != TPH: NotInherited
+        //! Else: Clone
         static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
             {
-            //No TPH
             if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
-                return PropertyMapInheritanceMode::New;
+                return PropertyMapInheritanceMode::NotInherited;
 
-            //TPH with joined tables
-            //if (mapStrategyExtInfo.GetTphInfo().IsValid() && mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
-                return PropertyMapInheritanceMode::Clone;
-
-            //TPH without joined tables
-            //return PropertyMapInheritanceMode::Reuse;
+            return PropertyMapInheritanceMode::Clone;
             }
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);

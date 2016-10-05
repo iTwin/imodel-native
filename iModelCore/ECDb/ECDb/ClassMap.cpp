@@ -353,7 +353,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
-    if (inheritanceMode != PropertyMapInheritanceMode::New)
+    if (inheritanceMode != PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -374,14 +374,14 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         if (&property->GetClass() == &m_ecClass ||
-            (inheritanceMode = GetPropertyMapInheritanceMode(*property)) == PropertyMapInheritanceMode::New)
+            inheritanceMode == PropertyMapInheritanceMode::NotInherited)
             {
-            //Property is not inherited or has mode New -> must be mapped
+            //Property map that should not be inherited -> must be mapped
             propertiesToMap.push_back(property);
             continue;
             }
 
-        //look for the base class' property map as property is inherited and not owned by this prop map
+        //look for the base class' property map as property is inherited
         PropertyMapPtr baseClassPropMap = nullptr;
         for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
@@ -396,19 +396,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             continue;
             }
 
-        //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
-        //as the context (table, containing ECClass) is different
-        //in all other cases, we can just use the base class' property map
-        PropertyMapPtr propertyMap = nullptr;
-        if (inheritanceMode == PropertyMapInheritanceMode::Clone)
-            propertyMap = PropertyMapFactory::ClonePropertyMap(ctx.GetClassMapLoadContext(), *baseClassPropMap, m_ecClass, nullptr);
-        else
-            {
-            //WIP_BASECLASSMAPID_REFACTOR
-            BeAssert(false && "should not reach this");
-            propertyMap = baseClassPropMap;
-            }
-
+        PropertyMapPtr propertyMap = PropertyMapFactory::ClonePropertyMap(ctx.GetClassMapLoadContext(), *baseClassPropMap, m_ecClass, nullptr);
         if (GetPropertyMapsR().AddPropertyMap(propertyMap) != SUCCESS)
             return MappingStatus::Error;
         }
@@ -614,16 +602,9 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
         }
 
     DbClassMapSaveContext classMapSaveContext(ctx);
-    ECClassId ownerClassMapId = GetClass().GetId();
     for (PropertyMapCP propertyMap : GetPropertyMaps())
         {
-        if (propertyMap->GetOwnerClassMapId() != ownerClassMapId)
-            {
-            //WIP_BASECLASSMAPID_REFACTOR Is this the correct replacement?
-            BeAssert(false && "Should not be reached anymore");
-            continue; //reused inherited property maps are not saved
-            }
-
+        BeAssert(GetClass().GetId() == propertyMap->GetOwnerClassMapId());
         if (SUCCESS != propertyMap->Save(classMapSaveContext))
             return ERROR;
         }
@@ -655,7 +636,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return SUCCESS;
         }
 
-    for (auto const& propMapping : dbLoadCtx.GetPropertyMaps())
+    for (std::pair<Utf8String, std::vector<DbColumn const*>> const& propMapping : dbLoadCtx.GetPropertyMaps())
         {
         std::vector<DbColumn const*> const& columns = propMapping.second;
         for (DbColumn const* column : columns)
@@ -708,7 +689,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     {
     bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
-    if (inheritanceMode != PropertyMapInheritanceMode::New)
+    if (inheritanceMode != PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -725,38 +706,22 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
 
-    std::vector<std::pair<ECPropertyCP, PropertyMapCP>> unloadedProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        if (&property->GetClass() == &m_ecClass || inheritanceMode == PropertyMapInheritanceMode::New)
+        PropertyMapPtr tphBaseClassPropMap = nullptr;
+        if (&property->GetClass() != &m_ecClass && inheritanceMode == PropertyMapInheritanceMode::Clone)
             {
-
-            //Property is not inherited or has not mode reuse -> must be loaded explicitly
-            unloadedProperties.push_back(std::make_pair(property, nullptr));
-            continue;
+            for (ClassMap const* baseClassMap : tphBaseClassMaps)
+                {
+                if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(tphBaseClassPropMap, property->GetName().c_str()))
+                    break;
+                }
             }
-
-        //look for the base class' property map as property map is reused from base class map
-        PropertyMapPtr baseClassPropMap = nullptr;
-        for (ClassMap const* baseClassMap : tphBaseClassMaps)
-            {
-            if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(baseClassPropMap, property->GetName().c_str()))
-                break;
-            }
-
-        unloadedProperties.push_back(std::make_pair(property, baseClassPropMap.get()));
-        }
-
-    for (std::pair<ECPropertyCP, PropertyMapCP> const& pair : unloadedProperties)
-        {
-        ECPropertyCP prop = pair.first;
-        PropertyMapCP tphBasePropMap = pair.second;
 
         PropertyMapPtr propMap = nullptr;
-
-        if (tphBasePropMap == nullptr)
+        if (tphBaseClassPropMap == nullptr)
             {
-            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), GetClass(), *prop, prop->GetName().c_str(), nullptr);
+            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), GetClass(), *property, property->GetName().c_str(), nullptr);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -788,7 +753,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         else
             {
-            propMap = PropertyMapFactory::ClonePropertyMap(ctx, *tphBasePropMap, GetClass(), nullptr);
+            propMap = PropertyMapFactory::ClonePropertyMap(ctx, *tphBaseClassPropMap, GetClass(), nullptr);
 
             if (propMap == nullptr)
                 return ERROR;

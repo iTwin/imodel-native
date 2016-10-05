@@ -816,7 +816,6 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
         }
 
     RelationshipClassEndTableMap const& baseRelClassMap = static_cast<RelationshipClassEndTableMap const&>(*baseClassMap);
-    ClassMapLoadContext& classLoadCtx = GetECDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
     //ECInstanceId property map
     PropertyMapCP basePropMap = baseRelClassMap.GetECInstanceIdPropertyMap();
     if (basePropMap == nullptr)
@@ -825,6 +824,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
         return ERROR;
         }
 
+    ClassMapLoadContext& classLoadCtx = GetECDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
     if (GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(classLoadCtx, *basePropMap, GetClass(), nullptr)) != SUCCESS)
         return ERROR;
 
@@ -1389,9 +1389,9 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
     if (stat != MappingStatus::Success)
         return stat;
 
+    //only create constraints on TPH root or if not TPH and not existing table
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing &&
-        (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId())) //if subclass we must not create any FK anymore, as the base class mapping did that already
-        //WIP_BASECLASSMAPID_REFACTOR Is this the correct replacement?
+        (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId())) 
         {
         RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
 
