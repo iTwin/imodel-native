@@ -131,12 +131,8 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
-
-%if defined (BENTLEYCONFIG_FOLLY)
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-%endif
-
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 %include $(sharedMki)LinkLibrary.mki
 

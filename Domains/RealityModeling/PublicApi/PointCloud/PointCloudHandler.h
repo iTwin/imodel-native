@@ -32,7 +32,7 @@ public:
         {
         DEFINE_T_SUPER(Dgn::SpatialModel::CreateParams);
 
-        Utf8String m_fileId;
+        Utf8String m_fileUri;
 
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
@@ -41,9 +41,9 @@ public:
             //! Parameters to create a new instance of a PointCloudModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] code The Code for the DgnModel
-            //! @param[in] fileId File Id of the PointCloud file.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
-                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId)
+            //! @param[in] fileUri File URI of the PointCloud file.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileUri) :
+                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileUri(fileUri)
                 {}
         };
         
@@ -59,7 +59,7 @@ public:
         Properties();
         ~Properties() {}
 
-        Utf8String      m_fileId;           //! File id provided by the application. Used to resolve the local file name.
+        Utf8String      m_fileUri;          //! File URI provided by the application. Used to resolve the local file name.
         Utf8String      m_description;
 
         Transform       m_sceneToWorld;     //! Including reprojection transformation if any.

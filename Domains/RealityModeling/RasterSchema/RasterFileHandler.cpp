@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_RASTER
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 RasterFileProperties::RasterFileProperties()
-    :m_fileId("")
+    :m_fileUri("")
     {
     m_sourceToWorld.InitIdentity();
     }
@@ -55,7 +55,7 @@ static void DMatrix4dToJson (JsonValueR outValue, DMatrix4dCR matrix)
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
-    v["fileId"] = m_fileId.c_str();
+    v["fileUri"] = m_fileUri.c_str();
     DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
     }
 
@@ -64,7 +64,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
-    m_fileId = v["fileId"].asString();
+    m_fileUri = v["fileUri"].asString();
     DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
     }
 
@@ -164,7 +164,7 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
     {
     // Find resolved file name for the raster
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
     if (status != SUCCESS)
         {
         return nullptr;
@@ -183,7 +183,7 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
         }
 
     RasterFileProperties props;
-    props.m_fileId = params.m_fileId;
+    props.m_fileUri = params.m_fileUri;
 
     if (params.m_sourceToWorldP != nullptr)
         props.m_sourceToWorld = *params.m_sourceToWorldP;
@@ -238,7 +238,7 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
 
     // Resolve raster name
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, m_fileProperties.m_fileUri, GetDgnDb());
     if (status != SUCCESS)
         {
         m_loadFileFailed = true;
