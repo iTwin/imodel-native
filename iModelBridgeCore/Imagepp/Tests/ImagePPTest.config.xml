@@ -5,7 +5,7 @@
         <!--Location of input files. If blank or invalid tests won't run.
         You can get a copy of files here: \\TEST33393QBC\Dataset\Images_Files\_forATPs\        
         -->
-        <Source Enable="false">D:\ATP\Dataset\Images_Files\_forATPs\</Source>
+        <Source Enable="true">D:\Dataset\Images_Files\_forATPs\</Source>
         <!-- &&MM TODO 
         - SourceFilters
 
@@ -15,8 +15,12 @@
             Images\iTIFF\8A00T1N2\TS1_256c_Alpha_None_Tile.iTIFF
             
         -->
-        <!-- Location of base files for comparaison. Must point to one level hight than 'ExportTester' directory-->
-        <BaseLine Enable="false">D:\ATP\Baseline\</BaseLine>
+
+        <!--During execution, the output location is : Debug\Winx64\Product\ImagePP-GTest\run\Output by default-->
+        <Output Enable="false">D:\Output\</Output>
+
+        <!-- Location of base files for comparaison. Must point to one level hight than 'Export..Tester' directory-->
+        <BaseLine Enable="false">D:\Baseline\</BaseLine>
 
         <!-- &&MM embed in baseline node, can only work when we have a baseline.-->
         <DurationValidation Enable="false">

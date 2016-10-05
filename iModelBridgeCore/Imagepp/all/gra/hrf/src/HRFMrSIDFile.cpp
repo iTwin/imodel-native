@@ -965,6 +965,33 @@ void HRFMrSIDFile::CreateDescriptors ()
     m_ListOfPageDescriptor.push_back(pPage);
     }
 
+static AString ConvertTextMonthtoNumberText(const char* pMonth)
+    {
+    if (strncmp(pMonth, "Jan", 3) == 0)
+        return AString("01");
+    else if (strncmp(pMonth, "Feb", 3) == 0)
+        return AString("02");
+    else if (strncmp(pMonth, "Mar", 3) == 0)
+        return AString("03");
+    else if (strncmp(pMonth, "Apr", 3) == 0)
+        return AString("04");
+    else if (strncmp(pMonth, "May", 3) == 0)
+        return AString("05");
+    else if (strncmp(pMonth, "Jun", 3) == 0)
+        return AString("06");
+    else if (strncmp(pMonth, "Jul", 3) == 0)
+        return AString("07");
+    else if (strncmp(pMonth, "Aug", 3) == 0)
+        return AString("08");
+    else if (strncmp(pMonth, "Sep", 3) == 0)
+        return AString("09");
+    else if (strncmp(pMonth, "Oct", 3) == 0)
+        return AString("10");
+    else if (strncmp(pMonth, "Nov", 3) == 0)
+        return AString("11");
+    //else if (strncmp(pMonth, "Dec", 3) == 0)
+    return AString("12");
+}
 
 //-----------------------------------------------------------------------------
 // GetTagInfo
@@ -1127,8 +1154,26 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     {
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_ASCII);
                     ppData = (const void**)pMetaRecord->getArrayData(NumDims, pDims);
-                    Utf8String Name((char*)*ppData);
-                    pTag = new HRFAttributeDateTime(Name);
+                    char* pDate((char*)*ppData);
+
+                    // Convert the date to Attribute format
+                    // format: "%4d:%02d:%02d %02d:%02d:%02d"
+                    //        Year Month  Day  H    M   S
+                    char AttDate[20];
+                    memset(AttDate, 0, 21);
+                    AttDate[0] = pDate[20];     // year
+                    AttDate[1] = pDate[21];
+                    AttDate[2] = pDate[22];
+                    AttDate[3] = pDate[23];
+                    AttDate[4] = ':';
+                    strncpy(&(AttDate[5]), ConvertTextMonthtoNumberText(&(pDate[4])).c_str(),2);
+                    AttDate[7] = ':';
+                    AttDate[8] = pDate[8];      // day
+                    AttDate[9] = pDate[9];
+                    AttDate[10] = ' ';
+                    strncpy (&(AttDate[11]), &(pDate[11]), 8);  // hour
+
+                    pTag = new HRFAttributeDateTime(Utf8String(AttDate));
                     po_rTagList.Set(pTag);
                     }
                 }

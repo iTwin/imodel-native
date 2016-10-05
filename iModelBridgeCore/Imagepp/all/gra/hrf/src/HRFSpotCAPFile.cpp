@@ -149,13 +149,9 @@ HRFSpotCAPCapabilities::HRFSpotCAPCapabilities()
     Add(new HRFTransfoModelCapability(HFC_READ_ONLY, HGF2DTranslation::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_ONLY, HGF2DIdentity::CLASS_ID   ));
 
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeDocumentName));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeImageDescription));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributePageName));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeSoftware));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeDateTime));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeArtist));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeHostComputer));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeResolutionUnit(0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeXResolution(0.0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeYResolution(0.0)));
@@ -1052,19 +1048,29 @@ void HRFSpotCAPFile::CreateDescriptors()
     //TODO
     //HFCPtr<HRPHistogram> pHistogram = GetHistogramFromFile();
 
+    if (!m_LeadHeader.ImageFormatDescription.empty())
+        {
+        pTag = new HRFAttributeImageDescription(m_LeadHeader.ImageFormatDescription.c_str());
+        TagList.Set(pTag);
+        }
 
-    pTag = new HRFAttributeImageDescription(m_LeadHeader.ImageFormatDescription.c_str());
-    TagList.Set(pTag);
+    if (!m_LeadHeader.SoftwareUsed.empty())
+        {
+        pTag = new HRFAttributeSoftware(m_LeadHeader.SoftwareUsed.c_str());
+        TagList.Set(pTag);
+        }
 
-    pTag = new HRFAttributeSoftware(m_LeadHeader.SoftwareUsed.c_str());
-    TagList.Set(pTag);
+    if (!m_VoldHeader.DateOfCreation.empty())
+        {
+        pTag = new HRFAttributeDateTime(m_VoldHeader.DateOfCreation.c_str());
+        TagList.Set(pTag);
+        }
 
-    pTag = new HRFAttributeDateTime(m_VoldHeader.DateOfCreation.c_str());
-    TagList.Set(pTag);
-
-    pTag = new HRFAttributeCopyright(m_VoldHeader.Copyright.c_str());
-    TagList.Set(pTag);
-
+    if (!m_VoldHeader.Copyright.empty())
+        {
+        pTag = new HRFAttributeCopyright(m_VoldHeader.Copyright.c_str());
+        TagList.Set(pTag);
+        }
 
 
     pPage = new HRFPageDescriptor (GetAccessMode(),         // AccessMode

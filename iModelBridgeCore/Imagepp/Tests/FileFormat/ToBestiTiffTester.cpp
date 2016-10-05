@@ -96,10 +96,12 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         //&&MM avoid hard copying the name and make BuildRelativeOutputFileName private?
         BeFileName relativeOutFilename = BuildRelativeOutputFileName(L"ExportiTiffTester\\ToBestiTiff", sourceFileName, *exporter->GetSelectedExportFileFormat());
         
+        BeFileName outputFilePath(ImagePPTestConfig::GetConfig().GetOutputDir());
+        if (outputFilePath.empty())
+            BeTest::GetHost().GetOutputRoot(outputFilePath);    // outputRoot if not specify in the config
+
         // Build output: outputRoot + testName + sourceSubDir + outputExtension
         // ex: ....\Product\ImagePP-GTest\run\Output\ + ExportiTiffTester\toBestiTiff\ + Image\jpeg\24bit.jpg + .iTiff
-        BeFileName outputFilePath;
-        BeTest::GetHost().GetOutputRoot(outputFilePath);
         outputFilePath.AppendToPath(relativeOutFilename);
 
 //         if (!outputFilePath.GetDirectoryName().DoesPathExist())

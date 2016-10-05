@@ -32,6 +32,8 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
 
     BeFileNameCR GetSourceDir() const { return m_sourceDir; }   
 
+    BeFileNameCR GetOutputDir() const { return m_outputDir; }
+
     BeFileNameCR GetBaselineDir() const { return m_baselineDir; }
 
     bool ValidateExportDuration() const {return m_validateDuration;}
@@ -46,6 +48,7 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
         BeFileName              m_baselineDir;
         BeFileName              m_sourceDir;
         std::list<std::wstring> m_sourceFileList;
+        BeFileName              m_outputDir;
 
         
         bool                    m_validateDuration;

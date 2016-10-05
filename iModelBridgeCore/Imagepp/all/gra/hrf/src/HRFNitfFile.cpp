@@ -434,7 +434,34 @@ void HRFNitfFile::CreateDescriptors()
     // Tag information
     const char* pNITF_IDATIM = GetDataSet()->GetMetadataItem("NITF_IDATIM");
     if(pNITF_IDATIM != NULL)
-        TagList.Set(new HRFAttributeDateTime(pNITF_IDATIM));
+        {
+        // Convert the date to Attribute format
+        // format: "%4d:%02d:%02d %02d:%02d:%02d"
+        //        Year Month  Day  H    M   S
+        char AttDate[20];
+        memset(AttDate, 0, 21);
+        AttDate[0] = pNITF_IDATIM[0];       // year
+        AttDate[1] = pNITF_IDATIM[1];
+        AttDate[2] = pNITF_IDATIM[2];
+        AttDate[3] = pNITF_IDATIM[3];
+        AttDate[4] = ':';                
+        AttDate[5] = pNITF_IDATIM[4];      // Month
+        AttDate[6] = pNITF_IDATIM[5];
+        AttDate[7] = ':';
+        AttDate[8] = pNITF_IDATIM[6];      // 'day
+        AttDate[9] = pNITF_IDATIM[7];
+        AttDate[10] = ' ';
+        AttDate[11] = pNITF_IDATIM[8];
+        AttDate[12] = pNITF_IDATIM[9];      
+        AttDate[13] = ':';
+        AttDate[14] = pNITF_IDATIM[10];
+        AttDate[15] = pNITF_IDATIM[11];
+        AttDate[16] = ':';
+        AttDate[17] = pNITF_IDATIM[12];      
+        AttDate[18] = pNITF_IDATIM[13];
+
+        TagList.Set(new HRFAttributeDateTime(AttDate));
+        }
 
 //     NITF_IID2 not supported available in NITF2.0
 //     const char* pNITF_IID2 = GetDataSet()->GetMetadataItem("NITF_IID2");

@@ -276,8 +276,9 @@ TEST_P(ExportAllTester, ToAllFormats)
     if (outExtension.StartsWith(L"*."))
         outExtension.erase(0, 2);
 
-    BeFileName outputRoot;
-    BeTest::GetHost().GetOutputRoot(outputRoot);
+    BeFileName outputRoot(ImagePPTestConfig::GetConfig().GetOutputDir());
+    if (outputRoot.empty())
+        BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName baseRelativeOutName("ExportAllTester\\ToAllFormats\\"); //&&MM avoid hard copying the name.
     //relativeOutName += L"Images_iTIFF_1A02S142_";

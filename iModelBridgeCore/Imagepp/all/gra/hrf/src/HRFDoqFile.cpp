@@ -151,29 +151,18 @@ HRFDoqCapabilities::HRFDoqCapabilities()
     Add(new HRFInterleaveCapability(HFC_READ_ONLY, HRFInterleaveType::LINE));
 
     // Tag capability
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeDocumentName));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeImageDescription));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributePageName));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeSoftware));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeDateTime));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeArtist));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeHostComputer));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeResolutionUnit(0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeXResolution(0.0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeYResolution(0.0)));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeCopyright));
 
     // Geocoding capability
     HFCPtr<HRFGeocodingCapability> pGeocodingCapability(new HRFGeocodingCapability(HFC_READ_ONLY));
 
     pGeocodingCapability->AddSupportedKey(GTModelType);
     pGeocodingCapability->AddSupportedKey(GTRasterType);
-    pGeocodingCapability->AddSupportedKey(PCSCitation);
     pGeocodingCapability->AddSupportedKey(ProjectedCSType);
-    pGeocodingCapability->AddSupportedKey(GTCitation);
     pGeocodingCapability->AddSupportedKey(Projection);
     pGeocodingCapability->AddSupportedKey(ProjCoordTrans);
-    pGeocodingCapability->AddSupportedKey(ProjLinearUnits);
     pGeocodingCapability->AddSupportedKey(GeographicType);
     pGeocodingCapability->AddSupportedKey(GeogCitation);
 

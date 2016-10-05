@@ -154,16 +154,6 @@ HRFFliCapabilities::HRFFliCapabilities()
     // Tag capability
 
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeBackground(0)));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeTitle));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeArtist));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeImageDescription));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeCopyright));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeDateTime));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeSoftware));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeLegalDisclaimer));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeContentWarning));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeHostComputer));
-    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeNotes));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeXResolution(0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeYResolution(0)));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeResolutionUnit(0)));

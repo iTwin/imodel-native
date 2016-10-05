@@ -103,6 +103,16 @@ ImagePPTestConfig::ImagePPTestConfig()
             if(enable)
                 pBaseLineDirNode->GetContent(m_baselineDir);
             }
+
+        BeXmlNodeP pOutputDirNode = nullptr;
+        if (BEXML_Success == pXmlDoc->SelectNode(pOutputDirNode, "/ImagePPTest/FileFormatTester/Output", nullptr, BeXmlDom::NODE_BIAS_First))
+        {
+            bool enable = false;
+            pOutputDirNode->GetAttributeBooleanValue(enable, "Enable");
+            if (enable)
+                pOutputDirNode->GetContent(m_outputDir);
+        }
+
         }
     }
 

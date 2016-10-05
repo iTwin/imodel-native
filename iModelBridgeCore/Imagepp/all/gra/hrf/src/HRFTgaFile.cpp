@@ -545,7 +545,7 @@ void HRFTgaFile::CreateDescriptors ()
 
         // Date/Time Tag
         Result = sprintf (StrInput,
-                          "%04u/%02u/%02u  %02u:%02u:%02u",
+                          "%04u:%02u:%02u  %02u:%02u:%02u",
                           m_pTgaExtentionArea->m_Year,
                           m_pTgaExtentionArea->m_Month,
                           m_pTgaExtentionArea->m_Day,
@@ -723,7 +723,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                 if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
                     {
                     BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str(),
-                                                "%hu/%hu/%hu %hu:%hu:%hu",
+                                                "%hu:%hu:%hu %hu:%hu:%hu",
                                                 &m_pTgaExtentionArea->m_Year,
                                                 &m_pTgaExtentionArea->m_Month,
                                                 &m_pTgaExtentionArea->m_Day,

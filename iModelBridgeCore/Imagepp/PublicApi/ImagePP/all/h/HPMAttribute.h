@@ -286,8 +286,8 @@ HPM_DEFINE_ATTRIBUTE(HRFAttributeDirector,                     Utf8String,      
 HPM_DEFINE_ATTRIBUTE(HRFAttributeCompany,                      Utf8String,              HRF_ATTRIBUTEID_Company,                      "Company");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeVendor,                       Utf8String,              HRF_ATTRIBUTEID_Vendor,                       "Vendor");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeHostComputer,                 Utf8String,              HRF_ATTRIBUTEID_HostComputer,                 "Host Computer");
-HPM_DEFINE_ATTRIBUTE(HRFAttributeDateTime,                     Utf8String,              HRF_ATTRIBUTEID_DateTime,                     "Date Time");
-HPM_DEFINE_ATTRIBUTE(HRFAttributeInkNames,                     Utf8String,              HRF_ATTRIBUTEID_InkNames,                     "Ink Names");
+HPM_DEFINE_ATTRIBUTE(HRFAttributeDateTime,                     Utf8String,              HRF_ATTRIBUTEID_DateTime,                     "Date Time");         // format: "%4d:%02d:%02d %02d:%02d:%02d"
+HPM_DEFINE_ATTRIBUTE(HRFAttributeInkNames,                     Utf8String,              HRF_ATTRIBUTEID_InkNames,                     "Ink Names");         //        Year Month  Day  H    M   S
 HPM_DEFINE_ATTRIBUTE(HRFAttributeSecurityLevel,                Utf8String,              HRF_ATTRIBUTEID_SecurityLevel,                "Security Level");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeLegalDisclaimer,              Utf8String,              HRF_ATTRIBUTEID_LegalDisclaimer,              "Legal Disclaimer");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeContentWarning,               Utf8String,              HRF_ATTRIBUTEID_ContentWarning,               "Content Warning");
