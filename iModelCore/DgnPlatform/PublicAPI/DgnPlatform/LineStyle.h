@@ -1478,37 +1478,29 @@ public:
 struct LsCache : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
+    friend struct DgnLineStyles;
 private:
     T_LsIdTree          m_idTree;
     DgnDbR              m_dgnDb;
-    bool                m_isLoaded;
 
-    LsCache(DgnDbR dgnProject) : m_dgnDb(dgnProject), m_isLoaded(false) {}
+    LsCache(DgnDbR dgnProject) : m_dgnDb(dgnProject) { Load(); }
     ~LsCache();
 
-    void                                    EmptyIdMap      ();   // EmptyIdMap and EmptyNameMap should probably always be called together.
-
-    //  virtual LineStyleComponentP     _FindComponent (ComponentID& componentID, bool searchSystemMaps) const;
+    BentleyStatus Load();
+    static LsCachePtr Create(DgnDbR project);
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
 public:
 
     typedef int (*PFNameMapProcessFunc) (NameNode const* nameNode, void* arg);
 
-    DGNPLATFORM_EXPORT LsIdNodeP                FindId                   (DgnStyleId styleId) const;
-    DGNPLATFORM_EXPORT void                     EmptyMaps                ();   //  Empty both the name tree and the id tree
-    T_LsIdIterator                              FirstId                  () {return m_idTree.FirstEntry();}
-    void                                        AddIdEntry               (LsDefinitionP nameRec);
-    DGNPLATFORM_EXPORT BentleyStatus            RemoveIdEntry            (DgnStyleId id);
-    T_LsIdTree*                                 GetIdMap                 () {return &m_idTree;}
-    DGNPLATFORM_EXPORT LsIdNodeP                SearchIdsForName         (Utf8CP name) const;
-    bool                                        IsLoaded                 () const {return m_isLoaded;}
-    void                                        TreeLoaded               () { m_isLoaded=true; }
-
-    DGNPLATFORM_EXPORT static LsDefinitionP     FindInMap                (DgnDbR dgndb, DgnStyleId styleId);
-    BentleyStatus                               Load                     ();
-
-    static LsCachePtr Create (DgnDbR project);
+    DGNPLATFORM_EXPORT LsIdNodeP FindId(DgnStyleId styleId) const;
+    T_LsIdIterator FirstId() {return m_idTree.FirstEntry();}
+    void AddIdEntry(LsDefinitionP nameRec);
+    DGNPLATFORM_EXPORT BentleyStatus RemoveIdEntry(DgnStyleId id);
+    T_LsIdTree* GetIdMap() {return &m_idTree;}
+    DGNPLATFORM_EXPORT LsIdNodeP SearchIdsForName(Utf8CP name) const;
+    DGNPLATFORM_EXPORT static LsDefinitionP FindInMap(DgnDbR dgndb, DgnStyleId styleId);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -1524,26 +1516,26 @@ public:
     //! returned may be a pointer to a stub used to translate from element style
     //! number to name.  Call LsDgnFileMap::Resolve to find the LsDefinition that
     //! is used to stroke the element.
-    DGNPLATFORM_EXPORT LsDefinitionP            GetLineStyleP   (DgnStyleId styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionP GetLineStyleP(DgnStyleId styleId) const;
     //! Searches the set of ID's associated with the LsCache.
     //! @param[in] styleId The ID that is used to associate an element with a line style.
     //! @return The associated LsDefinition object if found. Otherwise, it returns NULL. It
     //! also returns NULL for all of the special codes including STYLE_BYLEVEL, STYLE_BYCELL, and the
     //! reserved line codes 0 through 7.
     //! @see LsCache::GetLineStyleP
-    DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (DgnStyleId styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionCP GetLineStyleCP(DgnStyleId styleId) const;
 
     //!  Gets a reference to the associated DgnDb.
     //!  @remark Use DgnDb::LineStyles().GetCache() to get a reference to a DgnDb's LsCache.
-    DGNPLATFORM_EXPORT DgnDbCR      GetDgnDb  () const;
+    DGNPLATFORM_EXPORT DgnDbCR GetDgnDb() const;
 
     typedef LsCacheStyleIterator const_iterator;
     typedef const_iterator iterator;    //!< only const iteration is possible
 
     //! Used to step through all of the LsCacheStyleEntry entries for an LsCache. See
     //! LsCacheStyleIterator for an example.
-    DGNPLATFORM_EXPORT LsCacheStyleIterator            begin () const;
-    DGNPLATFORM_EXPORT LsCacheStyleIterator            end   () const;
+    DGNPLATFORM_EXPORT LsCacheStyleIterator begin() const;
+    DGNPLATFORM_EXPORT LsCacheStyleIterator end() const;
     };
 
 //=======================================================================================

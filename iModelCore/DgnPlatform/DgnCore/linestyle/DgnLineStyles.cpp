@@ -68,10 +68,7 @@ LsCacheR DgnLineStyles::GetCache()
         {
         BeMutexHolder lock(m_mutex);
         if (m_lineStyleMap.IsNull())
-            {
             m_lineStyleMap = LsCache::Create (m_dgndb);
-            m_lineStyleMap->Load();
-            }
         }
 
     return *m_lineStyleMap;

@@ -680,28 +680,11 @@ static StatusInt    freeIdRec (LsIdNodeP node, void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::EmptyIdMap ()
+LsCache::~LsCache ()
     {
     // iterate tree, delete all entries
     m_idTree.Process (freeIdRec, NULL);
     m_idTree.Empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::EmptyMaps()
-    {
-    EmptyIdMap ();
-    m_isLoaded = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsCache::~LsCache ()
-    {
-    EmptyMaps ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -717,12 +700,6 @@ DgnDbCR    LsCache::GetDgnDb () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsCache::Load ()
     {
-    if (IsLoaded())
-        return SUCCESS;
-
-    //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
-    TreeLoaded ();
-
     for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))
         {
         DgnStyleId  styleId (ls.GetElementId().GetValue());
