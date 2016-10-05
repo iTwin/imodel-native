@@ -10,6 +10,7 @@
 #include <pt/timestamp.h>
 
 #include <ptengine/VoxelLODRemoveVisitor.h>
+#include <ptengine/VoxelQueryStateRemoveVisitor.h>
 
 #include <stdio.h>
 
@@ -622,4 +623,13 @@ void pointsengine::PointsScene::removeLOD(int clientID)
 	VoxelLODRemoveVisitor	LODRemover(clientID);
 
 	visitVoxels(&LODRemover);
+}
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+void pointsengine::PointsScene::removeQueryStates(int clientID)
+{
+    VoxelQueryStateRemoveVisitor	queryStateRemover(clientID);
+
+    visitVoxels(&queryStateRemover);
 }
