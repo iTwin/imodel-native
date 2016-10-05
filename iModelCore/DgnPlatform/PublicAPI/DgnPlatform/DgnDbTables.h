@@ -712,25 +712,6 @@ public:
 };
 
 //=======================================================================================
-//! @see DgnDb::Styles
-// @bsiclass
-//=======================================================================================
-struct DgnStyles : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    struct DgnLineStyles* m_lineStyles;
-
-    explicit DgnStyles(DgnDbR);
-    ~DgnStyles();
-
-public:
-    //! Provides accessors for line styles.
-    DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-};
-
-//=======================================================================================
 //! Every DgnDb has a table for storing searchable text for use with SQLite's
 //! FTS5 full text search features. Each search term is qualified by a "text type" and associated
 //! with an ID into some other table from which the search term originated. The meaning of the

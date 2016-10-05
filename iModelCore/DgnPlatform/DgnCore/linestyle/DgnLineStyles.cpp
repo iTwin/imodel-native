@@ -59,16 +59,6 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
     return ERROR;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2012
-//--------------+------------------------------------------------------------------------
-LsCacheR DgnLineStyles::ReloadMap()
-    {
-    m_lineStyleMap = nullptr;
-    return *GetLsCacheP(true);
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    06/2009
 +---------------+---------------+---------------+---------------+---------------+------*/

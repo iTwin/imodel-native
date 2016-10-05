@@ -638,7 +638,7 @@ BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
 //---------------------------------------------------------------------------------------
 LsCacheP  LsCache::GetDgnDbCache (DgnDbR project, bool loadIfNotLoaded)
     {
-    return  project.Styles().LineStyles().GetLsCacheP (loadIfNotLoaded);
+    return  project.LineStyles().GetLsCacheP (loadIfNotLoaded);
     }
 
 /*---------------------------------------------------------------------------------**//**

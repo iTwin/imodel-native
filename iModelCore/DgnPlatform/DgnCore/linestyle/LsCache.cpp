@@ -736,7 +736,7 @@ LsInternalComponentPtr LsInternalComponent::CreateInternalComponent(LsLocation& 
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
+    project->LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -1093,7 +1093,7 @@ LsCacheP LsLocation::GetCacheP () const
 //---------------------------------------------------------------------------------------
 LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
     {
-    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->Styles().LineStyles();
+    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->LineStyles();
 
     auto iter = dgnLineStyles.m_loadedComponents.find(location);
     if (iter != dgnLineStyles.m_loadedComponents.end())

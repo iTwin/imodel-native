@@ -1578,25 +1578,19 @@ public:
 //! Groups methods for Line Styles.
 // @bsiclass
 //=======================================================================================
-struct DgnLineStyles : public DgnDbTable
+struct DgnLineStyles : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
+    friend struct DgnDb;
 private:
-    DEFINE_T_SUPER(DgnDbTable);
-    friend struct DgnStyles;
+    DgnDbR                              m_dgndb;
+    LsCachePtr                          m_lineStyleMap;
+    bmap<LsLocation, LsComponentPtr>    m_loadedComponents;
 
-    LsCachePtr m_lineStyleMap;
-    bmap<LsLocation, LsComponentPtr> m_loadedComponents;
-
-
-    //! Only the outer class is designed to construct this class.
-    DgnLineStyles(DgnDbR db) : T_Super(db) {}
-
+    DgnLineStyles(DgnDbR db) : m_dgndb(db) { }
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
     DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentId componentId);
 
-//__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
@@ -1604,7 +1598,6 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
     DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
-    DGNPLATFORM_EXPORT LsCacheR ReloadMap();
 };
 
 //__PUBLISH_SECTION_END__

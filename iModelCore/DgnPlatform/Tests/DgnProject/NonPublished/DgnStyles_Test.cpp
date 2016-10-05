@@ -102,7 +102,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     static Utf8CP STYLE_NAME = "ATestLineStyle";
@@ -125,7 +125,7 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
@@ -158,7 +158,7 @@ TEST_F(DgnLineStyleTest, InsertDuplicateLineStyle)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     static Utf8CP STYLE_NAME = "ATestLineStyle";
@@ -186,7 +186,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     static Utf8CP STYLE_NAME = "ATestLineStyle";
@@ -216,7 +216,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     LsCacheStyleEntry const& entry = *iterLineStyles;
@@ -263,7 +263,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
@@ -300,7 +300,9 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     ASSERT_TRUE(newStyleId.IsValid());
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
     ASSERT_TRUE(1 == LineStyleElement::QueryCount(*project));
+#ifdef WHY_RELOAD_MAP
     styleTable.ReloadMap();
+#endif
     cache = styleTable.GetLsCacheP();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
@@ -337,7 +339,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     SetupSeedProject();
 
     DgnDbPtr      project = m_db;
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
@@ -401,7 +403,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
 
     OpenDb(m_db, outFileName, mode);
    
-    cache = m_db->Styles().LineStyles().GetLsCacheP();
+    cache = m_db->LineStyles().GetLsCacheP();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
     LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
@@ -441,7 +443,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     SetupSeedProject();
     DgnDbPtr      project = m_db;
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = project->LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
@@ -479,7 +481,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
 
     OpenDb(m_db, outFileName, mode);
 
-    cache = m_db->Styles().LineStyles().GetLsCacheP();
+    cache = m_db->LineStyles().GetLsCacheP();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
     LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
