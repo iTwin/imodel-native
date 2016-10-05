@@ -358,14 +358,12 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
     // This calculation should actually be made for each triangle and maximum used. 
-    static      double      s_requiredSizeRatio = 2.0;
-    double      requiredSize = s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * uvRange.DiagonalDistance());
+    static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
+    double      requiredSize = std::min (s_sizeLimit, s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * std::min (1.0, uvRange.DiagonalDistance())));
     DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
-    static bool s_doResize = true;
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
-
 
     Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
 
