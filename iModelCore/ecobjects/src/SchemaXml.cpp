@@ -1148,7 +1148,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
 
     m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
 
-    if (m_ecXmlVersionMajor == 2)
+    if (m_ecXmlVersionMajor <= 3 && m_ecXmlVersionMinor == 0)
         {
         m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetAlias().c_str());
         m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetLegacyVersionString().c_str());
