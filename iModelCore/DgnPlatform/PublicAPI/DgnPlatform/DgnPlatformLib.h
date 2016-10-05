@@ -331,7 +331,7 @@ public:
             DGNPLATFORM_EXPORT void Suspend();
             DGNPLATFORM_EXPORT void Resume();
 
-            void EnsureInitialized();
+            DGNPLATFORM_EXPORT void EnsureInitialized();
         };
 
         //! Allows interaction between the host and the LineStyleManager.

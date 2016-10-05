@@ -562,7 +562,7 @@ public:
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
-    void Update();
+    DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
     DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
