@@ -75,9 +75,20 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE FunctionalElement : RoleElement
 {
     DEFINE_T_SUPER(RoleElement);
+
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Set the FunctionalType for this FunctionalElement
+    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId) {return SetPropertyValue("FunctionalType", functionalTypeId);}
+    //! Get the DgnElementId of the FunctionalType for this FunctionalElement
+    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
+    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("FunctionalType");}
+    //! Get the FunctionalType for this FunctionalElement
+    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
+    DGNPLATFORM_EXPORT FunctionalTypeCPtr GetFunctionalType() const;
 };
 
 //=======================================================================================
@@ -107,16 +118,6 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElement : FunctionalElement
 
 protected:
     explicit FunctionalComponentElement(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Set the FunctionalType for this FunctionalComponentElement
-    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId) {return SetPropertyValue("FunctionalType", functionalTypeId);}
-    //! Get the DgnElementId of the FunctionalType for this FunctionalComponentElement
-    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalComponentElement
-    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("FunctionalType");}
-    //! Get the FunctionalType for this FunctionalComponentElement
-    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalComponentElement
-    DGNPLATFORM_EXPORT FunctionalTypeCPtr GetFunctionalType() const;
 };
 
 //=======================================================================================

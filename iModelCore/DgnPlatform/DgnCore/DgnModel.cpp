@@ -1091,6 +1091,14 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
+#if 0 // WIP: not ready to enforce this yet!
+    if (!GetModeledElementId().IsValid())
+        {
+        BeAssert(false && "A DgnModel must be modeling an element (that is above it in the hiearchy)");
+        return DgnDbStatus::BadElement;
+        }
+#endif
+
     if (!DgnModels::IsValidName(m_code.GetValue()))
         {
         BeAssert(false);
