@@ -927,9 +927,12 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     host.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
+#define NEEDSWORK_LINESTYLE_THREAD_SAFETY
+#if defined(NEEDSWORK_LINESTYLE_THREAD_SAFETY)
     // Same deal with line styles.
     // NEEDSWORK: Line styles are a much bigger problem...and still WIP...need John's input
     LsCache::GetDgnDbCache(GetDgnDb(), true);
+#endif
 
     if (!tiles.empty())
         {

@@ -29,57 +29,33 @@ DGNPLATFORM_REF_COUNTED_PTR(LineStyleElement);
 
 //__PUBLISH_SECTION_START__
 
+DGNPLATFORM_TYPEDEFS(LsCache)
+DGNPLATFORM_TYPEDEFS(LsCacheStyleEntry)
+DGNPLATFORM_TYPEDEFS(LsCacheStyleIterator)
+DGNPLATFORM_TYPEDEFS(LsComponent)
+DGNPLATFORM_TYPEDEFS(LsCompoundComponent)
+DGNPLATFORM_TYPEDEFS(LsDefinition)
+DGNPLATFORM_TYPEDEFS(LsInternalComponent)
+DGNPLATFORM_TYPEDEFS(LsLocation)
+DGNPLATFORM_TYPEDEFS(LsLineCodeComponent)
+DGNPLATFORM_TYPEDEFS(LsOffsetComponent)
+DGNPLATFORM_TYPEDEFS(LsPointComponent)
+DGNPLATFORM_TYPEDEFS(LsRasterImageComponent)
+DGNPLATFORM_TYPEDEFS(LsStroke)
+DGNPLATFORM_TYPEDEFS(LsStrokePatternComponent)
+DGNPLATFORM_TYPEDEFS(LsSymbolComponent)
+DGNPLATFORM_TYPEDEFS(LsSymbolReference)
+
+DGNPLATFORM_REF_COUNTED_PTR(LsComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsPointComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsStrokePatternComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsSymbolComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsCompoundComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsInternalComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsCache);
+DGNPLATFORM_REF_COUNTED_PTR(LsRasterImageComponent);
+
 BEGIN_BENTLEY_DGN_NAMESPACE
-
-#define LINESTYLE_TYPEDEFS(_name_) \
-    struct _name_; \
-    typedef struct _name_*          _name_##P, &_name_##R;  \
-    typedef struct _name_ const*    _name_##CP; \
-    typedef struct _name_ const&    _name_##CR;
-
-LINESTYLE_TYPEDEFS (LsCache)
-LINESTYLE_TYPEDEFS (LsCacheStyleEntry)
-LINESTYLE_TYPEDEFS (LsCacheStyleIterator)
-LINESTYLE_TYPEDEFS (LsComponent)
-LINESTYLE_TYPEDEFS (LsCompoundComponent)
-LINESTYLE_TYPEDEFS (LsDefinition)
-LINESTYLE_TYPEDEFS (LsInternalComponent)
-LINESTYLE_TYPEDEFS (LsLocation)
-LINESTYLE_TYPEDEFS (LsLineCodeComponent)
-LINESTYLE_TYPEDEFS (LsOffsetComponent)
-LINESTYLE_TYPEDEFS (LsPointComponent)
-LINESTYLE_TYPEDEFS (LsRasterImageComponent)
-LINESTYLE_TYPEDEFS (LsStroke)
-LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
-LINESTYLE_TYPEDEFS (LsSymbolComponent)
-LINESTYLE_TYPEDEFS (LsSymbolReference)
-
-struct DgnLineStyles;
-
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsComponent
-typedef RefCountedPtr <LsComponent> LsComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsPointComponent
-typedef RefCountedPtr <LsPointComponent> LsPointComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsStrokePatternComponent
-typedef RefCountedPtr <LsStrokePatternComponent> LsStrokePatternComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsSymbolComponent
-typedef RefCountedPtr <LsSymbolComponent> LsSymbolComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsCompoundComponent
-typedef RefCountedPtr <LsCompoundComponent> LsCompoundComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsInternalComponent
-typedef RefCountedPtr <LsInternalComponent> LsInternalComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsCache
-typedef RefCountedPtr <LsCache> LsCachePtr;
-
-typedef RefCountedPtr <LsRasterImageComponent> LsRasterImageComponentPtr;
-
 
 //! Special style numbers that form a subset of values that may passed to LineStyleManager::GetNameFromNumber() or returned from LineStyleManager::GetNumberFromName()
 //! @ingroup LineStyleManagerModule
