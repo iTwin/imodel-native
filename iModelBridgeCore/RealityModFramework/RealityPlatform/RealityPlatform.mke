@@ -77,7 +77,7 @@ $(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDi
 
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
-$(o)ConversionTools$(oext) : $(baseDir)ConversionTools.cpp $(PublicApiDir)ConversionTools.h ${MultiCompileDepends}
+$(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -102,7 +102,8 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
+                       $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext)
 
 # windows specific for Unzipfile
 LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
