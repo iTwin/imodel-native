@@ -35,14 +35,6 @@ LsComponentReader::~LsComponentReader ()
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentReader*   LsComponentReader::GetRscReader (const LsLocation* source, DgnDbR project)
-    {
-    return  new LsComponentReader (source, project);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
@@ -57,15 +49,8 @@ void LsComponentReader::GetJsonValue(JsonValueR componentDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static LsComponent* cacheLoadComponent(LsLocationCR location)
     {
-    LsComponentReader* reader = LsComponentReader::GetRscReader (&location, *location.GetDgnDb());
-
-    if (NULL == reader)
-        return  NULL;
-
-    LsComponent* component = loadComponent (reader);
-    delete  reader;
-
-    return component;
+    LsComponentReader reader(&location, *location.GetDgnDb());
+    return loadComponent(&reader);
     }
 
 //---------------------------------------------------------------------------------------

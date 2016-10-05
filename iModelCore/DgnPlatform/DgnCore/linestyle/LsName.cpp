@@ -708,7 +708,10 @@ BentleyStatus       LsCache::Load ()
 
         Json::Value  jsonObj (Json::objectValue);
         if (!Json::Reader::Parse(data, jsonObj))
+            {
+            BeAssert(false && "Invalid line style data - LsCache::Load() aborted");
             return ERROR;
+            }
 
         LsDefinition* lsDef = new LsDefinition (name.c_str(), m_dgnDb, jsonObj, styleId);
         AddIdEntry(lsDef);

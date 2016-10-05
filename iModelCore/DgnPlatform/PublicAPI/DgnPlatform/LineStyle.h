@@ -295,8 +295,6 @@ public:
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
     void            GetJsonValue(JsonValueR componentDef);
     LsComponentType GetComponentType()  {return m_componentId.GetType();}
-
-    static LsComponentReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
 };
 
 //__PUBLISH_SECTION_START__
