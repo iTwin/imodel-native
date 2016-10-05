@@ -14,6 +14,7 @@ DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerCl
 #----------------------------------------------------------------------------------------
 
 DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                      \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBreakHelper.h          \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
@@ -40,6 +41,8 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 #----------------------------------------------------------------------------------------
 
 $(o)Logging$(oext)                         : $(DgnDbServerClientMkiSourceDir)Logging.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerBreakHelper$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerBreakHelper.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

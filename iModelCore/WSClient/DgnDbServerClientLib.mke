@@ -29,6 +29,11 @@ nameToDefine    = __DgnDbServerClient_DLL_BUILD__
 	%include cdefapnd.mki
 %endif
 
+%if defined (ENABLE_BIM_CRASH_TESTS) || defined (DEBUG)
+	nameToDefine    = ENABLE_BIM_CRASH_TESTS
+	%include cdefapnd.mki
+%endif
+
 %if $(TARGET_PLATFORM)=="Windows"
     # Ignore inheritance via dominance warning
     cDefs + -wd4250
