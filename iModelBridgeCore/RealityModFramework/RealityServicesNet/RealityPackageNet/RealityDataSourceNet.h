@@ -69,6 +69,10 @@ namespace RealityPackageNet
             System::String^ GetCopyright();
             void SetCopyright(System::String^ copyright);
 
+            //! Get/Set the term of use. Might be empty.
+            System::String^ GetTermOfUse();
+            void SetTermOfUse(System::String^ termOfUse);
+
             //! Get/Set the provider. Might be empty.
             System::String^ GetProvider();
             void SetProvider(System::String^ provider);
@@ -94,8 +98,8 @@ namespace RealityPackageNet
             void SetNoDataValue(System::String^ nodatavalue);
 
             //! Get/Set the sister files. Might be empty.
-            System::Collections::Generic::List<System::String^>^ GetSisterFiles();
-            void SetSisterFiles(System::Collections::Generic::List<System::String^>^ sisterFiles);
+            System::Collections::Generic::List<UriNet^>^ GetSisterFiles();
+            void SetSisterFiles(System::Collections::Generic::List<UriNet^>^ sisterFiles);
 
             //! Get the element name.
             System::String^ GetElementName();
@@ -139,7 +143,6 @@ namespace RealityPackageNet
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              10/2016
     //=====================================================================================
-    /*
     public ref class OsmDataSourceNet : public RealityDataSourceNet
         {
         public:
@@ -160,6 +163,38 @@ namespace RealityPackageNet
         private:
             RealityPackage::OsmDataSourcePtr* m_pSource;
         };
-    */
 
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote              10/2016
+    //=====================================================================================
+    public ref class MultiBandSourceNet : public RealityDataSourceNet
+        {
+        public:
+            static MultiBandSourceNet^ Create(UriNet^ uri, System::String^ type);
+
+            //! Get/Set the red band. 
+            RealityDataSourceNet^ GetRedBand();
+            void SetRedBand(RealityDataSourceNet^ band);
+
+            //! Get/Set the green band.
+            RealityDataSourceNet^ GetGreenBand();
+            void SetGreenBand(RealityDataSourceNet^ band);
+
+            //! Get/Set the green band.
+            RealityDataSourceNet^ GetBlueBand();
+            void SetBlueBand(RealityDataSourceNet^ band);
+
+            //! Get/Set the panchromatic band.
+            RealityDataSourceNet^ GetPanchromaticBand();
+            void SetPanchromaticBand(RealityDataSourceNet^ band);
+
+        protected:
+            MultiBandSourceNet() {}
+            MultiBandSourceNet(UriNet^ uri, System::String^ type);
+            virtual ~MultiBandSourceNet();
+            !MultiBandSourceNet();
+
+        private:
+            RealityPackage::MultiBandSourcePtr* m_pSource;
+        };
     }

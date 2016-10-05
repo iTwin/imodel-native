@@ -23,6 +23,153 @@ using namespace msclr::interop;
 using namespace System::Runtime::InteropServices;
 
 
+//=======================================================================================
+//                              Utility functions
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+UriNet^ NativeToManagedUri(UriCR nativeUri)
+    {
+    marshal_context ctx;
+    return UriNet::Create(ctx.marshal_as<String^>(nativeUri.ToString().c_str()));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+UriPtr ManagedToNativeUri(UriNet^ managedUri)
+    {
+    Utf8String uriUtf8;
+    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedUri->ToStr()).ToPointer()));
+
+    return RealityPackage::Uri::Create(uriUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativeSource)
+    {
+    UriNet^ managedUri = NativeToManagedUri(nativeSource.GetUri());
+
+    marshal_context ctx;
+    String^ managedType = ctx.marshal_as<String^>(nativeSource.GetType().c_str());
+
+    // Create source with required parameters.
+    RealityDataSourceNet^ managedSource = RealityDataSourceNet::Create(managedUri, managedType);
+
+    // Id.
+    String^ managedId = ctx.marshal_as<String^>(nativeSource.GetId().c_str());
+    managedSource->SetId(managedId);
+
+    // Copyright.
+    String^ managedCopyright = ctx.marshal_as<String^>(nativeSource.GetCopyright().c_str());
+    managedSource->SetCopyright(managedCopyright);
+
+    // Provider.
+    String^ managedProvider = ctx.marshal_as<String^>(nativeSource.GetProvider().c_str());
+    managedSource->SetProvider(managedProvider);
+
+    // Size.
+    int size = (int)nativeSource.GetSize();
+    managedSource->SetSize(size);
+
+    // Metadata.
+    String^ managedMetadata = ctx.marshal_as<String^>(nativeSource.GetMetadata().c_str());
+    managedSource->SetMetadata(managedMetadata);
+
+    // Metadata type.
+    String^ managedMetadataType = ctx.marshal_as<String^>(nativeSource.GetMetadataType().c_str());
+    managedSource->SetMetadataType(managedMetadataType);
+
+    // GeoCS.
+    String^ managedGeoCS = ctx.marshal_as<String^>(nativeSource.GetGeoCS().c_str());
+    managedSource->SetGeoCS(managedGeoCS);
+
+    // No data value.
+    String^ managedNoDataValue = ctx.marshal_as<String^>(nativeSource.GetNoDataValue().c_str());
+    managedSource->SetNoDataValue(managedNoDataValue);
+
+    // Sister files.
+    bvector<UriPtr> nativeSisterFiles = nativeSource.GetSisterFiles();
+    List<UriNet^>^ managedSisterFiles = gcnew List<UriNet^>();
+    for (UriPtr pNativeSisterFile : nativeSisterFiles)
+        {
+        managedSisterFiles->Add(NativeToManagedUri(*pNativeSisterFile));
+        }
+    managedSource->SetSisterFiles(managedSisterFiles);
+
+    return managedSource;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ managedSource)
+    {
+    RealityPackage::UriPtr nativeUri = ManagedToNativeUri(managedSource->GetUri());
+
+    Utf8String nativeType;
+    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
+
+    // Create source with required parameters.
+    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
+
+    // Id.
+    Utf8String nativeId;
+    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
+    nativeSource->SetId(nativeId.c_str());
+
+    // Copyright.
+    Utf8String nativeCopyright;
+    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
+    nativeSource->SetCopyright(nativeCopyright.c_str());
+
+    // Provider.
+    Utf8String nativeProvider;
+    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
+    nativeSource->SetProvider(nativeProvider.c_str());
+
+    // Size.
+    nativeSource->SetSize(managedSource->GetSize());
+
+    // Metadata.
+    Utf8String nativeMetadata;
+    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
+    nativeSource->SetMetadata(nativeMetadata.c_str());
+
+    // Metadata type.
+    Utf8String nativeMetadataType;
+    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
+    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+
+    // GeoCS.
+    Utf8String nativeGeoCS;
+    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
+    nativeSource->SetGeoCS(nativeGeoCS.c_str());
+
+    // No data value.
+    Utf8String nativeNoDataValue;
+    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
+    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
+
+    // Sister files.
+    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
+    bvector<UriPtr> nativeSisterFiles;
+    for each (UriNet^ managedSisterFile in managedSisterFiles)
+        {
+        nativeSisterFiles.push_back(ManagedToNativeUri(managedSisterFile));
+        }
+    nativeSource->SetSisterFiles(nativeSisterFiles);
+
+    return nativeSource;
+    }
+
+
+//=======================================================================================
+//                                      Uri
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
@@ -113,6 +260,10 @@ UriNet::!UriNet()
         }
     }
 
+
+//=======================================================================================
+//                               RealityDataSource
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
@@ -126,8 +277,7 @@ RealityDataSourceNet^ RealityDataSourceNet::Create(UriNet^ uri, String^ type)
 //-------------------------------------------------------------------------------------
 UriNet^ RealityDataSourceNet::GetUri()
     {    
-    marshal_context ctx;
-    return UriNet::Create(ctx.marshal_as<String^>((*m_pSource)->GetUri().ToString().c_str()));
+    return NativeToManagedUri((*m_pSource)->GetUri());
     }
 
 //-------------------------------------------------------------------------------------
@@ -135,10 +285,7 @@ UriNet^ RealityDataSourceNet::GetUri()
 //-------------------------------------------------------------------------------------
 void RealityDataSourceNet::SetUri(UriNet^ uri)
     {
-    Utf8String uriUtf8;
-    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri->ToStr()).ToPointer()));
-
-    (*m_pSource)->SetUri(*RealityPackage::Uri::Create(uriUtf8.c_str()));
+    (*m_pSource)->SetUri(*ManagedToNativeUri(uri));
     }
 
 //-------------------------------------------------------------------------------------
@@ -199,6 +346,26 @@ void RealityDataSourceNet::SetCopyright(String^ copyright)
     BeStringUtilities::WCharToUtf8(copyrightUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(copyright).ToPointer()));
 
     (*m_pSource)->SetCopyright(copyrightUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataSourceNet::GetTermOfUse()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetTermOfUse().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataSourceNet::SetTermOfUse(String^ termOfUse)
+    {
+    Utf8String termOfUseUtf8;
+    BeStringUtilities::WCharToUtf8(termOfUseUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(termOfUse).ToPointer()));
+
+    (*m_pSource)->SetTermOfUse(termOfUseUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -320,15 +487,15 @@ void RealityDataSourceNet::SetNoDataValue(String^ nodatavalue)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-List<String^>^ RealityDataSourceNet::GetSisterFiles()
+List<UriNet^>^ RealityDataSourceNet::GetSisterFiles()
     {
     marshal_context ctx;
-    List<String^>^ managedSisterFiles = gcnew List<String^>();
+    List<UriNet^>^ managedSisterFiles = gcnew List<UriNet^>();
 
-    bvector<Utf8String> sisterFiles = (*m_pSource)->GetSisterFiles();
-    for (Utf8StringCR sisterFile : sisterFiles)
+    bvector<UriPtr> sisterFiles = (*m_pSource)->GetSisterFiles();
+    for (UriPtr pSisterFile : sisterFiles)
         {
-        managedSisterFiles->Add(marshal_as<String^>(sisterFile.c_str()));
+        managedSisterFiles->Add(NativeToManagedUri(*pSisterFile));
         }
 
     return managedSisterFiles;
@@ -337,15 +504,14 @@ List<String^>^ RealityDataSourceNet::GetSisterFiles()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetSisterFiles(List<String^>^ sisterFiles)
+void RealityDataSourceNet::SetSisterFiles(List<UriNet^>^ sisterFiles)
     {
-    bvector<Utf8String> nativeSisterFiles;
+    bvector<UriPtr> nativeSisterFiles;
     Utf8String sisterFileUtf8;    
 
-    for each (String^ sisterFile in sisterFiles)
+    for each (UriNet^ sisterFile in sisterFiles)
         {
-        BeStringUtilities::WCharToUtf8(sisterFileUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(sisterFile).ToPointer()));
-        nativeSisterFiles.push_back(sisterFileUtf8);
+        nativeSisterFiles.push_back(ManagedToNativeUri(sisterFile));
         }
 
     (*m_pSource)->SetSisterFiles(nativeSisterFiles);
@@ -366,13 +532,10 @@ String^ RealityDataSourceNet::GetElementName()
 RealityDataSourceNet::RealityDataSourceNet(UriNet^ uri, String^ type)
     {
     // Managed to native reality data source.
-    Utf8String uriUtf8;
-    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri->ToStr()).ToPointer()));
-
     Utf8String typeUtf8;
     BeStringUtilities::WCharToUtf8(typeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(type).ToPointer()));
 
-    m_pSource = new RealityDataSourcePtr(RealityDataSource::Create(*RealityPackage::Uri::Create(uriUtf8.c_str()), typeUtf8.c_str()));
+    m_pSource = new RealityDataSourcePtr(RealityDataSource::Create(*ManagedToNativeUri(uri), typeUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------
@@ -395,6 +558,10 @@ RealityDataSourceNet::!RealityDataSourceNet()
         }
     }
 
+
+//=======================================================================================
+//                                  WmsDataSource
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
@@ -448,11 +615,8 @@ WmsDataSourceNet::WmsDataSourceNet(String^ uri)
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::WmsDataSourceNet(UriNet^ uri)
     {
-    // Managed to native reality data source.
-    Utf8String uriUtf8;
-    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri->ToStr()).ToPointer()));
-
-    m_pSource = new WmsDataSourcePtr(WmsDataSource::Create(*RealityPackage::Uri::Create(uriUtf8.c_str())));
+    // Managed to native reality data source.    
+    m_pSource = new WmsDataSourcePtr(WmsDataSource::Create(*ManagedToNativeUri(uri)));
     }
 
 //-------------------------------------------------------------------------------------
@@ -467,6 +631,180 @@ WmsDataSourceNet::~WmsDataSourceNet()
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::!WmsDataSourceNet()
+    {
+    if (0 != m_pSource)
+        {
+        delete m_pSource;
+        m_pSource = 0;
+        }
+    }
+
+
+//=======================================================================================
+//                                  OsmDataSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+OsmDataSourceNet^ OsmDataSourceNet::Create(String^ uri, double bboxMinX, double bboxMinY, double bboxMaxX, double bboxMaxY)
+    {
+    return gcnew OsmDataSourceNet(uri, bboxMinX, bboxMinY, bboxMaxX, bboxMaxY);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ OsmDataSourceNet::GetOsmResource()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetOsmResource().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void OsmDataSourceNet::SetOsmResource(String^ osmResource)
+    {
+    Utf8String osmResourceUtf8;
+    BeStringUtilities::WCharToUtf8(osmResourceUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmResource).ToPointer()));
+
+    (*m_pSource)->SetOsmResource(osmResourceUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+OsmDataSourceNet::OsmDataSourceNet(String^ uri, double bboxMinX, double bboxMinY, double bboxMaxX, double bboxMaxY)
+    {
+    // Managed to native reality data source.
+    Utf8String uriUtf8;
+    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri).ToPointer()));
+
+    DRange2d bbox = DRange2d::From(bboxMinX, bboxMinY, bboxMaxX, bboxMaxY);
+
+    m_pSource = new OsmDataSourcePtr(OsmDataSource::Create(uriUtf8.c_str(), &bbox));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+OsmDataSourceNet::~OsmDataSourceNet()
+    {
+    this->!OsmDataSourceNet();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+OsmDataSourceNet::!OsmDataSourceNet()
+    {
+    if (0 != m_pSource)
+        {
+        delete m_pSource;
+        m_pSource = 0;
+        }
+    }
+
+
+//=======================================================================================
+//                                  MultiBandSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourceNet^ MultiBandSourceNet::Create(UriNet^ uri, System::String^ type)
+    {
+    return gcnew MultiBandSourceNet(uri, type);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceNet^ MultiBandSourceNet::GetRedBand()
+    {
+    return NativeToManagedRealityDataSource(*(*m_pSource)->GetRedBand());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void MultiBandSourceNet::SetRedBand(RealityDataSourceNet^ band)
+    {
+    (*m_pSource)->SetRedBand(*ManagedToNativeRealityDataSource(band));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceNet^ MultiBandSourceNet::GetGreenBand()
+    {
+    return NativeToManagedRealityDataSource(*(*m_pSource)->GetGreenBand());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void MultiBandSourceNet::SetGreenBand(RealityDataSourceNet^ band)
+    {
+    (*m_pSource)->SetGreenBand(*ManagedToNativeRealityDataSource(band));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceNet^ MultiBandSourceNet::GetBlueBand()
+    {
+    return NativeToManagedRealityDataSource(*(*m_pSource)->GetBlueBand());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void MultiBandSourceNet::SetBlueBand(RealityDataSourceNet^ band)
+    {
+    (*m_pSource)->SetBlueBand(*ManagedToNativeRealityDataSource(band));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourceNet^ MultiBandSourceNet::GetPanchromaticBand()
+    {
+    return NativeToManagedRealityDataSource(*(*m_pSource)->GetPanchromaticBand());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void MultiBandSourceNet::SetPanchromaticBand(RealityDataSourceNet^ band)
+    {
+    (*m_pSource)->SetPanchromaticBand(*ManagedToNativeRealityDataSource(band));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourceNet::MultiBandSourceNet(UriNet^ uri, System::String^ type)
+    {
+    // Managed to native reality data source.
+    Utf8String typeUtf8;
+    BeStringUtilities::WCharToUtf8(typeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(type).ToPointer()));
+
+    m_pSource = new MultiBandSourcePtr(MultiBandSource::Create(*ManagedToNativeUri(uri), typeUtf8.c_str()));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourceNet::~MultiBandSourceNet()
+    {
+    this->!MultiBandSourceNet();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourceNet::!MultiBandSourceNet()
     {
     if (0 != m_pSource)
         {

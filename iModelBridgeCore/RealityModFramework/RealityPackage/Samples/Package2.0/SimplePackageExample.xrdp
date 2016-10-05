@@ -86,7 +86,7 @@
               <!-- Compound file contains two dem files representing eastern and western portions of the source. Both files form the source. This is expressed using the regexp located after the # -->
               <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#*.dem" type="dem">
                   <Id>75643</Id>
-                  <Copyright">http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada</Copyright> 
+                  <Copyright>http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada</Copyright> 
                   <TermOfUse>You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose.</TermOfUse>
                   <Provider>GeoGratis</Provider>
                   <Size>43827</Size>
