@@ -2080,6 +2080,28 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
+template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)
+    {
+    StatusInt status;
+    IScalableMeshPtr smTerrain = IScalableMesh::GetFor(terrainPath.c_str(), false, true, status);
+    if (status != SUCCESS) return;
+    auto nodeP = smTerrain->GetRootNode();
+
+    //create terrain index
+    auto pool = SMMemoryPool::GetInstance();
+    auto store = m_scmIndexPtr->GetDataStore();
+    m_scmTerrainIndexPtr = new MeshIndexType(store,
+                                        pool,
+                                   10000,
+                                   dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get())->GetNodePtr()->GetFilter(),
+                                   true, true, true,
+                                   dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher2_5d(),
+                                   dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher3d()
+                                   );
+    auto rootNodeP = m_scmTerrainIndexPtr->CreateRootNode();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(rootNodeP.GetPtr())->ImportTreeFrom(nodeP);
+    }
+
 #ifdef SCALABLE_MESH_ATP
 /*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders

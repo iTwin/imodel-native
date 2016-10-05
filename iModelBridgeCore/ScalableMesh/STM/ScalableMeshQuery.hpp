@@ -2380,6 +2380,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsHeaderLoaded() const
 template <class POINT> bool ScalableMeshNode<POINT>::_IsMeshLoaded() const
     {   
     LOAD_NODE
+
     //NEEDS_WORK_SM : Only good for points, not whole mesh.
     assert(!"Only good for points, not whole mesh.");
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));

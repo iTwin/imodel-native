@@ -2569,6 +2569,64 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     SetDirty(true);
     }
 
+
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ImportTreeFrom(IScalableMeshNodePtr& sourceNode)
+    {
+    m_nodeHeader.m_contentExtent = sourceNode->GetContentExtent();
+    m_nodeHeader.m_nodeExtent = sourceNode->GetNodeExtent();
+    
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshP = sourceNode->GetMesh(flags);
+    m_nodeHeader.m_isTextured = sourceNode->IsTextured();
+
+    bvector<DPoint3d> vertices(meshP->GetPolyfaceQuery()->GetPointCount());
+    if (!vertices.empty()) memcpy(vertices.data(), meshP->GetPolyfaceQuery()->GetPointCP(), vertices.size()* sizeof(DPoint3d));
+    bvector<int32_t> ptsIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
+    if (!ptsIndices.empty()) memcpy(ptsIndices.data(), meshP->GetPolyfaceQuery()->GetPointIndexCP(), ptsIndices.size()* sizeof(int32_t));
+
+    bvector<DPoint2d> uv(meshP->GetPolyfaceQuery()->GetParamCount());
+    if (!uv.empty()) memcpy(uv.data(), meshP->GetPolyfaceQuery()->GetParamCP(), uv.size()* sizeof(DPoint2d));
+    bvector<int32_t> uvIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
+    if (!uvIndices.empty()) memcpy(uvIndices.data(), meshP->GetPolyfaceQuery()->GetParamIndexCP(), uvIndices.size()* sizeof(int32_t));
+
+    size_t nIndicesCount = 0;
+    vector<POINT> nodePts(vertices.size());
+
+    for (size_t pointInd = 0; pointInd < vertices.size(); pointInd++)
+        {
+        nodePts[pointInd].x = vertices[pointInd].x;
+        nodePts[pointInd].y = vertices[pointInd].y;
+        nodePts[pointInd].z = vertices[pointInd].z;
+        }
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    pointsPtr->push_back(&nodePts[0], nodePts.size());
+    if(!uv.empty()) PushUV(&uv[0], uv.size());
+
+    vector<int32_t> indicesLine;
+
+   
+    nIndicesCount += ptsIndices.size();
+    PushPtsIndices(&ptsIndices[0], ptsIndices.size());
+    indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
+
+    if(!uvIndices.empty()) PushUVsIndices(0, &uvIndices[0], uvIndices.size());
+    m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
+    m_nodeHeader.m_nbUvIndexes = uv.size();
+    IncreaseTotalCount(GetNbPoints());
+
+    auto sourceChildren = sourceNode->GetChildrenNodes();
+    m_apSubNodes.resize(sourceChildren.size());
+    for (size_t i = 0; i < m_apSubNodes.size(); ++i)
+        {
+        m_apSubNodes[i] = CloneChild(sourceChildren[i]->GetNodeExtent());
+        dynamic_cast<SMMeshIndexNode<POINT,EXTENT>*>(m_apSubNodes[i].GetPtr())->ImportTreeFrom(sourceChildren[i]);
+        }
+
+    SetDirty(true);
+
+    }
+
     bool TopologyIsDifferent(const int32_t* indicesA, const size_t nIndicesA, const int32_t* indicesB, const size_t nIndicesB);
 
     //=======================================================================================
@@ -2687,7 +2745,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
         {
         texDataUnified.insert(texDataUnified.end(), existingTex->GetData(), existingTex->GetData()+existingTex->GetSize());
         }
-
+    GetMetadata();
+    GetMeshParts();
     if (m_meshParts.size() > 0)
         {
         for (size_t i = 0; i < m_meshParts.size(); i += 2)

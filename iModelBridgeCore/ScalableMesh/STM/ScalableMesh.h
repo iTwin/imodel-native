@@ -194,7 +194,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_computeTileBoundary;
         double                          m_minScreenPixelsPerPoint;            
 
-        HFCPtr<MeshIndexType>          m_scmIndexPtr;                                                    
+        HFCPtr<MeshIndexType>          m_scmIndexPtr;              
+        HFCPtr<MeshIndexType>          m_scmTerrainIndexPtr; //Optional. Scalable Mesh representing only terrain
         RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
@@ -291,7 +292,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override;
-
+        virtual void                               _ImportTerrainSM(WString terrainPath) override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -414,7 +415,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
-
+        virtual void                               _ImportTerrainSM(WString terrainPath) override {};
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {

@@ -249,6 +249,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void UpdateNodeFromBcDTM();
 
+    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode);
+
 #ifdef WIP_MESH_IMPORT
     void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
 
