@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudDataQuery.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -141,6 +141,7 @@ public:
         QUERY_DENSITY_FULL=1,
         QUERY_DENSITY_VIEW=2,
         QUERY_DENSITY_LIMIT=3,
+        QUERY_DENSITY_VIEW_PROGRESSIVE = 8,
         };
 
     enum POINT_FILTER
