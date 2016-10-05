@@ -36,7 +36,7 @@ struct ThreadPoolWorkDonePredicate;
 
 //__PUBLISH_SECTION_END__
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 enum class SchedulingMethod
     {
@@ -45,7 +45,7 @@ enum class SchedulingMethod
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 template<typename T> struct ThreadSafeQueue
 {
@@ -106,7 +106,7 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct PointCloudThread : RefCountedBase
 {
@@ -135,7 +135,7 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct PointCloudWork : IRefCounted
 {
@@ -147,7 +147,7 @@ protected:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct PointCloudWorkerThread : PointCloudThread
 {
@@ -199,7 +199,7 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct PointCloudWorkQueue : ThreadSafeQueue<PointCloudWorkPtr>
     {
@@ -209,7 +209,7 @@ struct PointCloudWorkQueue : ThreadSafeQueue<PointCloudWorkPtr>
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudThreadPool : RefCounted<PointCloudWorkerThread::IStateListener>
 {       

@@ -16,7 +16,7 @@ GROUND_DETECTION_TYPEDEF(IPointsProviderCreator)
 
 
 BEGIN_GROUND_DETECTION_NAMESPACE
-	
+    
 /*---------------------------------------------------------------------------------**//**
 * IPointsProviderIterator
 * @bsiclass
@@ -63,7 +63,7 @@ template <typename Impl> struct IPointsProviderIterator : std::iterator<std::for
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     12/2015
+* @bsiclass                                             Marc.Bedard     12/2015
 +===============+===============+===============+===============+===============+======*/
 struct IPointsProvider : public RefCountedBase
 {
@@ -128,7 +128,7 @@ protected:
     GROUND_DETECTION_EXPORT virtual void            _SetUseMeterUnit(bool value); 
     GROUND_DETECTION_EXPORT virtual bool            _GetUseMeterUnit() const;
 
-	Transform GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ bool useGlobalOrigin);
+    Transform GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ bool useGlobalOrigin);
     
     DRange3d                            m_boundingBoxInUors;
     mutable bool                        m_prefetchPoints;
@@ -157,7 +157,7 @@ public:
     //Point always returned in meters, you can set this to false if you want otherwise and point will be transformed to UORs
     //before being returned
     GROUND_DETECTION_EXPORT void        SetUseMeterUnit(bool value) { _SetUseMeterUnit(value); }
-    GROUND_DETECTION_EXPORT bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }	
+    GROUND_DETECTION_EXPORT bool        GetUseMeterUnit() const { return _GetUseMeterUnit(); }    
     GROUND_DETECTION_EXPORT Transform   GetUorToMeterTransform(bool useGlobalOrigin) const { return _GetUorToMeterTransform(useGlobalOrigin); }
     GROUND_DETECTION_EXPORT Transform   GetMeterToNativeTransform() const { return _GetMeterToNativeTransform(); }
 
@@ -181,23 +181,27 @@ private:
 }; // IPointsProvider
 
 /*=================================================================================**//**
-* @bsiclass                                     		                    10/2016
+* @bsiclass                                                                 10/2016
 +===============+===============+===============+===============+===============+======*/
 struct IPointsProviderCreator : public RefCountedBase
-	{
-	protected : 
+    {
+    protected : 
 
-		virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) = 0;
+        virtual IPointsProviderPtr _CreatePointProvider(DRange3d const& boundingBoxInUors) = 0;
 
-		virtual IPointsProviderPtr _CreatePointProvider() = 0;
+        virtual IPointsProviderPtr _CreatePointProvider() = 0;
 
-	
-	public : 
+       virtual void               _GetAvailableRange(DRange3d& availableRange) = 0;
 
-		IPointsProviderPtr CreatePointProvider(DRange3d const& boundingBoxInUors);
+    
+    public : 
 
-		IPointsProviderPtr CreatePointProvider();
-	};
+        IPointsProviderPtr CreatePointProvider(DRange3d const& boundingBoxInUors);
+
+        IPointsProviderPtr CreatePointProvider();
+
+        void               GetAvailableRange(DRange3d& availableRange);
+    };
 
 
 END_GROUND_DETECTION_NAMESPACE

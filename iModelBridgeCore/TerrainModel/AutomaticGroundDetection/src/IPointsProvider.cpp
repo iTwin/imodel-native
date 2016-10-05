@@ -30,34 +30,41 @@ const uint32_t IPointsProvider::DATA_QUERY_BUFFER_SIZE = 400000;
 * @bsimethod                                    Mathieu.St-Pierre                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPointsProviderPtr IPointsProviderCreator::CreatePointProvider(DRange3d const& boundingBoxInUors)
-	{
-	return _CreatePointProvider(boundingBoxInUors);
-	}
+    {
+    return _CreatePointProvider(boundingBoxInUors);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPointsProviderPtr IPointsProviderCreator::CreatePointProvider()
-	{
-	return _CreatePointProvider();
-	}
+    {
+    return _CreatePointProvider();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void IPointsProviderCreator::GetAvailableRange(DRange3d& availableRange)
+    {
+    _GetAvailableRange(availableRange);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPointsProviderPtr IPointsProvider::CreateFrom(IPointsProviderCreatorPtr& pointsProviderCreator, DRange3d* pRange)
     {
-	assert(pointsProviderCreator.IsValid());
+    assert(pointsProviderCreator.IsValid());
 
-	if (pRange == nullptr)
-		{
-		return pointsProviderCreator->CreatePointProvider();
-		}
-	
-	return pointsProviderCreator->CreatePointProvider(*pRange); 
+    if (pRange == nullptr)
+        {
+        return pointsProviderCreator->CreatePointProvider();
+        }
+    
+    return pointsProviderCreator->CreatePointProvider(*pRange); 
 
-	/*
+    /*
     if (isInputPointCloud)
         return PCPointsProvider::CreateFrom(eh, boundingBoxInUors);
 
@@ -69,7 +76,7 @@ IPointsProviderPtr IPointsProvider::CreateFrom(IPointsProviderCreatorPtr& points
     BeAssert(!"Not implemented yet - PointProvider for this element type");
     //Try with a generic PolyfaceFromElement
     return TMPointsProvider::CreateFrom(eh, boundingBoxInUors);
-	*/
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,7 +146,7 @@ size_t IPointsProvider::_ComputeMemorySize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform IPointsProvider::GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ bool useGlobalOrigin) 
     {
-	/*
+    /*
     double uorPerMetersScale = mdlModelRef_getUorPerMeter(model);
     DPoint3d globalOrigin;
     mdlModelRef_getGlobalOrigin(model, &globalOrigin);
@@ -155,7 +162,7 @@ Transform IPointsProvider::GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ 
     metersToUors.InitFromRowValues(uorPerMetersScale, 0.0,               0.0,               translation.x,
                                    0.0,               uorPerMetersScale, 0.0,               translation.y,
                                    0.0,               0.0,               uorPerMetersScale, translation.z);
-								   */
+                                   */
     Transform uorToMeters(Transform::FromIdentity());
     //uorToMeters.InverseOf(metersToUors);
     return uorToMeters;
@@ -167,9 +174,9 @@ Transform IPointsProvider::GetUorToMeterTransformIntern(/*DgnModelRefP model,*/ 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform IPointsProvider::_GetUorToMeterTransform(bool useGlobalOrigin) const
     {
-	Transform transform(Transform::FromIdentity());
+    Transform transform(Transform::FromIdentity());
 
-	return transform;
+    return transform;
 
     //return GetUorToMeterTransform(mdlModelRef_getActive(), useGlobalOrigin);
     }

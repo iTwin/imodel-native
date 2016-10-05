@@ -8,13 +8,13 @@
 #pragma  once
 #define BEGIN_GROUND_DETECTION_NAMESPACE                BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE namespace GroundDetection {
 #define END_GROUND_DETECTION_NAMESPACE                  END_BENTLEY_TERRAINMODEL_NAMESPACE }
-#define USING_NAMESPACE_GROUND_DETECTION				using namespace BENTLEY_NAMESPACE_NAME::TerrainModel::GroundDetection;
+#define USING_NAMESPACE_GROUND_DETECTION                using namespace BENTLEY_NAMESPACE_NAME::TerrainModel::GroundDetection;
 
 #define GROUND_DETECTION_TYPEDEF(_sname_) \
     BEGIN_GROUND_DETECTION_NAMESPACE \
-		struct _sname_; \
-		typedef RefCountedPtr<_sname_> _sname_##Ptr; \
-	END_GROUND_DETECTION_NAMESPACE
+        struct _sname_; \
+        typedef RefCountedPtr<_sname_> _sname_##Ptr; \
+    END_GROUND_DETECTION_NAMESPACE
 
 #if defined (__BENTLEY_GROUND_DETECT_BUILD__)
 #    define GROUND_DETECTION_EXPORT           EXPORT_ATTRIBUTE

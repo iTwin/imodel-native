@@ -80,6 +80,8 @@ $(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcD
 
 $(o)IPointsProvider$(oext) : $(groundDetectSrcDir)IPointsProvider.cpp $(groundDetectPublicApiDir)IPointsProvider.h  ${MultiCompileDepends}
 
+$(o)IPointsAccumulator$(oext) : $(groundDetectSrcDir)IPointsAccumulator.cpp $(groundDetectPublicApiDir)IPointsAccumulator.h  ${MultiCompileDepends}
+
 $(o)DiscreetHistogram$(oext) : $(groundDetectSrcDir)DiscreetHistogram.cpp $(groundDetectSrcDir)DiscreetHistogram.h  ${MultiCompileDepends}
 
 $(o)GroundDetectionManager$(oext) : $(groundDetectSrcDir)GroundDetectionManager.cpp ${MultiCompileDepends}
@@ -114,14 +116,14 @@ DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BaseGeoCoord.lib \
-	$(ContextSubpartsLibs)Bentley.lib \
-	$(ContextSubpartsLibs)BentleyGeom.lib \
+    $(ContextSubpartsLibs)Bentley.lib \
+    $(ContextSubpartsLibs)BentleyGeom.lib \
     ws2_32.lib \
     $(ContextSubpartsLibs)TerrainModelCore.lib \
-	$(ContextSubpartsLibs)TerrainModelFormats.lib
-	
-	
-	# \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+    $(ContextSubpartsLibs)TerrainModelFormats.lib
+    
+    
+    # \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)
 
 #LINKER_LIBRARIES            = 
 

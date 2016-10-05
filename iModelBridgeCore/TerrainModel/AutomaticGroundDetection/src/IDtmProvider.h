@@ -13,7 +13,7 @@
 BEGIN_GROUND_DETECTION_NAMESPACE
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
 struct Triangle
     {
@@ -122,7 +122,7 @@ template <typename Impl> struct IDtmProviderIterator : std::iterator<std::forwar
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     12/2015
+* @bsiclass                                             Marc.Bedard     12/2015
 +===============+===============+===============+===============+===============+======*/
 struct IDtmProvider : public RefCountedBase, NonCopyableClass
 {

@@ -122,7 +122,7 @@ m_nbPointToAdd(PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD)
     {
     Transform uorsToMeters;
     uorsToMeters.InverseOf(m_metersToUors);    
-	IPointsProviderCreatorPtr ptsProviderCreator(params.GetPointsProviderCreator());
+    IPointsProviderCreatorPtr ptsProviderCreator(params.GetPointsProviderCreator());
     m_pPointsProvider = IPointsProvider::CreateFrom(ptsProviderCreator, &m_boundingBoxUors);    
     m_pPointsProvider->SetUseMultiThread(params.GetUseMultiThread());
     m_pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...
@@ -211,7 +211,7 @@ StatusInt GridCellEntry::Classify(IDPoint3dCriteria const& criteria)
     {
     //reset last query and create our query buffer in preparation for our new query
 
-	
+    
     QueryContextGuard qerryContext(pointCloudeh, m_isMultiThread, m_boundingBoxUors);
     PCQueryHandle& queryHandle(qerryContext.GetQuery());
     queryHandle.SetMode(m_queryMode, m_queryView);
@@ -442,9 +442,10 @@ GroundDetectionGridPtr GroundDetectionGrid::Create(GroundDetectionParameters con
 GroundDetectionGrid::GroundDetectionGrid(GroundDetectionParameters const& params)
 :m_gridCellSize(params.GetLargestStructureSize()),
 m_density(params.GetDensity())
-    {
-	
-	DRange3d    boundingBoxInUors;//GDZERO (IPointsProvider::GetBoundingBox());
+    {        
+    DRange3d boundingBoxInUors;
+
+    params.GetPointsProviderCreator()->GetAvailableRange(boundingBoxInUors);
 
     //Create a grid cell entry that encompass all the range and extract the box in meters
     GridCellEntryPtr pEntry(GridCellEntry::Create(boundingBoxInUors, params));

@@ -96,7 +96,7 @@ private:
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		                    06/2015
+* @bsiclass                                                                 06/2015
 +===============+===============+===============+===============+===============+======*/
 struct GroundDetectionParameters : public RefCountedBase
 {
@@ -114,16 +114,16 @@ public:
 
     //General options     
      GROUND_DETECTION_EXPORT Transform const& GetMetersToUors() const;
-     GROUND_DETECTION_EXPORT void			  SetMetersToUors(Transform const& metersToUors);
+     GROUND_DETECTION_EXPORT void              SetMetersToUors(Transform const& metersToUors);
      GROUND_DETECTION_EXPORT bool             GetUseMultiThread() const;
      GROUND_DETECTION_EXPORT void             SetUseMultiThread(bool value);        
 
-	 GROUND_DETECTION_EXPORT IPointsProviderCreatorPtr GetPointsProviderCreator() const;        
-	 GROUND_DETECTION_EXPORT void					  SetPointsProviderCreator(IPointsProviderCreatorPtr& creator);        
-	 
-    //DTM file options        	     
+     GROUND_DETECTION_EXPORT IPointsProviderCreatorPtr GetPointsProviderCreator() const;        
+     GROUND_DETECTION_EXPORT void                      SetPointsProviderCreator(IPointsProviderCreatorPtr& creator);        
+     
+    //DTM file options                 
      GROUND_DETECTION_EXPORT DTMFileOptions  GetCreateDtmFile() const;
-	 GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
+     GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
      GROUND_DETECTION_EXPORT double          GetLargestStructureSize() const;
      GROUND_DETECTION_EXPORT void            SetLargestStructureSize(double value);
      GROUND_DETECTION_EXPORT bool            GetExpandTinToRange() const;
@@ -139,7 +139,7 @@ public:
      GROUND_DETECTION_EXPORT double          GetHeightPercentileFactor() const;        //We will use this histogram percentile height threshold for densification
      GROUND_DETECTION_EXPORT void            SetHeightPercentileFactor(double value);    
 
-	 //Classification options    
+     //Classification options    
     GROUND_DETECTION_EXPORT double          GetClassificationTolerance() const;
     GROUND_DETECTION_EXPORT void            SetClassificationTolerance(double value);
     GROUND_DETECTION_EXPORT bool            GetClassificationTolEstimateState() const;
@@ -156,14 +156,14 @@ public:
      GROUND_DETECTION_EXPORT void      SetSensitivityFactor(double value);
 
     //DEBUG options
-	 /*
+     /*
      bool      GetDrawSeeds() const;
      void      SetDrawSeeds(bool value);
      bool      GetDrawTriangles() const;
      void      SetDrawTriangles(bool value);
      bool      GetDrawGrid() const;
      void      SetDrawGrid(bool value);
-	 */
+     */
 
 private:
 
@@ -174,10 +174,10 @@ private:
     //General options               
     bool                                m_useViewFilters;
     Transform                           m_metersToUors;
-	IPointsProviderCreatorPtr			m_pointProviderCreator; 
+    IPointsProviderCreatorPtr            m_pointProviderCreator; 
    
     //Dtm file options                
-	DTMFileOptions  m_createDtmFile;
+    DTMFileOptions  m_createDtmFile;
     double          m_largestStructSize;
     bool            m_expandTinToRange;       //If true, will create TIN points on range border     
 
@@ -186,9 +186,9 @@ private:
     double      m_triangleEdgeThreshold;
     double      m_anglePercentileFactor;
     double      m_heightPercentileFactor;
-	
+    
 
-	//Classification options    
+    //Classification options    
     bool        m_classificationTolEstimateState;
     double      m_classificationTolerance; //Height above ground TIN that is considered to be ground point 
     
@@ -200,16 +200,16 @@ private:
     double              m_sensitivityFactor; //larger grows ground more aggressively, to be used on the easier datasets
 
     //Debug stuff
-	/*
+    /*
     bool     m_drawSeeds;
     bool     m_drawTriangles;
     bool     m_drawGrid;
-	*/
+    */
 };
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     05/2015
+* @bsiclass                                             Marc.Bedard     05/2015
 +===============+===============+===============+===============+===============+======*/
 struct IGroundDetectionServices 
 {

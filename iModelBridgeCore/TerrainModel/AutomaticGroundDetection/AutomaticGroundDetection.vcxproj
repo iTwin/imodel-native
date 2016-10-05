@@ -132,6 +132,7 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <ClInclude Include="PublicAPI\GroundDetectionMacros.h" />
     <ClInclude Include="PublicAPI\GroundDetectionManager.h" />
     <ClInclude Include="PublicAPI\IGroundDetectionServices.h" />
+    <ClInclude Include="PublicAPI\IPointsAccumulator.h" />
     <ClInclude Include="PublicAPI\IPointsProvider.h" />
     <ClInclude Include="src\AutomaticGroundDetectionPCH.h" />
     <ClInclude Include="src\BcDtmProvider.h" />
@@ -151,6 +152,7 @@ python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f 
     <ClCompile Include="src\GroundDetectionManagerDc.cpp" />
     <ClCompile Include="src\GroundDetectionParameters.cpp" />
     <ClCompile Include="src\IDtmProvider.cpp" />
+    <ClCompile Include="src\IPointsAccumulator.cpp" />
     <ClCompile Include="src\IPointsProvider.cpp" />
     <ClCompile Include="src\PCGroundTIN.cpp" />
   </ItemGroup>

@@ -17,7 +17,7 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     12/2015
+* @bsiclass                                             Marc.Bedard     12/2015
 +===============+===============+===============+===============+===============+======*/
 struct BcDtmProvider : public IDtmProvider
 {

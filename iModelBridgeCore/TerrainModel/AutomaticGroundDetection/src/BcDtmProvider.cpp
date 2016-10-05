@@ -250,10 +250,10 @@ long BcDtmProvider::_ComputeTriangulation()
 
     long newTrianglesCount(m_pBcDtm->GetTrianglesCount());
     
-	DPoint3d* meshPtsP = 0; 
-	long numMeshPts;
-	long* meshFacesP = 0; 
-	long numMeshFaces;
+    DPoint3d* meshPtsP = 0; 
+    long numMeshPts;
+    long* meshFacesP = 0; 
+    long numMeshFaces;
 
     DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject(m_pBcDtm->GetTinHandle(), 1, newTrianglesCount, NULL, DTMFenceType::Block, DTMFenceOption::Overlap, NULL, 0, &meshPtsP, &numMeshPts, &meshFacesP, &numMeshFaces);
 
@@ -261,11 +261,11 @@ long BcDtmProvider::_ComputeTriangulation()
 
     m_pMesh = BcDTMMesh::Create(meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
 
-	if (!meshPtsP)
-		delete[] meshPtsP;
+    if (!meshPtsP)
+        delete[] meshPtsP;
 
-	if (!meshFacesP)
-		delete[] meshFacesP;
+    if (!meshFacesP)
+        delete[] meshFacesP;
     
     BeAssert(m_pMesh.IsValid());
 

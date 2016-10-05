@@ -22,9 +22,9 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 bool CheckProcessNotAborted();
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
-struct	DrawingFacility
+struct    DrawingFacility
     {
     static void  DrawTriangle(DPoint3d const& pt1, DPoint3d const& pt2, DPoint3d const& pt3, Transform const& metersToUors);
     static void  DrawPoint(DPoint3d const& pt, Transform const& metersToUors);
@@ -32,7 +32,7 @@ struct	DrawingFacility
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
 struct DPoint3dValueEntryCompare
     {
@@ -68,7 +68,7 @@ typedef BENTLEY_NAMESPACE_NAME::bset<DPoint3d, DPoint3dValueEntryCompare> T_DPoi
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
 struct TINPointContainer : public PointCollection, RefCountedBase
     {
@@ -85,7 +85,7 @@ struct TINPointContainer : public PointCollection, RefCountedBase
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
 class PCGroundTrianglePointSorterPredicat
     {
@@ -98,7 +98,7 @@ class PCGroundTrianglePointSorterPredicat
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
 class PCGroundTrianglePointAcceptedPredicat
     {
@@ -111,9 +111,9 @@ class PCGroundTrianglePointAcceptedPredicat
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
-struct	PCGroundTriangle : public RefCountedBase
+struct    PCGroundTriangle : public RefCountedBase
     {
 public:
 
@@ -166,7 +166,7 @@ typedef std::vector<PCGroundTrianglePtr> PCGroundTriangleCollection;
 //GDZERO
 #if 0
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
     {
@@ -178,7 +178,7 @@ struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
         QueryAllPointsForFirstSeedPointWork(PCGroundTINMT& pcGroundTIN, GridCellEntry& gridCell) :m_PCGroundTin(pcGroundTIN), m_pGridCellEntry(&gridCell) {}
         ~QueryAllPointsForFirstSeedPointWork() {};
         //virtual void    _DoWork() override;
-		virtual size_t  _GetMemorySize(); //override;
+        virtual size_t  _GetMemorySize(); //override;
 
     public:
         static QueryAllPointsForFirstSeedPointWorkPtr Create(PCGroundTINMT& pcGroundTIN, GridCellEntry& gridCell)
@@ -187,7 +187,7 @@ struct QueryAllPointsForFirstSeedPointWork// : RefCounted<PointCloudWork>
             }
     };
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct FindFirstSeedPointWork //: RefCounted<PointCloudWork>
     {
@@ -198,7 +198,7 @@ struct FindFirstSeedPointWork //: RefCounted<PointCloudWork>
 
         FindFirstSeedPointWork(PCGroundTINMT& pcGroundTIN, GridCellEntry& gridCell) :m_PCGroundTin(pcGroundTIN), m_pGridCellEntry(&gridCell)   {}
         ~FindFirstSeedPointWork()  {};
-		virtual void    _DoWork(); //override;
+        virtual void    _DoWork(); //override;
         virtual size_t  _GetMemorySize() /*override*/ {return 0;}
 
     public:
@@ -209,7 +209,7 @@ struct FindFirstSeedPointWork //: RefCounted<PointCloudWork>
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct QueryAllPointsForTriangleWork /*: RefCounted<PointCloudWork>*/
     {
@@ -231,7 +231,7 @@ struct QueryAllPointsForTriangleWork /*: RefCounted<PointCloudWork>*/
 
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct DensifyTriangleWork /*: RefCounted<PointCloudWork>*/
     {
@@ -252,7 +252,7 @@ struct DensifyTriangleWork /*: RefCounted<PointCloudWork>*/
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     09/2015
+* @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct ClassifyPointCloudWork /*: RefCounted<PointCloudWork>*/
     {
@@ -274,13 +274,13 @@ struct ClassifyPointCloudWork /*: RefCounted<PointCloudWork>*/
 #endif
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
-struct	PCGroundTIN : public RefCountedBase,
+struct    PCGroundTIN : public RefCountedBase,
                       public IDPoint3dCriteria
 {
 static const size_t CONTAINER_MAX_SIZE;
-static const double HISTO_STEP_PRECISION_FACTOR;					
+static const double HISTO_STEP_PRECISION_FACTOR;                    
 static const size_t MAX_HISTO_STEP;
 static const size_t MAX_NB_SEEDPOINTS_TO_ADD;
 static const double SEED_BORDER_FACTOR;
@@ -376,9 +376,9 @@ private:
 }; // PCGroundTIN
 
 /*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2015
+* @bsiclass                                             Marc.Bedard     06/2015
 +===============+===============+===============+===============+===============+======*/
-struct	PCGroundTINMT : public PCGroundTIN
+struct    PCGroundTINMT : public PCGroundTIN
 {
 DEFINE_T_SUPER(PCGroundTIN)
 
@@ -391,7 +391,7 @@ public:
 
 
 private:
-	/*
+    /*
     static BeCriticalSection        s_CSPCGroundTIN;
     static BeCriticalSection        s_newPointToAddCS;
     static BeCriticalSection        s_dtmLibCS;
@@ -400,12 +400,12 @@ private:
 
     PointCloudThreadPoolPtr m_pQueryThreadPool;
     PointCloudThreadPoolPtr m_pThreadPool;
-	*/
+    */
 
     PCGroundTINMT(GroundDetectionParameters& params, ProgressReport& report);
     ~PCGroundTINMT();
 
-	/*
+    /*
     PointCloudThreadPool& GetQueryThreadPool();
     void FlushThreadPoolWork();
 
@@ -421,7 +421,7 @@ private:
     virtual StatusInt _DensifyTIN() override;
     virtual StatusInt _Classify() override;
     virtual void      _IncrementWorkDone() override;
-	*/
+    */
 
 }; // PCGroundTINMT
 

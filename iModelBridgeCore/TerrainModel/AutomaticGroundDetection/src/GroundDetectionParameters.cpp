@@ -134,10 +134,10 @@ void    ProgressReport::EndPhase(WChar* traceText)
     {
     m_timer.Stop();
     SetEstimatedRemainingTime(false, 0.0);
-	/*
+    /*
     GroundDetectionLogger::OutputTimerToLogger(m_timer);
     GROUNDDLOG->trace(traceText);
-	*/
+    */
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     08/2015
@@ -163,10 +163,10 @@ int  ProgressReport::GetCurrentIteration() const
 void ProgressReport::EndCurrentIteration()
     {
     m_timerIter.Stop();
-	/*
+    /*
     GroundDetectionLogger::OutputTimerToLogger(m_timerIter);
     GROUNDDLOG->tracev(L"END - Iteration=%d", m_currentIteration);
-	*/
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,7 +226,7 @@ BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* GroundDetectionLogger::Get()
     {
     return Bentley::NativeLogging::LoggingManager::GetLogger(L"Descartes.GroundDetection");
     }
-	*/
+    */
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2015
@@ -240,7 +240,7 @@ void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer)
     int seconds = (int) timer.GetElapsedSeconds() % 60;
    // GROUNDDLOG->tracev(L"%.2lf seconds (%ld days %ld h %ld min %ld s)", timer.GetElapsedSeconds(), days, hours, minutes, seconds);
     }
-	*/
+    */
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
@@ -269,10 +269,10 @@ m_metersToUors(Transform::FromIdentity()),
 m_createDtmFile(NO_DTM_REQUIRED),
 m_densifyTin(true)
     {
-	/*GDZERO
+    /*GDZERO
     Transform uorToMeter(IPointsProvider::GetUorToMeterTransform(mdlModelRef_getActive(),true));
     m_metersToUors.InverseOf(uorToMeter);
-	*/
+    */
     }
 
 
@@ -298,8 +298,8 @@ void      GroundDetectionParameters::SetAnglePercentileFactor(double value) { m_
 double    GroundDetectionParameters::GetHeightPercentileFactor() const { return m_heightPercentileFactor; }
 void      GroundDetectionParameters::SetHeightPercentileFactor(double value) { m_heightPercentileFactor = value; }
 
-		  GroundDetectionParameters::DTMFileOptions GroundDetectionParameters::GetCreateDtmFile() const                { return m_createDtmFile; }
-void	  GroundDetectionParameters::SetCreateDtmFile(GroundDetectionParameters::DTMFileOptions createDtmFile)    { m_createDtmFile = createDtmFile; }
+          GroundDetectionParameters::DTMFileOptions GroundDetectionParameters::GetCreateDtmFile() const                { return m_createDtmFile; }
+void      GroundDetectionParameters::SetCreateDtmFile(GroundDetectionParameters::DTMFileOptions createDtmFile)    { m_createDtmFile = createDtmFile; }
 
 double    GroundDetectionParameters::GetLargestStructureSize() const    { return m_largestStructSize; }
 void      GroundDetectionParameters::SetLargestStructureSize(double value){ m_largestStructSize = value; }
@@ -323,7 +323,7 @@ Transform const&  GroundDetectionParameters::GetMetersToUors() const     { retur
 void        GroundDetectionParameters::SetMetersToUors(Transform const& metersToUors)      { m_metersToUors.Copy(metersToUors); }
 
 IPointsProviderCreatorPtr GroundDetectionParameters::GetPointsProviderCreator() const     { return m_pointProviderCreator; }
-void					 GroundDetectionParameters::SetPointsProviderCreator(IPointsProviderCreatorPtr& creator)      { m_pointProviderCreator = creator; }
+void                     GroundDetectionParameters::SetPointsProviderCreator(IPointsProviderCreatorPtr& creator)      { m_pointProviderCreator = creator; }
 
 /*
 BeFileName GroundDetectionParameters::GetDtmFilename() const            { return m_dtmFileName; }
