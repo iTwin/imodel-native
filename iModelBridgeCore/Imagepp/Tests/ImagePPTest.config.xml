@@ -5,7 +5,8 @@
         <!--Location of input files. If blank or invalid tests won't run.
         You can get a copy of files here: \\TEST33393QBC\Dataset\Images_Files\_forATPs\        
         -->
-        <Source Enable="true">D:\Dataset\Images_Files\_forATPs\</Source>
+        <Source Enable="false">D:\Dataset\Images_Files\_forATPs\</Source>
+        <!--<Source Enable="true">D:\Dataset\Images_Files\_forATPsTst\</Source>-->
         <!-- &&MM TODO 
         - SourceFilters
 
