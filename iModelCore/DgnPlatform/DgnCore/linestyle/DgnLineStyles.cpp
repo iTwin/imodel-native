@@ -62,12 +62,12 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    06/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
+LsCacheP DgnLineStyles::GetLsCacheP ()
     {
     if (m_lineStyleMap.IsNull())
         m_lineStyleMap = LsCache::Create (m_dgndb);
 
-    if (!m_lineStyleMap->IsLoaded() && loadIfNull)
+    if (!m_lineStyleMap->IsLoaded())
         m_lineStyleMap->Load();
 
     return m_lineStyleMap.get();

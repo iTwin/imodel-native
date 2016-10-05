@@ -636,9 +636,9 @@ BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-LsCacheP  LsCache::GetDgnDbCache (DgnDbR project, bool loadIfNotLoaded)
+LsCacheP  LsCache::GetDgnDbCache (DgnDbR project)
     {
-    return  project.LineStyles().GetLsCacheP (loadIfNotLoaded);
+    return  project.LineStyles().GetLsCacheP ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -840,7 +840,7 @@ LsCacheStyleIterator LsCache::end   () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsDefinitionP     LsCache::FindInMap (DgnDbR dgndb, DgnStyleId styleId)
     {
-    LsCache*  lsMap = LsCache::GetDgnDbCache (dgndb, true);
+    LsCache*  lsMap = LsCache::GetDgnDbCache (dgndb);
     if (NULL == lsMap)
         {
         BeAssert (false);     // Should never occur

@@ -931,7 +931,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 #if defined(NEEDSWORK_LINESTYLE_THREAD_SAFETY)
     // Same deal with line styles.
     // NEEDSWORK: Line styles are a much bigger problem...and still WIP...need John's input
-    LsCache::GetDgnDbCache(GetDgnDb(), true);
+    LsCache::GetDgnDbCache(GetDgnDb());
 #endif
 
     if (!tiles.empty())

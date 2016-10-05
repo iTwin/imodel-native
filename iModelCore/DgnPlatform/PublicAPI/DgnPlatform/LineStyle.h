@@ -1515,7 +1515,7 @@ public:
 public:
     //! Gets the line style map associated with the specified project.
     //! @return a A pointer to the map if it is loaded or if not loaded but loadIfNotLoaded is true; NULL otherwise
-    DGNPLATFORM_EXPORT static LsCacheP  GetDgnDbCache             (DgnDbR, bool loadIfNotLoaded = true);
+    DGNPLATFORM_EXPORT static LsCacheP  GetDgnDbCache             (DgnDbR);
 
     DGNPLATFORM_EXPORT Utf8String                  GetFileName             () const;    //!< Name of file used to load the map.
 
@@ -1573,7 +1573,7 @@ public:
     //! Updates an a Line Style in the styles table..
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
-    DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
+    DGNPLATFORM_EXPORT LsCacheP GetLsCacheP ();
 };
 
 //__PUBLISH_SECTION_END__
