@@ -168,6 +168,9 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
     {
     functionReturnStatus = -1;
 
+    if (nullptr == el.ToGeometrySource3dP() && nullptr == el.ToGeometrySource2dP())
+        return DgnDbStatus::WrongClass;
+
     DgnDbStatus status = LoadProgram(el.GetDgnDb(), jsEgaFunctionName, false);
     if (DgnDbStatus::Success != status)
         return status;
@@ -182,7 +185,18 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
 
     BeginCallContext();
     BeJsObject parmsObj = EvaluateJson(parms);
-    BeJsNativePointer jsel = ObtainProjectedClassInstancePointer(new JsDgnElement(el), true);
+    BeJsNativePointer jsel; // try to get the best fit for the element type
+    auto g3d = dynamic_cast<GeometricElement3d*>(&el);
+    if (nullptr != g3d)
+        jsel = ObtainProjectedClassInstancePointer(new JsGeometricElement3d(*g3d), true);
+    else
+        {
+        auto g2d = dynamic_cast<GeometricElement2d*>(&el);
+        if (nullptr != g2d)
+            jsel = ObtainProjectedClassInstancePointer(new JsGeometrySource2d(*g2d), true);
+        else
+            jsel = ObtainProjectedClassInstancePointer(new JsDgnElement(el), true); // It's some kind of geometry source. We don't know the concrete class.
+        }
     BeJsNativePointer jsorigin = ObtainProjectedClassInstancePointer(new JsDPoint3d(origin), true);
     BeJsNativePointer jsangles = ObtainProjectedClassInstancePointer(new JsYawPitchRollAngles(angles), true);
     BeJsValue retval = jsfunc(jsel, jsorigin, jsangles, parmsObj);
