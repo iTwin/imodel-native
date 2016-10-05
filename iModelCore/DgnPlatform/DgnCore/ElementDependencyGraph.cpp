@@ -69,7 +69,7 @@ struct DgnElementDependencyGraph::ElementDrivesElement : DgnElementDependencyGra
     public:
     ElementDrivesElement(DgnElementDependencyGraph&);
         
-    DbResult DoPrepare(DgnModelId);
+    DbResult DoPrepare();
 
     DbResult StepSelectWhereRootInDirectChanges(Edge&);
     DbResult StepSelectWhereDependentInDirectChanges(Edge&);
@@ -308,107 +308,13 @@ void DgnElementDependencyGraph::WriteDot(BeFileNameCR dotFilename, bvector<bvect
     fclose(fp);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDependencyGraph::UpdateModelDependencyIndex()
-    {
-    // Do a total topological sort on the Model table, where the roots are the models
-    // that are not the target/dependent of any ModelDrivesModel.
-    // Update the dgn.Model.DependencyIndex column with the results.
-    // Note that this assigns a new DependencyIndex value to every row in the Model table.
-
-// NB: The SELECT stmt in a CTE must specify columns in the *same order* as propagate's arguments. This is required even if SELECT specifies aliases.
-    CachedStatementPtr stmt;
-    auto sqlitestat = GetDgnDb().GetCachedStatement(stmt, 
-        "WITH RECURSIVE"
-         " propagate(input_model,output_model,mpath,plevel,iscycle) AS ("
-          " SELECT 0,MODEL.Id,('.'||MODEL.Id),0,0"
-           " FROM " BIS_TABLE(BIS_CLASS_Model) " MODEL"
-           " WHERE ( MODEL.Id NOT IN ( SELECT DependentModelId FROM " BIS_TABLE(BIS_REL_ModelDrivesModel) " ))"
-          " UNION ALL"
-           " SELECT DEPREL.RootModelId, DEPREL.DependentModelId, (propagate.mpath||'.'||DEPREL.DependentModelId), (propagate.plevel + 1), (instr(propagate.mpath,DEPREL.DependentModelId) == 1)"
-            " FROM " BIS_TABLE(BIS_REL_ModelDrivesModel) " DEPREL, propagate"
-            " WHERE ((propagate.iscycle = 0) AND (DEPREL.RootModelId = propagate.output_model) AND (propagate.plevel < 100000))"
-           ")"
-        " SELECT propagate.plevel, propagate.input_model, propagate.output_model, propagate.mpath, propagate.iscycle FROM propagate");
-//                  0                1                      2                       3                4
-    if (sqlitestat != BE_SQLITE_OK)
-        {
-        EDGLOG(LOG_ERROR, "error creating computeModelDependencyIndex CTE -> %x", sqlitestat);
-        BeAssert(false);
-        return;
-        }
-
-    CachedStatementPtr updateIdx;
-    sqlitestat = GetDgnDb().GetCachedStatement(updateIdx, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET DependencyIndex=? WHERE Id=?");
-
-    bset<DgnModelId> modelsSeen;
-
-    int idx = 0;
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        auto output_model = stmt->GetValueId<DgnModelId>(2);
-        auto iscycle    = stmt->GetValueInt(4);
-
-        if (iscycle)
-            {
-            auto mpath = stmt->GetValueText(3);
-            ReportValidationError(*new CyclesDetectedError(FmtElementPath(mpath).c_str()), nullptr);
-            return;
-            }
-
-        //printf ("%d %lld -> %lld mpath:%s cycle? %d\n", level, input_model.IsValid()? input_model.GetValue(): 0LL, output_model.GetValue(), mpath, iscycle);
-        updateIdx->Reset();
-        updateIdx->ClearBindings();
-        updateIdx->BindInt(1, idx);
-        updateIdx->BindId(2, output_model);
-        sqlitestat = updateIdx->Step();
-        BeAssert( BE_SQLITE_DONE == sqlitestat );
-        ++idx;
-
-        // in order to count how many models we see, we must use a set.
-        //  that is because the recursive query will visit the same model multiple
-        //  times, once for each path to it.
-        modelsSeen.insert(output_model);
-        }
-
-    //  Check for cycles with no roots leading into them.
-    CachedStatementPtr modelsCount;
-    sqlitestat = GetDgnDb().GetCachedStatement(modelsCount, "SELECT COUNT(*) FROM " BIS_TABLE(BIS_CLASS_Model));
-    modelsCount->Step();
-    auto count = modelsCount->GetValueInt64(0);
-    if (modelsSeen.size() != count)
-        {
-        ReportValidationError(*new CyclesDetectedError(Utf8PrintfString("%d models involved",(count-idx)).c_str()), nullptr);
-        return;
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  03/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
     {
-    auto& models = GetDgnDb().Models();
-    uint64_t sidx, tidx;
-    models.QueryModelDependencyIndex(sidx, GetDgnDb().Elements().QueryModelId(edge.m_ein));
-    models.QueryModelDependencyIndex(tidx, GetDgnDb().Elements().QueryModelId(edge.m_eout));
-    if (sidx > tidx)
-        ReportValidationError(*new DirectionValidationError(FmtEdge(edge).c_str()), &edge);
+    /* *** WIP_DEPGRAPH_MODEL_TREE  */
     return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_PropagateChanges()
-    {
-    if (!HasChanges())
-        return;
-
-    DgnElementDependencyGraph graph(m_txnMgr);
-    graph.UpdateModelDependencyIndex();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -798,27 +704,21 @@ DgnElementDependencyGraph::ElementDrivesElement::ElementDrivesElement(DgnElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare(DgnModelId mid)
+DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare()
     {
     //  NB All Select statements must specify the same columns in the same order
 
     m_selectByRootInDirectChanges = GetTxnMgr().GetTxnStatement(
         "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
-        " WHERE (SourceECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
-
-    m_selectByRootInDirectChanges->BindId(1, mid);
+        " WHERE (SourceECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) "))");
 
     m_selectByDependentInDirectChanges = GetTxnMgr().GetTxnStatement(
         "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
-        " WHERE (TargetECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
-
-    m_selectByDependentInDirectChanges->BindId(1, mid);
+        " WHERE (TargetECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) "))");
 
     m_selectByRelationshipInDirectChanges = GetTxnMgr().GetTxnStatement(
         "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
-        " WHERE (ECInstanceId IN (SELECT ECInstanceId FROM " TEMP_TABLE(TXN_TABLE_Depend) " WHERE ModelId=?))");
-
-    m_selectByRelationshipInDirectChanges->BindId(1, mid);
+        " WHERE (ECInstanceId IN (SELECT ECInstanceId FROM " TEMP_TABLE(TXN_TABLE_Depend) "))");
 
     m__selectByRoot__ = GetTxnMgr().GetTxnStatement(
         "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
@@ -939,7 +839,7 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::StepSelectByDependent(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDependencyGraph::DiscoverEdges(DgnModelId mid)
+void DgnElementDependencyGraph::DiscoverEdges()
     {
     auto& queue = *m_edgeQueue;
     auto& elementDrivesElement = *m_elementDrivesElement;
@@ -1009,18 +909,18 @@ void DgnElementDependencyGraph::VerifyOverlappingDependencies()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDependencyGraph::InvokeHandlersInDependencyOrder(DgnModelId mid)
+void DgnElementDependencyGraph::InvokeHandlersInDependencyOrder()
     {
     EDGLOG(LOG_TRACE, "-----------------InvokeHandlersInDependencyOrder---------------------");
 
     EdgeQueue queue(*this);
     ElementDrivesElement ElementDrivesElement(*this);
-    ElementDrivesElement.DoPrepare(mid);
+    ElementDrivesElement.DoPrepare();
 
     m_edgeQueue = &queue;
     m_elementDrivesElement = &ElementDrivesElement;
 
-    DiscoverEdges(mid); // populates m_edgeQueue
+    DiscoverEdges(); // populates m_edgeQueue
 
     InvokeHandlersInTopologicalOrder(); // searches m_edgeQueue
 
@@ -1040,37 +940,17 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
     if (s_debugGraph > 1)
         WriteDot(BeFileName(L"D:\\tmp\\ChangePropagationRelationships.dot"), bvector<bvector<uint64_t>>());
 
-    // Step through the affected models in dependency order
-    CachedStatementPtr modelsInOrder=m_txnMgr.GetTxnStatement("SELECT Id From " BIS_TABLE(BIS_CLASS_Model) " WHERE "
-        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Elements) ") OR "
-        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Depend) ") OR " 
-        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Models) ") "
-        " ORDER BY DependencyIndex");
+    InvokeHandlersInDependencyOrder();
 
-    bset<DgnModelId> modelsSeen;
-    while (modelsInOrder->Step() == BE_SQLITE_ROW)
-        {
-        auto mid = modelsInOrder->GetValueId<DgnModelId>(0);
+    if (m_txnMgr.HasFatalErrors())
+        return;
 
-        if (!modelsSeen.insert(mid).second) // The select statement above can return dups. Filter them out.
-            continue;
-
-        EDGLOG(LOG_TRACE, "Model %lld", mid.GetValue());
-
-        InvokeHandlersInDependencyOrder(mid);
-
-        if (m_txnMgr.HasFatalErrors())
-            break;
-
-        DgnModelPtr model = GetDgnDb().Models().Get<GeometricModel>(mid);
-        if (model.IsValid())
-            {
-            model->OnValidate();
-
-            if (m_txnMgr.HasFatalErrors())
-                break;
-            }
-        }
+    // *** WIP_DEPGRAPH_MODEL_TREE - when to invoke model OnValidate?
+    /*
+    DgnModelPtr model = GetDgnDb().Models().Get<GeometricModel>(mid);
+    if (model.IsValid())
+        model->OnValidate();
+        */
     }
 
 /*---------------------------------------------------------------------------------**//**

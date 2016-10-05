@@ -84,7 +84,8 @@ Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageC
     m_inSize.x = (int32_t) sourceImage.GetWidth();
     m_inSize.y = (int32_t) sourceImage.GetHeight();
     m_outSize.x = (int32_t) targetWidth;
-    m_outSize.y = (int32_t) targetHeight;
+    m_outSize.y = (int32_t) targetHeight;
+
     m_bytesPerPixel = sourceImage.GetBytesPerPixel();
     m_pBuf.resize (m_bytesPerPixel * targetWidth);
     m_oBuf1.resize (m_bytesPerPixel * targetWidth);
@@ -224,7 +225,7 @@ void LoadLineSquetch (int32_t*  pBuf)
     {
     Byte const*     pInputRow = m_input + m_inSize.x * m_bytesPerPixel * m_currentInputRow;
 
-    for (size_t i=0; i<m_bytesPerPixel; i++)
+    for (int i=0; i<m_bytesPerPixel; i++)
         LoadSquetch (m_xMode, m_inSize.x, m_outSize.x, m_xTable, pInputRow + i, pBuf + i * m_outSize.x);
     }
 
@@ -233,7 +234,7 @@ void LoadLineSquetch (int32_t*  pBuf)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExtractLineSquetch (int32_t *pBuf, Byte* pOutput, int scale) 
     {
-    for (size_t i=0; i<m_bytesPerPixel; i++)
+    for (int i=0; i<m_bytesPerPixel; i++)
         {
         int32_t*    pThisBuffer = pBuf + i * m_outSize.x;
         Byte*       pOutputBuffer = pOutput + i;
@@ -256,7 +257,7 @@ int ExpandRows (int32_t* inBufA, int32_t* inBufB, int32_t* outBuf)
     int32_t wa = m_yTable[m_currentOutputRow].wa;
     int32_t wb = m_yTable[m_currentOutputRow].wb;
 
-    for (size_t i=0; i<m_outSize.x; i++)
+    for (int i=0; i<m_outSize.x; i++)
         *outBuf++ = (*inBufA++ * wa + *inBufB++ * wb);
 
     if (m_currentInputRow == m_inSize.y - 1)
@@ -289,7 +290,7 @@ int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
     w = m_yTable[m_currentInputRow].wa;
     t = inBuf;
 
-    for (size_t i=0; i < m_outSize.x; i++)
+    for (int i=0; i < m_outSize.x; i++)
         {
         *outBufA += (*t++ * w);
         outBufA++;
@@ -297,7 +298,7 @@ int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
     if ((m_currentInputRow == m_inSize.y - 1) || (m_yTable[m_currentInputRow].pa != m_yTable[m_currentInputRow+1].pa))
         {
         w = m_yTable[m_currentInputRow].wb;
-        for (size_t i=0; i < m_outSize.x; i++)
+        for (int i=0; i < m_outSize.x; i++)
             *outBufB++ = (*inBuf++ * w);
 
         return (1);
@@ -321,7 +322,7 @@ bool GetRow ()
             LoadLineSquetch (m_pBuf.data());
 
             int s = 0;
-            for (size_t i=0; i<m_bytesPerPixel; i++)
+            for (int i=0; i<m_bytesPerPixel; i++)
                 s |= CompressRows (m_pBuf.data()  + i * m_outSize.x,
                                    m_oBuf1.data() + i * m_outSize.x,
                                    m_oBuf2.data() + i * m_outSize.x);
@@ -341,7 +342,7 @@ bool GetRow ()
         {
         int s = 0;
 
-        for (size_t i=0; i<m_bytesPerPixel; i++)
+        for (int i=0; i<m_bytesPerPixel; i++)
             ExpandRows (m_pBuf.data()  + i * m_outSize.x,
                         m_oBuf1.data()+ i * m_outSize.x,
                         m_oBuf2.data() + i * m_outSize.x);

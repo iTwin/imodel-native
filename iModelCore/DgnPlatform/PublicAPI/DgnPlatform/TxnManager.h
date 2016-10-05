@@ -682,22 +682,6 @@ namespace dgn_TxnTable
         bool HasChanges() const {return m_changes;}
     };
 
-    struct ModelDep : TxnTable
-    {
-        bool m_changes;
-        static Utf8CP MyTableName() {return BIS_TABLE(BIS_REL_ModelDrivesModel);}
-        Utf8CP _GetTableName() const {return MyTableName();}
-        ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
-
-        void _Initialize() override {}
-        void _OnValidateAdd(BeSQLite::Changes::Change const&) override;
-        void _OnValidateUpdate(BeSQLite::Changes::Change const&) override;
-        void _PropagateChanges() override;
-        void CheckDirection(BeSQLite::EC::ECInstanceId);
-        void SetChanges() {m_changes=true;}
-        bool HasChanges() const {return m_changes;}
-    };
-
     //! @private
     struct RelationshipLinkTable : TxnTable
         {
@@ -779,13 +763,6 @@ namespace dgn_TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
-    };
-
-    //! TableHandler for DgnModel dependencies
-    struct ModelDep : DgnDomain::TableHandler
-    {
-        TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
-        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
     };
 
     //! TableHandler for BeProperties

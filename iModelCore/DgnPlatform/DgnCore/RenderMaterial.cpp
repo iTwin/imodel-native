@@ -242,7 +242,7 @@ static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visit
         {
         DPoint2d        param = DPoint2d::From (0.0, 0.0);
 
-        if (JsonRenderMaterial::TextureMap::Units::Relative != units || !visitor.TryGetDistanceParameter (i, param))
+        if (JsonRenderMaterial::TextureMap::Units::Relative == units || !visitor.TryGetDistanceParameter (i, param))
             visitor.TryGetNormalizedParameter (i, param);
 
         uvTransform.Multiply (params[i], param);
@@ -259,6 +259,10 @@ BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>
     params.resize (visitor.NumEdgesThisFace());
     switch (GetMode())
         {
+        default:
+            BeAssert (false && "Material mapping mode not implemented - defaulting to parametric");
+            // Fall through...
+
         case Render::Material::MapMode::Parametric:
             computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
             return SUCCESS;

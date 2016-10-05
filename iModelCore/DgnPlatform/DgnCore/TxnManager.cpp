@@ -1483,24 +1483,6 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnValidateAdd(Changes::Change const& change)
-    {
-    SetChanges();
-    CheckDirection(change.GetNewValue(0).GetValueId<ECInstanceId>());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnValidateUpdate(Changes::Change const& change)
-    {
-    SetChanges();
-    CheckDirection(change.GetOldValue(0).GetValueId<ECInstanceId>());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId)
     {
     enum Column : int {ElementId=1,ModelId=2,ChangeType=3,ECClass=4};
@@ -1622,27 +1604,6 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
 
     m_stmt.Reset();
     m_stmt.ClearBindings();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  03/2015
-//---------------------------------------------------------------------------------------
-void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
-    {
-    CachedStatementPtr stmt = m_txnMgr.GetTxnStatement("SELECT RootModelId,DependentModelId FROM " BIS_TABLE(BIS_REL_ModelDrivesModel) " WHERE(ECInstanceId=?)");
-    stmt->BindId(1, relid);
-    if (stmt->Step() != BE_SQLITE_ROW)
-        {
-        BeAssert(false); // model was just added or modified -- it has to exist!
-        return;
-        }
-
-    DgnModelId rootModel = stmt->GetValueId<DgnModelId>(0);
-    DgnModelId depModel  = stmt->GetValueId<DgnModelId>(1);
-
-    DgnModels::Model root, dep;
-    m_txnMgr.GetDgnDb().Models().QueryModelById(&root, rootModel);
-    m_txnMgr.GetDgnDb().Models().QueryModelById(&dep, depModel);
     }
 
 Utf8CP TxnRelationshipLinkTables::TABLE_NAME = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);

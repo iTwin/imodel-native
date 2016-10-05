@@ -9,10 +9,7 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #include <Geom/XYZRangeTree.h>
-
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -410,16 +407,40 @@ bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
+void TileMeshBuilder::AddTriangle(TriangleCR triangle)
+    {
+    if (triangle.IsDegenerate())
+        return;
+
+    TriangleKey key(triangle);
+
+    if (m_triangleSet.insert(key).second)
+        m_mesh->AddTriangle(triangle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
     {
     BeAssert(3 == visitor.Point().size());
 
-    Triangle newTriangle(!visitor.GetTwoSided());
-    bvector<DPoint2d> params;
+    Triangle                newTriangle(!visitor.GetTwoSided());
+    bvector<DPoint2d>       params = visitor.Param();
+    JsonRenderMaterial      material;
 
-    // ###TODO: If have material: Material::ComputeUVParams()
+    if (materialId.IsValid() &&
+        !params.empty() &&
+        SUCCESS == material.Load (materialId, dgnDb))
+        {
+        auto const&         patternMap = material.GetPatternMap();
+        bvector<DPoint2d>   computedParams;
 
-    params = visitor.Param();
+        if (patternMap.IsValid() &&
+            SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+            params = computedParams;
+        }
+            
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
@@ -468,44 +489,16 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
     m_mesh->AddPolyline (newPolyline);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
-    {
-    Triangle newTriangle(triangle.m_singleSided);
-    for (size_t i = 0; i < 3; i++)
-        {
-        uint32_t index = triangle.m_indices[i];
-        VertexKey vertex(*mesh.GetPoint(index), mesh.GetNormal(index), mesh.GetParam(index), mesh.GetEntityId(index));
-        newTriangle.m_indices[i] = AddVertex(vertex);
-        }
-
-    m_mesh->AddTriangle(newTriangle);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, BeInt64Id entityId, bool twoSidedTriangles)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, entityId, false, twoSidedTriangles);
+        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(TriangleCR triangle)
-    {
-    if (triangle.IsDegenerate())
-        return;
-
-    TriangleKey key(triangle);
-
-    if (m_triangleSet.insert(key).second)
-        m_mesh->AddTriangle(triangle);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -754,12 +747,8 @@ private:
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, BeInt64Id elemId, TileDisplayParamsPtr& params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
-#else
-        SetFacetCount(0);
-#endif
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
@@ -849,7 +838,6 @@ CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOptions)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -862,9 +850,6 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         }
 
     return polyface;
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -997,76 +982,6 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints)
-    {
-    auto const& points = mesh.Points();
-    if (points.size() <= maxPoints)
-        {
-        meshes.push_back(&mesh);
-        return;
-        }
-
-    bvector<DRange3d>       subRanges;
-    TileDisplayParamsPtr    displayParams = mesh.GetDisplayParamsPtr();
-
-    ComputeSubRanges(subRanges, points, maxPoints, DRange3d::From(points));
-    for (auto const& subRange : subRanges)
-        {
-        auto meshBuilder = TileMeshBuilder::Create(displayParams, 1.0E-6);
-        for (auto const& triangle : mesh.Triangles())
-            if (subRange.IntersectsWith(mesh.GetTriangleRange(triangle)))
-                meshBuilder->AddTriangle(triangle, mesh);
-
-        meshes.push_back(meshBuilder->GetMesh());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range)
-    {
-    size_t pointCount = 0;
-    DPoint3d centroid = DPoint3d::FromZero();
-
-    for (auto const& point : points)
-        {
-        if (range.IsContained(point))
-            {
-            ++pointCount;
-            centroid.Add(point);
-            }
-        }
-
-    if (pointCount < maxPoints)
-        {
-        subRanges.push_back(range);
-        }
-    else
-        {
-        centroid.Scale(1.0 / static_cast<double>(pointCount));
-
-        DVec3d diagonal = range.DiagonalVector();
-        if (diagonal.x > diagonal.y && diagonal.x > diagonal.z)
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, centroid.x, range.high.y,  range.high.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (centroid.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
-            }
-        else if (diagonal.y > diagonal.z)
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, centroid.y, range.high.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, centroid.y, range.low.z, range.high.x, range.high.y, range.high.z));
-            }
-        else
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, centroid.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, centroid.z, range.high.x, range.high.y, range.high.z));
-            }
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -1696,7 +1611,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
                     if (!maxGeometryCountExceeded)
                         elemId = geom->GetEntityId();
 
-                    meshBuilder->AddTriangle (*visitor, elemId, doVertexClustering, twoSidedTriangles);
+                    meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexClustering, twoSidedTriangles);
                     }
                 }
             }
@@ -1757,3 +1672,95 @@ bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId)
     return accepted;
     }
 
+
+
+#ifdef NOT_CURRENTLY_NEEDED
+// These would be required if the mesh sizes were limited (as in 3MX export).
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
+    {
+    Triangle newTriangle(triangle.m_singleSided);
+    for (size_t i = 0; i < 3; i++)
+        {
+        uint32_t index = triangle.m_indices[i];
+        VertexKey vertex(*mesh.GetPoint(index), mesh.GetNormal(index), mesh.GetParam(index), mesh.GetEntityId(index));
+        newTriangle.m_indices[i] = AddVertex(vertex);
+        }
+
+    m_mesh->AddTriangle(newTriangle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGenerator::SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints)
+    {
+    auto const& points = mesh.Points();
+    if (points.size() <= maxPoints)
+        {
+        meshes.push_back(&mesh);
+        return;
+        }
+
+    bvector<DRange3d>       subRanges;
+    TileDisplayParamsPtr    displayParams = mesh.GetDisplayParamsPtr();
+
+    ComputeSubRanges(subRanges, points, maxPoints, DRange3d::From(points));
+    for (auto const& subRange : subRanges)
+        {
+        auto meshBuilder = TileMeshBuilder::Create(displayParams, 1.0E-6);
+        for (auto const& triangle : mesh.Triangles())
+            if (subRange.IntersectsWith(mesh.GetTriangleRange(triangle)))
+                meshBuilder->AddTriangle(triangle, mesh);
+
+        meshes.push_back(meshBuilder->GetMesh());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range)
+    {
+    size_t pointCount = 0;
+    DPoint3d centroid = DPoint3d::FromZero();
+
+    for (auto const& point : points)
+        {
+        if (range.IsContained(point))
+            {
+            ++pointCount;
+            centroid.Add(point);
+            }
+        }
+
+    if (pointCount < maxPoints)
+        {
+        subRanges.push_back(range);
+        }
+    else
+        {
+        centroid.Scale(1.0 / static_cast<double>(pointCount));
+
+        DVec3d diagonal = range.DiagonalVector();
+        if (diagonal.x > diagonal.y && diagonal.x > diagonal.z)
+            {
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, centroid.x, range.high.y,  range.high.z));
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (centroid.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
+            }
+        else if (diagonal.y > diagonal.z)
+            {
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, centroid.y, range.high.z));
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, centroid.y, range.low.z, range.high.x, range.high.y, range.high.z));
+            }
+        else
+            {
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, centroid.z));
+            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, centroid.z, range.high.x, range.high.y, range.high.z));
+            }
+        }
+
+#endif
