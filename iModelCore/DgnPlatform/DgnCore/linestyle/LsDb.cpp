@@ -564,7 +564,7 @@ LsComponentId LsComponent::Import(LsComponentId sourceId, DgnImportContext& impo
     if (result.IsValid())
         return result;
 
-    LsComponentPtr srcComponent = importer.GetSourceDb().Styles().LineStyles().GetLsComponent(sourceId);
+    LsComponentPtr srcComponent = importer.GetSourceDb().LineStyles().GetLsComponent(sourceId);
     if (!srcComponent.IsValid())
         return LsComponentId();
 
@@ -583,7 +583,7 @@ LsComponentPtr LsComponent::GetImportedComponent(LsComponentId sourceId, DgnImpo
     if (!resultId.IsValid())
         return nullptr;
 
-    return importer.GetDestinationDb().Styles().LineStyles().GetLsComponent(resultId);
+    return importer.GetDestinationDb().LineStyles().GetLsComponent(resultId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -774,7 +774,7 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    BentleyStatus result = importer.GetDestinationDb().Styles().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetAttributes(jsonObj));
+    BentleyStatus result = importer.GetDestinationDb().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetAttributes(jsonObj));
     return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
 

@@ -633,14 +633,6 @@ BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
     return  SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-LsCacheP  LsCache::GetDgnDbCache (DgnDbR project, bool loadIfNotLoaded)
-    {
-    return  project.Styles().LineStyles().GetLsCacheP (loadIfNotLoaded);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -688,28 +680,11 @@ static StatusInt    freeIdRec (LsIdNodeP node, void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::EmptyIdMap ()
+LsCache::~LsCache ()
     {
     // iterate tree, delete all entries
     m_idTree.Process (freeIdRec, NULL);
     m_idTree.Empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::EmptyMaps()
-    {
-    EmptyIdMap ();
-    m_isLoaded = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsCache::~LsCache ()
-    {
-    EmptyMaps ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,12 +700,6 @@ DgnDbCR    LsCache::GetDgnDb () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsCache::Load ()
     {
-    if (IsLoaded())
-        return SUCCESS;
-
-    //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
-    TreeLoaded ();
-
     for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))
         {
         DgnStyleId  styleId (ls.GetElementId().GetValue());
@@ -739,7 +708,10 @@ BentleyStatus       LsCache::Load ()
 
         Json::Value  jsonObj (Json::objectValue);
         if (!Json::Reader::Parse(data, jsonObj))
+            {
+            BeAssert(false && "Invalid line style data - LsCache::Load() aborted");
             return ERROR;
+            }
 
         LsDefinition* lsDef = new LsDefinition (name.c_str(), m_dgnDb, jsonObj, styleId);
         AddIdEntry(lsDef);
@@ -840,14 +812,7 @@ LsCacheStyleIterator LsCache::end   () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsDefinitionP     LsCache::FindInMap (DgnDbR dgndb, DgnStyleId styleId)
     {
-    LsCache*  lsMap = LsCache::GetDgnDbCache (dgndb, true);
-    if (NULL == lsMap)
-        {
-        BeAssert (false);     // Should never occur
-        return NULL;
-        }
-
-    return  lsMap->GetLineStyleP (styleId);
+    return dgndb.LineStyles().GetCache().GetLineStyleP(styleId);
     }
 
 /*---------------------------------------------------------------------------------**//**
