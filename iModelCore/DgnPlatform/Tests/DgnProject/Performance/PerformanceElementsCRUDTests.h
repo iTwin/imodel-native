@@ -312,7 +312,7 @@ protected:
 
     void LogTiming(StopWatch&, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialCount, int opCount) const;
 
-    void ApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+    void ApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount, bool setFederationGuid=false, int idStrategy=0);
     void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
     void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
     void ApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
