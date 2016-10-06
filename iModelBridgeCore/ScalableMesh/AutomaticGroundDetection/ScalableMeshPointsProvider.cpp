@@ -100,7 +100,8 @@ double ScalableMeshPointsProvider::_GetExportResolution() const
     if (m_exportResolution>0.0)
         resolution = m_exportResolution < resolution ? m_exportResolution : resolution;
         -*/
-    assert(!"Not done yet");
+    //assert(!"Not done yet");
+    //GDZERO
 
     double resolution = 1;
 
@@ -214,10 +215,10 @@ double ScalableMeshPointsProvider::GetMeterToSRSFactor() const
     {
     double meterToSRSFactor(1.0);
     //Find meter to SRS transform
-
+      
     GeoCoordinates::BaseGCSCPtr baseGcs(m_smesh->GetBaseGCS());
     
-    if (baseGcs->IsValid())
+    if (baseGcs.IsValid())
         {
         WString unitName;        
         GeoCoordinates::Unit const* gcsUnit = GeoCoordinates::Unit::FindUnit(baseGcs->GetUnits(unitName));
@@ -255,8 +256,8 @@ Transform ScalableMeshPointsProvider::GetRootToNativeTransform() const
     Transform rootToNative;
     rootToNative.inverseOf(&nativeToRoot);
     */
-
-    assert(!"Not done yet");
+    
+    //GDZERO
     Transform rootToNative(Transform::FromIdentity());
 
     return rootToNative;
@@ -373,14 +374,17 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
 
     private:
 
-        bvector<DPoint3d>                                 m_points;
-        bvector<DPoint3d>::const_iterator                 m_endItr;
-        bvector<DPoint3d>::const_iterator                 m_currentItr;
-        mutable DPoint3d                                 m_currentPtTransformed;
-        Transform                                        m_transformToApply;
+        bvector<DPoint3d>                 m_points;
+        bvector<DPoint3d>::const_iterator m_endItr;
+        bvector<DPoint3d>::const_iterator m_currentItr;
+        mutable DPoint3d                  m_currentPtTransformed;
+        Transform                         m_transformToApply;
         
         ScalableMeshAttachmentPointsIteratorImpl(ScalableMeshPointsProvider const & scalableMeshPointProvider, bool isAtEnd)
             {
+            //GDZERO
+            assert(isAtEnd == false);
+
            // BeCriticalSectionHolder lock(scalableMeshPointProvider.s_MRMEshQueryCS);
             DRange3d range(scalableMeshPointProvider.GetBoundingBox());
             Transform meterToNative(scalableMeshPointProvider.GetMeterToNativeTransform());
@@ -429,10 +433,14 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
 
         virtual bool          _IsDifferent(IPointsProvider::IPointsProviderIteratorImpl const& rhs) const override
             {
+                /*
             ScalableMeshAttachmentPointsIteratorImpl const* pRhs = dynamic_cast<ScalableMeshAttachmentPointsIteratorImpl const*>(&rhs);
             if (pRhs == nullptr)
                 return true;
-            return (pRhs->m_currentItr != m_currentItr);
+                */
+            //GDZERO
+
+            return (m_currentItr != m_endItr);
             }
 
         virtual void          _MoveToNext() override
@@ -456,33 +464,16 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPointsProvider::const_iterator ScalableMeshPointsProvider::_begin() const
     {
-#if 0 //Don't use GetPoints use an iterator instead
-    InternalQueryPoints();
-    RefCountedPtr<ScalableMeshPointsProvider::IPointsProviderIteratorImpl> impl;
-    impl = new ScalableMeshPointsProvider::ScalableMeshPointsProviderPrefetchedIteratorImpl(m_prefetchedPoints, false/*isAtEnd*/);
-    return IPointsProvider::const_iterator(*impl);
-#else
-    RefCountedPtr<ScalableMeshAttachmentPointsIteratorImpl> impl;
-    impl = new ScalableMeshAttachmentPointsIteratorImpl(*this, false/*isAtEnd*/);
-    return IPointsProvider::const_iterator(*impl);
-#endif
+    m_currentIterator = new ScalableMeshAttachmentPointsIteratorImpl(*this, false/*isAtEnd*/);
+    return IPointsProvider::const_iterator(*m_currentIterator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPointsProvider::const_iterator ScalableMeshPointsProvider::_end() const
-    {
-#if 0  ////Don't use GetPoints use an iterator instead
-    InternalQueryPoints();
-    RefCountedPtr<ScalableMeshPointsProvider::IPointsProviderIteratorImpl> impl;
-    impl = new ScalableMeshPointsProvider::ScalableMeshPointsProviderPrefetchedIteratorImpl(m_prefetchedPoints, true/*isAtEnd*/);
-    return IPointsProvider::const_iterator(*impl);
-#else
-    RefCountedPtr<ScalableMeshAttachmentPointsIteratorImpl> impl;
-    impl = new ScalableMeshAttachmentPointsIteratorImpl(*this, true/*isAtEnd*/);
-    return IPointsProvider::const_iterator(*impl);
-#endif
+    {        
+    return IPointsProvider::const_iterator(*m_currentIterator);
     }
 
 

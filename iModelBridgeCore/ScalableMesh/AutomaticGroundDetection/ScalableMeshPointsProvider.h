@@ -11,6 +11,7 @@
 #include <Geom/Polyface.h>
 #include <ScalableMesh\IScalableMesh.h>
 
+
 /*
 DCPOINTCLOUDCORE_TYPEDEF(ScalableMeshPointsProvider)
 DCPOINTCLOUDCORE_REF_COUNTED_PTR(ScalableMeshPointsProvider)
@@ -38,8 +39,9 @@ private:
     
     //static BeCriticalSection s_MRMEshQueryCS;
 
-    IScalableMeshPtr m_smesh;
-    Transform         m_transform;
+    IScalableMeshPtr                                                       m_smesh;
+    Transform                                                              m_transform;
+    mutable RefCountedPtr<ScalableMeshPointsProvider::IPointsProviderIteratorImpl> m_currentIterator;
     
     ScalableMeshPointsProvider(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors);
     ScalableMeshPointsProvider(ScalableMeshPointsProvider const & object);
