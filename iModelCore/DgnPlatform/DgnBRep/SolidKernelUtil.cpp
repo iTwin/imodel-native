@@ -212,7 +212,14 @@ DRange3d _GetEntityRange() const
     {
     Bnd_Box box;
 
-    BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
+    try
+        {
+        BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
+        }
+    catch (Standard_Failure)
+        {
+        BRepBndLib::Add(m_shape, box); // Sloppy AABB implementation is apparently more robust...we NEED a valid range!
+        }
 
     return OCBRep::ToDRange3d(box);
     }
