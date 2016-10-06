@@ -24,6 +24,13 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     virtual size_t GetClipPolygonByteCount(int64_t clipID);
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
+    virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize);
+    virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize);
+    virtual size_t GetCoveragePolygonByteCount(int64_t coverageID);
+
+    virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes);
+
+
     static const SchemaVersion CURRENT_VERSION;
 
     protected:

@@ -120,8 +120,8 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
                              " FROM SMTexture_2");
         database->ExecuteSql("ALTER TABLE SMUVs ADD COLUMN UVIndexData BLOB");
         database->ExecuteSql("ALTER TABLE SMUVs ADD COLUMN SizeUVIndex INTEGER DEFAULT 0");
-        database->ExecuteSql("UPDATE SMUVs SET UVIndexData = (SELECT SMTexture_2.UVData FROM SMTexture_2 WHERE SMTexture_2.NodeId = NodeId) ,"
-                             "SizeUVIndex = (SELECT SMTexture_2.SizeUVs FROM SMTexture_2 WHERE SMTexture_2.NodeId = NodeId) WHERE NodeId = SMTexture_2.NodeId");
+        database->ExecuteSql("UPDATE SMUVs SET UVIndexData = (SELECT SMTexture_2.UVData FROM SMTexture_2 WHERE SMTexture_2.NodeId = SMUVs.NodeId) ,"
+                             "SizeUVIndex = (SELECT SMTexture_2.SizeUVs FROM SMTexture_2 WHERE SMTexture_2.NodeId = SMUVs.NodeId)");
         
         Savepoint s3(*database, Utf8String("drops").c_str());
         database->DropTable("SMNodeHeader_2");

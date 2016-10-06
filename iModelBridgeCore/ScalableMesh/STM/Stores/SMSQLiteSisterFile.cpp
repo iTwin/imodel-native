@@ -35,6 +35,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
+        case SMStoreDataType::Coverage:
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
@@ -118,6 +119,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
+        case SMStoreDataType::Coverage:
             {
             if (!m_smClipDefinitionSQLiteFile.IsValid())
                 {

@@ -196,6 +196,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
         HFCPtr<MeshIndexType>          m_scmTerrainIndexPtr; //Optional. Scalable Mesh representing only terrain
+        IScalableMeshPtr               m_terrainP; 
         RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
@@ -293,6 +294,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override;
         virtual void                               _ImportTerrainSM(WString terrainPath) override;
+        virtual IScalableMeshPtr                    _GetTerrainSM() override;
+
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -327,7 +332,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         double              GetMinScreenPixelsPerPoint();   
     
-        void                SetMinScreenPixelsPerPoint(double pi_minScreenPixelsPerPoint);                       
+        void                SetMinScreenPixelsPerPoint(double pi_minScreenPixelsPerPoint);     
+
+        HFCPtr<MeshIndexType> GetMainIndexP() { return m_scmIndexPtr; }
                                     
     };
 
@@ -416,6 +423,12 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {};
+        virtual IScalableMeshPtr                    _GetTerrainSM() override
+            {
+            return nullptr;
+            }
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {

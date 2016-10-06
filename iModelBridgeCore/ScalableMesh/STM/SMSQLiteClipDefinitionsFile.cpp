@@ -22,10 +22,10 @@
 
 const SchemaVersion SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
 
-const SchemaVersion s_listOfReleasedSchemasClip[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
-const size_t s_numberOfReleasedSchemasClip = 2;
+const SchemaVersion s_listOfReleasedSchemasClip[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1,1,0,2) };
+const size_t s_numberOfReleasedSchemasClip = 3;
 double s_expectedTimeUpdateClip[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[1] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[2] = {
     [](BeSQLite::Db* database)
         {
         database->DropTable("SMNodeHeader");
@@ -37,7 +37,14 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[1] = {
         database->DropTable("SMMasterHeader");
         database->DropTable("SMGraph");
         
-        }
+        },
+            [] (BeSQLite::Db* database)
+            {
+            database->CreateTable("SMCoverages", "PolygonId INTEGER PRIMARY KEY,"
+                                   "PolygonData BLOB,"
+                                   "Size INTEGER");
+
+            }
     };
 
 size_t SMSQLiteClipDefinitionsFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasClip; }
@@ -254,6 +261,104 @@ void SMSQLiteClipDefinitionsFile::GetSkirtPolygon(int64_t clipID, bvector<uint8_
     memcpy(&clipData[0], stmt->GetValueBlob(0), clipData.size());
     }
 
+void SMSQLiteClipDefinitionsFile::GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size FROM SMCoverages WHERE PolygonId=?");
+    stmt->BindInt64(1, coverageID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE)
+        {
+        uncompressedSize = 0;
+        return;
+        }
+    coverageData.resize(stmt->GetValueInt64(1));
+    uncompressedSize = stmt->GetValueInt64(2);
+    memcpy(&coverageData[0], stmt->GetValueBlob(0), coverageData.size());
+    }
+
+void SMSQLiteClipDefinitionsFile::StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    CachedStatementPtr stmt3;
+    m_database->GetCachedStatement(stmt3, "SELECT COUNT(PolygonId) FROM SMCoverages WHERE PolygonId=?");
+    stmt3->BindInt64(1, coverageID);
+    stmt3->Step();
+    size_t nRows = stmt3->GetValueInt64(0);
+    if (coverageID == SQLiteNodeHeader::NO_NODEID)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMCoverages (PolygonData,Size) VALUES(?,?)");
+        stmt->BindBlob(1, &coverageData[0], (int)coverageData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        CachedStatementPtr stmt2;
+        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
+        status = stmt2->Step();
+        coverageID = stmt2->GetValueInt64(0);
+        if (m_autocommit) m_database->SaveChanges();
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMCoverages (PolygonId, PolygonData,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, coverageID);
+        stmt->BindBlob(2, &coverageData[0], (int)coverageData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+        }
+    else
+        {
+        m_database->GetCachedStatement(stmt, "UPDATE SMCoverages SET PolygonData=?, Size=? WHERE PolygonId=?");
+        stmt->BindBlob(1, &coverageData[0], (int)coverageData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        stmt->BindInt64(3, coverageID);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+        }
+    }
+
+size_t SMSQLiteClipDefinitionsFile::GetCoveragePolygonByteCount(int64_t coverageID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Size FROM SMCoverages WHERE PolygonId=?");
+    stmt->BindInt64(1, coverageID);
+    DbResult status = stmt->Step();
+    if (status != BE_SQLITE_ROW) return 0;
+    return stmt->GetValueInt64(0);
+    }
+
+void SMSQLiteClipDefinitionsFile::GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size FROM SMCoverages");
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE)
+        {
+        return;
+        }
+    bvector<uint8_t> coverageData;
+    size_t uncompressedSize;
+    coverageData.resize(stmt->GetValueInt64(1));
+    uncompressedSize = stmt->GetValueInt64(2);
+    memcpy(&coverageData[0], stmt->GetValueBlob(0), coverageData.size());
+    polys.push_back(coverageData);
+    sizes.push_back(uncompressedSize);
+    }
+
 DbResult SMSQLiteClipDefinitionsFile::CreateTables()
     {
     DbResult result;
@@ -267,6 +372,10 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
                                      "NDimensions INTEGER");
 
     result = m_database->CreateTable("SMSkirts", "PolygonId INTEGER PRIMARY KEY,"
+                                     "PolygonData BLOB,"
+                                     "Size INTEGER");
+
+    result = m_database->CreateTable("SMCoverages", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
                                      "Size INTEGER");
 

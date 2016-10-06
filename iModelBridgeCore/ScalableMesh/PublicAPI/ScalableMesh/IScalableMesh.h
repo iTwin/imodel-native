@@ -182,6 +182,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
 
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
+
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
+
+        virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
+         
 #ifdef WIP_MESH_IMPORT
         virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
 #endif
@@ -292,6 +298,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const;
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
+
+        BENTLEY_SM_EXPORT IScalableMeshPtr                   GetTerrainSM();
+
+        BENTLEY_SM_EXPORT BentleyStatus                   CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id);
+
+        BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,

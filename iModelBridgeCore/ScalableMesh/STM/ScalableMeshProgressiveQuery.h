@@ -73,6 +73,7 @@ struct RequestedQuery
     int                                                          m_queryId;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
+    IScalableMeshPtr m_meshToQuery;
     //ISMPointIndexQuery<ISMStore::Point3d64f, Extent3dType>* m_queryObjectP;    
     bool                                                         m_isQueryCompleted;
     bool                                                         m_fetchLastCompletedNodes;
@@ -86,7 +87,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_overviewNodes;
         mutable std::vector<RequestedQuery>                   m_requestedQueries;        
-        IScalableMeshPtr                                      m_scalableMeshPtr;
+       // IScalableMeshPtr                                      m_scalableMeshPtr;
         IScalableMeshDisplayCacheManagerPtr                   m_displayCacheManagerPtr;
         bset<uint64_t>                                        m_activeClips;
 
@@ -109,7 +110,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
                                           bool                                                                     loadTexture,
-                                          const bvector<bool>&                                                     clipVisibilities) override; 
+                                          const bvector<bool>&                                                     clipVisibilities,
+                                          IScalableMeshPtr&                                                        smPtr) override; 
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const override;        

@@ -55,6 +55,7 @@ enum class SMStoreDataType
     DisplayMesh,
     //Not persisted data type
     DisplayTexture,
+    Coverage,
     Unknown, 
     };
 
@@ -70,6 +71,8 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void GetAllIDs(bvector<uint64_t>& allIds) = 0;
 
         virtual void SetAutoCommit(bool autoCommit) = 0;
+
+        virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) = 0;
         
     };
 

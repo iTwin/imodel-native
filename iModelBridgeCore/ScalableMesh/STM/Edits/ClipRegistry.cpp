@@ -193,4 +193,21 @@ void ClipRegistry::SetAutoCommit(bool autoCommit)
     clipDefinitionExOpsPtr->SetAutoCommit(autoCommit);    
     }
 
+void ClipRegistry::ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+    dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
+    }
+
+void ClipRegistry::GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::Coverage);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->GetAllPolys(allPolys);
+    }
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
