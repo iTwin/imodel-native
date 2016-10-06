@@ -162,26 +162,6 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
 //----------------------------------------------------------------------------------------
 RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
-    // Find resolved file name for the raster
-    BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
-    if (status != SUCCESS)
-        {
-        return nullptr;
-        }
-    Utf8String resolvedName(fileName);
-    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
-
-    // Open raster 
-    //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
-    // Otherwise the raster file is opened twice and this might be slow for network connection.
-    RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
-    if (rasterFilePtr == nullptr)
-        {
-        // Can't create model; probably that file name is invalid.
-        return nullptr;
-        }
-
     RasterFileProperties props;
     props.m_fileUri = params.m_fileUri;
 
@@ -189,6 +169,22 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
         props.m_sourceToWorld = *params.m_sourceToWorldP;
     else
         {
+        // Find resolved file name for the raster
+        BeFileName fileName;
+        BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
+        if (status != SUCCESS)
+            return nullptr;
+            
+        // Open raster 
+        //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
+        // Otherwise the raster file is opened twice and this might be slow for network connection.
+        RasterFilePtr rasterFilePtr = RasterFile::Create(fileName.GetNameUtf8());
+        if (rasterFilePtr == nullptr)
+            {
+            // Can't create model; probably that file name is invalid.
+            return nullptr;
+            }
+
         if (SUCCESS != ComputeGeoLocationFromFile(props.m_sourceToWorld, *rasterFilePtr, params.m_dgndb))
             return nullptr;
         }
