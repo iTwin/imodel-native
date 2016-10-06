@@ -19,7 +19,20 @@ enum DgnDbServerBreakpoints
     AfterStartCreateRevision,
     BeforePushRevisionToServer,
     AfterPushRevisionToServer,
-    AfterFinishCreateRevision
+    AfterFinishCreateRevision,
+
+    DgnDbClient_AfterCreateRequest,
+    DgnDbClient_AfterDownloadBriefcaseFile,
+    DgnDbClient_AfterDeleteBriefcase,
+    DgnDbClient_AfterOpenBriefcaseForMerge,
+    DgnDbClient_AfterMergeRevisions,
+    DgnDbClient_AfterCreateBriefcaseInstance,
+
+    DgnDbRepositoryConnection_AfterCreateNewServerFile, 
+    DgnDbRepositoryConnection_AfterUploadServerFile,
+    DgnDbRepositoryConnection_AfterWriteRepositoryInfo,
+    DgnDbRepositoryConnection_AfterCreateRevisionRequest,
+    DgnDbRepositoryConnection_AfterUploadRevisionFile
     };
 
 //=======================================================================================
