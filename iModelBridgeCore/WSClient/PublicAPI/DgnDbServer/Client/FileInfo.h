@@ -1,4 +1,3 @@
-#pragma once
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnDbServer/Client/FileInfo.h $
@@ -38,23 +37,24 @@ private:
     Utf8String  m_userUploaded;
     DateTime    m_uploadedDate;
     bool        m_areFileDetailsAvailable;
+
+    FileInfo(BeGuid fileId);
+    FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
+    FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
+             Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date);
 //__PUBLISH_SECTION_START__
 public:
     //__PUBLISH_SECTION_END__
     FileInfo();
-    FileInfo(BeGuid fileId);
-    //__PUBLISH_SECTION_START__
-    DGNDBSERVERCLIENT_EXPORT FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
-    DGNDBSERVERCLIENT_EXPORT FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
-        Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date);
 
-    //__PUBLISH_SECTION_END__
+    static FileInfoPtr Create(BeGuid fileId);
     static FileInfoPtr FromJson(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
     void ToPropertiesJson(JsonValueR json) const;
     WebServices::ObjectId GetObjectId() const;
     bool AreFileDetailsAvailable() const;
     //__PUBLISH_SECTION_START__
 
+    DGNDBSERVERCLIENT_EXPORT static FileInfoPtr Create(Dgn::DgnDbCR db, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT int32_t      GetIndex() const; //!< Index of the file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileName() const; //!< Name of the file.
     DGNDBSERVERCLIENT_EXPORT BeGuid       GetFileId() const; //!< Db Guid of the file.

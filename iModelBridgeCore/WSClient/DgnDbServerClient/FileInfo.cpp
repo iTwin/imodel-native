@@ -54,6 +54,22 @@ FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Ut
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  10/2016
+//---------------------------------------------------------------------------------------
+FileInfoPtr FileInfo::Create(BeGuid fileId)
+    {
+    return FileInfoPtr (new FileInfo (fileId));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  10/2016
+//---------------------------------------------------------------------------------------
+FileInfoPtr FileInfo::Create(Dgn::DgnDbCR db, Utf8StringCR description)
+    {
+    return FileInfoPtr (new FileInfo (db, description));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 int32_t FileInfo::GetIndex() const

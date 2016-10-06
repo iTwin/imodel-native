@@ -59,7 +59,8 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR r
     {
     const Utf8String methodName = "DgnDbClient::ConnectToRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return ConnectToRepository(RepositoryInfo(m_serverUrl, repositoryId), cancellationToken);
+    RepositoryInfoPtr repository = RepositoryInfo::Create(m_serverUrl, repositoryId);
+    return ConnectToRepository(*repository, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -432,7 +433,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
 
-    FileInfo fileInfo = FileInfo(*tempdb, description);
+    FileInfoPtr fileInfo = FileInfo::Create(*tempdb, description);
     BeFileName filePath = tempdb->GetFileName();
     tempdb->CloseDb();
 
@@ -463,7 +464,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
                 }
             DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Uploading new master file.");
-            connection->UploadNewMasterFile(filePath, fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
+            connection->UploadNewMasterFile(filePath, *fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     {
@@ -524,7 +525,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     RepositoryInfo repositoryInfo;
-    FileInfo fileInfo(*db, "");
+    FileInfoPtr fileInfo = FileInfo::Create(*db, "");
     auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
@@ -544,7 +545,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
             }
 
         auto connection = connectionResult.GetValue();
-        connection->ValidateBriefcase(fileInfo.GetFileId(), briefcaseId, cancellationToken)
+        connection->ValidateBriefcase(fileInfo->GetFileId(), briefcaseId, cancellationToken)
             ->Then([=] (DgnDbServerStatusResultCR validationResult)
             {
             if (!validationResult.IsSuccess())
@@ -608,7 +609,6 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
         }
     RepositoryInfo repositoryInfo;
     auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
-    FileInfo fileInfo(*db, "");
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
