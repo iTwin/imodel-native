@@ -216,7 +216,7 @@ DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCode code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeometryPartId DgnImportContext::RemapGeometryPartId(DgnGeometryPartId source)
+DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId source)
     {
     if (!IsBetweenDbs())
         return source;

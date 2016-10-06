@@ -371,6 +371,14 @@ public:
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
 
+    //! Create a new, non-persistent model from the supplied ECInstance.
+    //! Ths supplied instance must contain the model's Code.
+    //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
+    //! @param properties The instance that contains all of the model's business properties
+    //! @return a new, non-persistent model if successful, or an invalid ptr if not.
+    //! @note The returned model, if any, is non-persistent. The caller must call the model's Insert method to add it to the bim.
+    DGNPLATFORM_EXPORT DgnModelPtr CreateModel(DgnDbStatus* stat, ECN::IECInstanceCR properties);
+
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
     //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
     //! @param[in] modelId The Id of the model to load.

@@ -115,6 +115,19 @@ private:
 
     void ComputeGcsAndGOadjustment();
 
+protected:
+    DGNPLATFORM_EXPORT virtual DgnAuthorityId _RemapAuthorityId(DgnAuthorityId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnGeometryPartId _RemapGeometryPartId(DgnGeometryPartId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnCategoryId _RemapCategory(DgnCategoryId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnClassId _RemapClassId(DgnClassId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnTextureId _RemapTextureId(DgnTextureId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom);
+    DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
+    DGNPLATFORM_EXPORT virtual DgnStyleId _RemapLineStyleId(DgnStyleId sourceId);
+
+
 public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
@@ -129,7 +142,7 @@ public:
     //! @name Id remapping
     //! @{
     //! Make sure that a DgnAuthority has been imported
-    DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
+    DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId) { return _RemapAuthorityId(sourceId); }
     //! Register a copy of a DgnAuthority
     DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
@@ -137,48 +150,48 @@ public:
     //! Register a copy of a model
     DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeometryPart has been imported
-    DGNPLATFORM_EXPORT DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId);
+    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) { return _RemapGeometryPartId(sourceId); }
     //! Look up a copy of a Category
     DgnCategoryId FindCategory(DgnCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Category
     DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Category has been imported
-    DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
+    DgnCategoryId RemapCategory(DgnCategoryId sourceId) { return _RemapCategory(sourceId); }
     //! Look up a copy of an subcategory
     DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a SubCategory
     DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
-    DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
+    DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) { return _RemapSubCategory(destCategoryId, sourceId); }
     //! Make sure that an ECClass has been imported
-    DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+    DgnClassId RemapClassId(DgnClassId sourceId) { return _RemapClassId(sourceId); }
     //! Look up a copy of a Material
     DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Material
     DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Material has been imported
-    DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
+    DgnMaterialId RemapMaterialId(DgnMaterialId sourceId) { return _RemapMaterialId(sourceId); }
     //! Look up a copy of a Material
     DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Texture
     DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Texture has been imported
-    DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
+    DgnTextureId RemapTextureId(DgnTextureId sourceId) { return _RemapTextureId(sourceId); }
     //! Look up a copy of a LineStyle
     DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a LineStyle
     DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId);
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) { return _RemapLineStyleId(sourceId); }
     //! Look up a copy of a LineStyle component
     LsComponentId FindLineStyleComponentId(LsComponentId sourceId) const;
     //! Register a copy of a LineStyle component
     void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeometryStream have been imported
-    DGNPLATFORM_EXPORT DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom);
+    DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom) { return _RemapGeometryStreamIds(geom); }
     //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
-    DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
+    DgnFontId RemapFont(DgnFontId srcId) { return _RemapFont(srcId); }
     //! @}
 
     BeSQLite::EC::ECInstanceUpdater const& GetUpdater(ECN::ECClassCR) const;
