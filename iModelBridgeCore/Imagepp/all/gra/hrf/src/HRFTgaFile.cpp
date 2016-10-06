@@ -545,7 +545,7 @@ void HRFTgaFile::CreateDescriptors ()
 
         // Date/Time Tag
         Result = sprintf (StrInput,
-                          "%04u:%02u:%02u  %02u:%02u:%02u",
+                          "%04u:%02u:%02u %02u:%02u:%02u",
                           m_pTgaExtentionArea->m_Year,
                           m_pTgaExtentionArea->m_Month,
                           m_pTgaExtentionArea->m_Day,
