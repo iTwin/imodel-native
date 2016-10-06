@@ -137,11 +137,21 @@ TEST_F(DgnScriptTest, TestEga)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
-        Bentley.Dgn.Logging.Message('DgnScriptTest', Bentley.Dgn.LoggingSeverity.Info, 'element.CategoryId=' + element.CategoryId.ToString()); \
-        Bentley.Dgn.Logging.Message('DgnScriptTest', Bentley.Dgn.LoggingSeverity.Info, 'element.Model.ModelId=' + element.Model.ModelId.ToString()); \
+        var gsource = element.ToGeometrySource(); \
+        if (!gsource) \
+            { \
+            Bentley.Dgn.Script.ReportError('You must pass a geometry source of some kind to an EGA. You passed in an element that is not a geometry source.');\
+            return; \
+            } \
+        var g3d = element.ToGeometrySource3d(); \
+        if (!g3d) \
+            { \
+            Bentley.Dgn.Script.ReportError('This particular EGA expects a geometry source 3D. You passed in a 2D geometry source.');\
+            return; \
+            } \
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
-        var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, element.CategoryId, origin, angles); \
+        var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, g3d.CategoryId, origin, angles); \
         builder.AppendGeometry(box); \
         builder.Finish(element); \
         return 0;\
