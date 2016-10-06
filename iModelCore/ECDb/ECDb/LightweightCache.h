@@ -34,6 +34,7 @@ struct LightweightCache final: NonCopyableClass
         typedef bmap<DbTable const*, RelationshipTypeByClassId> RelationshipPerTable;
 
     private:
+        ECDb const& m_ecdb;
         mutable ClassIdsPerTableMap m_classIdsPerTable;
         mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
         mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_relationshipClassIdsPerConstraintClassIds;
@@ -42,7 +43,6 @@ struct LightweightCache final: NonCopyableClass
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
 
-        ECDbMap const& m_map;
         ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
         bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
@@ -50,7 +50,7 @@ struct LightweightCache final: NonCopyableClass
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
 
     public:
-        explicit LightweightCache(ECDbMap const& map);
+        explicit LightweightCache(ECDb const&);
         ~LightweightCache() {}
         std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;

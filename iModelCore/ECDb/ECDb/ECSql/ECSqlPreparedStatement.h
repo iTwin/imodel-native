@@ -10,7 +10,7 @@
 
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/IECSqlValue.h>
-#include  <ECDb/ECSqlStatement.h>
+#include <ECDb/ECSqlStatement.h>
 #include "ECSqlParser.h"
 #include "ECSqlPrepareContext.h"
 #include "ECSqlField.h"
@@ -30,7 +30,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
     private:
         ECSqlType m_type;
 
-        ECDbCP m_ecdb;
+        ECDb const* m_ecdb;
         Utf8String m_ecsql;
         Utf8String m_nativeSql;
         mutable BeSQLite::Statement m_sqliteStatement;
@@ -41,7 +41,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
         virtual ECSqlStatus _Reset() = 0;
 
     protected:
-        ECSqlPreparedStatement(ECSqlType, ECDbCR);
+        ECSqlPreparedStatement(ECSqlType, ECDb const&);
 
         DbResult DoStep();
         ECSqlStatus DoReset();

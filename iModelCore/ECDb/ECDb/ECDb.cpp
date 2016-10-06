@@ -15,16 +15,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::ECDb() : Db(), m_pimpl(nullptr) { m_pimpl = new Impl(*this); }
+ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::~ECDb()
-    {
-    Destroy();
-    }
+ECDb::~ECDb() { Destroy(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
@@ -123,66 +120,42 @@ DbResult ECDb::_VerifySchemaVersion(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
-int ECDb::_OnAddFunction(DbFunction& func) const
-    {
-    return m_pimpl->OnAddFunction(func) == SUCCESS ? 0 : 1;
-    }
+int ECDb::_OnAddFunction(DbFunction& func) const { return m_pimpl->OnAddFunction(func) == SUCCESS ? 0 : 1; }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::_OnRemoveFunction(DbFunction& func) const
-    {
-    m_pimpl->OnRemoveFunction(func);
-    }
+void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction(func); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Schemas() const
-    {
-    return m_pimpl->Schemas();
-    }
+ECDbSchemaManagerCR ECDb::Schemas() const { return m_pimpl->Schemas(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECN::IECSchemaLocaterR ECDb::GetSchemaLocater() const
-    {
-    return m_pimpl->GetSchemaLocater();
-    }
+ECN::IECSchemaLocaterR ECDb::GetSchemaLocater() const { return m_pimpl->GetSchemaLocater(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECN::IECClassLocaterR ECDb::GetClassLocater() const
-    {
-    return m_pimpl->GetClassLocater();
-    }
+ECN::IECClassLocaterR ECDb::GetClassLocater() const { return m_pimpl->GetClassLocater(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2015
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Purge(PurgeMode mode) const
-    {
-    return m_pimpl->Purge(mode);
-    }
+BentleyStatus ECDb::Purge(PurgeMode mode) const { return m_pimpl->Purge(mode); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2015
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::AddIssueListener(IIssueListener const& issueListener)
-    {
-    return m_pimpl->AddIssueListener(issueListener);
-    }
+BentleyStatus ECDb::AddIssueListener(IIssueListener const& issueListener) { return m_pimpl->AddIssueListener(issueListener); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2015
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::RemoveIssueListener()
-    {
-    m_pimpl->RemoveIssueListener();
-    }
+void ECDb::RemoveIssueListener() { m_pimpl->RemoveIssueListener(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2016
@@ -195,27 +168,16 @@ void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnCl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ClearECDbCache() const
-    {
-    m_pimpl->ClearECDbCache();
-    }
+void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl& ECDb::GetECDbImplR() const
-    {
-    BeAssert(m_pimpl != nullptr);
-    return *m_pimpl;
-    }
+ECDb::Impl& ECDb::GetECDbImplR() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015
 //---------------------------------------------------------------------------------------
-void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const
-    {
-    _OnIssueReported(severity, message);
-    }
-
+void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const { _OnIssueReported(severity, message); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2835,7 +2835,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
         return SUCCESS;
         }
 
-    ClassMap const* map = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*resolvedClass);
+    ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
     if (map == nullptr)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className.c_str());

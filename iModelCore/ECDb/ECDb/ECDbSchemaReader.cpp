@@ -48,11 +48,11 @@ ECSchemaId ECDbSchemaReader::GetECSchemaId(ECSchemaCR ecSchema) const
     {
     if (ecSchema.HasId())
         {
-        BeAssert(ecSchema.GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecSchema.GetName().c_str()));
+        BeAssert(ecSchema.GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecSchema.GetName().c_str()));
         return ecSchema.GetId();
         }
 
-    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecSchema.GetName().c_str());
+    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecSchema.GetName().c_str());
     if (schemaId.IsValid())
         {
         //it is possible that the schema was already imported before, but the given C++ object comes from another source.
@@ -86,11 +86,11 @@ ECEnumerationId ECDbSchemaReader::GetECEnumerationId(ECEnumerationCR ecEnum) con
     {
     if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
         {
-        BeAssert(ecEnum.GetId() == ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()));
+        BeAssert(ecEnum.GetId() == ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()));
         return ecEnum.GetId();
         }
 
-    const ECEnumerationId id = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
+    const ECEnumerationId id = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
     if (id.IsValid())
         {
         //it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
@@ -125,11 +125,11 @@ KindOfQuantityId ECDbSchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) con
     {
     if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(koq.GetId() == ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()));
+        BeAssert(koq.GetId() == ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()));
         return koq.GetId();
         }
 
-    const KindOfQuantityId id = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
+    const KindOfQuantityId id = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
     if (id.IsValid())
         {
         //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
@@ -147,7 +147,7 @@ ECPropertyId ECDbSchemaReader::GetECPropertyId(ECPropertyCR prop) const
     {
     if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
         {
-        BeAssert(prop.GetId() == ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()));
+        BeAssert(prop.GetId() == ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()));
         return prop.GetId();
         }
 
@@ -155,12 +155,12 @@ ECPropertyId ECDbSchemaReader::GetECPropertyId(ECPropertyCR prop) const
     if (prop.GetClass().HasId())
         {
         //If the ECClass already has an id, we can run a faster SQL to get the property id
-        BeAssert(prop.GetClass().GetId() == ECDbSchemaPersistenceHelper::GetECClassId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), ResolveSchema::BySchemaName));
+        BeAssert(prop.GetClass().GetId() == ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), ResolveSchema::BySchemaName));
 
-        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetId(), prop.GetName().c_str());
+        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, prop.GetClass().GetId(), prop.GetName().c_str());
         }
     else
-        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_db, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
+        propId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
 
     if (propId.IsValid())
         {
@@ -191,7 +191,7 @@ BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) c
 BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ecClassId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -231,7 +231,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
         return nullptr;
 
     BeMutexHolder lock(m_criticalSection);
-    ECDbExpressionSymbolContext symbolsContext(m_db);
+    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
 
     ECClassP classFromCache = nullptr;
     if (TryGetECClassFromCache(classFromCache, ecClassId))
@@ -247,7 +247,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     const int relStrengthDirColIx = 7;
     const int caContainerTypeIx = 8;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM ec_Class WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM ec_Class WHERE Id=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -386,7 +386,7 @@ bool ECDbSchemaReader::TryGetECClassFromCache(ECClassP& ecClass, ECClassId ecCla
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
     {
-    ECEnumerationId enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
+    ECEnumerationId enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, schemaName, enumName);
     if (!enumId.IsValid())
         return nullptr;
 
@@ -419,7 +419,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -474,7 +474,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
 //+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP ECDbSchemaReader::GetKindOfQuantity(Context& ctx, Utf8CP schemaName, Utf8CP koqName) const
     {
-    KindOfQuantityId koqId = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, schemaName, koqName);
+    KindOfQuantityId koqId = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, schemaName, koqName);
     if (!koqId.IsValid())
         return nullptr;
 
@@ -508,7 +508,7 @@ BentleyStatus ECDbSchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context
     const int defaultPresUnitColIx = 6;
     const int altPresUnitColIx = 7;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -577,7 +577,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
         return ERROR;
 
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
@@ -669,7 +669,7 @@ BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSche
     if (ecSchemaKey->IsFullyLoaded())
         return SUCCESS;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=?");
+    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -686,7 +686,7 @@ BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSche
         }
 
     stmt = nullptr;
-    stmt = m_db.GetCachedStatement("SELECT Id FROM ec_Enumeration WHERE SchemaId=?");
+    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Enumeration WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -704,7 +704,7 @@ BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSche
         }
 
     stmt = nullptr;
-    stmt = m_db.GetCachedStatement("SELECT Id FROM ec_KindOfQuantity WHERE SchemaId=?");
+    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_KindOfQuantity WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -730,7 +730,7 @@ BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSche
 BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt,
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt,
         "SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
         "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
@@ -926,7 +926,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
         };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
-    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, m_db, ecClassId))
+    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, m_ecdb, ecClassId))
         return ERROR;
 
     for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
@@ -1108,7 +1108,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -1145,7 +1145,7 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context
 BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, containerId))
@@ -1179,7 +1179,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR c
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -1216,7 +1216,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId constraintId) const
     {
     CachedStatementPtr statement = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(statement, "SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != statement->BindId(1, constraintId))
@@ -1259,8 +1259,8 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
     if (ecClass.GetSchema().HasId())
         {
         //If the ECSchema already has an id, we can run a faster SQL to get the class id
-        BeAssert(ecClass.GetSchema().GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, ecClass.GetSchema().GetName().c_str()));
-        classId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
+        BeAssert(ecClass.GetSchema().GetId() == ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecClass.GetSchema().GetName().c_str()));
+        classId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
         }
     else
         classId = GetECClassId(ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
@@ -1293,7 +1293,7 @@ ECClassId ECDbSchemaReader::GetECClassId(Utf8StringCR schemaName, Utf8StringCR c
             return innerIt->second;
         }
 
-    ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, schemaName.c_str(), className.c_str(), resolveSchema);
+    ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, schemaName.c_str(), className.c_str(), resolveSchema);
     
     //add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())
@@ -1317,7 +1317,6 @@ void ECDbSchemaReader::ClearCache() const
     m_ecSchemaCache.clear();
     m_cache.Clear();
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2015

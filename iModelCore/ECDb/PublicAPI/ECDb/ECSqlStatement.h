@@ -11,6 +11,7 @@
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/ECInstanceId.h>
+#include <ECDb/ECDb.h>
 #include <list>
 #include <json/json.h>
 
@@ -56,7 +57,7 @@ public:
     //! @param[in] ecdb ECDb context
     //! @param[in] ecsql ECSQL
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus Prepare(ECDbCR ecdb, Utf8CP ecsql);
+    ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql);
 
     //! Indicates whether this statement is already prepared or not.
     //! @return true, if it is prepared. false otherwise
@@ -398,7 +399,7 @@ public:
     //! Gets the ECDb handle which was used to prepare this statement.
     //! @remarks Only call this for a prepared statement!
     //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
-    ECDB_EXPORT ECDbCP GetECDb() const;
+    ECDB_EXPORT ECDb const* GetECDb() const;
 #endif
     };
 

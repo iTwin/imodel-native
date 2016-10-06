@@ -14,8 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
-                            m_ecdbMap(std::unique_ptr<ECDbMap>(new ECDbMap(ecdb))),
+ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb))),
                             m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
                             m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
                             m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
@@ -27,9 +26,7 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
                             m_indexIdSequence(ecdb, "ec_indexidsequence"),
                             m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
                             m_issueReporter(ecdb)
-    {
-    m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, *m_ecdbMap));
-    }
+    {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
@@ -97,9 +94,6 @@ DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ClearECDbCache() const
     {
-    if (m_ecdbMap != nullptr)
-        m_ecdbMap->ClearCache();
-
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 
@@ -113,13 +107,6 @@ void ECDb::Impl::ClearECDbCache() const
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2014
-//---------------+---------------+---------------+---------------+---------------+------
-ECDbMap const& ECDb::Impl::GetECDbMap() const
-    {     
-    return *m_ecdbMap; 
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -296,7 +283,7 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
     {
-    BeMutexHolder lock(m_mutex);
+    BeDbMutexHolder lock(m_mutex);
     m_statements.insert(&stmt);
     }
 
@@ -305,7 +292,7 @@ void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) const
     {
-    BeMutexHolder lock(m_mutex);
+    BeDbMutexHolder lock(m_mutex);
     auto it = m_statements.find(&stmt);
     if (it != m_statements.end())
         m_statements.erase(it);
@@ -316,7 +303,8 @@ void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) cons
 //---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
     {
-    BeMutexHolder lock(m_mutex);
+    BeDbMutexHolder lock(m_mutex);
+
     bset<ECSqlStatement::Impl*> readOnlyCachedStatementSet = m_statements;
     for (ECSqlStatement::Impl* stmt : readOnlyCachedStatementSet)
         {
@@ -332,7 +320,7 @@ ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::FinalizeStatements() const
     {
-    BeMutexHolder lock(m_mutex);
+    BeDbMutexHolder lock(m_mutex);
     for (ECSqlStatement::Impl* stmt : m_statements)
         {
         if (stmt != nullptr)

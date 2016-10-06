@@ -7,14 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <ECDb/ECDbTypes.h>
+#include <ECDb/ECDb.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #if !defined (DOCUMENTATION_GENERATOR)
 struct ECDbMap;
 struct ECDbSchemaReader;
-struct ECDbSchemaWriter;
 struct SchemaImportContext;
 #endif
 
@@ -65,8 +64,8 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
     {
     private:
         ECDb const& m_ecdb;
-        ECDbMap& m_map;
         ECDbSchemaReader* m_schemaReader;
+        ECDbMap* m_dbMap;
         mutable BeMutex m_criticalSection;
 
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -80,7 +79,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
-        ECDbSchemaManager(ECDb const&, ECDbMap&);
+        explicit ECDbSchemaManager(ECDb const&);
         ~ECDbSchemaManager();
 #endif
 
@@ -186,7 +185,8 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 #if !defined (DOCUMENTATION_GENERATOR)
         void ClearCache() const;
         ECDbSchemaReader const& GetReader() const;
-        ECDbCR GetECDb() const;
+        ECDbMap const& GetDbMap() const;
+        ECDb const& GetECDb() const;
 #endif
     };
 
@@ -204,9 +204,9 @@ private:
     ~ClassMappingInfoHelper();
 
 public:
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8StringCR schemaName, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8StringCR schemaName, Utf8StringCR className);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDb const&, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDb const&, Utf8StringCR schemaName, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDb const&, Utf8StringCR schemaName, Utf8StringCR className);
     };
 
 #endif

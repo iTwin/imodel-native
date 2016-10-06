@@ -475,7 +475,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         return ERROR;
         }
 
-    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecclass);
+    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecclass);
     if (classMap == nullptr)
         {
         BeAssert(false);

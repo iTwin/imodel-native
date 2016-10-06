@@ -45,9 +45,6 @@
 
 #define ECINSTANCE_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname,BeSQLite::EC::ECInstanceId)
 
-//Published types
-ECDB_TYPEDEFS(ECDb);
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m_map(map), m_schemaReader(new ECDbSchemaReader(ecdb))
+ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb) :m_ecdb(ecdb), m_dbMap(new ECDbMap(ecdb)), m_schemaReader(new ECDbSchemaReader(ecdb))
     {}
 
 //---------------------------------------------------------------------------------------
@@ -31,6 +31,12 @@ ECDbSchemaManager::~ECDbSchemaManager()
         {
         delete m_schemaReader;
         m_schemaReader = nullptr;
+        }
+
+    if (m_dbMap != nullptr)
+        {
+        delete m_dbMap;
+        m_dbMap = nullptr;
         }
     }
 
@@ -181,7 +187,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MappingStatus::Error == m_map.MapSchemas(context))
+    if (MappingStatus::Error == GetDbMap().MapSchemas(context))
         return ERROR;
 
     if (ViewGenerator::CreateUpdatableViews(GetECDb()) != SUCCESS)
@@ -397,7 +403,11 @@ KindOfQuantityCP ECDbSchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::ClearCache() const { GetReader().ClearCache(); }
+void ECDbSchemaManager::ClearCache() const 
+    {
+    GetReader().ClearCache(); 
+    GetDbMap().ClearCache();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle               09/2016
@@ -405,9 +415,14 @@ void ECDbSchemaManager::ClearCache() const { GetReader().ClearCache(); }
 ECDbSchemaReader const& ECDbSchemaManager::GetReader() const { BeAssert(m_schemaReader != nullptr); return *m_schemaReader; }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle               10/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbMap const& ECDbSchemaManager::GetDbMap() const { BeAssert(m_dbMap != nullptr); return *m_dbMap; }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle               12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbCR ECDbSchemaManager::GetECDb() const { return m_ecdb; }
+ECDb const& ECDbSchemaManager::GetECDb() const { return m_ecdb; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
@@ -444,7 +459,7 @@ ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
-    return m_map.CreateECClassViewsInDb();
+    return GetDbMap().CreateECClassViewsInDb();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

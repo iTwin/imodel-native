@@ -87,7 +87,7 @@ Statement& ECSqlField::GetSqliteStatement () const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) const
     {
-    ECDbCP ecdb = m_ecsqlStatement.GetECDb();
+    ECDb const* ecdb = m_ecsqlStatement.GetECDb();
     if (ecdb != nullptr)
         ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
 

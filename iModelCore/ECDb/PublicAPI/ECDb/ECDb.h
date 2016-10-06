@@ -156,4 +156,7 @@ public:
 #endif
 };
 
+typedef ECDb& ECDbR;
+typedef ECDb const& ECDbCR;
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

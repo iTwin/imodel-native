@@ -15,8 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(*this)
-    {}
+ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(ecdb) {}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
@@ -173,7 +172,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx)
+MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -290,7 +289,7 @@ void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-MappingStatus ECDbMap::DoMapSchemas()
+MappingStatus ECDbMap::DoMapSchemas() const
     {
     if (AssertIfIsNotImportingSchema())
         return MappingStatus::Error;
@@ -381,19 +380,19 @@ MappingStatus ECDbMap::DoMapSchemas()
     MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-        classMapTmp = NotMappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        classMapTmp = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, setIsDirty);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                classMapTmp = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+                classMapTmp = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, setIsDirty);
             else
-                classMapTmp = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+                classMapTmp = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, setIsDirty);
             }
         else
-            classMapTmp = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+            classMapTmp = ClassMap::Create(m_ecdb, ecClass, mapStrategy, setIsDirty);
         }
 
     if (MappingStatus::Error == AddClassMap(classMapTmp))
@@ -415,7 +414,7 @@ MappingStatus ECDbMap::DoMapSchemas()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
+MappingStatus ECDbMap::MapClass(ECClassCR ecClass) const
     {
     if (AssertIfIsNotImportingSchema())
         return MappingStatus::Error;
@@ -427,7 +426,7 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
     if (existingClassMap == nullptr)
         {
         MappingStatus status = MappingStatus::Success;
-        std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, ecClass, *this);
+        std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, m_ecdb, ecClass);
         if ((status == MappingStatus::BaseClassesNotMapped || status == MappingStatus::Error))
             return status;
 
@@ -437,19 +436,19 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
 
         ClassMapPtr classMap = nullptr;
         if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-            classMap = NotMappedClassMap::Create(ecClass, *this, mapStrategy, true);
+            classMap = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
         else
             {
             auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
             if (ecRelationshipClass != nullptr)
                 {
                 if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                    classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
+                    classMap = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
                 else
-                    classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
+                    classMap = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
                 }
             else
-                classMap = ClassMap::Create(ecClass, *this, mapStrategy, true);
+                classMap = ClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
             }
 
         status = AddClassMap(classMap);
@@ -1090,7 +1089,7 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::ClearCache()
+void ECDbMap::ClearCache() const
     {
     BeMutexHolder lock(m_mutex);
     m_classMapDictionary.clear();

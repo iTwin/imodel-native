@@ -66,8 +66,8 @@ private:
 
     IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
-public:
-    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)
+    public:
+    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb(ecdb)
         {
         m_customAttributeValidator.Accept("ECDbMap:ClassMap.Indexes.Name");
         m_customAttributeValidator.Accept("ECDbMap:ShareColumns.SharedColumnCount");

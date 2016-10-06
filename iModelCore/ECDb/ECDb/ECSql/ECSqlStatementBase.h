@@ -25,9 +25,9 @@ struct ECSqlStatementBase
     private:
         std::unique_ptr<ECSqlPreparedStatement> m_preparedStatement;
 
-        virtual ECSqlPrepareContext _InitializePrepare(ECDbCR, Utf8CP ecsql) = 0;
+        virtual ECSqlPrepareContext _InitializePrepare(ECDb const&, Utf8CP ecsql) = 0;
 
-        ECSqlPreparedStatement& CreatePreparedStatement(ECDbCR, Exp const&);
+        ECSqlPreparedStatement& CreatePreparedStatement(ECDb const&, Exp const&);
 
         ECSqlStatus FailIfNotPrepared(Utf8CP errorMessage) const;
         ECSqlStatus FailIfWrongType(ECSqlType expectedType, Utf8CP errorMessage) const;
@@ -35,13 +35,13 @@ struct ECSqlStatementBase
     protected:
         ECSqlStatementBase() : m_preparedStatement(nullptr) {}
 
-        virtual ECSqlStatus _Prepare(ECDbCR, Utf8CP ecsql);
+        virtual ECSqlStatus _Prepare(ECDb const&, Utf8CP ecsql);
         virtual void _Finalize();
 
     public:
         virtual ~ECSqlStatementBase() {}
         //Public API mirrors
-        ECSqlStatus Prepare(ECDbCR, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECDb const&, Utf8CP ecsql);
         bool IsPrepared() const { return GetPreparedStatementP() != nullptr; }
 
         IECSqlBinder& GetBinder(int parameterIndex) const;
@@ -57,7 +57,7 @@ struct ECSqlStatementBase
 
         Utf8CP GetECSql() const;
         Utf8CP GetNativeSql() const;
-        ECDbCP GetECDb() const;
+        ECDb const* GetECDb() const;
 
         void Finalize() { _Finalize(); }
 
@@ -82,7 +82,7 @@ struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
         ECN::ECClassId m_classId;
         IECSqlBinder* m_ecInstanceIdBinder;
 
-        virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override { return ECSqlPrepareContext(ecdb, *this, m_classId); }
+        virtual ECSqlPrepareContext _InitializePrepare(ECDb const& ecdb, Utf8CP ecsql) override { return ECSqlPrepareContext(ecdb, *this, m_classId); }
 
     public:
         explicit ParentOfJoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}

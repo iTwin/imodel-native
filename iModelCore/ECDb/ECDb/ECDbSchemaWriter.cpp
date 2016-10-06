@@ -1709,7 +1709,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         return ERROR;
         }
 
-    ClassMapCP deletedClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedClass);
+    ClassMapCP deletedClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(deletedClass);
     if (deletedClassMap == nullptr)
         {
         BeAssert(false && "Failed to find classMap");
@@ -1811,7 +1811,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
         return ERROR;
         }
 
-    ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedProperty.GetClass());
+    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(deletedProperty.GetClass());
     if (classMap == nullptr)
         {
         BeAssert(false && "Failed to find classMap");
@@ -1848,7 +1848,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             BeAssert(false);
             return ERROR;
             }
-        ClassMapCP partitionRootClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*rootClass);
+        ClassMapCP partitionRootClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*rootClass);
         if (partitionRootClassMap == nullptr)
             {
             BeAssert(false && "Failed to find classMap");

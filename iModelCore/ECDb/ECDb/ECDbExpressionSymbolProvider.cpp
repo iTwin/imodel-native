@@ -65,10 +65,10 @@ public:
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetECClassId, nullptr, const_cast<ECDbP>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDbP>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDbP>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetECClassId, nullptr, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDb*>(&m_db)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,7 +85,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetECClassId(EvaluationResult& ev
 
     Utf8CP className = args[0].GetECValue()->GetUtf8CP();
     Utf8CP schemaName = args[1].GetECValue()->GetUtf8CP();
-    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
     ECClassId classId = db.Schemas().GetECClassId(schemaName, className);
     evalResult.InitECValue().SetLong(classId.GetValueUnchecked());
     return ExpressionStatus::Success;
@@ -233,7 +233,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
     if (3 != args.size())
         return ExpressionStatus::WrongNumberOfArguments;
 
-    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
     Utf8String queryFormat;
     ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
@@ -278,7 +278,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     if (1 != args.size())
         return ExpressionStatus::WrongNumberOfArguments;
 
-    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
     Utf8String queryFormat;
     ECEntityClassCP relatedClass;
@@ -359,7 +359,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
     if (4 != args.size())
         return ExpressionStatus::WrongNumberOfArguments;
 
-    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
 
     Utf8String queryFormat;
     ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);

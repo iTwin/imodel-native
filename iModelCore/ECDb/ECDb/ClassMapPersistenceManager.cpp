@@ -227,7 +227,7 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
         }
 
     stmt->BindId(1, classId);
-    DbSchema const& dbSchema = ecdb.GetECDbImplR().GetECDbMap().GetDbSchema();
+    DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {

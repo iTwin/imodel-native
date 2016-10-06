@@ -740,7 +740,7 @@ BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap con
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetDbMap().GetECDb()))
         return ERROR;
 
     DbColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
@@ -983,7 +983,7 @@ BentleyStatus PointPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& clas
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
+    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetDbMap().GetECDb()))
         return ERROR;
 
     const DbColumn::Type colType = DbColumn::Type::Real;
@@ -1238,7 +1238,7 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ecdb) const
+bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDb const* ecdb) const
     {
     BeAssert(!logIfNotSupported || ecdb != nullptr);
 

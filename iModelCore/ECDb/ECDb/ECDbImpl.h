@@ -48,7 +48,7 @@ private:
         {
         private:
             mutable bset<ECSqlStatement::Impl*> m_statements;
-            mutable BeMutex m_mutex;
+            mutable BeDbMutex m_mutex;
 
         public:
             ECSqlStatementRegistry() {}
@@ -62,7 +62,6 @@ private:
 
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
-    std::unique_ptr<ECDbMap> m_ecdbMap;
 
     mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
     BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
@@ -109,10 +108,9 @@ private:
     DbResult InitializeSequences() const;
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
+
 public:
     ~Impl() {}
-
-    ECDbMap const& GetECDbMap() const;
 
     BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
     BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }

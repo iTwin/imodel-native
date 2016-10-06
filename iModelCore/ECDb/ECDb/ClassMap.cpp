@@ -17,8 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
-    : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
+ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
+    : m_ecdb(ecdb), m_type(type), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
     m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
@@ -92,7 +92,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
     if (needsToCreateTable)
         {
         const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(mappingInfo);
-        DbTable* table = const_cast<ECDbMap&>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mappingInfo.GetTableName(), tableType,
+        DbTable* table = const_cast<ECDbMap&>(GetDbMap()).FindOrCreateTable(&schemaImportContext, mappingInfo.GetTableName(), tableType,
                                                                            mappingInfo.MapsToVirtualTable(), mappingInfo.GetECInstanceIdColumnName(),
                                                                            isExclusiveRootClassOfTable ? mappingInfo.GetECClass().GetId() : ECClassId(),
                                                                            primaryTable);
@@ -119,7 +119,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         return MappingStatus::Success;
 
     //does not exist yet
-    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this);
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(m_ecdb.Schemas(), *this);
     if (ecInstanceIdPropertyMap == nullptr)
         //log and assert already done in child method
         return MappingStatus::Error;
@@ -292,7 +292,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk)
     {
-    if (!GetECDbMap().IsImportingSchema() && !loadingFromDisk)
+    if (!GetDbMap().IsImportingSchema() && !loadingFromDisk)
         {
         BeAssert(false && "Can only be called during schema import");
         return ERROR;
@@ -301,7 +301,7 @@ BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& c
     PropertyMapCP classIdPropertyMap = GetECClassIdPropertyMap();
     if (classIdPropertyMap == nullptr)
         {
-        PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(Schemas(), *this, columns);
+        PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(m_ecdb.Schemas(), *this, columns);
         if (ecclassIdPropertyMap == nullptr)
             //log and assert already done in child method
             return ERROR;
@@ -357,7 +357,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
@@ -406,7 +406,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx.GetClassMapLoadContext(), m_ecDbMap.GetECDb(), GetClass(), *property, propertyAccessString, nullptr);
+        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx.GetClassMapLoadContext(), m_ecdb, GetClass(), *property, propertyAccessString, nullptr);
         if (propMap == nullptr)
             return MappingStatus::Error;
 
@@ -509,7 +509,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             }
 
         DbTable* involvedTable =  const_cast<DbTable*>(*involvedTables.begin());
-        if (nullptr == m_ecDbMap.GetDbSchemaR().CreateIndex(*involvedTable, indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(*involvedTable, indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
@@ -583,7 +583,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
         {
         for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            ClassMap* baseClassMap = (ClassMap*) GetECDbMap().GetClassMap(*baseClass);
+            ClassMap* baseClassMap = (ClassMap*) GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false && "Failed to find baseClass map");
@@ -632,7 +632,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 
     if (!dbLoadCtx.HasMappedProperties())
         {
-        SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));
+        SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
 
@@ -665,7 +665,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (mapColumnsList == nullptr)
         return ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, *mapColumnsList);
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(m_ecdb.Schemas(), *this, *mapColumnsList);
     if (mapColumnsList == nullptr)
         return ERROR;
 
@@ -693,7 +693,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = m_ecDbMap.GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
@@ -721,13 +721,13 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         PropertyMapPtr propMap = nullptr;
         if (tphBaseClassPropMap == nullptr)
             {
-            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), GetClass(), *property, property->GetName().c_str(), nullptr);
+            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecdb, GetClass(), *property, property->GetName().c_str(), nullptr);
             if (propMap == nullptr)
                 return ERROR;
 
             if (ERROR == propMap->Load(dbCtx))
                 {
-                BeAssert(GetECDbMap().IsImportingSchema() && "This code must only be reached if in schema import");
+                BeAssert(GetDbMap().IsImportingSchema() && "This code must only be reached if in schema import");
 
                 //ECSchema Upgrade
                 GetColumnFactoryR().Update();
@@ -737,9 +737,9 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                     return ERROR;
                     }
                 //! ECSchema update added new property for which we need to save property map
-                DbMapSaveContext ctx(m_ecDbMap.GetECDb());
+                DbMapSaveContext ctx(m_ecdb);
                 //First make sure table is updated on disk. The table must already exist for this operation to work.
-                if (m_ecDbMap.GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
                     {
                     BeAssert(false && "Failed to save table");
                     return ERROR;
@@ -791,15 +791,9 @@ ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-ECDbSchemaManagerCR ClassMap::Schemas() const { return m_ecDbMap.GetECDb().Schemas(); }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-IssueReporter const& ClassMap::Issues() const { return m_ecDbMap.Issues(); }
-
+IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan      09/2013
@@ -818,7 +812,7 @@ PropertyMapCP ClassMap::GetPropertyMap(Utf8CP propertyName) const
 //------------------------------------------------------------------------------------------
 StorageDescription const& ClassMap::GetStorageDescription() const
     {
-    return GetECDbMap().GetLightweightCache().GetStorageDescription(*this);
+    return GetDbMap().GetLightweightCache().GetStorageDescription(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -826,11 +820,11 @@ StorageDescription const& ClassMap::GetStorageDescription() const
 //---------------------------------------------------------------------------------------
 std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
     {
-    ECDerivedClassesList const& derivedClasses = m_ecDbMap.GetECDb().Schemas().GetDerivedECClasses(GetClass());
+    ECDerivedClassesList const& derivedClasses = m_ecdb.Schemas().GetDerivedECClasses(GetClass());
     std::vector<ClassMap const*> derivedClassMaps;
     for (ECClassCP derivedClass : derivedClasses)
         {
-        ClassMap const* derivedClassMap = m_ecDbMap.GetClassMap(*derivedClass);
+        ClassMap const* derivedClassMap = GetDbMap().GetClassMap(*derivedClass);
         derivedClassMaps.push_back(derivedClassMap);
         }
 
@@ -899,7 +893,19 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    return ViewGenerator::GenerateSelectViewSql(viewSql, *this, isPolymorphic, prepareContext);
+    return ViewGenerator::GenerateSelectViewSql(viewSql, m_ecdb, *this, isPolymorphic, prepareContext);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  06/2016
+//---------------------------------------------------------------------------------------
+DbTable const* ClassMap::ExpectingSingleTable() const
+    {
+    BeAssert(GetTables().size() == 1);
+    if (GetTables().size() != 1)
+        return nullptr;
+
+    return &GetJoinedTable();
     }
 
 //---------------------------------------------------------------------------------------
@@ -948,7 +954,7 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
                     "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=%d WHERE ch.ClassId=?",
                     Enum::ToInt(JoinedTableInfo::ParentOfJoinedTable));
 
-        CachedStatementPtr stmt = m_classMap.GetECDbMap().GetECDb().GetCachedStatement(sql.c_str());
+        CachedStatementPtr stmt = m_classMap.GetECDb().GetCachedStatement(sql.c_str());
         if (stmt == nullptr ||
             BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
             BE_SQLITE_ROW != stmt->Step())
@@ -990,7 +996,7 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
         // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
         if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
             {
-            m_classMap.GetECDbMap().Issues().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
+            m_classMap.GetDbMap().Issues().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
                                                           "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
                                                           "The column is created without constraints.",
                                                           propMap.GetProperty().GetName().c_str(), propMap.GetProperty().GetClass().GetFullName());
@@ -1240,7 +1246,7 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 MappingStatus NotMappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {
-    DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
 
     return MappingStatus::Success;
@@ -1251,7 +1257,7 @@ MappingStatus NotMappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo con
 //---------------------------------------------------------------------------------------
 BentleyStatus NotMappedClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-    DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
     return SUCCESS;
     }

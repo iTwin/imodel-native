@@ -24,17 +24,16 @@ struct ECDbMap :NonCopyableClass
 
     private:
         mutable BeMutex m_mutex;
-        mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
-        mutable LightweightCache m_lightweightCache;
-
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
-        SchemaImportContext* m_schemaImportContext;
-    private:
+        mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
+        mutable LightweightCache m_lightweightCache;
+        mutable SchemaImportContext* m_schemaImportContext;
+
         ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
         BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
-        MappingStatus DoMapSchemas();
-        MappingStatus MapClass(ECN::ECClassCR);
+        MappingStatus DoMapSchemas() const;
+        MappingStatus MapClass(ECN::ECClassCR) const;
         BentleyStatus SaveDbSchema() const;
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
@@ -51,6 +50,7 @@ struct ECDbMap :NonCopyableClass
     public:
         explicit ECDbMap(ECDbCR ecdb);
         ~ECDbMap() {}
+        void ClearCache() const;
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
@@ -59,9 +59,9 @@ struct ECDbMap :NonCopyableClass
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-        MappingStatus MapSchemas(SchemaImportContext&);
+        MappingStatus MapSchemas(SchemaImportContext&) const;
         BentleyStatus CreateECClassViewsInDb() const;
-        void ClearCache();
+
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;
         bool AssertIfIsNotImportingSchema() const;

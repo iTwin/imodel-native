@@ -669,7 +669,7 @@ void DbSchema::SyncTableCache() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-void DbSchema::Reset()
+void DbSchema::Reset() const
     {
     m_nullTable = nullptr;
     m_tableMapByName.clear();

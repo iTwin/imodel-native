@@ -18,14 +18,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus& mapStatus, ECN::ECClassCR ecClass, ECDbMap const& ecDbMap)
+std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus& mapStatus, ECDb const& ecdb, ECN::ECClassCR ecClass)
     {
     std::unique_ptr<ClassMappingInfo> info = nullptr;
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     if (ecRelationshipClass != nullptr)
-        info = std::unique_ptr<ClassMappingInfo>(new RelationshipMappingInfo(*ecRelationshipClass, ecDbMap));
+        info = std::unique_ptr<ClassMappingInfo>(new RelationshipMappingInfo(ecdb, *ecRelationshipClass));
     else
-        info = std::unique_ptr<ClassMappingInfo>(new ClassMappingInfo(ecClass, ecDbMap));
+        info = std::unique_ptr<ClassMappingInfo>(new ClassMappingInfo(ecdb, ecClass));
 
     if (info == nullptr || (mapStatus = info->Initialize()) != MappingStatus::Success)
         return nullptr;
@@ -40,8 +40,8 @@ std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus&
 //---------------------------------------------------------------------------------
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingInfo::ClassMappingInfo(ECClassCR ecClass, ECDbMap const& ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_mapsToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_tphBaseClassMap(nullptr)
+ClassMappingInfo::ClassMappingInfo(ECDb const& ecdb, ECClassCR ecClass)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_mapsToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_tphBaseClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -107,8 +107,8 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
     if (stat != MappingStatus::Success)
         return stat;
 
-    BeAssert(m_ecdbMap.GetSchemaImportContext() != nullptr);
-    ClassMappingCACache const* caCacheCP = m_ecdbMap.GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
+    BeAssert(GetDbMap().GetSchemaImportContext() != nullptr);
+    ClassMappingCACache const* caCacheCP = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
     if (caCacheCP == nullptr)
         {
         BeAssert(false);
@@ -195,7 +195,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
     m_tableName = baseClassJoinedTable.GetName();
     m_ecInstanceIdColumnName.assign(baseClassJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
 
-    ClassMappingCACache const* baseClassCACache = m_ecdbMap.GetSchemaImportContext()->GetClassMappingCACache(baseClassMap.GetClass());
+    ClassMappingCACache const* baseClassCACache = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(baseClassMap.GetClass());
     if (baseClassCACache == nullptr)
         {
         BeAssert(false);
@@ -219,7 +219,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
             //"<Rootclass name><Rootclass ECInstanceId column name>"
             ECClassId rootClassId = baseClassMap.GetTphHelper()->DetermineTphRootClassId();
             BeAssert(rootClassId.IsValid());
-            ECClassCP rootClass = m_ecdbMap.GetECDb().Schemas().GetECClass(rootClassId);
+            ECClassCP rootClass = m_ecdb.Schemas().GetECClass(rootClassId);
             if (rootClass == nullptr)
                 {
                 BeAssert(false && "There should always be a root class map which defines the TablePerHierarchy strategy");
@@ -286,14 +286,14 @@ BentleyStatus ClassMappingInfo::AssignMapStrategy(ClassMappingCACache const& caC
     BeAssert(m_mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy);
     if (caCache.HasJoinedTablePerDirectSubclassOption())
         {
-        GetECDbMap().Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has the 'JoinedTablePerDirectSubclass' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
+        GetDbMap().Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has the 'JoinedTablePerDirectSubclass' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
                                      "the 'JoinedTablePerDirectSubclass' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'.", m_ecClass.GetFullName());
         return ERROR;
         }
 
     if (caCache.GetShareColumnsCA().IsValid())
         {
-        GetECDbMap().Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has the 'ShareColumns' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
+        GetDbMap().Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has the 'ShareColumns' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
                                      "the 'ShareColumns' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'.", m_ecClass.GetFullName());
         return ERROR;
         }
@@ -306,7 +306,7 @@ BentleyStatus ClassMappingInfo::AssignMapStrategy(ClassMappingCACache const& caC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMappingInfo::_InitializeFromSchema()
     {
-    ClassMappingCACache const* caCacheCP = m_ecdbMap.GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
+    ClassMappingCACache const* caCacheCP = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
     if (caCacheCP == nullptr)
         return ERROR;
 
@@ -344,7 +344,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 
         }
 
-    if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdbMap.GetECDb(), m_ecClass, classMap.IsValid() ? &classMap : nullptr))
+    if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, classMap.IsValid() ? &classMap : nullptr))
         return ERROR;
 
     return InitializeClassHasCurrentTimeStampProperty();
@@ -402,7 +402,7 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
     const bool isMultiInheritance = m_ecClass.GetBaseClasses().size() > 1;
     for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
         {
-        ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+        ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
             return MappingStatus::BaseClassesNotMapped;
 
@@ -497,7 +497,7 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdbMap.Issues(); }
+IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
@@ -653,8 +653,8 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     DetermineCardinality();
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    std::vector<ECClass const*> sourceClasses = m_ecdbMap.GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
-    std::vector<ECClass const*> targetClasses = m_ecdbMap.GetFlattenListOfClassesFromRelationshipEnd(relClass->GetTarget());
+    std::vector<ECClass const*> sourceClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
+    std::vector<ECClass const*> targetClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetTarget());
     if (ContainsClassWithNotMappedStrategy(sourceClasses) || ContainsClassWithNotMappedStrategy(targetClasses))
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
@@ -662,8 +662,8 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         return MappingStatus::Success;
         }
 
-    BeAssert(m_ecdbMap.GetSchemaImportContext() != nullptr);
-    ClassMappingCACache const* caCache = m_ecdbMap.GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
+    BeAssert(GetDbMap().GetSchemaImportContext() != nullptr);
+    ClassMappingCACache const* caCache = GetDbMap().GetSchemaImportContext()->GetClassMappingCACache(m_ecClass);
     if (caCache == nullptr)
         {
         BeAssert(false);
@@ -676,7 +676,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 return MappingStatus::BaseClassesNotMapped;
 
@@ -980,7 +980,7 @@ bool RelationshipMappingInfo::ContainsClassWithNotMappedStrategy(std::vector<ECN
     {
     for (ECClassCP ecClass : classes)
         {
-        ClassMap const* classMap = m_ecdbMap.GetClassMap(*ecClass);
+        ClassMap const* classMap = GetDbMap().GetClassMap(*ecClass);
         BeAssert(classMap != nullptr);
         if (classMap == nullptr || classMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
             return true;
@@ -1067,7 +1067,7 @@ bool RelationshipMappingInfo::DetermineAllowDuplicateRelationshipsFlagFromRoot(E
 std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const
     {
     bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = m_ecdbMap.GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetDbMap().GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<DbTable const*>();

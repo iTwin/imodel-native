@@ -18,6 +18,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
+LightweightCache::LightweightCache(ECDb const& ecdb) : m_ecdb(ecdb) { Reset(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
 std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTable const& tbl) const
     {
     auto itor = m_classIdsPerTable.find(&tbl);
@@ -25,7 +30,7 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement("SELECT ClassId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE TableId = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE TableId = ?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -57,7 +62,7 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         return itor->second;
 
     bset<DbTable const*>& subset = m_tablesPerClassId[classId];
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement("SELECT TableId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE ClassId = ? ORDER BY TableId");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT TableId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE ClassId = ? ORDER BY TableId");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -78,7 +83,7 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         DbTableId tableId = stmt->GetValueId<DbTableId>(0);
         if (currentTableId != tableId)
             {
-            currentTable = m_map.GetDbSchema().FindTable(tableId);
+            currentTable = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableId);
             currentTableId = tableId;
             BeAssert(currentTable != nullptr);
             }
@@ -99,7 +104,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement("SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
                                                                  "       LEFT JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=1 AND CH.ClassId=? "
                                                                  "WHERE RCC.ClassId=?");
@@ -143,7 +148,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
                                                                  "       LEFT JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic = 1 "
                                                                  "WHERE RC.RelationshipClassId=?");
@@ -192,14 +197,14 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
                 "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
                 "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> %d AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <> %d)", Enum::ToInt(MapStrategy::TablePerHierarchy), Enum::ToInt(DbTable::Type::Joined));
 
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
     stmt->BindId(1, classId);
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
         DbTableId tableId = stmt->GetValueId<DbTableId>(1);
-        DbTable const* table = m_map.GetDbSchema().FindTable(tableId);
+        DbTable const* table = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableId);
         BeAssert(table != nullptr);
         std::vector<ECClassId>& horizontalPartition = subset[table];
         if (derivedClassId == classId)
@@ -258,10 +263,6 @@ void LightweightCache::Reset()
     m_tablesPerClassId.clear();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-LightweightCache::LightweightCache(ECDbMap const& map) : m_map(map) { Reset(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015

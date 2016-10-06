@@ -466,7 +466,7 @@ public:
 
     BentleyStatus Postprocess(ECDbMap const&);
 
-    bool IsSupportedInECSql(bool logIfNotSupported = false, ECDbCP ecdb = nullptr) const;
+    bool IsSupportedInECSql(bool logIfNotSupported = false, ECDb const* ecdb = nullptr) const;
 
     RelationshipClassMap const& GetRelationshipClassMap() const { BeAssert(m_relClassMap != nullptr); return *m_relClassMap; }
 

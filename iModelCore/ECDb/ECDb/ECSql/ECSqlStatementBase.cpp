@@ -230,7 +230,7 @@ Utf8CP ECSqlStatementBase::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        02/14
 //---------------------------------------------------------------------------------------
-ECDbCP ECSqlStatementBase::GetECDb() const
+ECDb const* ECSqlStatementBase::GetECDb() const
     {
     ECSqlStatus stat = FailIfNotPrepared("Cannot call GetECDb on an unprepared ECSqlStatement.");
     if (!stat.IsSuccess())

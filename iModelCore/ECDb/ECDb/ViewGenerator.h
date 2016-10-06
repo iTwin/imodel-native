@@ -36,7 +36,7 @@ struct ViewGenerator
 
         typedef bmap<DbTable const*, ViewMember> ViewMemberByTable;
 
-        ECDbMap const& m_map;
+        ECDb const& m_ecdb;
         bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
         bool m_isPolymorphic;
@@ -44,19 +44,19 @@ struct ViewGenerator
         bool m_asSubQuery;
         bool m_captureViewAccessStringList;
 
-        explicit ViewGenerator(ECDbMap const& map, bool returnViewAccessStringList = false, bool asSubQuery = true) :
-            m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
+        explicit ViewGenerator(ECDb const& ecdb, bool returnViewAccessStringList = false, bool asSubQuery = true) :
+            m_ecdb(ecdb), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
             {
             if (returnViewAccessStringList)
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
             }
 
-        static BentleyStatus CreateECClassView(ClassMapCR);
+        static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
         BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
 
         BentleyStatus ComputeViewMembers(ViewMemberByTable& viewMembers, ECN::ECClassCR, bool ensureDerivedClassesAreLoaded);
-        BentleyStatus GetRootClasses(std::vector<ClassMap const*>& rootClasses, ECDbCR);
+        BentleyStatus GetRootClasses(std::vector<ClassMap const*>& rootClasses) const;
         BentleyStatus GetViewQueryForChild(NativeSqlBuilder& viewSql, DbTable const&, const std::vector<ClassMap const*>& childClassMap, ClassMap const& baseClassMap);
         //! Relationship polymorphic query
         BentleyStatus CreateViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap);
@@ -90,13 +90,13 @@ struct ViewGenerator
         //! @param isPolymorphicQuery [in] if true return a polymorphic view of ECClass else return a non-polymorphic view. Intend to be use by ECSQL "ONLY <ecClass>"
         //! @param prepareContext [in] prepareContext from ECSQL
         //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
-        static BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
+        static BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const&, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
 
-        static BentleyStatus CreateUpdatableViews(ECDbCR ecdb);
-        static BentleyStatus DropUpdatableViews(ECDbCR ecdb);
+        static BentleyStatus CreateUpdatableViews(ECDbCR);
+        static BentleyStatus DropUpdatableViews(ECDbCR);
 
-        static BentleyStatus CreateECClassViews(ECDbCR ecdb);
-        static BentleyStatus DropECClassViews(ECDbCR ecdb);
+        static BentleyStatus CreateECClassViews(ECDbCR);
+        static BentleyStatus DropECClassViews(ECDbCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

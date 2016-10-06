@@ -572,7 +572,7 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
         return ERROR;
         }
 
-    ClassMap const* targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
+    ClassMap const* targetClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*targetClass);
     if (targetClassMap == nullptr)
         {
         BeAssert(false && "No class map found for class.");

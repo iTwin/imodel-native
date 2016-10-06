@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECDb.h>
 #include "ECDbInternalTypes.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
@@ -38,7 +39,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECN::ECClassCR, ECDbMap const&);
+    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECDb const&, ECN::ECClassCR);
     };
 
 struct IndexMappingInfo;
@@ -59,7 +60,7 @@ private:
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
-    ECDbMap const& m_ecdbMap;
+    ECDb const& m_ecdb;
     ECN::ECClassCR m_ecClass;
     MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
@@ -83,14 +84,14 @@ protected:
     static void LogClassNotMapped (NativeLogging::SEVERITY, ECN::ECClassCR, Utf8CP explanation);
 
 public:
-    ClassMappingInfo(ECN::ECClassCR, ECDbMap const&);
+    ClassMappingInfo(ECDb const&, ECN::ECClassCR);
     virtual ~ClassMappingInfo() {}
 
     MappingStatus Initialize();
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
-    ECDbMap const& GetECDbMap() const {return m_ecdbMap;}
+    ECDbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
@@ -170,7 +171,7 @@ private:
     static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
 public:
-    RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMap const& ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
+    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
         m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true)
         {}

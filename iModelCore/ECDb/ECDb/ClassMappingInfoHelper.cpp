@@ -109,7 +109,7 @@ BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, b
     if (schemas.empty())
         return ERROR;
 
-    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& ecdbMap = ecdb.Schemas().GetDbMap();
 
     json = Json::Value(Json::objectValue);
     Json::Value& schemasJson = json["ECSchemas"];
@@ -134,7 +134,7 @@ BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, U
 
     json = Json::Value(Json::objectValue);
     Json::Value& schemaJson = json["ECSchema"];
-    SchemaToJson(schemaJson, ecdb.GetECDbImplR().GetECDbMap(), *schema, skipUnmappedClasses);
+    SchemaToJson(schemaJson, ecdb.Schemas().GetDbMap(), *schema, skipUnmappedClasses);
     return SUCCESS;
     }
 
@@ -148,7 +148,7 @@ BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Ut
     if (ecClass == nullptr)
         return ERROR;
 
-    ClassMap const* classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
+    ClassMap const* classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
     if (classMap == nullptr)
         return ERROR;
 

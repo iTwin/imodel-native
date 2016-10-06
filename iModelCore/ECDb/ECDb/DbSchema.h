@@ -485,7 +485,6 @@ public:
     typedef std::map<DbTableId, Utf8String> TableMapById;
 
 private:
-
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
     mutable TableMapByName m_tableMapByName;
@@ -532,13 +531,10 @@ public:
     BentleyStatus SynchronizeExistingTables();
     void SyncTableCache() const;
     ECDbCR GetECDb() const { return m_ecdb; }
-    void Reset();
+    void Reset() const;
 
     //!Update existing table in db so any new columns added would be save to disk.
-    BentleyStatus UpdateTableOnDisk(DbTable const& table) const
-        {
-        return UpdateTable(table);
-        }
+    BentleyStatus UpdateTableOnDisk(DbTable const& table) const { return UpdateTable(table); }
     //!This function save or update table as required. It skip if a table is not loaded
     BentleyStatus SaveOrUpdateTables() const;
     BentleyStatus CreateOrUpdateIndexes() const;

@@ -94,7 +94,7 @@ struct ECDbSchemaReader
                 BentleyStatus Postprocess(ECDbSchemaReader const&) const;
             };
 
-        ECDbCR m_db;
+        ECDbCR m_ecdb;
         mutable ECN::ECSchemaCache m_cache;
         mutable std::map<ECN::ECSchemaId, std::unique_ptr<DbECSchemaEntry>> m_ecSchemaCache;
         mutable std::map<ECN::ECClassId, std::unique_ptr<DbECClassEntry>> m_ecClassCache;
@@ -125,7 +125,7 @@ struct ECDbSchemaReader
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
     public:
-        explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
+        explicit ECDbSchemaReader(ECDbCR ecdb) :m_ecdb(ecdb) {}
         ~ECDbSchemaReader() {}
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;

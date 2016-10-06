@@ -149,7 +149,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             if (ctx.IsParentOfJoinedTable())
                 {
                 auto joinedTableClass = ctx.GetECDb().Schemas().GetECClass(ctx.GetJoinedTableClassId());
-                auto joinedTableMap = ctx.GetECDb().GetECDbImplR().GetECDbMap().GetClassMap(*joinedTableClass);
+                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*joinedTableClass);
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     *classIdColumn,
                     exp.GetClassNameExp()->IsPolymorphic()))
@@ -157,7 +157,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             else if (ctx.GetJoinedTableInfo() != nullptr  && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
                 {
-                auto joinedTableMap = ctx.GetECDb().GetECDbImplR().GetECDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
+                auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     *classIdColumn,
                     exp.GetClassNameExp()->IsPolymorphic()))

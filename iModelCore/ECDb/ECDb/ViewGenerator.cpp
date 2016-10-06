@@ -18,9 +18,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static 
-BentleyStatus ViewGenerator::GenerateSelectViewSql(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
+BentleyStatus ViewGenerator::GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const& ecdb, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
     {
-    ViewGenerator viewGenerator(classMap.GetECDbMap());
+    ViewGenerator viewGenerator(ecdb);
     return viewGenerator.GenerateViewSql(viewSql, classMap, isPolymorphicQuery, &prepareContext);
     }
 
@@ -46,7 +46,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& map = ecdb.Schemas().GetDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -118,7 +118,6 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -129,7 +128,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        ClassMapCP classMap = map.GetClassMap(*ecClass);
+        ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(classMap != nullptr);
@@ -137,7 +136,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
             }
 
         BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::NotMapped);
-        if (CreateECClassView(*classMap) != SUCCESS)
+        if (CreateECClassView(ecdb, *classMap) != SUCCESS)
             return ERROR;
         }
 
@@ -147,12 +146,12 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static 
-BentleyStatus ViewGenerator::CreateECClassView(ClassMapCR classMap)
+BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
     {
     Utf8String viewName;
     viewName.Sprintf("[%s.%s]", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
 
-    ViewGenerator viewGenerator(classMap.GetECDbMap(), true, false);
+    ViewGenerator viewGenerator(ecdb, true, false);
     NativeSqlBuilder viewSql;
     if (viewGenerator.GenerateViewSql(viewSql, classMap, true, nullptr) != SUCCESS)
         return ERROR;
@@ -172,7 +171,7 @@ BentleyStatus ViewGenerator::CreateECClassView(ClassMapCR classMap)
 
     Utf8String createViewSql;
     createViewSql.Sprintf("CREATE VIEW %s (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", viewName.c_str(), columns.c_str(), viewSql.ToString());
-    if (classMap.GetECDbMap().GetECDb().ExecuteSql(createViewSql.c_str()) != BE_SQLITE_OK)
+    if (ecdb.ExecuteSql(createViewSql.c_str()) != BE_SQLITE_OK)
         return ERROR;
 
     return SUCCESS;
@@ -271,7 +270,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap.IsRelationshipClassMap())
         return ERROR;
 
-    ECDbMap const& ecdbMap = classMap.GetECDbMap();
+    ECDbMap const& ecdbMap = ecdb.Schemas().GetDbMap();
     StorageDescription const& descr = classMap.GetStorageDescription();
     std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
     Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
@@ -347,7 +346,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
         if (updateTables.find(&partition.GetTable()) != updateTables.end())
             {//<----------UPDATE trigger----------
-            ECClassCP rootClass = ecdbMap.GetECDb().Schemas().GetECClass(partition.GetRootClassId());
+            ECClassCP rootClass = ecdb.Schemas().GetECClass(partition.GetRootClassId());
             if (rootClass == nullptr)
                 {
                 BeAssert(false);
@@ -381,7 +380,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     if (tableCount < 2)
         return SUCCESS;
 
-    ViewGenerator generator(ecdb.GetECDbImplR().GetECDbMap(), false, false);
+    ViewGenerator generator(ecdb, false, false);
     NativeSqlBuilder viewBodySql;
     if (generator.GenerateViewSql(viewBodySql, classMap, true, nullptr) != SUCCESS)
         return ERROR;
@@ -421,8 +420,8 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap
 
     if (m_asSubQuery)
         viewSql.AppendParenLeft();
-    ECDbCR db = m_map.GetECDb();
-    DbSchema::EntityType entityType = DbSchema::GetEntityType(db, classMap.GetPrimaryTable().GetName().c_str());
+
+    DbSchema::EntityType entityType = DbSchema::GetEntityType(m_ecdb, classMap.GetPrimaryTable().GetName().c_str());
     if (entityType == DbSchema::EntityType::None && !isPolymorphicQuery)
         {
         if (SUCCESS != CreateNullView(viewSql, classMap))
@@ -444,7 +443,7 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap
             }
 
         std::vector<ClassMap const*> rootClassMaps;
-        if (SUCCESS != GetRootClasses(rootClassMaps, db))
+        if (SUCCESS != GetRootClasses(rootClassMaps))
             return ERROR;
 
         for (ClassMap const* classMap : rootClassMaps)
@@ -511,9 +510,9 @@ BentleyStatus ViewGenerator::CreateNullView(NativeSqlBuilder& viewSql, ClassMap 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootClasses, ECDbCR db)
+BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootClasses) const
     {
-    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetECSchemas(true);
+    bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetECSchemas(true);
     if (schemas.empty())
         return ERROR;
 
@@ -527,7 +526,7 @@ BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootCl
             {
             if (ecClass->GetDerivedClasses().empty())
                 {
-                ClassMap const* classMap = db.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
+                ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
                 if (classMap == nullptr)
                     {
                     BeAssert(classMap != nullptr);
@@ -550,7 +549,7 @@ BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootCl
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, ECClassCR ecClass, bool ensureDerivedClassesAreLoaded)
     {
-    ClassMap const* classMap = m_map.GetClassMap(ecClass);
+    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
     if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         return SUCCESS;
 
@@ -564,7 +563,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
         if (m_optimizeByIncludingOnlyRealTables)
             {
             //This is a db query so optimization comes at a cost
-            storageType = DbSchema::GetEntityType(m_map.GetECDb(), classMap->GetJoinedTable().GetName().c_str());
+            storageType = DbSchema::GetEntityType(m_ecdb, classMap->GetJoinedTable().GetName().c_str());
             }
 
         if (storageType == DbSchema::EntityType::Table)
@@ -586,7 +585,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
         (!classMap->IsRelationshipClassMap() && classMap->GetMapStrategy().IsTablePerHierarchy()))
         return SUCCESS;
 
-    ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? m_map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
+    ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? m_ecdb.Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
     for (ECClassCP derivedClass : derivedClasses)
         {
         if (SUCCESS != ComputeViewMembers(viewMembers, *derivedClass, ensureDerivedClassesAreLoaded))
@@ -935,7 +934,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
         {
         RelConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
         RelationshipConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = static_cast<RelationshipConstraintECInstanceIdPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
-        size_t tableCount = classMap.GetECDbMap().GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
+        size_t tableCount = m_ecdb.Schemas().GetDbMap().GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         DbTable const* targetTable = &ecclassIdPropertyMap->GetSingleColumn()->GetTable();
         if (tableCount > 1
             /*In this case we expecting we have relationship with one end abstract we only support it in case joinedTable*/)
@@ -1311,7 +1310,7 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
     if (column->GetPersistenceType() == PersistenceType::Virtual)
         {
         bool hasAnyClass = false;
-        std::set<ClassMap const*> classMaps = m_map.GetClassMapsFromRelationshipEnd(constraint, &hasAnyClass);
+        std::set<ClassMap const*> classMaps = m_ecdb.Schemas().GetDbMap().GetClassMapsFromRelationshipEnd(constraint, &hasAnyClass);
         BeAssert(!hasAnyClass);
         std::vector<ClassMap const*> relaventClassMaps;
         if (classMaps.size() > 1)

@@ -321,8 +321,7 @@ DbValue SqlChange::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 void TableMapDetail::Initialize(Utf8StringCR tableName)
     {
-    DbSchema const& dbSchema = m_ecdb.GetECDbImplR().GetECDbMap().GetDbSchema();
-    //BeAssert(dbSchema.GetLoadState() != DbSchema::LoadState::NotLoaded);
+    DbSchema const& dbSchema = m_ecdb.Schemas().GetDbMap().GetDbSchema();
 
     DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
     if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
@@ -346,7 +345,7 @@ void TableMapDetail::Initialize(Utf8StringCR tableName)
 //---------------------------------------------------------------------------------------
 void TableMapDetail::Initialize(ECN::ECClassCR ecClass)
     {
-    ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(ecClass);
+    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
     if (!classMap)
         {
         m_isMapped = false;
@@ -1026,7 +1025,7 @@ ClassMapCP ChangeExtractor::GetClassMap(ECDbCR ecdb, ECClassId classId)
         return nullptr;
         }
 
-    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
+    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
     return classMap;
     }
 
