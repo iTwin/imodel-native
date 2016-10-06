@@ -154,6 +154,7 @@ typedef unsigned char   PTubyte;
 #define PT_QUERY_DENSITY_LIMIT               0X03
 #define    PT_QUERY_DENSITY_VIEW_COMPLETE    0X04
 #define PT_QUERY_DENSITY_SPATIAL             0x07
+#define    PT_QUERY_DENSITY_VIEW_PROGRESSIVE 0X08
 
 #define PT_QUERY_RGB_MODE_ACTUAL             0x04
 #define PT_QUERY_RGB_MODE_SHADER             0x05

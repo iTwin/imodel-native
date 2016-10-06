@@ -259,6 +259,8 @@ $(o)SHA$(oext)                           : $(basedir)src/encryption/SHA.cpp     
                                                                                                                   
 $(o)VoxelLODRemoveVisitor$(oext)         : $(basedir)src/ptengine/VoxelLODRemoveVisitor.cpp                      $(basedir)include/ptengine/VoxelLODRemoveVisitor.h               ${MultiCompileDepends}
                                                                                                                   
+$(o)VoxelQueryStateRemoveVisitor$(oext)  : $(basedir)src/ptengine/VoxelQueryStateRemoveVisitor.cpp               $(basedir)include/ptengine/VoxelQueryStateRemoveVisitor.h        ${MultiCompileDepends}
+                                                                                                                  
 $(o)DataSourceReadSet$(oext)             : $(basedir)src/ptds/DataSourceReadSet.cpp                              $(basedir)include/ptds/DataSourceReadSet.h                       ${MultiCompileDepends}
                                                                                                                   
 $(o)clashObjectManager$(oext)            : $(basedir)src/ptclash/clashObjectManager.cpp                          $(basedir)include/ptclash/clashObjectManager.h                   ${MultiCompileDepends}
@@ -276,6 +278,8 @@ $(o)scene_indexstream$(oext)             : $(basedir)src/ptcloud2/scene_indexstr
 $(o)DataCacheParallelRead$(oext)         : $(basedir)src/ptds/DataCacheParallelRead.cpp                          $(basedir)include/ptds/DataCacheParallelRead.h                   ${MultiCompileDepends}
                                                                                                                                                                                                                                  
 $(o)VoxelLODSet$(oext)                   : $(basedir)src/ptengine/VoxelLODSet.cpp                                $(basedir)include/ptengine/VoxelLODSet.h                         ${MultiCompileDepends}
+                                                                                                                  
+$(o)VoxelQueryStateSet$(oext)            : $(basedir)src/ptengine/VoxelQueryStateSet.cpp                         $(basedir)include/ptengine/VoxelQueryStateSet.h                  ${MultiCompileDepends}
                                                                                                                   
 $(o)pointsScene$(oext)                   : $(basedir)src/ptengine/pointsScene.cpp                                $(basedir)include/ptengine/pointsScene.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                     
