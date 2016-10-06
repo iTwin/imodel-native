@@ -325,6 +325,9 @@ void        GroundDetectionParameters::SetMetersToUors(Transform const& metersTo
 IPointsProviderCreatorPtr GroundDetectionParameters::GetPointsProviderCreator() const     { return m_pointProviderCreator; }
 void                     GroundDetectionParameters::SetPointsProviderCreator(IPointsProviderCreatorPtr& creator)      { m_pointProviderCreator = creator; }
 
+IGroundPointsAccumulatorPtr GroundDetectionParameters::GetGroundPointsAccumulator() const     { return m_groundPointsAccumulator; }
+void                        GroundDetectionParameters::SetGroundPointsAccumulator(IGroundPointsAccumulatorPtr& pointsAccumulator)      { m_groundPointsAccumulator = pointsAccumulator; }
+
 /*
 BeFileName GroundDetectionParameters::GetDtmFilename() const            { return m_dtmFileName; }
 void GroundDetectionParameters::SetDtmFilename(BeFileName const& dtmFileName){ m_dtmFileName = dtmFileName; }

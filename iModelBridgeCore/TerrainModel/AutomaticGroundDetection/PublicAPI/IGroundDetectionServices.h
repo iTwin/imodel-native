@@ -10,6 +10,7 @@
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
+#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
 
 
@@ -120,7 +121,10 @@ public:
 
      GROUND_DETECTION_EXPORT IPointsProviderCreatorPtr GetPointsProviderCreator() const;        
      GROUND_DETECTION_EXPORT void                      SetPointsProviderCreator(IPointsProviderCreatorPtr& creator);        
-     
+
+     GROUND_DETECTION_EXPORT IGroundPointsAccumulatorPtr GetGroundPointsAccumulator() const;        
+     GROUND_DETECTION_EXPORT void                        SetGroundPointsAccumulator(IGroundPointsAccumulatorPtr& pointsAccumulator);        
+
     //DTM file options                 
      GROUND_DETECTION_EXPORT DTMFileOptions  GetCreateDtmFile() const;
      GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
@@ -174,7 +178,8 @@ private:
     //General options               
     bool                                m_useViewFilters;
     Transform                           m_metersToUors;
-    IPointsProviderCreatorPtr            m_pointProviderCreator; 
+    IPointsProviderCreatorPtr           m_pointProviderCreator; 
+    IGroundPointsAccumulatorPtr         m_groundPointsAccumulator; 
    
     //Dtm file options                
     DTMFileOptions  m_createDtmFile;

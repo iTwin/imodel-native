@@ -60,6 +60,16 @@ StatusInt GroundDetectionManagerDc::_DoGroundDetection(GroundDetectionParameters
         status = m_PCGroundTIN->DensifyTIN();
         }
 
+    IGroundPointsAccumulatorPtr ptsAccumPtr(pParameters->GetGroundPointsAccumulator());
+
+    if (ptsAccumPtr.IsValid())
+        {
+        bvector<DPoint3d> points;
+
+        m_PCGroundTIN->GetDTMPoints(points);
+
+        ptsAccumPtr->AddPoints(points);               
+        }
 
     //Classify all point cloud points from resulting TIN
     /*
