@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecZlib.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecZlib
@@ -24,6 +24,8 @@ public:
     IMAGEPP_EXPORT                 HCDCodecZlib();
 
     IMAGEPP_EXPORT                 HCDCodecZlib(size_t pi_DataSize);
+    IMAGEPP_EXPORT                 HCDCodecZlib(size_t pi_DataSize, uint32_t pi_Width, uint32_t pi_BitsPerPixel, uint16_t pi_Predictor, uint32_t pi_SamplesPerPixel);
+
 
     IMAGEPP_EXPORT                 HCDCodecZlib(const HCDCodecZlib& pi_rObj);
 
@@ -47,6 +49,10 @@ public:
 protected:
 
 private:
+    uint32_t    m_BitsPerPixel;
+    uint32_t    m_SamplesPerPixel;
+    uint16_t    m_Predictor;
+    uint32_t    m_Width;
     };
 
 END_IMAGEPP_NAMESPACE

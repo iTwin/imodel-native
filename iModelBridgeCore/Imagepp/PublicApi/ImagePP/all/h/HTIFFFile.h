@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -284,7 +284,7 @@ private:
 
     // HTIFFFileCoDec.cpp
     void            SetNoneAlgo         ();
-    void            SetDeflateAlgo      ();
+    void            SetDeflateAlgo      (uint32_t pi_BitsPerPixel=8, uint16_t pi_Predictor=1/*none*/, uint32_t pi_SamplesPerPixel=1);
     void            SetRLE1Algo         ();
     void            SetPackBitsAlgo     (uint32_t pi_BitsPerPixel);
     void            SetLuraWavePaddedAlgo    (uint32_t pi_BitsPerPixel);

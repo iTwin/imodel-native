@@ -551,6 +551,8 @@ $(o)HUTImportFromFileExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromFile
 
 $(o)HUTImportFromRasterExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromRasterExportToFile.cpp $(ippAllInc)HUTImportFromRasterExportToFile.h ${MultiCompileDepends}
 
+$(o)HUTLandSat8ToRGBA$(oext) : $(ippGraDir)hut/src/HUTLandSat8ToRGBA.cpp $(ippAllInc)HUTLandSat8ToRGBA.h ${MultiCompileDepends}
+
 $(o)HPSInternalNodes$(oext) : $(ippGraDir)hps/src/HPSInternalNodes.cpp $(ippGraDir)hps/src/HPSInternalNodes.h $(ippAllInc)HPSValueNode.h ${MultiCompileDepends}
 
 $(o)HPSNode$(oext) : $(ippGraDir)hps/src/HPSNode.cpp $(ippAllInc)HPSNode.h $(ippGraDir)hps/src/HPSInternalNodes.h ${MultiCompileDepends}
@@ -1032,6 +1034,10 @@ $(o)HRFGifFile$(oext) : $(ippGraDir)hrf/src/HRFGifFile.cpp $(ippAllInc)HRFGifFil
 $(o)HRFGifImageEditor$(oext) : $(ippGraDir)hrf/src/HRFGifImageEditor.cpp $(ippAllInc)HRFGifImageEditor.h ${MultiCompileDepends}
 
 $(o)HRFGifLineEditor$(oext) : $(ippGraDir)hrf/src/HRFGifLineEditor.cpp $(ippAllInc)HRFGifLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFSRTMEditor$(oext) : $(ippGraDir)hrf/src/HRFSRTMEditor.cpp $(ippAllInc)HRFSRTMEditor.h ${MultiCompileDepends}
+
+$(o)HRFSRTMFile$(oext) : $(ippGraDir)hrf/src/HRFSRTMFile.cpp $(ippAllInc)HRFSRTMFile.h ${MultiCompileDepends}
 
 $(o)HRFHMRFile$(oext) : $(ippGraDir)hrf/src/HRFHMRFile.cpp $(ippAllInc)HRFHMRFile.h ${MultiCompileDepends}
 

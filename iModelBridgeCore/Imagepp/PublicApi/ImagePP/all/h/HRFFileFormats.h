@@ -68,6 +68,8 @@
 #include "HRFNitfFile.h"
 #include "HRFDtedFile.h"
 #include "HRFVirtualEarthFile.h"
+#include "HRFSRTMFile.h"
+
 #include "HRFErMapperSupportedFile.h"
 #include "HRFMrSIDFile.h"
 #include "HRFGeoRasterFile.h"
@@ -250,6 +252,7 @@
     HOST_REGISTER_FILEFORMAT(HRFPcxCreator)      \
     HOST_REGISTER_ERMAPPER_FILEFORMAT            \
     HOST_REGISTER_MRSID_FILEFORMAT               \
+    HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphMPFCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCitCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCot29Creator) \
@@ -262,6 +265,7 @@
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCRLCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFTiffIntgrCreator)       \
     HOST_REGISTER_FILEFORMAT(HRFWbmpCreator)            \
+    HOST_REGISTER_FILEFORMAT(HRFSRTMCreator)            \
     HOST_REGISTER_GDAL_FILEFORMAT                       \
     HOST_REGISTER_Irasb_FILEFORMAT                      \
     HOST_REGISTER_Raw_FILEFORMAT                        \

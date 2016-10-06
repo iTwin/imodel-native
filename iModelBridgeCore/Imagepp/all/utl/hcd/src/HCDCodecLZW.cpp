@@ -290,7 +290,8 @@ HCDCodecLZW::HCDCodecLZW()
 
 //-----------------------------------------------------------------------------
 // public
-// Default constructor
+// if pi_Predictor == 2, the data must be V24R8B8G8 or V32 
+// for V16... see HCDCodecLZWPredicateExt
 //-----------------------------------------------------------------------------
 HCDCodecLZW::HCDCodecLZW(size_t     pi_Width,
                          size_t     pi_Height,

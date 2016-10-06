@@ -20,6 +20,7 @@
 
 
 BEGIN_IMAGEPP_NAMESPACE
+
 class HRFMapBoxCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -71,7 +72,6 @@ protected:
 private:
     
     // Members                           
-           
     // Create the file
     /*
     void                    SaveMapBoxFile(bool pi_CloseFile);
@@ -121,5 +121,6 @@ private:
     // Disabled methodes
     HRFMapBoxCreator();
     };
+
 END_IMAGEPP_NAMESPACE
 

@@ -19,12 +19,12 @@
 
 #include <ImagePP\all\h\HGF2DStretch.h>
 
-#define VE_MAP_RESOLUTION       13
+#define MB_MAP_RESOLUTION       19
 
 BEGIN_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  1/2016
+// @bsimethod                                                   Mathieu.St-Pierre  1/2016
 //----------------------------------------------------------------------------------------
 void MapBoxTileQuery::_Run()
     {
@@ -37,10 +37,7 @@ void MapBoxTileQuery::_Run()
     auto contentTypeItr = response->GetHeader().find("Content-Type"); // case insensitive find.
     if(contentTypeItr == response->GetHeader().end())
         return;
-
-    // We can tell from the header response if the tile is a missing tile(Kodak) or the real thing.
-    // ("X-VE-Tile-Info", "no-tile")     
-       
+           
     if(contentTypeItr->second.EqualsI("image/png"))
         {
         bool isRGBA = false;
@@ -312,27 +309,12 @@ HSTATUS HRFMapBoxTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     HFCPtr<HRFPageDescriptor> pageDescriptor(rasterFile.GetPageDescriptor(0));
 
     HFCPtr<HGF2DTransfoModel> transfoModel(pageDescriptor->GetTransfoModel());
-
-    /*
-    GeoPoint2d outLatLong;
-    DPoint2d   inCartesian; 
-    */
-    //HGF2DDisplacement translation(0, 0);    
-    //double factor = pow(2, m_Resolution);
-    //HGF2DStretch resolutionStretch(translation, factor, factor);
-            
-    //HFCPtr<HGF2DTransfoModel> pComposedModel1 = transfoModel->ComposeInverseWithDirectOf(resolutionStretch);
-    //HFCPtr<HGF2DTransfoModel> pComposedModel1 = resolutionStretch.ComposeInverseWithDirectOf(*transfoModel);
-        
-    //pComposedModel1->ConvertDirect((double)pi_PosBlockX, (double)pi_PosBlockY, &inCartesian.x, &inCartesian.y);
-    //GeoCoordinates::BaseGCSCP baseGcsP(pageDescriptor->GetGeocodingCP());                                                                                            
-    //baseGcsP->LatLongFromCartesian2D(outLatLong, inCartesian);    
-
         
     char tempBuffer[300];
-    int zoomFactor = VE_MAP_RESOLUTION - m_Resolution;
-
-    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.jpg80?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");    
+    int zoomFactor = MB_MAP_RESOLUTION - m_Resolution;
+   
+    HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
+    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=TOKEN_FROM_APP");
 
     Utf8String tileUri(tempBuffer);
 
@@ -342,7 +324,7 @@ HSTATUS HRFMapBoxTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     MapBoxTileQuery tileQuery(TileID, tileUri, rasterFile);    
 
     tileQuery._Run();
-
+    
     //assert(!tileQuery.m_tileData.empty());           
 
     if (!tileQuery.m_tileData.empty())

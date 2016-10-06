@@ -25,6 +25,7 @@
 #include <Imagepp/all/h/HRPChannelOrgRGB.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DProjective.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
@@ -55,7 +56,7 @@
 #include <MrSid/lti_imageReader.h>
 #include <MrSid/MrSIDImageReader.h>
 #include <MrSid/lti_dynamicRangeFilter.h>
-
+#include <MrSid/lti_bandSelectFilter.h>
 
 using namespace LizardTech;
 
@@ -122,6 +123,10 @@ HRFMrSIDCapabilities::HRFMrSIDCapabilities()
 
     Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
                                    HRPPixelTypeV24R8G8B8::CLASS_ID,
+                                   new HRFMrSIDCodecIdentityCapabilities()));
+
+    Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
+                                   HRPPixelTypeV32R8G8B8A8::CLASS_ID,
                                    new HRFMrSIDCodecIdentityCapabilities()));
 
     // Scanline orientation capability
@@ -587,29 +592,28 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
     // the model type is used int he creation of the transformation matrix below
+    double effectiveRatioToMeter = pi_RatioToMeter;
+    bool hasGTModel(false);
     if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
-        HFCPtr<HGF2DTransfoModel> pTransfoModel;
-
-        bool hasGTModel(false);
         HCPGeoTiffKeys geoKeysContainer;
         pBaseGCS->GetGeoTiffKeys(&geoKeysContainer, true);
 
         hasGTModel = geoKeysContainer.HasKey(GTModelType);
 
-        // TranfoModel
-        BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
-
         //Ensure that a new GeoCoord is created based on the pi_CheckSpecificUnitSpec
         //configuration.
-        double effectiveRatioToMeter = pi_RatioToMeter;
         if (pBaseGCS != nullptr && pBaseGCS->IsValid())
             effectiveRatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
+        }
 
+    // TranfoModel
+    HFCPtr<HGF2DTransfoModel> pTransfoModel;
+    BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
 
-        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
-                                                           1.0 / pBaseGCS->UnitsFromMeters());
-
+    if (effectiveRatioToMeter != 1.0)
+        {
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel, effectiveRatioToMeter);
 
         pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
         pPageDescriptor->SetTransfoModelUnchanged();
@@ -1343,7 +1347,38 @@ bool HRFMrSIDFile::CreateFilter_CreatePixelType(LizardTech::LTIImageStage* pi_pI
             break;
             
         case LTI_COLORSPACE_RGBA:
-            HASSERT(0);
+            switch(datatype)
+                {
+                case LTI_DATATYPE_UINT8:
+                    FilterRequiered = false;
+
+                    if (po_PixelType != 0)
+                        *po_PixelType = new HRPPixelTypeV32R8G8B8A8();
+
+                    // Returns filter if requested.
+                    if (po_ImageFilter != 0)
+                        {
+                        LTIBandSelectFilter* pImgFilter = LTIBandSelectFilter::create();
+
+                        uint16_t bandSelection[] = { 0, 1, 2, 4 };
+                        if (LT_FAILURE(pImgFilter->initialize(m_pImageRawReader, bandSelection, 4, LTI_COLORSPACE_RGBA)))
+                            {
+                            pImgFilter->release();
+                            FilterRequiered = true;
+                            }
+                        else
+                            {
+                            *po_ImageFilter = pImgFilter;
+                            FilterCreated = true;
+                            }
+                        }
+                    break;
+
+                default:
+                    HASSERT(0);
+                    break;
+                }
+
             break;
 
         case LTI_COLORSPACE_RGBA_PM:

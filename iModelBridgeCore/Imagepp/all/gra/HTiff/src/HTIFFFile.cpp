@@ -3050,13 +3050,19 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                 case COMPRESSION_DEFLATE:
                 case COMPRESSION_ADOBE_DEFLATE:
                     m_IsCompress = true;
-                    SetDeflateAlgo();
+                    uint16_t Predictor;
+
+                    if (!GetField(PREDICTOR, &Predictor))
+                        Predictor = 1;
+
+                    if (Predictor == 2)
+                        SetDeflateAlgo(m_BitsByPixel, Predictor, m_SamplesByPixel);
+                    else
+                        SetDeflateAlgo();
                     break;
 
                 case COMPRESSION_LZW:
                     m_IsCompress = true;
-
-                    unsigned short Predictor;
 
                     if( !GetField(PREDICTOR, &Predictor) )
                         Predictor = 1;
