@@ -1542,6 +1542,7 @@ public:
 //=======================================================================================
 struct DgnLineStyles : RefCountedBase
 {
+//__PUBLISH_SECTION_END__
     friend struct DgnDb;
 private:
     typedef bmap<LsLocation, LsComponentPtr> LoadedComponents;
@@ -1556,6 +1557,8 @@ public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
     DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentId componentId);
 
+//__PUBLISH_SECTION_START__
+public:
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
