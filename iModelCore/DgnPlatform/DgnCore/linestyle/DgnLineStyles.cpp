@@ -31,6 +31,9 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
     
     newStyleId = DgnStyleId(constLs->GetElementId().GetValue());
 
+    LsDefinition* lsDef = new LsDefinition(name, m_dgndb, jsonObj, newStyleId);
+    GetCache().AddIdEntry(lsDef);
+
     return SUCCESS;
     }
 
@@ -59,27 +62,18 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
     return ERROR;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2012
-//--------------+------------------------------------------------------------------------
-LsCacheR DgnLineStyles::ReloadMap()
-    {
-    m_lineStyleMap = nullptr;
-    return *GetLsCacheP(true);
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    06/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
+LsCacheR DgnLineStyles::GetCache()
     {
     if (m_lineStyleMap.IsNull())
-        m_lineStyleMap = LsCache::Create (m_dgndb);
+        {
+        BeMutexHolder lock(m_mutex);
+        if (m_lineStyleMap.IsNull())
+            m_lineStyleMap = LsCache::Create (m_dgndb);
+        }
 
-    if (!m_lineStyleMap->IsLoaded() && loadIfNull)
-        m_lineStyleMap->Load();
-
-    return m_lineStyleMap.get();
+    return *m_lineStyleMap;
     }
 

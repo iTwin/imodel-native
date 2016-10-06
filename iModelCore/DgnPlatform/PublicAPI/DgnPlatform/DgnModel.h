@@ -78,6 +78,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
     friend struct DgnElements;
     friend struct QueryModel;
     friend struct dgn_TxnTable::Model;
+    friend struct dgn_ModelHandler::Model;
 
     struct CreateParams;
 
@@ -249,6 +250,11 @@ protected:
     //! super class properties.
     virtual void _ReadJsonProperties(Json::Value const& value) {}
 
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
+    //! Set the properties of this model from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
+    //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
+
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
     //! Called when a DgnElement in this DgnModel is about to be inserted.
@@ -411,6 +417,8 @@ protected:
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
     //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
     DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+
+    static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
@@ -1171,6 +1179,7 @@ namespace dgn_ModelHandler
     protected:
         ModelHandlerP _ToModelHandler() override final {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
+        DGNPLATFORM_EXPORT virtual DgnModelPtr _CreateNewModel(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR);
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return DgnModel::RestrictedAction::Parse(name);}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
 

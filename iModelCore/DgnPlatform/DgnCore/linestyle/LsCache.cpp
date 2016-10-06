@@ -35,14 +35,6 @@ LsComponentReader::~LsComponentReader ()
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentReader*   LsComponentReader::GetRscReader (const LsLocation* source, DgnDbR project)
-    {
-    return  new LsComponentReader (source, project);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
@@ -57,15 +49,8 @@ void LsComponentReader::GetJsonValue(JsonValueR componentDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static LsComponent* cacheLoadComponent(LsLocationCR location)
     {
-    LsComponentReader* reader = LsComponentReader::GetRscReader (&location, *location.GetDgnDb());
-
-    if (NULL == reader)
-        return  NULL;
-
-    LsComponent* component = loadComponent (reader);
-    delete  reader;
-
-    return component;
+    LsComponentReader reader(&location, *location.GetDgnDb());
+    return loadComponent(&reader);
     }
 
 //---------------------------------------------------------------------------------------
@@ -736,7 +721,7 @@ LsInternalComponentPtr LsInternalComponent::CreateInternalComponent(LsLocation& 
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
+    project->LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -1084,8 +1069,8 @@ LsCacheP LsLocation::GetCacheP () const
     {
     if (GetDgnDb() == nullptr)
         return nullptr;
-
-    return LsCache::GetDgnDbCache(*GetDgnDb(), true);
+    else
+        return &GetDgnDb()->LineStyles().GetCache();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1093,7 +1078,7 @@ LsCacheP LsLocation::GetCacheP () const
 //---------------------------------------------------------------------------------------
 LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
     {
-    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->Styles().LineStyles();
+    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->LineStyles();
 
     auto iter = dgnLineStyles.m_loadedComponents.find(location);
     if (iter != dgnLineStyles.m_loadedComponents.end())

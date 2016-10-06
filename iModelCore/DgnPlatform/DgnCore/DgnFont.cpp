@@ -999,7 +999,7 @@ DgnFontPtr DgnFontPersistence::Missing::CreateMissingFont(DgnFontType type, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2015
 //---------------------------------------------------------------------------------------
-DgnFontId DgnImportContext::RemapFont(DgnFontId srcId)
+DgnFontId DgnImportContext::_RemapFont(DgnFontId srcId)
     {
     // Alreay remapped once? Use cached result.
     DgnFontId dstId = m_remap.Find(srcId);

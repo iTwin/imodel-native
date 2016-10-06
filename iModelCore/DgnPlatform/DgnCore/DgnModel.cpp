@@ -1308,6 +1308,26 @@ DgnModelPtr DgnModels::FindModel(DgnModelId modelId)
     return  it!=m_models.end() ? it->second : NULL;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnModelPtr DgnModels::CreateModel(DgnDbStatus* inStat, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
+    DgnClassId classId(properties.GetClass().GetId().GetValue());
+    auto handler = dgn_ModelHandler::Model::FindHandler(GetDgnDb(), classId);
+    if (nullptr == handler)
+        {
+        BeAssert(false);
+        stat = DgnDbStatus::MissingHandler;
+        return nullptr;
+        }
+
+    return handler->_CreateNewModel(inStat, GetDgnDb(), properties);
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1478,6 +1498,157 @@ void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
     params.Add(SHEET_MODEL_PROP_SheetSize, ECSqlClassParams::StatementType::All);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
+    DgnClassId classId(properties.GetClass().GetId().GetValue());
+    DgnCode code;
+    //! The authority ID must be non-null and identify a valid authority.
+    //! The namespace may not be null, but may be a blank string.
+    //! The value may be null if and only if the namespace is blank, signifying that the authority
+    //! assigns no special meaning to the object's code.
+    //! The value may not be an empty string.
+        {
+        ECN::ECValue v;
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeAuthorityId) || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
+            }
+        DgnAuthorityId id((uint64_t) v.GetLong());
+
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeNamespace) || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
+            }
+        Utf8String codeName(v.GetUtf8CP());
+
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_CodeValue) || (v.IsNull() && !Utf8String::IsNullOrEmpty(codeName.c_str())) ||
+            (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnCode::CreateEmpty());
+            }
+
+        code.From(id, v.GetUtf8CP(), codeName);
+        }
+    ECN::ECValue v;
+    bool inGuiList = true;
+    if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_Visibility) && !v.IsNull())
+        inGuiList = v.GetInteger() == 1;
+
+    DgnElementId modeledElementId;
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElementId) || v.IsNull())
+        stat = DgnDbStatus::BadArg;
+    else
+        modeledElementId = DgnElementId((uint64_t) v.GetLong());
+    DgnModel::CreateParams params(db, classId, modeledElementId, code, inGuiList);
+    return params;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    //// Common case: auto-handled properties
+    //ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
+    //if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
+    //    {
+    //    if (!isValidValue(*ecprop, value))
+    //        return DgnDbStatus::BadArg;
+
+    //    auto autoHandledProps = GetAutoHandledProperties();
+    //    if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
+    //        {
+    //        m_flags.m_autoHandledPropsDirty = true;
+    //        return DgnDbStatus::Success;
+    //        }
+    //    return DgnDbStatus::BadArg;
+    //    }
+
+    if (0 == strcmp(MODEL_PROP_CodeAuthorityId, name) || 0 == strcmp(MODEL_PROP_CodeNamespace, name) || 0 == strcmp(MODEL_PROP_CodeValue, name))
+        {
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name) || 0 == strcmp(MODEL_PROP_ECInstanceId, name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp(MODEL_PROP_Properties, name))
+        {
+        Json::Value  propsJson(Json::objectValue);
+        if (!Json::Reader::Parse(value.GetUtf8CP(), propsJson))
+            return DgnDbStatus::BadArg;
+        _ReadJsonProperties(propsJson);
+        return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::NotFound;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
+    {
+    for (auto prop : properties.GetClass().GetProperties(true))
+        {
+        Utf8StringCR propName = prop->GetName();
+
+        // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
+        if (propName.Equals(MODEL_PROP_CodeAuthorityId) || propName.Equals(MODEL_PROP_CodeNamespace) || propName.Equals(MODEL_PROP_CodeValue) || 
+            propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElementId) || propName.Equals(MODEL_PROP_FederationGuid) || propName.Equals(MODEL_PROP_Visibility))
+            continue;
+
+        ECN::ECValue value;
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(value, propName.c_str()))
+            continue;
+
+        if (!value.IsNull())
+            {
+            DgnDbStatus stat;
+            if (DgnDbStatus::Success != (stat = _SetProperty(propName.c_str(), value)))
+                {
+                if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to 
+                    {
+                    BeAssert(false && "Attempt to set read-only property value.");
+                    }
+                else
+                    {
+                    BeAssert(false && "Failed to set property value. _SetProperties is probably missing a case.");
+                    }
+                return stat;
+                }
+            }
+        }
+    
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+    auto params = DgnModel::InitCreateParamsFromECInstance(inStat, db, properties);
+    if (!params.m_classId.IsValid() && !params.m_code.IsValid())
+        return nullptr;
+    auto model = _CreateInstance(params);
+    if (nullptr == model)
+        {
+        BeAssert(false && "when would a handler fail to construct an element?");
+        return nullptr;
+        }
+    stat = model->_SetProperties(properties);
+    return (DgnDbStatus::Success == stat)? model : nullptr;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/

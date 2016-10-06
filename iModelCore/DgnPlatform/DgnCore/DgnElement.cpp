@@ -4105,7 +4105,39 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
 
-    DgnElement::CreateParams params(db, mid, classId);
+    DgnCode code;
+        //! The authority ID must be non-null and identify a valid authority.
+        //! The namespace may not be null, but may be a blank string.
+        //! The value may be null if and only if the namespace is blank, signifying that the authority
+        //! assigns no special meaning to the object's code.
+        //! The value may not be an empty string.
+        {
+        ECN::ECValue v;
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthorityId) || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, DgnModelId(), classId);
+            }
+        DgnAuthorityId id((uint64_t) v.GetLong());
+
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, DgnModelId(), classId);
+            }
+        Utf8String codeName(v.GetUtf8CP());
+
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeValue) || (v.IsNull() && !Utf8String::IsNullOrEmpty(codeName.c_str())) ||
+            (!v.IsNull() && 0 == strlen(v.GetUtf8CP())))
+            {
+            stat = DgnDbStatus::BadArg;
+            return CreateParams(db, DgnModelId(), classId);
+            }
+
+        code.From(id, v.GetUtf8CP(), codeName);
+        }
+
+    DgnElement::CreateParams params(db, mid, classId, code);
 
     auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
     if (!ecinstanceid.empty())
@@ -4143,7 +4175,12 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(BIS_ELEMENT_PROP_ModelId) || propName.Equals("Id") || propName.Equals(BIS_ELEMENT_PROP_ECInstanceId))
+        if (propName.Equals(BIS_ELEMENT_PROP_ModelId) || propName.Equals("Id") || propName.Equals(BIS_ELEMENT_PROP_ECInstanceId) ||
+            propName.Equals(BIS_ELEMENT_PROP_CodeAuthorityId) || propName.Equals(BIS_ELEMENT_PROP_CodeNamespace) || propName.Equals(BIS_ELEMENT_PROP_CodeValue))
+            continue;
+
+        // Geometry related properties.  These can't be imported here.
+        if (propName.Equals(GEOM3_InSpatialIndex))
             continue;
 
         ECN::ECValue value;
@@ -4172,13 +4209,21 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR properties)
     return DgnDbStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElement::CreateParams dgn_ElementHandler::Element::_InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    return DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
-    auto params = DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
+    auto params = _InitCreateParams(inStat, db, properties);
     if (!params.IsValid())
         return nullptr;
     auto ele = _CreateInstance(params);

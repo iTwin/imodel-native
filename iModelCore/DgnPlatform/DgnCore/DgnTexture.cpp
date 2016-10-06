@@ -155,7 +155,7 @@ DgnTextureId DgnTexture::ImportTexture(DgnImportContext& context, DgnTextureId s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnImportContext::RemapTextureId(DgnTextureId source)
+DgnTextureId DgnImportContext::_RemapTextureId(DgnTextureId source)
     {
     if (!IsBetweenDbs())
         return source;
