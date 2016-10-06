@@ -13,6 +13,7 @@
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <DgnDbServer/Client/Logging.h>
 #include "DgnDbServerUtils.h"
+#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -282,6 +283,9 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
         {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateRequest);
+#endif
         if (createRepositoryResult.IsSuccess())
             {
             JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
@@ -309,7 +313,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
 
         WSQuery repositoryQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
         Utf8String filter;
-        filter.Sprintf("%s+eq+%s", ServerSchema::Property::RepositoryName, repositoryName.c_str());
+        filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::RepositoryName, repositoryName.c_str());
         repositoryQuery.SetFilter(filter);
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Querying repository by name %s.", repositoryName.c_str());
         client->SendQueryRequest(repositoryQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
@@ -643,6 +647,10 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
             connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
                 {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDownloadBriefcaseFile);
+#endif
+
                 if (!downloadResult.IsSuccess())
                     {
                     finalResult->SetError(downloadResult.GetError());
@@ -652,11 +660,14 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
 
-
                 std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
                 DgnDbServerHost::Adopt(host);
                 db->CloseDb();
                 BeFileNameStatus status = originalFilePath.BeDeleteFile();
+#if defined (ENABLE_BIM_CRASH_TESTS)
+                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDeleteBriefcase);
+#endif
+
                 if (BeFileNameStatus::Success != status)
                     {
                     finalResult->SetError(DgnDbServerError::Id::Unknown);
@@ -716,6 +727,9 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
         if (BeSQLite::DbResult::BE_SQLITE_OK == status)
             {
             db->Txns().EnableTracking(true);
+#if defined (ENABLE_BIM_CRASH_TESTS)
+            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterOpenBriefcaseForMerge);
+#endif
             bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
             RevisionStatus mergeStatus = RevisionStatus::Success;
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging revisions.");
@@ -728,7 +742,9 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
                         break; // TODO: Use the information on the revision that actually failed. 
                     }
                 }
-
+#if defined (ENABLE_BIM_CRASH_TESTS)
+            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
+#endif
             db->CloseDb();
             DgnDbServerHost::Forget(host);
 
@@ -793,6 +809,9 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
         connection->CreateBriefcaseInstance(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
             {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateBriefcaseInstance);
+#endif
             if (!briefcaseResult.IsSuccess())
                 {
                 finalResult->SetError(briefcaseResult.GetError());
