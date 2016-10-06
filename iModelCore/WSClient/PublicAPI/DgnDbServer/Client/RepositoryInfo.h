@@ -29,17 +29,19 @@ private:
     Utf8String m_description;
     Utf8String m_userCreated;
     DateTime   m_createdDate;
- //__PUBLISH_SECTION_START__
-public:
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description);
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 
+    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
+    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+//__PUBLISH_SECTION_START__
+public:
     //__PUBLISH_SECTION_END__
+    RepositoryInfo();
+
     bool operator==(RepositoryInfoCR rhs) const;
     static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
     //__PUBLISH_SECTION_START__
+
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create (Utf8StringCR serverUrl, Utf8StringCR id);
 
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult ReadRepositoryInfo(Dgn::DgnDbCR db);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId = false) const;

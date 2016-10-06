@@ -28,20 +28,19 @@ RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             03/2016
-//---------------------------------------------------------------------------------------
-RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description)
-    : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description)
-    {
-
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
     : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date)
     {
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  10/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id)
+    {
+    return RepositoryInfoPtr (new RepositoryInfo(serverUrl, id));
     }
 
 //---------------------------------------------------------------------------------------
@@ -164,7 +163,7 @@ RepositoryInfoPtr RepositoryInfo::FromJson(JsonValueCR json, Utf8StringCR url)
     Utf8String dateStr = properties[ServerSchema::Property::UploadedDate].asString();
     if (!dateStr.empty())
         DateTime::FromString(uploadedDate, dateStr.c_str());
-    return std::make_shared<RepositoryInfo>(url, repositoryInstanceId, name, description, userUploaded, uploadedDate);
+    return RepositoryInfoPtr (new RepositoryInfo(url, repositoryInstanceId, name, description, userUploaded, uploadedDate));
     }
 
 //---------------------------------------------------------------------------------------
