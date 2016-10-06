@@ -643,4 +643,65 @@ TEST_F(ECRelationshipTests, TestRoleLabelInheritance)
     EXPECT_FALSE(relationClass->GetTarget().IsRoleLabelDefinedLocally()) << "The Target constraint's role label was set in a base class, so it should not be locally defined.";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipTests, TestBaseClassRules)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    ecSchema->CreateEntityClass(entityClassC, "C");
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "ARelB");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass->SetClassModifier(ECClassModifier::Abstract);
+    relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetTarget().AddClass(*entityClassB);
+
+    ECEntityClassP baseClass;
+    ecSchema->CreateEntityClass(baseClass, "InvalidBaseClass");
+
+    EXPECT_NE(ECObjectsStatus::Success, relationClass->AddBaseClass(*baseClass)) << "An ECRelationshipClass can only have an ECRelationshipClass as a base class";
+
+    ECRelationshipClassP relationClass2;
+    ecSchema->CreateRelationshipClass(relationClass2, "ARelC");
+    relationClass2->SetStrength(StrengthType::Referencing);
+    relationClass2->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass2->SetClassModifier(ECClassModifier::Abstract);
+    relationClass2->GetSource().AddClass(*entityClassA);
+    relationClass2->GetTarget().AddClass(*entityClassC);
+
+    EXPECT_NE(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClass)) << "An ECRelationshipClass class constraint have to be narrowing.";
+
+    entityClassC->AddBaseClass(*entityClassB);
+
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClass)) << "Relationship Class ARelB should now be a valid base class for ARelC";
+
+    ECEntityClassP entityClassD;
+    ECEntityClassP entityClassE;
+    ecSchema->CreateEntityClass(entityClassD, "D");
+    ecSchema->CreateEntityClass(entityClassE, "E");
+    entityClassD->AddBaseClass(*entityClassA);
+    entityClassE->AddBaseClass(*entityClassB);
+    ECRelationshipClassP baseRelationClass;
+    ecSchema->CreateRelationshipClass(baseRelationClass, "BaseClass");
+    baseRelationClass->SetStrength(StrengthType::Referencing);
+    baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
+    baseRelationClass->GetSource().AddClass(*entityClassD);
+    baseRelationClass->GetTarget().AddClass(*entityClassE);
+
+    EXPECT_NE(ECObjectsStatus::Success, relationClass2->AddBaseClass(*baseRelationClass)) << "An ECRelationshipClass can only have one base class";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

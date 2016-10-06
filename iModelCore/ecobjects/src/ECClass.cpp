@@ -1657,7 +1657,6 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
             return SchemaReadStatus::Success;
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
             resolveConflicts = true;
-
         }
 
     ECObjectsStatus stat;
@@ -2367,6 +2366,36 @@ bool ECRelationshipConstraint::IsValid() const
     return valid;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const
+    {
+    if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
+        {
+        ECEntityClassCR baseConstraintClass = baseConstraint.GetConstraintClasses()[0]->GetClass();
+
+        if (!m_constraintClasses[0]->GetClass().Is(&baseConstraintClass))
+            {
+            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not nor derived from Class '%s' as specified in Class '%s'",
+                       m_constraintClasses[0]->GetClass().GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_SOURCECONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                       baseConstraintClass.GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
+
+            return ECObjectsStatus::BaseClassUnacceptable;
+            }
+        }
+
+    if (RelationshipMultiplicity::Compare(GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
+        {
+        LOG.errorv("Multiplicity Violation: The %s Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                   (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, GetMultiplicity().GetLowerLimit(), GetMultiplicity().GetUpperLimit(), m_relClass->GetFullName(),
+                   baseConstraint.GetRelationshipClass().GetFullName(), baseConstraint.GetMultiplicity().GetLowerLimit(), baseConstraint.GetMultiplicity().GetUpperLimit());
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Caleb.Shafer                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2946,7 +2975,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo
 ECRelationshipConstraintR toRelationshipConstraint
 )
     {
-    if (IsRoleLabelDefined())
+    if (IsRoleLabelDefinedLocally())
         toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel());
 
     toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
@@ -3256,6 +3285,11 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
                 {
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
+
+            ECObjectsStatus status;
+            if (ECObjectsStatus::Success != (status = GetSource()._ValidateBaseConstraint(relationshipBaseClass->GetSource())) ||
+                ECObjectsStatus::Success != (status = GetTarget()._ValidateBaseConstraint(relationshipBaseClass->GetTarget())))
+                return status;
 
             if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == -1)
                 {

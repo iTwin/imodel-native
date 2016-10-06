@@ -2155,6 +2155,7 @@ private:
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
     bool                        IsValid() const;
+    ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
     ECObjectsStatus             ValidateRoleLabel() const;
     ECObjectsStatus             ValidateClassConstraint() const;
     ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
@@ -2174,7 +2175,7 @@ public:
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Return relationshipClass to which this constraint is associated
-    ECOBJECTS_EXPORT   ECRelationshipClassCR  GetRelationshipClass() const;
+    ECOBJECTS_EXPORT ECRelationshipClassCR      GetRelationshipClass() const;
     //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (Utf8StringCR value);
     //! Gets the label of the constraint role in the relationship.
@@ -2207,7 +2208,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(Utf8CP multiplicity);
 
     //! Gets the multiplicity of the constraint in the relationship
-    ECOBJECTS_EXPORT RelationshipMultiplicityCR  GetMultiplicity() const;
+    ECOBJECTS_EXPORT RelationshipMultiplicityCR GetMultiplicity() const;
 
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add

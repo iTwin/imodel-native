@@ -1130,6 +1130,10 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
+    // Checks to make sure the schema is not of a lower version than it's to be written to.
+    if (m_ecSchema.GetECVersionMajor() < (uint32_t) m_ecXmlVersionMajor || m_ecSchema.GetECVersionMinor() < (uint32_t) m_ecXmlVersionMinor)
+        return SchemaWriteStatus::FailedToCreateXml;
+
     if (utf16)
         m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
     else
