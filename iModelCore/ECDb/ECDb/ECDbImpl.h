@@ -48,7 +48,7 @@ private:
         {
         private:
             mutable bset<ECSqlStatement::Impl*> m_statements;
-            mutable BeDbMutex m_mutex;
+            mutable BeMutex m_mutex;
 
         public:
             ECSqlStatementRegistry() {}

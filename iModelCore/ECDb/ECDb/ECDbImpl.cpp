@@ -283,7 +283,7 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
     {
-    BeDbMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     m_statements.insert(&stmt);
     }
 
@@ -292,7 +292,7 @@ void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) const
     {
-    BeDbMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     auto it = m_statements.find(&stmt);
     if (it != m_statements.end())
         m_statements.erase(it);
@@ -303,7 +303,7 @@ void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) cons
 //---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
     {
-    BeDbMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
 
     bset<ECSqlStatement::Impl*> readOnlyCachedStatementSet = m_statements;
     for (ECSqlStatement::Impl* stmt : readOnlyCachedStatementSet)
@@ -320,7 +320,7 @@ ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ECSqlStatementRegistry::FinalizeStatements() const
     {
-    BeDbMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     for (ECSqlStatement::Impl* stmt : m_statements)
         {
         if (stmt != nullptr)
