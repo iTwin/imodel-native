@@ -44,6 +44,7 @@
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
+
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
@@ -623,6 +624,10 @@
         <SubPart PartName="TilePublisherExe" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
+
+    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" />
+    </Part>
 
     <ProductDirectoryList ListName="TilePublisherDirs" >
         <ProductDirectory Name="ApplicationRoot" Path=""/>
