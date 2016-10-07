@@ -180,8 +180,7 @@ struct CachedResponseManager : public IDeleteHandler
 
         //! Invalidates cache tag for responses that contain specified instance
         BentleyStatus InvalidateResponsePagesContainingInstance(ECInstanceKeyCR instanceKey);
-
-        BentleyStatus DeleteFullResponsesContainingInstances(const ECInstanceKeyMultiMap& instances);
+        BentleyStatus InvalidateFullResponsePagesContainingInstances(const ECInstanceKeyMultiMap& instances);
     };
 
 typedef const CachedResponseManager& QueryManagerCR;

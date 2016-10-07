@@ -2601,7 +2601,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstance_DeletesFullResponsesWhenOverridenWithPartialData)
+TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
@@ -2620,9 +2620,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
 
     bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse(), &rejected, &fullQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &fullQuery));
     ASSERT_THAT(rejected, IsEmpty());
 
     ASSERT_TRUE(cache->IsResponseCached(fullResponseKey));
@@ -2633,19 +2633,23 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
     ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
 
     // Assert
     EXPECT_TRUE(cache->IsResponseCached(newResponseKey));
+    EXPECT_EQ("TagC", cache->ReadResponseCacheTag(newResponseKey));
+
     EXPECT_TRUE(cache->IsResponseCached(partialResponseKey));
-    EXPECT_FALSE(cache->IsResponseCached(fullResponseKey));
+    EXPECT_EQ("TagA", cache->ReadResponseCacheTag(partialResponseKey));
+
+    EXPECT_TRUE(cache->IsResponseCached(fullResponseKey));
     EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstanceAsParent_DeletesFullResponsesWhenOverridenWithPartialData)
+TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstanceAsParent_InvalidatesFullResponsesWhenOverridenWithPartialData)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
@@ -2665,12 +2669,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
 
     bset<ObjectId> rejected;
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse(), &rejected, &fullQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &fullQuery));
     ASSERT_THAT(rejected, IsEmpty());
 
-    ASSERT_TRUE(cache->IsResponseCached(fullResponseKey));
+    ASSERT_EQ("TagA", cache->ReadResponseCacheTag(partialResponseKey));
+    ASSERT_EQ("TagB", cache->ReadResponseCacheTag(fullResponseKey));
     ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
 
     // Act
@@ -2678,16 +2683,51 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse(), &rejected, &partialQuery));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
     ASSERT_THAT(rejected, IsEmpty());
     ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
 
     // Assert
     EXPECT_TRUE(cache->IsResponseCached(newResponseKey));
+    EXPECT_EQ("TagC", cache->ReadResponseCacheTag(newResponseKey));
+
     EXPECT_TRUE(cache->IsResponseCached(partialResponseKey));
-    EXPECT_FALSE(cache->IsResponseCached(fullResponseKey));
+    EXPECT_EQ("TagA", cache->ReadResponseCacheTag(partialResponseKey));
+
+    EXPECT_TRUE(cache->IsResponseCached(fullResponseKey));
     EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponseWithFullAndThenPartial_DoesNotInvalidateButOverridesItselfWithPartialData)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    // Arrange
+    WSQuery fullQuery("TestSchema", "TestClass");
+    fullQuery.SetSelect("*");
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &fullQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+
+    // Act
+    WSQuery partialQuery("TestSchema", "TestClass");
+    partialQuery.SetSelect("TestProperty");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+
+    ASSERT_TRUE(cache->IsResponseCached(responseKey));
+    ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+    ASSERT_EQ("Partial", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    EXPECT_EQ("TagB", cache->ReadResponseCacheTag(responseKey));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
