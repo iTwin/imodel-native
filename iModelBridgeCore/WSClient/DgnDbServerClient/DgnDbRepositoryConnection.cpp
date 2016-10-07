@@ -2639,8 +2639,6 @@ ICancellationTokenPtr           cancellationToken
         //Try to acquire all required locks and codes.
         DgnCodeSet codesToReserve = usedCodes;
         codesToReserve.insert(discardedCodes.begin(), discardedCodes.end());
-        BeGuid masterFileId;
-        masterFileId.FromString(revision->GetDbGuid().c_str());
 
         AcquireCodesLocks(usedLocks, codesToReserve, briefcaseId, masterFileId, revision->GetParentId(), IBriefcaseManager::ResponseOptions::None, cancellationToken)
             ->Then([=] (DgnDbServerStatusResultCR acquireCodesLocksResult)
