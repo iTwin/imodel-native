@@ -89,9 +89,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::ReadFromFile() const
     {
-    if (!m_tile.IsValid())
-        return ERROR;
-
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
         {
