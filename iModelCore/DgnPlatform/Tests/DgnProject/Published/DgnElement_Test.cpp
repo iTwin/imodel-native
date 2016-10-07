@@ -872,10 +872,14 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         {
         ECN::ECClassCP testClass = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
         auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        DgnCode code = DgnCode::CreateEmpty();
         // custom-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthorityId", ECN::ECValue(code.GetAuthority().GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
