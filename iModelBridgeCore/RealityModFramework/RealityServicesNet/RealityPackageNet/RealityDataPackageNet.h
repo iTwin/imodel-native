@@ -43,6 +43,10 @@ namespace RealityPackageNet
             System::String^ GetOrigin();
             void SetOrigin(System::String^ origin);
 
+            //! The requesting application of this package file. 
+            System::String^ GetRequestingApplication();
+            void SetRequestingApplication(System::String^ requestingApplication);
+
             //! The name of this package file.
             System::String^ GetName();
             void SetName(System::String^ name);
@@ -104,6 +108,9 @@ namespace RealityPackageNet
             System::String^ GetDataName();
             void SetDataName(System::String^ dataName);
 
+            System::String^ GetDataset();
+            void SetDataset(System::String^ dataset);
+
             //! Data can contain many sources (at least one). This returns the number of sources.
             int GetNumSources();
 
@@ -123,6 +130,7 @@ namespace RealityPackageNet
             System::Collections::Generic::List<RealityDataSourceNet^>^ m_sources;
             System::String^ m_id;
             System::String^ m_name;
+            System::String^ m_dataset;
         };
 
     //=====================================================================================

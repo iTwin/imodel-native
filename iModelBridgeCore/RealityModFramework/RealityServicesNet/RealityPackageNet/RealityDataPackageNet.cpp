@@ -60,6 +60,26 @@ void RealityDataPackageNet::SetOrigin(String^ origin)
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataPackageNet::GetRequestingApplication()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pPackage)->GetRequestingApplication().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::SetRequestingApplication(String^ requestingApplication)
+    {
+    Utf8String requestingApplicationUtf8;
+    BeStringUtilities::WCharToUtf8(requestingApplicationUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(requestingApplication).ToPointer()));
+
+    (*m_pPackage)->SetRequestingApplication(requestingApplicationUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
 String^ RealityDataPackageNet::GetName()
@@ -265,6 +285,22 @@ String^ RealityDataNet::GetDataName()
 void RealityDataNet::SetDataName(String^ dataName)
     {
     m_name = dataName;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataNet::GetDataset()
+    {
+    return m_dataset;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataNet::SetDataset(String^ dataset)
+    {
+    m_dataset = dataset;
     }
 
 //-------------------------------------------------------------------------------------

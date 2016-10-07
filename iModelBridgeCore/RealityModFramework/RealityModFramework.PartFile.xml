@@ -130,13 +130,12 @@
         <SubPart PartName="UsageDataExtractor"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
-        <!--<SubPart PartName="RealityServicesNet"/>-->
-        <!--<SubPart PartName="RealityCrawler"/>-->
+        <!--<SubPart PartName="DataHandlerTool" />-->
+        <SubPart PartName="RealityServicesNet"/>
     </Part>
     
     <Part Name="RealityAdmin-Applications">
         <SubPart PartName="ConversionToolsTester"/>
-        <!--<SubPart PartName="DataHandlerTool" />-->
         <SubPart PartName="FtpTraverser"/>
         <SubPart PartName="AwsTraverser"/>
     </Part>
