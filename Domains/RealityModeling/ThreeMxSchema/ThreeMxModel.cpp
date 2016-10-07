@@ -21,7 +21,7 @@ BentleyStatus Scene::ReadSceneFile()
     StreamBuffer rootStream;
     auto result = _RequestFile(m_rootUrl, rootStream);
 
-    result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+    result.wait(); 
     return result.isReady() ? m_sceneInfo.Read(rootStream) : ERROR;
     }
 
@@ -424,14 +424,11 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR dgnDb, TileGe
 
         if (m_clip.IsValid())
             {
-            DRange3d    tileRange;
+            DRange3d        tileRange;
 
             sceneToTile.Multiply (tileRange, node.GetRange());
             if (ClipPlaneContainment_StronglyOutside == (clipContainment = m_clip->ClassifyRangeContainment(tileRange)))
-                {
-                BeAssert (false);
                 continue;
-                }
             }
 
         for (auto& geometry : node.GetGeometry())
@@ -511,16 +508,22 @@ typedef RefCountedPtr<PublishTileNode>  T_PublishTilePtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static T_PublishTilePtr tileFromNode(DgnModelId modelId, NodeR node, SceneR scene, TransformCR transformDbToTile, ClipVectorCP tileClip, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    Transform       sceneToTile = Transform::FromProduct(transformDbToTile, scene.GetLocation());
     double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
-    DRange3d        tileRange, dgnRange;
+    DRange3d        dgnRange;
 
     scene.GetLocation().Multiply (dgnRange, node.GetRange());
+
+#ifdef IGNORE_CLIPPED_TILES
+    // This seems like a good idea but doesn't work -- Revisit later (Clark Island);
+    DRange3d        tileRange;
+    Transform       sceneToTile = Transform::FromProduct(transformDbToTile, scene.GetLocation());
+
     sceneToTile.Multiply(tileRange, node.GetRange());
 
     if (nullptr != tileClip &&
         ClipPlaneContainment_StronglyOutside == tileClip->ClassifyRangeContainment(tileRange))
         return nullptr;
+#endif
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
