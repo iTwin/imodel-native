@@ -357,10 +357,16 @@ void TextString::ApplyTransform(TransformCR transform)
     
     if (m_isValid)
         {
-        m_range.high.x *= scaleFactor.y;
+        m_range.low.x *= scaleFactor.x;
+        m_range.low.y *= scaleFactor.y;
+        m_range.high.x *= scaleFactor.x;
         m_range.high.y *= scaleFactor.y;
+        
         for (DPoint3dR glyphOrigin : m_glyphOrigins)
+            {
             glyphOrigin.x *= scaleFactor.x;
+            glyphOrigin.y *= scaleFactor.y;
+            }
         }
     }
 
