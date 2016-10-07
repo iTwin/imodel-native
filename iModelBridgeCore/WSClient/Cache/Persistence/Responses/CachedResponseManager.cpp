@@ -1096,7 +1096,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(E
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus CachedResponseManager::DeleteFullResponsesContainingInstances(const ECInstanceKeyMultiMap& instances)
+BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstances(const ECInstanceKeyMultiMap& instances)
     {
     if (instances.empty())
         return SUCCESS;
@@ -1105,16 +1105,14 @@ BentleyStatus CachedResponseManager::DeleteFullResponsesContainingInstances(cons
     for (auto pair : instances)
         idSet.insert(pair.second);
 
-    bvector<ECInstanceId> responseIds;
+    bvector<ECInstanceId> pageIds;
 
     // Common ECSql
     Utf8CP ecSql =
-        "SELECT response.ECInstanceId "
-        "FROM ONLY " ECSql_CachedResponseInfoClass " response "
-        "JOIN " ECSql_ResponseToResponsePageClass " rel1 ON rel1.SourceECInstanceId = response.ECInstanceId "
-        "JOIN " ECSql_CachedResponsePageInfoClass " page ON page.ECInstanceId = rel1.TargetECInstanceId "
-        "JOIN %s rel2 ON rel2.SourceECInstanceId = rel1.TargetECInstanceId "
-        "WHERE NOT page.[" CLASS_CachedResponsePageInfo_PROPERTY_IsPartial "] AND InVirtualSet(?, rel2.TargetECInstanceId) ";
+        "SELECT page.ECInstanceId "
+        "FROM ONLY " ECSql_CachedResponsePageInfoClass " page "
+        "JOIN %s rel ON page.ECInstanceId = rel.SourceECInstanceId "
+        "WHERE NOT page.[" CLASS_CachedResponsePageInfo_PROPERTY_IsPartial "] AND InVirtualSet(?, rel.TargetECInstanceId) ";
 
     // Result relationship
     auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Rel", [&]
@@ -1123,7 +1121,7 @@ BentleyStatus CachedResponseManager::DeleteFullResponsesContainingInstances(cons
         });
 
     statement->BindInt64(1, (int64_t) &idSet);
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, responseIds))
+    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
     // Result weak relationship
@@ -1133,12 +1131,11 @@ BentleyStatus CachedResponseManager::DeleteFullResponsesContainingInstances(cons
         });
 
     statement->BindInt64(1, (int64_t) &idSet);
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, responseIds))
+    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
-    // Invalidate
-    for (auto& responseId : responseIds)
-        if (SUCCESS != m_hierarchyManager->DeleteInstance({m_responseClass->GetId(), responseId}))
+    for (auto& pageId : pageIds)
+        if (SUCCESS != ClearPageCacheTag(pageId))
             return ERROR;
 
     return SUCCESS;
