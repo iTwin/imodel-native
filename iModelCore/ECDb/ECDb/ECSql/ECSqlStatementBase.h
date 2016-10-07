@@ -36,7 +36,6 @@ struct ECSqlStatementBase
         ECSqlStatementBase() : m_preparedStatement(nullptr) {}
 
         virtual ECSqlStatus _Prepare(ECDb const&, Utf8CP ecsql);
-        virtual void _Finalize();
 
     public:
         virtual ~ECSqlStatementBase() {}
@@ -59,7 +58,7 @@ struct ECSqlStatementBase
         Utf8CP GetNativeSql() const;
         ECDb const* GetECDb() const;
 
-        void Finalize() { _Finalize(); }
+        void Finalize() { m_preparedStatement = nullptr; BeAssert(!IsPrepared()); }
 
         // Helpers
         ECSqlPreparedStatement* GetPreparedStatementP() const { return m_preparedStatement.get(); }

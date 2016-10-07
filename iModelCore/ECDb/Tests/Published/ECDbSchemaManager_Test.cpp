@@ -993,7 +993,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMin
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
-    auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb, bool clearCacheAfterFirstImport)
+    auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb)
         {
         Utf8CP baseSchemaXml =
             "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1018,9 +1018,6 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         ECSchemaPtr schema1 = nullptr;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, baseSchemaXml, *context1));
         ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context1->GetCache().GetSchemas()));
-
-        if (clearCacheAfterFirstImport)
-            ecdb.ClearECDbCache();
 
         Utf8CP secondSchemaXml =
             "<ECSchema schemaName='Construction' nameSpacePrefix='c' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1050,13 +1047,11 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         activityKey = newKey;
         };
 
-    //Import two ECSchemas separately without clearing the cache before the second import
-    {
     ECDbTestProject testProject;
     ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema1.ecdb");
 
     ECInstanceKey activityKey;
-    setup(activityKey, ecdb, false);
+    setup(activityKey, ecdb);
     ASSERT_TRUE(activityKey.IsValid());
 
     ECSqlStatement stmt;
@@ -1068,29 +1063,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
     ASSERT_FALSE(stmt.IsValueNull(1)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }
-
-    //Import two ECSchemas separately with clearing the cache before the second import
-    {
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema2.ecdb");
-
-    ECInstanceKey activityKey;
-    setup(activityKey, ecdb, true);
-    ASSERT_TRUE(activityKey.IsValid());
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
-    stmt.BindId(1, activityKey.GetECInstanceId());
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    ASSERT_TRUE(!stmt.IsValueNull(0));
-    ASSERT_EQ(100ULL, stmt.GetValueInt64(0));
-    ASSERT_TRUE(!stmt.IsValueNull(1));
-    ASSERT_EQ(100, stmt.GetValueInt(1));
-
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }
+   
     }
 
 
@@ -1285,7 +1258,6 @@ TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
     ECDb& ecdb = SetupECDb("duplicateInMemorySchemaTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
     ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
-    ecdb.ClearECDbCache();
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
     ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";

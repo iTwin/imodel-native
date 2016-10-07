@@ -85,4 +85,5 @@ public:
     ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
     };
 
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

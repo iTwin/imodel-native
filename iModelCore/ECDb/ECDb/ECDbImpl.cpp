@@ -71,6 +71,15 @@ DbResult ECDb::Impl::OnDbCreated() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2016
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::OnDbClose() const
+    {
+    ClearECDbCache();
+    m_sqlFunctions.clear();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
@@ -97,12 +106,14 @@ void ECDb::Impl::ClearECDbCache() const
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 
-    m_statementRegistry.ReprepareStatements();
-
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
+    //after the cache was cleared.
+    m_clearCacheCounter.Increment();
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
     }
@@ -275,59 +286,5 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
     m_ecdb.AddAppData(key, appData);
     }
 
-//******************************************
-// ECDb::Impl::ECSqlStatementRegistry
-//******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
-    {
-    BeMutexHolder lock(m_mutex);
-    m_statements.insert(&stmt);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) const
-    {
-    BeMutexHolder lock(m_mutex);
-    auto it = m_statements.find(&stmt);
-    if (it != m_statements.end())
-        m_statements.erase(it);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                01/2016
-//---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
-    {
-    BeMutexHolder lock(m_mutex);
-
-    bset<ECSqlStatement::Impl*> readOnlyCachedStatementSet = m_statements;
-    for (ECSqlStatement::Impl* stmt : readOnlyCachedStatementSet)
-        {
-        if (stmt != nullptr && stmt->IsPrepared())
-            stmt->Reprepare();
-        }
-
-    return ECSqlStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                01/2016
-//---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ECSqlStatementRegistry::FinalizeStatements() const
-    {
-    BeMutexHolder lock(m_mutex);
-    for (ECSqlStatement::Impl* stmt : m_statements)
-        {
-        if (stmt != nullptr)
-            stmt->DoFinalize(false); //don't unregister, as we will simply clear the registry after all statements have been finalized
-        }
-
-    m_statements.clear();
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

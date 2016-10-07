@@ -8,7 +8,6 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/ECDbSchemaManager.h>
-#include "ECDbMap.h"
 #include "BeBriefcaseBasedIdSequence.h"
 #include "ECDbProfileManager.h"
 #include "IssueReporter.h"
@@ -23,6 +22,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDb::Impl : NonCopyableClass
     {
 friend struct ECDb;
+
+public:
+    //=======================================================================================
+    //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
+    //! by code that refers to objects held in the cache to invalidate itself.
+    //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
+    //! an error from any of its methods.
+    // @bsiclass                                                Krischan.Eberle       10/2016
+    //+===============+===============+===============+===============+===============+======
+    struct ClearCacheCounter
+        {
+        private:
+            uint32_t m_value;
+
+        public:
+            ClearCacheCounter() : m_value(0) {}
+
+            bool operator==(ClearCacheCounter const& rhs) const { return m_value == rhs.m_value; }
+            bool operator!=(ClearCacheCounter const& rhs) const { return m_value != rhs.m_value; }
+
+            void Increment() { m_value++; }
+            uint32_t GetValue() const { return m_value; }
+        };
 
 private:
     struct DbFunctionKey
@@ -44,21 +66,7 @@ private:
             };
         };
 
-    struct ECSqlStatementRegistry : NonCopyableClass
-        {
-        private:
-            mutable bset<ECSqlStatement::Impl*> m_statements;
-            mutable BeMutex m_mutex;
-
-        public:
-            ECSqlStatementRegistry() {}
-
-            void Add(ECSqlStatement::Impl&) const;
-            void Remove(ECSqlStatement::Impl&) const;
-
-            ECSqlStatus ReprepareStatements() const;
-            void FinalizeStatements() const;
-        };
+    
 
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
@@ -74,8 +82,8 @@ private:
     BeBriefcaseBasedIdSequence m_indexIdSequence;
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
-    ECSqlStatementRegistry m_statementRegistry;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
+    mutable ClearCacheCounter m_clearCacheCounter;
 
     IssueReporter m_issueReporter;
 
@@ -101,6 +109,7 @@ private:
     void ClearECDbCache() const;
     DbResult OnDbOpening() const { return InitializeSequences(); }
     DbResult OnDbCreated() const;
+    void OnDbClose() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeECProfile(m_ecdb, params); }
@@ -125,7 +134,12 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
-    ECSqlStatementRegistry const& GetStatementRegistry() const { return m_statementRegistry; }
+    //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
+    //! by code that refers to objects held in the cache to invalidate itself.
+    //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
+    //! an error from any of its methods.
+    ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
+
     IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
     };
 

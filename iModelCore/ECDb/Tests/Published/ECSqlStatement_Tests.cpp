@@ -2846,7 +2846,6 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     }
 
     ecdb.SaveChanges();
-    ecdb.ClearECDbCache();
 
     //now verify the inserts
     ECSqlStatement statement;

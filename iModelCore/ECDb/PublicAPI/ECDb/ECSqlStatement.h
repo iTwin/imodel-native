@@ -355,10 +355,7 @@ public:
     //! @return BeInt64Id value
     //! @note Possible errors:
     //! - column data does not hold a BeInt64Id
-    template <class TBeInt64Id> TBeInt64Id GetValueId(int columnIndex) const
-        {
-        return TBeInt64Id(GetValueUInt64(columnIndex));
-        }
+    template <class TBeInt64Id> TBeInt64Id GetValueId(int columnIndex) const { return TBeInt64Id(GetValueUInt64(columnIndex)); }
 
     //! Gets the array value of the specified column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

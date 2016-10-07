@@ -83,8 +83,6 @@ public:
 private:
     Impl* m_pimpl;
 
-    void Destroy();
-
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
     ECDB_EXPORT virtual DbResult _OnDbOpening() override;
@@ -145,13 +143,13 @@ public:
     ECDB_EXPORT BentleyStatus AddIssueListener(IIssueListener const& issueListener);
     ECDB_EXPORT void RemoveIssueListener();
 
-    //! Clears the ECDb cache
-    ECDB_EXPORT void ClearECDbCache() const;
 
     ECDB_EXPORT void AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const;
     using Db::AddAppData;
 
 #if !defined (DOCUMENTATION_GENERATOR)
+    //! Clears the ECDb cache (not exported until we decided whether we need consumers to call it directly or not)
+    void ClearECDbCache() const;
     Impl& GetECDbImplR() const;
 #endif
 };

@@ -12,15 +12,6 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::_Finalize()
-    {
-    m_preparedStatement = nullptr;
-    BeAssert(!IsPrepared());
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        01/14
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql)

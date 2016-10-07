@@ -279,7 +279,6 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
     for (int i = 0; i < 5; i++)
         {
         double importTime = 0.0;
-        double clearCacheTime = 0.0;
         double schemaExportTime = 0.0;
 
         auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"schemaWithCAImportPerformance.ecdb");
@@ -296,11 +295,6 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         ecdb.SaveChanges();
 
         timer.Start();
-        ecdb.ClearECDbCache();
-        timer.Stop();
-        clearCacheTime = timer.GetElapsedSeconds();
-
-        timer.Start();
         ECSchemaCP ecschema = ecdb.Schemas().GetECSchema("TestSchema", true);
         timer.Stop();
         schemaExportTime = timer.GetElapsedSeconds();
@@ -310,7 +304,6 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property", i, i);
         LOGTODB(TEST_DETAILS, importTime, testDescription.c_str(), i);
         testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
-        LOGTODB(TEST_DETAILS, clearCacheTime, testDescription.c_str(), i);
         testDescription.Sprintf("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
         LOGTODB(TEST_DETAILS, schemaExportTime, testDescription.c_str(), i);
         ecdb.CloseDb();

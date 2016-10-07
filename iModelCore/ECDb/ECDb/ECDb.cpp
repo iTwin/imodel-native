@@ -21,18 +21,10 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::~ECDb() { Destroy(); }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
-//---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Destroy()
-    {
-    //any active statements need to be finalized before attempting to close the Db.
+ECDb::~ECDb() 
+    { 
     if (m_pimpl != nullptr)
         {
-        m_pimpl->GetStatementRegistry().FinalizeStatements();
-
         delete m_pimpl;
         m_pimpl = nullptr;
         }
@@ -91,8 +83,7 @@ DbResult ECDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
 void ECDb::_OnDbClose()
     {
     BeAssert(m_pimpl != nullptr && "DbClose was called in destructor after pimpl was deleted.");
-    Destroy();
-    m_pimpl = new Impl(*this);
+    m_pimpl->OnDbClose();
     Db::_OnDbClose();
     }
 

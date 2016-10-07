@@ -66,11 +66,14 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDb const& m_ecdb;
         ECDbSchemaReader* m_schemaReader;
         ECDbMap* m_dbMap;
+
         mutable BeMutex m_criticalSection;
 
+        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
+
         //! Implementation of IECSchemaLocater
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 

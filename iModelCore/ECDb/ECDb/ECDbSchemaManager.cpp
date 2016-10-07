@@ -19,8 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb) :m_ecdb(ecdb), m_dbMap(new ECDbMap(ecdb)), m_schemaReader(new ECDbSchemaReader(ecdb))
-    {}
+ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb) :m_ecdb(ecdb), m_dbMap(new ECDbMap(ecdb)), m_schemaReader(new ECDbSchemaReader(ecdb)) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
@@ -166,7 +165,23 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
         }
 
     StopWatch timer(true);
+    const BentleyStatus stat = DoImportECSchemas(schemas);
+    timer.Stop();
+    if (SUCCESS == stat)
+        {
+        LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
+        }
 
+    m_ecdb.ClearECDbCache();
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                     06/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas) const
+    {
     BeMutexHolder lock(m_criticalSection);
 
     if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
@@ -190,15 +205,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
     if (MappingStatus::Error == GetDbMap().MapSchemas(context))
         return ERROR;
 
-    if (ViewGenerator::CreateUpdatableViews(GetECDb()) != SUCCESS)
-        return ERROR;
-
-    m_ecdb.ClearECDbCache();
-
-    timer.Stop();
-    LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
-    return SUCCESS;
+    return ViewGenerator::CreateUpdatableViews(GetECDb());
     }
 
 /*---------------------------------------------------------------------------------------
@@ -461,6 +468,7 @@ BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
     return GetDbMap().CreateECClassViewsInDb();
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

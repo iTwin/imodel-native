@@ -38,9 +38,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
             }
         }
 
-    ecdb.ClearECDbCache();
-
-    auto runLookup = [] (StopWatch& timer, ECDbCR ecdb, bmap<Utf8String, bmap<Utf8String, ECClassId>> const& expectedClassIds, int repetitionCount, bool useCache)
+    auto runLookup = [] (StopWatch& timer, ECDbCR ecdb, bmap<Utf8String, bmap<Utf8String, ECClassId>> const& expectedClassIds, int repetitionCount)
         {
         timer.Start();
         for (int i = 0; i < repetitionCount; i++)
@@ -55,8 +53,6 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
                     ECClassId expectedId = innerKvPair.second;
                     ECClassId actualId = ecdb.Schemas().GetECClassId(schemaName, className, ResolveSchema::BySchemaName);
                     ASSERT_EQ(expectedId.GetValue(), actualId.GetValue()) << "ECClass: " << schemaName.c_str() << "." << className.c_str();
-                    if (!useCache)
-                        ecdb.ClearECDbCache();
                     }
                 }
             }
@@ -66,14 +62,9 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
 
     const int repetitionCount = 50;
     StopWatch timer(false);
-    runLookup(timer, ecdb, expectedClassIds, repetitionCount, true);
+    runLookup(timer, ecdb, expectedClassIds, repetitionCount);
     Utf8String logMessage;
-    logMessage.Sprintf("Cached ECClassId look-up by name for %d ECClasses in %d ECSchemas.", classCount, (int) schemas.size());
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
-
-    ecdb.ClearECDbCache();
-    runLookup(timer, ecdb, expectedClassIds, repetitionCount, false);
-    logMessage.Sprintf("Uncached ECClassId look-up by name for %d ECClasses in %d ECSchemas.", classCount, (int) schemas.size());
+    logMessage.Sprintf("ECClassId look-up by name for %d ECClasses in %d ECSchemas.", classCount, (int) schemas.size());
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
     }
 
@@ -98,8 +89,6 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     ECClassId expectedClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
-    ecdb.ClearECDbCache();
-
     const int repetitionCount = 100000;
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
@@ -110,20 +99,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
 
     timer.Stop();
     Utf8String logMessage;
-    logMessage.Sprintf("Cached ECClassId look-up for a single ECClass in a file with %d ECClasses.", classCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
-
-    ecdb.ClearECDbCache();
-    timer.Start();
-    for (int i = 0; i < repetitionCount; i++)
-        {
-        ECClassId actualClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
-        ASSERT_EQ(expectedClassId.GetValue(), actualClassId.GetValue());
-        ecdb.ClearECDbCache();
-        }
-
-    timer.Stop();
-    logMessage.Sprintf("Uncached ECClassId look-up for a single ECClass in a file with %d ECClasses.", classCount);
+    logMessage.Sprintf("ECClassId look-up for a single ECClass in a file with %d ECClasses.", classCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
     }
 
@@ -149,8 +125,6 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     ECClassId expectedClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
-    ecdb.ClearECDbCache();
-
     Utf8String ecsql;
     ecsql.Sprintf("SELECT NULL FROM %s.%s", testSchemaName, testClassName);
 
@@ -165,20 +139,6 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     timer.Stop();
     Utf8String logMessage;
     logMessage.Sprintf("ECSQL preparation for a single ECClass with ECClassId cache in a file with %d ECClasses.", classCount);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
-
-    ecdb.ClearECDbCache();
-    timer.Start();
-    for (int i = 0; i < repetitionCount; i++)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
-        stmt.Finalize();
-        ecdb.ClearECDbCache();
-        }
-
-    timer.Stop();
-    logMessage.Sprintf("ECSQL preparation for a single ECClass without ECClassId cache in a file with %d ECClasses", classCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), repetitionCount);
     }
 

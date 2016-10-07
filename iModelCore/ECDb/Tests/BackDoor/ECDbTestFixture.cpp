@@ -157,7 +157,6 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
         return ERROR;
 
-    ecdb.ClearECDbCache();
     Populate(ecdb, instanceCountPerClass);
     ecdb.SaveChanges();
     filePath.AppendUtf8(ecdb.GetDbFileName());

@@ -1004,7 +1004,6 @@ TEST_F(ECDbSchemaTests, ArrayPropertyTest)
     {
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-    db.ClearECDbCache();
 
     ECSchemaCP startupCompanySchema = db.Schemas().GetECSchema("StartupCompany", true);
     ASSERT_TRUE(startupCompanySchema != nullptr);

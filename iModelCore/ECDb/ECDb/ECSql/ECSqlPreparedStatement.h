@@ -30,13 +30,15 @@ struct ECSqlPreparedStatement : NonCopyableClass
     private:
         ECSqlType m_type;
 
-        ECDb const* m_ecdb;
+        ECDb const& m_ecdb;
         Utf8String m_ecsql;
         Utf8String m_nativeSql;
         mutable BeSQLite::Statement m_sqliteStatement;
         bool m_isNoopInSqlite;
         ECSqlParameterMap m_parameterMap;
         std::unique_ptr<ParentOfJoinedTableECSqlStatement> m_parentOfJoinedTableECSqlStatement;
+
+        ECDb::Impl::ClearCacheCounter m_preparationClearCacheCounter;
 
         virtual ECSqlStatus _Reset() = 0;
 
@@ -49,7 +51,9 @@ struct ECSqlPreparedStatement : NonCopyableClass
         ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
         bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
 
-        IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
+        BentleyStatus AssertIsValid() const;
+
+        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
     public:
         virtual ~ECSqlPreparedStatement() {}
@@ -68,7 +72,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
         ParentOfJoinedTableECSqlStatement* CreateParentOfJoinedTableECSqlStatement(ECN::ECClassId joinedTableClassId);
         ParentOfJoinedTableECSqlStatement* GetParentOfJoinedTableECSqlStatement() const;
 
-        ECDbCR GetECDb() const { return *m_ecdb; }
+        ECDbCR GetECDb() const { return m_ecdb; }
         BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
 
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
@@ -81,31 +85,31 @@ struct ECSqlPreparedStatement : NonCopyableClass
 //+===============+===============+===============+===============+===============+======
 struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
     {
-private:
-    DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
-    ECSqlField::Collection m_fields;
-    //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
-    std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
-    std::vector<ECSqlField*> m_fieldsRequiringReset;
+    private:
+        DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
+        ECSqlField::Collection m_fields;
+        //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
+        std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
+        std::vector<ECSqlField*> m_fieldsRequiringReset;
 
-    virtual ECSqlStatus _Reset () override;
+        virtual ECSqlStatus _Reset() override;
 
-    ECSqlStatus ResetFields () const;
-    ECSqlStatus OnAfterStep () const;
+        ECSqlStatus ResetFields() const;
+        ECSqlStatus OnAfterStep() const;
 
-public:
-    explicit ECSqlSelectPreparedStatement (ECDbCR ecdb) : ECSqlPreparedStatement (ECSqlType::Select, ecdb) {}
-    ~ECSqlSelectPreparedStatement () {}
+    public:
+        explicit ECSqlSelectPreparedStatement(ECDbCR ecdb) : ECSqlPreparedStatement(ECSqlType::Select, ecdb) {}
+        ~ECSqlSelectPreparedStatement() {}
 
-    DbResult Step ();
+        DbResult Step();
 
-    int GetColumnCount () const;
-    IECSqlValue const& GetValue (int columnIndex) const;
+        int GetColumnCount() const;
+        IECSqlValue const& GetValue(int columnIndex) const;
 
-    ECSqlField::Collection const& GetFields () const { return m_fields; }
-    void AddField (std::unique_ptr<ECSqlField> field);
+        ECSqlField::Collection const& GetFields() const { return m_fields; }
+        void AddField(std::unique_ptr<ECSqlField> field);
 
-    DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
+        DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
 
 //=======================================================================================
@@ -115,12 +119,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
     {
-protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb)  {}
-    virtual ECSqlStatus _Reset () override;
+    protected:
+        ECSqlNonSelectPreparedStatement(ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement(statementType, ecdb) {}
+        virtual ECSqlStatus _Reset() override { return DoReset(); }
 
-public:
-    virtual ~ECSqlNonSelectPreparedStatement () {}
+    public:
+        virtual ~ECSqlNonSelectPreparedStatement() {}
     };
 
 //=======================================================================================
@@ -130,58 +134,58 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
     {
-public:
-    struct ECInstanceKeyInfo
-        {
+    public:
+        struct ECInstanceKeyInfo
+            {
+            private:
+                ECN::ECClassId m_ecClassId;
+                ECSqlBinder* m_ecInstanceIdBinder;
+                ECInstanceId m_userProvidedECInstanceId;
+
+            public:
+                //compiler generated copy ctor and copy assignment
+
+                explicit ECInstanceKeyInfo() : m_ecInstanceIdBinder(nullptr) {}
+
+                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder)
+                    : m_ecClassId(ecClassId), m_ecInstanceIdBinder(&ecInstanceIdBinder)
+                    {}
+
+                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECInstanceId userProvidedLiteral)
+                    : m_ecClassId(ecClassId), m_ecInstanceIdBinder(nullptr), m_userProvidedECInstanceId(userProvidedLiteral)
+                    {}
+
+                ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
+
+                ECSqlBinder* GetECInstanceIdBinder() const { return m_ecInstanceIdBinder; }
+                bool HasUserProvidedECInstanceId() const { return m_userProvidedECInstanceId.IsValid(); }
+                ECInstanceId GetUserProvidedECInstanceId() const { return m_userProvidedECInstanceId; }
+
+                void SetBoundECInstanceId(ECInstanceId ecinstanceId) { m_userProvidedECInstanceId = ecinstanceId; }
+                void ResetBoundECInstanceId()
+                    {
+                    if (m_ecInstanceIdBinder != nullptr)
+                        m_userProvidedECInstanceId.Invalidate();
+                    }
+            };
+
     private:
-        ECN::ECClassId m_ecClassId;
-        ECSqlBinder* m_ecInstanceIdBinder;
-        ECInstanceId m_userProvidedECInstanceId;
+        ECInstanceKeyInfo m_ecInstanceKeyInfo;
+
+        bool m_isECInstanceIdAutogenerationDisabled;
+
+        ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId);
+
 
     public:
-        //compiler generated copy ctor and copy assignment
+        explicit ECSqlInsertPreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb), m_isECInstanceIdAutogenerationDisabled(false) {}
+        ~ECSqlInsertPreparedStatement() {}
 
-        explicit ECInstanceKeyInfo () :  m_ecInstanceIdBinder(nullptr) {}
+        DbResult Step(ECInstanceKey& instanceKey);
 
-        ECInstanceKeyInfo (ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder)
-            : m_ecClassId (ecClassId), m_ecInstanceIdBinder (&ecInstanceIdBinder)
-            {}
-
-        ECInstanceKeyInfo (ECN::ECClassId ecClassId, ECInstanceId userProvidedLiteral)
-            : m_ecClassId (ecClassId), m_ecInstanceIdBinder (nullptr), m_userProvidedECInstanceId (userProvidedLiteral)
-            {}
-
-        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
-
-        ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
-        bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}
-        ECInstanceId GetUserProvidedECInstanceId () const { return m_userProvidedECInstanceId; }
-
-        void SetBoundECInstanceId (ECInstanceId ecinstanceId) {m_userProvidedECInstanceId = ecinstanceId;}
-        void ResetBoundECInstanceId ()
-            {
-            if (m_ecInstanceIdBinder != nullptr)
-                m_userProvidedECInstanceId.Invalidate ();
-            }
-        };
-
-private:
-    ECInstanceKeyInfo m_ecInstanceKeyInfo;
-
-    bool m_isECInstanceIdAutogenerationDisabled;
-
-    ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement (ECInstanceId& generatedECInstanceId);
-  
-
-public:
-    explicit ECSqlInsertPreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb), m_isECInstanceIdAutogenerationDisabled(false) {}
-    ~ECSqlInsertPreparedStatement () {}
-
-    DbResult Step (ECInstanceKey& instanceKey);
-
-    ECInstanceKeyInfo& GetECInstanceKeyInfo () {return m_ecInstanceKeyInfo;}
-    void SetECInstanceKeyInfo (ECInstanceKeyInfo const& ecInstanceKeyInfo);
-    void SetIsECInstanceIdAutogenerationDisabled() { m_isECInstanceIdAutogenerationDisabled = true; }
+        ECInstanceKeyInfo& GetECInstanceKeyInfo() { return m_ecInstanceKeyInfo; }
+        void SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo);
+        void SetIsECInstanceIdAutogenerationDisabled() { m_isECInstanceIdAutogenerationDisabled = true; }
     };
 
 
@@ -193,10 +197,10 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
-public:
-    explicit ECSqlUpdatePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
-    ~ECSqlUpdatePreparedStatement() {}
-    DbResult Step();
+    public:
+        explicit ECSqlUpdatePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
+        ~ECSqlUpdatePreparedStatement() {}
+        DbResult Step();
     };
 
 
@@ -207,10 +211,10 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlDeletePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
-public:
-    explicit ECSqlDeletePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
-    ~ECSqlDeletePreparedStatement() {}
-    DbResult Step();
+    public:
+        explicit ECSqlDeletePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
+        ~ECSqlDeletePreparedStatement() {}
+        DbResult Step();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
