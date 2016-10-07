@@ -133,9 +133,16 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     // Create Bridge
     auto bridgePtr = Bridge::Create(*roadOnBridgeCPtr);
     auto bridgeCPtr = bridgePtr->Insert();
+
+    roadOnBridgePtr->SetBridgeId(bridgeCPtr->GetElementId());
+    ASSERT_TRUE(roadOnBridgePtr->Update().IsValid());
+
     ASSERT_TRUE(bridgeCPtr.IsValid());
     ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
-    ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), bridgeCPtr->GetIPhysicalElementOnBridge()->GetElementId());
+
+    auto physicalElementsOnBridge = bridgeCPtr->QueryIPhysicalElementsOnBridge();
+    ASSERT_EQ(1, physicalElementsOnBridge.size());
+    ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), physicalElementsOnBridge.front().GetILinearlyLocatedId());
 
     // Create Abutment - Pier - Abutment
     auto abutment1Ptr = BridgeAbutment::Create(*bridgeCPtr, 0);

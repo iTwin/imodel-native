@@ -134,6 +134,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadSegmentOnBridge" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
         <BaseClass>RoadSegmentElement</BaseClass>
+        <BaseClass>bphys:IPhysicalElementOnBridge</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

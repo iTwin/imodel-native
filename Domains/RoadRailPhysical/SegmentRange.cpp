@@ -104,7 +104,8 @@ DgnDbStatus SegmentRangeElement::_OnChildUpdate(DgnElementCR original, DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SegmentRangeElement::_OnChildUpdated(DgnElementCR child) const
     {
-    _CommitCascadeChanges(*m_cascadeAlgorithmPtr);
+    if (m_cascadeAlgorithmPtr.IsValid())
+        _CommitCascadeChanges(*m_cascadeAlgorithmPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
