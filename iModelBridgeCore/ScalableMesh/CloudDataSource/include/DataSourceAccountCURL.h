@@ -101,6 +101,8 @@ protected:
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
 
+    bool                                    isLocalOrNetworkAccount = false;
+
 
 public:
                                             DataSourceAccountCURL                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);

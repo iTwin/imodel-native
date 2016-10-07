@@ -4,8 +4,6 @@
 #include "DataSourceAccount.h"
 #include "DataSourceURL.h"
 
-unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
-
 
 class DataSourceAccountCached : public DataSourceAccount
 {

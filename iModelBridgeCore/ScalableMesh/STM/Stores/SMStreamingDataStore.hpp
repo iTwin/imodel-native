@@ -65,7 +65,23 @@ template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
 template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory)
     {
     DataSourceStatus                            status;
-    if (s_stream_from_disk)
+    if (s_stream_from_disk && s_stream_using_curl)
+        {
+        DataSourceAccount                       *   accountLocalFile;
+        DataSourceService                       *   serviceLocalFile;
+
+        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceCURL"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the file service streaming
+        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalCURLAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountLocalFile);
+        }
+    else if (s_stream_from_disk)
         {
         DataSourceAccount                       *   accountLocalFile;
         DataSourceService                       *   serviceLocalFile;

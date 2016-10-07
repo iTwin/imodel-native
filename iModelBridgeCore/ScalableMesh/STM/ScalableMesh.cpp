@@ -2037,6 +2037,17 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 
         path += outContainerName + L"~2F" + outDatasetName;
         }
+    else if (server == SMCloudServerType::LocalDiskCURL)
+        {
+        // Setup streaming stores to use local disk (relative to attached stm file location)
+        s_stream_from_disk = true;
+        s_stream_using_curl = true;
+
+        const auto smFileName = BeFileName(this->GetPath());
+        path += smFileName.GetDirectoryName();
+        path += L"cloud\\";
+        path += smFileName.GetFileNameWithoutExtension();
+        }
     else
         {
         assert(server == SMCloudServerType::LocalDisk);

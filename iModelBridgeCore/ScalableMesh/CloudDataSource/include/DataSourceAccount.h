@@ -8,6 +8,8 @@
 class DataSource;
 class DataSourceManager;
 
+unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
+
 
 class DataSourceAccount
 {

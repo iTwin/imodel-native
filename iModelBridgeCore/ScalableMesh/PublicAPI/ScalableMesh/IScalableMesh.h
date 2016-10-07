@@ -61,6 +61,7 @@ enum DTMAnalysisType
 enum SMCloudServerType
     {
     LocalDisk = 0,
+    LocalDiskCURL,
     Azure,
     WSG
     };

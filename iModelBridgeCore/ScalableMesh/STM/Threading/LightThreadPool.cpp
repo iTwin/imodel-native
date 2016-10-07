@@ -47,6 +47,19 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
     bool wait = true;
     while (wait)
         {
+//#ifndef NDEBUG
+//        static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+//       std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+//        if (std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500)
+//            {
+//            int nBusyThreads = 0;
+//            for (size_t t = 0; t < LIGHT_THREAD_POOL_NUMBER_THREADS; ++t)
+//                if (s_areThreadsBusy[t]) ++nBusyThreads;
+//            std::cout << nBusyThreads << std::endl;
+//            start_time = std::chrono::steady_clock::now();
+//            }
+//
+//#endif
         for (size_t t = 0; t < LIGHT_THREAD_POOL_NUMBER_THREADS; ++t)
             {
             bool expected = false;

@@ -6,6 +6,7 @@
 #include <openssl/crypto.h>
 #include <locale>
 #include <codecvt>
+#include <Bentley/BeFileName.h>
 #include "include/DataSourceAccountCURL.h"
 #include "include/DataSourceCURL.h"
 
@@ -175,6 +176,12 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
+    if (isLocalOrNetworkAccount)
+        {
+        BeFileName file(url.c_str());
+        assert(false == file.DoesPathExist()); // file should not exist
+        url = L"file:///" + url;
+        }
     struct CURLHandle::CURLDataMemoryBuffer buffer;
     buffer.data = source;
     buffer.size = size;
