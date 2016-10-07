@@ -401,55 +401,58 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
 #ifndef VANCOUVER_API
-        // Save indices
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
-
-        if (indicePtr.IsValid() && indicePtr->size() > 0)
+        if (node->m_nodeHeader.m_nodeCount > 0)
             {
-            ISMInt32DataStorePtr faceIndDataStore;
-            bool result = pi_pDataStore->GetNodeDataStore(faceIndDataStore, &node->m_nodeHeader, SMStoreDataType::TriPtIndices);
-            assert(result == true); // problem getting the indice data store for streaming
-            faceIndDataStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
-            }
+            // Save indices
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
-        if (node->m_nodeHeader.m_isTextured)
-            {
-            // Save UVs
-            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
-
-            if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+            if (indicePtr.IsValid() && indicePtr->size() > 0)
                 {
-                ISMUVCoordsDataStorePtr uvCoordDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(uvCoordDataStore, &node->m_nodeHeader);
-                assert(result == true); // problem getting the uv data store for streaming
-                uvCoordDataStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
+                ISMInt32DataStorePtr faceIndDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(faceIndDataStore, &node->m_nodeHeader, SMStoreDataType::TriPtIndices);
+                assert(result == true); // problem getting the indice data store for streaming
+                faceIndDataStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
                 }
 
-            // Save UVIndices
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
-
-            if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
+            if (node->m_nodeHeader.m_isTextured)
                 {
-                ISMInt32DataStorePtr uvIndiceDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(uvIndiceDataStore, &node->m_nodeHeader, SMStoreDataType::TriUvIndices);
-                assert(result == true); // problem getting the uvIndice data store for streaming
-                uvIndiceDataStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
-                }
+                // Save UVs
+                RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
 
-            // Save texture
-            ISMTextureDataStorePtr textureDataStore;
-            bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
-            assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
-            auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
-            if (countTextureData > 0)
-                {
-                bvector<uint8_t> textureData(countTextureData);
-                size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
-                ISMTextureDataStorePtr cloudTextureDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(cloudTextureDataStore, &node->m_nodeHeader);
-                assert(result == true && cloudTextureDataStore.IsValid() && !cloudTextureDataStore.IsNull());
-                cloudTextureDataStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
-                node->m_nodeHeader.m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ newCount, 5 });
+                if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                    {
+                    ISMUVCoordsDataStorePtr uvCoordDataStore;
+                    bool result = pi_pDataStore->GetNodeDataStore(uvCoordDataStore, &node->m_nodeHeader);
+                    assert(result == true); // problem getting the uv data store for streaming
+                    uvCoordDataStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
+                    }
+
+                // Save UVIndices
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+                if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
+                    {
+                    ISMInt32DataStorePtr uvIndiceDataStore;
+                    bool result = pi_pDataStore->GetNodeDataStore(uvIndiceDataStore, &node->m_nodeHeader, SMStoreDataType::TriUvIndices);
+                    assert(result == true); // problem getting the uvIndice data store for streaming
+                    uvIndiceDataStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
+                    }
+
+                // Save texture
+                ISMTextureDataStorePtr textureDataStore;
+                bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
+                assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
+                auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
+                if (countTextureData > 0)
+                    {
+                    bvector<uint8_t> textureData(countTextureData);
+                    size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
+                    ISMTextureDataStorePtr cloudTextureDataStore;
+                    bool result = pi_pDataStore->GetNodeDataStore(cloudTextureDataStore, &node->m_nodeHeader);
+                    assert(result == true && cloudTextureDataStore.IsValid() && !cloudTextureDataStore.IsNull());
+                    cloudTextureDataStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
+                    node->m_nodeHeader.m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ newCount, 5 });
+                    }
                 }
             }
         // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
@@ -461,7 +464,6 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
         SetThreadAvailableAsync(threadId);
         }, this, std::placeholders::_1));
-
     auto loadNodeHelper = [](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
         //node->LoadTreeNode(nLoaded, level, headersOnly);
