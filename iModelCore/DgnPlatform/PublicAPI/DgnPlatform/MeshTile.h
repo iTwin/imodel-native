@@ -250,6 +250,7 @@ private:
     TriangleSet             m_triangleSet;
     double                  m_tolerance;
     size_t                  m_triangleIndex;
+    JsonRenderMaterial      m_material;
 
     TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap (VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_triangleIndex(0) { }

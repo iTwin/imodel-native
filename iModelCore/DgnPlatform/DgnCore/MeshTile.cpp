@@ -427,13 +427,11 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
-    JsonRenderMaterial      material;
 
-    if (materialId.IsValid() &&
-        !params.empty() &&
-        SUCCESS == material.Load (materialId, dgnDb))
+    if (!params.empty() &&
+        (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
         {
-        auto const&         patternMap = material.GetPatternMap();
+        auto const&         patternMap = m_material.GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid() &&
