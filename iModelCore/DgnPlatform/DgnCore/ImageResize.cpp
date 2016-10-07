@@ -69,8 +69,11 @@ Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageC
     m_xMode = BuildSquetchTable (m_inSize.x, m_outSize.x, m_xTable);
     m_yMode = BuildSquetchTable (m_inSize.y, m_outSize.y, m_yTable);
 
-    LoadLineSquetch (m_oBuf1.data());
-    LoadLineSquetch (m_oBuf2.data());
+    if (m_yMode == EXPAND)
+        {
+        LoadLineSquetch (m_oBuf1.data());
+        LoadLineSquetch (m_oBuf2.data());
+        }
 
     m_output.Resize(m_bytesPerPixel * targetWidth * targetHeight);
     }
@@ -274,7 +277,7 @@ int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
         };
     if ((m_currentInputRow == m_yTable.size() - 1) || (m_yTable[m_currentInputRow].pa != m_yTable[m_currentInputRow+1].pa))
         {
-        w = m_yTable[m_currentOutputRow].wb;
+        w = m_yTable[m_currentInputRow].wb;
         for (int i=0; i < m_outSize.x; i++)
             *outBufB++ = (*inBuf++ * w);
 
@@ -352,7 +355,8 @@ void    DoResize()
 
 };      // Resizer
 
-#define DEBUG_IMAGES
+
+//#define DEBUG_IMAGES
 #ifdef DEBUG_IMAGES
 static void writeImageFile (Byte const* data, uint32_t width, uint32_t height, char* name, int32_t bytesPerPixel)
     {
