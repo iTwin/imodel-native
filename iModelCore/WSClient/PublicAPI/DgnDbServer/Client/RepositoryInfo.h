@@ -34,9 +34,9 @@ private:
     RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 //__PUBLISH_SECTION_START__
 public:
-    //__PUBLISH_SECTION_END__
-    RepositoryInfo();
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
 
+    //__PUBLISH_SECTION_END__
     bool operator==(RepositoryInfoCR rhs) const;
     static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
     //__PUBLISH_SECTION_START__
