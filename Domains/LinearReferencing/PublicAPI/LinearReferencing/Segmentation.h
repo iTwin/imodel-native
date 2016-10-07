@@ -32,13 +32,13 @@ private:
     LinearSegment() :  m_startDistanceAlong(0), m_stopDistanceAlong(0), 
         m_linearlyLocatedId(Dgn::DgnElementId()), m_linearlyLocatedClassId(Dgn::DgnClassId()), m_locationId(LinearlyReferencedLocationId()) {}
 
-    LinearSegment(Dgn::DgnElementId linearlyLocatedId, Dgn::DgnClassId linearlyLocatedClassId, double startDistanceAlong, double stopDistanceAlong, 
+public:
+    LinearSegment(Dgn::DgnElementId linearlyLocatedId, Dgn::DgnClassId linearlyLocatedClassId, double startDistanceAlong, double stopDistanceAlong,
         LinearlyReferencedLocationId locationId) :
         m_linearlyLocatedId(linearlyLocatedId), m_linearlyLocatedClassId(linearlyLocatedClassId),
         m_startDistanceAlong(startDistanceAlong), m_stopDistanceAlong(stopDistanceAlong), m_locationId(locationId)
         {}
 
-public:
     LinearSegment(ILinearlyLocatedCR linearlyLocated, double startDistanceAlong, double stopDistanceAlong):
         m_linearlyLocatedId(linearlyLocated.ToElement().GetElementId()), m_linearlyLocatedClassId(linearlyLocated.ToElement().GetElementClassId()),
         m_startDistanceAlong(startDistanceAlong), m_stopDistanceAlong(stopDistanceAlong), m_locationId(LinearlyReferencedLocationId())
