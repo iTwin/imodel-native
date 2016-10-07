@@ -30,9 +30,7 @@ typedef std::shared_ptr<ITaskScheduler> ITaskSchedulerPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE IBuddiClient
     {
-    virtual ~IBuddiClient()
-        {}
-
+    virtual ~IBuddiClient() {}
     virtual AsyncTaskPtr<BuddiRegionsResult> GetRegions() = 0;
     virtual AsyncTaskPtr<BuddiUrlResult> GetUrl(Utf8StringCR urlName, uint32_t regionId = 0) = 0;
     };
