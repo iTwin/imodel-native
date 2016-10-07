@@ -317,9 +317,11 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int32_t  roundToMultipleOfTwo (int32_t value)
     {
-    int32_t rounded = 2;
+    static          double  s_closeEnoughRatio = .85;       // Don't round up if already within .85 of value.
+    int32_t         rounded = 2;
+    int32_t         closeEnoughValue = (int32_t) ((double) value * s_closeEnoughRatio);
     
-    while (rounded < value && rounded < 0x01000000)
+    while (rounded < closeEnoughValue && rounded < 0x01000000)
         rounded <<= 1;
 
     return rounded;
@@ -1084,6 +1086,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
         }
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1106,8 +1109,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
-    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
-    range = contentRange;
+    range = contentRange = DRange3d::FromIntersection (tile.GetTileRange(), publishedRange, true);
 
     if (!tile.GetChildren().empty())
         {
