@@ -46,14 +46,14 @@ namespace RealityServicesCli
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              5/2016
     //=====================================================================================
-    class FtpTraversalObserverWrapper : public RealityPlatform::IWebResourceTraversalObserver
+    class FtpTraversalObserverWrapper : public RealityPlatform::ISpatialEntityTraversalObserver
         {
         public:
             FtpTraversalObserverWrapper(gcroot<IFtpTraversalObserverWrapper^> managedFtpObserver);
 
             virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
             virtual void OnFileDownloaded(Utf8CP file);
-            virtual void OnDataExtracted(RealityPlatform::WebResourceDataCR data);
+            virtual void OnDataExtracted(RealityPlatform::SpatialEntityDataCR data);
 
         private:
             gcroot<IFtpTraversalObserverWrapper^> m_managedFtpObserver;
@@ -168,7 +168,7 @@ namespace RealityServicesCli
             ~FtpDataWrapper();
             !FtpDataWrapper();
 
-            RealityPlatform::WebResourceDataPtr* m_pData;
+            RealityPlatform::SpatialEntityDataPtr* m_pData;
         };
 
     //=====================================================================================
@@ -213,7 +213,7 @@ namespace RealityServicesCli
             ~FtpThumbnailWrapper();
             !FtpThumbnailWrapper();
 
-            RealityPlatform::WebResourceThumbnailPtr* m_pThumbnail;
+            RealityPlatform::SpatialEntityThumbnailPtr* m_pThumbnail;
         };
 
     //=====================================================================================
@@ -254,7 +254,7 @@ namespace RealityServicesCli
             ~FtpMetadataWrapper();
             !FtpMetadataWrapper();
 
-            RealityPlatform::WebResourceMetadataPtr* m_pMetadata;
+            RealityPlatform::SpatialEntityMetadataPtr* m_pMetadata;
         };
 
     //=====================================================================================
@@ -315,6 +315,6 @@ namespace RealityServicesCli
             ~FtpServerWrapper();
             !FtpServerWrapper();
 
-            RealityPlatform::WebResourceServerPtr* m_pServer;
+            RealityPlatform::SpatialEntityServerPtr* m_pServer;
         };
     }

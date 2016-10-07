@@ -22,15 +22,29 @@
         </Bindings>
     </Part>
     
-    <Part Name="FtpTraverser" BentleyBuildMakeFile="RealityPlatform\FtpTraverser\FtpTraverser.mke">
+    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke">
+        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityAdmin$(stlibext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="FtpTraverser" BentleyBuildMakeFile="RealityAdmin\FtpTraverser\FtpTraverser.mke">
         <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
         <Bindings>
             <Assemblies>Delivery/FtpTraverser.exe</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityPlatform\AwsTraverser\AwsTraverser.mke">
+    <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityAdmin\AwsTraverser\AwsTraverser.mke">
         <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
         <Bindings>
             <Assemblies>Delivery/AwsTraverser.exe</Assemblies>
         </Bindings>
@@ -89,19 +103,21 @@
         </Bindings>
     </Part>
 
-    <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityPlatform\Example\ConversionToolsTester.mke">
+    <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
+        <SubPart PartName="RealityAdmin"/>
         <Bindings>
             <Assemblies>Delivery/ConversionToolsTester.exe</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
+    <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityAdmin\Example\DataHandlerTool.mke">
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform" />
+        <SubPart PartName="RealityAdmin"/>
         <Bindings>
             <Assemblies>Delivery/DataHandlerTool.exe</Assemblies>
         </Bindings>
@@ -109,17 +125,20 @@
     
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
-        <SubPart PartName="ConversionToolsTester"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
-        <SubPart PartName="DataHandlerTool" />
         <!--<SubPart PartName="RealityServicesNet"/>-->
+        <!--<SubPart PartName="RealityCrawler"/>-->
+    </Part>
+    
+    <Part Name="RealityAdmin-Applications">
+        <SubPart PartName="ConversionToolsTester"/>
+        <!--<SubPart PartName="DataHandlerTool" />-->
         <SubPart PartName="FtpTraverser"/>
         <SubPart PartName="AwsTraverser"/>
-        <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
@@ -254,6 +273,7 @@
     
     <Product Name="RealityModFramework">
         <SubPart PartName="Reality-Examples"/>
+        <SubPart PartName="RealityAdmin-Applications"/>
         <SubPart PartName="RealityDbECPluginCNuGet"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />

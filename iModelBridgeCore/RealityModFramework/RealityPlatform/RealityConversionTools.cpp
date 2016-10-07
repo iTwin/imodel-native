@@ -12,12 +12,12 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*----------------------------------------------------------------------------------**//**
-* Fills a bvector with WebResourceData objects, created with data extracted from JSON
+* Fills a bvector with SpatialEntityData objects, created with data extracted from JSON
 * Currently parses JSON for Name, DataType, Provider, Date, Size, Resolution and Footprint
 * None of these fields are guaranteed, and should be validated by the user 
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToWebResourceData(Utf8CP data, bvector<WebResourceDataPtr>* outData)
+StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bvector<SpatialEntityDataPtr>* outData)
     {
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
@@ -45,7 +45,7 @@ StatusInt RealityConversionTools::JsonToWebResourceData(Utf8CP data, bvector<Web
 
         const Json::Value properties = instance["properties"];
 
-        WebResourceDataPtr data = WebResourceData::Create();
+        SpatialEntityDataPtr data = SpatialEntityData::Create();
 
         // Name
         if (properties.isMember("Name") && !properties["Name"].isNull())
@@ -61,10 +61,10 @@ StatusInt RealityConversionTools::JsonToWebResourceData(Utf8CP data, bvector<Web
 
         // Date
         if (properties.isMember("Date") && !properties["Date"].isNull())
-        {
+            {
             DateTime::FromString(date, properties["Date"].asCString());
             data->SetDate(date);
-        }
+            }
 
         //Size
         if(properties.isMember("FileSize") && !properties["FileSize"].isNull())
@@ -129,20 +129,20 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError)
-{
+    {
     RealityPackage::RealityPackageStatus status = RealityPackage::RealityPackageStatus::UnknownError;
 
     RealityPackage::RealityDataPackagePtr package = RealityPackage::RealityDataPackage::CreateFromFile(status, filename, pParseError);
     BeAssert(status == RealityPackage::RealityPackageStatus::Success);
 
     return PackageToDownloadOrder(package);
-}
+    }
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPackage::RealityDataPackagePtr package)
-{
+    {
     bvector<RealityPackage::UriPtr> sisters;
 
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
@@ -150,7 +150,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
     RealityPackage::RealityDataPackage::ImageryGroup files = package->GetImageryGroup();
 
     for (RealityPackage::ImageryDataPtr file : files)
-    {
+        {
         RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
         size_t mirrorCount = file->GetNumSources();
@@ -159,7 +159,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
         WString filename;
         for (size_t i = 0; i < mirrorCount; ++i)
-        {
+            {
             RealityPackage::RealityDataSourceCR mirror = file->GetSource(i);
 
             RealityPackage::UriCR mainFile = mirror.GetUri();
@@ -169,18 +169,17 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
             sisters = mirror.GetSisterFiles();
             for (RealityPackage::UriPtr sister : sisters)
-            {
-                if (sister->GetSource().length() > 0)
                 {
+                if (sister->GetSource().length() > 0)
+                    {
                     RealityDataDownload::ExtractFileName(filename, sister->ToString());
                     sfVector.push_back(std::make_pair(sister->ToString(), filename));
+                    }
                 }
-            }
             mVector.push_back(sfVector);
 
-        }
+            }
         downloadOrder.push_back(mVector);
-    }
-
+        }
     return downloadOrder;
-}
+    }

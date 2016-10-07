@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/StdAfx.h $
+|     $Source: RealityAdmin/StdAfx.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -44,5 +44,5 @@ USING_NAMESPACE_IMAGEPP
 // #endif
 
 #include <RealityPlatform/RealityPlatformApi.h>
-//#include <RealityPlatform/RealityPlatformUtil.h>
-//#include "RealityPlatformAdmins.h"
+#include "RealityPlatformUtil.h"
+#include "RealityPlatformAdmins.h"
