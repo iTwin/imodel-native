@@ -127,10 +127,9 @@ DataSourceStatus DataSourceAccountCURL::setAccount(const AccountName & account, 
 
 void DataSourceAccountCURL::setPrefixPath(const DataSourceURL &prefix)
     {
-    DataSourceURL url(prefix);
-    // &&RB TODO
-
-    DataSourceAccount::setPrefixPath(url);
+    // Default is local or network files
+    isLocalOrNetworkAccount = true;
+    DataSourceAccount::setPrefixPath(prefix);
     }
 
 
@@ -145,6 +144,11 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 
 DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
+    if (isLocalOrNetworkAccount)
+        {
+        url = L"file:///" + url;
+        }
+
     struct CURLHandle::CURLDataMemoryBuffer buffer;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
@@ -178,10 +182,13 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     {
     if (isLocalOrNetworkAccount)
         {
+#ifndef NDEBUG
         BeFileName file(url.c_str());
         assert(false == file.DoesPathExist()); // file should not exist
+#endif
         url = L"file:///" + url;
         }
+
     struct CURLHandle::CURLDataMemoryBuffer buffer;
     buffer.data = source;
     buffer.size = size;
