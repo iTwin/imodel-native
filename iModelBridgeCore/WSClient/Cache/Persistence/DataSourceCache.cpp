@@ -1500,7 +1500,7 @@ ICancellationTokenPtr ct
             }
 
         if (nullptr != partialCachingState &&
-            SUCCESS != m_state->GetCachedResponseManager().DeleteFullResponsesContainingInstances(partialCachingState->GetOverriddenFullInstances()))
+            SUCCESS != m_state->GetCachedResponseManager().InvalidateFullResponsePagesContainingInstances(partialCachingState->GetOverriddenFullInstances()))
             {
             return ERROR;
             }
