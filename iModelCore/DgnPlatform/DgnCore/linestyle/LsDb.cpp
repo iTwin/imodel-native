@@ -695,7 +695,7 @@ HANDLER_DEFINE_MEMBERS(LineStyleHandler);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
+DgnStyleId DgnImportContext::_RemapLineStyleId(DgnStyleId sourceId)
     {
     if (!IsBetweenDbs())
         return sourceId;

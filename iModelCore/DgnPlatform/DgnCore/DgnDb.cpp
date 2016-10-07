@@ -394,7 +394,7 @@ DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
+DgnClassId DgnImportContext::_RemapClassId(DgnClassId source)
     {
     if (!IsBetweenDbs())
         return source;
