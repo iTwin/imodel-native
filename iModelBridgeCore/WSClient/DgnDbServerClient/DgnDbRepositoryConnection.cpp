@@ -11,6 +11,7 @@
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <DgnDbServer/Client/Logging.h>
+#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -413,6 +414,9 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
     return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
         {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterCreateNewServerFile);
+#endif
         if (!fileCreationResult.IsSuccess())
             {
             finalResult->SetError(fileCreationResult.GetError());
@@ -435,6 +439,9 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
 
         UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
             {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterUploadServerFile);
+#endif
             if (!uploadResult.IsSuccess())
                 {
                 finalResult->SetError(uploadResult.GetError());
@@ -565,6 +572,9 @@ BeBriefcaseId                  briefcaseId
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
         result = m_repositoryInfo.WriteRepositoryInfo (*db, briefcaseId);
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterWriteRepositoryInfo);
+#endif
         db->CloseDb ();
         }
     else
@@ -2688,6 +2698,9 @@ ICancellationTokenPtr           cancellationToken
     return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), callback, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& initializePushResult)
         {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterCreateRevisionRequest);
+#endif
         if (!initializePushResult.IsSuccess())
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, initializePushResult.GetError().GetMessage().c_str());
@@ -2706,6 +2719,9 @@ ICancellationTokenPtr           cancellationToken
             m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetChangeStreamFile(), callback, cancellationToken)
                 ->Then([=] (const WSUpdateObjectResult& uploadRevisionResult)
                 {
+#if defined (ENABLE_BIM_CRASH_TESTS)
+                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterUploadRevisionFile);
+#endif
                 if (!uploadRevisionResult.IsSuccess())
                     {
                     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, uploadRevisionResult.GetError().GetMessage().c_str());
