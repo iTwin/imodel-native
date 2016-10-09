@@ -458,7 +458,7 @@ virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR dgnDb, TileGe
                     {
                     TileTextureImagePtr     tileTexture = TileTextureImage::Create(publishTexture->m_source);
                     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
-                    builder = TileMeshBuilder::Create(displayParams, 0.0);
+                    builder = TileMeshBuilder::Create(displayParams, 0.0, 0.0);
 
                     builderMap.Insert(publishTexture, builder);
                     }
