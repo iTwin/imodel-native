@@ -143,12 +143,13 @@ protected:
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
-    BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
+    mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     DgnQueryQueue m_queryQueue;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
+    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
@@ -166,7 +167,7 @@ public:
     DgnDb();
     virtual ~DgnDb();
 
-    //! Get ae BeFileName for this DgnDb.
+    //! Get the BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
     BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
