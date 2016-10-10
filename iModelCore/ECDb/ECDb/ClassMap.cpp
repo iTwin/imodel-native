@@ -373,6 +373,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
     if (isImportingSchemas)
         GetColumnFactoryR().Update();
 
+    std::vector<PropertyMapPtr> failedPropertyList;
     for (ECPropertyCP property : propertiesToCreatePropMapsFor)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
@@ -392,35 +393,37 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             {
             if (ERROR == propMap->Load(*dbClassMapLoadContext))
                 {
-                //ECSchema Upgrade
-                GetColumnFactoryR().Update();
-                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
-                    {
-                    BeAssert(false);
-                    return MappingStatus::Error;
-                    }
-                //! ECSchema update added new property for which we need to save property map
-                DbMapSaveContext ctx(GetECDbMap().GetECDb());
-                //First make sure table is updated on disk. The table must already exist for this operation to work.
-                if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
-                    {
-                    BeAssert(false && "Failed to save table");
-                    return MappingStatus::Error;
-                    }
-
-                ctx.BeginSaving(*this);
-                DbClassMapSaveContext classMapContext(ctx);
-                propMap->Save(classMapContext);
-                ctx.EndSaving(*this);
-                //!WIP save this property map
-                //BeAssert(false);
-
-                //we need to save this map
+                failedPropertyList.push_back(propMap);
                 }
             }
 
+
         if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
             return MappingStatus::Error;
+        }
+
+    //! Following might mess up order of property but that may be fine.
+    for (PropertyMapPtr& failedProperty : failedPropertyList)
+        {
+        GetColumnFactoryR().Update();
+        if (SUCCESS != failedProperty->FindOrCreateColumnsInTable(*this))
+            {
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
+        //! ECSchema update added new property for which we need to save property map
+        DbMapSaveContext ctx(GetECDbMap().GetECDb());
+        //First make sure table is updated on disk. The table must already exist for this operation to work.
+        if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*failedProperty->GetTable()) != SUCCESS)
+            {
+            BeAssert(false && "Failed to save table");
+            return MappingStatus::Error;
+            }
+
+        ctx.BeginSaving(*this);
+        DbClassMapSaveContext classMapContext(ctx);
+        failedProperty->Save(classMapContext);
+        ctx.EndSaving(*this);
         }
 
     return MappingStatus::Success;
