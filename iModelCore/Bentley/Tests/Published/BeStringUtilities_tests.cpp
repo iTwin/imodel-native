@@ -1345,18 +1345,18 @@ TEST(BeStringUtilitiesTests, CharToPointer)
     if (sizeof(void*) == 8)
         {
         void* ptr = BeStringUtilities::WCharToPointer(L"0x1122334455667788");
-        ASSERT_EQ(0x1122334455667788, (uintptr_t)ptr);
+        EXPECT_EQ(0x1122334455667788, (uintptr_t)ptr);
 
         ptr = BeStringUtilities::Utf8ToPointer("0x1122334455667788");
-        ASSERT_EQ(0x1122334455667788, (uintptr_t)ptr);
+        EXPECT_EQ(0x1122334455667788, (uintptr_t)ptr);
         }
     else if (sizeof(void*) == 4)
         {
         void* ptr = BeStringUtilities::WCharToPointer(L"0x11223344");
-        ASSERT_EQ(0x11223344, (uintptr_t)ptr);
+        EXPECT_EQ(0x11223344, (uintptr_t)ptr) << Utf8PrintfString("ptr value=%x", (unsigned)(uintptr_t)ptr).c_str();
 
         ptr = BeStringUtilities::Utf8ToPointer("0x11223344");
-        ASSERT_EQ(0x11223344, (uintptr_t)ptr);
+        EXPECT_EQ(0x11223344, (uintptr_t)ptr) << Utf8PrintfString("ptr value=%x", (unsigned)(uintptr_t)ptr).c_str();
         }
     else
         {

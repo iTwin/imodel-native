@@ -2317,7 +2317,7 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
         return NULL;
 
     uintptr_t v;
-    swscanf (inWChar, L"%" SCNxPTR, &v);
+    BE_STRING_UTILITIES_SWSCANF(inWChar, L"%" SCNxPTR, &v);
     return (void*)v;
     }
 
