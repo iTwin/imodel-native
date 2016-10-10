@@ -152,6 +152,25 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
+    StopWatch timer(true);
+    const BentleyStatus stat = DoImportECSchemas(schemas);
+    timer.Stop();
+    if (SUCCESS == stat)
+        {
+        LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
+        }
+
+    m_ecdb.ClearECDbCache();
+    m_ecdb.FireAfterECSchemaImportEvent();
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                     06/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas) const
+    {
     if (m_ecdb.IsReadonly())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
@@ -164,24 +183,6 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
         return ERROR;
         }
 
-    StopWatch timer(true);
-    const BentleyStatus stat = DoImportECSchemas(schemas);
-    timer.Stop();
-    if (SUCCESS == stat)
-        {
-        LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
-        STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
-        }
-
-    m_ecdb.ClearECDbCache();
-    return stat;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                     06/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas) const
-    {
     BeMutexHolder lock(m_criticalSection);
 
     if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)

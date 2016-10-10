@@ -95,6 +95,8 @@ protected:
     ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction& func) const override;
 #endif
 
+    virtual void _OnAfterECSchemaImport() const {}
+
 public:
     //! This method @b must be called once per process before any other ECDb method is called.
     //! @remarks This method is a convenience wrapper around the individual initialization routines
@@ -151,6 +153,7 @@ public:
     //! Clears the ECDb cache (not exported until we decided whether we need consumers to call it directly or not)
     void ClearECDbCache() const;
     Impl& GetECDbImplR() const;
+    void FireAfterECSchemaImportEvent() const { _OnAfterECSchemaImport(); }
 #endif
 };
 
