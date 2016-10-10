@@ -31,6 +31,8 @@ SmCachedDisplayTexture* cachedTexture)
                        reinterpret_cast <FloatXY*> (params), textureId,/*QV_QTMESH_GENNORMALS*/0);
     qv_endElement(qvCachedDisplayMesh->m_qvElem);
 
+    if (nbTriangles == 0) qvCachedDisplayMesh->m_qvElem = 0;
+
     cachedDisplayMesh = qvCachedDisplayMesh.release();
 
     return SUCCESS;

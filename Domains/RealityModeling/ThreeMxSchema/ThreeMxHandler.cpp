@@ -7,8 +7,21 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
 
+#include <WebServices/Client/WSClient.h>
+#include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Connect/Authentication.h>
+#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectSetup.h>
+#include <WebServices/Connect/ConnectSpaces.h>
+
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Licensing/UsageTracking.h>
+
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 
@@ -70,8 +83,32 @@ ThreeMxScenePtr      ThreeMxModel::ReadScene (BeFileNameR fileName, DgnDbR db, U
     ThreeMxScenePtr     scene;
     Transform           transform;
     DRange3d            range;
+    Utf8String          authToken;
 
-    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
+
+    Utf8String tempFileName;
+    BeStringUtilities::WCharToUtf8(tempFileName, fileName);
+
+    MRMeshFileName meshFileName(tempFileName);
+    
+    
+    // Stream-X connection always requires the CONNECT token of the one logged-in
+    if (meshFileName.IsS3MXUrl())
+        {
+        Utf8String          cacheToken;
+        SamlTokenPtr cacheTokenPtr = ConnectAuthenticationPersistence::GetShared()->GetToken();
+        if (cacheTokenPtr != nullptr && !cacheTokenPtr->IsEmpty())
+            cacheToken = cacheTokenPtr->AsString();
+
+        Utf8String stsToken;
+        stsToken = "Token ";
+
+        authToken = stsToken.append(cacheToken).c_str();
+        }
+
+
+
+	if (SUCCESS != MRMeshUtil::ReadSceneFile(sceneInfo, fileName.c_str(), &authToken) ||
        ! (scene = MRMeshScene::Create (sceneInfo, fileName)).IsValid())
         return nullptr;
 
@@ -91,13 +128,23 @@ DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, Utf8StringCR fileId)
     BeAssert(classId.IsValid());
 
     BeFileName      fileName;
+
+
     
     ThreeMxScenePtr scene = ReadScene (fileName, db, fileId);
     if (! scene.IsValid())
         return DgnModelId();
     
     // Create model in DgnDb
-    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
+    // This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+    // on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+    // DO NOT PORT!	
+    Utf8String tempFileName;
+    BeStringUtilities::WCharToUtf8(tempFileName, fileName);
+
+    MRMeshFileName meshFileName(tempFileName);
+
+    Utf8String modelName(meshFileName.GetFileNameWithoutExtension().c_str());
     ThreeMxModelPtr model = new ThreeMxModel (DgnModel::CreateParams(db, classId, CreateModelCode(modelName)));
 
     model->SetScene (scene);

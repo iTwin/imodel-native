@@ -39,9 +39,14 @@ private :
 public : 
 
     int m_currentQuery;
+    int m_terrainQuery;
+    ClipVectorPtr m_coverageClips;
+    bool m_hasCoverage;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
-
+    bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_terrainMeshNodes;
+    bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_terrainOverviewNodes;
+    BentleyG06::ScalableMesh::IScalableMeshPtr m_smPtr;
 public : 
         
     ScalableMeshDrawingInfo(ViewContextP viewContext)        
@@ -50,6 +55,7 @@ public :
         const DMatrix4d localToView(viewContext->GetLocalToView());     
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
         viewContext->GetViewport()->GetViewCorners(m_low, m_high);
+        m_hasCoverage = false;
         }
 
     ~ScalableMeshDrawingInfo()
@@ -71,7 +77,8 @@ public :
         {                                                                  
         return (0 != memcmp(&smDrawingInfoPtr->m_localToViewTransformation, &m_localToViewTransformation, sizeof(DMatrix4d))) ||
                (0 != memcmp(&smDrawingInfoPtr->m_low, &m_low, sizeof(DPoint3d))) ||
-               (0 != memcmp(&smDrawingInfoPtr->m_high, &m_high, sizeof(DPoint3d)));        
+               (0 != memcmp(&smDrawingInfoPtr->m_high, &m_high, sizeof(DPoint3d))) || m_hasCoverage != smDrawingInfoPtr->m_hasCoverage
+               || m_coverageClips != smDrawingInfoPtr->m_coverageClips;
         }
 
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   

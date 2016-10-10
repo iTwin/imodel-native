@@ -2,7 +2,7 @@
 #
 #     $Source: ThreeMxSchema/ThreeMxSchema.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -89,6 +89,7 @@ $(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchem
 
 $(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
+$(o)MRMeshFileName$(oext)           : $(SrcMrMesh)MRMeshFileName.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
 #   Schema
@@ -123,6 +124,7 @@ DLM_NO_DEF                  = 1
 LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)  \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
