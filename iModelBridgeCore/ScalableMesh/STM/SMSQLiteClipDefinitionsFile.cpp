@@ -344,19 +344,24 @@ void SMSQLiteClipDefinitionsFile::GetAllPolys(bvector<bvector<uint8_t>>& polys, 
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size FROM SMCoverages");
-    DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
-    if (status == BE_SQLITE_DONE)
+    DbResult status;
+    do
         {
-        return;
+        status = stmt->Step();
+        // assert(status == BE_SQLITE_ROW);
+        if (status == BE_SQLITE_DONE)
+            {
+            return;
+            }
+        bvector<uint8_t> coverageData;
+        size_t uncompressedSize;
+        coverageData.resize(stmt->GetValueInt64(1));
+        uncompressedSize = stmt->GetValueInt64(2);
+        memcpy(&coverageData[0], stmt->GetValueBlob(0), coverageData.size());
+        polys.push_back(coverageData);
+        sizes.push_back(uncompressedSize);
         }
-    bvector<uint8_t> coverageData;
-    size_t uncompressedSize;
-    coverageData.resize(stmt->GetValueInt64(1));
-    uncompressedSize = stmt->GetValueInt64(2);
-    memcpy(&coverageData[0], stmt->GetValueBlob(0), coverageData.size());
-    polys.push_back(coverageData);
-    sizes.push_back(uncompressedSize);
+    while (status == BE_SQLITE_ROW);
     }
 
 DbResult SMSQLiteClipDefinitionsFile::CreateTables()
