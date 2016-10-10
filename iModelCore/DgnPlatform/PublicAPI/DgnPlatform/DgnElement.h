@@ -819,6 +819,9 @@ protected:
     bool _ReleaseData() const override {return true;}
     bool _IsMemoryInitialized() const override {return nullptr != m_ahp_data;}
     Byte const * _GetData() const override {return m_ahp_data;}
+    bool _AllowWritingDirectlyToInstanceMemory() const override {return true;}
+    bool _AreAllPropertiesCalculated() const override {return true;}
+    void _SetAllPropertiesCalculated(bool) override { }
     DGNPLATFORM_EXPORT uint32_t _GetBytesAllocated() const override {return m_ahp_bytesAllocated;}
     DGNPLATFORM_EXPORT ECN::ECObjectsStatus _ModifyData(uint32_t offset, void const * newData, uint32_t dataLength) override;
     DGNPLATFORM_EXPORT ECN::ECObjectsStatus _MoveData(uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) override;

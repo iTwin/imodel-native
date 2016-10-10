@@ -1006,7 +1006,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : ECDBuffer(true), m_refCount(0), m_elementId(params.m_id), 
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
     m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ahp_data(nullptr), m_ahp_bytesAllocated(0)
