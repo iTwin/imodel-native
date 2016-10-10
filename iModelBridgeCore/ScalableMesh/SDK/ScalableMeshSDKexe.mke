@@ -9,6 +9,9 @@ baseDir         = $(_MakeFilePath)../
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 consoleAppUnicode = 1
+BUILD_USING_VS2013=1
+VANCOUVER=1
+OPTIMIZE_FOR_SPEED=1
 %include mdl.mki
 
 appName = ScalableMeshSDKexe
@@ -36,7 +39,7 @@ $(o)StmStreamingImporter.obj: $(baseDir)StmStreamingImporter.cpp  ${MultiCompile
 
 
 %include MultiCppCompileGo.mki
-
+certDir             = $(bsiCerts)
 #----------------------------------------------------------------------
 #   Link the executable
 #----------------------------------------------------------------------
@@ -71,6 +74,6 @@ EXE_TMP_DIR  = $(o)
 
 always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
-    ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
-    ~linkfile "$(BuildContext)Delivery/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml"
+#   ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
+#    ~linkfile "$(BuildContext)Delivery/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml"
 
