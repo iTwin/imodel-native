@@ -77,6 +77,8 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
+    bool                    m_allowWritingDirectlyToInstanceMemory;
+    bool                    m_allPropertiesCalculated;
     uint16_t                m_usageBitmask;  // currently only used to round trip Partially Loaded and Hidden flags
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
@@ -121,6 +123,10 @@ protected:
 
                      virtual IECInstanceP       _GetAsIECInstance () const = 0;
 //    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const override;
+
+    virtual bool _AllowWritingDirectlyToInstanceMemory() const override { return m_allowWritingDirectlyToInstanceMemory; }
+    virtual bool _AreAllPropertiesCalculated() const override { return m_allPropertiesCalculated; }
+    virtual void _SetAllPropertiesCalculated(bool allCalculated) override { m_allPropertiesCalculated = allCalculated; }
 
     ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 public:
