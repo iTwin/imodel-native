@@ -1274,6 +1274,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
         ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+        statement.Finalize();
 
         //Verify class and Property accessible using new ECSchemaPrefix
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
@@ -1361,6 +1362,7 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -1605,6 +1607,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -1742,6 +1745,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
 
         //Verify newly added CA
         testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
@@ -1823,6 +1827,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -2016,6 +2021,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty, NewTestProperty FROM ts_modified.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -2127,6 +2133,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         ECValue val;
         ASSERT_EQ(ECObjectsStatus::Success, testCA->GetValue(val, "IsUnique"));
         ASSERT_FALSE(val.GetBoolean());
+        statement.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -5729,16 +5736,17 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass WHERE ReadWriteProp='RW2new'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("P1_Val2new", statement.GetValueText(0));
+    statement.Finalize();
 
     //Verify Delete
     Savepoint sp(GetECDb(), "To Revert Delete Operation");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM ts.TestClass");
 
-    statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Finalize();
 
     sp.Cancel();
 
@@ -5772,18 +5780,18 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P2='P2_Val3new' WHERE P1 = 'P1_Val3'");
 
     //Verify Select
-    statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass WHERE ReadWriteProp='RW3new'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
+    statement.Finalize();
 
     //Verify Delete
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM ts.TestClass");
 
-    statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
+    statement.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -6962,6 +6970,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ModelHasGeometricElements"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
         ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
+        stmt.Finalize();
 
         GetECDb().CloseDb();
         }
@@ -7250,6 +7259,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.UrlLinkDrivesAnnotation3dElement"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
         ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
+        stmt.Finalize();
 
         GetECDb().CloseDb();
         }

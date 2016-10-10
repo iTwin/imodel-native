@@ -592,6 +592,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(4, classA->GetId());
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
     // reopen ECDb
