@@ -614,7 +614,7 @@ void ClassMap::SetTable(ECDbSqlTable& newTable, bool append /*= false*/)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo)
     {
     const bool isJoinedTableMapping = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     const bool isImportingSchemas = classMapInfo != nullptr && loadInfo == nullptr;
@@ -651,6 +651,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap cons
     if (isImportingSchemas)
         GetColumnFactoryR().Update();
 
+    std::vector<PropertyMapPtr> failedPropertyList;
     for (ECPropertyCP property : propertiesToCreatePropMapsFor)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
@@ -670,16 +671,21 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap cons
             {
             if (ERROR == propMap->Load(*loadInfo))
                 {
-                //ECSchema Upgrade
-                GetColumnFactoryR().Update();
-                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
-                    {
-                    BeAssert(false);
-                    return MappingStatus::Error;
-                    }
+                failedPropertyList.push_back(propMap);
                 }
             }
+
         GetPropertyMapsR().AddPropertyMap(propMap);
+        }
+
+    for (PropertyMapPtr& failedProperty : failedPropertyList)
+        {
+        GetColumnFactoryR().Update();
+        if (SUCCESS != failedProperty->FindOrCreateColumnsInTable(*this, classMapInfo))
+            {
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
         }
 
     return MappingStatus::Success;
