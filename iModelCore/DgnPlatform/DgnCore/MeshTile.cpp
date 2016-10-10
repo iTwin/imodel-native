@@ -29,7 +29,7 @@ struct RangeTreeNode
     RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
 };
 
-static const double s_minRangeBoxSize = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
@@ -423,17 +423,25 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
     {
-    BeAssert(3 == visitor.Point().size());
+    auto const&       points = visitor.Point();
+    BeAssert(3 == points.size());
+
+    if (doVertexClustering)
+        {
+        DVec3d      cross;
+
+        cross.CrossProductToPoints (points.at(0), points.at(1), points.at(2));
+        if (cross.MagnitudeSquared() < m_areaTolerance)
+            return;
+        }
 
     Triangle                newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>       params = visitor.Param();
-    JsonRenderMaterial      material;
 
-    if (materialId.IsValid() &&
-        !params.empty() &&
-        SUCCESS == material.Load (materialId, dgnDb))
+    if (!params.empty() &&
+        (m_material.IsValid() || (materialId.IsValid() && SUCCESS == m_material.Load (materialId, dgnDb))))
         {
-        auto const&         patternMap = material.GetPatternMap();
+        auto const&         patternMap = m_material.GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid() &&
@@ -444,7 +452,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(visitor.Point().at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
         newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -464,7 +472,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(visitor.Point().at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
             dupTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -1557,9 +1565,11 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
     {
     static const double s_vertexToleranceRatio = 1.0;
     static const double s_decimateThresholdPixels = 50.0;
+    static const double s_facetAreaToleranceRatio = .25;
 
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
+    double facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
 
     // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
@@ -1571,6 +1581,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
     MeshBuilderMap builderMap;
     size_t geometryCount = 0;
     DRange3d myTileRange = GetTileRange();
+    size_t      maxPointCount = 0, pointTotal = 0;
 
     for (auto& geom : processor.GetGeometries())
         {
@@ -1592,7 +1603,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
         if (builderMap.end() != found)
             meshBuilder = found->second;
         else
-            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance);
+            builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
 
         bool isContained = geomRange.IsContained(myTileRange);
         bool doVertexClustering = geom->IsPolyface() ||  rangePixels < s_decimateThresholdPixels;
@@ -1602,6 +1613,12 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
 
         if (polyface.IsValid())
             {
+            size_t  pointCount  =  polyface->Point().size();
+
+            if (pointCount > maxPointCount)
+                maxPointCount = pointCount;
+
+            pointTotal += pointCount;
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 {
                 if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))

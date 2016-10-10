@@ -107,6 +107,7 @@ public:
 
 
         TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
+
     }; // TextureMap
 
     DGNPLATFORM_EXPORT BentleyStatus Relocate(DgnImportContext& context);
@@ -120,6 +121,8 @@ public:
     DGNPLATFORM_EXPORT void SetColor(Utf8CP name, RgbFactor);
     Json::Value& GetValueR() {return m_value;}
     Json::Value const& GetValue() const {return m_value;}
+    bool IsValid() const {return !m_value.isNull();}
+
     DGNPLATFORM_EXPORT TextureMap GetPatternMap();
 };
 

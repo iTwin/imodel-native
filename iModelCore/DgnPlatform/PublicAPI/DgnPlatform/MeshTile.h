@@ -249,12 +249,14 @@ private:
     VertexMap               m_unclusteredVertexMap;
     TriangleSet             m_triangleSet;
     double                  m_tolerance;
+    double                  m_areaTolerance;
     size_t                  m_triangleIndex;
+    JsonRenderMaterial      m_material;
 
-    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap (VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_triangleIndex(0) { }
+    TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap (VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+            m_tolerance(tolerance), m_areaTolerance (areaTolerance), m_triangleIndex(0) { }
 public:
-    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance) { return new TileMeshBuilder(params, tolerance); }
+    static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
     DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
