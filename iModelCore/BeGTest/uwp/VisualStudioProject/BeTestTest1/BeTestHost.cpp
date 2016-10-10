@@ -93,9 +93,18 @@ void BeTestHost::_GetFrameworkSqlangFiles(BeFileName& path)
     path.AppendToPath(TEST_FRAMEWORK_SQLANG); // This macro is defined by buildGtest.mke
 }
 
+typedef void(*TArgFunc)();
 void* BeTestHost::_InvokeP (char const* requestId, void* args)  
     {
-    if (0 == strcmp (requestId, "getUiThreadDispatcher"))
+    if (0 == strcmp (requestId, "executeOnUiThread"))
+        {
+        TArgFunc func = (TArgFunc)(args);
+        ExecuteOnUiThread (ref new DispatchedHandler ([=]()
+            {
+            func();
+            }));
+        }
+    else if (0 == strcmp (requestId, "getUiThreadDispatcher"))
         {
         Windows::UI::Core::CoreDispatcher^ dispatcher = nullptr;
         ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
