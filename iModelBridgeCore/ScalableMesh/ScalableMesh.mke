@@ -44,7 +44,7 @@ always:
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
 #Uncomment this to allow generating design meshes
-#CCompOpts + -DWIP_MESH_IMPORT
+CCompOpts + -DWIP_MESH_IMPORT
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -283,6 +283,12 @@ $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderD
 $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.h ${MultiCompileDepends}
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteDiffsetFile$(oext) : $(stmDir)SMSQLiteDiffsetFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteDiffsetFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteClipDefinitionsFile$(oext) : $(stmDir)SMSQLiteClipDefinitionsFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteClipDefinitionsFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteFeatureFile$(oext) : $(stmDir)SMSQLiteFeatureFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFeatureFile.h ${MultiCompileDepends}
 
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
 

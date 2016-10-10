@@ -73,7 +73,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                           bool                                                                     loadTexture, 
-                                          const bvector<bool>&                                                     clipVisibilities) = 0; 
+                                          const bvector<bool>&                                                     clipVisibilities,
+                                          IScalableMeshPtr&                                                        smPtr) = 0;
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const = 0;
@@ -98,7 +99,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                                    const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                                    bool                                                                     loadTexture, 
-                                                   const bvector<bool>&                                                     clipVisibilities); 
+                                                   const bvector<bool>&                                                     clipVisibilities,
+                                                   IScalableMeshPtr&                                                        smPtr);
 
         BENTLEY_SM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                          int                                                   queryId);

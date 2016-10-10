@@ -14,8 +14,9 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
     switch (dataType)
         {
         case SMStoreDataType::LinearFeature:
+        case SMStoreDataType::Graph:
             {
-            assert(!m_smSQLiteFile.IsValid()); // Must have a valid SQLite database 
+            assert(m_smSQLiteFile.IsValid()); // Must have a valid SQLite database 
             Utf8String dbFileName;
             bool result = m_smSQLiteFile->GetFileName(dbFileName);
             assert(result == true);
@@ -34,6 +35,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
+        case SMStoreDataType::Coverage:
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
@@ -78,6 +80,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     switch (dataType)
         {
         case SMStoreDataType::LinearFeature:
+        case SMStoreDataType::Graph:
             {
             if (!m_smFeatureSQLiteFile.IsValid())
                 {
@@ -85,9 +88,9 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
                 _wremove(sqlFileName.c_str());
-
-                m_smFeatureSQLiteFile = new SMSQLiteFile();
-                m_smFeatureSQLiteFile->Create(sqlFileName);
+                StatusInt status;
+                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
+                m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
                 }
 
             sqlFilePtr = m_smFeatureSQLiteFile;
@@ -102,11 +105,11 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
                 StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
+                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
 
                 if (status == 0)
                     {
-                    m_smClipSQLiteFile->Create(sqlFileName);
+                    m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
                     }
                 }
 
@@ -116,6 +119,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
         case SMStoreDataType::ClipDefinition:
         case SMStoreDataType::Skirt:
+        case SMStoreDataType::Coverage:
             {
             if (!m_smClipDefinitionSQLiteFile.IsValid())
                 {
@@ -123,11 +127,11 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
                 StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
+                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
 
                 if (status == 0)
                     {
-                    m_smClipDefinitionSQLiteFile->Create(sqlFileName);
+                    m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
                     }
                 }
 

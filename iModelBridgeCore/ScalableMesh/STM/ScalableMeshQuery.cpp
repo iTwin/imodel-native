@@ -2448,6 +2448,17 @@ bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Valu
     {
     return _IntersectRay(pt, ray, retrievedMetadata);
     }
+
+void IScalableMeshNode::GetAllSubMeshes(bvector<IScalableMeshMeshPtr>& meshes, bvector<uint64_t>& texIDs) const
+    {
+    return _GetAllSubMeshes(meshes,texIDs);
+    }
+
+IScalableMeshTexturePtr IScalableMeshNode::GetTexture(uint64_t texID) const
+    {
+    return _GetTexture(texID);
+    }
+
 #endif
 
 bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
@@ -2510,14 +2521,14 @@ StatusInt  IScalableMeshNodeEdit::SetContentExtent(DRange3d& extent)
     }
 
 /*=========================IScalableMeshCachedDisplayNode===============================*/
-StatusInt IScalableMeshCachedDisplayNode::GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const
     {
-    return _GetCachedMesh(cachedMesh);
+    return _GetCachedMeshes(cachedMesh, textureIds);
     }
 
-StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const
     {
-    return _GetCachedTexture(cachedTexture);
+    return _GetCachedTextures(cachedTexture, textureIds);
     }
 
 StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const

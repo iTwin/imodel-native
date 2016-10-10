@@ -358,6 +358,13 @@ IScalableMeshNodePtr IScalableMesh::GetRootNode()
     return _GetRootNode();
     }
 
+#ifdef WIP_MESH_IMPORT
+void  IScalableMesh::GetAllTextures(bvector<IScalableMeshTexturePtr>& textures)
+    {
+    return _GetAllTextures(textures);
+    }
+#endif
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -367,6 +374,26 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
 int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const
     {
     return _ConvertToCloud(outContainerName, outDatasetName, server);
+    }
+
+BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+    {
+    return _CreateCoverage(coverageData, id);
+    }
+
+void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
+    {
+    return _GetAllCoverages(coverageData);
+    }
+
+void IScalableMesh::ImportTerrainSM(WString terrainPath)
+    {
+    return _ImportTerrainSM(terrainPath);
+    }
+
+IScalableMeshPtr IScalableMesh::GetTerrainSM()
+    {
+    return _GetTerrainSM();
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -819,19 +846,27 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            if (m_scmIndexPtr->IsTerrain())
-                {
+            
+            BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
-                BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-
-                bool result = dataStore->SetProjectFilesPath(projectFilesPath);
-                assert(result == true);
-
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+            assert(result == true);
                                                                  
-                ClipRegistry* registry = new ClipRegistry(dataStore);
-                m_scmIndexPtr->SetClipRegistry(registry);
+            ClipRegistry* registry = new ClipRegistry(dataStore);
+            m_scmIndexPtr->SetClipRegistry(registry);
+            
+            if (!m_scmIndexPtr->IsTerrain())
+                {
+                WString newPath = m_path + L"_terrain.3sm";
+                Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain";
+                StatusInt openStatus;
+                SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+                if (smSQLiteFile != nullptr)
+                    {
+                    m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
+                    m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+                    }
                 }
-
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1265,7 +1300,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     return DTM_SUCCESS;
     }
 
-DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP) 
+    DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {
     //find the highest resolution that has less than 5M points
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
@@ -1311,7 +1346,7 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
     TerrainModel::BcDTMPtr dtm;
     DTMStatusInt val = meshP->GetAsBcDTM(dtm);
     if (val == DTM_ERROR) return val;
-    val = dtm->ExportToGeopakTinFile(fileNameP);
+    val = dtm->ExportToGeopakTinFile(fileNameP, transformation);
     return val;
     }
 
@@ -1906,6 +1941,28 @@ return  ScalableMeshNode<POINT>::CreateItem(nodeP);
     }
 
 
+#ifdef WIP_MESH_IMPORT
+template <class POINT> void ScalableMesh<POINT>::_GetAllTextures(bvector<IScalableMeshTexturePtr>& textures)
+    {
+    size_t nTextures = m_smSQLitePtr->CountTextures();
+    textures.resize(nTextures);
+
+    auto meshNode = dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>(m_scmIndexPtr->GetRootNode().GetPtr());
+    for (size_t i = 1; i <= nTextures; ++i)
+        {
+        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTexturePtr(i));
+
+        if (texPtr.IsValid())
+            {
+            ScalableMeshTexturePtr textureP(ScalableMeshTexture::Create(texPtr));
+
+            if (textureP->GetSize() != 0)
+                textures[i-1] = IScalableMeshTexturePtr(textureP.get());
+            }
+        }
+    }
+#endif
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_RemoveClip
 +----------------------------------------------------------------------------*/
@@ -2064,6 +2121,48 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     //s_stream_from_grouped_store = false;
 
     return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
+    }
+
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+    {
+    if (m_scmTerrainIndexPtr == nullptr) return ERROR;
+    AddClip(coverageData.data(), coverageData.size(), id);
+
+    DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
+    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
+    return SUCCESS;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
+    {
+    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
+    }
+
+template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
+    {
+    return m_terrainP;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)
+    {
+    StatusInt status;
+    m_terrainP = IScalableMesh::GetFor(terrainPath.c_str(), false, true, status);
+    if (status != SUCCESS) return;
+    auto nodeP = m_terrainP->GetRootNode();
+
+    //create terrain index
+    auto pool = SMMemoryPool::GetInstance();
+    auto store = m_scmIndexPtr->GetDataStore();
+    m_scmTerrainIndexPtr = new MeshIndexType(store,
+                                        pool,
+                                   10000,
+                                   dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get())->GetNodePtr()->GetFilter(),
+                                   true, true, true,
+                                   dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher2_5d(),
+                                   dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher3d()
+                                   );
+    auto rootNodeP = m_scmTerrainIndexPtr->CreateRootNode();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(rootNodeP.GetPtr())->ImportTreeFrom(nodeP);
     }
 
 #ifdef SCALABLE_MESH_ATP

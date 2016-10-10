@@ -449,11 +449,16 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
+    <ClInclude Include="STM\SharedTextureManager.h" />
+    <ClInclude Include="STM\SmCachedDisplayData.h" />
     <ClInclude Include="STM\SMDataSourceParams.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
     <ClInclude Include="STM\SMNodeGroup.h" />
+    <ClInclude Include="STM\SMSQLiteClipDefinitionsFile.h" />
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteDiffsetFile.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteFeatureFile.h" />
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFile.h" />
     <ClInclude Include="STM\Edits\ClipRegistry.h" />
@@ -629,6 +634,9 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\SMMemoryPool.cpp" />
     <ClCompile Include="STM\SMMeshIndex.cpp" />
     <ClCompile Include="STM\SMPointIndex.cpp" />
+    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp" />
+    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp" />
+    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp" />
     <ClCompile Include="STM\SMSQLiteFile.cpp" />
     <ClCompile Include="STM\Edits\ClipUtilities.cpp" />
     <ClCompile Include="STM\Edits\DifferenceSet.cpp" />

@@ -93,7 +93,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     {                   
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::Coverage)
         {
         sqlFilePtr = GetSisterSQLiteFile(dataType);
         }
@@ -148,8 +148,15 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {                        
-    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, m_smSQLiteFile);
+    {                    
+    SMSQLiteFilePtr sqliteFilePtr;
+
+
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph);
+        assert(sqliteFilePtr.IsValid() == true);
+
+
+        dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
                     
     return true;    
     }
@@ -344,6 +351,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             m_smSQLiteFile->StoreMetadata(id, nodeData, countData*sizeof(DATATYPE));
             break;
 #endif
+        case SMStoreDataType::Coverage:
+            m_smSQLiteFile->StoreCoveragePolygon(id, nodeData, countData*sizeof(DATATYPE));
+            break;
         default : 
             assert(!"Unsupported type");
             break;
@@ -405,6 +415,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             break;
         case SMStoreDataType::ClipDefinition :
             blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+        case SMStoreDataType::Coverage :
+            blockDataCount = m_smSQLiteFile->GetCoveragePolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
 #ifdef WIP_MESH_IMPORT
         case SMStoreDataType::MeshParts:
@@ -644,7 +657,10 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
 #endif
         case SMStoreDataType::ClipDefinition :
             m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
-            break;    
+            break;  
+        case SMStoreDataType::Coverage:
+            m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
         case SMStoreDataType::Texture:
             m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);
             break;
@@ -670,7 +686,7 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
     {
-    if (m_dataType != SMStoreDataType::ClipDefinition)
+    if (m_dataType != SMStoreDataType::ClipDefinition && m_dataType != SMStoreDataType::Coverage)
         {
         assert(!"Unexpected call");
         return false;

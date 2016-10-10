@@ -180,6 +180,19 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
+
+        virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
+
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
+
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
+
+        virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
+         
+#ifdef WIP_MESH_IMPORT
+        virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
+#endif
+
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -285,6 +298,14 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const;
 
+        BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
+
+        BENTLEY_SM_EXPORT IScalableMeshPtr                   GetTerrainSM();
+
+        BENTLEY_SM_EXPORT BentleyStatus                   CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id);
+
+        BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
+
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable,
@@ -308,6 +329,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
+
+#ifdef WIP_MESH_IMPORT
+        BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
+#endif
 
         BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
         BENTLEY_SM_EXPORT void ReFilter();

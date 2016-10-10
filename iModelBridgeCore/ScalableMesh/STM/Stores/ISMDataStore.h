@@ -45,12 +45,17 @@ enum class SMStoreDataType
     ClipDefinition,     
     //Not persisted data type
     Display,
-    BcDTM,     
-
+    //Not persisted data type
+    BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
     MeshParts,
     Metadata,
+    //Not persisted data type
+    DisplayMesh,
+    //Not persisted data type
+    DisplayTexture,
+    Coverage,
     Unknown, 
     };
 
@@ -66,6 +71,8 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void GetAllIDs(bvector<uint64_t>& allIds) = 0;
 
         virtual void SetAutoCommit(bool autoCommit) = 0;
+
+        virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) = 0;
         
     };
 
