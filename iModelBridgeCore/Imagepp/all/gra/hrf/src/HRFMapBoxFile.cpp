@@ -31,7 +31,9 @@
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 #include <Imagepp/all/h/HFCURLHTTP.h>
 
-//#define VE_MAP_RESOLUTION       18
+#define MB_MAP_RESOLUTION       19
+#define MB_MAP_WIDTH            (256 * (1 << MB_MAP_RESOLUTION))
+#define MB_MAP_HEIGHT           (256 * (1 << MB_MAP_RESOLUTION))
 
 //-----------------------------------------------------------------------------//
 //                         Extern - MapBoxTileSystem API                 //
@@ -130,14 +132,7 @@ HRFMapBoxCapabilities::HRFMapBoxCapabilities()
     Add(new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
                                    HRPPixelTypeV24R8G8B8::CLASS_ID,
                                    new HRFMapBoxBlockCodecTrueColorCapabilities()));
-
-    // PixelTypeV32B8G8R8X8
-    // Read/Write/Create capabilities
-    Add(new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
-                                   HRPPixelTypeV32B8G8R8X8::CLASS_ID,
-                                   new HRFMapBoxCodecIdentityCapabilities()));
-                                   */
-
+    
     // Scanline orientation capability
     Add(new HRFScanlineOrientationCapability(HFC_READ_ONLY, HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL));
 
