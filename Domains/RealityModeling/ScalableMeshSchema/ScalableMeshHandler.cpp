@@ -605,16 +605,19 @@ virtual Completion _Process(ViewContextR viewContext) override
             if (s_drawInProcess)
                 {
                 ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);
-                if (m_currentDrawingInfoPtr->m_coverageClips.IsValid())
+                if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
                     {
-                    viewContext.PushClip(*m_currentDrawingInfoPtr->m_coverageClips);
-                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo);
-                    viewContext.PopTransformClip();
+                    for (auto& clip : m_currentDrawingInfoPtr->m_coverageClips)
+                        {
+                        viewContext.PushClip(*clip);
+                        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo);
+                        viewContext.PopTransformClip();
+                        }
                     }
                 }
             }
 
-        if (m_currentDrawingInfoPtr->m_coverageClips.IsValid())
+        if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
             {
             if (!m_progressiveQueryEngine->IsQueryComplete(m_currentDrawingInfoPtr->m_terrainQuery))
                 m_hasFetchedFinalNode = false;
@@ -698,25 +701,31 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     bvector<bvector<DPoint3d>> coverages;
     m_smPtr->GetAllCoverages(coverages);
 
-    ClipVectorPtr clipFromCoverageSet;
+    bvector<ClipVectorPtr> clipFromCoverageSet;
     if (!coverages.empty())
         {
         //clip vector from coverages
-        if (m_currentDrawingInfoPtr.IsValid() && m_currentDrawingInfoPtr->m_hasCoverage) clipFromCoverageSet = m_currentDrawingInfoPtr->m_coverageClips;
+        if (m_currentDrawingInfoPtr.IsValid() && m_currentDrawingInfoPtr->m_hasCoverage && coverages.size() == m_currentDrawingInfoPtr->m_coverageClips.size()) clipFromCoverageSet = m_currentDrawingInfoPtr->m_coverageClips;
         else
             {
+            if (!m_currentDrawingInfoPtr.IsValid() || !m_currentDrawingInfoPtr->m_hasCoverage)
+                {
+                auto smPtr = m_smPtr->GetTerrainSM();
+                m_progressiveQueryEngine->InitScalableMesh(smPtr);
+                }
             nextDrawingInfoPtr->m_hasCoverage = true;
+
+
+            for (auto& coverageVal : coverages)
+                {
+                CurveVectorPtr curvePtr = CurveVector::CreateLinear(coverageVal, CurveVector::BOUNDARY_TYPE_Outer, true);
+                ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
+                clipPrimitive->SetIsMask(false);
+                ClipVectorPtr clip = ClipVector::CreateFromPrimitive(clipPrimitive);
+                clipFromCoverageSet.push_back(clip);
+                }
+            nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
             }
-        clipFromCoverageSet = ClipVector::Create();
-        for (auto& coverageVal : coverages)
-            {
-            CurveVectorPtr curvePtr = CurveVector::CreateLinear(coverageVal, CurveVector::BOUNDARY_TYPE_Outer, true);
-            ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
-            clipPrimitive->SetIsMask(false);
-            ClipVectorPtr clip = ClipVector::CreateFromPrimitive(clipPrimitive);
-            clipFromCoverageSet->Append(*clip);
-            }
-        nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
 
         }
     if ((m_currentDrawingInfoPtr != nullptr) &&
@@ -729,11 +738,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
             ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);  
-            if (clipFromCoverageSet.IsValid())
+            if (!clipFromCoverageSet.empty())
                 {
-                context.PushClip(*clipFromCoverageSet);
-                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
-                context.PopTransformClip();
+                for (auto& clip : clipFromCoverageSet)
+                    {
+                    context.PushClip(*clip);
+                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
+                    context.PopTransformClip();
+                    }
                 }
             return;                        
             }   
@@ -741,7 +753,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     BentleyStatus status;
 
     status = m_progressiveQueryEngine->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
-    if (clipFromCoverageSet.IsValid())
+    if (!clipFromCoverageSet.empty())
         {
         status = m_progressiveQueryEngine->StopQuery(nextDrawingInfoPtr->m_terrainQuery);
         }
@@ -836,7 +848,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             }
         }
     int terrainQueryId = -1;
-    if (clipFromCoverageSet.IsValid())
+    if (!clipFromCoverageSet.empty())
         {
         m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
         terrainQueryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) | 0xAFFF);//nextDrawingInfoPtr->GetViewNumber();                 
@@ -889,7 +901,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         needProgressive = true;
         }                         
 
-    if (clipFromCoverageSet.IsValid())
+    if (!clipFromCoverageSet.empty())
         {
         if (m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
             {
@@ -911,11 +923,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
 
     ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
-    if (clipFromCoverageSet.IsValid())
+    if (!clipFromCoverageSet.empty())
         {
-        context.PushClip(*clipFromCoverageSet);
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
-        context.PopTransformClip();
+        for (auto&clip : clipFromCoverageSet)
+            {
+            context.PushClip(*clip);
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, context, m_storageToUorsTransfo);
+            context.PopTransformClip();
+            }
         }
 
     if (needProgressive)

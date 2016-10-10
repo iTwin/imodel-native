@@ -40,7 +40,7 @@ public :
 
     int m_currentQuery;
     int m_terrainQuery;
-    ClipVectorPtr m_coverageClips;
+    bvector<ClipVectorPtr> m_coverageClips;
     bool m_hasCoverage;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
