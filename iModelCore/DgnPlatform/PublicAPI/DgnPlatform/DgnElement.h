@@ -855,66 +855,66 @@ protected:
     //! Return the value of a DateTime ECProperty by name
     //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a DPoint3d ECProperty by name
     //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a DPoint2d ECProperty by name
     //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a boolean ECProperty by name
     //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a double ECProperty by name
     //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a integer ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of a UInt64 ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Return the value of an ECNavigationProperty by name
-    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
+    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
         {
-        return TBeInt64Id(GetPropertyValueUInt64(propertyName));
+        return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
         }
     //! Return the value of a string ECProperty by name
-    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
+    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
     //! Get the 3 property values that back a YPR
     DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set a DPoint3d ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set a DPoint2d ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set a boolean ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set a double ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set an integer ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set a string ECProperty by name
     //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value);
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
