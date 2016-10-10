@@ -477,6 +477,15 @@ public:
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
 
+    //! Specifies either an invalid value or the index of an item in an array.
+    struct PropertyArrayIndex
+        {
+        bool m_hasIndex;
+        uint32_t m_index;
+        PropertyArrayIndex() : m_hasIndex(0) {}
+        PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
+        };
+
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
     enum class Hilited : uint8_t
     {
@@ -811,7 +820,7 @@ protected:
     ECN::PrimitiveType _GetStructArrayPrimitiveType() const override {/*BeAssert(false);*/ return ECN::PrimitiveType::PRIMITIVETYPE_Integer;}
     ECN::ECObjectsStatus _RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
     bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const {BeAssert(false); return false;}
-    void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable) override {BeAssert(false);};
+    void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool, uint32_t, int flagIndex, bool enable) override {BeAssert(false);};
     ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
     ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
 
@@ -1183,15 +1192,16 @@ protected:
     virtual DocumentCP _ToDocumentElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR);
     DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const;
     //! Test if the value of the specified property on this element is equivalent to the value of the same property on the other element
     //! @param prop The property to be compared
     //! @param other The other element
     //! @param ignore The list of properties to be ignored
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const;
+    //! @param arrayIdx Optional. If the property is an array, you must specify the index of the item to compare.
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore, PropertyArrayIndex const& arrayIdx) const;
 
     DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
 
@@ -1433,16 +1443,18 @@ public:
     //! Get the value of a property. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
+    //! @param aidx Optional. If the property is an array, you must specify the index of the item to get.
     //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
-    DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name) const {return _GetPropertyValue(value, name);}
+    DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx = PropertyArrayIndex()) const {return _GetPropertyValue(value, name, aidx);}
 
     //! Set the value of a property. 
     //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
+    //! @param aidx Optional. If the property is an array, you must specify the index of the item to set.
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
-    DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value) {return _SetPropertyValue(name, value);}
+    DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex()) {return _SetPropertyValue(name, value, aidx);}
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
     //! @param instance The source of the properties that are to be copied to this element
@@ -1745,7 +1757,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&) const; // Handles GeometryStream
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&, PropertyArrayIndex const& arrayIdx) const; // Handles GeometryStream
     DGNPLATFORM_EXPORT DgnDbStatus GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const;
     DGNPLATFORM_EXPORT DgnDbStatus SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value);
 
@@ -1822,8 +1834,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
     DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
@@ -1894,8 +1906,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
     DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);

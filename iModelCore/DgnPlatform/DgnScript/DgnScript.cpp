@@ -574,7 +574,7 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
     if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
         {
@@ -604,7 +604,7 @@ DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValue
             return DgnDbStatus::BadArg;
         }
 
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------

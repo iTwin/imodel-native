@@ -133,7 +133,7 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value)
+DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
 #define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
 #define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
@@ -154,13 +154,13 @@ DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_SetPropertyValue(propName, value);
+    return T_Super::_SetPropertyValue(propName, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName) const
+DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName, PropertyArrayIndex const& arrayIdx) const
     {
 #define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
 #define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
@@ -181,7 +181,7 @@ DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName)
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_GetPropertyValue(value, propName);
+    return T_Super::_GetPropertyValue(value, propName, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**

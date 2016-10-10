@@ -1050,7 +1050,7 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const
+bool DgnElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore, PropertyArrayIndex const& arrayIdx) const
     {
     auto const& propName = prop.GetName();
 
@@ -1064,8 +1064,8 @@ bool DgnElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset
         }
 
     ECN::ECValue value, othervalue;
-    if (DgnDbStatus::Success != _GetPropertyValue(value, propName.c_str())
-     || DgnDbStatus::Success != other._GetPropertyValue(othervalue, propName.c_str()))
+    if (DgnDbStatus::Success != _GetPropertyValue(value, propName.c_str(), arrayIdx)
+     || DgnDbStatus::Success != other._GetPropertyValue(othervalue, propName.c_str(), arrayIdx))
         return false;
     return value.Equals(othervalue);
     }
@@ -1110,7 +1110,8 @@ bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) con
         if (ignore.find(propName) != ignore.end())
             continue;
 
-        if (!_EqualProperty(*prop, other, ignore))
+        // *** WIP Arrays
+        if (!_EqualProperty(*prop, other, ignore, PropertyArrayIndex()))
             return false;
         }
 
@@ -1132,7 +1133,8 @@ void DgnElement::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
         if (ignore.find(propName.c_str()) != ignore.end())
             continue;
         ECN::ECValue value;
-        if (DgnDbStatus::Success == _GetPropertyValue(value, propName.c_str()))
+        // *** WIP Arrays
+        if (DgnDbStatus::Success == _GetPropertyValue(value, propName.c_str(), PropertyArrayIndex()))
             {
             str.append(propName.c_str());
             str.append("=");
@@ -2223,7 +2225,7 @@ static bool isValidForStatementType(DgnDbR db, ECN::ECPropertyCR prop, ECSqlClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
     // Common case: auto-handled properties
     ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
@@ -2236,7 +2238,7 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
             return DgnDbStatus::BadRequest;
             }
 
-        if (ECN::ECObjectsStatus::Success == GetValueFromMemory(value, name, false, 0))
+        if (ECN::ECObjectsStatus::Success == GetValueFromMemory(value, name, arrayIdx.m_hasIndex, arrayIdx.m_index))
             return DgnDbStatus::Success;
         return DgnDbStatus::BadRequest;
         }
@@ -2323,7 +2325,7 @@ static bool isEcObjectsWriteError(ECObjectsStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
     // Common case: auto-handled properties
     ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
@@ -2342,7 +2344,7 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
             return DgnDbStatus::BadRequest;
             }
 
-        if (isEcObjectsWriteError(SetValueToMemory(name, value, false, 0)))
+        if (isEcObjectsWriteError(SetValueToMemory(name, value, arrayIdx.m_hasIndex, arrayIdx.m_index)))
             return DgnDbStatus::BadArg; // probably a type mismatch
 
         m_flags.m_autoHandledPropsDirty = true;
@@ -2401,7 +2403,7 @@ DgnDbStatus GeometricElement::GetGeometricElementPropertyValue(ECN::ECValueR val
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
     if (0 == strcmp(name, "CategoryId"))
         {
@@ -2422,7 +2424,7 @@ DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP na
     if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
         return status;
 
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2439,7 +2441,7 @@ DgnDbStatus GeometricElement::SetGeometricElementPropertyValue(Utf8CP name, ECN:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
     if (0 == strcmp(name, GEOM_FacetCount))
         {
@@ -2460,7 +2462,7 @@ DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR va
     if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
         return status;
 
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2975,7 +2977,7 @@ DgnDbStatus GeometricElement2d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus GeometricElement2d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
     if (0 == strcmp(name, "CategoryId"))
         {
@@ -2990,13 +2992,13 @@ DgnDbStatus GeometricElement2d::_GetPropertyValue(ECN::ECValueR value, Utf8CP na
     if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
         return status;
 
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus GeometricElement2d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
     if (0 == strcmp(name, GEOM_FacetCount))
         {
@@ -3014,7 +3016,7 @@ DgnDbStatus GeometricElement2d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR va
     if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
         return status;
 
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3698,11 +3700,11 @@ DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometricElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const
+bool GeometricElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore, PropertyArrayIndex const& aidx) const
     {
     if (!prop.GetName().Equals(GEOM_GeometryStream))
         {
-        return T_Super::_EqualProperty(prop, other, ignore);
+        return T_Super::_EqualProperty(prop, other, ignore, aidx);
         }
 
     if (ignore.find(GEOM_GeometryStream) != ignore.end())
@@ -4234,7 +4236,8 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR properties)
         if (!value.IsNull())
             {
             DgnDbStatus stat;
-            if (DgnDbStatus::Success != (stat = _SetPropertyValue(propName.c_str(), value)))
+            // *** WIP Arrays
+            if (DgnDbStatus::Success != (stat = _SetPropertyValue(propName.c_str(), value, PropertyArrayIndex())))
                 {
                 if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to 
                     {
