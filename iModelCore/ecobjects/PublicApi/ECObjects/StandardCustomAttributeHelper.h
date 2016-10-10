@@ -481,13 +481,6 @@ public:
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
 
-    //! Tries to get the value of the CreateIndex property from the ForeignKeyRelationshipMap.
-    //! @param[out] createIndexFlag true, if an index should be created on the foreign key column(s)
-    //!             false if no index should be created.
-    //!             @p createIndexFlag remains unchanged, if the CreateIndex property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if CreateIndex was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateIndex(bool& createIndexFlag) const;
-
     //! Tries to get the value of the ForeignKeyColumn property from the ForeignKeyRelationshipMap.
     //! @param[out] foreignKeyColumnName Name of column to which ForeignKeyColumn is mapped to. 
     //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
