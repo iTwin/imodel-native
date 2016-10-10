@@ -22,6 +22,25 @@ static long editPnt2=DTM_NULL_PNT ;
 static long editPnt3=DTM_NULL_PNT ;
 static long editStatus=true ;
 
+struct DTMToleranceOverride
+    {
+    private: double m_originalPLTol;
+             double m_originalPPTol;
+             BC_DTM_OBJ& m_dtm;
+
+    public:
+        DTMToleranceOverride(BC_DTM_OBJ& dtm, double ppTol, double plTol) : m_dtm(dtm), m_originalPLTol(dtm.plTol), m_originalPPTol(dtm.ppTol)
+            {
+            dtm.ppTol = ppTol;
+            dtm.plTol = plTol;
+            }
+        ~DTMToleranceOverride()
+            {
+            m_dtm.plTol = m_originalPLTol;
+            m_dtm.ppTol = m_originalPPTol;
+            }
+
+    };
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -5175,14 +5194,16 @@ BENTLEYDTM_EXPORT int  bcdtmEdit_checkPointCanBeDeletedDtmObject(BC_DTM_OBJ *dtm
  clc = nodeAddrP(dtmP,Point)->fPtr ;
  while ( clc != dtmP->nullPtr )
    {
-    feat = flistAddrP(dtmP,clc)->dtmFeature ;
-    clc  = flistAddrP(dtmP,clc)->nextPtr ;
-    if( ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint != dtmP->nullPnt )
+   auto flistAddr = flistAddrP(dtmP, clc);
+    feat = flistAddr->dtmFeature ;
+    clc  = flistAddr->nextPtr ;
+    auto ftableAddr = ftableAddrP(dtmP, feat);
+    if (ftableAddr->dtmFeaturePts.firstPoint != dtmP->nullPnt)
       {
-       if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::Breakline   ) ++BrkFlag    ;
-       if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::ContourLine ) ++ConFlag    ;
-       if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::Void         ) ++VoidFlag   ;
-       if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::Island       ) ++IslandFlag ;
+       if( ftableAddr->dtmFeatureType == DTMFeatureType::Breakline   ) ++BrkFlag    ;
+       else if( ftableAddr->dtmFeatureType == DTMFeatureType::ContourLine ) ++ConFlag    ;
+       else if( ftableAddr->dtmFeatureType == DTMFeatureType::Void         ) ++VoidFlag   ;
+       else if( ftableAddr->dtmFeatureType == DTMFeatureType::Island       ) ++IslandFlag ;
       }
    }
 /*
@@ -5190,7 +5211,10 @@ BENTLEYDTM_EXPORT int  bcdtmEdit_checkPointCanBeDeletedDtmObject(BC_DTM_OBJ *dtm
 */
   for( feat = 0 ; feat < dtmP->numFeatures ; ++feat )
     {
-     if( ( sp = ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint ) != dtmP->nullPnt && (ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::Breakline || ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::ContourLine ))
+    auto ftableAddr = ftableAddrP(dtmP, feat);
+    if (ftableAddr->dtmFeatureState != DTMFeatureState::Tin)
+        break;
+     if( ( sp = ftableAddr->dtmFeaturePts.firstPoint ) != dtmP->nullPnt && (ftableAddr->dtmFeatureType == DTMFeatureType::Breakline || ftableAddr->dtmFeatureType == DTMFeatureType::ContourLine ))
        {
         np = lp = sp ;
         clc = nodeAddrP(dtmP,np)->fPtr ;
@@ -5210,8 +5234,8 @@ BENTLEYDTM_EXPORT int  bcdtmEdit_checkPointCanBeDeletedDtmObject(BC_DTM_OBJ *dtm
 */
         if( lp == Point )
           {
-           if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::Breakline   ) ++BrkFlag ;
-           if( ftableAddrP(dtmP,feat)->dtmFeatureType == DTMFeatureType::ContourLine ) ++ConFlag ;
+           if( ftableAddr->dtmFeatureType == DTMFeatureType::Breakline   ) ++BrkFlag ;
+           else if( ftableAddr->dtmFeatureType == DTMFeatureType::ContourLine ) ++ConFlag ;
           }
        }
     }
@@ -6982,6 +7006,237 @@ BENTLEYDTM_Public int bcdtmEdit_triangulateVoidDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+long GetPointNum(BC_DTM_OBJ* dtmP, long pointNum)
+    {
+    for (int i = 0; i < dtmP->numPoints; i++)
+        {
+        if (pointAddrP(dtmP, i)->z == pointNum)
+            return i;
+        }
+    return -1;
+    }
+
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
+BENTLEYDTM_Public int bcdtmEdit_deletePointHelperDtmDTMObject(BC_DTM_OBJ *dtmP, long pointToRemove, long point, bvector<DTMTinPointFeatures>& pointFeatures)
+/*
+** This Function Fills A Tptr Polygon With Triangles
+*/
+    {
+    int   ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
+    long  numPoints;
+    DPoint3d   *pointsP = nullptr;
+    BC_DTM_OBJ  *tempDtmP = nullptr;
+    long pp, sp, rsp, rnp, cp, rcp, np;
+    long firstPt = -1;
+    long nextPt;
+    bool hasSwapped = false;
+    /*
+    ** Write Entry Message
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Filling Tptr Polygon With Triangles");
+    /*
+    ** Check Line Connections
+    */
+    if (cdbg)
+        {
+        bcdtmWrite_message(0, 0, 0, "Checking Reverse Line Connections");
+        if (bcdtmClip_checkReverseLineConnectionsDtmObject(dtmP)) goto errexit;
+        }
+    /*
+    ** Write Out Tptr Polygon
+    */
+    if (dbg) bcdtmList_writeTptrListDtmObject(dtmP, point);
+    /*
+    ** Copy Tptr Polygon To Point Array
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Copying Tptr Polygon To Point Array");
+    if (bcdtmClip_copyTptrListToPointArrayDtmObject(dtmP, point, &pointsP, &numPoints)) goto errexit;
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Number Of Tptr Polygon Points = %8ld", numPoints);
+    /*
+    ** Create Dtm Object
+    */
+    if (bcdtmObject_createDtmObject(&tempDtmP)) goto errexit;
+    /*
+    ** Set Memory Allocation Parameters For tempDtmP Object
+    */
+    if (bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempDtmP, numPoints, numPoints)) goto errexit;
+    /*
+    **  Store Polygon In tempDtmP Object As Break Lines
+    */
+    if (bcdtmObject_storeDtmFeatureInDtmObject(tempDtmP, DTMFeatureType::Breakline, tempDtmP->nullUserTag, 1, &tempDtmP->nullFeatureId, pointsP, numPoints)) goto errexit;
+    /*
+    ** Triangulate tempDtmP Object
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Triangulating Temporary Dtm Object");
+    tempDtmP->ppTol = tempDtmP->plTol = 0.0;
+    if (bcdtmObject_createTinDtmObject(tempDtmP, 1, 0.0, false, false)) goto errexit;
+    tempDtmP->ppTol = tempDtmP->plTol = 0.0;
+
+    if (tempDtmP->numPoints != numPoints - 1)
+        goto errexit;
+
+    if (bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtmP)) goto errexit;
+
+    if (tempDtmP->numPoints != numPoints - 1)
+        goto errexit;
+
+    for (int i = 0; i < tempDtmP->numPoints; i++)
+        {
+        DPoint3dCR pt = *pointAddrP(tempDtmP, i);
+        if (pointsP[0].IsEqual(pt))
+            {
+            firstPt = i;
+            break;
+            }
+        }
+
+    if (firstPt == -1)
+        goto errexit;
+
+    nextPt = nodeAddrP(tempDtmP, firstPt)->hPtr;
+
+    for (long i = 1; i < numPoints; i++)
+        {
+        if (nextPt == tempDtmP->nullPnt)
+            goto errexit;
+
+        if (!pointsP[i].IsEqual(*pointAddrP(tempDtmP, nextPt)))
+            goto errexit;
+
+        nextPt = nodeAddrP(tempDtmP, nextPt)->hPtr;
+        }
+
+    for (auto& ppf : pointFeatures)
+        {
+        if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(&ppf - pointFeatures.data()), ppf.dtmFeature, ppf.dtmFeatureType, ppf.priorPoint, ppf.nextPoint, ppf.userTag);
+        if (ppf.dtmFeatureType != DTMFeatureType::GroupSpots)
+            {
+            if (ppf.priorPoint != dtmP->nullPnt && ppf.nextPoint != dtmP->nullPnt)
+                {
+                long priorPoint = GetPointNum(tempDtmP, ppf.priorPoint);
+                long nextPoint = GetPointNum(tempDtmP, ppf.nextPoint);
+
+                if (priorPoint == -1 || nextPoint == -1)
+                    goto errexit;
+                if (!bcdtmList_testLineDtmObject(tempDtmP, priorPoint, nextPoint))
+                    {
+                    hasSwapped = true;
+                    if (bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(tempDtmP, priorPoint, nextPoint, true))
+                        {
+                        }
+                    else if (!bcdtmList_testLineDtmObject(tempDtmP, priorPoint, nextPoint))
+                        {
+                        goto errexit;
+                        }
+                    }
+                }
+            }
+        }
+
+    // Make sure that we haven't swapped back a feature.
+    if (hasSwapped)
+        {
+        for (auto& ppf : pointFeatures)
+            {
+            if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(&ppf - pointFeatures.data()), ppf.dtmFeature, ppf.dtmFeatureType, ppf.priorPoint, ppf.nextPoint, ppf.userTag);
+            if (ppf.dtmFeatureType != DTMFeatureType::GroupSpots)
+                {
+                if (ppf.priorPoint != dtmP->nullPnt && ppf.nextPoint != dtmP->nullPnt)
+                    {
+                    long priorPoint = GetPointNum(tempDtmP, ppf.priorPoint);
+                    long nextPoint = GetPointNum(tempDtmP, ppf.nextPoint);
+
+                    if (priorPoint == -1 || nextPoint == -1)
+                        goto errexit;
+                    if (!bcdtmList_testLineDtmObject(tempDtmP, priorPoint, nextPoint))
+                        {
+                        goto errexit;
+                        }
+                    }
+                }
+            }
+        }
+
+    if (bcdtmEdit_removePointDtmObject(dtmP, pointToRemove, 0, dtmP->nullPnt, dtmP->nullPnt, dtmP->nullPnt, dtmP->nullPnt)) goto errexit;
+    /*
+    ** Insert Internal Lines Into Tptr Polygon
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Inserting Internal Lines");
+    pp = tempDtmP->hullPoint;
+    sp = nodeAddrP(tempDtmP, pp)->hPtr;
+    rsp = (long)pointAddrP(tempDtmP, sp)->z;
+    do
+        {
+        np = nodeAddrP(tempDtmP, sp)->hPtr;
+        rnp = (long)pointAddrP(tempDtmP, np)->z;
+        if ((cp = bcdtmList_nextClkDtmObject(tempDtmP, sp, pp)) < 0) goto errexit;
+        while (cp != np)
+            {
+            rcp = (long)pointAddrP(tempDtmP, cp)->z;
+            if (bcdtmList_insertLineBeforePointDtmObject(dtmP, rsp, rcp, rnp)) goto errexit;
+            if ((cp = bcdtmList_nextClkDtmObject(tempDtmP, sp, cp)) < 0) goto errexit;
+            }
+        pp = sp;
+        sp = np;
+        rsp = rnp;
+        } while (pp != tempDtmP->hullPoint);
+        /*
+        ** Check Line Connections
+        */
+        if (cdbg)
+            {
+            bcdtmWrite_message(0, 0, 0, "Checking Reverse Line Connections");
+            if (bcdtmClip_checkReverseLineConnectionsDtmObject(dtmP)) goto errexit;
+            }
+
+        if (bcdtmList_nullTptrListDtmObject(dtmP, point)) goto errexit;
+
+        //   07Mar2012 RobC  Join Up Features With Broken Connections
+            {
+            DTMToleranceOverride tolOverride(*dtmP, 0, 0);
+            bool hasFailedToAddFeature = false;
+            for (auto& ppf : pointFeatures)
+                {
+                if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(&ppf - pointFeatures.data()), ppf.dtmFeature, ppf.dtmFeatureType, ppf.priorPoint, ppf.nextPoint, ppf.userTag);
+                if (ppf.dtmFeatureType != DTMFeatureType::GroupSpots)
+                    {
+                    if (ppf.priorPoint != dtmP->nullPnt && ppf.nextPoint != dtmP->nullPnt)
+                        {
+                        if (!bcdtmList_testLineDtmObject(dtmP, ppf.priorPoint, ppf.nextPoint))
+                            {
+                            hasFailedToAddFeature = true;
+                            }
+                        }
+                    }
+                }
+            if (hasFailedToAddFeature)
+                goto errexit;
+            }
+
+
+    /*
+    ** Clean Up
+    */
+cleanup:
+    if (pointsP != nullptr) free(pointsP);
+    if (tempDtmP != nullptr) bcdtmObject_destroyDtmObject(&tempDtmP);
+    /*
+    ** Job Completed
+    */
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check Filling Tptr Polygon With Triangles Completed");
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check Filling Tptr Polygon With Triangles Error");
+    return(ret);
+    /*
+    ** Error Exit
+    */
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
+    }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -6998,7 +7253,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 */
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0) ;
- long  spnt,numFeaturePts,drapeOption,insertOption,canDeleteFlag=0 ;
+ long  spnt,canDeleteFlag=0 ;
  long  numPointFeatures,nextHullPnt,priorHullPnt,numHullPnts;
  DPoint3d   *featurePtsP=NULL ;
  DTMTinPointFeatures *ppf;
@@ -7152,47 +7407,14 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 /*
 ** Delete Point
 */
- switch( deleteFlag )
-   {
-    case 1  : /* Delete Internal Point And Retriangulate */
-      if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Internal Point And Retriangulating") ;
-      if (bcdtmClip_checkFillTptrPolygonWithTrianglesDtmDTMObject(dtmP, spnt)) goto errexit;
-      if( bcdtmEdit_removePointDtmObject(dtmP,tinPoint,0,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
-      if( bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(dtmP,spnt)) goto errexit ;
-      if( bcdtmList_nullTptrListDtmObject(dtmP,spnt)) goto errexit ;
-
-//   07Mar2012 RobC  Join Up Features With Broken Connections
-
-     for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures; ++ppf)
-      {
-      if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(ppf - pointFeatures.data()), ppf->dtmFeature, ppf->dtmFeatureType, ppf->priorPoint, ppf->nextPoint, ppf->userTag);
-       if( ppf->priorPoint != dtmP->nullPnt && ppf->nextPoint != dtmP->nullPnt )
+ switch (deleteFlag)
+     {
+     case 1: /* Delete Internal Point And Retriangulate */
          {
-          if( ! bcdtmList_testLineDtmObject(dtmP,ppf->priorPoint,ppf->nextPoint ))
-            {
-            if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] Connection Broken ** priorPnt = %8ld nextPoint = %8ld", (long)(ppf - pointFeatures.data()), ppf->priorPoint, ppf->nextPoint, ppf->userTag);
-             if( ppf->dtmFeatureType != DTMFeatureType::GroupSpots )
-               {
-                drapeOption = 1 ;
-                insertOption = 2 ;
-                if( ppf->dtmFeatureType == DTMFeatureType::Breakline || ppf->dtmFeatureType == DTMFeatureType::SoftBreakline )
-                  {
-                   drapeOption  = 2 ;
-                   insertOption = 1 ;
-                  }
-
-//              Remove And Re Insert Feature
-
-                if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,ppf->dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
-                if( bcdtmInsert_internalStringIntoDtmObject(dtmP,drapeOption,insertOption,featurePtsP,numFeaturePts,&spnt)) goto errexit ;
-                if( bcdtmList_checkConnectivityTptrListDtmObject(dtmP,spnt,0)) goto errexit ;
-                if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,ppf->dtmFeatureType,ppf->userTag,ppf->userFeatureId,spnt,1)) goto errexit ;
-                if( bcdtmInsert_removeDtmFeatureFromDtmObject2(dtmP,ppf->dtmFeature)) goto errexit ;
-               }
-            }
+         if (dbg) bcdtmWrite_message(0, 0, 0, "Deleting Internal Point And Retriangulating");
+         if (bcdtmEdit_deletePointHelperDtmDTMObject(dtmP, tinPoint, spnt, pointFeatures)) goto errexit;
          }
-      }
-    break   ;
+     break;
 
     case 2  : /* Delete Point On Tin Hull */
       if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Point On Tin Hull") ;

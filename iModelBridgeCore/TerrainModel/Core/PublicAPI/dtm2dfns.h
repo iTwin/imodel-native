@@ -99,11 +99,11 @@ BENTLEYDTM_Public                      int bcdtmCleanUp_resolveMultipleIntersect
 BENTLEYDTM_EXPORT                      int bcdtmClip_buildClippingTinFromFencePointsDtmObject (BC_DTM_OBJ **dtmPP, DPoint3dCP fencePtsP, long numFencePts); 
 BENTLEYDTM_Public                      int bcdtmClip_checkForInsertedVoidInternalToVoidDtmObject (BC_DTM_OBJ *dtmP); 
 BENTLEYDTM_Public                      int bcdtmClip_checkPolygonsIntersect (DPoint3d *Poly1, long numPts1, DPoint3d *Poly2, long numPts2, long *IntersectFlag); 
-BENTLEYDTM_Private                     int bcdtmClip_checkReverseLineConnectionsDtmObject (BC_DTM_OBJ *dtmP);
+BENTLEYDTM_Public                      int bcdtmClip_checkReverseLineConnectionsDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_EXPORT                      int bcdtmClip_checkTinHullsIntersectDtmObject (BC_DTM_OBJ *dtm1P, BC_DTM_OBJ *dtm2P, long *intersectResultP); 
 BENTLEYDTM_EXPORT                      int bcdtmClip_cloneAndClipToPolygonDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ **cloneDtmPP, DPoint3d *ptsP, long numPts, DTMClipOption clipOption);
 BENTLEYDTM_EXPORT                      int bcdtmClip_cloneAndInsertIslandAndVoidBoundariesDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ *bndyDtmP, BC_DTM_OBJ **clonedDtmPP); 
-BENTLEYDTM_Private                     int bcdtmClip_copyTptrListToPointArrayDtmObject (BC_DTM_OBJ *dtmP, long startPnt, DPoint3d **tptrPtsPP, long *numTptrPtsP);
+BENTLEYDTM_Public                      int bcdtmClip_copyTptrListToPointArrayDtmObject (BC_DTM_OBJ *dtmP, long startPnt, DPoint3d **tptrPtsPP, long *numTptrPtsP);
 BENTLEYDTM_Public                      int bcdtmClip_determineFeatureExtentWithFenceDtmObject (BC_DTM_OBJ *tinP, DPoint3d *featurePtsP, long numFeaturePts, DTMFenceOption *featureExtentP);
 BENTLEYDTM_Public                      int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject (BC_DTM_OBJ *dtmP, long startPnt, long mark); 
 BENTLEYDTM_Public                      int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject (BC_DTM_OBJ *dtmP, long startPnt, long mark); 
@@ -782,7 +782,7 @@ BENTLEYDTM_Private                     int bcdtmInsert_scanPointForPointAngleInt
 BENTLEYDTM_Public                      int bcdtmInsert_storePointInDtmObject(BC_DTM_OBJ *dtmP, long drapeOption, long internalPoint, double x, double y, double z, long *dtmPointNumP, DTMInsertPointCallback insertPointCallback = nullptr);
 BENTLEYDTM_Public                      int bcdtmInsert_storeRigidPointInDtmObject(BC_DTM_OBJ *dtmP, long drapeFlag, long insertFlag, double x, double y, double z, long *dtmPntNumP);
 BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp, bool allowAdd);
-BENTLEYDTM_Private                     int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
+BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
 BENTLEYDTM_Public                      int bcdtmInsert_triangulateAboutPointDtmObject (BC_DTM_OBJ *dtmP, long point);
 
 ///////// bcdtmInterpolate/////////
