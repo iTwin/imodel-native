@@ -30,8 +30,9 @@ typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t B
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataDownload_StatusCallBack;
 
 //Special Error codes
-#define REALITYDATADOWNLOAD_RETRY_TENTATIVE   -2
-#define REALITYDATADOWNLOAD_MIRROR_CHANGE     -3
+#define REALITYDATADOWNLOAD_RETRY_TENTATIVE     -2
+#define REALITYDATADOWNLOAD_MIRROR_CHANGE       -3
+#define REALITYDATADOWNLOAD_CONTACTING_SISTER   -4
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -41,6 +42,14 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! 
 //! @bsiclass
 //=======================================================================================
+
+enum class SetupCurlStatus
+    {
+    Success                     = SUCCESS,
+    FromCache,
+    Error                       = ERROR,
+    };
+
 
 struct RealityDataDownload : public RefCountedBase
 {
@@ -60,6 +69,8 @@ public:
         AString url;
         WString filename;
         FileTransfer* nextSister;
+        size_t sisterIndex;
+        size_t totalSisters;
         };
 
     struct FileTransfer 
@@ -79,19 +90,21 @@ public:
         float                   progressStep;
         int                     nbRetry;
 
-        void InsertMirror(url_file_pair ufPair, size_t id)
+        void InsertMirror(url_file_pair ufPair, size_t id, size_t sisterCount)
             {
             Mirror_struct ms;
             ms.url = ufPair.first;
             ms.filename = ufPair.second;
             ms.nextSister = nullptr;
+            ms.totalSisters = sisterCount;
+            ms.sisterIndex = 0;
             mirrors.push_back(ms);
             }
 
         FileTransfer(){}
 
         FileTransfer(FileTransfer* ft):mirrors(bvector<Mirror_struct>()), filename(ft->filename), index(ft->index), 
-            fromCache(false), iAppend(ft->iAppend), pProgressFunc(ft->pProgressFunc), filesize(ft->filesize),
+            fromCache(true), iAppend(ft->iAppend), pProgressFunc(ft->pProgressFunc), filesize(ft->filesize),
             downloadedSizeStep(ft->downloadedSizeStep), progressStep(ft->progressStep), nbRetry(ft->nbRetry)
             {}
         };
@@ -145,10 +158,10 @@ private:
     RealityDataDownload(const Link_File_wMirrors_wSisters& pi_Link_File_wMirrors_wSisters);
     ~RealityDataDownload();
 
-    bool SetupCurlandFile(FileTransfer* ft);
+    SetupCurlStatus SetupCurlandFile(FileTransfer* ft);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
-    void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index);
+    void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index, size_t sisterCount, size_t sisterIndex);
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;

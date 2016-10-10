@@ -241,13 +241,18 @@ RealityPackageStatus RealityDataSerializerV2::ReadImageryGroup(RealityDataPackag
                 pImgData->AddSource(*pSources[i]);
                 }
             }
-        else if(!pMultiBandSources.empty())
+        if(!pMultiBandSources.empty())
             {
-            pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
-            pImgData->SetDataId(id.c_str());
-            pImgData->SetDataName(name.c_str());
-            pImgData->SetDataset(dataset.c_str());
-            for (size_t i = 1; i < pMultiBandSources.size(); ++i)
+            size_t start = 0;
+            if (pImgData.IsNull())
+                {
+                pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
+                pImgData->SetDataId(id.c_str());
+                pImgData->SetDataName(name.c_str());
+                pImgData->SetDataset(dataset.c_str());
+                start = 1;
+                }
+            for (size_t i = start; i < pMultiBandSources.size(); ++i)
                 {
                 pImgData->AddSource(*pMultiBandSources[i]);
                 }
@@ -635,7 +640,7 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
     BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
         {
-        Utf8String file;
+
         BeXmlDom::IterableNodeSet fileNodes;
         pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
         for (BeXmlNodeP const& pFileNode : fileNodes)
@@ -644,7 +649,8 @@ RealityDataSourcePtr RealityDataSerializerV2::ReadSource(RealityPackageStatus& s
             pFileNode->GetContent(file);
             sisterFiles.push_back(Uri::Create(file.c_str()));
             }
-        pDataSource->SetSisterFiles(sisterFiles);
+        if(!sisterFiles.empty())
+            pDataSource->SetSisterFiles(sisterFiles);
         }   
 
     return pDataSource;
@@ -722,11 +728,10 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
     pSourceNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
     pDataSource->SetNoDataValue(nodatavalue.c_str());
 
-    // &&JFC Sister files.
     bvector<UriPtr> sisterFiles;
     BeXmlNodeP pSisterFilesNode = pSourceNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
-    {
+        {
         BeXmlDom::IterableNodeSet fileNodes;
         pSisterFilesNode->SelectChildNodes(fileNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_File);
         for (BeXmlNodeP const& pFileNode : fileNodes)
@@ -735,8 +740,9 @@ MultiBandSourcePtr RealityDataSerializerV2::ReadMultiBandSource(RealityPackageSt
             pFileNode->GetContent(file);
             sisterFiles.push_back(Uri::Create(file.c_str()));
             }
-        pDataSource->SetSisterFiles(sisterFiles);
-    }
+        if (!sisterFiles.empty())
+            pDataSource->SetSisterFiles(sisterFiles);
+        }
 
     // *** Read MultiBand specific data ***
     // Red band.
