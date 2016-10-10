@@ -782,7 +782,7 @@ BENTLEYDTM_Private                     int bcdtmInsert_scanPointForPointAngleInt
 BENTLEYDTM_Public                      int bcdtmInsert_storePointInDtmObject(BC_DTM_OBJ *dtmP, long drapeOption, long internalPoint, double x, double y, double z, long *dtmPointNumP, DTMInsertPointCallback insertPointCallback = nullptr);
 BENTLEYDTM_Public                      int bcdtmInsert_storeRigidPointInDtmObject(BC_DTM_OBJ *dtmP, long drapeFlag, long insertFlag, double x, double y, double z, long *dtmPntNumP);
 BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp, bool allowAdd);
-BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
+BENTLEYDTM_Private                     int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
 BENTLEYDTM_Public                      int bcdtmInsert_triangulateAboutPointDtmObject (BC_DTM_OBJ *dtmP, long point);
 
 ///////// bcdtmInterpolate/////////
