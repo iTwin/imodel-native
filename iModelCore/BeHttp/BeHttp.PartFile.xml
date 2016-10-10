@@ -5,12 +5,17 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
+        <SubPart PartName="BeCasablancaPublicAPIShim" />
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <Bindings>
             <PublicAPI Domain="BeHttp" />
         </Bindings>
+    </Part>
+
+    <!-- We need this shim part because there is no LKG for Android, and thus Android builds cannot get a partfile from the LKG to see that the part excludes Android. -->
+    <Part Name="BeCasablancaPublicAPIShim" OnlyPlatforms="WinRT*,x86,x64">
+        <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
     </Part>
          
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
