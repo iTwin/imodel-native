@@ -439,7 +439,7 @@ struct AutoHandledPropertiesCollection
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : ECN::ECDBuffer, NonCopyableClass, ICodedEntity
 {
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -782,6 +782,10 @@ protected:
     };
 
     mutable BeAtomic<uint32_t> m_refCount;
+    mutable Flags m_flags;
+    mutable uint32_t m_ahp_bytesAllocated;      // *** WIP_AUTO_HANDLED_PROPERTIES - we could merge this into Flags, if we were willing to limit the max size of property data
+    // Add any future int32 here
+    mutable Byte* m_ahp_data;
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
     DgnElementId m_parentId;
@@ -790,8 +794,6 @@ protected:
     DgnCode m_code;
     BeSQLite::BeGuid m_federationGuid;
     Utf8String m_userLabel;
-    mutable ECN::IECInstancePtr m_autoHandledProperties;
-    mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -802,10 +804,36 @@ protected:
     void SetPersistent(bool val) const {m_flags.m_persistent = val;}
     void InvalidateElementId() {m_elementId = DgnElementId();}
     void InvalidateCode() {m_code = DgnCode();}
+
+    // ECDBuffer
+    ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
+    ECN::ECObjectsStatus _GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
+    ECN::PrimitiveType _GetStructArrayPrimitiveType() const override {/*BeAssert(false);*/ return ECN::PrimitiveType::PRIMITIVETYPE_Integer;}
+    ECN::ECObjectsStatus _RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
+    bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const {BeAssert(false); return false;}
+    void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable) override {BeAssert(false);};
+    ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
+    ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
+
+    DGNPLATFORM_EXPORT bool _AcquireData(bool forWrite) const override;
+    bool _ReleaseData() const override {return true;}
+    bool _IsMemoryInitialized() const override {return nullptr != m_ahp_data;}
+    Byte const * _GetData() const override {return m_ahp_data;}
+    DGNPLATFORM_EXPORT uint32_t _GetBytesAllocated() const override {return m_ahp_bytesAllocated;}
+    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _ModifyData(uint32_t offset, void const * newData, uint32_t dataLength) override;
+    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _MoveData(uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) override;
+    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _GrowAllocation(uint32_t additionalBytesNeeded) override;
+    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _ShrinkAllocation() override;
+    DGNPLATFORM_EXPORT void _FreeAllocation() override;
+    DGNPLATFORM_EXPORT void _ClearValues() override;
+    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
+    DGNPLATFORM_EXPORT ECN::ClassLayoutCR _GetClassLayout() const override;
+    
+    uint32_t AhpGetBytesUsed() const;
+
 #endif
     
-    ECN::IECInstanceP GetAutoHandledProperties() const;
-    BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const;
+    BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const; // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
     DgnDbStatus UpdateAutoHandledProperties();
 
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
