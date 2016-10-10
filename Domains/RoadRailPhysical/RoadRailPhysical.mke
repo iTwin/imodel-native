@@ -45,6 +45,10 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 $(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
 
+$(o)LinearReferencing$(oext) : $(_MakeFilePath)LinearReferencing.cpp ${MultiCompileDepends} $(appPublicApi)LinearReferencing.h
+
+$(o)RoadDesignSpeed$(oext) : $(_MakeFilePath)RoadDesignSpeed.cpp ${MultiCompileDepends} $(appPublicApi)RoadDesignSpeed.h
+
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
 
 $(o)Segment$(oext) : $(_MakeFilePath)Segment.cpp ${MultiCompileDepends} $(appPublicApi)Segment.h

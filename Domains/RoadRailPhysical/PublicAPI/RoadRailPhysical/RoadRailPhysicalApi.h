@@ -66,6 +66,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_RailRange                                        "RailRange"
+#define BRRP_CLASS_RoadDesignSpeed                                  "RoadDesignSpeed"
 #define BRRP_CLASS_RoadRange                                        "RoadRange"
 #define BRRP_CLASS_RoadSegment                                      "RoadSegment"
 #define BRRP_CLASS_RoadSegmentOnBridge                              "RoadSegmentOnBridge"
@@ -136,6 +137,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 ROADRAILPHYSICAL_TYPEDEFS(RailRange)
 ROADRAILPHYSICAL_TYPEDEFS(RailSegmentElement)
+ROADRAILPHYSICAL_TYPEDEFS(RoadDesignSpeed)
 ROADRAILPHYSICAL_TYPEDEFS(RoadRange)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegment)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentElement)
@@ -148,6 +150,7 @@ ROADRAILPHYSICAL_TYPEDEFS(TransitionSegment)
 
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RailRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RailSegmentElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadDesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentElement)
@@ -160,7 +163,10 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR(TransitionSegment)
 //-----------------------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------------------
+#include "RoadRailPhysical.h"
 #include "RoadRailPhysicalDomain.h"
 #include "ElementAspects.h"
+#include "LinearReferencing.h"
+#include "RoadDesignSpeed.h"
 #include "SegmentRange.h"
 #include "Segment.h"

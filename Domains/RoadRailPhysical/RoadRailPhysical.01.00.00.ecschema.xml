@@ -316,4 +316,48 @@
         <ECProperty propertyName="DerivedPropertiesCache" typeName="string" description="Json string containing derived properties, typically computed by an EGA"/>
     </ECEntityClass>
     <!-- END General Aspects classes -->
+
+    <!-- BEGIN Road Design-Speed classes -->
+    <ECEntityClass typeName="RoadDesignSpeedDefinition">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="SideSlopeFrictionFactor" typeName="double" />
+        <ECProperty propertyName="Speed" typeName="double" />
+        <ECProperty propertyName="MaxTransitionRadius" typeName="double" />
+        <ECProperty propertyName="DesirableSpiralLength" typeName="double" />
+        <ECProperty propertyName="Type1CrestVertical" typeName="double" />
+        <ECProperty propertyName="Type3SagVertical" typeName="double" />
+        <ECProperty propertyName="CrestVerticalPsd" typeName="double" />
+        <ECProperty propertyName="AverageRunningSpeed" typeName="double" />
+        <ECProperty propertyName="MaximumRelativeGradient" typeName="double" />
+        <ECProperty propertyName="CrestK_SSD" typeName="double" />
+        <ECProperty propertyName="SagK_SSD" typeName="double" />
+        <ECProperty propertyName="IgnoreLength" typeName="double" />
+        <ECProperty propertyName="UnitSystem" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing">
+        <Source multiplicity="(0..*)" polymorphic="false">
+            <Class class="RoadDesignSpeed"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="RoadDesignSpeedDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RoadDesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a RoadRange specifying design-speeds along it." >
+        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="forward"/>
+    </ECEntityClass>
+    <!--ECRelationshipClass typeName="RoadRangeHasDesignSpeeds" strength="embedding">
+        <BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="RoadRange"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="RoadDesignSpeed"/>
+        </Target>
+    </ECRelationshipClass-->
+    <!-- END General Aspects classes -->
 </ECSchema>

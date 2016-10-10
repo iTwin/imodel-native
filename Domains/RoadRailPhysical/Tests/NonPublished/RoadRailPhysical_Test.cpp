@@ -42,6 +42,9 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
 
+    auto designSpeedPtr = RoadDesignSpeed::Create(*roadRangeCPtr, 0, 150);
+    ASSERT_TRUE(designSpeedPtr->Insert().IsValid());
+
     // Create RoadSegment #1
     auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50);
     auto roadSegment1CPtr = roadSegment1Ptr->Insert();

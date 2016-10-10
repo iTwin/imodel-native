@@ -17,14 +17,10 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! Base class for physical Road and Rail segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement
+struct EXPORT_VTABLE_ATTRIBUTE SegmentElement : Dgn::PhysicalElement, LinearReferencing::ILinearlyLocatedElement, ILinearlyLocatedSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_SegmentElement, Dgn::PhysicalElement);
     friend struct SegmentElementHandler;
-
-private:
-    mutable LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
-    LinearReferencing::LinearlyReferencedFromToLocationPtr m_unpersistedFromToLocationPtr;
 
 protected:
     //! @private
@@ -37,12 +33,6 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SegmentElement)
-
-    ROADRAILPHYSICAL_EXPORT double GetFromDistanceAlong() const;
-    ROADRAILPHYSICAL_EXPORT void SetFromDistanceAlong(double newFrom);
-
-    ROADRAILPHYSICAL_EXPORT double GetToDistanceAlong() const;
-    ROADRAILPHYSICAL_EXPORT void SetToDistanceAlong(double newFrom);
 }; // SegmentElement
 
 //=======================================================================================
