@@ -1300,7 +1300,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     return DTM_SUCCESS;
     }
 
-DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP) 
+    DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {
     //find the highest resolution that has less than 5M points
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
@@ -1346,7 +1346,7 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
     TerrainModel::BcDTMPtr dtm;
     DTMStatusInt val = meshP->GetAsBcDTM(dtm);
     if (val == DTM_ERROR) return val;
-    val = dtm->ExportToGeopakTinFile(fileNameP);
+    val = dtm->ExportToGeopakTinFile(fileNameP, transformation);
     return val;
     }
 
