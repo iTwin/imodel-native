@@ -256,7 +256,6 @@ struct ColumnFactory : NonCopyableClass
             ColumnKind m_columnKind;
             bool m_isNotNull;
             bool m_isUnique;
-
         public:
             Specification (
                 PropertyMapR propertyMap,
@@ -298,14 +297,15 @@ struct ColumnFactory : NonCopyableClass
         bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
         bool IsColumnInUse (ECDbSqlColumn const&) const;
         const Utf8String Encode (Utf8StringCR acessString) const;
+        void GetDerivedColumnList(std::vector<ECDbSqlColumn const*>& columnSet) const;
 
     public:
         ColumnFactory (ClassMapCR);
         ~ColumnFactory (){}
-        ECDbSqlTable & GetTable();
+        ECDbSqlTable & GetTable() const;
         void RegisterColumnInUse (ECDbSqlColumn const&);
         void Reset ();
-        void Update ();
+        void Update (bool includeDerivedClasses = false);
         ECDbSqlColumn* Configure (Specification const&, ECDbSqlTable&);
         ECDbSqlColumn* Configure (Specification const& specs);
     };
