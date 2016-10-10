@@ -1047,8 +1047,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
     const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
 
-    if (!relMapInfo.CreateIndexOnForeignKey() ||
-        (!isUniqueIndex && m_hasKeyPropertyFk))
+    if (!isUniqueIndex && m_hasKeyPropertyFk)
         return;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);

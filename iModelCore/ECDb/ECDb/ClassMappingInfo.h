@@ -152,7 +152,6 @@ private:
     bool m_allowDuplicateRelationships;
     ForeignKeyDbConstraint::ActionType m_onDeleteAction;
     ForeignKeyDbConstraint::ActionType m_onUpdateAction;
-    bool m_createIndexOnForeignKey;
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
@@ -173,7 +172,7 @@ private:
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
-        m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true)
+        m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified)
         {}
 
     virtual ~RelationshipMappingInfo() {}
@@ -184,7 +183,6 @@ public:
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_allowDuplicateRelationships; }
     ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo));  return m_onDeleteAction; }
     ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_onUpdateAction; }
-    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_createIndexOnForeignKey; }
 
     RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
     std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}

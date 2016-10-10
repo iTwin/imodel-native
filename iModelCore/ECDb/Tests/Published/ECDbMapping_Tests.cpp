@@ -2339,68 +2339,6 @@ TEST_F(ECDbMappingTestFixture, AbstractClass)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  09/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' modifier='None'>"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' modifier='None'>"
-                        "    <ECProperty propertyName='ParentId' typeName='long' />"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexTrue' modifier='Sealed' strength='referencing'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexFalse' modifier='Sealed' strength='referencing'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' >"
-                        "           <CreateIndex>False</CreateIndex>"
-                        "        </ForeignKeyRelationshipMap>"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexDefaultValue' modifier='Sealed' strength='referencing'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "foreignkeymapcreateindex.ecdb");
-    ASSERT_FALSE(asserted);
-
-    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false, "ts_Child", {"ForeignECInstanceId_ts_RelCreateIndexTrue"});
-    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false, "ts_Child", {"ForeignECInstanceId_ts_RelCreateIndexDefaultValue"});
-    AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexFalse_target", false);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
