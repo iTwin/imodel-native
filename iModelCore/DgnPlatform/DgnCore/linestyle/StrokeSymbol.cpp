@@ -57,7 +57,7 @@ static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
+double LsSymbolReference::_GetMaxWidth () const
     {
     if (NULL == m_symbol.get ())
         return 0.0;
@@ -268,7 +268,7 @@ StatusInt       LsSymbolComponent::_DoStroke (LineStyleContextR context, DPoint3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
+void LsSymbolComponent::_PostProcessLoad ()
     {
     if (m_postProcessed)
         return;

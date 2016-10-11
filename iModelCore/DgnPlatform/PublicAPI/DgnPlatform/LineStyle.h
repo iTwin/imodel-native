@@ -345,7 +345,7 @@ public:
     virtual bool        _IsBySegment() const {return false;}
     virtual bool        _HasLineCodes() const {return false;}
     virtual bool        _IsContinuousOrSingleDash() const {return false;}
-    virtual double      _GetMaxWidth (DgnModelP modelRef)       const {return 0.0;}
+    virtual double      _GetMaxWidth ()       const {return 0.0;}
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
@@ -355,7 +355,7 @@ public:
     virtual bool        _HasWidth               () const override  {return true;}
     virtual double      _GetLength              () const override  {return 0.0;}
     virtual double      _GetLengthForTexture    () const           {return _GetLength();}
-    virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
+    virtual void        _PostProcessLoad        () { return; }
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
     virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
@@ -430,7 +430,7 @@ protected:
     virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
     virtual BentleyStatus   _GetTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
-    virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
+    virtual double          _GetMaxWidth () const override  { return _HasWidth() ? m_trueWidth : 0.0; }
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
@@ -500,7 +500,7 @@ public:
     uint32_t            GetFlags            () const {return m_symFlags;}
     bool                IsNotScaled         () const {return 0 != (m_symFlags & LSSYM_NOSCALE);}
 
-    void                _PostProcessLoad    (DgnModelP modelRef) override;
+    void                _PostProcessLoad    () override;
     void                _ClearPostProcess   () override;
     void                Draw                (LineStyleContextR, TransformCR);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -510,7 +510,6 @@ public:
     void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
     DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
     DgnGeometryPartCPtr     GetGeometryPart         () const;
-    DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
     void                SetSymBase          (DPoint3dCP sz){m_symBase = *sz;}
@@ -573,7 +572,7 @@ private:
 
 public:
     uint32_t            GetMod1             () const {return m_mod1;}
-    double              _GetMaxWidth         (DgnModelP modelRef) const;
+    double              _GetMaxWidth         () const;
 
     StatusInt           Output              (LineStyleContextR, Render::LineStyleSymbCP, DPoint3dCP org, DPoint3dCP dir, double const* xScale=0,
                                                 DPoint3dCP clipOrg=0, DPoint3dCP clipEnd=0) const;
@@ -705,17 +704,17 @@ protected:
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
-    void            CalculateSize                       (DgnModelP modelRef);
+    void            CalculateSize                       ();
 
     void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
-    virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
+    virtual void    _PostProcessLoad            () override;
     virtual void    _ClearPostProcess           () override;
     size_t          GetNumComponents            () const {return m_components.size ();}
     double          GetOffset                   (size_t index)   const   {return m_components[index].m_offset;}
     virtual double  _GetLength                  () const {return m_size.x;}
-    virtual double  _GetMaxWidth                 (DgnModelP modelRef) const override   {return m_size.y;}
+    virtual double  _GetMaxWidth                 () const override   {return m_size.y;}
     virtual bool    _HasWidth                   () const override;
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
@@ -975,7 +974,7 @@ public:
     virtual bool    _IsAffectedByWidth       (bool currentStatusOnly) const override;
     virtual double  _GetLength              () const override {return m_patternLength;}
     double          GetLength               (double*) const;
-    virtual double  _GetMaxWidth             (DgnModelP modelRef) const override;
+    virtual double  _GetMaxWidth             () const override;
     bool            RequiresLength          () const;
     virtual void _StartTextureGeneration() const override { m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; }
     virtual LsComponentPtr _GetForTextureGeneration() const override;
@@ -1122,14 +1121,14 @@ protected:
     virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
-    virtual void                    _PostProcessLoad        (DgnModelP modelRef) override;
+    virtual void                    _PostProcessLoad        () override;
     virtual void                    _ClearPostProcess       () override;
     virtual bool                    _IsContinuous           () const override {return NULL==m_strokeComponent.get () ? false : m_strokeComponent->_IsContinuous();}
     virtual double                  _GetLength              () const override;
     virtual StatusInt               _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     static LsPointComponent*        LoadLinePoint           (LsComponentReader*reader);
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
-    virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
+    virtual double                  _GetMaxWidth             ()  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
@@ -1305,7 +1304,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt UpdateStyleTable() const;
 
     void CheckForContinuous (LsStrokePatternComponentCP);
-    void PostProcessComponentLoad (DgnModelP modelRef);
+    void PostProcessComponentLoad ();
     void ClearPostProcess ();
     DGNPLATFORM_EXPORT void SetName (Utf8CP name);
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
@@ -1367,12 +1366,12 @@ public:
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
     //!  may reference other components.
-    DGNPLATFORM_EXPORT LsComponentP             GetComponentP           (DgnModelP modelRef) const;
+    DGNPLATFORM_EXPORT LsComponentP             GetComponentP           () const;
     //!  Gets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
     //!  may reference other components.
-    DGNPLATFORM_EXPORT LsComponentCP            GetComponentCP          (DgnModelP modelRef) const;
+    DGNPLATFORM_EXPORT LsComponentCP            GetComponentCP          () const;
     //!  Sets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent

@@ -470,7 +470,7 @@ LsCompoundComponent::LsCompoundComponent (LsLocation const *pLocation) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCompoundComponent::_PostProcessLoad (DgnModelP modelRef)
+void            LsCompoundComponent::_PostProcessLoad ()
     {
     if (m_postProcessed)
         return;
@@ -478,9 +478,9 @@ void            LsCompoundComponent::_PostProcessLoad (DgnModelP modelRef)
     m_postProcessed = true;
     
     for (T_ComponentsCollectionIter start = m_components.begin (); start < m_components.end (); start++)
-        start->m_subComponent->_PostProcessLoad (modelRef);
+        start->m_subComponent->_PostProcessLoad ();
 
-    CalculateSize(modelRef);
+    CalculateSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -558,7 +558,7 @@ StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCompoundComponent::CalculateSize(DgnModelP modelRef)
+void            LsCompoundComponent::CalculateSize()
     {
     BeAssert (m_postProcessed);
     m_size.x  = 0.0;
@@ -581,7 +581,7 @@ void            LsCompoundComponent::CalculateSize(DgnModelP modelRef)
 
         double offset    = fabs (GetOffset (compNum));
         //  NEEDSWORK_LINESTYLE_UNITS
-        double compWidth = GetComponentCP(compNum)->_GetMaxWidth(modelRef);
+        double compWidth = GetComponentCP(compNum)->_GetMaxWidth();
         double thisWidth = (offset + (compWidth/2.0)) * 2.0;
 
         if (thisWidth > m_size.y)
@@ -876,19 +876,14 @@ LsStrokePatternComponentCP    strokeComp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsDefinition::PostProcessComponentLoad (DgnModelP modelRef)
+void LsDefinition::PostProcessComponentLoad ()
     {
-#if defined(NEEDSWORK_LINESTYLE_MODELREF)
-    if (NULL == modelRef)
-        return;    //  defer post-processing until there is a request that supplies a modelRef.
-#endif
-
     if (m_componentLoadPostProcessed)
         return;
         
     m_componentLoadPostProcessed = true;
     
-    m_lsComp->_PostProcessLoad (modelRef);
+    m_lsComp->_PostProcessLoad ();
     
     /* Look for continuous lines; mark them as such in the LineStyle */
     CheckForContinuous (dynamic_cast<LsStrokePatternComponentCP> (m_lsComp.get ()));
@@ -896,7 +891,7 @@ void LsDefinition::PostProcessComponentLoad (DgnModelP modelRef)
     if (IsContinuous() && !m_lsComp->_HasWidth ())
         m_attributes |= LSATTR_NOWIDTH;
 
-    m_maxWidth = m_lsComp->_GetMaxWidth(modelRef);
+    m_maxWidth = m_lsComp->_GetMaxWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -930,9 +925,9 @@ LineStyleStatus LsDefinition::SetComponent(LsComponentP lsComp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentCP LsDefinition::GetComponentCP(DgnModelP modelRef) const
+LsComponentCP LsDefinition::GetComponentCP() const
     {
-    return GetComponentP (modelRef);
+    return GetComponentP ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -941,7 +936,7 @@ LsComponentCP LsDefinition::GetComponentCP(DgnModelP modelRef) const
   sub-components will be loaded.
 * @bsimethod                                                    JimBartlett     3/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
+LsComponentP    LsDefinition::GetComponentP() const
     {
     if (m_componentLookupFailed)
         return NULL;
@@ -951,7 +946,7 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
     // see if we have it cached. If so, use it.
     if (NULL != m_lsComp.get ())
         {
-        nonConstThis->PostProcessComponentLoad (modelRef);
+        nonConstThis->PostProcessComponentLoad ();
         return  m_lsComp.get ();
         }
 
@@ -966,7 +961,7 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
         }
 
     nonConstThis->SetComponent (component);
-    nonConstThis->PostProcessComponentLoad (modelRef);
+    nonConstThis->PostProcessComponentLoad ();
     
     return  component;
     }
