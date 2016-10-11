@@ -789,18 +789,6 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyColumn(Utf8String
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetCreateIndex(bool& createIndexFlag) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetBooleanValue(createIndexFlag, *m_ca, "CreateIndex");
-    }
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnDeleteAction(Utf8StringR onDeleteAction) const
     {
     if (m_ca == nullptr)
