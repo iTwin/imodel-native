@@ -145,7 +145,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_hardwareLineCode  = -1;
     m_maxWidth          = 0.0;
-    m_componentLoadPostProcessed = false;
+    m_componentLoadPostProcessed.store(false);
 
     m_name = NULL;
     SetName (name);
@@ -228,7 +228,7 @@ ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(d
     if (length <  mgds_fc_epsilon)
         {
         //  Apparently nothing is length dependent.
-        length = component._GetMaxWidth(nullptr);
+        length = component._GetMaxWidth();
         if (length <  mgds_fc_epsilon)
             length = 1.0;
         }
@@ -326,7 +326,7 @@ static void initializePoints(DPoint3d points[2], LsComponentR component, double 
     if (length <  mgds_fc_epsilon)
         {
         //  Apparently nothing is length dependent.
-        length = component._GetMaxWidth(nullptr);
+        length = component._GetMaxWidth();
         if (length <  mgds_fc_epsilon)
             length = 2048.00;
         }

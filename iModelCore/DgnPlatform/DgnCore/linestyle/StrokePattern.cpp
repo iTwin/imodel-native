@@ -246,7 +246,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR conte
 
     // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnDb or maybe ViewController...
 
-    bool        hasWidth = (0 != _GetMaxWidth(nullptr) || 0 != modifiers->GetMaxWidth());
+    bool        hasWidth = (0 != _GetMaxWidth() || 0 != modifiers->GetMaxWidth());
 
     if (hasWidth)
         {
@@ -952,7 +952,7 @@ void            LsStrokePatternComponent::CalcPatternLength ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     04/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-double  LsStrokePatternComponent::_GetMaxWidth (DgnModelP DgnModel) const
+double  LsStrokePatternComponent::_GetMaxWidth () const
     {
     LsStroke const*    pStroke = m_strokes;
     LsStroke const*    pEnd    = pStroke + m_nStrokes;

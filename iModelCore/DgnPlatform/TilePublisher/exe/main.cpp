@@ -157,7 +157,7 @@ private:
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -325,6 +325,23 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Standalone:
                 m_standalone = true;
                 break;
+            case ParamId::Tolerance:
+                {
+                static const double     s_minTolerance = 1.0E-5, s_maxTolerance = 100.0;
+
+                if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_tolerance))
+                    {
+                    printf ("Unrecognized tolerance value: %ls\n", av[i]);
+                    return false;
+                    }
+                if (m_tolerance < s_minTolerance || s_maxTolerance > s_maxTolerance)
+                    {
+                    printf ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
+                    return false;
+                    }
+                break;
+                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -485,6 +502,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
+    bset<DgnViewId> publishedViews;
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
@@ -522,6 +540,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
             }
 
+        publishedViews.insert (view.GetId());
         viewsJson[view.GetId().ToString()] = entry;
         }
 
@@ -530,7 +549,11 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["models"] = GetModelsJson (m_allModels);
     json["categories"] = GetCategoriesJson (m_allCategories);
-    json["defaultView"] = GetViewController().GetViewId().ToString();
+
+    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
+        json["defaultView"] = publishedViews.begin()->ToString();
+    else
+        json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
     }

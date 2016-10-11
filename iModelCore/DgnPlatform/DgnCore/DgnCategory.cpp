@@ -75,7 +75,7 @@ DgnDbStatus DgnCategory::BindParams(ECSqlStatement& stmt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
     if (0 == strcmp(CAT_PROP_Descr, name))
         {
@@ -92,13 +92,13 @@ DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) con
         value.SetInteger(static_cast<int32_t>(m_data.m_scope));
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
 
     if (0 == strcmp(CAT_PROP_Descr, name))
@@ -116,7 +116,7 @@ DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         m_data.m_scope = static_cast<Scope>(value.GetInteger());
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,7 +337,7 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
     if (0 == strcmp(SUBCAT_PROP_Descr, name))
         {
@@ -349,13 +349,13 @@ DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) 
         value.SetUtf8CP(m_data.m_appearance.ToJson().c_str());
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
 
     if (0 == strcmp(SUBCAT_PROP_Descr, name))
@@ -368,7 +368,7 @@ DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         m_data.m_appearance.FromJson(value.GetUtf8CP());
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
