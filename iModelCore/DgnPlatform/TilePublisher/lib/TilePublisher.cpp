@@ -1256,7 +1256,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     Status                  status;
     static size_t           s_maxPointsPerTile = 200000;
 
-    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
+    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, toleranceInMeters, s_maxPointsPerTile))))
         return status;
         
     return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
