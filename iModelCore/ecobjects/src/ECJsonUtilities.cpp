@@ -169,9 +169,19 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
                 status = ecValue.SetLong(BeJsonUtilities::Int64FromValue(jsonValue));
                 break;
             case PRIMITIVETYPE_Double:
-                if (!EXPECTED_CONDITION(jsonValueType == Json::realValue))
+                if (!jsonValue.isConvertibleTo(Json::ValueType::realValue))
                     return ERROR;
-                status = ecValue.SetDouble(jsonValue.asDouble());
+                if (jsonValue.isDouble())
+                    status = ecValue.SetDouble(jsonValue.asDouble());
+                else if (jsonValue.isInt())
+                    status = ecValue.SetDouble((double)jsonValue.asInt());
+                else if (jsonValue.isInt())
+                    status = ecValue.SetDouble((double) jsonValue.asInt64());
+                else
+                    {
+                    BeAssert(false && "Invalid type to convert to double");
+                    return ERROR;
+                    }
                 break;
             case PRIMITIVETYPE_DateTime:
             {
