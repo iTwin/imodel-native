@@ -175,8 +175,6 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
                     status = ecValue.SetDouble(jsonValue.asDouble());
                 else if (jsonValue.isInt())
                     status = ecValue.SetDouble((double)jsonValue.asInt());
-                else if (jsonValue.isInt())
-                    status = ecValue.SetDouble((double) jsonValue.asInt64());
                 else
                     {
                     BeAssert(false && "Invalid type to convert to double");
