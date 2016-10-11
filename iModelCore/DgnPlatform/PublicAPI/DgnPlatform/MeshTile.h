@@ -605,7 +605,7 @@ public:
     Statistics const& GetStatistics() const { return m_statistics; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, double leafTolerance, size_t maxPointsPerTile);
 };
 
 //=======================================================================================
