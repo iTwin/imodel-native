@@ -4150,7 +4150,7 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementECDBuffer::ElementECDBuffer(DgnElement const& el) : m_element(const_cast<DgnElement&>(el))
     {
@@ -4171,7 +4171,7 @@ ElementECDBuffer::ElementECDBuffer(DgnElement const& el) : m_element(const_cast<
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementECDBuffer::LoadProperties()
     {
@@ -4238,7 +4238,7 @@ BentleyStatus ElementECDBuffer::LoadProperties()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementECDBuffer::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
     {
@@ -4260,7 +4260,7 @@ bool ElementECDBuffer::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementECDBuffer::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
     {
@@ -4279,7 +4279,7 @@ bool ElementECDBuffer::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClas
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* ElementECDBuffer::GetUpdater()
     {
@@ -4305,7 +4305,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementECDBuffer::GetUpdater()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECDBuffer::UpdateProperties()
     {
@@ -4343,7 +4343,8 @@ DgnDbStatus ElementECDBuffer::UpdateProperties()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2011
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECDBuffer::_CopyFromBuffer (ECDBufferCR src)
     {
@@ -4358,7 +4359,8 @@ ECObjectsStatus ElementECDBuffer::_CopyFromBuffer (ECDBufferCR src)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t ElementECDBuffer::GetBytesUsed () const
     {
@@ -4369,7 +4371,8 @@ uint32_t ElementECDBuffer::GetBytesUsed () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/        
 void ElementECDBuffer::_ClearValues ()
     {
@@ -4382,7 +4385,8 @@ void ElementECDBuffer::_ClearValues ()
     }
    
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECDBuffer::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
     {
@@ -4396,7 +4400,8 @@ ECObjectsStatus ElementECDBuffer::_ModifyData (uint32_t offset, void const * new
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECDBuffer::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
     {
@@ -4410,7 +4415,8 @@ ECObjectsStatus ElementECDBuffer::_MoveData (uint32_t toOffset, uint32_t fromOff
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECDBuffer::_ShrinkAllocation ()
     {
@@ -4434,7 +4440,8 @@ ECObjectsStatus ElementECDBuffer::_ShrinkAllocation ()
     } 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementECDBuffer::_FreeAllocation ()
     {
@@ -4461,7 +4468,8 @@ void ElementECDBuffer::_FreeAllocation ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECDBuffer::_GrowAllocation (uint32_t bytesNeeded)
     {
@@ -4491,7 +4499,7 @@ ClassLayoutCR ElementECDBuffer::_GetClassLayout () const
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElement const& el, Utf8CP propName) :
     ElementECDBuffer(el)
@@ -4512,7 +4520,7 @@ ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElement const& el, Utf8C
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx)
     {
@@ -4534,7 +4542,7 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECValueCR value, DgnElem
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/16
+* @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx)
     {
