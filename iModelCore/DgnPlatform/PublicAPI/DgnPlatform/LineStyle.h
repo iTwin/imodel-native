@@ -1267,7 +1267,7 @@ private:
     double              m_maxWidth;
     uint32_t            m_attributes;
     int                 m_hardwareLineCode;
-    bool                m_componentLoadPostProcessed;
+    BeAtomic<bool>      m_componentLoadPostProcessed;
 
     // For texture styles...
     mutable bool        m_firstTextureInitialized;
@@ -1555,6 +1555,7 @@ private:
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
     DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentId componentId);
+    LsComponent* GetComponent(LsLocationCR location);
 
 //__PUBLISH_SECTION_START__
 public:

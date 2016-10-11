@@ -881,7 +881,7 @@ void LsDefinition::PostProcessComponentLoad ()
     if (m_componentLoadPostProcessed)
         return;
         
-    m_componentLoadPostProcessed = true;
+    m_componentLoadPostProcessed.store(true);
     
     m_lsComp->_PostProcessLoad ();
     
@@ -899,7 +899,7 @@ void LsDefinition::PostProcessComponentLoad ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsDefinition::ClearPostProcess()
     {
-    m_componentLoadPostProcessed = false;
+    m_componentLoadPostProcessed.store(false);
     
     if (NULL != m_lsComp.get ())
         m_lsComp->_ClearPostProcess ();
@@ -950,7 +950,7 @@ LsComponentP    LsDefinition::GetComponentP() const
         return  m_lsComp.get ();
         }
 
-    nonConstThis->m_componentLoadPostProcessed = false;
+    nonConstThis->m_componentLoadPostProcessed.store(false);
     LsLocation  location = nonConstThis->m_location;
 
     LsComponentP    component = DgnLineStyles::GetLsComponent (location);
@@ -1073,17 +1073,25 @@ LsCacheP LsLocation::GetCacheP () const
 //---------------------------------------------------------------------------------------
 LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
     {
-    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->LineStyles();
+    return location.GetDgnDb()->LineStyles().GetComponent(location);
+    }
 
-    auto iter = dgnLineStyles.m_loadedComponents.find(location);
-    if (iter != dgnLineStyles.m_loadedComponents.end())
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+LsComponent* DgnLineStyles::GetComponent(LsLocationCR location)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    auto iter = m_loadedComponents.find(location);
+    if (iter != m_loadedComponents.end())
         return iter->second.get();
 
     LsComponentPtr comp = cacheLoadComponent (location);
     if (comp.IsNull())
         return nullptr;
 
-    dgnLineStyles.m_loadedComponents[location] = comp;
+    m_loadedComponents[location] = comp;
     return comp.get();
     }
 

@@ -145,7 +145,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_hardwareLineCode  = -1;
     m_maxWidth          = 0.0;
-    m_componentLoadPostProcessed = false;
+    m_componentLoadPostProcessed.store(false);
 
     m_name = NULL;
     SetName (name);
