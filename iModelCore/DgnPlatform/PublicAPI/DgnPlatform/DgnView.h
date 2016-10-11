@@ -156,6 +156,9 @@ public:
     DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
     //! Query if the selector includes the specified category
     DGNPLATFORM_EXPORT bool ContainsCategoryId(DgnCategoryId cid) const;
+    //! Query a list of category selectors
+    DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
+
     //! Get the SubCategoryOverrides
     DGNPLATFORM_EXPORT void GetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override>& overrides) const;
     //! Set the SubCategoryOverrides

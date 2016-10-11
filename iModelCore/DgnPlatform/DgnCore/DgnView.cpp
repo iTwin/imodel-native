@@ -630,6 +630,24 @@ DgnDbStatus CategorySelector::SetSubCategoryOverrides(bmap<DgnSubCategoryId, Dgn
     return SetPropertyValue("SubCategoryOverrides", Json::FastWriter::ToString(arr).c_str());
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  10/2016
+//---------------------------------------------------------------------------------------
+DgnElementIdSet CategorySelector::QuerySelectors(DgnDbR db)
+    {
+    DgnElementIdSet ids;
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_CategorySelector));
+    if (stmt.IsValid())
+        {
+        while (BE_SQLITE_ROW == stmt->Step())
+            ids.insert(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    return ids;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
