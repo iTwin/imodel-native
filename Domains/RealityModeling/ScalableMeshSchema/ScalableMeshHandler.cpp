@@ -534,6 +534,7 @@ protected:
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     const DMatrix4d&                        m_storageToUorsTransfo;
     bool                                    m_hasFetchedFinalNode;
+    bool                                    m_hasFetchedFinalTerrainNode;
 
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
@@ -546,6 +547,7 @@ protected:
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_hasFetchedFinalNode = false;
+        m_hasFetchedFinalTerrainNode = false;
         }
 
 public:
@@ -558,6 +560,37 @@ public:
 virtual Completion _Process(ViewContextR viewContext) override
     {
     Completion completionStatus = Completion::Aborted; 
+
+    if (!m_currentDrawingInfoPtr->m_coverageClips.empty() && !m_hasFetchedFinalTerrainNode)
+        {
+        if (!m_progressiveQueryEngine->IsQueryComplete(m_currentDrawingInfoPtr->m_terrainQuery))
+            {
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
+            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainQuery);
+            assert(status == SUCCESS);
+
+            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
+            status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_terrainOverviewNodes, m_currentDrawingInfoPtr->m_terrainQuery);
+            assert(status == SUCCESS);
+
+            }
+        else
+            {
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
+
+            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainQuery);
+
+            assert(status == SUCCESS);
+            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
+
+            status = m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
+
+            assert(status == SUCCESS);
+
+            completionStatus = Completion::HealRequired;
+            m_hasFetchedFinalTerrainNode = true;
+            }
+        }
 
     if (!m_hasFetchedFinalNode)
         {                    
@@ -602,31 +635,26 @@ virtual Completion _Process(ViewContextR viewContext) override
                         
             completionStatus = Completion::Aborted;
 
-            if (s_drawInProcess)
-                {
-                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);
-                if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
-                    {
-                    for (auto& clip : m_currentDrawingInfoPtr->m_coverageClips)
-                        {
-                        viewContext.PushClip(*clip);
-                        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo);
-                        viewContext.PopTransformClip();
-                        }
-                    }
-                }
             }
 
-        if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
-            {
-            if (!m_progressiveQueryEngine->IsQueryComplete(m_currentDrawingInfoPtr->m_terrainQuery))
-                m_hasFetchedFinalNode = false;
-            }
         }
-    else
+    if (m_hasFetchedFinalTerrainNode && m_hasFetchedFinalNode)
         {
         completionStatus = Completion::Finished;
         }        
+    else if (s_drawInProcess)
+            {
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);
+            if (!m_currentDrawingInfoPtr->m_coverageClips.empty())
+                {
+                for (auto& clip : m_currentDrawingInfoPtr->m_coverageClips)
+                    {
+                    viewContext.PushClip(*clip);
+                    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_terrainMeshNodes, m_currentDrawingInfoPtr->m_terrainOverviewNodes, viewContext, m_storageToUorsTransfo);
+                    viewContext.PopTransformClip();
+                    }
+                }
+            }
             
     return completionStatus;
     }
@@ -867,7 +895,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
 
     bool needProgressive;
-    
+    bool isTerrainComplete = false;
     if (m_progressiveQueryEngine->IsQueryComplete(queryId))
         {        
         m_currentDrawingInfoPtr->m_meshNodes.clear();
@@ -880,7 +908,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         m_smPtr->SetCurrentlyViewedNodes(nodes);
                         
         needProgressive = false;
-        m_forceRedraw = false;
+        
         }
     else
         {  
@@ -909,6 +937,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
             m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
+            isTerrainComplete = true;
             }
         else
             {
@@ -919,9 +948,11 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
             needProgressive = true;
+            isTerrainComplete = false;
             }
         }
-
+    else isTerrainComplete = true;
+    if (isTerrainComplete && !needProgressive) m_forceRedraw = false;
     ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
     if (!clipFromCoverageSet.empty())
         {
