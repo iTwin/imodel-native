@@ -92,7 +92,9 @@ BentleyStatus TileData::ReadFromFile() const
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
         {
-        m_tile->SetNotFound();
+        if (m_tile.IsValid())
+            m_tile->SetNotFound();
+
         return ERROR;
         }
 
