@@ -1006,8 +1006,10 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_userLabel(params.m_userLabel), m_userProperties(nullptr)
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
+    m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
+    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ahp_data(nullptr), m_ahp_bytesAllocated(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1312,10 +1314,6 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
-
-    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
-    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
-    (*const_cast<DgnElementP>(&original)).m_autoHandledProperties = nullptr;
 
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
