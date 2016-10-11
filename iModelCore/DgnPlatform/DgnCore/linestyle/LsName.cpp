@@ -20,14 +20,15 @@ private:
     DRange3d            m_range;
     Transform           m_currentTransform;
     DPoint3d            m_points[2];
+    LineStyleSymbR 		m_lsSymb;
 
 protected:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(LsComponentR component, DPoint3d points[2]) 
-: m_component(component) 
+explicit LineStyleRangeCollector(LsComponentR component, LineStyleSymbR lsSymb, DPoint3d points[2]) 
+: m_component(component), m_lsSymb(lsSymb) 
     {
     //  Make sure to include both end points in case the line style has pading at the beginning or end.
     m_range = DRange3d::From(points[0], points[1]);
@@ -66,11 +67,7 @@ virtual void _OutputGraphics(ViewContext& viewContext) override
     Render::GraphicParams   defaultParams;
     LineStyleContext lsContext(*graphic, defaultParams, &viewContext);
 
-    LineStyleSymb   lineStyleSymb;
-    lineStyleSymb.Init(nullptr);
-    //  lineStyleSymb.SetScale(m_scaleFactor);
-
-    m_component._StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
+    m_component._StrokeLineString(*graphic, lsContext, &m_lsSymb, m_points, 2, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -86,9 +83,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, LsComponentR component, DPoint3d points[2])
+static void Process(DRange3dR range, LsComponentR component, LineStyleSymbR lsSymb, DPoint3d points[2])
     {
-    LineStyleRangeCollector  processor(component, points);
+    LineStyleRangeCollector  processor(component, lsSymb, points);
 
     BeAssert(nullptr != component.GetDgnDbP());
     GeometryProcessor::Process(processor, *component.GetDgnDbP());
@@ -223,6 +220,9 @@ public:
 //---------------------------------------------------------------------------------------
 ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(dgndb), m_component(&component)
     {
+    if (scale == 0)
+        scale = 1;
+
     double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
 
     if (length <  mgds_fc_epsilon)
@@ -250,7 +250,7 @@ double GetLength() {return m_points[1].x;}
 struct ComponentToTextureStroker : ComponentStroker
 {
 private:
-    double              m_scaleFactor;
+    LineStyleSymbR      m_lsSymb;
     Transform           m_transformForTexture;
     ColorDef            m_lineColor;
     ColorDef            m_fillColor;
@@ -261,18 +261,18 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
-            ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
+ComponentToTextureStroker(DgnDbR dgndb, LineStyleSymbR lsSymb, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
+            ComponentStroker(dgndb, component, lsSymb.GetScale()), m_lsSymb(lsSymb), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
 #if defined (BENTLEYCONFIG_GRAPHICS_DIRECTX)
+    //  This is to compensate for a bug in QV using DirectX. QV creates the mirror image.
     DVec3d normal;
     normal.Init(0, 1, 0);
     DPoint3d zero;
     zero.Zero();
-    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
     m_transformForTexture.InitFromMirrorPlane(zero, normal);
 #else
     m_transformForTexture.InitIdentity();
@@ -298,18 +298,13 @@ Render::GraphicPtr Stroke(ViewContextR context) const
     elemMatSymb.SetFillColor(m_fillColor);
     elemMatSymb.SetWidth(m_lineWeight);
 
-    LineStyleSymb   lineStyleSymb;
-    lineStyleSymb.Init(nullptr);
-    lineStyleSymb.SetScale(m_scaleFactor);
-
-
     //  Create the graphic
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
 
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);
     LineStyleContext lsContext(*graphic, elemMatSymb, &context);
-    m_component->_StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
+    m_component->_StrokeLineString(*graphic, lsContext, &m_lsSymb, m_points, 2, false);
     graphic->Close();
 
     return graphic;
@@ -407,6 +402,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, uint32_t weight)
     {
+    double componentScaleFactor = lineStyleSymb.GetScale();
     textureDescr.m_hasTextureWidth = false;
     textureDescr.m_textureWidth = 0;
 
@@ -445,10 +441,10 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 
     //  Get just the range of the components.  Don't let any scaling enter into this. We scale latter by multiplying by unitDef.
     DPoint3d  points[2];
-    initializePoints(points, *m_lsComp, 1.0);
+    initializePoints(points, *m_lsComp, componentScaleFactor);
 
     DRange3d  lsRange;
-    LineStyleRangeCollector::Process(lsRange, *comp, points);
+    LineStyleRangeCollector::Process(lsRange, *comp, lineStyleSymb, points);
 
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLengthForTexture());
@@ -463,7 +459,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     if (!m_usesSymbolWeight)
         lineWeight = weight;
 
-    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), lineStyleSymb, lineColor, fillColor, lineWeight, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
     if (!graphic.IsValid() || viewContext.CheckStop())
@@ -488,8 +484,6 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     textureDescr.m_hasTextureWidth = true;
     textureDescr.m_textureWidth = yRange * unitDef;
 
-    BeAssert((range2d.high.y - range2d.low.y) * unitDef < 50);
-    BeAssert((range2d.high.x - range2d.low.x) * unitDef < 50);
     m_firstTextureInitialized = true;
 
     return BSISUCCESS;    
@@ -500,15 +494,25 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 //---------------------------------------------------------------------------------------
 StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scaleWithoutUnits, uint32_t weight)
     {
+    if (m_usesSymbolWeight)
+        weight = 0;   // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
+
+    uint32_t modifiers = 0;
+    if (lineStyleSymb.IsScaled())
+        modifiers |= STYLEMOD_SCALE;
+    if (lineStyleSymb.HasOrgWidth())
+        modifiers |= STYLEMOD_SWIDTH;
+
+    //  Dash and gap scales purposely omitted since the MicroStation user interface does not provide any way to set them.
+
+    TextureParams params(weight, modifiers, lineStyleSymb.GetScale(), lineStyleSymb.GetOriginWidth());
+
     if (m_firstTextureInitialized)
         {
         if (m_texturesNotSupported)
             return BSIERROR;
 
-        if (m_usesSymbolWeight)
-            weight = 0;   // if this value will be ignored when generating the texture, but we still use it for looking up the texture
-
-        WeightToTexture_t::iterator tDescrIter = m_textures.find(weight);
+        ParamsToTexture_t::iterator tDescrIter = m_textures.find(params);
         if (tDescrIter != m_textures.end())
             {
             tDescr = tDescrIter->second;
@@ -519,10 +523,7 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR vi
     if (LsDefinition::GenerateTexture(tDescr,  viewContext, lineStyleSymb, weight) != BSISUCCESS)
         return BSIERROR;
 
-    if (m_usesSymbolWeight)
-        weight = 0;
-
-    m_textures[weight] = tDescr;
+    m_textures[params] = tDescr;
     return BSISUCCESS;
     }
 
@@ -594,8 +595,10 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
                 if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, scaleWithoutUnits, weight) != BSISUCCESS)
                     return nullptr;
 
+                //  Do not apply the scaling factor here.  It must be applied when generating the texture, not when applying the texture.
+                //  Line widths should not be scaled, but scaling the result texture would scale the line widths.
                 if (tDescr.m_texture.IsValid() && tDescr.m_hasTextureWidth)
-                    lineStyleSymb.SetWidth (tDescr.m_textureWidth * scaleWithoutUnits);
+                    lineStyleSymb.SetWidth (tDescr.m_textureWidth);
 
                 return tDescr.m_texture.get();
                 }
@@ -911,4 +914,46 @@ LsDefinition* LsDefinition::Clone()
     LsDefinition* retval = new LsDefinition(_GetName(), *GetLocation()->GetDgnDb(), jsonObj, m_styleId);
 
     return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2016
+//---------------------------------------------------------------------------------------
+bool TextureParams::operator< (struct TextureParams const&rhs) const
+    {
+    if (m_flags < rhs.m_flags)
+        return true;
+    if (m_flags > rhs.m_flags)
+        return false;
+
+    if (m_lineWeight < rhs.m_lineWeight)
+        return true;
+    if (m_lineWeight > rhs.m_lineWeight)
+        return false;
+
+    if (m_scale < rhs.m_scale)
+        return true;
+    if (m_scale > rhs.m_scale)
+        return false;
+
+    if (m_styleWidth < rhs.m_styleWidth)
+        return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2016
+//---------------------------------------------------------------------------------------
+TextureParams::TextureParams(uint32_t lineWeight, uint32_t flags, double scale, double styleWidth) :
+        m_lineWeight(lineWeight), m_flags(flags), m_scale(scale), m_styleWidth(styleWidth)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2016
+//---------------------------------------------------------------------------------------
+TextureParams::TextureParams() :
+        m_lineWeight(0), m_flags(0), m_scale(0), m_styleWidth(0)
+    {
     }
