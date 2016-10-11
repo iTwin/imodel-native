@@ -10,12 +10,21 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
-        <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
+        <SubPart PartName="BeOpenSSLPublicAPI-UWP"/>
+        <SubPart PartName="BeOpenSSLPublicAPI-NonUWP"/>
         <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="BeSecurity" />
         </Bindings>
+    </Part>
+
+    <Part Name="BeOpenSSLPublicAPI-UWP" OnlyPlatforms="WinRT*">
+        <SubPart PartName="PublicAPI" PartFile="BeOpenSSLUWP" Repository="Libsrc-OpenSSL-UWP"/>
+    </Part>
+
+    <Part Name="BeOpenSSLPublicAPI-NonUWP" ExcludePlatforms="WinRT*">
+        <SubPart PartName="PublicAPI" PartFile="BeOpenSSL" Repository="Libsrc-OpenSSL"/>
     </Part>
 
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json">
