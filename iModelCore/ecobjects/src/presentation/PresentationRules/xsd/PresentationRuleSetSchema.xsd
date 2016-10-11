@@ -148,7 +148,7 @@
             <xs:attribute name="ContextMenuCondition" type="xs:string"/>
             <xs:attribute name="ContextMenuLabel" type="xs:string"/>
             <xs:attribute name="SettingsId" type="xs:string"/>
-    </xs:complexType>
+        </xs:complexType>
     </xs:element>
     <xs:element name="ContentRule">
         <xs:complexType mixed="true">
@@ -359,11 +359,14 @@
     </xs:element>
     <xs:element name="SelectedNodeInstances">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element ref="DisplayRelatedItems"/>
+                    <xs:element ref="RelatedProperties"/>
+                    <xs:element ref="HiddenProperties"/>
+                </xs:choice>
+                <xs:element ref="CalculatedProperties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
             <xs:attribute name="AcceptableSchemaName" type="xs:string"/>
             <xs:attribute name="AcceptableClassNames" type="xs:string"/>
             <xs:attribute name="AcceptablePolymorphically" type="xs:boolean" default="false"/>
@@ -374,11 +377,14 @@
     </xs:element>
     <xs:element name="ContentInstancesOfSpecificClasses">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
+           <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element ref="DisplayRelatedItems"/>
+                    <xs:element ref="RelatedProperties"/>
+                    <xs:element ref="HiddenProperties"/>
+                </xs:choice>
+                <xs:element ref="CalculatedProperties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
             <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
             <xs:attribute name="InstanceFilter" type="xs:string"/>
             <xs:attribute name="ClassNames" type="xs:string" use="required"/>
@@ -388,11 +394,14 @@
     </xs:element>
     <xs:element name="ContentRelatedInstances">
         <xs:complexType>
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="DisplayRelatedItems"/>
-                <xs:element ref="RelatedProperties"/>
-                <xs:element ref="HiddenProperties"/>
-            </xs:choice>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element ref="DisplayRelatedItems"/>
+                    <xs:element ref="RelatedProperties"/>
+                    <xs:element ref="HiddenProperties"/>
+                </xs:choice>
+                <xs:element ref="CalculatedProperties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
             <xs:attribute name="InstanceFilter" type="xs:string"/>
             <xs:attribute name="RelationshipClassNames" type="xs:string"/>
             <xs:attribute name="RelatedClassNames" type="xs:string"/>
@@ -433,6 +442,19 @@
         <xs:complexType>
             <xs:attribute name="ClassName" type="xs:string"/>
             <xs:attribute name="PropertyNames" type="xs:string"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="CalculatedProperties">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="Property"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Property">
+        <xs:complexType mixed="true">
+            <xs:attribute name="Label" type="xs:string" use="required"/>
+            <xs:attribute name="Priority" type="xs:int" use="optional" default="1000"/>
         </xs:complexType>
     </xs:element>
 </xs:schema>

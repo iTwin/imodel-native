@@ -180,7 +180,7 @@ public:
     bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
 
     //! Returns the ValueKind of the ECProperty
-    inline ValueKind            GetTypeKind() const         { return m_typeKind; }
+    inline ValueKind            GetTypeKind() const { return m_typeKind; }
     //! Returns the ArrayKind of the ECProperty, if the ECProperty is an array property
     inline ArrayKind            GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }
     //! Returns true if the ECProperty is a Primitive property
