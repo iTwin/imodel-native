@@ -25,7 +25,7 @@ always:
     CSCOpt = \/define:IMSOFF
 %endif
     
-ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)BentleyWMSPackageNet.dll
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)RealityServicesNet.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
 %include csrefapnd.mki

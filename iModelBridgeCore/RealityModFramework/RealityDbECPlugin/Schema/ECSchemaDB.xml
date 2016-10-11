@@ -242,6 +242,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="Dataset" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Dataset</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Dataset</OverrideColumnName>
+                    <CacheColumnName>Dataset</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
         
         <ECProperty propertyName="Date" typeName="dateTime">
             <ECCustomAttributes>
@@ -757,6 +768,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="CoordinateSystem" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CoordinateSystem</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>CoordinateSystem</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="Metadata" typeName="string" >
             <!--ECCustomAttributes>
                 <MimicDBColumn>
@@ -764,7 +786,6 @@
                 </MimicDBColumn>
             </ECCustomAttributes-->
         </ECProperty>
-        
         
         <!--<ECProperty propertyName="ServerId" typeName="int">
             <ECCustomAttributes>
@@ -969,6 +990,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="RedBandSisterFiles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RedBandSisterFiles</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>RedBandSisterFiles</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
         <ECProperty propertyName="GreenBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -991,6 +1023,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="GreenBandSisterFiles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GreenBandSisterFiles</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>GreenBandSisterFiles</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
         <ECProperty propertyName="BlueBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1013,6 +1056,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="BlueBandSisterFiles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>BlueBandSisterFiles</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>BlueBandSisterFiles</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
         <ECProperty propertyName="PanchromaticBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1031,6 +1085,17 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>PanchromaticBandFileSize</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="PanchromaticBandSisterFiles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>PanchromaticBandSisterFiles</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>PanchromaticBandSisterFiles</OverrideColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1673,6 +1738,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+        
+        <ECProperty propertyName="Dataset" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Dataset</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>Dataset</OverrideColumnName>
+                    <CacheColumnName>Dataset</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
             
         <ECProperty propertyName="Occlusion" typeName="string">
             <ECCustomAttributes>
@@ -1940,6 +2017,8 @@
         <ECProperty propertyName="CoordinateSystem" typeName="string" />
         <ECProperty propertyName="Polygon" typeName="string" />
         <ECProperty propertyName="OSM" typeName="boolean" />
+        <ECProperty propertyName="Requestor" typeName="string" />
+        <ECProperty propertyName="RequestorVersion" typeName="string" />
     </ECClass>
 
     <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">
