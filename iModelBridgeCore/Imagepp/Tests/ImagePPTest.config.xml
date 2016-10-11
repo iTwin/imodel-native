@@ -18,7 +18,7 @@
         -->
 
         <!--During execution, the output location is : Debug\Winx64\Product\ImagePP-GTest\run\Output by default-->
-        <Output Enable="false">D:\Output\</Output>
+        <Output Enable="false">K:\ATPsOutput\</Output>
 
         <!-- Location of base files for comparaison. Must point to one level hight than 'Export..Tester' directory-->
         <BaseLine Enable="false">D:\Baseline\</BaseLine>
