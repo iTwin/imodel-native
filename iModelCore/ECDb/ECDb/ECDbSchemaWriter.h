@@ -18,7 +18,6 @@ struct ECDbSchemaWriter : NonCopyableClass
     {
 private:
     ECDbCR m_ecdb;
-    BeMutex m_mutex;
     CustomAttributeValidator m_customAttributeValidator;
     std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
 

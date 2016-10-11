@@ -1141,13 +1141,6 @@ namespace connectivity
         aValue = _rValue; //affan
         return aValue;
         }
-    // -----------------------------------------------------------------------------
-
-    BeMutex& OSQLParser::getCriticalSection()
-        {
-        static BeMutex aMutex;
-        return aMutex;
-        }
 
     //-----------------------------------------------------------------------------
     OSQLParseNode* OSQLParser::predicateTree(Utf8String& rErrorMessage, const Utf8String& rStatement,
@@ -1155,15 +1148,8 @@ namespace connectivity
         const RefCountedPtr< XPropertySet > & xField)
         {
 
-
-        // mutex for parsing
-        //static ::osl::Mutex aMutex;
-
-        // Guard the parsing
-        BeMutexHolder aGuard(getCriticalSection());
         // must be reset
         setParser(this);
-
 
         // reset the parser
         m_xField = xField;
@@ -1327,7 +1313,6 @@ namespace connectivity
         SQLyydebug = 1;
 #endif
 
-        BeMutexHolder aGuard(getCriticalSection());
         setParser(this);
 
 
@@ -2658,14 +2643,12 @@ namespace connectivity
     // -----------------------------------------------------------------------------
     void OSQLParseNodesContainer::push_back(OSQLParseNode* _pNode)
         {
-        BeMutexHolder aGuard(m_aCriticalSection);
         m_aNodes.push_back(_pNode);
 
         }
     // -----------------------------------------------------------------------------
     void OSQLParseNodesContainer::erase(OSQLParseNode* _pNode)
         {
-        BeMutexHolder aGuard(m_aCriticalSection);
         if (!m_aNodes.empty())
             {
             ::std::vector< OSQLParseNode* >::iterator aFind = ::std::find(m_aNodes.begin(), m_aNodes.end(), _pNode);
@@ -2676,13 +2659,11 @@ namespace connectivity
     // -----------------------------------------------------------------------------
     void OSQLParseNodesContainer::clear()
         {
-        BeMutexHolder aGuard(m_aCriticalSection);
         m_aNodes.clear();
         }
     // -----------------------------------------------------------------------------
     void OSQLParseNodesContainer::clearAndDelete()
         {
-        BeMutexHolder aGuard(m_aCriticalSection);
         // clear the garbage collector
         while (!m_aNodes.empty())
             {

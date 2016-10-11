@@ -19,6 +19,8 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
+    BeMutexHolder lock(ecdb.GetECDbImplR().GetMutex());
+
     OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
     Utf8String error;
     std::unique_ptr<OSQLParseNode> parseNode(parser.parseTree(error, ecsql));
@@ -43,6 +45,8 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& e
     {
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
+
+    BeMutexHolder lock(ecdb.GetECDbImplR().GetMutex());
 
     ECSqlParser parser;
     std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql);

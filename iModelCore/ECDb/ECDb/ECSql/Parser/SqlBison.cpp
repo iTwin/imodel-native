@@ -184,8 +184,8 @@ using namespace connectivity;
 
 /* In a future release of Bison, this section will be replaced
    by #include "SqlBison.h".  */
-#ifndef YY_SQLYY_D_DEV_BSW_DGNDB_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
-# define YY_SQLYY_D_DEV_BSW_DGNDB_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+#ifndef YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+# define YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -464,7 +464,7 @@ int SQLyyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_SQLYY_D_DEV_BSW_DGNDB_BIM0200DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
+#endif /* !YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
@@ -7294,7 +7294,6 @@ void setParser(OSQLParser* _pParser)
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
 {
-    BeMutexHolder aGuard(getCriticalSection());
     m_pParseTree = pNewParseTree;
 }
 //-----------------------------------------------------------------------------
@@ -7366,8 +7365,6 @@ OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
 {
 
 
-    // Guard the parsing
-    BeMutexHolder aGuard(getCriticalSection());
     // must be reset
     setParser(this);
 
