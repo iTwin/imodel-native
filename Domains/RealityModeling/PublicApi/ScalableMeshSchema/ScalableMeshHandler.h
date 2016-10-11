@@ -144,7 +144,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
                 
-        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
+        SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
 

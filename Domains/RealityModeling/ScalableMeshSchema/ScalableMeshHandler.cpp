@@ -1255,6 +1255,12 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
        clipIds.push_back(clip);
     m_progressiveQueryEngine->SetActiveClips(activeClips, m_smPtr);
     m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+
+    if (m_smPtr->GetTerrainSM().IsValid())
+        {
+        m_progressiveQueryEngine->SetActiveClips(activeClips, m_smPtr->GetTerrainSM());
+        m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr->GetTerrainSM());
+        }
     m_forceRedraw = true;
     }
 
@@ -1357,6 +1363,7 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
     T_Super::_ReadJsonProperties(v);
     m_properties.FromJson(v);
     }
+
 
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
