@@ -189,13 +189,27 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
     {
+    MockECDbSchemaChangeListener listener;
     auto cache = GetTestCache();
 
-    MockECDbSchemaChangeListener listener;
     cache->RegisterSchemaChangeListener(&listener);
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+
+    cache->UnRegisterSchemaChangeListener(&listener);
+    }
+
+TEST_F(DataSourceCacheTests, Close_SchemaChangeListenerRegistered_CallsListener)
+    {
+    MockECDbSchemaChangeListener listener;
+    auto cache = GetTestCache();
+
+    cache->RegisterSchemaChangeListener(&listener);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(1);
+
+    cache->Close();
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListenerOnceTransactionIsStarted)
@@ -204,14 +218,14 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     ECDb::CreateParams params;
     params.SetStartDefaultTxn(DefaultTxn::No);
 
+    MockECDbSchemaChangeListener listener1;
+    MockECDbSchemaChangeListener listener2;
+
     DataSourceCache cache1;
     DataSourceCache cache2;
 
     ASSERT_EQ(SUCCESS, cache1.Create(path, StubCacheEnvironemnt(), params));
     ASSERT_EQ(SUCCESS, cache2.Open(path, StubCacheEnvironemnt(), params));
-
-    MockECDbSchemaChangeListener listener1;
-    MockECDbSchemaChangeListener listener2;
 
     cache1.RegisterSchemaChangeListener(&listener1);
     cache2.RegisterSchemaChangeListener(&listener2);
@@ -231,6 +245,9 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     Mock::VerifyAndClear(&listener2);
 
     ASSERT_EQ(BE_SQLITE_OK, sp2.Commit());
+
+    cache1.UnRegisterSchemaChangeListener(&listener1);
+    cache2.UnRegisterSchemaChangeListener(&listener2);
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
