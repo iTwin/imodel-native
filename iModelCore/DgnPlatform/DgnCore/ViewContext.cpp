@@ -1119,7 +1119,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 
     if (nullptr != vp)
         {
-        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
+        appearance = vp->GetViewController().GetViewDefinition().GetCategorySelector().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {

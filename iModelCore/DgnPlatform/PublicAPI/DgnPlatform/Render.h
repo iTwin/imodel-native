@@ -70,10 +70,8 @@ public:
     RenderMode GetRenderMode() const {return m_renderMode;}
 
     DGNPLATFORM_EXPORT void InitDefaults();
-    DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;
-    DGNPLATFORM_EXPORT void FromBaseJson(JsonValueCR);
-    DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
-    DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
     };
 
 //=======================================================================================

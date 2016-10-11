@@ -198,29 +198,31 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    CameraViewDefinition viewRow(*m_testDb, "Default");
-    viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
-    ASSERT_TRUE(viewRow.Insert().IsValid());
-
-    CameraViewControllerPtr viewController = viewRow.LoadViewController();
-    viewController->SetStandardViewRotation(StandardView::Iso);
-    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
-
+    CategorySelector categories(*m_testDb,"");
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        viewController->ChangeCategoryDisplay(catId, true);
+        categories.AddCategory(catId);
 
+    DisplayStyle3d style(*m_testDb,"");
+    style.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
+
+    ModelSelector models(*m_testDb,"");
     DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
     for (auto& entry : modIter)
         {
-        DgnModelId modelId = entry.GetModelId();
-        viewController->ChangeModelDisplay(modelId, true);
+        auto id = entry.GetModelId();
+        auto model = m_testDb->Models().GetModel(id);
+
+        if (model.IsValid() && model->IsSpatialModel())
+            models.AddModel(id);
         }
 
-    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
+    CameraViewDefinition view(*m_testDb, "Default", categories, style, models);
+    view.SetStandardViewRotation(StandardView::Iso);
 
-    DgnViewId viewId = viewRow.GetViewId();
+    ASSERT_TRUE(view.Insert().IsValid());
+
+    DgnViewId viewId = view.GetViewId();
     m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
-    m_testDb->SaveSettings();
     }
 
 //---------------------------------------------------------------------------------------
@@ -232,10 +234,11 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
     m_testDb->Units().SetProjectExtents(physicalExtents);
 
-    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
+    auto view = ViewDefinition::QueryView("Default", *m_testDb);
     ASSERT_TRUE(view.IsValid());
+    auto editView = view->MakeCopy<SpatialViewDefinition>();
+    ASSERT_TRUE(editView.IsValid());
 
-    ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
-    viewController->LookAtVolume(physicalExtents);
-    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
+    editView->LookAtVolume(physicalExtents);
+    ASSERT_TRUE(editView->Update().IsValid());
     }

@@ -2715,7 +2715,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
             return false; // Sub-graphic outside range...
         }
 
-    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetViewDefinition().GetCategorySelector().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;

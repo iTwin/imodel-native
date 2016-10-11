@@ -169,9 +169,12 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView(viewId, db).get());
     ASSERT_TRUE(view.IsValid());
 
-    ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
-    viewController->LookAtVolume(db.Units().GetProjectExtents());
-    ASSERT_EQ(DgnDbStatus::Success, viewController->Save());
+    ViewControllerPtr viewController = view->LoadViewController();
+    viewController->GetViewDefinitionR().LookAtVolume(db.Units().GetProjectExtents());
+
+    DgnDbStatus stat;
+    viewController->GetViewDefinitionR().Update(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
     }
 
 //---------------------------------------------------------------------------------------
@@ -218,7 +221,7 @@ DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP author
 ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
     {
     ModelSelector modSel(db, name);
-    modSel.SetModelId(model);
+    modSel.AddModel(model);
     auto modSelPersist = db.Elements().Insert(modSel);
     if (!modSelPersist.IsValid())
         {
@@ -226,11 +229,44 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
         return nullptr;
         }
 
-    auto models = modSelPersist->GetModelIds();
+    auto& models = modSelPersist->GetModels();
     EXPECT_EQ(1, models.size());
     EXPECT_EQ(model, *models.begin());
 
     return modSelPersist;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void addAllCategories(DgnDbR db, CategorySelectorR selector)
+    {
+    for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        selector.AddCategory(categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewDescr)
+    {
+    auto& db = model.GetDgnDb();
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), CategorySelector(db,""), DisplayStyle(db,""));
+    addAllCategories(db, viewDef->GetCategorySelectorR());
+    viewDef->Insert();
+    return viewDef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    auto& db = model.GetDgnDb();
+    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), CategorySelector(db,""), DisplayStyle3d(db,""), ModelSelector(db,""));
+    addAllCategories(db, viewDef.GetCategorySelectorR());
+    viewDef.Insert();
+    return viewDef.GetViewId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -250,7 +286,10 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
         }
 
     if (!categories->empty())
-        catSel.SetCategoryIds(*categories);
+        {
+        for (auto id : *categories)
+            catSel.AddCategory(id);
+        }
 
     CategorySelectorCPtr catSelPersist = db.Elements().Insert(catSel);
     if (!catSelPersist.IsValid())
@@ -261,7 +300,7 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
 
     EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSel.GetElementId()).get());
     
-    auto categoriesStored = catSelPersist->GetCategoryIds();
+    auto& categoriesStored = catSelPersist->GetCategories();
     EXPECT_EQ(categoriesStored, *categories);
 
     return catSelPersist;
