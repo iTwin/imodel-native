@@ -485,6 +485,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
+    bset<DgnViewId> publishedViews;
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
@@ -522,6 +523,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
             }
 
+        publishedViews.insert (view.GetId());
         viewsJson[view.GetId().ToString()] = entry;
         }
 
@@ -530,7 +532,11 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["models"] = GetModelsJson (m_allModels);
     json["categories"] = GetCategoriesJson (m_allCategories);
-    json["defaultView"] = GetViewController().GetViewId().ToString();
+
+    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
+        json["defaultView"] = publishedViews.begin()->ToString();
+    else
+        json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
     }

@@ -421,12 +421,12 @@ void TileMeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool doDecimate, bool duplicateTwoSidedTriangles)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
 
-    if (doVertexClustering)
+    if (doDecimate)
         {
         DVec3d      cross;
 
@@ -453,7 +453,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     for (size_t i = 0; i < 3; i++)
         {
         VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), entityId);
-        newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
+        newTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
     BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
@@ -473,7 +473,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
             VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), entityId);
-            dupTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            dupTriangle.m_indices[i] = doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
         AddTriangle(dupTriangle);
@@ -484,7 +484,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id entityId, bool doVertexClustering)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id entityId, bool doDecimate)
     {
     TilePolyline    newPolyline;
 
@@ -492,7 +492,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
         {
         VertexKey vertex(point, nullptr, nullptr, entityId);
 
-        newPolyline.m_indices.push_back (doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        newPolyline.m_indices.push_back (doDecimate ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
     m_mesh->AddPolyline (newPolyline);
     }
@@ -1563,9 +1563,10 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
     {
-    static const double s_vertexToleranceRatio = 1.0;
+    static const double s_vertexToleranceRatio    = .1;
     static const double s_decimateThresholdPixels = 50.0;
-    static const double s_facetAreaToleranceRatio = .25;
+    static const double s_facetAreaToleranceRatio = .1;
+    static const size_t s_decimatePolyfacePointCount = 100;
 
     double tolerance = GetTolerance();
     double vertexTolerance = tolerance * s_vertexToleranceRatio;
@@ -1579,9 +1580,9 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
 
     // Convert to meshes
     MeshBuilderMap builderMap;
-    size_t geometryCount = 0;
-    DRange3d myTileRange = GetTileRange();
-    size_t      maxPointCount = 0, pointTotal = 0;
+    size_t      geometryCount = 0;
+    DRange3d    myTileRange = GetTileRange();
+    bool        isLeaf = m_children.empty();
 
     for (auto& geom : processor.GetGeometries())
         {
@@ -1606,19 +1607,16 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
             builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
 
         bool isContained = geomRange.IsContained(myTileRange);
-        bool doVertexClustering = geom->IsPolyface() ||  rangePixels < s_decimateThresholdPixels;
 
         ++geometryCount;
         bool maxGeometryCountExceeded = geometryCount > s_maxGeometryIdCount;
 
         if (polyface.IsValid())
             {
-            size_t  pointCount  =  polyface->Point().size();
+            // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
+            // A polyface with many points is likely a tesselation from an outside source.
+            bool        doDecimate  = (!isLeaf && geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels;
 
-            if (pointCount > maxPointCount)
-                maxPointCount = pointCount;
-
-            pointTotal += pointCount;
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 {
                 if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
@@ -1627,7 +1625,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
                     if (!maxGeometryCountExceeded)
                         elemId = geom->GetEntityId();
 
-                    meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexClustering, twoSidedTriangles);
+                    meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doDecimate, twoSidedTriangles);
                     }
                 }
             }
@@ -1648,7 +1646,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
                 if (!maxGeometryCountExceeded)
                     elemId = geom->GetEntityId();
 
-                meshBuilder->AddPolyline (*lineString, elemId, doVertexClustering);
+                meshBuilder->AddPolyline (*lineString, elemId, rangePixels < s_decimateThresholdPixels);
                 }
             }
         }
