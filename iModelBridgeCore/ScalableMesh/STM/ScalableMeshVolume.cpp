@@ -145,7 +145,13 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
 
-    IScalableMeshMeshQueryPtr meshQueryInterface = (m_scmPtr)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+
+    bvector<bvector<DPoint3d>> coverages;
+    IScalableMeshPtr targetedMesh = m_scmPtr;
+    m_scmPtr->GetAllCoverages(coverages);
+    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+
+    IScalableMeshMeshQueryPtr meshQueryInterface = (targetedMesh)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
@@ -157,7 +163,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         transPtr->Transform(m_UorsToStorage);
         transformedMesh = transPtr.get();
         }
-    m_scmPtr->GetDTMInterface()->GetRange(fileRange);
+    targetedMesh->GetDTMInterface()->GetRange(fileRange);
     DRange3d meshRange = transformedMesh->PointRange();
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
@@ -166,7 +172,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
         };
     if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
-    params->SetLevel(m_scmPtr->GetTerrainDepth());
+    params->SetLevel(targetedMesh->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
