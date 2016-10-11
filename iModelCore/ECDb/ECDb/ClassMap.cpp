@@ -939,8 +939,6 @@ Utf8CP ClassMap::TypeToString(Type type)
 //------------------------------------------------------------------------------------------
 ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId() const
     {
-    BeDbMutexHolder lock(m_mutex);
-
     if (!HasJoinedTable())
         {
         BeAssert(false && "TablePerHierarchyHelper::DetermineParentOfJoinedTableECClassId can only be called for class maps that have a joined table.");

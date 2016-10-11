@@ -68,6 +68,7 @@ private:
 
     
 
+    mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
 
@@ -84,7 +85,6 @@ private:
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
     mutable ClearCacheCounter m_clearCacheCounter;
-
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
@@ -141,6 +141,8 @@ public:
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
 
     IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
+
+    BeMutex& GetMutex() const { return m_mutex; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

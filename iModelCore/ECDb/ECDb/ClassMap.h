@@ -106,7 +106,6 @@ struct ClassMap : RefCountedBase
         struct TablePerHierarchyHelper
             {
         private:
-            mutable BeDbMutex m_mutex;
             ClassMap const& m_classMap;
             mutable ECN::ECClassId m_parentOfJoinedTableECClassId;
 

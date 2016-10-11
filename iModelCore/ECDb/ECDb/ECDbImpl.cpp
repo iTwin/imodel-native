@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb))),
+ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb),
                             m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
                             m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
                             m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
@@ -26,7 +26,9 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(std::unique_ptr<ECD
                             m_indexIdSequence(ecdb, "ec_indexidsequence"),
                             m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
                             m_issueReporter(ecdb)
-    {}
+    {
+    m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, m_mutex));
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
@@ -103,6 +105,9 @@ DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ClearECDbCache() const
     {
+    //Note: no mutex lock required as long as this method is not exported.
+    //BeMutexHolder lock(m_mutex);
+
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 
@@ -123,6 +128,8 @@ void ECDb::Impl::ClearECDbCache() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::OnAddFunction(DbFunction& function) const
     {
+    BeMutexHolder lock(m_mutex);
+
     DbFunctionKey key(function);
     m_sqlFunctions[key] = &function;
     return SUCCESS;
@@ -133,6 +140,8 @@ BentleyStatus ECDb::Impl::OnAddFunction(DbFunction& function) const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::OnRemoveFunction(DbFunction& function) const
     {
+    BeMutexHolder lock(m_mutex);
+
     DbFunctionKey key(function);
     m_sqlFunctions.erase(key);
     }
@@ -209,6 +218,8 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     {
+    BeMutexHolder lock(m_mutex);
+
     if (Enum::Contains(mode, ECDb::PurgeMode::FileInfoOwnerships))
         {
         if (SUCCESS != PurgeFileInfos())

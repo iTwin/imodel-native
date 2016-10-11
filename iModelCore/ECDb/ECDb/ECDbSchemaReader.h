@@ -101,7 +101,6 @@ struct ECDbSchemaReader
         mutable std::map<ECN::ECEnumerationId, std::unique_ptr<DbECEnumEntry>> m_ecEnumCache;
         mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<DbKindOfQuantityEntry>> m_koqCache;
         mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
-        mutable BeMutex m_criticalSection;
 
         ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetECClass(Context&, ECN::ECClassId) const;

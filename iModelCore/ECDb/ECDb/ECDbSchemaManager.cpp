@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb) :m_ecdb(ecdb), m_dbMap(new ECDbMap(ecdb)), m_schemaReader(new ECDbSchemaReader(ecdb)) {}
+ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_dbMap(new ECDbMap(ecdb)), m_schemaReader(new ECDbSchemaReader(ecdb)), m_mutex(mutex) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
@@ -44,6 +44,8 @@ ECDbSchemaManager::~ECDbSchemaManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECSchemaCP> ECDbSchemaManager::GetECSchemas(bool loadSchemaEntities) const
     {
+    BeMutexHolder lock(m_mutex);
+
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
     if (stmt == nullptr)
         return bvector<ECSchemaCP>();
@@ -183,7 +185,7 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
         return ERROR;
         }
 
-    BeMutexHolder lock(m_criticalSection);
+    BeMutexHolder lock(m_mutex);
 
     if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
         return ERROR;
@@ -321,6 +323,8 @@ BentleyStatus ECDbSchemaManager::PersistECSchemas(SchemaImportContext& context, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool loadSchemaEntities) const
     {
+    BeMutexHolder lock(m_mutex);
+
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
     if (!schemaId.IsValid())
         return nullptr;
@@ -347,6 +351,7 @@ bool ECDbSchemaManager::ContainsECSchema(Utf8CP schemaName)  const
         return false;
         }
 
+    BeMutexHolder lock(m_mutex);
     return ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schemaName).IsValid();
     }
 
@@ -355,6 +360,8 @@ bool ECDbSchemaManager::ContainsECSchema(Utf8CP schemaName)  const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
+    BeMutexHolder lock(m_mutex);
+
     const ECClassId id = GetECClassId(schemaNameOrAlias, className, resolveSchema);
     return GetECClass(id);
     }
@@ -364,6 +371,8 @@ ECClassCP ECDbSchemaManager::GetECClass(Utf8StringCR schemaNameOrAlias, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
+    BeMutexHolder lock(m_mutex);
+
     return GetReader().GetECClass(ecClassId);
     }
 
@@ -372,6 +381,8 @@ ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECDbSchemaManager::GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
+    BeMutexHolder lock(m_mutex);
+
     return GetReader().GetECClassId(schemaNameOrAlias, className, resolveSchema);
     }
 
@@ -380,6 +391,8 @@ ECClassId ECDbSchemaManager::GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8St
 //---------------------------------------------------------------------------------------
 ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecClass) const
     {
+    BeMutexHolder lock(m_mutex);
+
     ECClassId id = GetReader().GetECClassId(ecClass);
     if (id.IsValid())
         {
@@ -397,6 +410,8 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
+    BeMutexHolder lock(m_mutex);
+
     return GetReader().GetECEnumeration(schemaName, enumName);
     }
 
@@ -405,6 +420,8 @@ ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP en
 //+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP ECDbSchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
     {
+    BeMutexHolder lock(m_mutex);
+
     return GetReader().GetKindOfQuantity(schemaName, koqName);
     }
 
@@ -467,6 +484,8 @@ ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
+    BeMutexHolder lock(m_mutex);
+
     return GetDbMap().CreateECClassViewsInDb();
     }
 

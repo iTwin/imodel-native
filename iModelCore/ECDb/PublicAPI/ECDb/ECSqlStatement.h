@@ -23,6 +23,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!
 //! See @ref ECSqlStatementOverview for details on how to use ECSqlStatement.
 //!
+//! While it is safe to use multiple ECSqlStatements in multiple threads, a given ECSqlStatement
+//! can only be used in a single thread.
+//!
 //! @see @ref ECSqlStatementOverview, @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
 //! @nosubgrouping
