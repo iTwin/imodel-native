@@ -66,8 +66,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDb const& m_ecdb;
         ECDbSchemaReader* m_schemaReader;
         ECDbMap* m_dbMap;
-
-        mutable BeMutex m_criticalSection;
+        BeMutex& m_mutex;
 
         BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -82,7 +81,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
-        explicit ECDbSchemaManager(ECDb const&);
+        ECDbSchemaManager(ECDb const&, BeMutex&);
         ~ECDbSchemaManager();
 #endif
 

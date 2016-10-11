@@ -114,7 +114,6 @@ namespace connectivity
     //==========================================================================
     class OSQLParseNodesContainer
         {
-        BeMutex m_aCriticalSection;
         ::std::vector< OSQLParseNode* > m_aNodes;
         public:
             OSQLParseNodesContainer ();
@@ -177,8 +176,6 @@ namespace connectivity
             // makes a string out of a number, pLiteral will be deleted
             OSQLParseNode*  buildNode_STR_NUM (OSQLParseNode*& pLiteral);
             OSQLParseNode*  buildNode_Date (const double& fValue, sal_Int32 nType);
-
-            static BeMutex& getCriticalSection ();
 
 
         public:

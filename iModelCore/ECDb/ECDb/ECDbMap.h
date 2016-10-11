@@ -23,7 +23,6 @@ struct ECDbMap :NonCopyableClass
         typedef bmap<DbTable*, bset<ClassMap*>> ClassMapsByTable;
 
     private:
-        mutable BeMutex m_mutex;
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
         mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;

@@ -32,6 +32,7 @@ enum class ECDbIssueSeverity
 //! It is used to create, open, close @ref ECDbFile "ECDb files" (see ECDb::CreateNewDb, ECDb::OpenBeSQLiteDb,
 //! ECDb::CloseDb) and gives access to the %EC data.
 //!
+//! An ECDb object is generally thread-safe. However an ECDb connection must be closed in the same thread in which is was opened.
 //! @see @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
 // @bsiclass                                                Ramanujam.Raman      03/2012

@@ -230,7 +230,6 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-    BeMutexHolder lock(m_criticalSection);
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
 
     ECClassP classFromCache = nullptr;
@@ -402,8 +401,6 @@ ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaNa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
-    BeMutexHolder lock(m_criticalSection);
-
     auto enumEntryIt = m_ecEnumCache.find(enumId);
     if (enumEntryIt != m_ecEnumCache.end())
         {
@@ -490,8 +487,6 @@ KindOfQuantityCP ECDbSchemaReader::GetKindOfQuantity(Context& ctx, Utf8CP schema
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
     {
-    BeMutexHolder lock(m_criticalSection);
-
     auto koqEntryIt = m_koqCache.find(koqId);
     if (koqEntryIt != m_koqCache.end())
         {
@@ -618,7 +613,6 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, Context& ctx, ECSchemaId ctxECSchemaId, bool loadSchemaEntities) const
     {
-    BeMutexHolder lock(m_criticalSection);
     bvector<DbECSchemaEntry*> newlyLoadedSchemas;
     if (SUCCESS != LoadECSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId))
         return ERROR;
@@ -1281,8 +1275,6 @@ ECClassId ECDbSchemaReader::GetECClassId(ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECDbSchemaReader::GetECClassId(Utf8StringCR schemaName, Utf8StringCR className, ResolveSchema resolveSchema) const
     {
-    BeMutexHolder lock(m_criticalSection);
-
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     auto outerIt = m_classIdCache.find(schemaName);
     if (outerIt != m_classIdCache.end())
@@ -1308,8 +1300,6 @@ ECClassId ECDbSchemaReader::GetECClassId(Utf8StringCR schemaName, Utf8StringCR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbSchemaReader::ClearCache() const
     {
-    BeMutexHolder lock(m_criticalSection);
-
     m_classIdCache.clear();
     m_ecEnumCache.clear();
     m_koqCache.clear();

@@ -366,7 +366,6 @@ MappingStatus ECDbMap::DoMapSchemas() const
 //---------------------------------------------------------------------------------------
  BentleyStatus ECDbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
-    BeMutexHolder lock(m_mutex);
     classMap = nullptr;
 
     DbClassMapLoadContext classMapLoadContext;
@@ -478,7 +477,6 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 MappingStatus ECDbMap::AddClassMap(ClassMapPtr& classMap) const
     {
-    BeMutexHolder lock(m_mutex);
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
@@ -496,8 +494,6 @@ MappingStatus ECDbMap::AddClassMap(ClassMapPtr& classMap) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
-    BeMutexHolder lock(m_mutex);
-
     if (m_schemaImportContext == nullptr)
         {
         ClassMapLoadContext ctx;
@@ -568,7 +564,6 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
     if (AssertIfIsNotImportingSchema())
         return nullptr;
 
-    BeMutexHolder lock(m_mutex);
     DbTable* table = m_dbSchema.FindTableP(tableName);
     if (table != nullptr)
         {
@@ -677,7 +672,6 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     if (AssertIfIsNotImportingSchema())
         return ERROR;
 
-    BeMutexHolder lock(m_mutex);
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
@@ -1057,7 +1051,6 @@ BentleyStatus ECDbMap::SaveDbSchema() const
         return ERROR;
         }
 
-    BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
     if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
         {
@@ -1091,7 +1084,6 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::ClearCache() const
     {
-    BeMutexHolder lock(m_mutex);
     m_classMapDictionary.clear();
     m_dbSchema.Reset();
     m_lightweightCache.Reset();
