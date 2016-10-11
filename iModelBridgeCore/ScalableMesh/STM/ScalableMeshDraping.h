@@ -36,7 +36,7 @@ struct ScalableMeshDraping : IDTMDraping
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
 
-        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params);
+        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params, const IScalableMeshPtr& targetedMeshPtr);
 
     protected:
 #ifdef VANCOUVER_API

@@ -111,6 +111,11 @@ void IScalableMeshProgressiveQueryEngine::SetActiveClips(const bset<uint64_t>& a
     return _SetActiveClips(activeClips, scalableMeshPtr);
     }
 
+void IScalableMeshProgressiveQueryEngine::InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
+    {
+    return _InitScalableMesh(scalableMeshPtr);
+    }
+
 
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
@@ -1372,6 +1377,13 @@ void ScalableMeshProgressiveQueryEngine::_SetActiveClips(const bset<uint64_t>& a
     UpdatePreloadOverview();
     }
 
+void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
+    {
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)scalableMeshPtr.get())->GetRootNode());
+
+    PreloadOverview(rootNodePtr);
+    }
+
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
@@ -1513,6 +1525,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StopQuery(int queryId)
             requestedQueryP = &(*queryIter);
             break;
         }
+        queryIter++;
     }
 
     if (requestedQueryP != 0)

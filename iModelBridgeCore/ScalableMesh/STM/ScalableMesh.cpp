@@ -1760,39 +1760,27 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_AddClip
 +----------------------------------------------------------------------------*/
-template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain)
     {
+    bvector<bvector<DPoint3d>> coverageData;
+    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     DRange3d extent = DRange3d::From(pts, (int)ptsSize);
-   /* bvector<int> idx;
-    bvector<DPoint3d> points;
-    vu_triangulateSpacePolygonExt(&idx, &points, const_cast<DPoint3d*>(pts), (int)ptsSize, 1e-6, true);
-    bvector<DPoint3d> poly;
-    bvector<DPoint3d> current;
-    for (auto& i : idx)
-        {
-        if (i > 0) current.push_back(points[i - 1]);
-        else if (current.size() > poly.size())
-            {
-            poly = current;
-            current.clear();
-            }
-        }
-    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, &poly[0], poly.size());*/
+
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
-    return true;
-    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+    if (!alsoAddOnTerrain || coverageData.empty())
         {
-        uint64_t clipId = 0;
-        DPoint3d* flippedPts = new DPoint3d[ptsSize];
-        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
-        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
-        delete[] flippedPts;
-        return clipId;
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
         }
-    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    else
+        {
+        if (m_terrainP.IsValid())
+            {
+            m_terrainP->AddClip(pts, ptsSize, clipID);
+            }
+        }
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1806,34 +1794,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
     DRange3d extentNew = DRange3d::From(pts, (int)ptsSize);
     extent.Extend(extentNew);
-   /* bvector<int> idx;
-    bvector<DPoint3d> points;
-    vu_triangulateSpacePolygonExt(&idx, &points, const_cast<DPoint3d*>(pts), (int)ptsSize, 1e-6, true);
-    bvector<DPoint3d> poly;
-    bvector<DPoint3d> current;
-    for (auto& i : idx)
-        {
-        if (i > 0) current.push_back(points[i - 1]);
-        else if (current.size() > poly.size())
-            {
-            poly = current;
-            current.clear();
-            }
-        }
-    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, &poly[0], poly.size());*/
+
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
     return true;
-    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
-        {
-        uint64_t clipId = 0;
-        DPoint3d* flippedPts = new DPoint3d[ptsSize];
-        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
-        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
-        delete[] flippedPts;
-        return clipId;
-        }
-    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+
     }
 
 /*----------------------------------------------------------------------------+
@@ -1848,16 +1813,6 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
     return true;
-    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
-        {
-        uint64_t clipId = 0;
-        DPoint3d* flippedPts = new DPoint3d[ptsSize];
-        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
-        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
-        delete[] flippedPts;
-        return clipId;
-        }
-    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
     }
 
 template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
@@ -1877,14 +1832,26 @@ template <class POINT> void ScalableMesh<POINT>::_ModifyClipMetadata(uint64_t cl
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_AddClip
 +----------------------------------------------------------------------------*/
-template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID, bool alsoAddOnTerrain)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr || skirt.size() == 0 || skirt[0].size() == 0) return false;
-    DRange3d extent = DRange3d::From(skirt[0][0]);
-    for (auto& vec : skirt) extent.Extend(vec, nullptr);
-    if (m_scmIndexPtr->GetClipRegistry()->HasSkirt(clipID)) return false;
-    m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, false);
+    bvector<bvector<DPoint3d>> coverageData;
+    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
+    if (!alsoAddOnTerrain || coverageData.empty())
+        {
+        DRange3d extent = DRange3d::From(skirt[0][0]);
+        for (auto& vec : skirt) extent.Extend(vec, nullptr);
+        if (m_scmIndexPtr->GetClipRegistry()->HasSkirt(clipID)) return false;
+        m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, false);
+        }
+    else
+        {
+        if (m_terrainP.IsValid())
+            {
+            m_terrainP->AddSkirt(skirt, clipID);
+            }
+        }
     return true;
     }
 
@@ -2126,7 +2093,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
     {
     if (m_scmTerrainIndexPtr == nullptr) return ERROR;
-    AddClip(coverageData.data(), coverageData.size(), id);
+    _AddClip(coverageData.data(), coverageData.size(), id, false);
+    bvector<bvector<DPoint3d>> skirts;
+    skirts.push_back(coverageData);
+   // _AddSkirt(skirts, id, false);
 
     DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
     m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
@@ -2440,7 +2410,7 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
 
 
 
-template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain)
     {
     return false;
     }
@@ -2462,7 +2432,7 @@ template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_
     return;
     }
 
-template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID, bool alsoAddOnTerrain)
     {
     return false;
     }

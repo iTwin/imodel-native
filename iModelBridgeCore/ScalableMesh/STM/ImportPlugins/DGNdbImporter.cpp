@@ -610,7 +610,7 @@ private:
                                 uvs.resize(pts.size(),DPoint2d::From(0.0,0.0));
                                 parts.back() = (int)indices.size();
                                 }
-                            else if (elem->GetElementClass()->GetId() == 340 && pts.size() > 10000 && parts.size() >10)
+                            else if (pts.size() > 10000 && parts.size() >5)
                                 {
                                 size_t id = 0;
                                 for (; id < parts.size() && parts[id] < 15000; id++) {}

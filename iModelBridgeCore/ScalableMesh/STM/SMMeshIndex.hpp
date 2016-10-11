@@ -3788,7 +3788,6 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         }
     if (n >2) return true;
 
-    if (noIntersect) return false;
     ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
@@ -3801,6 +3800,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
         }
     if (allInsidePolygon) return true;
+    if (noIntersect) return false;
 
     extRange.low.z = -100;
     extRange.high.z = 100;

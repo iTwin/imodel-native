@@ -52,7 +52,7 @@ void SMSQLiteClipDefinitionExtOps::GetAllPolys(bvector<bvector<DPoint3d>>& polys
         pi_compressedPacket.SetBuffer(&data[i][0], data[i].size());
         pi_compressedPacket.SetDataSize(data[i].size());
         
-        bvector<DPoint3d> poly(sizes[i]);
+        bvector<DPoint3d> poly(sizes[i]/sizeof(DPoint3d));
         pi_uncompressedPacket.SetBuffer(poly.data(), poly.size() * sizeof(DPoint3d));
         pi_uncompressedPacket.SetBufferOwnership(false);
 

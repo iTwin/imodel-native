@@ -82,6 +82,48 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override
             {
+#ifdef WIP_MESH_IMPORT
+            node->GetMetadata();
+            node->GetMeshParts();
+            bvector<int> newMeshParts;
+            bvector<Utf8String> newMeshMetadata;
+            int64_t currentTexId = -1;
+            int64_t currentElementId = -1;
+            if (node->m_meshParts.size() > 0)
+                {
+                for (size_t i = 0; i < node->m_meshParts.size(); i += 2)
+                    {
+                    auto metadataString = Utf8String(node->m_meshMetadata[i/2]);
+                    Json::Value val;
+                    Json::Reader reader;
+                    reader.parse(metadataString, val);
+                    bvector<int> parts;
+                    bvector<int64_t> texId;
+                    for (const Json::Value& id : val["texId"])
+                        {
+                        texId.push_back(id.asInt64());
+                        }
+                    if (!texId.empty())
+                        {
+                        if(currentTexId == texId[0] && val["elementId"].asInt64() == currentElementId)
+                            {
+                            newMeshParts.back() = node->m_meshParts[i+1];
+                            continue;
+                            }
+                        }
+                    currentTexId = texId[0];
+                    currentElementId = val["elementId"].asInt64();
+                    newMeshParts.push_back(node->m_meshParts[i]);
+                    newMeshParts.push_back(node->m_meshParts[i+1]);
+                    newMeshMetadata.push_back(node->m_meshMetadata[i/2]);
+
+                    }
+                }
+            node->m_meshParts = newMeshParts;
+            node->m_meshMetadata = newMeshMetadata;
+            node->StoreMetadata();
+            node->StoreMeshParts();
+#endif
             return true;
             };
         

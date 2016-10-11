@@ -154,14 +154,14 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
 
-        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
 
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
 
-        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
 

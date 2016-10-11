@@ -122,6 +122,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         virtual BentleyStatus _StopQuery(int queryId) override; 
 
         virtual bool          _IsQueryComplete(int queryId) override; 
+
+        virtual void _InitScalableMesh(IScalableMeshPtr& scalableMeshPtr) override;
         
 
     public : 
