@@ -1119,6 +1119,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
     return SUCCESS;
     }
 
+#ifdef WIP_MERGE
 void ColumnFactory::GetDerivedColumnList(std::vector<ECDbSqlColumn const*>& columnSet) const
     {
     Utf8CP sql = " WITH RECURSIVE "
@@ -1147,6 +1148,8 @@ void ColumnFactory::GetDerivedColumnList(std::vector<ECDbSqlColumn const*>& colu
         columnSet.push_back(GetTable().FindColumnCP(stmt->GetValueText(0)));
         }
     }
+#endif
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
