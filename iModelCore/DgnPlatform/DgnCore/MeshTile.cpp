@@ -993,7 +993,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t maxPointsPerTile)
+TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, double leafTolerance, size_t maxPointsPerTile)
     {
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
@@ -1009,9 +1009,8 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodePtr& root, size_t max
         }
 
     // Collect the tiles
-    static const double s_leafTolerance = 0.01;
     auto elementRoot = ElementTileNode::Create(viewRange, GetTransformFromDgn(), 0, 0, nullptr);
-    elementRoot->ComputeTiles(s_leafTolerance, maxPointsPerTile, m_cache);
+    elementRoot->ComputeTiles(leafTolerance, maxPointsPerTile, m_cache);
 
     m_statistics.m_collectionTime = timer.GetCurrentSeconds();
     m_progressMeter._IndicateProgress(1, 1);
@@ -1615,7 +1614,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
             {
             // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
             // A polyface with many points is likely a tesselation from an outside source.
-            bool        doDecimate  = (!isLeaf && geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels;
+            bool        doDecimate  = !isLeaf && ((geom->IsPolyface() && polyface->GetPointCount() > s_decimatePolyfacePointCount) ||  rangePixels < s_decimateThresholdPixels);
 
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 {
