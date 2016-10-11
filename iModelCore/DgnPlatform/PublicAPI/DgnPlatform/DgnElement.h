@@ -39,6 +39,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct SectionDrawing; struct Sheet; struct Definition; struct PhysicalType; struct GraphicalType2d; struct Subject; struct Role;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
+struct ElementECPropertyAccessor;
+struct ElementECDBuffer;
+
 //=======================================================================================
 //! Holds Id remapping tables
 //=======================================================================================
@@ -439,7 +442,7 @@ struct AutoHandledPropertiesCollection
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : ECN::ECDBuffer, NonCopyableClass, ICodedEntity
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
 {
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -451,6 +454,8 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
     friend struct GeometrySource;
+    friend struct ElementECPropertyAccessor;
+    friend struct ElementECDBuffer;
 
     //! Parameters for creating a new DgnElement
     struct CreateParams
@@ -785,16 +790,23 @@ protected:
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
-        uint32_t m_hasAutoHandledProps:2; // 0==unknown, 1==yes, 2==no
-        uint32_t m_autoHandledPropsDirty:1;
+        uint32_t m_propState:2; // See PropState
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
+    enum PropState // must fit in 3 bits
+        {
+        Unknown = 0,
+        NotFound = 1,
+        InBuffer = 2,
+        Dirty = 3       // (implies InBuffer)
+        };
+
     mutable BeAtomic<uint32_t> m_refCount;
     mutable Flags m_flags;
-    mutable uint32_t m_ahp_bytesAllocated;      // *** WIP_AUTO_HANDLED_PROPERTIES - we could merge this into Flags, if we were willing to limit the max size of property data
+    mutable uint32_t m_ecPropertyDataSize; // *** WIP_AUTO_HANDLED_PROPERTIES - we could merge this into Flags, if we were willing to limit the max size of property data
     // Add any future int32 here
-    mutable Byte* m_ahp_data;
+    mutable Byte* m_ecPropertyData;
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
     DgnElementId m_parentId;
@@ -813,41 +825,8 @@ protected:
     void SetPersistent(bool val) const {m_flags.m_persistent = val;}
     void InvalidateElementId() {m_elementId = DgnElementId();}
     void InvalidateCode() {m_code = DgnCode();}
-
-    // ECDBuffer
-    ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
-    ECN::ECObjectsStatus _GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
-    ECN::PrimitiveType _GetStructArrayPrimitiveType() const override {/*BeAssert(false);*/ return ECN::PrimitiveType::PRIMITIVETYPE_Integer;}
-    ECN::ECObjectsStatus _RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override {BeAssert(false); return ECN::ECObjectsStatus::Error;}
-    bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const {BeAssert(false); return false;}
-    void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool, uint32_t, int flagIndex, bool enable) override {BeAssert(false);};
-    ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
-    ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
-
-    DGNPLATFORM_EXPORT bool _AcquireData(bool forWrite) const override;
-    bool _ReleaseData() const override {return true;}
-    bool _IsMemoryInitialized() const override {return nullptr != m_ahp_data;}
-    Byte const * _GetData() const override {return m_ahp_data;}
-    bool _AllowWritingDirectlyToInstanceMemory() const override {return true;}
-    bool _AreAllPropertiesCalculated() const override {return true;}
-    void _SetAllPropertiesCalculated(bool) override { }
-    DGNPLATFORM_EXPORT uint32_t _GetBytesAllocated() const override {return m_ahp_bytesAllocated;}
-    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _ModifyData(uint32_t offset, void const * newData, uint32_t dataLength) override;
-    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _MoveData(uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) override;
-    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _GrowAllocation(uint32_t additionalBytesNeeded) override;
-    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _ShrinkAllocation() override;
-    DGNPLATFORM_EXPORT void _FreeAllocation() override;
-    DGNPLATFORM_EXPORT void _ClearValues() override;
-    DGNPLATFORM_EXPORT ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
-    DGNPLATFORM_EXPORT ECN::ClassLayoutCR _GetClassLayout() const override;
-    
-    uint32_t AhpGetBytesUsed() const;
-
 #endif
     
-    BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const; // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
-    DgnDbStatus UpdateAutoHandledProperties();
-
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
@@ -2383,6 +2362,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
+    friend struct ElementECDBuffer;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
