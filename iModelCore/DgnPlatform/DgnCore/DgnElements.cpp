@@ -1009,7 +1009,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
-    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ahp_data(nullptr), m_ahp_bytesAllocated(0)
+    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
