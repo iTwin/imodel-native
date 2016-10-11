@@ -452,6 +452,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
                 return;
             }
 
+        Init(nameRec);  //  This is required.  The logic that tests UseLinePixels is skipped unless the LineStyleSymb is initialized with the nameRec
         SetUseLinePixels((uint32_t)lp);
         return;
         }
