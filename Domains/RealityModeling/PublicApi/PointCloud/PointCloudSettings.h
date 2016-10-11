@@ -105,8 +105,8 @@ public:
     int32_t GetDisplayStyleIndex() const {return m_displayStyleIndex;}
     void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
 
-    void _SaveToUserProperties(ViewDefinitionR) const override;
-    void _LoadFromUserProperties(ViewDefinitionCR) override;
+    void _Save(ViewDefinitionR) const override;
+    void _Load(ViewDefinitionCR) override;
 
     POINTCLOUD_EXPORT static PointCloudViewSettings& FromView(SpatialViewController const&);
 };
@@ -170,8 +170,8 @@ public:
     bool GetUnclassVisible() const { return m_unclassVisible; }
     void SetUnclassVisible(bool unclassVisible) { m_unclassVisible = unclassVisible; }
 
-    void _SaveToUserProperties(ViewDefinitionR) const override;
-    void _LoadFromUserProperties(ViewDefinitionCR) override;
+    void _Save(ViewDefinitionR) const override;
+    void _Load(ViewDefinitionCR) override;
     POINTCLOUD_EXPORT static PointCloudClassificationSettings& FromView(SpatialViewController const&);
 };
 
