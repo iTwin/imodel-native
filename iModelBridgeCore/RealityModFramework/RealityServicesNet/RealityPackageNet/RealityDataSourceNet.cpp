@@ -72,7 +72,7 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     managedSource->SetProvider(managedProvider);
 
     // Size.
-    int size = (int)nativeSource.GetSize();
+    uint64_t size = (uint64_t)nativeSource.GetSize();
     managedSource->SetSize(size);
 
     // Metadata.
@@ -391,15 +391,15 @@ void RealityDataSourceNet::SetProvider(String^ provider)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-int RealityDataSourceNet::GetSize()
+uint64_t RealityDataSourceNet::GetSize()
     {
-    return (int)(*m_pSource)->GetSize();
+    return (uint64_t)(*m_pSource)->GetSize();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetSize(int sizeInKB)
+void RealityDataSourceNet::SetSize(uint64_t sizeInKB)
     {
     (*m_pSource)->SetSize(sizeInKB);
     }
