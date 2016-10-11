@@ -896,6 +896,13 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_stmts.Empty();
     m_classInfos.clear();
+    for (bpair<const DgnClassId, ECInstanceUpdater*>& kvPair : m_updaterCache)
+        {
+        if (kvPair.second != nullptr)
+            delete kvPair.second;
+        }
+
+    m_updaterCache.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -999,8 +1006,10 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_userLabel(params.m_userLabel), m_userProperties(nullptr)
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
+    m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
+    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ahp_data(nullptr), m_ahp_bytesAllocated(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1260,8 +1269,13 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
+#ifdef __clang__
+    if (0 != strcmp(typeid(element).name(), element.GetElementHandler()._ElementType().name()))
+#else
     if (typeid(element) != element.GetElementHandler()._ElementType())
+#endif
         {
+        LOG.errorv("InsertElement element must have its own handler: element typeid=%s, handler typeid=%s", typeid(element).name(), element.GetElementHandler()._ElementType().name());
         BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
@@ -1300,10 +1314,6 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
-
-    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
-    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
-    (*const_cast<DgnElementP>(&original)).m_autoHandledProperties = nullptr;
 
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }

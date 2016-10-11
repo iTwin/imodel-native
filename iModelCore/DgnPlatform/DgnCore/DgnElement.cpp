@@ -411,10 +411,6 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
-    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
-    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
-    m_autoHandledProperties = nullptr;
-
     GetModel()->_OnInsertedElement(*this);
     GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
@@ -689,7 +685,7 @@ DgnDbStatus DgnElement::_InsertInDb()
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
 
-    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+    if (nullptr != m_ahp_data && m_flags.m_autoHandledPropsDirty)
         {
         status = UpdateAutoHandledProperties();
         if (DgnDbStatus::Success != status)
@@ -737,7 +733,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
         }
 
-    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+    if (nullptr != m_ahp_data && m_flags.m_autoHandledPropsDirty)
         {
         status = UpdateAutoHandledProperties();
         if (DgnDbStatus::Success != status)
@@ -1014,12 +1010,10 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_userLabel = other.m_userLabel;
     m_parentId  = other.m_parentId;
     // don't copy FederationGuid
-    
-    if (other.m_autoHandledProperties.IsValid())
-        {
-        GetAutoHandledProperties();
-        m_autoHandledProperties->CopyValues(*other.m_autoHandledProperties);
-        }
+
+    ScopedDataAccessor otherAhpAccess(other, true);
+    if (otherAhpAccess.IsValid())
+        CopyDataBuffer(other, true);
 
     CopyUserProperties(other);
     }
@@ -1613,7 +1607,11 @@ DgnElementPtr DgnElement::CopyForEdit() const
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
+#ifdef __clang__
+    BeAssert(0 == strcmp(typeid(*newEl).name(), typeid(*this).name()));
+#else
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
+#endif
     newEl->_CopyFrom(*this);
     return newEl;
     }
@@ -2213,6 +2211,8 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isValidForStatementType(DgnDbR db, ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
     {
+    // *** WIP_AUTO_HANDLED_PROPERTIES -- must somehow cache this kind of metadata
+
     auto propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
     auto stypeCA = prop.GetCustomAttribute(*propertyStatementType);
     if (!stypeCA.IsValid())
@@ -2233,8 +2233,14 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
     ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
     if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
-        auto autoHandledProps = GetAutoHandledProperties();
-        if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
+        ScopedDataAccessor ahpAccess(*this, false);
+        if (!ahpAccess.IsValid())
+            {
+            BeAssert(false && "We know this is an auto-handled property. _AcquireData should not be failing");
+            return DgnDbStatus::BadRequest;
+            }
+
+        if (ECN::ECObjectsStatus::Success == GetValueFromMemory(value, name, false, 0))
             return DgnDbStatus::Success;
         return DgnDbStatus::BadRequest;
         }
@@ -2297,6 +2303,7 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
     if (value.IsNull())
         {
         ECN::ECDbPropertyMap propertyMap;
+        // *** WIP_AUTO_HANDLED_PROPERTIES -- must somehow cache this kind of metadata
         if (ECN::ECDbMapCustomAttributeHelper::TryGetPropertyMap(propertyMap, prop))
             {
             bool isNullable;
@@ -2307,6 +2314,14 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
 
     // *** TBD: do range validation
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isEcObjectsWriteError(ECObjectsStatus status)
+    {
+    return (ECObjectsStatus::Success != status) && (ECObjectsStatus::PropertyValueMatchesNoChange != status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2324,16 +2339,16 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         if (!isValidForStatementType(GetDgnDb(), *ecprop, GetElementId().IsValid()? ECSqlClassParams::StatementType::Update: ECSqlClassParams::StatementType::Insert))
             return DgnDbStatus::ReadOnly;
 
-        auto autoHandledProps = GetAutoHandledProperties();
-        if (nullptr == autoHandledProps)
+        ScopedDataAccessor ahpAccess(*this, true);
+        if (!ahpAccess.IsValid())
             {
-            BeAssert(false);
-            return DgnDbStatus::BadArg;
+            BeAssert(false && "We know this is an auto-handled property. _AcquireData should not be failing");
+            return DgnDbStatus::BadRequest;
             }
 
-        if (ECN::ECObjectsStatus::Success != autoHandledProps->SetValue(name, value))
+        if (isEcObjectsWriteError(SetValueToMemory(name, value, false, 0)))
             return DgnDbStatus::BadArg; // probably a type mismatch
-        
+
         m_flags.m_autoHandledPropsDirty = true;
         return DgnDbStatus::Success;
         }
@@ -3452,8 +3467,9 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UpdateAutoHandledProperties()
     {
-    if (!m_autoHandledProperties.IsValid() || !m_flags.m_autoHandledPropsDirty)
-        return DgnDbStatus::Success;
+    // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
+
+    BeAssert(nullptr != m_ahp_data && m_flags.m_autoHandledPropsDirty);
     
     m_flags.m_autoHandledPropsDirty = false;
     ECInstanceUpdater* updater = GetAutoHandledPropertiesUpdater();
@@ -3463,14 +3479,22 @@ DgnDbStatus DgnElement::UpdateAutoHandledProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    if (m_autoHandledProperties->GetInstanceId().empty())
+    IECInstancePtr ahpinst = GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    GetElementId().ToString(idStrBuffer);
+    ahpinst->SetInstanceId(idStrBuffer);
+
+    ECDBuffer* buf = ahpinst->GetECDBufferP();
+    if (nullptr == buf)
         {
-        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-        GetElementId().ToString(idStrBuffer);
-        m_autoHandledProperties->SetInstanceId(idStrBuffer);
+        BeAssert(false && "For the sake of efficienty, we assume that ECInstanceECSqlSelectAdapter will always create some kind of ECDBuffer");
+        return DgnDbStatus::BadRequest;
         }
 
-    return (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    buf->CopyDataBuffer(*this, false);
+
+    return (BSISUCCESS == updater->Update(*ahpinst))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3478,8 +3502,8 @@ DgnDbStatus DgnElement::UpdateAutoHandledProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const
     {
-    BeAssert(m_flags.m_hasAutoHandledProps == 1);
-    BeAssert(m_autoHandledProperties.IsValid());
+    BeAssert(1 == m_flags.m_hasAutoHandledProps);
+    BeAssert(nullptr != m_ahp_data);
 
     ECN::ECClassCP eclass = GetElementClass();
     DgnClassId eclassid(eclass->GetId().GetValue());
@@ -3504,15 +3528,17 @@ BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
+bool DgnElement::_AcquireData(bool) const
     {
-    if (m_autoHandledProperties.IsValid())      // if we not only know that we have them but also have them loaded, return quickly.
-        return m_autoHandledProperties.get();
+    if (nullptr != m_ahp_data)
+        return true;
 
     if (m_flags.m_hasAutoHandledProps == 2)     // if we know that we don't have any, return null quickly
-        return nullptr;
+        return false;
     
     ECN::ECClassCP eclass = GetElementClass();
+
+    // *** WIP_AUTO_HANDLED_PROPERTIES -- Don't build this select argument list every time. Cache it.
 
     Utf8String props;
     Utf8CP comma = "";
@@ -3527,28 +3553,49 @@ ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
     if (props.empty())
         {
         m_flags.m_hasAutoHandledProps = 2;
-        return nullptr;
+        return false;
         }
+
+    // **************************************
+    // At this point, we must return true. 
+    // The ECClass says it has auto-handled
+    // properties. They may be NULL or not
+    // yet defined, but they are there.
+    // **************************************
 
     m_flags.m_hasAutoHandledProps = 1;
 
     auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), eclass->GetECSqlName().c_str()).c_str());
 
     stmt->BindId(1, GetElementId());
-    if (BE_SQLITE_ROW == stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         {
-        ECInstanceECSqlSelectAdapter adapter(*stmt);
-        m_autoHandledProperties = adapter.GetInstance();
-        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-        GetElementId().ToString(idStrBuffer);
-        m_autoHandledProperties->SetInstanceId(idStrBuffer);
-        }
-    else
-        {
-        m_autoHandledProperties = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
+        auto const& classLayout = _GetClassLayout();
+        m_ahp_bytesAllocated = CalculateInitialAllocation(classLayout);
+        m_ahp_data = (Byte*)bentleyAllocator_malloc(m_ahp_bytesAllocated);
+        InitializeMemory(classLayout, m_ahp_data, m_ahp_bytesAllocated, true);
+        return true; // element is not persistent => all props are null at this point
         }
 
-    return m_autoHandledProperties.get();
+    // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
+
+    ECInstanceECSqlSelectAdapter adapter(*stmt);
+    auto ahpinst = adapter.GetInstance();
+
+    ECDBuffer const* buf = ahpinst->GetECDBuffer();
+    if (nullptr == buf)
+        {
+        BeAssert(false && "For the sake of efficienty, we assume that ECInstanceECSqlSelectAdapter will always create some kind of ECDBuffer");
+        return true;
+        }
+
+    // NB. Don't call CopyDataBuffer, as that calls _AcquireData recursively
+    m_ahp_bytesAllocated = buf->GetBufferSize();
+    m_ahp_data = (Byte*)bentleyAllocator_malloc(m_ahp_bytesAllocated);
+
+    buf->GetBufferData(m_ahp_data);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4159,7 +4206,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus*
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR properties)
     {
-#ifdef WIP_AUTOHANDLED_PROPERTIES // *** ECValuesCollection does not return all properties!?
+#ifdef WIP_AUTO_HANDLED_PROPERTIES // *** ECValuesCollection does not return all properties!?
     ECValuesCollectionPtr propValues = ECValuesCollection::Create(properties);
     for (ECN::ECPropertyValue const& propValue : *propValues)
         {
@@ -4234,4 +4281,151 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat
         }
     stat = ele->_SetPropertyValues(properties);
     return (DgnDbStatus::Success == stat)? ele: nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus DgnElement::_CopyFromBuffer (ECDBufferCR src)
+    {
+    //DgnElement const* fromMemoryInstance = dynamic_cast<DgnElement const*> (&src);
+    //if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
+    //    {
+    //    SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
+    //    memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(uint32_t));
+    //    }
+
+    return CopyPropertiesFromBuffer (src);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DgnElement::AhpGetBytesUsed () const
+    {
+    if (NULL == m_ahp_data)
+        return 0;
+
+    return CalculateBytesUsed ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+void                DgnElement::_ClearValues ()
+    {
+    //if (m_structInstances)
+    //    m_structInstances->clear ();
+
+    InitializeMemory (GetClassLayout(), m_ahp_data, m_ahp_bytesAllocated);
+
+    //ClearAllPerPropertyFlags ();
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           DgnElement::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
+    {
+    PRECONDITION (NULL != m_ahp_data, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (offset + dataLength <= m_ahp_bytesAllocated, ECObjectsStatus::MemoryBoundsOverrun);
+
+    Byte * dest = m_ahp_data + offset;
+    memcpy (dest, newData, dataLength);
+    
+    return ECObjectsStatus::Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus DgnElement::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
+    {
+    PRECONDITION (NULL != m_ahp_data, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (toOffset + dataLength <= m_ahp_bytesAllocated, ECObjectsStatus::MemoryBoundsOverrun);
+
+    Byte* data = m_ahp_data;
+    memmove (data+toOffset, data+fromOffset, dataLength);
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus                DgnElement::_ShrinkAllocation ()
+    {
+    uint32_t newAllocation = AhpGetBytesUsed();
+    if (0 == newAllocation)
+        _FreeAllocation();
+    else if (newAllocation != _GetBytesAllocated())
+        {
+        Byte* reallocedData = (Byte*)realloc(m_ahp_data, newAllocation);
+        if (NULL == reallocedData)
+            {
+            BeAssert (false);
+            return ECObjectsStatus::UnableToAllocateMemory;
+            }
+
+        m_ahp_data = reallocedData;
+        m_ahp_bytesAllocated = newAllocation;
+        }
+
+    return ECObjectsStatus::Success;
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void                DgnElement::_FreeAllocation ()
+    {
+    //if (!m_usingSharedMemory)
+    //    {
+        if (m_ahp_data)
+            free (m_ahp_data); 
+
+        //if (m_perPropertyFlagsHolder.perPropertyFlags)
+        //    {
+        //    free (m_perPropertyFlagsHolder.perPropertyFlags); 
+        //    m_perPropertyFlagsHolder.perPropertyFlags = NULL;
+        //    }
+    //    }
+
+    m_ahp_data = NULL;
+
+    //if (m_structInstances)
+    //    {
+    //    m_structInstances->clear ();
+    //    delete m_structInstances;
+    //    m_structInstances = NULL;
+    //    }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           DgnElement::_GrowAllocation (uint32_t bytesNeeded)
+    {
+    DEBUG_EXPECT (m_ahp_bytesAllocated > 0);
+    DEBUG_EXPECT (NULL != m_ahp_data);
+        
+    uint32_t newSize = 2 * (m_ahp_bytesAllocated + bytesNeeded); // Assume the growing trend will continue.
+
+    Byte * reallocedData = (Byte*)realloc(m_ahp_data, newSize);
+    DEBUG_EXPECT (NULL != reallocedData);
+    if (NULL == reallocedData)
+        return ECObjectsStatus::UnableToAllocateMemory;
+    
+    m_ahp_data = reallocedData; 
+    m_ahp_bytesAllocated = newSize;
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCR       DgnElement::_GetClassLayout () const
+    {
+    return GetElementClass()->GetDefaultStandaloneEnabler()->GetClassLayout();
     }
