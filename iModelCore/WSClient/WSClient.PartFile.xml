@@ -359,6 +359,8 @@
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="DgnDbServerClient-Library" />
+        <SubPart PartName="DgnDbServerClient-Library-Android" />
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
