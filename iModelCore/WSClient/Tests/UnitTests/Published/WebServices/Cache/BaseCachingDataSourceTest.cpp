@@ -38,7 +38,7 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webA
     {
     // AsyncTask API delays destruction of CachingDataSource, thus DB is not always closed, force close here
     if (s_lastCachingDataSource && s_lastDataSourceCache->GetECDb().IsDbOpen())
-        s_lastDataSourceCache->GetECDb().CloseDb();
+        s_lastDataSourceCache->Close();
     s_lastCachingDataSource = nullptr;
 
     BeFileName seedCacheFolderName(webApiVersion.ToString());

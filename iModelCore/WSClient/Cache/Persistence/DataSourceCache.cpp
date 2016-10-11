@@ -132,6 +132,9 @@ BentleyStatus DataSourceCache::Close()
     m_state = nullptr;
     if (m_db.IsDbOpen())
         {
+        // Close all cached statements
+        m_db.NotifyOnSchemaChangedListeners();
+        // Close DB
         m_db.CloseDb();
         }
     return SUCCESS;

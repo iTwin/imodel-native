@@ -161,10 +161,10 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_Retur
 
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_CallsOnSchemaChangedListenerOnlyFirstTime)
     {
+    MockECDbSchemaChangeListener listener;
     auto cache = CreateTestCache();
     ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
 
-    MockECDbSchemaChangeListener listener;
     cache->RegisterSchemaChangeListener(&listener);
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
@@ -176,6 +176,8 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_Calls
     ASSERT_EQ(relClass1, relClass2);
     ASSERT_TRUE(nullptr != relClass1);
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClass1->GetId()));
+
+    cache->UnRegisterSchemaChangeListener(&listener);
     }
 
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentParameters_ReturnsDifferentClasses)
@@ -258,11 +260,11 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_ExistingClasses_Retu
 
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_GenerateNewClassFalse_DoesNotGenerateNewClassAndReturnsNullForNotExisting)
     {
+    MockECDbSchemaChangeListener listener;
     auto cache = CreateTestCache();
     ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
     ECRelationshipClassCP relClass = nullptr;
 
-    MockECDbSchemaChangeListener listener;
     cache->RegisterSchemaChangeListener(&listener);
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(0);
@@ -272,6 +274,8 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_GenerateNewClassFals
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
     relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
     EXPECT_TRUE(nullptr != relClass);
+
+    cache->UnRegisterSchemaChangeListener(&listener);
     }
 
 TEST_F(ChangeManagerTests, CreateObject_RemoteIdIsEmpty_SetsRemoteId)
