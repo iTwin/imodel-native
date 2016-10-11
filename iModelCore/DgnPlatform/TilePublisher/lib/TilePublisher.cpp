@@ -871,13 +871,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         {
         attr["attributes"]["TEXCOORD_0"] = accParamId;
 
-        size_t i=0;
-        bvector<DPoint2d> flippedUvs (mesh.Params().size());
-        for (auto const& uv : mesh.Params())
-            flippedUvs[i++] = DPoint2d::From (uv.x, 1.0 - uv.y);      // Needs work - flip textures rather than params.
-
-        DRange3d        paramRange = DRange3d::From(flippedUvs, 0.0);
-        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
+        AddMeshVertexAttribute (rootNode, &mesh.Params().front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
         }
 
 
