@@ -54,7 +54,7 @@ public APIs.
 <p>
 The bset implementation is based on the Google cpp-btree (see https://code.google.com/p/cpp-btree/).
 It generally has much better performance than the r-b based @c std::set implementations, in terms of
-memory usage, creation time, and lookup performance. However, it does suffer from the limitation that
+memory usage, creation time, and lookup performance (though not always, YMMV). However, it does suffer from the limitation that
 inserts and deletes can invalidate all existing iterators. It also requires that all key types be 
 default-constructable (see CAVEATS at Bentley/btree/btree.h).
 <p>
