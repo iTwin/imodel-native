@@ -58,7 +58,8 @@ $(o)WmsSourceNet$(oext):                $(baseDir)RealityPackageNet\WmsSourceNet
 
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
-BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)RealityPlatform$(libext) \
+BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley$(libext) \
+                                $(BuildContextSubPartsLibDir)RealityPlatform$(libext) \
                                 $(BuildContextSubPartsLibDir)BentleyGeom$(libext) \
                                 $(BuildContextSubPartsLibDir)RealityPackage$(libext)
                                 
