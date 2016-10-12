@@ -51,14 +51,16 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
+// *** NB: This adapter provides access to AUTO-HANDLED PROPERTIES ONLY.
+// ***     It cannot be used to present all of the properties of an element as an IECInstance. 
 // @bsiclass                                                     Sam.Wilson        10/16
 //=======================================================================================
-struct ElementECDBuffer : ECN::ECDBuffer
+struct ElementInstanceAdapter : ECN::ECDBuffer, ECN::IECInstance
 {
     DgnElement& m_element;
     ECClassCP m_eclass;
 
-    ElementECDBuffer(DgnElement const& el);
+    ElementInstanceAdapter(DgnElement const& el);
     
     bool IsValid() const {return nullptr != m_eclass;}
 
@@ -67,7 +69,7 @@ struct ElementECDBuffer : ECN::ECDBuffer
     uint32_t GetBytesUsed() const;
 
     BentleyStatus LoadProperties();
-    BeSQLite::EC::ECInstanceUpdater* GetUpdater(); // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
+    BeSQLite::EC::ECInstanceUpdater* GetUpdater();
     DgnDbStatus UpdateProperties();
 
     // ECDBuffer:
@@ -97,18 +99,54 @@ struct ElementECDBuffer : ECN::ECDBuffer
     ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
     ECN::ClassLayoutCR _GetClassLayout() const override;
 
+    // IECInstance
+    Utf8String      _GetInstanceId() const override {return m_element.GetElementId().ToString();}
+    ECObjectsStatus _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        {return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);}
+    ECObjectsStatus _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override 
+        {return GetValueFromMemory(v, propertyIndex, useArrayIndex, arrayIndex);}
+    ECObjectsStatus _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override
+        {return SetValueToMemory(propertyIndex, v, useArrayIndex, arrayIndex);}
+    ECObjectsStatus _InsertArrayElements (uint32_t propertyIndex, uint32_t index, uint32_t size) override
+        {return InsertNullArrayElementsAt(propertyIndex, index, size);}
+    ECObjectsStatus _AddArrayElements (uint32_t propertyIndex, uint32_t size) override
+        {return AddNullArrayElementsAt(propertyIndex, size);}
+    ECObjectsStatus _RemoveArrayElement (uint32_t propertyIndex, uint32_t index) override
+        {return RemoveArrayElementsAt(propertyIndex, index, 1);}
+    ECObjectsStatus _ClearArray (uint32_t propIdx) override
+        {
+        PropertyLayoutCP pPropertyLayout = NULL;
+        ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
+        if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
+            return ECObjectsStatus::PropertyNotFound;
+
+        uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);
+        if (arrayCount > 0)
+            {
+            RemoveArrayElements (*pPropertyLayout, 0, arrayCount);
+            }
+
+        return ECObjectsStatus::Success;
+        }
+
+    ECEnablerCR     _GetEnabler() const override {return *(m_eclass->GetDefaultStandaloneEnabler());}
+    bool            _IsReadOnly() const override {return false;}
+    Utf8String      _ToString (Utf8CP indent) const override {return "";}
+    size_t          _GetOffsetToIECInstance () const override {return 0;} // WIP_AUTO_HANDLED_PROPERTIES -- what is this??
+
+
 };
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson        10/16
 //=======================================================================================
-struct ElementECPropertyAccessor : ElementECDBuffer
+struct ElementECPropertyAccessor : ElementInstanceAdapter
 {
     ECPropertyCP m_ecprop;
 
     ElementECPropertyAccessor(DgnElement const& el, Utf8CP propName);
 
-    bool IsValid() const { return ElementECDBuffer::IsValid() && (nullptr != m_ecprop); }
+    bool IsValid() const { return ElementInstanceAdapter::IsValid() && (nullptr != m_ecprop); }
 
     DgnDbStatus SetPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx);
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx);
@@ -754,7 +792,7 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementECDBuffer ec(*this);
+        ElementInstanceAdapter ec(*this);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -803,7 +841,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementECDBuffer ec(*this);
+        ElementInstanceAdapter ec(*this);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -1080,8 +1118,8 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_parentId  = other.m_parentId;
     // don't copy FederationGuid
 
-    ElementECDBuffer ecThis(*this);
-    ElementECDBuffer ecOther(other);
+    ElementInstanceAdapter ecThis(*this);
+    ElementInstanceAdapter ecOther(other);
     if (ecThis.IsValid() && ecOther.IsValid())
         ecThis.CopyDataBuffer(ecOther, true);
 
@@ -1180,7 +1218,7 @@ bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) con
         if (ignore.find(propName) != ignore.end())
             continue;
 
-        // *** WIP Arrays
+        // *** WIP_AUTO_HANDLED_PROPERTIES Structs, Arrays
         if (!_EqualProperty(*prop, other, ignore, PropertyArrayIndex()))
             return false;
         }
@@ -1203,7 +1241,7 @@ void DgnElement::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
         if (ignore.find(propName.c_str()) != ignore.end())
             continue;
         ECN::ECValue value;
-        // *** WIP Arrays
+        // *** WIP_AUTO_HANDLED_PROPERTIES Structs, Arrays
         if (DgnDbStatus::Success == _GetPropertyValue(value, propName.c_str(), PropertyArrayIndex()))
             {
             str.append(propName.c_str());
@@ -3468,7 +3506,7 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    // See ElementECDBuffer for where we read auto-handled properties
+    // See ElementInstanceAdapter for where we read auto-handled properties
     return DgnDbStatus::Success;
     }
 
@@ -4103,7 +4141,7 @@ DgnDbStatus DgnElement::_SetPropertyValues(ECN::IECInstanceCR properties)
         if (!value.IsNull())
             {
             DgnDbStatus stat;
-            // *** WIP Arrays
+            // *** WIP_AUTO_HANDLED_PROPERTIES Structs, Arrays
             if (DgnDbStatus::Success != (stat = _SetPropertyValue(propName.c_str(), value, PropertyArrayIndex())))
                 {
                 if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to 
@@ -4152,7 +4190,7 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementECDBuffer::ElementECDBuffer(DgnElement const& el) : m_element(const_cast<DgnElement&>(el))
+ElementInstanceAdapter::ElementInstanceAdapter(DgnElement const& el) : m_element(const_cast<DgnElement&>(el))
     {
     m_eclass = m_element.GetElementClass();
 
@@ -4173,7 +4211,7 @@ ElementECDBuffer::ElementECDBuffer(DgnElement const& el) : m_element(const_cast<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementECDBuffer::LoadProperties()
+BentleyStatus ElementInstanceAdapter::LoadProperties()
     {
     BeAssert(IsValid());
     BeAssert(DgnElement::PropState::Unknown == m_element.m_flags.m_propState);
@@ -4206,33 +4244,19 @@ BentleyStatus ElementECDBuffer::LoadProperties()
 
     auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), m_eclass->GetECSqlName().c_str()).c_str());
 
+    auto const& classLayout = _GetClassLayout();
+    m_element.m_ecPropertyDataSize = CalculateInitialAllocation(classLayout);
+    m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
+    InitializeMemory(classLayout, m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
+
     stmt->BindId(1, m_element.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         {
-        auto const& classLayout = _GetClassLayout();
-        m_element.m_ecPropertyDataSize = CalculateInitialAllocation(classLayout);
-        m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
-        InitializeMemory(classLayout, m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
         return BSISUCCESS; // element is not persistent => all props are null at this point
         }
 
-    // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - get values from statement using ECDb's binders
-
     ECInstanceECSqlSelectAdapter adapter(*stmt);
-    auto ahpinst = adapter.GetInstance();
-
-    ECDBuffer const* buf = ahpinst->GetECDBuffer();
-    if (nullptr == buf)
-        {
-        BeAssert(false && "For the sake of efficienty, we assume that ECInstanceECSqlSelectAdapter will always create some kind of ECDBuffer");
-        return BSISUCCESS;
-        }
-
-    // NB. DON'T CALL CopyDataBuffer, as that calls _AcquireData recursively
-    m_element.m_ecPropertyDataSize = buf->GetBufferSize();
-    m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
-
-    buf->GetBufferData(m_element.m_ecPropertyData);
+    adapter.SetInstanceData(*this, true);
 
     return BSISUCCESS;
     }
@@ -4240,7 +4264,7 @@ BentleyStatus ElementECDBuffer::LoadProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementECDBuffer::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
+bool ElementInstanceAdapter::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
     {
     BeAssert(IsValid());
     if (value.IsNull())
@@ -4262,7 +4286,7 @@ bool ElementECDBuffer::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementECDBuffer::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
+bool ElementInstanceAdapter::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
     {
     BeAssert(IsValid());
     // *** WIP_AUTO_HANDLED_PROPERTIES -- must somehow cache this kind of metadata
@@ -4281,7 +4305,7 @@ bool ElementECDBuffer::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECInstanceUpdater* ElementECDBuffer::GetUpdater()
+BeSQLite::EC::ECInstanceUpdater* ElementInstanceAdapter::GetUpdater()
     {
     BeAssert(IsValid());
 
@@ -4307,10 +4331,8 @@ BeSQLite::EC::ECInstanceUpdater* ElementECDBuffer::GetUpdater()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECDBuffer::UpdateProperties()
+DgnDbStatus ElementInstanceAdapter::UpdateProperties()
     {
-    // *** WIP_AUTO_HANDLED_PROPERTIES -- don't use adapter - generate SQL
-
     BeAssert(IsValid());
     BeAssert(DgnElement::PropState::Dirty == m_element.m_flags.m_propState);
     BeAssert(nullptr != m_element.m_ecPropertyData);
@@ -4324,29 +4346,14 @@ DgnDbStatus ElementECDBuffer::UpdateProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    IECInstancePtr ahpinst = m_eclass->GetDefaultStandaloneEnabler()->CreateInstance();
-
-    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    m_element.GetElementId().ToString(idStrBuffer);
-    ahpinst->SetInstanceId(idStrBuffer);
-
-    ECDBuffer* buf = ahpinst->GetECDBufferP();
-    if (nullptr == buf)
-        {
-        BeAssert(false && "For the sake of efficiency, we assume that ECInstanceECSqlSelectAdapter will always create some kind of ECDBuffer");
-        return DgnDbStatus::BadRequest;
-        }
-
-    buf->CopyDataBuffer(*this, false);
-
-    return (BSISUCCESS == updater->Update(*ahpinst))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    return (BSISUCCESS == updater->Update(*this))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECDBuffer::_CopyFromBuffer (ECDBufferCR src)
+ECObjectsStatus ElementInstanceAdapter::_CopyFromBuffer (ECDBufferCR src)
     {
     //DgnElement const* fromMemoryInstance = dynamic_cast<DgnElement const*> (&src);
     //if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
@@ -4362,7 +4369,7 @@ ECObjectsStatus ElementECDBuffer::_CopyFromBuffer (ECDBufferCR src)
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ElementECDBuffer::GetBytesUsed () const
+uint32_t ElementInstanceAdapter::GetBytesUsed () const
     {
     if (NULL == m_element.m_ecPropertyData)
         return 0;
@@ -4374,7 +4381,7 @@ uint32_t ElementECDBuffer::GetBytesUsed () const
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/        
-void ElementECDBuffer::_ClearValues ()
+void ElementInstanceAdapter::_ClearValues ()
     {
     //if (m_structInstances)
     //    m_structInstances->clear ();
@@ -4388,7 +4395,7 @@ void ElementECDBuffer::_ClearValues ()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECDBuffer::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
+ECObjectsStatus ElementInstanceAdapter::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
     {
     PRECONDITION (NULL != m_element.m_ecPropertyData, ECObjectsStatus::PreconditionViolated);
     PRECONDITION (offset + dataLength <= m_element.m_ecPropertyDataSize, ECObjectsStatus::MemoryBoundsOverrun);
@@ -4403,7 +4410,7 @@ ECObjectsStatus ElementECDBuffer::_ModifyData (uint32_t offset, void const * new
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECDBuffer::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
+ECObjectsStatus ElementInstanceAdapter::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
     {
     PRECONDITION (NULL != m_element.m_ecPropertyData, ECObjectsStatus::PreconditionViolated);
     PRECONDITION (toOffset + dataLength <= m_element.m_ecPropertyDataSize, ECObjectsStatus::MemoryBoundsOverrun);
@@ -4418,7 +4425,7 @@ ECObjectsStatus ElementECDBuffer::_MoveData (uint32_t toOffset, uint32_t fromOff
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECDBuffer::_ShrinkAllocation ()
+ECObjectsStatus ElementInstanceAdapter::_ShrinkAllocation ()
     {
     uint32_t newAllocation = GetBytesUsed();
     if (0 == newAllocation)
@@ -4443,7 +4450,7 @@ ECObjectsStatus ElementECDBuffer::_ShrinkAllocation ()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementECDBuffer::_FreeAllocation ()
+void ElementInstanceAdapter::_FreeAllocation ()
     {
     //if (!m_usingSharedMemory)
     //    {
@@ -4471,7 +4478,7 @@ void ElementECDBuffer::_FreeAllocation ()
 * Adapted from MemoryECBaseInstance
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECDBuffer::_GrowAllocation (uint32_t bytesNeeded)
+ECObjectsStatus ElementInstanceAdapter::_GrowAllocation (uint32_t bytesNeeded)
     {
     DEBUG_EXPECT (m_element.m_ecPropertyDataSize > 0);
     DEBUG_EXPECT (NULL != m_element.m_ecPropertyData);
@@ -4492,7 +4499,7 @@ ECObjectsStatus ElementECDBuffer::_GrowAllocation (uint32_t bytesNeeded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR ElementECDBuffer::_GetClassLayout () const
+ClassLayoutCR ElementInstanceAdapter::_GetClassLayout () const
     {
     return m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();
     }
@@ -4502,9 +4509,9 @@ ClassLayoutCR ElementECDBuffer::_GetClassLayout () const
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElement const& el, Utf8CP propName) :
-    ElementECDBuffer(el)
+    ElementInstanceAdapter(el)
     {
-    if (!ElementECDBuffer::IsValid())
+    if (!ElementInstanceAdapter::IsValid())
         return;
 
     m_ecprop = m_eclass->GetPropertyP(propName);

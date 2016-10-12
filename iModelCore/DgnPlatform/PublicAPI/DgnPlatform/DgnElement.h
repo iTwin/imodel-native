@@ -40,7 +40,7 @@ namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometr
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct ElementECPropertyAccessor;
-struct ElementECDBuffer;
+struct ElementInstanceAdapter;
 
 //=======================================================================================
 //! Holds Id remapping tables
@@ -455,7 +455,7 @@ public:
     friend struct MultiAspect;
     friend struct GeometrySource;
     friend struct ElementECPropertyAccessor;
-    friend struct ElementECDBuffer;
+    friend struct ElementInstanceAdapter;
 
     //! Parameters for creating a new DgnElement
     struct CreateParams
@@ -2362,7 +2362,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
-    friend struct ElementECDBuffer;
+    friend struct ElementInstanceAdapter;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals

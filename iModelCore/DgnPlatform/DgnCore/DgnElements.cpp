@@ -1025,6 +1025,9 @@ DgnElement::~DgnElement()
     if (m_userProperties)
         UnloadUserProperties();
 
+    if (nullptr != m_ecPropertyData)
+        bentleyAllocator_free(m_ecPropertyData);
+
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
 
