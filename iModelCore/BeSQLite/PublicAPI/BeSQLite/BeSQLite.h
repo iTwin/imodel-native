@@ -966,7 +966,7 @@ public:
 struct DbDupValue : DbValue, NonCopyableClass
 {
     BE_SQLITE_EXPORT DbDupValue(SqlValueP val);
-    DbDupValue(DbDupValue&& other) : DbValue(other.m_val) { other.m_val = nullptr; }
+    DbDupValue(DbDupValue&& other) : DbValue(other.m_val) {other.m_val = nullptr;}
     BE_SQLITE_EXPORT DbDupValue& operator=(DbDupValue&& other);
     BE_SQLITE_EXPORT ~DbDupValue();
 };
@@ -1132,7 +1132,7 @@ private:
     void FromCompactString(Utf8StringCR);
     void FromReadableString(Utf8StringCR);
 public:
-    enum class StringFormat { Compact=0, Readable=1 };
+    enum class StringFormat {Compact=0, Readable=1};
 
     BE_SQLITE_EXPORT void FromString(Utf8StringCR in);
     BE_SQLITE_EXPORT Utf8String ToString(StringFormat format=StringFormat::Compact) const;
@@ -1141,7 +1141,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-template<typename IdType> struct IdSet : BeIdSet, VirtualSet
+template<typename IdType> struct IdSet : VirtualSet
 {
 private:
     BeIdSet m_set;
@@ -1152,8 +1152,9 @@ private:
         return Contains(IdType(vals[0].GetValueUInt64()));
         }
 public:
-    IdSet() { static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size."); }
+    IdSet() {static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");}
 
+    typedef IdSet<IdType> T_Self;
     typedef bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
     typedef typename T_SetType::iterator iterator;
@@ -1161,6 +1162,8 @@ public:
     const_iterator begin() const {return ((T_SetType&)m_set).begin();}
     const_iterator end() const {return ((T_SetType&)m_set).end();}
     const_iterator find(IdType id) const {return ((T_SetType&)m_set).find(id);}
+    bool operator==(T_Self const& other) const {return m_set==other.m_set;}
+    bool operator!=(T_Self const& other) const {return m_set!=other.m_set;}
     bool empty() const {return m_set.empty();}
     void clear() {m_set.clear();}
     size_t size() const {return m_set.size();}
