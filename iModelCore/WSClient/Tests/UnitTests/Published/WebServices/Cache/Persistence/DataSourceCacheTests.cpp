@@ -147,7 +147,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_FailsAsECDbRequiresSharedColumnsCA)
     {
     auto cache = GetTestCache();
 
@@ -162,6 +162,46 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
     auto schema2 = ParseSchema(
         R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
+                <ECProperty propertyName="A" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+
+    EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
+    {
+    auto cache = GetTestCache();
+
+    // ShareColumns & TablePerHierarchy is needed for BIM0200 property deletion to work
+    auto schema1 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    auto schema2 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00" />
+                </ECCustomAttributes>
                 <ECProperty propertyName="A" typeName="string" />
             </ECClass>
         </ECSchema>)xml");
