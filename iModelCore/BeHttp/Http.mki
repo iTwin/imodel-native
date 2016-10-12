@@ -28,26 +28,8 @@ HttpHeaders + $(BeHttpPublicApiDir)ProxyHttpHandler.h
 #---------------------------------------------------------------------------------------+
 #   Setup HTTP library
 #---------------------------------------------------------------------------------------+
-%if !defined (HTTP_LIB)
-        %if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx64" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
-                HTTP_LIB = CASABLANCA
-        %else
-                HTTP_LIB = CURL
-        %endif
-%endif
-
-%if $(HTTP_LIB) == "CASABLANCA"
-    dirToSearch = $(BuildContext)VendorAPI/casablanca/
-    %include cincapnd.mki
-    
-    nameToDefine = HTTP_LIB_CASABLANCA
-    %include cdefapnd.mki
-    
-%elif $(HTTP_LIB) == "CURL"
-    nameToDefine = HTTP_LIB_CURL
-    %include cdefapnd.mki
-    
-%endif
+nameToDefine = HTTP_LIB_CURL
+%include cdefapnd.mki
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -74,27 +56,19 @@ $(o)HttpRequest$(oext)                      : $(BeHttpSourceDir)HttpRequest.cpp 
 
 $(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-%if $(HTTP_LIB) == "CASABLANCA"
-    $(o)CasablancaHttpRequest$(oext)        : $(BeHttpSourceDir)Casablanca/CasablancaHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-    $(o)CasablancaHttpHandler$(oext)        : $(BeHttpSourceDir)Casablanca/CasablancaHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)CurlPool$(oext)                       : $(BeHttpSourceDir)Curl/CurlPool.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-    $(o)CasablancaTaskRunner$(oext)         : $(BeHttpSourceDir)Casablanca/CasablancaTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)CurlHttpRequest$(oext)                : $(BeHttpSourceDir)Curl/CurlHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-%elif $(HTTP_LIB) == "CURL"
-    $(o)CurlPool$(oext)                     : $(BeHttpSourceDir)Curl/CurlPool.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)CurlHttpHandler$(oext)                : $(BeHttpSourceDir)Curl/CurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-    $(o)CurlHttpRequest$(oext)              : $(BeHttpSourceDir)Curl/CurlHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
-
-    $(o)CurlHttpHandler$(oext)              : $(BeHttpSourceDir)Curl/CurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
-
-    $(o)NotificationPipe$(oext)             : $(BeHttpSourceDir)Curl/NotificationPipe.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)NotificationPipe$(oext)               : $(BeHttpSourceDir)Curl/NotificationPipe.cpp $(HttpHeaders) ${MultiCompileDepends}
     
-    $(o)CurlTaskRunner$(oext)               : $(BeHttpSourceDir)Curl/CurlTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)CurlTaskRunner$(oext)                 : $(BeHttpSourceDir)Curl/CurlTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-    $(o)ThreadCurlHttpHandler$(oext)        : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+$(o)ThreadCurlHttpHandler$(oext)          : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-%endif
 
 %if "iOS" != $(TARGET_PLATFORM)
         $(o)NetworkIndicator$(oext)                             : $(BeHttpSourceDir)NetworkIndicator.cpp $(HttpHeaders) ${MultiCompileDepends}
@@ -130,13 +104,8 @@ $(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler
     LINKER_LIBRARIES            + "Winhttp.Lib"
 %endif
 
-%if $(HTTP_LIB) == "CASABLANCA"
-    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCasablanca$(libext)
-
-%elif $(HTTP_LIB) == "CURL"
-    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(libext)
-    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext)
-%endif
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(stlibext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(stlibext)
 
 #---------------------------------------------------------------------------------------+
 #   Deliver assets

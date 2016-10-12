@@ -8,12 +8,7 @@
 
 #include <BeHttp/DefaultHttpHandler.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
-
-#if defined (HTTP_LIB_CASABLANCA)
-#include "Casablanca/CasablancaHttpHandler.h"
-#elif defined (HTTP_LIB_CURL)
 #include "Curl/ThreadCurlHttpHandler.h"
-#endif
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -23,11 +18,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 +---------------+---------------+---------------+---------------+---------------+------*/
 static IHttpHandlerPtr createDefaultHandler()
     {
-#if defined (HTTP_LIB_CASABLANCA)
-    return std::make_shared<CasablancaHttpHandler> ();
-#elif defined (HTTP_LIB_CURL)
     return std::make_shared<ThreadCurlHttpHandler> ();
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+

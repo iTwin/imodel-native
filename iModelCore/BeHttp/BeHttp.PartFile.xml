@@ -5,7 +5,6 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="G06">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <Bindings>
@@ -23,7 +22,6 @@
     <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary-Curl"/>
-        <SubPart PartName="BeHttpLibrary-Casablanca"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"     Repository="BeSQLite"/>
         <Bindings>
@@ -35,10 +33,6 @@
     
     <Part Name="BeHttpLibrary-Curl" ExcludePlatforms="WinRT*">
         <SubPart PartName="BeCurl"          PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-    </Part>
-    
-    <Part Name="BeHttpLibrary-Casablanca" OnlyPlatforms="WinRT*">
-        <SubPart PartName="BeCasablanca"    PartFile="BeCasablanca" Repository="Libsrc-casablanca"/>
     </Part>
     
     <Part Name="BeHttp">
