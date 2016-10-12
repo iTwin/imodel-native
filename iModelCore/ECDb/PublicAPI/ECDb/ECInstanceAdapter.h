@@ -45,7 +45,6 @@ private:
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
 
-    BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
     BentleyStatus SetStructArrayElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
     BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
@@ -54,6 +53,7 @@ public:
 
     //__PUBLISH_SECTION_END__
     BentleyStatus SetSimpleProperty(ECN::IECInstanceR instance, IECSqlValue const& value) const {return SetPropertyData(instance, value);}
+    ECDB_EXPORT BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
     //__PUBLISH_SECTION_START__
 
     //! Creates a new instance of the adapter
