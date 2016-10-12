@@ -553,7 +553,7 @@ public:
     //! @param[in] numBytes number of bytes of randomness to generate.
     //! @param[out] random buffer to hold randomness.
     //! @see sqlite3_randomness
-    static void Randomness(int numBytes, void* random);
+    BE_SQLITE_EXPORT static void Randomness(int numBytes, void* random);
 
     //! Allocate a buffer using SQLite's memory manager.
     static void* MallocMem(int sz);
