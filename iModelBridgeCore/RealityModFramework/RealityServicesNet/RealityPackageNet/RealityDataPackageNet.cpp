@@ -9,6 +9,8 @@
 // Package.
 #include "RealityDataPackageNet.h"
 
+#include <Bentley/BeFileName.h>
+
 using namespace RealityPackage;
 using namespace RealityPackageNet;
 
@@ -36,7 +38,17 @@ RealityDataPackageNet^ RealityDataPackageNet::Create(String^ name)
 //-------------------------------------------------------------------------------------
 bool RealityDataPackageNet::Write(String^ filename)
     {
-    return false;
+    Utf8String filenameUtf8;
+    BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(filename).ToPointer()));
+    BeFileName nativeFilename(filenameUtf8);
+
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    status = (*m_pPackage)->Write(nativeFilename);
+
+    if (RealityPackageStatus::Success != status)
+        return false;
+
+    return true;
     }
 
 //-------------------------------------------------------------------------------------
