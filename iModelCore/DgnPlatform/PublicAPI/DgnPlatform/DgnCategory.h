@@ -192,9 +192,9 @@ public:
     DgnSubCategoryCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnSubCategory>(*this, status); } //!< Updates this sub-category in the DgnDb and returns the updated persistent sub-category
 
     Utf8CP GetDescription() const { return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str(); } //!< The sub-category description, or nullptr if not defined
-    Appearance const& GetAppearance() const { return m_data.m_appearance; } //!< This sub-category's appearance
-    Appearance& GetAppearanceR() { return m_data.m_appearance; } //!< A writable reference to this sub-category's appearance
-    void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description
+    Appearance const& GetAppearance() const {return m_data.m_appearance;} //!< This sub-category's appearance
+    Appearance& GetAppearanceR() { return m_data.m_appearance;} //!< A writable reference to this sub-category's appearance
+    void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the description
 
     //! Create a DgnCode for the name of a sub-category of the specified category
     static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }

@@ -99,36 +99,6 @@ Json::Value ViewFlags::ToJson() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::Appearance CategorySelector::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
-    {
-    auto const entry = m_subCategories.find(subCategoryId);
-    if (entry != m_subCategories.end())
-        return entry->second;
-
-    DgnSubCategoryCPtr subCategory = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
-    BeAssert(subCategory.IsValid());
-    DgnSubCategory::Appearance appearance;
-    if (subCategory.IsValid())
-        appearance = subCategory->GetAppearance();
-
-    auto out = m_subCategories.Insert(subCategoryId, appearance);
-    return out.first->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
-    {
-    if (onOff)
-        m_categories.insert(categoryId);
-    else
-        m_categories.erase(categoryId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
@@ -221,52 +191,6 @@ Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, Geometr
 Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
     return source.StrokeHit(context, hit);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::ReloadSubCategory(DgnSubCategoryId id)
-    {
-    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
-    BeAssert(unmodified.IsValid());
-    if (unmodified.IsValid())
-        {
-        auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
-
-        if (!result.second)
-            result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it.
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
-    {
-    if (!id.IsValid())
-        return;
-
-    auto result = m_subCategoryOverrides.Insert(id, ovr);
-    if (!result.second)
-        {
-        result.first->second = ovr; // we already had this override; change it.
-        ReloadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
-        }
-
-    // now apply this override to the unmodified SubCategory appearance
-    auto it = m_subCategories.find(id);
-    if (it != m_subCategories.end())
-        ovr.ApplyTo(it->second);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::DropSubCategoryOverride(DgnSubCategoryId id)
-    {
-    m_subCategoryOverrides.erase(id);
-    ReloadSubCategory(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,20 +601,6 @@ void SpatialViewController::TransformBy(TransformCR trans)
     {
     GetSpatialViewDefinitionR()._OnTransform(trans);
     }
-
-#if defined (NEEDS_WORK_VIEWS)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::_SetTargetModel(GeometricModelP target)
-    {
-    if (nullptr == target || !m_viewedModels.Contains(target->GetModelId()))
-        return  ERROR;
-
-    m_targetModelId = target->GetModelId();
-    return SUCCESS;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
@@ -1255,25 +1165,6 @@ DPoint3d CameraViewDefinition::_GetTargetPoint() const
     DPoint3d target;
     target.SumOf(GetEyePoint(), viewZ, -1.0 * GetFocusDistance());
     return  target;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::InitDefaults()
-    {
-    memset(this, 0, sizeof(ViewFlags));
-
-    m_text = true;
-    m_dimensions = true;
-    m_patterns = true;
-    m_weights = true;
-    m_styles = true;
-    m_transparency = true;
-    m_fill = true;
-    m_textures = true;
-    m_materials = true;
-    m_sceneLights = true;
     }
 
 /*---------------------------------------------------------------------------------**//**

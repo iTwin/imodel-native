@@ -283,9 +283,10 @@ private:
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
-    T_DgnModelMap   m_models;
+    mutable BeSQLite::BeDbMutex m_mutex;
+    T_DgnModelMap  m_models;
     bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
-    T_ClassInfoMap  m_classInfos;
+    T_ClassInfoMap m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
     void Empty();
@@ -939,9 +940,8 @@ public:
     //! @param[in] key The key identifying the record to drop.
     //! @return Success if the record was dropped, or an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
-//__PUBLISH_SECTION_END__
+
     static bool IsUntrackedFts5Table(Utf8CP tableName);
-//__PUBLISH_SECTION_START__
 };
 
 ENUM_IS_FLAGS(DgnSearchableText::Query::Column);

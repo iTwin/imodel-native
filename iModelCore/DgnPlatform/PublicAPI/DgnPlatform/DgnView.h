@@ -56,20 +56,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DefinitionElement);
     friend struct dgn_ElementHandler::DisplayStyleDef;
+    friend struct ViewDefinition;
 
 protected:
     mutable Json::Value m_styles;
     Render::ViewFlags m_viewFlags;
 
     DGNPLATFORM_EXPORT void SaveStyles();
+    bool EqualState(DisplayStyleCR other) const {return m_styles==other.m_styles;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DgnDbStatus _InsertInDb() override {SaveStyles(); return T_Super::_InsertInDb();}
     DgnDbStatus _OnUpdate(DgnElementCR el) override {SaveStyles(); return T_Super::_OnUpdate(el);}
-    explicit DisplayStyle(CreateParams const& params) : T_Super(params) {m_viewFlags.InitDefaults();}
+    explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Construct a new modelselector. You should then call SetModelIds.
+    //! Construct a new DisplayStyle.
     DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     JsonValueCR GetStyle(Utf8CP name) const {return m_styles[name];}
@@ -139,8 +141,7 @@ protected:
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
 
 public:
-
-    //! Construct a new modelselector. You should then call SetModelIds.
+    //! Construct a new DisplayStyle3d.
     DisplayStyle3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {m_environment.Initialize();}
 
     /** @name Environment Display*/
@@ -171,9 +172,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
+    friend struct SpatialViewDefinition;
+    friend struct ViewDefinition;
+
 protected:
     DgnModelIdSet m_models;
 
+    bool EqualState(ModelSelectorCR other) const {return m_models==other.m_models;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
@@ -212,11 +217,16 @@ struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
     DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
+    friend struct ViewDefinition;
+
 protected:
+    mutable bool m_dirty;
+    mutable BeMutex m_mutex;
     mutable DgnCategoryIdSet m_categories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
+    DGNPLATFORM_EXPORT bool EqualState(CategorySelectorCR other) const;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
@@ -224,8 +234,9 @@ protected:
     DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
     DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
 
+    void SaveState() const;
     DgnDbStatus WriteCategories();
-
+    DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -244,7 +255,6 @@ public:
     void AddCategory(DgnCategoryId id) {m_categories.insert(id);}
     bool DropCategory(DgnCategoryId id) {return 0 != m_categories.erase(id);}
 
-    void ReloadSubCategory(DgnSubCategoryId);
     bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
@@ -256,14 +266,16 @@ public:
 };
 
 //=======================================================================================
-//! Holds the definition of a view.
+//! The definition element for a view.
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
     friend struct ViewController;
+    friend struct DgnViewport;
     DEFINE_T_SUPER(DefinitionElement);
+
 public:
 
     //! Parameters used to construct a ViewDefinition
@@ -290,6 +302,7 @@ protected:
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {SetCategorySelector(params.m_categorySelector); SetDisplayStyle(params.m_displayStyle);}
 
+    DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionCR) const;
     DgnDbStatus _OnInsert() override {SaveDefinition(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveDefinition(); return T_Super::_OnUpdate(original);}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
@@ -565,6 +578,7 @@ public:
     //! such that the entire volume is visible.
     //! @note, for 2d views, only the X and Y values of volume are used.
     DGNPLATFORM_EXPORT void LookAtVolume(DRange3dCR worldVolume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
+
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
 
     //! Adjust the aspect ratio of this view so that it matches the aspect ratio (x/y) of the supplied rectangle.
@@ -589,6 +603,7 @@ protected:
     RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
 
     DGNPLATFORM_EXPORT void SaveViewDef3d();
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus _OnInsert() override {SaveViewDef3d(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveViewDef3d(); return T_Super::_OnUpdate(original);}
@@ -614,7 +629,6 @@ public:
 //=======================================================================================
 //! Defines a view of one or more SpatialModels.
 //! The list of viewed models is stored by the ModelSelector.
-//! table.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
@@ -638,6 +652,7 @@ protected:
     ModelSelectorPtr m_modelSelector;
 
     DGNPLATFORM_EXPORT void UpdateModelSelectorId();
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
     DgnDbStatus _OnInsert() override {UpdateModelSelectorId(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {UpdateModelSelectorId(); return T_Super::_OnUpdate(original);}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
@@ -720,6 +735,7 @@ public:
     DPoint3dCR GetEyePoint() const {return m_eyePoint;}
     void SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
     bool IsValid() const {return IsLensValid() && IsFocusValid();}
+    bool IsEqual(CameraInfo const& other) const {return m_lensAngle==other.m_lensAngle && m_focusDistance==other.m_focusDistance && m_eyePoint.IsEqual(other.m_eyePoint);}
 };
 
 /** @addtogroup GROUP_DgnView DgnView Module
@@ -796,6 +812,7 @@ protected:
     CameraInfo m_camera;  //!< Information about the camera lens used for the view.
     
     explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     DgnDbStatus _OnInsert() override {SaveCamera(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveCamera(); return T_Super::_OnUpdate(original);}
@@ -959,6 +976,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
 
     DGNPLATFORM_EXPORT void SaveViewDef2d();
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionCR) const override;
     DgnDbStatus _OnInsert() override {SaveViewDef2d(); return T_Super::_OnInsert();}
     DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveViewDef2d(); return T_Super::_OnUpdate(original);}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;

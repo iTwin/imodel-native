@@ -415,16 +415,6 @@ uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subject
 ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
 
 
-#if defined (NEEDS_WORK_VIEWS)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
-    {
-    return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -436,17 +426,6 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR v
     fullRange.UnionOf(rdlRange, subjectRange);
     return fullRange;
     }
-
-#if defined (NEEDS_WORK_TARGET_MODEL)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_LoadState()
-    {
-    T_Super::_LoadState();
-    SynchWithSubjectViewController();
-    }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.wilson      10/2015

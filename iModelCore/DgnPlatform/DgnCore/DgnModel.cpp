@@ -88,6 +88,7 @@ DgnCode DgnModels::GetModelCode(Iterator::Entry const& entry)
 void DgnModels::AddLoadedModel(DgnModelR model)
     {
     model.m_persistent = true;
+    BeDbMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
     }
 
@@ -97,6 +98,7 @@ void DgnModels::AddLoadedModel(DgnModelR model)
 void DgnModels::DropLoadedModel(DgnModelR model)
     {
     model.m_persistent = false;
+    BeDbMutexHolder _v_v(m_mutex);
     m_models.erase(model.GetModelId());
     }
 
@@ -1325,8 +1327,9 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::FindModel(DgnModelId modelId)
     {
+    BeDbMutexHolder _v_v(m_mutex);
     auto it=m_models.find(modelId);
-    return  it!=m_models.end() ? it->second : NULL;
+    return it!=m_models.end() ? it->second : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**

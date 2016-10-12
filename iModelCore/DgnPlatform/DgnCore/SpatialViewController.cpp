@@ -249,16 +249,9 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 
     RequestAbort(true);
     if (onOff)
-        {
         models.insert(modelId);
-        //  Ensure the model is in the m_loadedModels list.  QueryModel
-        //  must not do this in the query thread.
-        GetDgnDb().Models().GetModel(modelId);
-        }
     else
-        {
         models.erase(modelId);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

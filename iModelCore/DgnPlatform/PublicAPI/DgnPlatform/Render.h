@@ -35,7 +35,7 @@ enum class RenderMode
     };
 
 /*=================================================================================**//**
-*  The flags that control view information.
+* Flags for view display style
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ViewFlags
@@ -44,7 +44,6 @@ private:
     RenderMode m_renderMode;
 
 public:
-    uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
     uint32_t m_text:1;             //!< Shows or hides text.
     uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
     uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
@@ -52,24 +51,91 @@ public:
     uint32_t m_styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
     uint32_t m_transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
     uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
-    uint32_t m_grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
-    uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
     uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
     uint32_t m_sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used.
-    uint32_t m_visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. 
-    uint32_t m_hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. 
-    uint32_t m_shadows:1;          //!< Shows or hides shadows. 
-    uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied. 
+    uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
+    uint32_t m_grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
+    uint32_t m_visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode.
+    uint32_t m_hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode.
     uint32_t m_ignoreLighting:1;   //!< Controls whether lights are used.
+    uint32_t m_shadows:1;          //!< Shows or hides shadows.
+    uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied.
+    uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
     uint32_t m_monochrome:1;       //!< use monochrome style
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
-    void SetRenderMode(RenderMode value) {m_renderMode = value;}
-    RenderMode GetRenderMode() const {return m_renderMode;}
+    ViewFlags()
+        {
+        m_renderMode = RenderMode::Wireframe;
+        m_text = 1;
+        m_dimensions = 1;
+        m_patterns = 1;
+        m_weights = 1;
+        m_styles = 1;
+        m_transparency = 1;
+        m_fill = 1;
+        m_textures = 1;
+        m_materials = 1;
+        m_sceneLights = 1;
+        m_acsTriad = 0;
+        m_grid = 0;
+        m_visibleEdges = 0;
+        m_hiddenEdges = 0;
+        m_ignoreLighting = 0;
+        m_shadows = 0;
+        m_noClipVolume = 0;
+        m_constructions = 0;
+        m_monochrome = 0;
+        m_noGeometryMap = 0;
+        m_edgeMask = 0;
+        }
 
-    DGNPLATFORM_EXPORT void InitDefaults();
+    bool ShowText() const {return m_text;}
+    void SetShowText(bool val) {m_text = val;}
+    bool ShowDimensions() const {return m_dimensions;}
+    void SetShowDimensions(bool val) {m_dimensions = val;}
+    bool ShowPatterns() const {return m_patterns;}
+    void SetShowPatterns(bool val) {m_patterns = val;}
+    bool ShowWeights() const {return m_weights;}
+    void SetShowWeights(bool val) {m_weights = val;}
+    bool ShowStyles() const {return m_styles;}
+    void SetShowStyles(bool val) {m_styles = val;}
+    bool ShowTransparency() const {return m_transparency;}
+    void SetShowTransparency(bool val) {m_transparency = val;}
+    bool ShowFill() const {return m_fill;}
+    void SetShowFill(bool val) {m_fill = val;}
+    bool ShowTextures() const {return m_textures;}
+    void SetShowTextures(bool val) {m_textures = val;}
+    bool ShowMaterials() const {return m_materials;}
+    void SetShowMaterials(bool val) {m_materials = val;}
+    bool ShowSceneLights() const {return m_sceneLights;}
+    void SetShowSceneLights(bool val) {m_sceneLights = val;}
+    bool ShowAcsTriad() const {return m_acsTriad;}
+    void SetShowAcsTriad(bool val) {m_acsTriad = val;}
+    bool ShowGrid() const {return m_grid;}
+    void SetShowGrid(bool val) {m_grid = val;}
+    bool ShowVisibleEdges() const {return m_visibleEdges;}
+    void SetShowVisibleEdges(bool val) {m_visibleEdges = val;}
+    bool ShowHiddenEdges() const {return m_hiddenEdges;}
+    void SetShowHiddenEdges(bool val) {m_hiddenEdges = val;}
+    bool IgnoreLighting() const {return m_ignoreLighting;}
+    void SetIgnoreLighting(bool val) {m_ignoreLighting = val;}
+    bool ShowShadows() const {return m_shadows;}
+    void SetShowShadows(bool val) {m_shadows = val;}
+    bool ShowClipVolume() const {return !m_noClipVolume;}
+    void SetShowClipVolume(bool val) {m_noClipVolume = !val;}
+    bool ShowConstructions() const {return m_constructions;}
+    void SetShowConstructions(bool val) {m_constructions = val;}
+    bool IsMonochrome() const {return m_monochrome;}
+    void SetMonochrome(bool val) {m_monochrome = val;}
+    int GetEdgeMask() const {return m_edgeMask;}
+    void SetEdgeMask(int val) {m_edgeMask;}
+    RenderMode GetRenderMode() const {return m_renderMode;}
+    void SetRenderMode(RenderMode value) {m_renderMode = value;}
+
+    void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
     };
@@ -382,7 +448,7 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_specularColor;
         MatColor m_emissiveColor;
         double m_diffuse = 0.5;
-        double m_ambient = 0.5; 
+        double m_ambient = 0.5;
         double m_specularExponent = 0.0;
         double m_reflect = 0.0;
         double m_transparency = 0.0;
@@ -403,7 +469,7 @@ struct Material : RefCounted<NonCopyableClass>
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
     };
 
-    struct Trans2x3 
+    struct Trans2x3
     {
         double m_val[2][3];
         Trans2x3() {}
@@ -714,7 +780,7 @@ protected:
 
 public:
     GradientSymb() {}
-    
+
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
     //! Create an instance of a GradientSymb.
@@ -1564,11 +1630,11 @@ public:
 //=======================================================================================
 struct TransClip : RefCounted<NonCopyableClass>
 {
-    
+
 };
 
 //=======================================================================================
-//! An array of GraphicPtrs. 
+//! An array of GraphicPtrs.
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
@@ -1725,7 +1791,7 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
-    static double DefaultFrameRateGoal() 
+    static double DefaultFrameRateGoal()
         {
 #ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
         return 20.0; // Plan for the best on Windows (desktop) computers.
@@ -1744,10 +1810,10 @@ public:
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
-    //! Make the specified rectangle have the specified aspect ratio 
+    //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture
-    //! @param[in] targetAspectRatio The desired aspect ratio 
-    //! @return The adjusted rectangle that captures as much of the requested rectangle as possible 
+    //! @param[in] targetAspectRatio The desired aspect ratio
+    //! @return The adjusted rectangle that captures as much of the requested rectangle as possible
     //!         with one of its dimensions adjusted to match the aspect ratio of targetSize.
     DGNPLATFORM_EXPORT static BSIRect SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio);
 };

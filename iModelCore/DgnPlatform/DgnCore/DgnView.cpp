@@ -92,6 +92,20 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::_EqualState(ViewDefinitionCR other) const
+    {
+    if (!m_categorySelector->EqualState(*other.m_categorySelector))
+        return false;
+
+    if (!m_displayStyle->EqualState(*other.m_displayStyle))
+        return false;
+
+    return m_details == other.m_details;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
@@ -203,6 +217,7 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
 
     m_categorySelector = other->m_categorySelector->MakeCopy<CategorySelector>();
     m_displayStyle = other->m_displayStyle->MakeCopy<DisplayStyle>();
+    m_details = other->m_details;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,15 +312,17 @@ void ViewDefinition2d::_CopyFrom(DgnElementCR el)
     m_rotAngle = other.m_rotAngle;
     }
 
-#ifdef TODO_CODES
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_SetCode(DgnCode const& code)
+bool ViewDefinition2d::_EqualState(ViewDefinitionCR in) const 
     {
-    return IsValidCode(code) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
+    auto const& other= (ViewDefinition2d const&) in;
+    if (m_baseModelId != other.m_baseModelId || !m_origin.IsEqual(other.m_origin) || !m_delta.IsEqual(other.m_delta) || m_rotAngle != other.m_rotAngle)
+        return false;
+
+    return T_Super::_EqualState(in);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -476,6 +493,74 @@ void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* load a subcategory appearance into its unmodified state
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Appearance CategorySelector::LoadSubCategory(DgnSubCategoryId id) const
+    {
+    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
+    BeAssert(unmodified.IsValid());
+    if (!unmodified.IsValid())
+        return DgnSubCategory::Appearance();
+
+    BeMutexHolder _v(m_mutex);
+    auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
+    if (!result.second)
+        result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it to unmodified state
+
+    return unmodified->GetAppearance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
+    {
+    if (!id.IsValid())
+        return;
+
+    m_dirty = true;
+    auto result = m_subCategoryOverrides.Insert(id, ovr);
+    if (!result.second)
+        result.first->second = ovr; // we already had this override; change it.
+
+    LoadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
+
+    // now apply this override to the unmodified SubCategory appearance
+    auto it = m_subCategories.find(id);
+    if (it != m_subCategories.end())
+        ovr.ApplyTo(it->second);
+    else
+        BeAssert(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Appearance CategorySelector::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
+    {
+    if (true)
+        {
+        BeMutexHolder _v(m_mutex);
+        auto const entry = m_subCategories.find(subCategoryId);
+        if (entry != m_subCategories.end())
+            return entry->second;
+        }
+
+    return LoadSubCategory(subCategoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::DropSubCategoryOverride(DgnSubCategoryId id)
+    {
+    m_dirty = true;
+    m_subCategoryOverrides.erase(id);
+    LoadSubCategory(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
@@ -488,41 +573,18 @@ bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& 
     }
 
 /*---------------------------------------------------------------------------------**//**
-*@bsimethod                                    Sam.Wilson                      08 / 16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
-    {
-    if (!T_Super::_Equals(rhsElement, ignore))
-        return false;
-
-    auto const& rhs = (ModelSelector const&)rhsElement;
-    return m_models == rhs.m_models;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
-    {
-    T_Super::_Dump(str, ignore);
-    str.append("{");
-    Utf8CP comma = "";
-    for (auto id : m_models)
-        {
-        str.append(comma).append(id.ToString().c_str());
-        comma = ",";
-        }
-    str.append("}\n");
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_CopyFrom(DgnElementCR rhsElement) 
+void CategorySelector::_CopyFrom(DgnElementCR in) 
     {
-    T_Super::_CopyFrom(rhsElement);
-    auto const& rhs = (CategorySelector const&)rhsElement;
-    m_categories = rhs.m_categories; 
+    auto const& other = (CategorySelector const&) in;
+    other.SaveState();
+    T_Super::_CopyFrom(in);
+
+    m_dirty = false;
+    m_categories = other.m_categories; 
+    m_subCategories = other.m_subCategories;
+    m_subCategoryOverrides = other.m_subCategoryOverrides;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,6 +597,20 @@ DgnDbStatus CategorySelector::_InsertInDb()
         return status;
 
     return WriteCategories();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CategorySelector::EqualState(CategorySelectorCR other) const 
+    {
+    if (m_categories != other.m_categories)
+        return false;
+
+    SaveState();
+    other.SaveState();
+
+    return GetPropertyValueString(str_SubCategoryOverrides()) == other.GetPropertyValueString(str_SubCategoryOverrides());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,7 +630,27 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::SaveState() const
+    {
+    if (!m_dirty)
+        return;
+    m_dirty = false;
+
+    Json::Value ovrJson;
+    int i=0;
+    for (auto const& it : m_subCategoryOverrides)
+        {
+        ovrJson[i][str_SubCategory()] = it.first.GetValue();
+        it.second.ToJson(ovrJson[i++]);
+        }
+
+    ((CategorySelector*) this)->SetPropertyValue(str_SubCategoryOverrides(), Json::FastWriter::ToString(ovrJson).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::WriteCategories() 
     {
@@ -578,15 +674,8 @@ DgnDbStatus CategorySelector::WriteCategories()
             return DgnDbStatus::WriteError;
         }
 
-    Json::Value ovrJson;
-    int i=0;
-    for (auto const& it : m_subCategoryOverrides)
-        {
-        ovrJson[i][str_SubCategory()] = it.first.GetValue();
-        it.second.ToJson(ovrJson[i++]);
-        }
-
-    return SetPropertyValue(str_SubCategoryOverrides(), Json::FastWriter::ToString(ovrJson).c_str());
+    SaveState();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -606,17 +695,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
 
     while (BE_SQLITE_ROW == statement->Step())
         m_categories.insert(statement->GetValueId<DgnCategoryId>(0));
-
-    // load all SubCategories (even for categories not currently on)
-    for (auto const& id : DgnSubCategory::QuerySubCategories(GetDgnDb()))
-        {
-        DgnSubCategory::Appearance appearance;
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
-        if (subCat.IsValid())
-            appearance = subCat->GetAppearance();
-
-        m_subCategories.Insert(id, appearance);
-        }
 
     auto jsonStr = GetPropertyValueString(str_SubCategoryOverrides());
     if (0 == jsonStr.length())
@@ -640,8 +718,20 @@ DgnDbStatus CategorySelector::_LoadFromDb()
             }
         OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
+    m_dirty = false;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
+    {
+    if (onOff)
+        m_categories.insert(categoryId);
+    else
+        m_categories.erase(categoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -672,6 +762,34 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
             }
         }
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*@bsimethod                                    Sam.Wilson                      08 / 16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+    {
+    if (!T_Super::_Equals(rhsElement, ignore))
+        return false;
+
+    auto const& rhs = (ModelSelector const&)rhsElement;
+    return m_models == rhs.m_models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+    {
+    T_Super::_Dump(str, ignore);
+    str.append("{");
+    Utf8CP comma = "";
+    for (auto id : m_models)
+        {
+        str.append(comma).append(id.ToString().c_str());
+        comma = ",";
+        }
+    str.append("}\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -778,12 +896,6 @@ DgnDbStatus ModelSelector::_LoadFromDb()
         {
         auto id = statement->GetValueId<DgnModelId>(0);
         m_models.insert(id);
-
-#if defined (NEEDS_WORK_TARGET_MODEL)
-        // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
-        // the model is not already loaded.
-        m_dgndb.Models().GetModel(id);
-#endif
         }
 
     return DgnDbStatus::Success;
@@ -800,6 +912,18 @@ void ViewDefinition3d::SaveViewDef3d()
     YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, m_rotation);
     SetPropertyValueYpr(angles, str_Yaw(), str_Pitch(), str_Roll());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition3d::_EqualState(ViewDefinitionCR in) const 
+    {
+    auto const& other = (ViewDefinition3d const&) in;
+    if (!m_origin.IsEqual(other.m_origin) || !m_extents.IsEqual(other.m_extents) || !m_rotation.IsEqual(other.m_rotation))
+        return false;
+
+    return T_Super::_EqualState(other);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -871,6 +995,18 @@ void SpatialViewDefinition::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool SpatialViewDefinition::_EqualState(ViewDefinitionCR in) const 
+    {
+    if (!T_Super::_EqualState(in))
+        return false;
+
+    auto const& other = (SpatialViewDefinition const&) in;
+    return m_modelSelector->EqualState(*other.m_modelSelector);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewDefinition::SaveCamera()
     {
     SetPropertyValue(str_EyePoint(), GetEyePoint());
@@ -904,6 +1040,18 @@ DgnDbStatus CameraViewDefinition::_LoadFromDb()
     
     VerifyFocusPlane();
     return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CameraViewDefinition::_EqualState(ViewDefinitionCR in) const 
+    {
+    if (!T_Super::_EqualState(in))
+        return false;
+
+    auto const& other = (CameraViewDefinition const&) in;
+    return m_camera.IsEqual(other.m_camera);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -973,158 +1121,6 @@ void DisplayStyle::SetBackgroundColor(ColorDef val)
     else
         SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
-
-#if defined (NEEDS_WORK_VIEWS)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static DRange3d getViewVolume(GeometricModelCR model, DRange3dCP viewVolume)
-    {
-    if (nullptr != viewVolume)
-        return *viewVolume;
-
-    DRange3d modelRange;
-    modelRange = model.QueryModelRange();
-    if (modelRange.IsEmpty())
-        modelRange.InitFromMinMax(-1.0, 10.0);
-    return modelRange;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static void displayAllCategories(ViewControllerR controller, DgnDbR db)
-    {
-    for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        controller.ChangeCategoryDisplay(categoryId, true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static void lookAtViewVolume(ViewControllerR controller, GeometricModelCR model, DRange3dCP viewVolume)
-    {
-    ViewDefinition::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-    controller.LookAtVolume(getViewVolume(model, viewVolume), nullptr, &viewMargin);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static Utf8String getUniqueViewName(DgnModelR model, Utf8CP nameIn)
-    {
-    DgnDbR db = model.GetDgnDb();
-    Utf8String baseName;
-    if (nullptr == nameIn)
-        baseName = model.GetCode().GetValue();
-    else
-        baseName = nameIn;
-
-    Utf8String tmpStr(baseName);
-
-    if (!tmpStr.empty() && !ViewDefinition::QueryViewId(tmpStr,db).IsValid())
-        return tmpStr;
-
-    bool addDash = !tmpStr.empty();
-    int index = 0;
-    size_t lastDash = tmpStr.find_last_of('-');
-    if (lastDash != Utf8String::npos)
-        {
-        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
-            addDash = false;
-        else
-            index = 0;
-        }
-
-    Utf8String uniqueName;
-    do
-        {
-        uniqueName.assign(tmpStr);
-        if (addDash)
-            uniqueName.append("-");
-        uniqueName.append(Utf8PrintfString("%d", ++index));
-        } while (ViewDefinition::QueryViewId(uniqueName,db).IsValid());
-
-    return uniqueName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static void initViewOfSpatialModel(SpatialViewDefinition& viewDef, SpatialModelR model, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
-    {
-    ViewControllerPtr viewController = viewDef.LoadViewController();
-
-    viewController->ChangeModelDisplay(model.GetModelId(), true);
-
-    displayAllCategories(*viewController, model.GetDgnDb());
-
-    lookAtViewVolume(*viewController, model, viewVolume);
-
-    viewController->SetStandardViewRotation(rot);
-
-    auto& viewFlags = viewController->GetViewFlagsR();
-    viewFlags.SetRenderMode(renderMode);
-
-    viewController->StoreState();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-OrthographicViewDefinitionPtr OrthographicViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
-    {
-    OrthographicViewDefinitionPtr newViewDef = new OrthographicViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
-    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
-    return newViewDef;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-CameraViewDefinitionPtr CameraViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
-    {
-    CameraViewDefinitionPtr newViewDef = new CameraViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
-    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
-    return newViewDef;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-static void initViewOf2dModel(ViewDefinition2d& viewDef, GraphicalModel2dR model, DRange3dCP viewVolume)
-    {
-    ViewControllerPtr viewController = viewDef.LoadViewController();
-
-    displayAllCategories(*viewController, model.GetDgnDb());
-
-    lookAtViewVolume(*viewController, model, nullptr);
-
-    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-
-    viewController->StoreState();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      06/15
-//---------------------------------------------------------------------------------------
-DrawingViewDefinitionPtr DrawingViewDefinition::MakeViewOfModel(DrawingModel& model, Utf8CP nameIn)
-    {
-    DrawingViewDefinitionPtr view = new DrawingViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
-    initViewOf2dModel(*view, model, nullptr);
-    return view;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      06/15
-//---------------------------------------------------------------------------------------
-SheetViewDefinitionPtr SheetViewDefinition::MakeViewOfModel(SheetModel& model, Utf8CP nameIn)
-    {
-    SheetViewDefinitionPtr view = new SheetViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
-    initViewOf2dModel(*view, model, nullptr);
-    return view;
-    }
-#endif
 
 OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr; }
 CameraViewControllerPtr CameraViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToCameraViewP() : nullptr; }

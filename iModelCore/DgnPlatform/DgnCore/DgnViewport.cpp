@@ -1071,7 +1071,6 @@ ViewportStatus DgnViewport::ValidateViewDelta(DPoint3dR delta, bool messageNeede
     return error;
     }
 
-
 #define QV_RESERVED_DISPLAYPRIORITY     (32)
 #define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
 #define RESERVED_DISPLAYPRIORITY        (1<<19)
@@ -1157,7 +1156,7 @@ void DgnViewport::SaveViewUndo()
         return;
         }
 
-    if (curr.Equals(m_currentBaseline))
+    if (curr->_EqualState(*m_currentBaseline))
         return; // nothing changed
 
     if (m_backStack.size() >= m_maxUndoSteps)
