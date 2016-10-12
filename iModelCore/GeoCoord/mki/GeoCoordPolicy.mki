@@ -2,7 +2,7 @@
 #
 #     $Source: mki/GeoCoordPolicy.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__GeoCoordPolicy_mki__)
@@ -40,7 +40,6 @@ WARNINGS_UP=1
 #   BSI Get settings
 #----------------------------------------------------------
 %if defined (PRG)
-    MSJ_SPLIT_SYMBOLS               = 1
     BSI_VERSIONING                  = 1
     NoTestFilesInWithDeliverables   = 1
 %else
@@ -53,19 +52,6 @@ _WIN32_WINNT=0x0501
 WINVER=0x0501
 _WIN32_IE=0x0501
 
-
-#----------------------------------------------------------
-#  Location for symbols
-#----------------------------------------------------------
-symbolsDir          = $(OutGeoCoord)symbols/
-    symbolsDllDir   = $(symbolsDir)dll/
-    symbolsExeDir   = $(symbolsDir)exe/
-
-%if defined (SPLITSYM) && !defined (NO_SPLITSYM)
-    ASSEMBLY_SYMB_DIR = $(symbolsDllDir)
-    DLM_SYMB_DEST   = $(symbolsDllDir)
-    EXE_SYMB_DEST   = $(symbolsExeDir)
-%endif
 
 #----------------------------------------------------------
 #  Source Dirs
