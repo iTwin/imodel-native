@@ -63,7 +63,6 @@ struct ColumnFactory : NonCopyableClass
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
         bool IsColumnInUseByClassMap(DbColumn const&) const;
         void CacheUsedColumn(DbColumn const&) const;
-
         DbTable& GetTable() const;
 
     public:

@@ -1498,9 +1498,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperties(ECPropertyChanges& propertyCh
                 return ERROR;
                 }
 
-            BentleyStatus r = DeleteECProperty(change, *oldProperty);
-            if (r != SUCCESS)
-                return r;
+            if (SUCCESS != DeleteECProperty(change, *oldProperty))
+                return ERROR;
 
             }
         else if (change.GetState() == ChangeState::New)
