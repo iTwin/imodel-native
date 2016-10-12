@@ -419,7 +419,6 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
         if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
             return MappingStatus::Error;
         }
-
     return MappingStatus::Success;
     }
 
@@ -1117,6 +1116,37 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
 
     return SUCCESS;
     }
+
+#ifdef WIP_MERGE
+void ColumnFactory::GetDerivedColumnList(std::vector<ECDbSqlColumn const*>& columnSet) const
+    {
+    Utf8CP sql = " WITH RECURSIVE "
+        "   BaseClassList(ClassId, BaseClassId) AS "
+        "    ("
+        "    VALUES(?1, ?1) "
+        "    UNION "
+        "    SELECT BC.ClassId, DCL.BaseClassId"
+        "           FROM BaseClassList DCL "
+        "                INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.ClassId"
+        "    )"
+        " SELECT ec_Column.Name FROM BaseClassList "
+        "   INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = BaseClassList.ClassId"
+        "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
+        "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
+        "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        " WHERE ec_Table.Name = ?2"
+        " GROUP BY ec_Column.Name";
+
+    ECDbCR ecdb = m_classMap.GetECDbMap().GetECDb();
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    stmt->BindInt64(1, m_classMap.GetClass().GetId());
+    stmt->BindText(2, GetTable().GetName().c_str(), Statement::MakeCopy::No);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        columnSet.push_back(GetTable().FindColumnCP(stmt->GetValueText(0)));
+        }
+    }
+#endif
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
