@@ -254,7 +254,10 @@ AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveV
 CurveVectorCR AlignmentHorizontal::GetGeometry() const
     {
     ECValue val;
-    _GetPropertyValue(val, BRRA_PROP_AlignmentHorizontal_HorizontalGeometry);
+    if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_AlignmentHorizontal_HorizontalGeometry))
+        {
+        BeAssert(false);
+        }
 
     BeAssert(val.IsIGeometry());
 
@@ -271,7 +274,7 @@ void AlignmentHorizontal::SetGeometry(CurveVectorR geometry)
     ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
     val.SetIGeometry(*IGeometry::Create(cvPtr));
 
-    _SetPropertyValue(BRRA_PROP_AlignmentHorizontal_HorizontalGeometry, val);
+    SetPropertyValue(BRRA_PROP_AlignmentHorizontal_HorizontalGeometry, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,7 +319,10 @@ AlignmentVerticalCPtr AlignmentVertical::InsertAsMainVertical(Dgn::DgnDbStatus* 
 CurveVectorCR AlignmentVertical::GetGeometry() const
     {
     ECValue val;
-    _GetPropertyValue(val, BRRA_PROP_AlignmentVertical_VerticalGeometry);
+    if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_AlignmentVertical_VerticalGeometry))
+        {
+        BeAssert(false);
+        }
 
     BeAssert(val.IsIGeometry());
 
@@ -333,5 +339,5 @@ void AlignmentVertical::SetGeometry(CurveVectorR geometry)
     ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
     val.SetIGeometry(*IGeometry::Create(cvPtr));
 
-    _SetPropertyValue(BRRA_PROP_AlignmentVertical_VerticalGeometry, val);
+    SetPropertyValue(BRRA_PROP_AlignmentVertical_VerticalGeometry, val);
     }
