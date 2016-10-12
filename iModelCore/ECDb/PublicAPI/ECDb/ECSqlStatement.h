@@ -47,7 +47,7 @@ public:
     //! Move constructor
     ECDB_EXPORT ECSqlStatement(ECSqlStatement&& rhs);
     //! Move assignment operator
-    ECDB_EXPORT ECSqlStatement& operator= (ECSqlStatement&& rhs);
+    ECDB_EXPORT ECSqlStatement& operator=(ECSqlStatement&& rhs);
 
     //! Finalizes this ECSqlStatement, i.e. frees any internal resources.
     //! @remarks Before calling ECDb::CloseDb explicitly make sure that all prepared ECSqlStatements

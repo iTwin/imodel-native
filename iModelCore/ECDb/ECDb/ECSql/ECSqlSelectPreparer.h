@@ -27,6 +27,7 @@ private:
 
     static ECSqlStatus PrepareSelectClauseExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, SelectClauseExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);
     static ECSqlStatus PrepareDerivedPropertyExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, DerivedPropertyExp const&, size_t referenceSqliteSnippetCount);
+    static BentleyStatus ValidateSelectClauseItems(ECSqlPrepareContext&, SelectClauseExp const& lhs, SelectClauseExp const& rhs);
     static void ExtractPropertyRefs(ECSqlPrepareContext&, Exp const*);
 public:
     static ECSqlStatus Prepare(ECSqlPrepareContext&, SelectStatementExp const&);

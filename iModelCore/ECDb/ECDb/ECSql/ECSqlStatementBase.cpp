@@ -8,8 +8,6 @@
 #include "ECDbPch.h"
 #include "ECSqlStatementBase.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        01/14
@@ -271,19 +269,19 @@ ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb,
     switch (exp.GetType())
         {
             case Exp::Type::Select:
-                m_preparedStatement = unique_ptr<ECSqlPreparedStatement>(new ECSqlSelectPreparedStatement(ecdb));
+                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement>(new ECSqlSelectPreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Insert:
-                m_preparedStatement = unique_ptr<ECSqlPreparedStatement>(new ECSqlInsertPreparedStatement(ecdb));
+                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement>(new ECSqlInsertPreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Update:
-                m_preparedStatement = unique_ptr<ECSqlPreparedStatement>(new ECSqlUpdatePreparedStatement(ecdb));
+                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement>(new ECSqlUpdatePreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Delete:
-                m_preparedStatement = unique_ptr<ECSqlPreparedStatement>(new ECSqlDeletePreparedStatement(ecdb));
+                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement>(new ECSqlDeletePreparedStatement(ecdb));
                 break;
 
             default:

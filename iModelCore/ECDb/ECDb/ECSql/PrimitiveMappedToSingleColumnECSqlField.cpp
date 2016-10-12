@@ -8,7 +8,6 @@
 #include "ECDbPch.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

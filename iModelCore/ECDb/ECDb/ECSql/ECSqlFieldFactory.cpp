@@ -176,7 +176,7 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberField(std::unique_ptr<ECSqlFiel
 
     if (structMemberProperty.GetIsStruct())
         {
-        ECStructClassCR childStructType = *structMemberProperty.GetAsStructProperty()->GetClass().GetStructClassCP();
+        ECStructClassCR childStructType = structMemberProperty.GetAsStructProperty()->GetType();
         return CreateStructMemberFields(memberField, sqlColumnIndex, ctx, childStructType, columnInfo);
         }
 

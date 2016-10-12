@@ -388,7 +388,7 @@ bool PropertyPath::IsResolved() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void PropertyPath::Push(Utf8CP propertyName, size_t arrayIndex)
+void PropertyPath::Push(Utf8StringCR propertyName, size_t arrayIndex)
     {
     m_path.push_back(Location(propertyName, (int) arrayIndex));
     }
@@ -396,7 +396,7 @@ void PropertyPath::Push(Utf8CP propertyName, size_t arrayIndex)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void PropertyPath::Push(Utf8CP propertyName)
+void PropertyPath::Push(Utf8StringCR propertyName)
     {
     m_path.push_back(Location(propertyName, Location::NOT_ARRAY));
     }

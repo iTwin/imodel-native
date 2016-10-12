@@ -11,8 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using namespace std;
-
 //****************************** PropertyNameExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -23,7 +21,7 @@ PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_proper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8CP propertyName) : ValueExp(), m_isSystemProperty(false), m_classRefExp(nullptr)
+PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_isSystemProperty(false), m_classRefExp(nullptr)
     {
     m_propertyPath.Push(propertyName);
     }
@@ -34,21 +32,25 @@ PropertyNameExp::PropertyNameExp(Utf8CP propertyName) : ValueExp(), m_isSystemPr
 PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
     : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
-    m_propertyPath.Push(derivedPropExp.GetName().c_str());
+    Utf8String propName = derivedPropExp.GetName();
+    //WIP: Affan, why do we have to remove the square brackets?
+    propName.ReplaceAll("[", "");
+    propName.ReplaceAll("]", "");
+    m_propertyPath.Push(propName.c_str());
     SetPropertyRef(derivedPropExp);
     }
-
+    
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
+PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
     : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
     m_propertyPath.Push(propertyName);
     if (m_propertyPath.Resolve(classMap) != SUCCESS)
         BeAssert(false && "Must always resolve correctly");
     }
-
+    
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -365,11 +367,11 @@ PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAn
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PropertyNameExp::PropertyRef::Prepare(NativeSqlBuilder::List const& snippets)
+BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List const& snippets)
     {
     m_nativeSqlSnippets.clear();
-    m_isPrepared = false;
-    auto alias = m_linkedTo.GetColumnAlias();
+    m_isConverted = false;
+    Utf8String alias = m_linkedTo.GetColumnAlias();
     if (alias.empty())
         alias = m_linkedTo.GetNestedAlias();
 
@@ -380,7 +382,7 @@ bool PropertyNameExp::PropertyRef::Prepare(NativeSqlBuilder::List const& snippet
             {
             m_nativeSqlSnippets.front().Reset();
             m_nativeSqlSnippets.front().AppendEscaped(alias.c_str());
-            m_isPrepared = true;
+            m_isConverted = true;
             }
         else
             {
@@ -394,10 +396,10 @@ bool PropertyNameExp::PropertyRef::Prepare(NativeSqlBuilder::List const& snippet
                 snippet.AppendEscaped(postfix.c_str());
                 }
 
-            m_isPrepared = true;
+            m_isConverted = true;
             }
         }
 
-    return m_isPrepared;
+    return m_isConverted ? SUCCESS : ERROR;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

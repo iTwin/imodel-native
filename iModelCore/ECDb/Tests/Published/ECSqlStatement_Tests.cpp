@@ -297,13 +297,14 @@ TEST_F(ECSqlStatementTestFixture, IntersectTests)
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
     {
     const int rowCountPerClass = 3;
-    ECDbCR ecdb = SetupECDb("nullliteralpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+    ECDbCR ecdb = SetupECDb("nullliterals.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_EQ(PRIMITIVETYPE_Point3D, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+    ASSERT_TRUE(stmt.IsValueNull(0));
     }
 
     bmap<Utf8CP, bool> ecsqls;
@@ -364,6 +365,238 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NullLiteralForStructs)
+    {
+    const int rowCountPerClass = 3;
+    ECDbCR ecdb = SetupECDb("nullliterals.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+
+    ECClassCP structType = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(structType != nullptr);
+
+    auto assertColumn = [] (ECClassCR expected, IECSqlValue const& colVal, bool checkIsNull)
+        {
+        ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsStruct() && &colVal.GetColumnInfo().GetProperty()->GetAsStructProperty()->GetType() == &expected);
+        
+        if (checkIsNull)
+            ASSERT_TRUE(colVal.IsNull());
+
+        IECSqlStructValue const& structColVal = colVal.GetStruct();
+        const int actualStructMemberCount = structColVal.GetMemberCount();
+        ASSERT_EQ((int) expected.GetPropertyCount(), actualStructMemberCount);
+
+        for (int i = 0; i < actualStructMemberCount; i++)
+            {
+            IECSqlValue const& memberVal = structColVal.GetValue(i);
+            if (checkIsNull)
+                ASSERT_TRUE(memberVal.IsNull());
+            }
+        };
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    assertColumn(*structType, stmt.GetValue(0), true);
+    }
+
+    bmap<Utf8CP, bool> ecsqls;
+    ecsqls["SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStructProp FROM ecsql.PSA"] = true;
+
+    ecsqls["SELECT CAST(NULL AS ecsql.[PStruct]) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStructProp FROM ecsql.PSA"] = true;
+
+    ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.PASpatial "
+        "UNION ALL "
+        "SELECT PStructProp FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT NULL FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStructProp FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT PStructProp FROM ecsql.PSA "
+        "UNION ALL "
+        "SELECT NULL FROM ecsql.P"] = true;
+
+    for (bpair<Utf8CP, bool> const& kvPair : ecsqls)
+        {
+        Utf8CP ecsql = kvPair.first;
+        const bool expectedToSucceed = kvPair.second;
+
+        if (!expectedToSucceed)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql)) << ecsql;
+            continue;
+            }
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << ecsql;
+
+        int actualRowCount = 0;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            assertColumn(*structType, stmt.GetValue(0), false);
+            actualRowCount++;
+            }
+
+        ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
+    {
+    const int rowCountPerClass = 3;
+    ECDbCR ecdb = SetupECDb("nullliterals.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+
+    auto assertColumn = [] (PrimitiveType expected, IECSqlValue const& colVal, bool checkIsNull)
+        {
+        ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsPrimitiveArray());
+        ASSERT_EQ(expected, colVal.GetColumnInfo().GetDataType().GetPrimitiveType());
+        ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
+        if (checkIsNull)
+            {
+            ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
+            }
+        };
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    assertColumn(PRIMITIVETYPE_DateTime, stmt.GetValue(0), true);
+    }
+
+    bmap<Utf8CP, bool> ecsqls;
+    ecsqls["SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT Dt_Array FROM ecsql.PSA"] = true;
+
+    ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT Dt_Array FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT CAST(NULL AS TimeStamp) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT Dt_Array FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT NULL FROM ecsql.P "
+        "UNION ALL "
+        "SELECT Dt_Array FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT Dt_Array FROM ecsql.PSA "
+        "UNION ALL "
+        "SELECT NULL FROM ecsql.P"] = true;
+
+    for (bpair<Utf8CP, bool> const& kvPair : ecsqls)
+        {
+        Utf8CP ecsql = kvPair.first;
+        const bool expectedToSucceed = kvPair.second;
+
+        if (!expectedToSucceed)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql)) << ecsql;
+            continue;
+            }
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << ecsql;
+
+        int actualRowCount = 0;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            assertColumn(PRIMITIVETYPE_DateTime, stmt.GetValue(0), false);
+            actualRowCount++;
+            }
+
+        ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
+    {
+    const int rowCountPerClass = 3;
+    ECDbCR ecdb = SetupECDb("nullliterals.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+
+    ECClassCP structType = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(structType != nullptr);
+
+    auto assertColumn = [] (ECClassCR expected, IECSqlValue const& colVal, bool checkIsNull)
+        {
+        ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsStructArray());
+        ASSERT_TRUE(colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
+        ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
+        if (checkIsNull)
+            {
+            ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
+            }
+        };
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.PSA LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    assertColumn(*structType, stmt.GetValue(0), true);
+    }
+
+    bmap<Utf8CP, bool> ecsqls;
+    ecsqls["SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
+
+    ecsqls["SELECT CAST(NULL AS [ecsql].[PStruct][]) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
+
+    ecsqls["SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStruct_Array FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT NULL FROM ecsql.P "
+        "UNION ALL "
+        "SELECT PStruct_Array FROM ecsql.PSA"] = false;
+
+    ecsqls["SELECT PStruct_Array FROM ecsql.PSA "
+        "UNION ALL "
+        "SELECT NULL FROM ecsql.P"] = true;
+
+    for (bpair<Utf8CP, bool> const& kvPair : ecsqls)
+        {
+        Utf8CP ecsql = kvPair.first;
+        const bool expectedToSucceed = kvPair.second;
+
+        if (!expectedToSucceed)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql)) << ecsql;
+            continue;
+            }
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << ecsql;
+
+        int actualRowCount = 0;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            assertColumn(*structType, stmt.GetValue(0), false);
+            actualRowCount++;
+            }
+
+        ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1444,7 +1677,7 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
-    const auto perClassRowCount = 10;
+    const int perClassRowCount = 10;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     auto testFunction = [this, &ecdb] (Utf8CP insertECSql, bool bindExpectedToSucceed, int structParameterIndex, Utf8CP structValueJson, Utf8CP verifySelectECSql, int structValueIndex)

@@ -117,7 +117,6 @@
 
         SELECT FirstName, LastName, Address.Street, Address.City, Address.Zip FROM stco.Employee
 
-
     @section ECSQLSamplesArrays ECArrays
 
         SELECT EmployeeId, Certifications FROM stco.Employee
@@ -262,6 +261,25 @@
 
     For an example of writing a custom SQLite SQL function and how to use it in ECSQL see: 
     @ref ECDbCodeSampleECSQLAndCustomSQLiteFunctions 
+
+    @section ECSQLSamplesCasts ECSQL Casts
+
+    ECSQL supports the CAST expression for primitive types except for Point2d and Point3d.
+    For structs and arrays CAST is generally not supported except for CAST (NULL AS ...) expressions (see below). 
+    
+    Casting NULL is possible for all data types, including structs and arrays. This kind of cast is necessary in UNION
+    statements so that the data types of the corresponding select clause items match.
+
+    Example:
+
+    A query should return employees and other persons with their first and last name and a list of
+    certifications they have. The ECClass Person doesn't have a certifications property, so the query
+    should return NULL for the certifications for Person rows.
+
+        SELECT FirstName, LastName, CAST(NULL AS stco.Certification[]) FROM foo.Person
+        UNION
+        SELECT FirstName, LastName, Certifications FROM stco.Employee
+    
 
     @see @ref WorkingWithECDb
 

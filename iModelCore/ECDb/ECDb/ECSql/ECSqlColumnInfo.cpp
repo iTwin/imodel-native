@@ -22,8 +22,8 @@ ECSqlColumnInfo::ECSqlColumnInfo() : m_property(nullptr), m_isGeneratedProperty(
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, ECPropertyCP ecProperty, bool isGeneratedProperty, ECSqlPropertyPath&& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
-    : m_dataType(dataType), m_property(ecProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(std::move(propertyPath)), m_rootClass(&rootClass), m_rootClassAlias(rootClassAlias)
+ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, ECPropertyCP ecProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
+    : m_dataType(dataType), m_property(ecProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(&rootClass), m_rootClassAlias(rootClassAlias)
     {}
 
 //--------------------------------------------------------------------------------------
@@ -35,12 +35,12 @@ ECSqlPropertyPath& ECSqlColumnInfo::GetPropertyPathR() { return m_propertyPath; 
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath&& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
+ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
     {
     BeAssert(propertyPath.Size() > 0);
     ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
     BeAssert(ecProperty != nullptr);
-    return ECSqlColumnInfo(DetermineDataType(*ecProperty), ecProperty, isGeneratedProperty, std::move(propertyPath), rootClass, rootClassAlias);
+    return ECSqlColumnInfo(DetermineDataType(*ecProperty), ecProperty, isGeneratedProperty, propertyPath, rootClass, rootClassAlias);
     }
 
 //--------------------------------------------------------------------------------------
@@ -49,12 +49,12 @@ ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlP
 //static
 ECSqlColumnInfo ECSqlColumnInfo::CreateChild(ECSqlColumnInfo const& parent, ECPropertyCR childProperty)
     {
-    auto dataType = DetermineDataType(childProperty);
+    ECTypeDescriptor dataType = DetermineDataType(childProperty);
     ECSqlPropertyPath childPropPath;
     childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
     childPropPath.AddEntry(childProperty);
 
-    return ECSqlColumnInfo(dataType, &childProperty, parent.IsGeneratedProperty(), std::move(childPropPath), parent.GetRootClass(), parent.GetRootClassAlias());
+    return ECSqlColumnInfo(dataType, &childProperty, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
     }
 
 //--------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ ECSqlColumnInfo ECSqlColumnInfo::CreateForArrayElement(ECSqlColumnInfo const& pa
     childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
     childPropPath.AddEntry(arrayIndex);
 
-    return ECSqlColumnInfo(arrayElementDataType, nullptr, parent.IsGeneratedProperty(), std::move(childPropPath), parent.GetRootClass(), parent.GetRootClassAlias());
+    return ECSqlColumnInfo(arrayElementDataType, nullptr, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
     }
 
 //--------------------------------------------------------------------------------------
@@ -87,19 +87,22 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType(ECPropertyCR ecProperty)
     {
     if (ecProperty.GetIsPrimitive())
         return ECTypeDescriptor::CreatePrimitiveTypeDescriptor(ecProperty.GetAsPrimitiveProperty()->GetType());
-    else if (ecProperty.GetIsStruct())
+
+    if (ecProperty.GetIsStruct())
         return ECTypeDescriptor::CreateStructTypeDescriptor();
-    else if (ecProperty.GetIsArray())
+
+    if (ecProperty.GetIsArray())
         {
-        auto arrayProp = ecProperty.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProp = ecProperty.GetAsArrayProperty();
         if (arrayProp->GetKind() == ARRAYKIND_Primitive)
             return ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(arrayProp->GetPrimitiveElementType());
         else
             return ECTypeDescriptor::CreateStructArrayTypeDescriptor();
         }
-    else if (ecProperty.GetIsNavigation())
+
+    if (ecProperty.GetIsNavigation())
         {
-        auto navProp = ecProperty.GetAsNavigationProperty();
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
         return ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), navProp->IsMultiple());
         }
 

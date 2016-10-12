@@ -43,7 +43,7 @@ public:
         void ClearResolvedProperty() { m_property = nullptr; }
 
     public: 
-        Location(Utf8CP name, int arrayIndex) : m_propertyName(name), m_property(nullptr), m_arrayIndex(arrayIndex) { BeAssert(!Utf8String::IsNullOrEmpty(name)); }
+        Location(Utf8StringCR name, int arrayIndex) : m_propertyName(name), m_property(nullptr), m_arrayIndex(arrayIndex) { BeAssert(!name.empty()); }
             
         Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
         ECN::ECPropertyCP GetProperty() const { return m_property; }
@@ -75,8 +75,8 @@ public:
     bool IsEmpty() const { return m_path.empty(); }
     ClassMap const* GetClassMap() const { return m_classMap; }
 
-    void Push(Utf8CP propertyName);
-    void Push(Utf8CP propertyName, size_t arrayIndex);
+    void Push(Utf8StringCR propertyName);
+    void Push(Utf8StringCR propertyName, size_t arrayIndex);
     void Pop();
     void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
 

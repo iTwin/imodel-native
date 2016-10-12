@@ -14,27 +14,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo)
-    : ECSqlField (ecsqlStatement, ecsqlColumnInfo, false, false) {}
+StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo)
+    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-bool StructMappedToColumnsECSqlField::_IsNull () const 
+bool StructMappedToColumnsECSqlField::_IsNull() const
     {
     for (auto& field : m_structFields)
         {
-        if (!field->IsNull ())
+        if (!field->IsNull())
             return false;
         }
     return true;
     }
 
-       
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct () const
+IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct() const
     {
     return *this;
     }
@@ -42,38 +43,38 @@ IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive () const
+IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive() const
     {
-    ReportError (ECSqlStatus::Error, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
-    BeAssert (false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
-    return NoopECSqlValue::GetSingleton ().GetPrimitive ();
+    ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
+    BeAssert(false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
+    return NoopECSqlValue::GetSingleton().GetPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray () const
-    { 
-    ReportError (ECSqlStatus::Error, "GetArray cannot be called for a struct column. Call GetStruct instead.");
-    BeAssert (false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
-    return NoopECSqlValue::GetSingleton ().GetArray ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue (int columnIndex) const
+IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray() const
     {
-    if (!CanRead (columnIndex))
-        return NoopECSqlValue::GetSingleton ().GetValue (columnIndex);
-
-    return *m_structFields.at (columnIndex);
+    ReportError(ECSqlStatus::Error, "GetArray cannot be called for a struct column. Call GetStruct instead.");
+    BeAssert(false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
+    return NoopECSqlValue::GetSingleton().GetArray();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-int StructMappedToColumnsECSqlField::_GetMemberCount () const
+IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue(int columnIndex) const
+    {
+    if (!CanRead(columnIndex))
+        return NoopECSqlValue::GetSingleton().GetValue(columnIndex);
+
+    return *m_structFields.at(columnIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle      03/2014
+//---------------------------------------------------------------------------------------
+int StructMappedToColumnsECSqlField::_GetMemberCount() const
     {
     return static_cast<int>(m_structFields.size());
     }
@@ -82,7 +83,7 @@ int StructMappedToColumnsECSqlField::_GetMemberCount () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren () const
+ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren() const
     {
     return m_structFields;
     }
@@ -90,31 +91,31 @@ ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren () co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-void StructMappedToColumnsECSqlField::AppendField (std::unique_ptr<ECSqlField> field)
+void StructMappedToColumnsECSqlField::AppendField(std::unique_ptr<ECSqlField> field)
     {
-    PRECONDITION (field != nullptr, );
-    
+    PRECONDITION(field != nullptr, );
+
     if (field->RequiresOnAfterStep())
         m_requiresOnAfterStep = true;
 
     if (field->RequiresOnAfterReset())
         m_requiresOnAfterReset = true;
 
-    m_structFields.push_back (move (field));
+    m_structFields.push_back(move(field));
 
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-bool StructMappedToColumnsECSqlField::CanRead (int columnindex) const
+bool StructMappedToColumnsECSqlField::CanRead(int columnindex) const
     {
-    const bool canRead = columnindex >= 0 && columnindex < _GetMemberCount ();
+    const bool canRead = columnindex >= 0 && columnindex < _GetMemberCount();
     if (!canRead)
         {
         Utf8String errorMessage;
-        errorMessage.Sprintf ("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnindex);
-        ReportError (ECSqlStatus::Error, errorMessage.c_str ());
+        errorMessage.Sprintf("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnindex);
+        ReportError(ECSqlStatus::Error, errorMessage.c_str());
         }
 
     return canRead;

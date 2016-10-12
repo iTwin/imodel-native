@@ -174,11 +174,10 @@ Utf8String BinaryValueExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    auto castOperand = GetCastOperand();
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         //if operands are parameters set the target exp in those expressions
-        if (castOperand->IsParameterExp())
+        if (GetCastOperand()->IsParameterExp())
             {
             ctx.Issues().Report(ECDbIssueSeverity::Error, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
             return FinalizeParseStatus::Error;
@@ -265,7 +264,7 @@ void CastExp::_DoToECSql(Utf8StringR ecsql) const
     if (!m_castTargetSchemaName.empty())
         ecsql.append(m_castTargetSchemaName).append(".");
 
-    ecsql.append(m_castTargetType);
+    ecsql.append(m_castTargetTypeName);
     
     if (m_castTargetIsArray)
         ecsql.append("[]");
@@ -282,7 +281,7 @@ Utf8String CastExp::_ToString() const
     if (!m_castTargetSchemaName.empty())
         str.append(m_castTargetSchemaName).append(".");
 
-    str.append(m_castTargetType);
+    str.append(m_castTargetTypeName);
 
     if (m_castTargetIsArray)
         str.append("[] ");

@@ -8,24 +8,12 @@
 #include "ECDbPch.h"
 #include "DynamicSelectClauseECClass.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle 10/13
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP const DynamicSelectClauseECClass::SCHEMANAME = "ECSqlStatement";
-Utf8CP const DynamicSelectClauseECClass::CLASSNAME = "ECSqlSelectClause";
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DynamicSelectClauseECClass::DynamicSelectClauseECClass()
-    : m_schema(nullptr), m_class(nullptr)
-    {}
+#define SCHEMANAME "ECSqlStatement"
+#define CLASSNAME "ECSqlSelectClause"
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
@@ -52,7 +40,7 @@ DynamicSelectClauseECClass& DynamicSelectClauseECClass::operator= (DynamicSelect
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DynamicSelectClauseECClass::DynamicSelectClauseECClass(DynamicSelectClauseECClass&& rhs)
-    : m_schema(move(rhs.m_schema)), m_class(move(rhs.m_class))
+    : m_schema(std::move(rhs.m_schema)), m_class(std::move(rhs.m_class))
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -62,8 +50,8 @@ DynamicSelectClauseECClass& DynamicSelectClauseECClass::operator= (DynamicSelect
     {
     if (this != &rhs)
         {
-        m_schema = move(rhs.m_schema);
-        m_class = move(rhs.m_class);
+        m_schema = std::move(rhs.m_schema);
+        m_class = std::move(rhs.m_class);
         }
 
     return *this;

@@ -8,7 +8,6 @@
 #include "ECDbPch.h"
 #include "ECSqlStatementBase.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -22,15 +21,15 @@ ECSqlField::Collection* ECSqlField::s_emptyChildCollection = nullptr;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::OnAfterStep () 
+ECSqlStatus ECSqlField::OnAfterStep()
     {
-    auto stat = _OnAfterStep ();
+    ECSqlStatus stat = _OnAfterStep();
     if (!stat.IsSuccess())
         return stat;
 
-    for (unique_ptr<ECSqlField> const& child : GetChildren ())
+    for (std::unique_ptr<ECSqlField> const& child : GetChildren())
         {
-        stat = child->OnAfterStep ();
+        stat = child->OnAfterStep();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -41,7 +40,7 @@ ECSqlStatus ECSqlField::OnAfterStep ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
+ECSqlColumnInfoCR ECSqlField::_GetColumnInfo() const
     {
     return m_ecsqlColumnInfo;
     }
@@ -49,15 +48,15 @@ ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::OnAfterReset () 
+ECSqlStatus ECSqlField::OnAfterReset()
     {
-    auto stat = _OnAfterReset ();
+    ECSqlStatus stat = _OnAfterReset();
     if (!stat.IsSuccess())
         return stat;
 
-    for (unique_ptr<ECSqlField> const& child : GetChildren ())
+    for (std::unique_ptr<ECSqlField> const& child : GetChildren())
         {
-        stat = child->OnAfterReset ();
+        stat = child->OnAfterReset();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -68,24 +67,24 @@ ECSqlStatus ECSqlField::OnAfterReset ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatementBase& ECSqlField::GetECSqlStatementR () const
-    { 
+ECSqlStatementBase& ECSqlField::GetECSqlStatementR() const
+    {
     return m_ecsqlStatement;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlField::GetSqliteStatement () const
-    { 
-    BeAssert (GetECSqlStatementR ().IsPrepared ());
-    return GetECSqlStatementR ().GetPreparedStatementP ()->GetSqliteStatementR ();
+Statement& ECSqlField::GetSqliteStatement() const
+    {
+    BeAssert(GetECSqlStatementR().IsPrepared());
+    return GetECSqlStatementR().GetPreparedStatementP()->GetSqliteStatementR();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) const
+ECSqlStatus ECSqlField::ReportError(ECSqlStatus status, Utf8CP errorMessage) const
     {
     ECDb const* ecdb = m_ecsqlStatement.GetECDb();
     if (ecdb != nullptr)

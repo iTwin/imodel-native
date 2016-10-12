@@ -21,61 +21,61 @@ struct PropertyNameExp : ValueExp
     {
     struct PropertyRef
         {
-    private:
-        DerivedPropertyExp const& m_linkedTo;
-        NativeSqlBuilder::List m_nativeSqlSnippets;
-        bool m_isPrepared;
-    public:
-        explicit PropertyRef (DerivedPropertyExp const& endPoint):m_linkedTo (endPoint), m_isPrepared (false) {}
+        private:
+            DerivedPropertyExp const& m_linkedTo;
+            NativeSqlBuilder::List m_nativeSqlSnippets;
+            bool m_isConverted;
+        public:
+            explicit PropertyRef(DerivedPropertyExp const& endPoint) :m_linkedTo(endPoint), m_isConverted(false) {}
 
-        DerivedPropertyExp const& LinkedTo () const { return m_linkedTo; }
+            DerivedPropertyExp const& LinkedTo() const { return m_linkedTo; }
 
-        NativeSqlBuilder::List const& GetOutSnippets () const { return m_nativeSqlSnippets; }
+            NativeSqlBuilder::List const& GetOutSnippets() const { return m_nativeSqlSnippets; }
 
-        DerivedPropertyExp const& GetEndPointDerivedProperty () const;
-        PropertyNameExp const* GetEndPointPropertyNameIfAny () const;
-        bool IsPrepared () const { return m_isPrepared; }
-        bool Prepare (NativeSqlBuilder::List const& snippets);
+            DerivedPropertyExp const& GetEndPointDerivedProperty() const;
+            PropertyNameExp const* GetEndPointPropertyNameIfAny() const;
+            bool IsConverted() const { return m_isConverted; }
+            BentleyStatus ToNativeSql(NativeSqlBuilder::List const& snippets);
         };
-public:
-    DEFINE_EXPR_TYPE(PropertyName) 
-private:
-    PropertyPath m_propertyPath;
-    bool m_isSystemProperty;
-    ECSqlSystemProperty m_systemProperty;
-    std::unique_ptr<PropertyRef> m_propertyRef;
+    public:
+        DEFINE_EXPR_TYPE(PropertyName)
+    private:
+        PropertyPath m_propertyPath;
+        bool m_isSystemProperty;
+        ECSqlSystemProperty m_systemProperty;
+        std::unique_ptr<PropertyRef> m_propertyRef;
 
-    Utf8String m_classAlias;
-    RangeClassRefExp const* m_classRefExp;
+        Utf8String m_classAlias;
+        RangeClassRefExp const* m_classRefExp;
 
-    BentleyStatus ResolveColumnRef (ECSqlParseContext&);
-    BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
+        BentleyStatus ResolveColumnRef(ECSqlParseContext&);
+        BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-    void SetClassRefExp (RangeClassRefExp const& classRefExp);
-    void SetPropertyRef (DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override;
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+        void SetClassRefExp(RangeClassRefExp const& classRefExp);
+        void SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
+        virtual void _DoToECSql(Utf8StringR ecsql) const override;
+        virtual Utf8String _ToString() const override;
 
-public:
-    explicit PropertyNameExp (PropertyPath&& propPath);
-    explicit PropertyNameExp (Utf8CP propertyName);
-    PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
-    PropertyNameExp (RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
+    public:
+        explicit PropertyNameExp(PropertyPath&& propPath);
+        explicit PropertyNameExp(Utf8StringCR propertyName);
+        PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
+        PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
 
-    Utf8CP GetPropertyName() const;
+        Utf8CP GetPropertyName() const;
 
-    PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
-    PropertyMapCR GetPropertyMap () const;
+        PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
+        PropertyMapCR GetPropertyMap() const;
 
-    bool IsSystemProperty () const { return m_isSystemProperty; }
-    bool TryGetSystemProperty (ECSqlSystemProperty& systemProperty) const;
+        bool IsSystemProperty() const { return m_isSystemProperty; }
+        bool TryGetSystemProperty(ECSqlSystemProperty&) const;
 
-    Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
-    RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
-    PropertyRef const* GetPropertyRef () const { return m_propertyRef.get (); }
-    PropertyRef* GetPropertyRefP () { return m_propertyRef.get (); }
-    bool IsPropertyRef () const { return m_propertyRef != nullptr; }
+        Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
+        RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
+        PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
+        PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
+        bool IsPropertyRef() const { return m_propertyRef != nullptr; }
     };
 
 

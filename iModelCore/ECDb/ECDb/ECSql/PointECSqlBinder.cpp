@@ -9,8 +9,6 @@
 #include "PointECSqlBinder.h"
 #include "ECSqlStatementBase.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------

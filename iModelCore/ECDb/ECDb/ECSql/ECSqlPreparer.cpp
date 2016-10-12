@@ -363,7 +363,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& nullCastExp)
     {
-    size_t sqliteSnippetCount = 1;
+    int sqliteSnippetCount = 0;
     ECSqlTypeInfo const& castTargetTypeInfo = nullCastExp.GetTypeInfo();
     if (castTargetTypeInfo.IsPrimitive())
         {
@@ -378,6 +378,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
                     break;
 
                 default:
+                    sqliteSnippetCount = 1;
                     break;
             }
         }
@@ -386,6 +387,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
         std::function<void(int& colCount, ECStructClassCR structType)> countColumns;
         countColumns = [&countColumns] (int& colCount, ECStructClassCR structType)
             {
+            //WIP This will most likely not work for overflow properties. Depending
+            //on how we implement them at this point here they might just map to a single col too.
             for (ECPropertyCP prop : structType.GetProperties())
                 {
                 if (prop->GetIsPrimitive())
@@ -408,16 +411,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
 
                 if (prop->GetIsStruct())
                     {
-                    countColumns(colCount, *prop->GetAsStructProperty()->GetClass().GetStructClassCP());
+                    countColumns(colCount, prop->GetAsStructProperty()->GetType());
                     continue;
                     }
 
                 colCount++;
                 }
             };
-        }
 
-    for (size_t i = 0; i < sqliteSnippetCount; i++)
+        countColumns(sqliteSnippetCount, castTargetTypeInfo.GetStructType());
+        }
+    else //all other types are mapped to a single column
+        sqliteSnippetCount = 1;
+
+    for (int i = 0; i < sqliteSnippetCount; i++)
         {
         nativeSqlSnippets.push_back(NativeSqlBuilder("NULL"));
         }

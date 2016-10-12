@@ -47,7 +47,12 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
     if (exp.IsAll())
         ctx.GetSqlBuilderR().Append("ALL ");
 
+    SelectClauseExp const* lhs = exp.GetSelection();
     SelectStatementExp const& rhsStatement = *exp.GetRhsStatement();
+    SelectClauseExp const* rhs = rhsStatement.GetSelection();
+    if (SUCCESS != ValidateSelectClauseItems(ctx, *lhs, *rhs))
+        return ECSqlStatus::InvalidECSql;
+
     //generate list of sql snippet counts per select clause item as this is needed to prepare
     //the RHS select clause (in case of NULL literals)
     std::vector<size_t> selectClauseSqlSnippetCounts;
@@ -57,26 +62,6 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
         }
 
     st = Prepare(ctx, rhsStatement, &selectClauseSqlSnippetCounts);
-
-    SelectClauseExp const* lhs = exp.GetSelection();
-    SelectClauseExp const* rhs = rhsStatement.GetSelection();
-    if (rhs->GetChildrenCount() != lhs->GetChildrenCount())
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    for (size_t i = 0; i < rhs->GetChildrenCount(); i++)
-        {
-        DerivedPropertyExp const* rhsDerivedPropExp = rhs->GetChildren().Get<DerivedPropertyExp>(i);
-        DerivedPropertyExp const* lhsDerivedPropExp = lhs->GetChildren().Get<DerivedPropertyExp>(i);
-
-        if (!rhsDerivedPropExp->GetExpression()->GetTypeInfo().CanCompare(lhsDerivedPropExp->GetExpression()->GetTypeInfo()))
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
-            return ECSqlStatus::InvalidECSql;
-            }
-        }
 
     ctx.PopScope();
     return st;
@@ -236,10 +221,8 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
         if (!alias.empty())
             {
-            if (nativeSqlSnippets.size() == 1LL)
-                {
+            if (nativeSqlSnippets.size() == 1)
                 nativeSqlSnippets.front().AppendSpace().AppendEscaped(alias.c_str());
-                }
             else
                 {
                 int idx = 0;
@@ -263,6 +246,41 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
         }
 
     return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext& ctx, SelectClauseExp const& lhs, SelectClauseExp const& rhs)
+    {
+    const size_t count = lhs.GetChildrenCount();
+    if (count != rhs.GetChildrenCount())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        return ERROR;
+        }
+
+    for (size_t i = 0; i < count; i++)
+        {
+        DerivedPropertyExp const* lhsDerivedPropExp = lhs.GetChildren().Get<DerivedPropertyExp>(i);
+        DerivedPropertyExp const* rhsDerivedPropExp = rhs.GetChildren().Get<DerivedPropertyExp>(i);
+        ECSqlTypeInfo const& lhsTypeInfo = lhsDerivedPropExp->GetExpression()->GetTypeInfo();
+        ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
+        if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            return ERROR;
+            }
+
+        if (lhsTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

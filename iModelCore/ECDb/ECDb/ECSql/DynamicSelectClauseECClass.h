@@ -20,30 +20,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct DynamicSelectClauseECClass
     {
-private:
-    static Utf8CP const SCHEMANAME;
-    static Utf8CP const CLASSNAME;
+    private:
+        ECN::ECSchemaPtr m_schema;
+        ECN::ECEntityClassP m_class;
+        bmap<Utf8String, DerivedPropertyExp const*, CompareIUtf8Ascii> m_selectClauseNames;
 
-    ECN::ECSchemaPtr m_schema;
-    ECN::ECEntityClassP m_class;
-    bmap<Utf8String, DerivedPropertyExp const*, CompareIUtf8Ascii> m_selectClauseNames;
+        ECSqlStatus Initialize();
 
-    ECSqlStatus Initialize ();
+        ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR);
+        ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
+        ECN::ECEntityClassR GetClassR() const { return *m_class; }
+        ECN::ECSchemaR GetSchemaR() const { return *m_schema; }
+        ECSqlStatus SetBackReferenceToPropertyPath(ECN::ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
 
-    ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR);
-    ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
-    ECN::ECClassR GetClassR() const { return *m_class; }
-    ECN::ECSchemaR GetSchemaR() const { return *m_schema; }
-    ECSqlStatus SetBackReferenceToPropertyPath(ECN::ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
+    public:
+        DynamicSelectClauseECClass() : m_schema(nullptr), m_class(nullptr) {}
+        DynamicSelectClauseECClass(DynamicSelectClauseECClass const& rhs);
+        DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass const& rhs);
+        DynamicSelectClauseECClass(DynamicSelectClauseECClass&& rhs);
+        DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass&& rhs);
 
-public:
-    DynamicSelectClauseECClass ();
-    DynamicSelectClauseECClass (DynamicSelectClauseECClass const& rhs);
-    DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass const& rhs);
-    DynamicSelectClauseECClass (DynamicSelectClauseECClass&& rhs);
-    DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass&& rhs);
-
-    ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, ECDbCR);
+        ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, ECDbCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

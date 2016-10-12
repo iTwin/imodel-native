@@ -550,7 +550,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS ecsql.PStruct) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT CAST (NULL AS [ecsql].[PStruct]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT CAST (NULL AS ecsql.PStruct[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS [ecsql].[PStruct][]) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (NULL AS PStruct) FROM ecsql.PSA";

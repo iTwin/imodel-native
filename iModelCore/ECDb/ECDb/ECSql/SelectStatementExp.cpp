@@ -9,16 +9,13 @@
 #include "SelectStatementExp.h"
 #include "ExpHelper.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************** SubqueryExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp)
-    : QueryExp()
+SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryExp()
     {
     AddChild(std::move(selectExp));
     }
@@ -43,11 +40,11 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, unique_ptr<SubqueryExp> subquery)
+AllOrAnyExp::AllOrAnyExp(std::unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, std::unique_ptr<SubqueryExp> subquery)
     : BooleanExp(), m_type(type), m_operator(op)
     {
-    m_operandExpIndex = AddChild(move(operand));
-    m_subqueryExpIndex = AddChild(move(subquery));
+    m_operandExpIndex = AddChild(std::move(operand));
+    m_subqueryExpIndex = AddChild(std::move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -74,10 +71,10 @@ Utf8String AllOrAnyExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp::DerivedPropertyExp(unique_ptr<ValueExp> valueExp, Utf8CP columnAlias)
+DerivedPropertyExp::DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias)
     : Exp(), m_columnAlias(columnAlias)
     {
-    AddChild(move(valueExp));
+    AddChild(std::move(valueExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -98,10 +95,7 @@ Utf8String DerivedPropertyExp::GetName() const
         return propertyNameExp->GetPropertyPath().ToString();
         }
 
-    Utf8String expr = GetExpression()->ToECSql();
-    expr.ReplaceAll("[", "");
-    expr.ReplaceAll("]", "");
-    return expr;
+    return GetExpression()->ToECSql();
     }
 
 
@@ -115,11 +109,9 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
+        PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
         if (propertyNameExp->IsPropertyRef())
-            {
             return propertyNameExp->GetPropertyRef()->LinkedTo().GetColumnAlias();
-            }
         }
 
     return m_columnAlias;
@@ -241,9 +233,9 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
+std::unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
     {
-    auto rangeClassRefs = unique_ptr<RangeClassRefList>(new RangeClassRefList());
+    std::unique_ptr<RangeClassRefList> rangeClassRefs(new RangeClassRefList());
     FindRangeClassRefs(*rangeClassRefs);
     return rangeClassRefs;
     }
@@ -255,7 +247,7 @@ Utf8String FromExp::_ToECSql() const
     {
     Utf8String tmp = "FROM ";
     bool isFirstItem = true;
-    for (auto classRefExp : GetChildren())
+    for (Exp const* classRefExp : GetChildren())
         {
         if (!isFirstItem)
             tmp.append(", ");
@@ -545,35 +537,34 @@ void OrderBySpecExp::AppendSortDirection(Utf8String& str, bool addLeadingBlank) 
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList const& rangeClassRefs)
     {
-    vector<DerivedPropertyExp const*> propertyNameExpList;
+    std::vector<DerivedPropertyExp const*> propertyNameExpList;
     for (auto childExp : GetChildren())
         {
-        auto derivedPropExp = static_cast<DerivedPropertyExp const*> (childExp);
+        DerivedPropertyExp const* derivedPropExp = static_cast<DerivedPropertyExp const*> (childExp);
         if (derivedPropExp->GetExpression()->GetType() == Exp::Type::PropertyName)
             propertyNameExpList.push_back(derivedPropExp);
         }
 
-    for (auto propertyNameExp : propertyNameExpList)
+    for (DerivedPropertyExp const* propertyNameExp : propertyNameExpList)
         {
         PropertyNameExp const* innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
         if (Exp::IsAsteriskToken(innerExp->GetPropertyName()))
             {
-            auto stat = ReplaceAsteriskExpression(*propertyNameExp, rangeClassRefs);
-            if (stat != SUCCESS)
-                return stat;
+            if (SUCCESS != ReplaceAsteriskExpression(*propertyNameExp, rangeClassRefs))
+                return ERROR;
 
             continue;
             }
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        auto const& propertyPath = innerExp->GetPropertyPath();
+        PropertyPath const& propertyPath = innerExp->GetPropertyPath();
         //case: SELECT a.* from FOO a
         if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetPropertyName()))
             {
             Utf8CP alias = propertyPath[0].GetPropertyName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
-            for (auto classRef : rangeClassRefs)
+            for (RangeClassRefExp const* classRef : rangeClassRefs)
                 {
                 if (classRef->GetId().Equals(alias))
                     {
@@ -597,13 +588,13 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList cons
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
     {
-    vector<unique_ptr<Exp>> derivedPropExpList;
-    auto addDelegate = [&derivedPropExpList] (unique_ptr<PropertyNameExp>& propNameExp)
+    std::vector<std::unique_ptr<Exp>> derivedPropExpList;
+    auto addDelegate = [&derivedPropExpList] (std::unique_ptr<PropertyNameExp>& propNameExp)
         {
-        derivedPropExpList.push_back(unique_ptr<Exp>(new DerivedPropertyExp(move(propNameExp), nullptr)));
+        derivedPropExpList.push_back(std::unique_ptr<Exp>(new DerivedPropertyExp(std::move(propNameExp), nullptr)));
         };
 
-    for (auto classRef : rangeClassRefs)
+    for (RangeClassRefExp const* classRef : rangeClassRefs)
         classRef->CreatePropertyNameExpList(addDelegate);
 
     if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
@@ -791,11 +782,11 @@ Utf8String SubqueryExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryRefExp::SubqueryRefExp(unique_ptr<SubqueryExp> subquery, Utf8StringCR alias, bool isPolymorphic)
+SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8StringCR alias, bool isPolymorphic)
     : RangeClassRefExp(isPolymorphic)
     {
     SetAlias(alias);
-    AddChild(move(subquery));
+    AddChild(std::move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -803,12 +794,11 @@ SubqueryRefExp::SubqueryRefExp(unique_ptr<SubqueryExp> subquery, Utf8StringCR al
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
-    for (auto expr : GetSubquery()->GetSelection()->GetChildren())
+    for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
-        auto selectClauseItemExp = static_cast<DerivedPropertyExp const*> (expr);
-        auto propertyNameExp = unique_ptr<PropertyNameExp>(new PropertyNameExp(*this, *selectClauseItemExp));
-
-        addDelegate(propertyNameExp);
+        DerivedPropertyExp const* selectClauseItemExp = static_cast<DerivedPropertyExp const*> (expr);
+        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(*this, *selectClauseItemExp));
+        addDelegate(propNameExp);
         }
 
     return SUCCESS;
@@ -820,7 +810,7 @@ BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(std::function<void(std:
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String SubqueryRefExp::_ToECSql() const
     {
-    return  (!IsPolymorphic() ? "ONLY " : "") + GetSubquery()->ToString() + (GetAlias().empty() ? "" : " AS " + GetAlias());
+    return (!IsPolymorphic() ? "ONLY " : "") + GetSubquery()->ToString() + (GetAlias().empty() ? "" : " AS " + GetAlias());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -829,7 +819,7 @@ Utf8String SubqueryRefExp::_ToECSql() const
 Utf8String SubqueryRefExp::_ToString() const
     {
     Utf8String str("SubqueryRef [");
-    str.append(GetId().c_str()).append("]");
+    str.append(GetId()).append("]");
     return str;
     }
 
