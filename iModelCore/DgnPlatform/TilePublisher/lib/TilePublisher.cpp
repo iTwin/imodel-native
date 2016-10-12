@@ -395,34 +395,24 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
         }
 
-    if (targetImageSize.x == imageSize.x && targetImageSize.y == imageSize.y)
-        {
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
-        
-        ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
-        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    ImageSource         imageSource = textureImage.GetImageSource();
+    static const int    s_imageQuality = 50;
 
-        AddBinaryData (imageData.data(), imageData.size());
-        }
-    else
+    if (targetImageSize.x != imageSize.x || targetImageSize.y != imageSize.y)
         {
-        static int      s_imageQuality = 50;
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
-        ByteStream      targetImageData;
 
-        ImageSource targetImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
-        
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"]  = targetImageSize.y;
-        
-        ByteStream const& imageData = targetImageSource.GetByteStream();
-        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
-
-        AddBinaryData (imageData.data(), imageData.size());
+        imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
         }
+
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+
+    ByteStream const& imageData = imageSource.GetByteStream();
+    rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+
+    AddBinaryData (imageData.data(), imageData.size());
 
     m_textureImages.Insert (&textureImage, textureId);
 
