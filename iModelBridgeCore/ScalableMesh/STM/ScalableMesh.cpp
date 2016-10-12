@@ -861,7 +861,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain";
                 StatusInt openStatus;
                 SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
-                if (smSQLiteFile != nullptr)
+                if (openStatus && smSQLiteFile != nullptr)
                     {
                     m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
                     m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
@@ -949,8 +949,10 @@ template <class POINT> int ScalableMesh<POINT>::Close
 )
     {
     m_viewedNodes.clear();
-    ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
-    ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Precise]->GetDTMDraping())->ClearNodes();
+    if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
+        ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
+    if (m_scalableMeshDTM[DTMAnalysisType::Precise] != nullptr)
+        ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Precise]->GetDTMDraping())->ClearNodes();
     m_scmIndexPtr = 0;
 
     if(m_smSQLitePtr != nullptr)

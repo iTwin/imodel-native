@@ -1132,8 +1132,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
    // RunClipPlaneTest();
    // RunClipMeshTest();
     WString stmFileName(argv[1]);
-    RunGetMeshParts(stmFileName);
-    //RunUpdateTest(stmFileName);
+    //RunGetMeshParts(stmFileName);
+    RunUpdateTest(stmFileName);
     std::cout << "THE END" << std::endl;
     return 0;
 }
