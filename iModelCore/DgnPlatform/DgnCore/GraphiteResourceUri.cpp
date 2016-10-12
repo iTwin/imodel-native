@@ -692,7 +692,7 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
         // Unfortunately, we have no way of knowing what namespace value to use, since that depends on the value of the "guest" command-line parameter that was 
         // passed to the converter, which we cannot detect now.
         CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE(Code_Value=?)");
-        codestmt->BindText(1, propvalue.GetString().c_str(), Statement::MakeCopy::No);
+        codestmt->BindText(1, propvalue.GetString().c_str(), Statement::MakeCopy::Yes);
         if (BE_SQLITE_ROW == codestmt->Step())
             return codestmt->GetValueId<DgnElementId>(0);
         }

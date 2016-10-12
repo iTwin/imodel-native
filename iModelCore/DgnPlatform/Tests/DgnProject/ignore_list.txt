@@ -146,3 +146,5 @@ CsvFileTests.GetRowAndMaxColumnCount
     #   Actual: false
     # Expected: true
     # [  FAILED  ] CsvFileTests.GetRowAndMaxColumnCount (0 ms)
+
+CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048

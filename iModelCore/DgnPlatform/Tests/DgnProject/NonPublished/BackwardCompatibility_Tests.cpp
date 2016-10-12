@@ -179,7 +179,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::CreateNewDirectory(outputRoot.c_str()));
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_DgnDb0601.csv");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_DgnDb61-16Q4.csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
@@ -222,16 +222,16 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                 }
 
             if (writeStatus)
-                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             else
                 {
-                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
                 EXPECT_TRUE(false) << getCompatibilityStatusString(stat);
                 }
             }
         else
             {
-            fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
+            fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
             EXPECT_TRUE(false) << "copying file failed for:" << dbName.GetFileNameAndExtension().c_str();
             }
         }
