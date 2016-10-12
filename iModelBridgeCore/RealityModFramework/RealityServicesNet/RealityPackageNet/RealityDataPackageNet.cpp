@@ -110,20 +110,20 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ man
 ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     {
     // Create with main source.
-    ImageryDataPtr pImageryData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
+    ImageryDataPtr pData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pImageryData->SetDataId(id.c_str());
+    pData->SetDataId(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pImageryData->SetDataName(name.c_str());
+    pData->SetDataName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
-    pImageryData->SetDataset(dataset.c_str());
+    pData->SetDataset(dataset.c_str());
 
     // Set corners.
     List<double>^ corners = managedData->GetCornersCP();
@@ -138,16 +138,124 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
             cornerPts[i].y = corners[j++];
             }
 
-        pImageryData->SetCorners(cornerPts);
+        pData->SetCorners(cornerPts);
         }
 
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
-        pImageryData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
         }    
 
-    return pImageryData;
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
+    {
+    // Create with main source.
+    ModelDataPtr pData = ModelData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
+    {
+    // Create with main source.
+    PinnedDataPtr pData = PinnedData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), 0, 0);
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Set location.
+    List<double>^ location = managedData->GetLocation();
+    DPoint2d longlat;
+    longlat.x = location[0];
+    longlat.y = location[1];
+    pData->SetLocation(longlat);
+
+    // Set area.
+    List<double>^ polygonPts = managedData->GetAreaCP();
+    DPoint2d pts[4];
+    int j = 0;
+    for (int i = 0; i < polygonPts->Count; ++i)
+        {
+        pts[i].x = polygonPts[j++];
+        pts[i].y = polygonPts[j++];
+        }
+    pData->SetArea(*BoundingPolygon::Create(pts, polygonPts->Count));
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
+    {
+    // Create with main source.
+    TerrainDataPtr pData = TerrainData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
     }
 
 
@@ -345,7 +453,7 @@ void RealityDataPackageNet::AddImageryData(ImageryDataNet^ data)
 //-------------------------------------------------------------------------------------
 void RealityDataPackageNet::AddModelData(ModelDataNet^ data)
     {
-    //(*m_pPackage)->GetModelGroupR().push_back(*ManagedToNativeRealityData(data));
+    (*m_pPackage)->GetModelGroupR().push_back(ManagedToNativeModelData(data));
     }
 
 //-------------------------------------------------------------------------------------
@@ -353,7 +461,7 @@ void RealityDataPackageNet::AddModelData(ModelDataNet^ data)
 //-------------------------------------------------------------------------------------
 void RealityDataPackageNet::AddPinnedData(PinnedDataNet^ data)
     {
-    //(*m_pPackage)->GetPinnedGroupR().push_back(*ManagedToNativeRealityData(data));
+    (*m_pPackage)->GetPinnedGroupR().push_back(ManagedToNativePinnedData(data));
     }
 
 //-------------------------------------------------------------------------------------
@@ -361,7 +469,7 @@ void RealityDataPackageNet::AddPinnedData(PinnedDataNet^ data)
 //-------------------------------------------------------------------------------------
 void RealityDataPackageNet::AddTerrainData(TerrainDataNet^ data)
     {
-    //(*m_pPackage)->GetTerrainGroupR().push_back(*ManagedToNativeRealityData(data));
+    (*m_pPackage)->GetTerrainGroupR().push_back(ManagedToNativeTerrainData(data));
     }
 
 //-------------------------------------------------------------------------------------
