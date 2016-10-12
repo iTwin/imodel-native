@@ -358,7 +358,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
         range2d.low.y = -2 * xRange/MAX_XRANGE_RATIO;
 
     //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
-    if (xRange < 1)
+    if (xRange < 0.0001)
         {
         scaleFactor = (uint32_t)ceil(1/xRange);
         range2d.high.Scale(scaleFactor);
@@ -400,13 +400,11 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, uint32_t weight)
+StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymbIn, uint32_t weight)
     {
-    double componentScaleFactor = lineStyleSymb.GetScale();
     textureDescr.m_hasTextureWidth = false;
     textureDescr.m_textureWidth = 0;
 
-    //  We create the texture in the component's units.  Then to convert to the line style's units we set the true width to the component width times unitDef.
     double unitDef = GetUnitsDefinition();
     if (unitDef == 0)
         unitDef = 1.0;
@@ -414,6 +412,23 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     DgnViewportP vp = viewContext.GetViewport();
     if (vp == nullptr)
         return BSIERROR;
+
+    //  We create the texture in the component's units.  Then to convert to the line style's units we set the true width to the component width times unitDef.
+    //  It seems more logical to work in the line style's units.  However, the lines in a texture look much better if QV draws them in the component's units. It seems that
+    //  scaling down works much better than scaling up when we use the texture.
+    //
+    //  I expected this approach would be unusable due to line weights get scaled when we use the texture.  Surprisingly, the line weights work properly with this approach.
+    LineStyleSymb lineStyleSymb = lineStyleSymbIn;
+
+    lineStyleSymb.SetScale(lineStyleSymb.GetScale()/unitDef);
+    if (lineStyleSymb.HasOrgWidth())
+        {
+        lineStyleSymb.SetWidth(lineStyleSymb.GetOriginWidth()/unitDef);
+        //  The caller enforces this when we are generating a texture.
+        BeAssert(lineStyleSymb.GetOriginWidth() == lineStyleSymb.GetEndWidth());
+        }
+
+    double componentScaleFactor = lineStyleSymb.GetScale();
 
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
@@ -439,7 +454,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
         return BSIERROR;
         }
 
-    //  Get just the range of the components.  Don't let any scaling enter into this. We scale latter by multiplying by unitDef.
+    //  Get just the range of the components.  
     DPoint3d  points[2];
     initializePoints(points, *m_lsComp, componentScaleFactor);
 
@@ -447,7 +462,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     LineStyleRangeCollector::Process(lsRange, *comp, lineStyleSymb, points);
 
     uint32_t  scaleFactor = 1;
-    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLengthForTexture());
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, componentScaleFactor * comp->_GetLengthForTexture());
 
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
@@ -492,7 +507,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2016
 //---------------------------------------------------------------------------------------
-StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scaleWithoutUnits, uint32_t weight)
+StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, uint32_t weight)
     {
     if (m_usesSymbolWeight)
         weight = 0;   // This line style does not use the current element's weight so there is no sense distinguishing based on weight.
@@ -530,7 +545,7 @@ StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnits, uint32_t weight) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, uint32_t weight) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
@@ -572,7 +587,7 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
         if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
-            lineStyleSymb.SetWidth (m_textureWidth * scaleWithoutUnits);
+            lineStyleSymb.SetWidth (m_textureWidth * __unused);
     
         return m_texture.get();
 #endif
@@ -592,7 +607,7 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
                 {
                 BeAssert (weight >=0 && weight < 32);
                 TextureDescr    tDescr;
-                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, scaleWithoutUnits, weight) != BSISUCCESS)
+                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, weight) != BSISUCCESS)
                     return nullptr;
 
                 //  Do not apply the scaling factor here.  It must be applied when generating the texture, not when applying the texture.

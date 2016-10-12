@@ -473,11 +473,13 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     Init(nameRec);
     bool willForceTexture = context.Is3dView();
 
+    BeAssert(0 == (styleParams.modifiers & (STYLEMOD_DSCALE | STYLEMOD_GSCALE)));
+    
+    m_options.isContinuous = nameRec->IsContinuous();
     if (!willForceTexture)
         {
         //  Instances of the texture are applied uniformly so none of these options make sense.
         SetTangents(startTangent, endTangent);
-        m_options.isContinuous = nameRec->IsContinuous();
 
         if ((nullptr != startTangent) && xElemPhaseSet)
             {
@@ -508,7 +510,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
         SetTreatAsSingleSegment((styleParams.modifiers & STYLEMOD_NOSEGMODE) && !(styleParams.modifiers & STYLEMOD_SEGMODE));
 
-        //  I don't see a why to set these in the user interface so I am assuming these are not important.  Therefore, I will
+        //  I don't see a way to set these in the user interface so I am assuming these are not important.  Therefore, I will
         //  not try to figure out how to make the texture generator deal with these.
         if (styleParams.modifiers & STYLEMOD_DSCALE)
             SetDashScale(styleParams.dashScale);
@@ -566,7 +568,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     // Texture is required for 3d...but it should still be an option for 2d...
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), scaleWithoutUnits, params.GetWeight());
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), params.GetWeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
