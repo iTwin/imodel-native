@@ -53,10 +53,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # DgnClientFx library name
-%if $(TARGET_PLATFORM)=="WinRT"
-    %include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki
-    _dgnclientfxLibraryName = Bentley$(BENTLEY_API_NAME).DgnClientFx.Win8$(stlibext)
-%elif $(TARGET_PLATFORM)=="Android"
+%if $(TARGET_PLATFORM)=="Android"
     _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)
 %else
     _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
