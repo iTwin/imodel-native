@@ -7,9 +7,6 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
-# ECSchema update in ECDb does not support deletions yet
-DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
-
 CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
     # DgnDb61-16Q2-Dev, WinX64, DEBUG
     # [ RUN      ] CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
