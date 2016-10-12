@@ -1329,8 +1329,8 @@ static bool getGridDimension(int& nRepetitions, double& min, DPoint3dCR org, DVe
     if (distHigh <= distLow)
         return false;
 
-    min = ceil(distLow / gridSize); // NOTE: Don't let grid extend outside project extents or display can be clipped...
-    double max = floor(distHigh / gridSize);
+    min = floor(distLow / gridSize); // NOTE: Should be ok to let grid extend outside project extents since view extends padded for ground plane...
+    double max = ceil(distHigh / gridSize);
     nRepetitions = (int)(max - min);
     min *= gridSize;
 
