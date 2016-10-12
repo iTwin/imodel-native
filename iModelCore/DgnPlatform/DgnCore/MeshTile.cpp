@@ -849,8 +849,30 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
+    DRange3d    entityRange = m_entity->GetEntityRange();
+    if (entityRange.IsNull())
+        return nullptr;
+
+    double              rangeDiagonal = entityRange.DiagonalDistance();
+    static double       s_minRangeRelTol = 1.0e-4;
+    double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
+    IFacetOptionsPtr    pFacetOptions;
+    
+    if (facetOptions.GetChordTolerance() < minChordTolerance)
+        {
+        pFacetOptions = facetOptions.Clone();
+        pFacetOptions->SetChordTolerance (minChordTolerance);
+        }
+    else
+        {
+        pFacetOptions = &facetOptions;
+        }
+
+
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*m_entity);
-    auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr;
+
+
+    auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *pFacetOptions) : nullptr;
     if (polyface.IsValid())
         {
         polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
@@ -988,7 +1010,6 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
