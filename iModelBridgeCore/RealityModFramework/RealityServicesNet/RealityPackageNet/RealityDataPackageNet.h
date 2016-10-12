@@ -7,21 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//#include <Bentley/BeFileName.h>
 #include <RealityPackage/RealityDataPackage.h>
 
 //#using  <mscorlib.dll>
 
-//using RealityPackage::RealityDataPackage;
-//using namespace System::Collections::Generic;
-
-
 // Forward declaration
-//namespace RealityPackageNet { ref class ImageryGroupNet; }
-//namespace RealityPackageNet { ref class ModelGroupNet; }
-//namespace RealityPackageNet { ref class PinnedGroupNet; }
-//namespace RealityPackageNet { ref class TerrainGroupNet; }
-//namespace RealityPackageNet { ref class DataGroupNet; }
+namespace RealityPackageNet { ref class ImageryDataNet; }
+namespace RealityPackageNet { ref class ModelDataNet; }
+namespace RealityPackageNet { ref class PinnedDataNet; }
+namespace RealityPackageNet { ref class TerrainDataNet; }
 namespace RealityPackageNet { ref class RealityDataSourceNet; }
 
 namespace RealityPackageNet
@@ -70,17 +64,11 @@ namespace RealityPackageNet
             //! Package object will increment ref count of 'polygon'.
             void SetBoundingPolygon(System::Collections::Generic::List<double>^ polygonPts);
 
-            ////! A read-only access to data source container. Might be empty.
-            //REALITYPACKAGE_EXPORT ImageryGroup const& GetImageryGroup() const;
-            //REALITYPACKAGE_EXPORT ModelGroup const& GetModelGroup() const;
-            //REALITYPACKAGE_EXPORT PinnedGroup const& GetPinnedGroup() const;
-            //REALITYPACKAGE_EXPORT TerrainGroup const& GetTerrainGroup() const;
-            //
-            ////! A read-write access to the data source container.
-            //REALITYPACKAGE_EXPORT ImageryGroup& GetImageryGroupR();
-            //REALITYPACKAGE_EXPORT ModelGroup& GetModelGroupR();
-            //REALITYPACKAGE_EXPORT PinnedGroup& GetPinnedGroupR();
-            //REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();
+            //! Add data sources to corresponding group.
+            void AddImageryData(ImageryDataNet^ data);
+            void AddModelData(ModelDataNet^ data);
+            void AddPinnedData(PinnedDataNet^ data);
+            void AddTerrainData(TerrainDataNet^ data);
 
             //! Get package version.
             int GetMajorVersion();
