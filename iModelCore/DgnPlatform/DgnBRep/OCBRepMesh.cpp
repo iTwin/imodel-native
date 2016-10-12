@@ -17,7 +17,7 @@ static const double DEFAULT_CREASE_DEGREES = 45.0; // From SimplifyViewDrawGeom.
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurface const& curveOnSurf)
+static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurface const& curveOnSurf, TransformCP transform)
     {
     // NEEDSWORK: CurveTopologyId...
     double param1 = curveOnSurf.FirstParameter();
@@ -26,16 +26,28 @@ static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurfac
     if (GeomAbs_Line == curveOnSurf.GetType())
         {
         DSegment3d segment = DSegment3d::From(OCBRep::ToDPoint3d(curveOnSurf.Value(param1)), OCBRep::ToDPoint3d(curveOnSurf.Value(param2)));
+
+        if (nullptr != transform)
+            transform->Multiply(segment.point, segment.point, 2);
+
         graphic.AddLineString(2, segment.point);
         }
     else if (GeomAbs_Circle == curveOnSurf.GetType())
         {
         DEllipse3d arc = OCBRep::ToDEllipse3d(curveOnSurf.Circle(), param1, param2);
+
+        if (nullptr != transform)
+            transform->Multiply(arc);
+
         graphic.AddArc(arc, false, false);
         }
     else if (GeomAbs_Ellipse == curveOnSurf.GetType())
         {
         DEllipse3d arc = OCBRep::ToDEllipse3d(curveOnSurf.Ellipse(), param1, param2);
+
+        if (nullptr != transform)
+            transform->Multiply(arc);
+
         graphic.AddArc(arc, false, false);
         }
     else if (GeomAbs_BSplineCurve == curveOnSurf.GetType())
@@ -44,6 +56,9 @@ static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurfac
 
         if (!curve.IsValid())
             return;
+
+        if (nullptr != transform)
+            curve->TransformInPlace(*transform);
 
         graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
@@ -60,6 +75,9 @@ static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurfac
 
         if (!curve.IsValid())
             return;
+
+        if (nullptr != transform)
+            curve->TransformInPlace(*transform);
 
         graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
@@ -369,6 +387,9 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
                 hatcher.ComputeDomains(index);
             }
 
+        Transform   transform = OCBRep::ToTransform(location);
+        bool        haveTransform = !transform.IsIdentity();
+
         // Iso curve output...
         for (Standard_Integer uIso = faceUParam.Lower(); uIso <= faceUParam.Upper(); uIso++)
             {
@@ -392,7 +413,7 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
                 Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), v1, v2);
                 curveOnSurf.Load(hCurve2dAdaptor);
 
-                addIsoCurve(graphic, curveOnSurf);
+                addIsoCurve(graphic, curveOnSurf, haveTransform ? &transform : nullptr);
                 }
             }
 
@@ -418,7 +439,7 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
                 Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), u1, u2);
                 curveOnSurf.Load(hCurve2dAdaptor);
 
-                addIsoCurve(graphic, curveOnSurf);
+                addIsoCurve(graphic, curveOnSurf, haveTransform ? &transform : nullptr);
                 }
             }
         }

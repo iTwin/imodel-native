@@ -56,12 +56,6 @@ typedef JsDgnModels* JsDgnModelsP;
 struct JsECDbSchemaManager;
 typedef JsECDbSchemaManager* JsECDbSchemaManagerP;
 
-struct JsComponentModel;
-typedef JsComponentModel* JsComponentModelP;
-
-struct JsComponentDef;
-typedef JsComponentDef* JsComponentDefP;
-
 struct JsECInstance;
 typedef JsECInstance* JsECInstanceP;
 
@@ -625,14 +619,6 @@ struct JsDgnModel : RefCountedBaseWithCreate
         return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));
         }
 
-    ComponentModel* ToDgnComponentModel() 
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return dynamic_cast<ComponentModel*>(m_model.get());
-        }
-
-    JsComponentModelP ToComponentModel();
-
     RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
@@ -661,56 +647,6 @@ struct JsPlacement3d : RefCountedBaseWithCreate
 
     STUB_OUT_SET_METHOD(ElementBox, JsDRange3dP);
     STUB_OUT_SET_METHOD(Transform, JsTransformP);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct JsComponentModel : JsDgnModel
-{
-    JsComponentModel(ComponentModel& m) : JsDgnModel(m) {;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct JsComponentDef : RefCountedBaseWithCreate
-{
-    ComponentDefPtr m_cdef;
-
-    JsComponentDef(ComponentDef& cd) : m_cdef(&cd) {}
-    bool IsValid() const {return m_cdef.IsValid();}
-
-    Utf8String GetName() const {return m_cdef->GetName();}
-    JsDgnCategoryP GetCategory() const;
-    Utf8String GetCodeAuthority() const {return m_cdef->GetCodeAuthorityName();}
-    JsECClassP GetComponentECClass() const;
-
-    //static               FindByName(db: DgnDbP, name: Bentley_Utf8String): ComponentDefP;
-    static JsComponentDefP FindByName(JsDgnDbP db, Utf8StringCR name);
-
-    // QueryVariationByName(variationName: Bentley_Utf8String): DgnElementP;
-    JsDgnElementP QueryVariationByName(Utf8StringCR variationName);
-
-    // static GetParameters(instance: DgnElementP): ECInstanceP;
-    static JsECInstanceP GetParameters(JsDgnElementP instance);
-
-    //! Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
-    //! The caller should then assign values to the properties of the instance.
-    //! The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
-    JsECInstanceP MakeParameters();
-
-    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
-    JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
-
-
-    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
-    JsDgnElementP MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
-
-    STUB_OUT_SET_METHOD(Name,Utf8String)
-    STUB_OUT_SET_METHOD(Category,JsDgnCategoryP)
-    STUB_OUT_SET_METHOD(CodeAuthority,Utf8StringCR)
-    STUB_OUT_SET_METHOD(ComponentECClass,JsECClassP)
 };
 
 //=======================================================================================

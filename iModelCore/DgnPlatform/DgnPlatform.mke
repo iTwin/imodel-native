@@ -22,10 +22,8 @@
 %endif
 %endif
 
-%if defined (BENTLEYCONFIG_OPENCASCADE)
 dirToSearch = $(BuildContext)VendorAPI/opencascade/
 %include cincapnd.mki
-%endif
 
 #-----------------------------------------------------------
 # Root DgnPlatform directory
@@ -185,8 +183,6 @@ $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp 
 
 $(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
 
-$(CoreObjs)ComponentModel$(oext) :                  $(DgnCoreDir)ComponentModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
-
 $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
@@ -319,6 +315,8 @@ $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${M
 
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
+$(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}
+
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 
 $(CoreObjs)stringop$(oext) :                        $(ToolsDir)charutil/stringop.cpp ${MultiCompileDepends}
@@ -383,6 +381,8 @@ $(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable
 
 $(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
+$(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
+
 # NEEDSWORK: disabling this until we can settle schema issues
 #
 #$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
@@ -405,8 +405,6 @@ $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.c
 
 $(CoreObjs)SolidKernelUtil$(oext) :                 $(DgnBRepSrc)SolidKernelUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
 
-%if defined (BENTLEYCONFIG_OPENCASCADE)
-
 $(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 $(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
@@ -416,8 +414,6 @@ $(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp 
 $(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 $(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
-
-%endif
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -650,13 +646,9 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
+                            $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
-%if defined (BENTLEYCONFIG_FOLLY)
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-%endif
-
-%if defined (BENTLEYCONFIG_OPENCASCADE)
 # FoundationClasses
 LINKER_LIBRARIES_DELAYLOADED = \
     $(ContextSubPartsLibs)TKernel.lib \
@@ -679,7 +671,6 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKGeomAlgo.lib \
     $(ContextSubPartsLibs)TKShHealing.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
-%endif
 
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT

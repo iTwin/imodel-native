@@ -25,7 +25,6 @@ R"HTML(
 <script src="scripts/Cesium/Cesium.js"></script>
 <script src="scripts/Bentley/Bim.js"></script>
 <script src="scripts/Bentley/BimWidgets.js"></script>
-<script src="scripts/Bentley/BimInspectorWidget.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
 @import url(scripts/Bentley/Bim.css);
@@ -55,7 +54,6 @@ Cesium.when(viewset.readyPromise).then(function() {
     var tileset = new Bim.Tileset(viewset);
     Cesium.when(tileset.readyPromise).then(function() {
         var viewer = new Bim.Viewer('cesiumContainer', tileset, { 'cesiumViewerOptions': viewset.createCesiumViewerOptions() });
-        viewer.cesiumViewer.extend(Bim.viewerInspectorMixin);
         viewer.createDefaultToolbar();
     });
 });

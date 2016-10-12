@@ -29,57 +29,33 @@ DGNPLATFORM_REF_COUNTED_PTR(LineStyleElement);
 
 //__PUBLISH_SECTION_START__
 
+DGNPLATFORM_TYPEDEFS(LsCache)
+DGNPLATFORM_TYPEDEFS(LsCacheStyleEntry)
+DGNPLATFORM_TYPEDEFS(LsCacheStyleIterator)
+DGNPLATFORM_TYPEDEFS(LsComponent)
+DGNPLATFORM_TYPEDEFS(LsCompoundComponent)
+DGNPLATFORM_TYPEDEFS(LsDefinition)
+DGNPLATFORM_TYPEDEFS(LsInternalComponent)
+DGNPLATFORM_TYPEDEFS(LsLocation)
+DGNPLATFORM_TYPEDEFS(LsLineCodeComponent)
+DGNPLATFORM_TYPEDEFS(LsOffsetComponent)
+DGNPLATFORM_TYPEDEFS(LsPointComponent)
+DGNPLATFORM_TYPEDEFS(LsRasterImageComponent)
+DGNPLATFORM_TYPEDEFS(LsStroke)
+DGNPLATFORM_TYPEDEFS(LsStrokePatternComponent)
+DGNPLATFORM_TYPEDEFS(LsSymbolComponent)
+DGNPLATFORM_TYPEDEFS(LsSymbolReference)
+
+DGNPLATFORM_REF_COUNTED_PTR(LsComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsPointComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsStrokePatternComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsSymbolComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsCompoundComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsInternalComponent);
+DGNPLATFORM_REF_COUNTED_PTR(LsCache);
+DGNPLATFORM_REF_COUNTED_PTR(LsRasterImageComponent);
+
 BEGIN_BENTLEY_DGN_NAMESPACE
-
-#define LINESTYLE_TYPEDEFS(_name_) \
-    struct _name_; \
-    typedef struct _name_*          _name_##P, &_name_##R;  \
-    typedef struct _name_ const*    _name_##CP; \
-    typedef struct _name_ const&    _name_##CR;
-
-LINESTYLE_TYPEDEFS (LsCache)
-LINESTYLE_TYPEDEFS (LsCacheStyleEntry)
-LINESTYLE_TYPEDEFS (LsCacheStyleIterator)
-LINESTYLE_TYPEDEFS (LsComponent)
-LINESTYLE_TYPEDEFS (LsCompoundComponent)
-LINESTYLE_TYPEDEFS (LsDefinition)
-LINESTYLE_TYPEDEFS (LsInternalComponent)
-LINESTYLE_TYPEDEFS (LsLocation)
-LINESTYLE_TYPEDEFS (LsLineCodeComponent)
-LINESTYLE_TYPEDEFS (LsOffsetComponent)
-LINESTYLE_TYPEDEFS (LsPointComponent)
-LINESTYLE_TYPEDEFS (LsRasterImageComponent)
-LINESTYLE_TYPEDEFS (LsStroke)
-LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
-LINESTYLE_TYPEDEFS (LsSymbolComponent)
-LINESTYLE_TYPEDEFS (LsSymbolReference)
-
-struct DgnLineStyles;
-
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsComponent
-typedef RefCountedPtr <LsComponent> LsComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsPointComponent
-typedef RefCountedPtr <LsPointComponent> LsPointComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsStrokePatternComponent
-typedef RefCountedPtr <LsStrokePatternComponent> LsStrokePatternComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsSymbolComponent
-typedef RefCountedPtr <LsSymbolComponent> LsSymbolComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsCompoundComponent
-typedef RefCountedPtr <LsCompoundComponent> LsCompoundComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsInternalComponent
-typedef RefCountedPtr <LsInternalComponent> LsInternalComponentPtr;
-//! @ingroup LineStyleManagerModule
-//! Smart pointer wrapper for LsCache
-typedef RefCountedPtr <LsCache> LsCachePtr;
-
-typedef RefCountedPtr <LsRasterImageComponent> LsRasterImageComponentPtr;
-
 
 //! Special style numbers that form a subset of values that may passed to LineStyleManager::GetNameFromNumber() or returned from LineStyleManager::GetNumberFromName()
 //! @ingroup LineStyleManagerModule
@@ -319,8 +295,6 @@ public:
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
     void            GetJsonValue(JsonValueR componentDef);
     LsComponentType GetComponentType()  {return m_componentId.GetType();}
-
-    static LsComponentReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
 };
 
 //__PUBLISH_SECTION_START__
@@ -371,7 +345,7 @@ public:
     virtual bool        _IsBySegment() const {return false;}
     virtual bool        _HasLineCodes() const {return false;}
     virtual bool        _IsContinuousOrSingleDash() const {return false;}
-    virtual double      _GetMaxWidth (DgnModelP modelRef)       const {return 0.0;}
+    virtual double      _GetMaxWidth ()       const {return 0.0;}
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
@@ -381,7 +355,7 @@ public:
     virtual bool        _HasWidth               () const override  {return true;}
     virtual double      _GetLength              () const override  {return 0.0;}
     virtual double      _GetLengthForTexture    () const           {return _GetLength();}
-    virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
+    virtual void        _PostProcessLoad        () { return; }
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
     virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
@@ -456,7 +430,7 @@ protected:
     virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
     virtual BentleyStatus   _GetTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
-    virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
+    virtual double          _GetMaxWidth () const override  { return _HasWidth() ? m_trueWidth : 0.0; }
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
@@ -526,7 +500,7 @@ public:
     uint32_t            GetFlags            () const {return m_symFlags;}
     bool                IsNotScaled         () const {return 0 != (m_symFlags & LSSYM_NOSCALE);}
 
-    void                _PostProcessLoad    (DgnModelP modelRef) override;
+    void                _PostProcessLoad    () override;
     void                _ClearPostProcess   () override;
     void                Draw                (LineStyleContextR, TransformCR);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -536,7 +510,6 @@ public:
     void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
     DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
     DgnGeometryPartCPtr     GetGeometryPart         () const;
-    DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
     void                SetSymBase          (DPoint3dCP sz){m_symBase = *sz;}
@@ -599,7 +572,7 @@ private:
 
 public:
     uint32_t            GetMod1             () const {return m_mod1;}
-    double              _GetMaxWidth         (DgnModelP modelRef) const;
+    double              _GetMaxWidth         () const;
 
     StatusInt           Output              (LineStyleContextR, Render::LineStyleSymbCP, DPoint3dCP org, DPoint3dCP dir, double const* xScale=0,
                                                 DPoint3dCP clipOrg=0, DPoint3dCP clipEnd=0) const;
@@ -731,17 +704,17 @@ protected:
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
-    void            CalculateSize                       (DgnModelP modelRef);
+    void            CalculateSize                       ();
 
     void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
-    virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
+    virtual void    _PostProcessLoad            () override;
     virtual void    _ClearPostProcess           () override;
     size_t          GetNumComponents            () const {return m_components.size ();}
     double          GetOffset                   (size_t index)   const   {return m_components[index].m_offset;}
     virtual double  _GetLength                  () const {return m_size.x;}
-    virtual double  _GetMaxWidth                 (DgnModelP modelRef) const override   {return m_size.y;}
+    virtual double  _GetMaxWidth                 () const override   {return m_size.y;}
     virtual bool    _HasWidth                   () const override;
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
@@ -1001,7 +974,7 @@ public:
     virtual bool    _IsAffectedByWidth       (bool currentStatusOnly) const override;
     virtual double  _GetLength              () const override {return m_patternLength;}
     double          GetLength               (double*) const;
-    virtual double  _GetMaxWidth             (DgnModelP modelRef) const override;
+    virtual double  _GetMaxWidth             () const override;
     bool            RequiresLength          () const;
     virtual void _StartTextureGeneration() const override { m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; }
     virtual LsComponentPtr _GetForTextureGeneration() const override;
@@ -1148,14 +1121,14 @@ protected:
     virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
-    virtual void                    _PostProcessLoad        (DgnModelP modelRef) override;
+    virtual void                    _PostProcessLoad        () override;
     virtual void                    _ClearPostProcess       () override;
     virtual bool                    _IsContinuous           () const override {return NULL==m_strokeComponent.get () ? false : m_strokeComponent->_IsContinuous();}
     virtual double                  _GetLength              () const override;
     virtual StatusInt               _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     static LsPointComponent*        LoadLinePoint           (LsComponentReader*reader);
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
-    virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
+    virtual double                  _GetMaxWidth             ()  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
@@ -1294,7 +1267,7 @@ private:
     double              m_maxWidth;
     uint32_t            m_attributes;
     int                 m_hardwareLineCode;
-    bool                m_componentLoadPostProcessed;
+    BeAtomic<bool>      m_componentLoadPostProcessed;
 
     // For texture styles...
     mutable bool        m_firstTextureInitialized;
@@ -1331,7 +1304,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt UpdateStyleTable() const;
 
     void CheckForContinuous (LsStrokePatternComponentCP);
-    void PostProcessComponentLoad (DgnModelP modelRef);
+    void PostProcessComponentLoad ();
     void ClearPostProcess ();
     DGNPLATFORM_EXPORT void SetName (Utf8CP name);
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
@@ -1393,12 +1366,12 @@ public:
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
     //!  may reference other components.
-    DGNPLATFORM_EXPORT LsComponentP             GetComponentP           (DgnModelP modelRef) const;
+    DGNPLATFORM_EXPORT LsComponentP             GetComponentP           () const;
     //!  Gets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
     //!  may reference other components.
-    DGNPLATFORM_EXPORT LsComponentCP            GetComponentCP          (DgnModelP modelRef) const;
+    DGNPLATFORM_EXPORT LsComponentCP            GetComponentCP          () const;
     //!  Sets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
@@ -1502,46 +1475,34 @@ public:
 struct LsCache : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
+    friend struct DgnLineStyles;
 private:
     T_LsIdTree          m_idTree;
     DgnDbR              m_dgnDb;
-    bool                m_isLoaded;
 
-    LsCache(DgnDbR dgnProject) : m_dgnDb(dgnProject), m_isLoaded(false) {}
+    LsCache(DgnDbR dgnProject) : m_dgnDb(dgnProject) { Load(); }
     ~LsCache();
 
-    void                                    EmptyIdMap      ();   // EmptyIdMap and EmptyNameMap should probably always be called together.
-
-    //  virtual LineStyleComponentP     _FindComponent (ComponentID& componentID, bool searchSystemMaps) const;
+    BentleyStatus Load();
+    static LsCachePtr Create(DgnDbR project);
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
 public:
 
     typedef int (*PFNameMapProcessFunc) (NameNode const* nameNode, void* arg);
 
-    DGNPLATFORM_EXPORT LsIdNodeP                FindId                   (DgnStyleId styleId) const;
-    DGNPLATFORM_EXPORT void                     EmptyMaps                ();   //  Empty both the name tree and the id tree
-    T_LsIdIterator                              FirstId                  () {return m_idTree.FirstEntry();}
-    void                                        AddIdEntry               (LsDefinitionP nameRec);
-    DGNPLATFORM_EXPORT BentleyStatus            RemoveIdEntry            (DgnStyleId id);
-    T_LsIdTree*                                 GetIdMap                 () {return &m_idTree;}
-    DGNPLATFORM_EXPORT LsIdNodeP                SearchIdsForName         (Utf8CP name) const;
-    bool                                        IsLoaded                 () const {return m_isLoaded;}
-    void                                        TreeLoaded               () { m_isLoaded=true; }
-
-    DGNPLATFORM_EXPORT static LsDefinitionP     FindInMap                (DgnDbR dgndb, DgnStyleId styleId);
-    BentleyStatus                               Load                     ();
-
-    static LsCachePtr Create (DgnDbR project);
+    DGNPLATFORM_EXPORT LsIdNodeP FindId(DgnStyleId styleId) const;
+    T_LsIdIterator FirstId() {return m_idTree.FirstEntry();}
+    void AddIdEntry(LsDefinitionP nameRec);
+    DGNPLATFORM_EXPORT BentleyStatus RemoveIdEntry(DgnStyleId id);
+    T_LsIdTree* GetIdMap() {return &m_idTree;}
+    DGNPLATFORM_EXPORT LsIdNodeP SearchIdsForName(Utf8CP name) const;
+    DGNPLATFORM_EXPORT static LsDefinitionP FindInMap(DgnDbR dgndb, DgnStyleId styleId);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    //! Gets the line style map associated with the specified project.
-    //! @return a A pointer to the map if it is loaded or if not loaded but loadIfNotLoaded is true; NULL otherwise
-    DGNPLATFORM_EXPORT static LsCacheP  GetDgnDbCache             (DgnDbR, bool loadIfNotLoaded = true);
-
-    DGNPLATFORM_EXPORT Utf8String                  GetFileName             () const;    //!< Name of file used to load the map.
+    DGNPLATFORM_EXPORT Utf8String GetFileName() const;    //!< Name of file used to load the map.
 
     //! Searches the set of ID's associated with the LsCache.
     //! @param[in] styleId The ID that is used to associate an element with a line style.
@@ -1552,59 +1513,59 @@ public:
     //! returned may be a pointer to a stub used to translate from element style
     //! number to name.  Call LsDgnFileMap::Resolve to find the LsDefinition that
     //! is used to stroke the element.
-    DGNPLATFORM_EXPORT LsDefinitionP            GetLineStyleP   (DgnStyleId styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionP GetLineStyleP(DgnStyleId styleId) const;
     //! Searches the set of ID's associated with the LsCache.
     //! @param[in] styleId The ID that is used to associate an element with a line style.
     //! @return The associated LsDefinition object if found. Otherwise, it returns NULL. It
     //! also returns NULL for all of the special codes including STYLE_BYLEVEL, STYLE_BYCELL, and the
     //! reserved line codes 0 through 7.
     //! @see LsCache::GetLineStyleP
-    DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (DgnStyleId styleId) const;
+    DGNPLATFORM_EXPORT LsDefinitionCP GetLineStyleCP(DgnStyleId styleId) const;
 
-    //!  Gets a pointer to the associated DgnDb.
-    //!  @remark Use GetDgnDbCache to get a pointer to a DgnDb's LsCache.
-    DGNPLATFORM_EXPORT DgnDbCR      GetDgnDb  () const;
+    //!  Gets a reference to the associated DgnDb.
+    //!  @remark Use DgnDb::LineStyles().GetCache() to get a reference to a DgnDb's LsCache.
+    DGNPLATFORM_EXPORT DgnDbCR GetDgnDb() const;
 
     typedef LsCacheStyleIterator const_iterator;
     typedef const_iterator iterator;    //!< only const iteration is possible
 
     //! Used to step through all of the LsCacheStyleEntry entries for an LsCache. See
     //! LsCacheStyleIterator for an example.
-    DGNPLATFORM_EXPORT LsCacheStyleIterator            begin () const;
-    DGNPLATFORM_EXPORT LsCacheStyleIterator            end   () const;
+    DGNPLATFORM_EXPORT LsCacheStyleIterator begin() const;
+    DGNPLATFORM_EXPORT LsCacheStyleIterator end() const;
     };
 
 //=======================================================================================
 //! Groups methods for Line Styles.
 // @bsiclass
 //=======================================================================================
-struct DgnLineStyles : public DgnDbTable
+struct DgnLineStyles : RefCountedBase
 {
 //__PUBLISH_SECTION_END__
+    friend struct DgnDb;
 private:
-    DEFINE_T_SUPER(DgnDbTable);
-    friend struct DgnStyles;
+    typedef bmap<LsLocation, LsComponentPtr> LoadedComponents;
 
-    LsCachePtr m_lineStyleMap;
-    bmap<LsLocation, LsComponentPtr> m_loadedComponents;
+    DgnDbR              m_dgndb;
+    LsCachePtr          m_lineStyleMap;
+    LoadedComponents    m_loadedComponents;
+    BeMutex             m_mutex;
 
-
-    //! Only the outer class is designed to construct this class.
-    DgnLineStyles(DgnDbR db) : T_Super(db) {}
-
+    DgnLineStyles(DgnDbR db) : m_dgndb(db) { }
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
     DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentId componentId);
+    LsComponent* GetComponent(LsLocationCR location);
 
 //__PUBLISH_SECTION_START__
+public:
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
-    DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
-    DGNPLATFORM_EXPORT LsCacheR ReloadMap();
+    DGNPLATFORM_EXPORT LsCacheR GetCache();
 };
 
 //__PUBLISH_SECTION_END__

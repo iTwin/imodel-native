@@ -72,6 +72,53 @@ DgnDbStatus DgnCategory::BindParams(ECSqlStatement& stmt)
         return DgnDbStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (0 == strcmp(CAT_PROP_Descr, name))
+        {
+        value.SetUtf8CP(GetDescription());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(CAT_PROP_Rank, name))
+        {
+        value.SetInteger(static_cast<int32_t>(m_data.m_rank));
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(CAT_PROP_Scope, name))
+        {
+        value.SetInteger(static_cast<int32_t>(m_data.m_scope));
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+
+    if (0 == strcmp(CAT_PROP_Descr, name))
+        {
+        SetDescription(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(CAT_PROP_Rank, name))
+        {
+        m_data.m_rank = static_cast<Rank>(value.GetInteger());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(CAT_PROP_Scope, name))
+        {
+        m_data.m_scope = static_cast<Scope>(value.GetInteger());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -285,6 +332,43 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
         }
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (0 == strcmp(SUBCAT_PROP_Descr, name))
+        {
+        value.SetUtf8CP(GetDescription());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(SUBCAT_PROP_Props, name))
+        {
+        value.SetUtf8CP(m_data.m_appearance.ToJson().c_str());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+
+    if (0 == strcmp(SUBCAT_PROP_Descr, name))
+        {
+        SetDescription(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(SUBCAT_PROP_Props, name))
+        {
+        m_data.m_appearance.FromJson(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,7 +761,7 @@ DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnImportContext::RemapCategory(DgnCategoryId source)
+DgnCategoryId DgnImportContext::_RemapCategory(DgnCategoryId source)
     {
     if (!IsBetweenDbs())
         return source;
@@ -692,7 +776,7 @@ DgnCategoryId DgnImportContext::RemapCategory(DgnCategoryId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId source)
+DgnSubCategoryId DgnImportContext::_RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId source)
     {
     if (!IsBetweenDbs())
         return source;
@@ -707,7 +791,7 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnImportContext::RemapGeometryStreamIds(GeometryStreamR geom)
+DgnDbStatus DgnImportContext::_RemapGeometryStreamIds(GeometryStreamR geom)
     {
     return GeometryStreamIO::Import(geom, geom, *this);
     }
@@ -742,4 +826,62 @@ DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el)
 DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
     {
     return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+    DgnCategoryId cid;
+        {
+        ECN::ECValue v;
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, "ParentId") || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance(), "");
+            }
+        cid = DgnCategoryId((uint64_t) v.GetLong());
+        if (!cid.IsValid())
+            {
+            stat = DgnDbStatus::BadArg;
+            return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance(), "");
+            }
+        }
+
+    Utf8CP name = nullptr;
+    ECN::ECValue codeValue;
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(codeValue, "CodeValue"))
+        {
+        stat = DgnDbStatus::BadArg;
+        return DgnSubCategory::CreateParams(db, cid, "", Appearance(), "");
+        }
+    name = codeValue.GetUtf8CP();
+
+    ECN::ECValue props;
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(props, "Properties"))
+        {
+        stat = DgnDbStatus::BadArg;
+        return DgnSubCategory::CreateParams(db, cid, name, Appearance(), "");
+        }
+    Appearance appearance(props.GetUtf8CP());
+
+    ECN::ECValue descr;
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(props, "Descr"))
+        {
+        stat = DgnDbStatus::BadArg;
+        return DgnSubCategory::CreateParams(db, cid, name, appearance, "");
+        }
+    DgnSubCategory::CreateParams params(db, cid, name, appearance, !descr.IsNull() ? descr.GetUtf8CP() : "");
+
+    return params;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElement::CreateParams dgn_ElementHandler::SubCategory::_InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    return DgnSubCategory::CreateParamsFromECInstance(inStat, db, properties);
     }

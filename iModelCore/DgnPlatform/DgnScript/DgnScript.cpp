@@ -64,7 +64,6 @@ struct DgnScriptContext : BeJsContext
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec, bool forceReload);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
     DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -169,6 +168,9 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
     {
     functionReturnStatus = -1;
 
+    if (nullptr == el.ToGeometrySource3dP() && nullptr == el.ToGeometrySource2dP())
+        return DgnDbStatus::WrongClass;
+
     DgnDbStatus status = LoadProgram(el.GetDgnDb(), jsEgaFunctionName, false);
     if (DgnDbStatus::Success != status)
         return status;
@@ -183,7 +185,18 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
 
     BeginCallContext();
     BeJsObject parmsObj = EvaluateJson(parms);
-    BeJsNativePointer jsel = ObtainProjectedClassInstancePointer(new JsDgnElement(el), true);
+    BeJsNativePointer jsel; // try to get the best fit for the element type
+    auto g3d = dynamic_cast<GeometricElement3d*>(&el);
+    if (nullptr != g3d)
+        jsel = ObtainProjectedClassInstancePointer(new JsGeometricElement3d(*g3d), true);
+    else
+        {
+        auto g2d = dynamic_cast<GeometricElement2d*>(&el);
+        if (nullptr != g2d)
+            jsel = ObtainProjectedClassInstancePointer(new JsGeometrySource2d(*g2d), true);
+        else
+            jsel = ObtainProjectedClassInstancePointer(new JsDgnElement(el), true); // It's some kind of geometry source. We don't know the concrete class.
+        }
     BeJsNativePointer jsorigin = ObtainProjectedClassInstancePointer(new JsDPoint3d(origin), true);
     BeJsNativePointer jsangles = ObtainProjectedClassInstancePointer(new JsYawPitchRollAngles(angles), true);
     BeJsValue retval = jsfunc(jsel, jsorigin, jsangles, parmsObj);
@@ -244,55 +257,6 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for an DgnDbScript - must return an int", functionName.c_str());
         BeAssert(false && "DgnDbScript has incorrect return type");
-        return DgnDbStatus::NotEnabled;
-        }
-
-    BeJsNumber num(retval);
-    functionReturnStatus = num.GetIntegerValue();
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName)
-    {
-    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.ExecuteComponentGenerateElements(functionReturnStatus, componentModel, destModel, instance, cdef, functionName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR jsFunctionName)
-    {
-    functionReturnStatus = -1;
-
-    DgnDbStatus status = LoadProgram(componentModel.GetDgnDb(), jsFunctionName.c_str(), false);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName.c_str());
-    if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
-        {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName.c_str());
-        BeAssert(false && "model solver not registered");
-        return DgnDbStatus::NotEnabled;
-        }
-
-    BeginCallContext();
-    BeJsObject jsInstance = ObtainProjectedClassInstancePointer(new JsECInstance(const_cast<ECN::IECInstanceR>(instance)), true);
-    BeJsNativePointer jsCompDef = ObtainProjectedClassInstancePointer(new JsComponentDef(cdef), true);
-    BeJsNativePointer jsCompModel = ObtainProjectedClassInstancePointer(new JsComponentModel(componentModel), true);
-    BeJsNativePointer jsDestModel = ObtainProjectedClassInstancePointer(new JsDgnModel(destModel), true);
-    // export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
-    BeJsValue retval = jsfunc(jsCompModel, jsDestModel, jsInstance, jsCompDef);
-    EndCallContext();
-
-    if (!retval.IsNumber())
-        {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName.c_str());
-        BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
 
@@ -540,9 +504,11 @@ static bool isNonEmptyString(ECN::ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-static bvector<Utf8String> parseCDL(Utf8StringCR cdl)
+static bvector<Utf8String> parseCDL(Utf8StringCR cdlIn)
     {
     bvector<Utf8String> items;
+
+    Utf8String cdl = cdlIn.substr(0, cdlIn.find(')'));
 
     size_t offset = 0;
     Utf8String arg;
@@ -564,21 +530,23 @@ static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8Strin
     std::string s (textIn);
     while (std::regex_search(s, sm, re))
         {
-        s = sm.suffix().str();
-
         if (3 != sm.size())
+            {
+            s = sm.suffix();
             continue;
+            }
 
         auto name = sm[1].str();
         if (name != entryPoint)
+            {
+            s = sm.suffix();
             continue;
+            }
 
-#ifdef NEEDS_WORK // regex problem - I seem to get the rest of the function along with the args...
         auto haveArgs = parseCDL(sm[2].str().c_str());
         auto wantArgs = parseCDL(args);
         if (haveArgs.size() != wantArgs.size())
             return BSIERROR;
-#endif
 
         return BSISUCCESS;
         }
@@ -596,19 +564,17 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
     std::string s(textIn);
     while (std::regex_search(s, sm, re))
         {
+        if (3 == sm.size())
+            entryPoint = sm[1].str().c_str();
+
         s = sm.suffix().str();
-
-        if (3 != sm.size())
-            continue;
-
-        entryPoint = sm[1].str().c_str();
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
     if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
         {
@@ -638,7 +604,7 @@ DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValue
             return DgnDbStatus::BadArg;
         }
 
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------

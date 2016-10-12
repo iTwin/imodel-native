@@ -42,6 +42,9 @@ enum class ParamId
     Tolerance,
     Depth,
     Polylines,
+    GeographicLocation,
+    GlobeImagery,
+    Standalone,
     Invalid,
 };
 
@@ -62,15 +65,18 @@ struct CommandParam
 //=======================================================================================
 static CommandParam s_paramTable[] =
     {
-        { L"i", L"input", L"Name of the .bim file to publish", true },
-        { L"v", L"view", L"Name of the view that will be initially opened in the viewer. If omitted, the default view is used", false },
-        { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
-        { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
-        { L"h", L"groundheight",L"Ground height (meters).", false},
-        { L"g", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
-        { L"t", L"tolerance",L"Tolerance (meters).", false},
-        { L"d", L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"p", L"polylines", L"Publish poly-lines", false, true },
+        { L"i",  L"input", L"Name of the .bim file to publish", true },
+        { L"v",  L"view", L"Name of the view that will be initially opened in the viewer. If omitted, the default view is used", false },
+        { L"o",  L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
+        { L"n",  L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
+        { L"gh", L"groundheight",L"Ground height (meters).", false},
+        { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
+        { L"t",  L"tolerance",L"Tolerance (meters).", false},
+        { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
+        { L"pl", L"polylines", L"Publish polylines", false, true },
+        { L"l",  L"geographicLocation", L"Geographic location (latitude, longitude)", false },
+        { L"ip", L"imageryProvider" L"Imagery Provider", false, false },
+        { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -94,11 +100,15 @@ struct CommandArg
             ++raw;
 
         WCharCP equalPos = wcschr(raw, '=');
+
+        if (nullptr == equalPos)        // Batch files don't support=
+            equalPos = wcschr(raw, ':');
+
         bool haveArgValue = nullptr != equalPos;
         WCharCP argValue = haveArgValue ? equalPos+1 : nullptr;
         auto paramNameLen = haveArgValue ? equalPos - raw : wcslen(raw);
 
-        if (0 == paramNameLen || (!verboseParamName && 1 != paramNameLen))
+        if (0 == paramNameLen)  
             return;
 
         for (size_t i = 0; i < s_paramTableSize; i++)
@@ -141,10 +151,13 @@ private:
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
     bool            m_polylines = false;
+    Utf8String      m_imageryProvider;
+    bool            m_standalone = false;
+    GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -155,10 +168,14 @@ public:
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
+    GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+
+    Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
     ViewControllerPtr LoadViewController(DgnDbR db);
+    Json::Value  GetViewerOptions () const;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,6 +244,20 @@ DgnDbPtr PublisherParams::OpenDgnDb() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value  PublisherParams::GetViewerOptions () const
+    {
+    Json::Value viewerOptions;
+
+    viewerOptions["displayInPlace"] = !m_standalone;
+    if (!m_imageryProvider.empty())
+        viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
+
+    return viewerOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
@@ -273,13 +304,44 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Depth:
                 if (1 != swscanf (arg.m_value.c_str(), L"%u", &m_depth))
                     {
-                    printf ("Expected unsigned integer for depth parameter");
+                    printf ("Expected unsigned integer for depth parameter\n");
                     return false;
                     }
                 break;
             case ParamId::Polylines:
                 m_polylines = true;
                 break;
+            case ParamId::GeographicLocation:
+                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.latitude, &m_geoLocation.longitude))
+                    {
+                    printf ("Unrecognized geographic location: %ls\n", av[i]);
+                    return false;
+                    }
+                m_standalone = false;
+                break;
+            case ParamId::GlobeImagery:
+                m_imageryProvider = Utf8String(arg.m_value.c_str());
+                break;
+            case ParamId::Standalone:
+                m_standalone = true;
+                break;
+            case ParamId::Tolerance:
+                {
+                static const double     s_minTolerance = 1.0E-5, s_maxTolerance = 100.0;
+
+                if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_tolerance))
+                    {
+                    printf ("Unrecognized tolerance value: %ls\n", av[i]);
+                    return false;
+                    }
+                if (m_tolerance < s_minTolerance || s_maxTolerance > s_maxTolerance)
+                    {
+                    printf ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
+                    return false;
+                    }
+                break;
+                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -320,12 +382,13 @@ private:
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
     virtual TileGenerationCacheCR _GetCache() const override { BeAssert(nullptr != m_generator); return m_generator->GetCache(); }
     virtual bool _OmitFromTileset(TileNodeCR tile) const override { return m_emptyNodes.end() != std::find(m_emptyNodes.begin(), m_emptyNodes.end(), &tile); }
+    virtual bool _AllTilesPublished() const { return true; }
 
     Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
 
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
-    Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint);
+    Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -347,8 +410,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
-        : PublisherContext(viewController, outputDir, tilesetName, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth, size_t maxTilesPerDirectory, uint32_t publishDepth, bool publishPolylines)
+        : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, maxTilesPerDirectory), m_publishedTileDepth(publishDepth)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -439,6 +502,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
+    bset<DgnViewId> publishedViews;
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
@@ -465,6 +529,18 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         if (categorySelector.IsValid())
             entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
 
+        auto displayStyle = GetDgnDb().Elements().Get<DisplayStyle>(spatialView->GetDisplayStyleId());
+
+        if (displayStyle.IsValid())
+            {
+            ColorDef    backgroundColor = displayStyle->GetBackgroundColor();
+            auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
+            colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
+            colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
+            colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
+            }
+
+        publishedViews.insert (view.GetId());
         viewsJson[view.GetId().ToString()] = entry;
         }
 
@@ -473,7 +549,11 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["models"] = GetModelsJson (m_allModels);
     json["categories"] = GetCategoriesJson (m_allCategories);
-    json["defaultView"] = GetViewController().GetViewId().ToString();
+
+    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
+        json["defaultView"] = publishedViews.begin()->ToString();
+    else
+        json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
     }
@@ -481,13 +561,30 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint)
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params)
     {
     Json::Value json;
     Status      status;
 
     if (Status::Success != (status = GetViewsJson (json, transform, groundPoint)))
         return status;
+
+
+    Json::Value viewerOptions = params.GetViewerOptions();
+
+    // If we are displaying "in place" but don't have a real geographic location - default to natural earth.
+    if (IsGeolocated())
+        {
+        viewerOptions["displayInPlace"]= true;
+        }
+    else
+        {
+        if (viewerOptions["displayInPlace"].asBool() &&
+            viewerOptions["imageryProvider"].isNull())
+            viewerOptions["imageryProvider"] = "NaturalEarth";
+        }
+
+    json["viewerOptions"] = viewerOptions;
 
     BeFileName jsonFileName = m_outputDir;
     jsonFileName.AppendString(m_rootName.c_str()).AppendExtension(L"json");
@@ -631,7 +728,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         groundPoint.z = params.GetGroundHeight();
         }
 
-    return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint);
+    return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,7 +823,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
     static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, s_maxTilesPerDirectory, createParams.GetDepth(), createParams.WantPolylines());
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

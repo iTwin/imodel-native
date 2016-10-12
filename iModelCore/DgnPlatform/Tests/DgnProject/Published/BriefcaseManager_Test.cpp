@@ -1018,6 +1018,22 @@ public:
 
         return db;
         }
+
+    DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
+        {
+        SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+        SubjectPtr modelSubject = Subject::Create(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
+        EXPECT_TRUE(modelSubject.IsValid());
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*modelSubject));
+        EXPECT_TRUE(db.Elements().Insert<Subject>(*modelSubject).IsValid());
+        PhysicalModelPtr model = PhysicalModel::Create(*modelSubject, DgnModel::CreateModelCode(name));
+        EXPECT_TRUE(model.IsValid());
+        IBriefcaseManager::Request req;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
+        auto status = model->Insert();
+        EXPECT_EQ(DgnDbStatus::Success, status);
+        return DgnDbStatus::Success == status ? model : nullptr;
+        }
 };
 DgnPlatformSeedManager::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
@@ -1136,22 +1152,6 @@ struct LocksManagerTest : RepositoryManagerTest
                 EXPECT_TRUE(ownership.GetSharedOwners().end() != ownership.GetSharedOwners().find(owningBcId));
                 break;
             }
-        }
-
-    DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
-        {
-        SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-        SubjectPtr modelSubject = Subject::Create(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
-        EXPECT_TRUE(modelSubject.IsValid());
-        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*modelSubject));
-        EXPECT_TRUE(db.Elements().Insert<Subject>(*modelSubject).IsValid());
-        PhysicalModelPtr model = PhysicalModel::Create(*modelSubject, DgnModel::CreateModelCode(name));
-        EXPECT_TRUE(model.IsValid());
-        IBriefcaseManager::Request req;
-        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
-        auto status = model->Insert();
-        EXPECT_EQ(DgnDbStatus::Success, status);
-        return DgnDbStatus::Success == status ? model : nullptr;
         }
 
     DgnElementCPtr CreateElement(DgnModelR model, bool acquireLocks=true)
@@ -2559,6 +2559,42 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Attempting unsucessfully to reproduce an issue described by Mehreen Javaid.
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, BatchReserveAndInsert)
+    {
+    DgnDbPtr pDb = SetupDb(L"BatchReserveAndInsert.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+    IBriefcaseManagerR mgr = db.BriefcaseManager();
+
+    EXPECT_TRUE(CreateModel("MyNewModel", db).IsValid());
+
+    IBriefcaseManager::Request req;
+
+    bvector<DgnElementPtr> elemsToInsert;
+    for (uint32_t i = 0; i < 5; i++)
+        {
+        AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
+        style->SetName(Utf8PrintfString("Style%u", i).c_str());
+        style->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+        elemsToInsert.push_back(style);
+        }
+
+    EXPECT_EQ(RepositoryStatus::Success, mgr.Acquire(req).Result());
+
+    for (auto& elem : elemsToInsert)
+        {
+        DgnDbStatus status;
+        EXPECT_TRUE(elem->Insert(&status).IsValid());
+        EXPECT_EQ(DgnDbStatus::Success, status);
+        }
+
+    elemsToInsert.clear();
+    db.SaveChanges();
     }
 
 

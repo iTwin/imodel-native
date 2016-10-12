@@ -70,8 +70,6 @@ DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
 DGNPLATFORM_TYPEDEFS(ColorDef)
-DGNPLATFORM_TYPEDEFS(ComponentDef)
-DGNPLATFORM_TYPEDEFS(ComponentModel)
 DGNPLATFORM_TYPEDEFS(DecorateContext)
 DGNPLATFORM_TYPEDEFS(DefinitionElement)
 DGNPLATFORM_TYPEDEFS(Dgn3DInputEvent)
@@ -203,6 +201,7 @@ DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
 DGNPLATFORM_TYPEDEFS(TxnManager)
+DGNPLATFORM_TYPEDEFS(DgnLineStyles)
 DGNPLATFORM_TYPEDEFS(UrlLink)
 DGNPLATFORM_TYPEDEFS(ViewContext)
 DGNPLATFORM_TYPEDEFS(ViewController)
@@ -217,8 +216,6 @@ DGNPLATFORM_REF_COUNTED_PTR(CameraViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
 DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
-DGNPLATFORM_REF_COUNTED_PTR(ComponentDef)
-DGNPLATFORM_REF_COUNTED_PTR(ComponentModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(DgnDb)
@@ -274,6 +271,7 @@ DGNPLATFORM_REF_COUNTED_PTR(Subject)
 DGNPLATFORM_REF_COUNTED_PTR(TextString)
 DGNPLATFORM_REF_COUNTED_PTR(TextStringStyle)
 DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
+DGNPLATFORM_REF_COUNTED_PTR(DgnLineStyles)
 DGNPLATFORM_REF_COUNTED_PTR(UrlLink)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
@@ -323,7 +321,7 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnGeometryPartId, DgnElementId) //!< A DgnElementI
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#Styles.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#LineStyles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.

@@ -958,7 +958,6 @@ TEST(ECDbInstances3, BGRJoinedTable)
     schemaContext->RemoveSchemaLocater(dgnDb->GetSchemaLocater());
 
     dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    dgnDb->ClearECDbCache();
     dgnDb->SaveChanges();
 
     //BeFileName bgr(L"f:\\temp\\BGRSubset.i.ibim");

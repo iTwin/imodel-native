@@ -228,19 +228,6 @@ public:
 };
 
 //=======================================================================================
-//! The default code-issuing authority for Component Definitions.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct ComponentAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-public:
-    ComponentAuthority(CreateParams const& params) : T_Super(params) { }
-
-    DGNPLATFORM_EXPORT static DgnCode CreateVariationCode(Utf8StringCR solutionId, Utf8StringCR componentDefName);
-};
-
-//=======================================================================================
 //! The default code-issuing authority for DgnGeometryParts.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
@@ -290,11 +277,6 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Material : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_MaterialAuthority, MaterialAuthority, Material, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Component : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ComponentAuthority, ComponentAuthority, Component, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority

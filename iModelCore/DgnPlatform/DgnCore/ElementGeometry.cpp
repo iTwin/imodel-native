@@ -10,9 +10,7 @@
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 using namespace flatbuffers;
 
@@ -700,9 +698,7 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::CurvePrimitive:
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         case OpCode::OpenCascadeBRep:
-#endif
         case OpCode::TextString:
             return true;
 
@@ -1021,7 +1017,6 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
     Append(Operation(OpCode::BsplineSurface, (uint32_t) buffer.size(), &buffer.front()));
     }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1055,14 +1050,6 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     fbb.Finish(mloc);
     Append(Operation(OpCode::OpenCascadeBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
     }
-#else
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
-    {
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
@@ -1478,7 +1465,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, MSBsplineSurfacePtr& s
     return surface.IsValid();
     }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1503,15 +1489,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr&
 
     return true;
     }
-#else
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
-    {
-    return false;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
@@ -1969,7 +1946,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             ISolidKernelEntityPtr entityPtr;
@@ -1980,7 +1956,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             elemGeom = GeometricPrimitive::Create(entityPtr);
             return true;
             }
-#endif
 
         case GeometryStreamIO::OpCode::TextString:
             {
@@ -2459,13 +2434,11 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 break;
                 }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::OpenCascadeBRep\n").c_str());
                 break;
                 }
-#endif
 
             case GeometryStreamIO::OpCode::AreaFill:
                 {
@@ -2830,7 +2803,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 currGraphic = subGraphic.get();
 
                 mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
-                geomParamsChanged = false; // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
+
+                // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
+                // ...unless we're a SimplifyGraphic, in which case our geometry processor wants the params resolved immediately
+                geomParamsChanged = !isQVis; 
+
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
 
@@ -3135,7 +3112,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 entryId.Increment();
@@ -3158,7 +3134,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 currGraphic->AddBody(*entityPtr);
                 break;
                 }
-#endif
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -3430,10 +3405,8 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::BsplineSurface:
             return EntryType::BsplineSurface;
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             return EntryType::SolidKernelEntity;
-#endif
 
         case GeometryStreamIO::OpCode::TextString:
             return EntryType::TextString;
@@ -3499,14 +3472,12 @@ bool GeometryCollection::Iterator::IsSurface() const
             return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
-#endif
 
         default:
             return false;
@@ -3534,14 +3505,12 @@ bool GeometryCollection::Iterator::IsSolid() const
             return (geom.IsValid() && geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
-#endif
 
         default:
             return false;
@@ -3615,10 +3584,16 @@ void GeometryCollection::Iterator::ToNext()
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                {
+                reader.Get(m_egOp, m_state->m_localRange);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 DgnGeometryPartId geomPartId;
-                Transform     geomToSource;
+                Transform         geomToSource;
 
                 m_state->m_geomStreamEntryId.Increment();
 
@@ -3627,6 +3602,7 @@ void GeometryCollection::Iterator::ToNext()
 
                 m_state->m_geomStreamEntryId.SetActiveGeometryPart(geomPartId);
                 m_state->m_geomToSource = geomToSource;
+                m_state->m_localRange = DRange3d::NullRange();
                 m_state->m_geometry = nullptr;
 
                 if (m_state->m_geomParams.GetCategoryId().IsValid())
@@ -3665,10 +3641,12 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb) : m_state(dgnDb)
+GeometryCollection::GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, DgnCategoryId categoryId, TransformCR sourceToWorld) : m_state(dgnDb)
     {
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
+    m_state.m_geomParams.SetCategoryId(categoryId);
+    m_state.m_sourceToWorld = sourceToWorld;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3926,7 +3904,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement, DRange3dCR localRange, size_t facets)
     {
     if (m_isPartCreate)
         {
@@ -3937,18 +3915,29 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     if (!m_havePlacement)
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
-    DRange3d partRange;
-    size_t partFacets;
-    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(partRange, partFacets, m_dgnDb, geomPartId))
-        return false; // part probably doesn't exist...
+    DRange3d    partRange = localRange;
 
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(partRange, false, partFacets); // Parts are already handled as sub-graphics...
+    OnNewGeom(partRange, false, facets); // Parts are already handled as sub-graphics...
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
+    {
+    size_t      facets;
+    DRange3d    localRange;
+
+    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(localRange, facets, m_dgnDb, geomPartId))
+        return false; // part probably doesn't exist...
+
+    return Append(geomPartId, geomToElement, localRange, facets);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4482,17 +4471,7 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 return false; // Nested parts are invalid...
 
             case GeometryStreamIO::OpCode::BasicSymbology:
-                {
-                if (ignoreSymbology)
-                    break;
-
-                basicSymbCount++;
-
-                if (1 == basicSymbCount && ignoreInitialSymbology)
-                    break;
-
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
-                }
+                basicSymbCount++; // Increment symbology change count and fall through...
 
             case GeometryStreamIO::OpCode::LineStyleModifiers:
             case GeometryStreamIO::OpCode::AreaFill:
@@ -4505,7 +4484,7 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 if (1 == basicSymbCount && ignoreInitialSymbology)
                     break;
 
-                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
+                return false; // NOTE: Don't need to support this currently...V8 converter doesn't need to post-instance GeometryStreams with symbology changes...
                 }
 
             default:
@@ -4523,8 +4502,9 @@ bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, b
                 if (partEgOp.m_dataSize != egOp.m_dataSize)
                     return false;
 
-                // NEEDSWORK: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
-                break;
+                basicSymbCount++; // Want to return false if a symbology change is encountered AFTER the first geometric primitive.
+
+                break; // NOTE: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
                 }
             }
         }
@@ -4629,6 +4609,55 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(DgnDbR db, bool is3d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStreamCR stream)
+    {
+    DgnCategoryId categoryId = source.GetCategoryId();
+
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    GeometryBuilderPtr builder;
+
+    if (nullptr != source.ToGeometrySource3d())
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
+    else
+        builder = new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
+
+    if (!builder.IsValid())
+        return nullptr;
+    
+    GeometryCollection collection(stream, source.GetSourceDgnDb(), source.GetCategoryId(), source.GetPlacementTransform());
+
+    for (auto iter : collection)
+        {
+        builder->Append(iter.GetGeometryParams());
+
+        DgnGeometryPartId partId = iter.GetGeometryPartId();
+
+        if (partId.IsValid())
+            {
+            builder->Append(partId, iter.GetGeometryToSource());
+            continue;
+            }
+
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+
+        BeAssert(geom.IsValid());
+        if (!geom.IsValid())
+            continue;
+
+        if (!iter.GetSubGraphicLocalRange().IsNull())
+            builder->SetAppendAsSubGraphics();
+
+        builder->Append(*geom);
+        }
+
+    return builder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilderPtr GeometryBuilder::CreateWithAutoPlacement(DgnModelR model, DgnCategoryId categoryId)
@@ -4655,11 +4684,22 @@ GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId catego
     if (nullptr == geomModel)
         return nullptr;
 
-    DPoint3d origin;
-    YawPitchRollAngles angles;
+    DPoint3d            origin;
+    RotMatrix           rMatrix;
+    YawPitchRollAngles  angles;
 
-    if (!YawPitchRollAngles::TryFromTransform(origin, angles, transform))
-        return nullptr;
+    transform.GetTranslation(origin);
+    transform.GetMatrix(rMatrix);
+
+    // NOTE: YawPitchRollAngles::TryFromRotMatrix compares against Angle::SmallAngle, which after
+    //       consulting with Earlin is too strict for our purposes and shouldn't be considered a failure.
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
+        {
+        RotMatrix   resultMatrix = angles.ToRotMatrix();
+
+        if (rMatrix.MaxDiff(resultMatrix) > 1.0e-5)
+            return nullptr;
+        }
 
     if (geomModel->Is3d())
         {

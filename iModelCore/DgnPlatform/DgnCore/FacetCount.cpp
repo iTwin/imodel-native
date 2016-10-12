@@ -6,10 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 #include <GeomLib_IsPlanarSurface.hxx>
-#endif
 
 #define TRIANGLE_MULTIPLIER 2
 
@@ -368,7 +366,14 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
     return options;
     }
 
-#ifdef BENTLEYCONFIG_OPENCASCADE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool uvInvalid(DRange2d uvs)
+    {
+    return (Precision::IsInfinite(uvs.low.x) || Precision::IsInfinite(uvs.high.x) || Precision::IsInfinite(uvs.low.y) || Precision::IsInfinite(uvs.high.y));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,6 +402,17 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
             DRange2d uvRange;
             BRepTools::UVBounds((const TopoDS_Face&)faceExplorer.Current(), uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
+
+            // Work around bug in OpenCASCADE - they throw exception for offset surface.
+            DRange2d surfUV;
+            faceSurf->Bounds(surfUV.low.x, surfUV.high.x, surfUV.low.y, surfUV.high.y);
+
+            if (uvInvalid(uvRange))
+                continue;
+
+            // Trim infinite surfaces
+            if (uvInvalid(surfUV))
+                faceSurf = new Geom_RectangularTrimmedSurface(faceSurf, uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
 
             size_t uStrokeMax = 0, vStrokeMax = 0;
             double stepSize = 1.0/3;
@@ -436,19 +452,14 @@ size_t  FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     return facetCount;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount(ISolidKernelEntityCR entity) const
     {
-#ifdef BENTLEYCONFIG_OPENCASCADE
     auto shape = SolidKernelUtil::GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? GetFacetCount(*shape) : 0;
-#else
-    return 0;
-#endif
     }
 

@@ -8,9 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 #include <DgnPlatform/DgnBRep/OCBRep.h>
-#endif
 
 using namespace flatbuffers;
 
@@ -94,7 +92,6 @@ bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
             m_uv.y             < rhs.m_uv.y);
     }
 
-#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
 +===============+===============+===============+===============+===============+======*/
@@ -111,7 +108,7 @@ virtual Transform _GetEntityTransform () const override {Transform transform = O
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetEntityTransform (TransformCR transform) override
+virtual bool _SetEntityTransform (TransformCR transform) override
     {
     DPoint3d    origin;
     RotMatrix   rMatrix, rotation, skewFactor;
@@ -132,47 +129,56 @@ virtual void _SetEntityTransform (TransformCR transform) override
         shapeTrans.InitIdentity();
         }
 
-    if (!goopTrans.IsIdentity())
+    try
         {
-        double  goopScale;
-
-        goopTrans.GetMatrix(rMatrix);
-
-        if (rMatrix.IsUniformScale(goopScale))
+        if (!goopTrans.IsIdentity())
             {
-            gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
+            double  goopScale;
 
-            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-            BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
-    
-            if (!transformer.IsDone())
+            goopTrans.GetMatrix(rMatrix);
+
+            if (rMatrix.IsUniformScale(goopScale))
                 {
-                BeAssert(false);
-                return;
+                gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
+
+                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+                BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
+    
+                if (!transformer.IsDone())
+                    {
+                    BeAssert(false);
+                    return false;
+                    }
+
+                m_shape = transformer.ModifiedShape(m_shape);
+                }
+            else
+                {
+                gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
+
+                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+                BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
+    
+                if (!transformer.IsDone())
+                    {
+                    BeAssert(false);
+                    return false;
+                    }
+
+                m_shape = transformer.ModifiedShape(m_shape);
                 }
 
-            m_shape = transformer.ModifiedShape(m_shape);
+            BeAssert(m_shape.Location().IsIdentity());
             }
-        else
-            {
-            gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
-
-            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-            BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
-    
-            if (!transformer.IsDone())
-                {
-                BeAssert(false);
-                return;
-                }
-
-            m_shape = transformer.ModifiedShape(m_shape);
-            }
-
-        BeAssert(m_shape.Location().IsIdentity());
+        }
+    catch (Standard_Failure)
+        {
+        return false;
         }
 
     m_shape.Location(OCBRep::ToGpTrsf(shapeTrans));
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,7 +221,14 @@ DRange3d _GetEntityRange() const
     {
     Bnd_Box box;
 
-    BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
+    try
+        {
+        BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
+        }
+    catch (Standard_Failure)
+        {
+        BRepBndLib::Add(m_shape, box); // Sloppy AABB implementation is apparently more robust...we NEED a valid range!
+        }
 
     return OCBRep::ToDRange3d(box);
     }
@@ -271,23 +284,18 @@ TopoDS_Shape& GetShapeR() {return m_shape;}
 static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape) {return new OpenCascadeEntity(shape);}
 
 }; // OpenCascadeEntity
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
 
     if (!ocEntity)
         return nullptr;
 
     return &ocEntity->GetShape();
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,13 +303,9 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = GetShape(entity);
     BeAssert(nullptr != shape);
     return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,16 +313,12 @@ bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     OpenCascadeEntity* ocEntity = dynamic_cast <OpenCascadeEntity*> (&entity);
 
     if (!ocEntity)
         return nullptr;
 
     return &ocEntity->GetShapeR();
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,11 +326,7 @@ TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     return OpenCascadeEntity::CreateNewEntity(shape);
-#else
-    return nullptr;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,7 +334,6 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -402,7 +397,4 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
-#else
-    return nullptr;
-#endif
     }

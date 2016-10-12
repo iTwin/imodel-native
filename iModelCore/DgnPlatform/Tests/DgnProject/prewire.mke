@@ -51,20 +51,6 @@ $(ScriptOutDir)DgnScriptTest.js : $(tsSourceFiles)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $@
     ~time
 
-#
-#                   ComponentModelTest
-#
-tsSourceFiles = $[@wildcard $(baseDir)Published/ComponentModelTest/*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
-
-%if !defined(NDEBUG)
-    DEBUG_PARMS = --sourceMap --sourceRoot $(baseDir)Published/ComponentModelTest --mapRoot ${ScriptOutDir}
-%endif
-
-$(ScriptOutDir)ComponentModelTest.js : $(tsSourceFiles)
-    $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $@
-    ~time
-
 %endif
 
 $(BuildContext)Delivery/UnitTests/Script : $(ScriptOutDir)

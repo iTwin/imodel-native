@@ -44,6 +44,7 @@
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
+
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
@@ -78,7 +79,7 @@
             <Assemblies>Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="yes">Delivery/SkyBox/SkyBox.jpg</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="Yes">Delivery/SkyBox/SkyBox.jpg</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" />
 
             <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
@@ -623,6 +624,10 @@
         <SubPart PartName="TilePublisherExe" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
+
+    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" />
+    </Part>
 
     <ProductDirectoryList ListName="TilePublisherDirs" >
         <ProductDirectory Name="ApplicationRoot" Path=""/>

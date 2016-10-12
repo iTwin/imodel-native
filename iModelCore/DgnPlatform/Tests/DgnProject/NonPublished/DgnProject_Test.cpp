@@ -404,8 +404,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
             properties.viewCount = ViewDefinition::QueryCount(*project);
             properties.categoryCount = DgnCategory::QueryCount(*project);
 #ifdef STYLE_REWRITE_06
-            DgnStyles& styleTable = project->Styles();
-            properties.styleCount = styleTable.LineStyles().MakeIterator().QueryCount();
+            properties.styleCount = project->LineStyles().MakeIterator().QueryCount();
 #else
             properties.styleCount = 0;
 #endif
@@ -998,6 +997,7 @@ TEST_F(ImportTests, SimpleSchemaImport)
     BeFileName searchDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
     searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     schemaContext->AddSchemaPath(searchDir.GetName());
 
     ECN::ECSchemaPtr schema = nullptr;

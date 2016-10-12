@@ -32,12 +32,13 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 struct BatchIdMap
 {
 private:
-    bmap<DgnElementId, uint16_t> m_map;
-    bvector<DgnElementId>        m_list;
+    bmap<BeInt64Id, uint16_t>   m_map;
+    bvector<BeInt64Id>          m_list;
+    TileSource                  m_source;
 public:
-    BatchIdMap();
+    BatchIdMap(TileSource source);
 
-    uint16_t GetBatchId(DgnElementId elemId);
+    uint16_t GetBatchId(BeInt64Id entityId);
     void ToJson(Json::Value& value, DgnDbR db) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
@@ -73,11 +74,12 @@ protected:
     size_t              m_maxTilesPerDirectory;
     bool                m_publishPolylines;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines = false, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual TileGenerationCacheCR _GetCache() const = 0;
     virtual bool _OmitFromTileset(TileNodeCR) const { return false; }
+    virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
     TILEPUBLISHER_EXPORT Status Setup();
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
@@ -97,9 +99,10 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
     ViewControllerCR GetViewController() const { return m_viewController; }
-    DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
+    DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
+    bool WantPolylines() const { return m_publishPolylines; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
@@ -110,6 +113,7 @@ public:
     TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
+    TILEPUBLISHER_EXPORT bool IsGeolocated () const;
 
     template<typename T> static Json::Value IdSetToJson(T const& ids)
         {
@@ -166,8 +170,8 @@ private:
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
     void AppendUInt32(uint32_t value);
 
-    Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix);
-    Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP suffix);
+    Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 

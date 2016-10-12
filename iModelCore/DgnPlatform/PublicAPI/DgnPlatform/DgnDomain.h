@@ -302,8 +302,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
         virtual AuthorityHandlerP _ToAuthorityHandler() {return nullptr;}   //!< dynamic_cast this Handler to an AuthorityHandler
 
-        static Handler& z_GetHandlerInstance(); //!< @private
-        DGNPLATFORM_EXPORT static Handler& GetHandler() {return z_GetHandlerInstance();}//!< @private
+        DGNPLATFORM_EXPORT static Handler& z_GetHandlerInstance(); //!< @private
+        static Handler& GetHandler() {return z_GetHandlerInstance();}//!< @private
     }; // Handler
 
     //=======================================================================================
@@ -402,7 +402,6 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
-    friend struct ComponentModel;
 
     DomainList    m_domains;
     Handlers      m_handlers;

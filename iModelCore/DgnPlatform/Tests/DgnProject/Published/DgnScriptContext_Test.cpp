@@ -137,9 +137,21 @@ TEST_F(DgnScriptTest, TestEga)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
+        var gsource = element.ToGeometrySource(); \
+        if (!gsource) \
+            { \
+            Bentley.Dgn.Script.ReportError('You must pass a geometry source of some kind to an EGA. You passed in an element that is not a geometry source.');\
+            return; \
+            } \
+        var g3d = element.ToGeometrySource3d(); \
+        if (!g3d) \
+            { \
+            Bentley.Dgn.Script.ReportError('This particular EGA expects a geometry source 3D. You passed in a 2D geometry source.');\
+            return; \
+            } \
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
-        var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, element.CategoryId, origin, angles); \
+        var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, g3d.CategoryId, origin, angles); \
         builder.AppendGeometry(box); \
         builder.Finish(element); \
         return 0;\
@@ -421,8 +433,8 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         ASSERT_NE(DgnDbStatus::Success, status);
 #endif
 
-        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_PopulateElementList,
-"function fillEleList(dgnObjectIdSet,db,viewport) {\
+        auto newScriptEl1 = ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_PopulateElementList,
+                                                            "function fillEleList(dgnObjectIdSet,db,viewport) {\
     var be = Bentley.Dgn;\
     var categories = be.DgnCategory.QueryCategories(db);\
     for (var catiter = categories.Begin(); categories.IsValid(catiter); categories.ToNext(catiter))\
@@ -430,7 +442,9 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         dgnObjectIdSet.Insert(categories.GetId(catiter));\
         }\
     }"
-        ));
+        );
+        ASSERT_TRUE(newScriptEl1.IsValid());
+        scriptEl1 = m_db->Elements().Insert(*newScriptEl1);
         DgnElementIdSet ids;
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
         //ASSERT_STREQ("", retVal.c_str());

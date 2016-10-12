@@ -23,8 +23,6 @@
 #define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
 #define BIS_CLASS_Authority                 "Authority"
 #define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
-#define BIS_CLASS_ComponentAuthority        "ComponentAuthority"
-#define BIS_CLASS_ComponentModel            "ComponentModel"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
@@ -92,9 +90,7 @@
 #define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
-#define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
 #define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 #define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
@@ -285,7 +281,6 @@ private:
 
     mutable BeSQLite::BeDbMutex m_mutex;
     T_DgnModelMap  m_models;
-    bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
     T_ClassInfoMap m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -377,6 +372,14 @@ public:
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
 
+    //! Create a new, non-persistent model from the supplied ECInstance.
+    //! Ths supplied instance must contain the model's Code.
+    //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
+    //! @param properties The instance that contains all of the model's business properties
+    //! @return a new, non-persistent model if successful, or an invalid ptr if not.
+    //! @note The returned model, if any, is non-persistent. The caller must call the model's Insert method to add it to the bim.
+    DGNPLATFORM_EXPORT DgnModelPtr CreateModel(DgnDbStatus* stat, ECN::IECInstanceCR properties);
+
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
     //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
     //! @param[in] modelId The Id of the model to load.
@@ -399,12 +402,6 @@ public:
     //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
-
-    //! Query for the dependency index of the specified model
-    //! @param[out] dependencyIndex  The model's DependencyIndex property value
-    //! @param[in] modelId      The model's ID
-    //! @return non-zero if the model does not exist
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndex(uint64_t& dependencyIndex, DgnModelId modelId);
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
@@ -574,7 +571,7 @@ public:
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
-    void Update();
+    DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
     DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
@@ -721,25 +718,6 @@ public:
     static double const OneMillimeter() {return OneMeter() / 1000.0;}
     static double const OneCentimeter() {return OneMeter() / 100.0;}
     static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
-};
-
-//=======================================================================================
-//! @see DgnDb::Styles
-// @bsiclass
-//=======================================================================================
-struct DgnStyles : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    struct DgnLineStyles* m_lineStyles;
-
-    explicit DgnStyles(DgnDbR);
-    ~DgnStyles();
-
-public:
-    //! Provides accessors for line styles.
-    DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
 };
 
 //=======================================================================================

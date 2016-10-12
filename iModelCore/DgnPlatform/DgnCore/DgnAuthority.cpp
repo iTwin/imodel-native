@@ -20,7 +20,7 @@ DgnAuthorityId DgnAuthorities::QueryAuthorityId (Utf8CP name) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
+DgnAuthorityId DgnImportContext::_RemapAuthorityId(DgnAuthorityId source)
     {
     if (!IsBetweenDbs())
         return source;
@@ -347,7 +347,6 @@ struct SystemAuthority
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
         Model = 6LL,
-        Component = 7LL,    // Component instances. Code value is combination of component name, component parameter set, and unique integer ID
 
         // ............     Introduce new BuiltinIds here
         
@@ -408,7 +407,6 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
-            { "DgnComponent", SystemAuthority::Component, dgn_AuthorityHandler::Component::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
         };
 
@@ -524,22 +522,6 @@ DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nam
 DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Model, codeValue, modeledElementId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ComponentAuthority::CreateVariationCode(Utf8StringCR slnId, Utf8StringCR name)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Component, slnId, name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
-    {
-    return icode.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Component);
     }
 
 /*---------------------------------------------------------------------------------**//**

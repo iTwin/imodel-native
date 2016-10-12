@@ -22,6 +22,8 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnSubCategory);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace dgn_ElementHandler { struct SubCategory; }
+
 typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
 /**
@@ -157,6 +159,7 @@ public:
     };
 private:
     friend struct DgnCategory;
+    friend struct dgn_ElementHandler::SubCategory;
 
     Data m_data;
 
@@ -165,6 +168,8 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
@@ -174,6 +179,7 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
     uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    static CreateParams CreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties);
 
 //__PUBLISH_SECTION_END__
 public:
@@ -322,6 +328,8 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
@@ -421,6 +429,9 @@ namespace dgn_ElementHandler
     struct SubCategory : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
+    protected:
+        virtual DgnElement::CreateParams _InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties) override;
+
     };
 }
 

@@ -54,7 +54,7 @@ bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSym
 
     DPoint3d    max;
 
-    max.Init (_GetLength(), _GetMaxWidth(nullptr) * 1.5, 0);
+    max.Init (_GetLength(), _GetMaxWidth() * 1.5, 0);
     max.Scale (lsSymb->GetScale());
 
     // see if there's a width modifier on the element, and if the linestyle is affected by it.

@@ -13,19 +13,21 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
+BentleyStatus resize_image (ByteStream&    outputImage, Point2dCR outputSize, Byte const*  inputImage, Point2dCR  inputSize, bool isRGBA);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchIdMap::BatchIdMap()
+BatchIdMap::BatchIdMap(TileSource source) : m_source(source)
     {
-    // "no element" always maps to the first batch table index
-    GetBatchId(DgnElementId());
+    // Invalid ID always maps to the first batch table index
+    GetBatchId(BeInt64Id());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
+uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
     {
     auto found = m_map.find(elemId);
     if (m_map.end() == found)
@@ -35,7 +37,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
             return 0;   // ###TODO: avoid hitting this limit...
 
         m_list.push_back(elemId);
-        found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
+        found = m_map.insert(bmap<BeInt64Id, uint16_t>::value_type(elemId, batchId)).first;
         }
 
     return found->second; 
@@ -46,53 +48,70 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
     {
-    // ###TODO: Assumes 3d-only...
-    // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                                "WHERE e.Id=? AND g.ElementId=e.Id";
-
-    BeSQLite::Statement stmt;
-    stmt.Prepare(db, s_sql);
-
-    Json::Value elementIds(Json::arrayValue);
-    Json::Value modelIds(Json::arrayValue);
-    Json::Value categoryIds(Json::arrayValue);
-
-    for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+    switch (m_source)
         {
-        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-        DgnModelId modelId;
-        DgnCategoryId categoryId;
-
-        stmt.BindId(1, *elemIter);
-        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+        case TileSource::None:
+            return;
+        case TileSource::Model:
             {
-            modelId = stmt.GetValueId<DgnModelId>(0);
-            categoryId = stmt.GetValueId<DgnCategoryId>(1);
+            Json::Value modelIds(Json::arrayValue);
+            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
+                modelIds.append(idIter->ToString());
+
+            value["model"] = modelIds;
+            return;
             }
+        case TileSource::Element:
+            {
+            // ###TODO: Assumes 3d-only...
+            // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
+            static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+                "WHERE e.Id=? AND g.ElementId=e.Id";
 
-        modelIds.append(modelId.ToString());
-        categoryIds.append(categoryId.ToString());
-        stmt.Reset();
+            BeSQLite::Statement stmt;
+            stmt.Prepare(db, s_sql);
+
+            Json::Value elementIds(Json::arrayValue);
+            Json::Value modelIds(Json::arrayValue);
+            Json::Value categoryIds(Json::arrayValue);
+
+            for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+                {
+                elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+                DgnModelId modelId;
+                DgnCategoryId categoryId;
+
+                stmt.BindId(1, *elemIter);
+                if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+                    {
+                    modelId = stmt.GetValueId<DgnModelId>(0);
+                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
+                    }
+
+                modelIds.append(modelId.ToString());
+                categoryIds.append(categoryId.ToString());
+                stmt.Reset();
+                }
+
+            value["element"] = elementIds;
+            value["model"] = modelIds;
+            value["category"] = categoryIds;
+            }
         }
-
-    value["element"] = elementIds;
-    value["model"] = modelIds;
-    value["category"] = categoryIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
+    : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile._GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false);
+    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,9 +313,24 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/02016
++---------------+---------------+---------------+---------------+---------------+------*/
+static int32_t  roundToMultipleOfTwo (int32_t value)
+    {
+    static          double  s_closeEnoughRatio = .85;       // Don't round up if already within .85 of value.
+    int32_t         rounded = 2;
+    int32_t         closeEnoughValue = (int32_t) ((double) value * s_closeEnoughRatio);
+    
+    while (rounded < closeEnoughValue && rounded < 0x01000000)
+        rounded <<= 1;
+
+    return rounded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/02016
 +---------------+---------------+---------------+---------------+---------------+------*/
- Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP  suffix)
+ Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP  suffix)
     {
     auto const& found = m_textureImages.find (&textureImage);
 
@@ -304,6 +338,7 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
         return found->second;
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
+
 
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
@@ -315,20 +350,65 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
 
-    Image image (textureImage.GetImageSource());
 
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
 
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
+    DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
+    Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
-    ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
+    // This calculation should actually be made for each triangle and maximum used. 
+    static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
+    double      requiredSize = std::min (s_sizeLimit, s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * std::min (1.0, uvRange.DiagonalDistance())));
+    DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
+
+    Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
+
+    if (requiredSize < std::min (currentImageSize.x, currentImageSize.y))
+        {
+        static      int32_t s_minImageSize = 64;
+        static      int     s_imageQuality = 60;
+        int32_t     targetImageMin = std::max(s_minImageSize, (int32_t) requiredSize);
+        ByteStream  targetImageData;
+
+        if (imageSize.x > imageSize.y)
+            {
+            targetImageSize.y = targetImageMin;
+            targetImageSize.x = (int32_t) ((double) targetImageSize.y * imageSize.x / imageSize.y);
+            }
+        else
+            {
+            targetImageSize.x = targetImageMin;
+            targetImageSize.y = (int32_t) ((double) targetImageSize.x * imageSize.y / imageSize.x);
+            }
+        targetImageSize.x = roundToMultipleOfTwo (targetImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (targetImageSize.y);
+        }
+    else
+        {
+        targetImageSize.x = roundToMultipleOfTwo (currentImageSize.x);
+        targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
+        }
+
+    ImageSource         imageSource = textureImage.GetImageSource();
+    static const int    s_imageQuality = 50;
+
+    if (targetImageSize.x != imageSize.x || targetImageSize.y != imageSize.y)
+        {
+        Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
+
+        imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
+        }
+
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+
+    ByteStream const& imageData = imageSource.GetByteStream();
     rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
     rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
 
@@ -538,70 +618,71 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix)
+Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
+    Utf8String      materialName = Utf8String ("Material_") + suffix;
+
+    if (nullptr == displayParams)
+        return materialName;
+
+
     RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
     double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-    uint32_t        rgbInt  = 0xffffff;
+    uint32_t        rgbInt  = displayParams->GetFillColor();
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-    Utf8String      materialName = Utf8String ("Material_") + suffix;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
+    bool            isPolyline = mesh.Triangles().empty();
+    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
-    if (nullptr != displayParams)
+    if (!isPolyline && displayParams->GetMaterialId().IsValid())
         {
-        rgbInt = displayParams->GetFillColor();
-        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+        JsonRenderMaterial  jsonMaterial;
 
-        if (!isPolyline && displayParams->GetMaterialId().IsValid())
+        if (SUCCESS == jsonMaterial.Load (displayParams->GetMaterialId(), m_context.GetDgnDb()))
             {
-            JsonRenderMaterial  jsonMaterial;
+            static double       s_finishScale = 15.0;
 
-            if (SUCCESS == jsonMaterial.Load (displayParams->GetMaterialId(), m_context.GetDgnDb()))
-                {
-                static double       s_finishScale = 15.0;
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
+                specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
-                    specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
+                specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
-                    specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
+                rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
 
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
-                    rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
-
-                if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
-                    alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
-                }
+            if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
+                alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
             }
+        }
 
-        TileTextureImageCP      textureImage;
+    TileTextureImageCP      textureImage;
 
-        if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
-            {
-            materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
-            materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, suffix);
-            }
-        else
-            {
-            auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
+    if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
+        {
+        materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
+        materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
+        }
+    else
+        {
+        auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
-            materialColor.append(rgb.red);
-            materialColor.append(rgb.green);
-            materialColor.append(rgb.blue);
-            materialColor.append(alpha);
+        materialColor.append(rgb.red);
+        materialColor.append(rgb.green);
+        materialColor.append(rgb.blue);
+        materialColor.append(alpha);
 
-            materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
-            }
+        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
+        }
 
-        if (!isPolyline && !displayParams->GetIgnoreLighting())
-            {
-            materialValue["values"]["specularExponent"] = specularExponent;
+    if (!isPolyline && !displayParams->GetIgnoreLighting())
+        {
+        materialValue["values"]["specularExponent"] = specularExponent;
 
-            auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
-            materialSpecularColor.append (specularColor.red);
-            materialSpecularColor.append (specularColor.green);
-            materialSpecularColor.append (specularColor.blue);
-            }
+        auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
+        materialSpecularColor.append (specularColor.red);
+        materialSpecularColor.append (specularColor.green);
+        materialSpecularColor.append (specularColor.blue);
         }
     return materialName;
     }
@@ -758,8 +839,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     if (mesh.ValidIdsPresent())
         {
-        batchIds.reserve(mesh.ElementIds().size());
-        for (auto const& elemId : mesh.ElementIds())
+        batchIds.reserve(mesh.EntityIds().size());
+        for (auto const& elemId : mesh.EntityIds())
             batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
         attr["attributes"]["BATCHID"] = accBatchId;
@@ -770,7 +851,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
 
     attr["indices"] = accIndexId;
-    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
+    attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh, idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
     attr["attributes"]["POSITION"] = accPositionId;
@@ -780,13 +861,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         {
         attr["attributes"]["TEXCOORD_0"] = accParamId;
 
-        size_t i=0;
-        bvector<DPoint2d> flippedUvs (mesh.Params().size());
-        for (auto const& uv : mesh.Params())
-            flippedUvs[i++] = DPoint2d::From (uv.x, 1.0 - uv.y);      // Needs work - flip textures rather than params.
-
-        DRange3d        paramRange = DRange3d::From(flippedUvs, 0.0);
-        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
+        AddMeshVertexAttribute (rootNode, &mesh.Params().front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
         }
 
 
@@ -850,11 +926,48 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint3d  cartesianFromRadians (double longitude, double latitude, double height = 0.0)
+    {
+    DPoint3d    s_wgs84RadiiSquared = DPoint3d::From (6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+    double      cosLatitude = cos(latitude);
+    DPoint3d    normal, scratchK;
+
+    normal.x = cosLatitude * cos(longitude);
+    normal.y = cosLatitude * sin(longitude);
+    normal.z = sin(latitude);
+
+    normal.Normalize();
+    scratchK.x = normal.x * s_wgs84RadiiSquared.x;
+    scratchK.y = normal.y * s_wgs84RadiiSquared.y;
+    scratchK.z = normal.z * s_wgs84RadiiSquared.z;
+
+    double  gamma = sqrt(normal.DotProduct (scratchK));
+
+    DPoint3d    earthPoint = DPoint3d::FromScale(scratchK, 1.0 / gamma);
+    DPoint3d    heightDelta = DPoint3d::FromScale (normal, height);
+
+    return DPoint3d::FromSumOf (earthPoint, heightDelta);
+    };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::IsGeolocated () const
+    {
+    return nullptr != GetDgnDb().Units().GetDgnGCS();
+    }
+    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
     : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
@@ -868,15 +981,24 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+    DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
         {
-        m_tileToEcef    = Transform::FromIdentity ();   
+        double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
+
+        if (nullptr != geoLocation)
+            {
+            longitude = geoLocation->longitude;
+            latitude  = geoLocation->latitude;
+            }
+        ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
         }
     else
         {
         GeoPoint        originLatLong, northLatLong;
-        DPoint3d        ecfOrigin, ecfNorth, north = origin;
+        DPoint3d        north = origin;
     
         north.y += 100.0;
 
@@ -885,19 +1007,20 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 
         dgnGCS->LatLongFromUors (northLatLong, north);
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
-
-        DVec3d      zVector, yVector;
-        RotMatrix   rMatrix;
-
-        zVector.Normalize ((DVec3dCR) ecfOrigin);
-        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
-
-        rMatrix.SetColumn (yVector, 1);
-        rMatrix.SetColumn (zVector, 2);
-        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
-
-        m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
         }
+
+
+    DVec3d      zVector, yVector;
+    RotMatrix   rMatrix;
+
+    zVector.Normalize ((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+    rMatrix.SetColumn (yVector, 1);
+    rMatrix.SetColumn (zVector, 2);
+    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+
+    m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,6 +1071,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
         }
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -959,17 +1083,18 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
         return;
         }
 
+    DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
+
+    // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
+    // In that case we can trust the published ranges and use them to only write non-empty nodes and branches.
+    // In the server case we don't have this information and have to trust the tile ranges.  
+    if (!_AllTilesPublished() && publishedRange.IsNull())
+        publishedRange = tile.GetTileRange();
+    
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
-    DRange3d        contentRange;
-
-    DRange3d publishedRange = tile.GetPublishedRange();
-    if (publishedRange.IsNull())
-        publishedRange = tile.GetTileRange();
-
-    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
-    range = contentRange;
+    range = contentRange = DRange3d::FromIntersection (tile.GetTileRange(), publishedRange, true);
 
     if (!tile.GetChildren().empty())
         {
@@ -1022,15 +1147,18 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         }
+    if (range.IsNull())
+        return;
+
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
-    root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
-    
-    // The content bounding box represents the actual 
     if (!contentRange.IsNull())
-        TilePublisher::WriteBoundingVolume (root[JSON_Content], publishedRange);
+        {
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
+        TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,7 +1246,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     Status                  status;
     static size_t           s_maxPointsPerTile = 200000;
 
-    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
+    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, toleranceInMeters, s_maxPointsPerTile))))
         return status;
         
     return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
@@ -1248,11 +1376,12 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
 
         DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
 
-        rotation.Multiply(viewOrigin, cameraView->GetBackOrigin());
+        rotation.Multiply(viewOrigin, cameraView->GetOrigin());
         rotation.Multiply(viewEyePoint, eyePoint);
 
-        viewTarget.x = viewOrigin.x + cameraView->GetWidth()/2.0;
-        viewTarget.y = viewOrigin.y + cameraView->GetHeight()/2.0;
+        auto extents = cameraView->GetExtents();
+        viewTarget.x = viewOrigin.x + extents.x/2.0;
+        viewTarget.y = viewOrigin.y + extents.y/2.0;
         viewTarget.z = viewEyePoint.z - cameraView->GetFocusDistance();
 
         rotation.MultiplyTranspose (target, viewTarget);
@@ -1263,7 +1392,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         xVec.NormalizedCrossProduct (yVec, zVec);
         yVec.NormalizedCrossProduct (zVec, xVec);
 
-        json["fov"]   =  2.0 * atan2 (cameraView->GetWidth()/2.0, cameraView->GetFocusDistance());
+        json["fov"]   =  2.0 * atan2 (extents.x/2.0, cameraView->GetFocusDistance());
         }
     else if (nullptr != (orthographicView = dynamic_cast <OrthographicViewDefinitionCP> (&view)))
         {
