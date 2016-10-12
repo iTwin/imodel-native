@@ -317,10 +317,6 @@ WmsTile::WmsTile(WmsSourceR root, TileId id, WmsTileCP parent)
         }
 
     m_range.InitFrom(m_corners.m_pts, 4);
-    //&&MM review. doesn't work with GCS in lat/long. Why we need that?
-    //             also problematic in DrawArgs::DrawGraphics where substitute are offseted.
-//     m_range.low.z = -1.0;
-//     m_range.high.z = 1.0;
 
     if (parent)
         parent->ExtendRange(m_range);

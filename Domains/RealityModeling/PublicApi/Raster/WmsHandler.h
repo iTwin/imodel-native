@@ -85,6 +85,8 @@ protected:
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
 
+    bool _IsParallelToGround() const override { return true; }
+
     virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const override;
 
     //! Create a WmsModel object, in preparation for loading it from the DgnDb. Called by MODELHANDLER_DECLARE_MEMBERS. 
@@ -107,7 +109,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_WmsModel, WmsModel, WmsModelHandler, RasterModelHandler, RASTER_EXPORT)
 
 public:
-    RASTER_EXPORT static Dgn::DgnModelId CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
+    RASTER_EXPORT static WmsModelPtr CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop);
 };
 
 END_BENTLEY_RASTER_NAMESPACE

@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_RASTER
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 RasterFileProperties::RasterFileProperties()
-    :m_fileId("")
+    :m_fileUri("")
     {
     m_sourceToWorld.InitIdentity();
     }
@@ -55,7 +55,7 @@ static void DMatrix4dToJson (JsonValueR outValue, DMatrix4dCR matrix)
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
-    v["fileId"] = m_fileId.c_str();
+    v["fileUri"] = m_fileUri.c_str();
     DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
     }
 
@@ -64,7 +64,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
-    m_fileId = v["fileId"].asString();
+    m_fileUri = v["fileUri"].asString();
     DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
     }
 
@@ -162,33 +162,29 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
 //----------------------------------------------------------------------------------------
 RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
-    // Find resolved file name for the raster
-    BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
-    if (status != SUCCESS)
-        {
-        return nullptr;
-        }
-    Utf8String resolvedName(fileName);
-    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
-
-    // Open raster 
-    //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
-    // Otherwise the raster file is opened twice and this might be slow for network connection.
-    RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
-    if (rasterFilePtr == nullptr)
-        {
-        // Can't create model; probably that file name is invalid.
-        return nullptr;
-        }
-
     RasterFileProperties props;
-    props.m_fileId = params.m_fileId;
+    props.m_fileUri = params.m_fileUri;
 
     if (params.m_sourceToWorldP != nullptr)
         props.m_sourceToWorld = *params.m_sourceToWorldP;
     else
         {
+        // Find resolved file name for the raster
+        BeFileName fileName;
+        BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
+        if (status != SUCCESS)
+            return nullptr;
+            
+        // Open raster 
+        //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
+        // Otherwise the raster file is opened twice and this might be slow for network connection.
+        RasterFilePtr rasterFilePtr = RasterFile::Create(fileName.GetNameUtf8());
+        if (rasterFilePtr == nullptr)
+            {
+            // Can't create model; probably that file name is invalid.
+            return nullptr;
+            }
+
         if (SUCCESS != ComputeGeoLocationFromFile(props.m_sourceToWorld, *rasterFilePtr, params.m_dgndb))
             return nullptr;
         }
@@ -238,7 +234,7 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
 
     // Resolve raster name
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, m_fileProperties.m_fileUri, GetDgnDb());
     if (status != SUCCESS)
         {
         m_loadFileFailed = true;
@@ -271,5 +267,17 @@ void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
     m_fileProperties.FromJson(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+bool RasterFileModel::_IsParallelToGround() const
+    {
+    DMatrix4dCR srcToWlrd = GetSourceToWorld();
+    DVec3d uvCross = DVec3d::FromCrossProduct(srcToWlrd.coff[0][0], srcToWlrd.coff[1][0], srcToWlrd.coff[2][0],
+                                              srcToWlrd.coff[0][1], srcToWlrd.coff[1][1], srcToWlrd.coff[2][1]);
+
+    return uvCross.IsParallelTo(DVec3d::From(0, 0, 1));
     }
 

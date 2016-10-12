@@ -177,18 +177,15 @@ void WmsMap::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
+WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
     {
     DgnClassId classId(db.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
 
     if(!mapInfo.HasValidParameters())
-        return DgnModelId();  // Can't create model, Return an invalid model id.
+        return nullptr;  // Can't create model.
 
-    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(modelName)), mapInfo);
-
-    modelP->Insert();
-    return modelP->GetModelId();
+    return new WmsModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(modelName)), mapInfo);    
     }
 
 //----------------------------------------------------------------------------------------

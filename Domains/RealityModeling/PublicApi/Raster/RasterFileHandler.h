@@ -22,7 +22,7 @@ struct RasterRoot;
 //=======================================================================================
 struct RasterFileProperties
     {
-    Utf8String  m_fileId;           //! File id provided by the application. Used to resolve the local file name.  
+    Utf8String  m_fileUri;          //! File URI provided by the application. Used to resolve the local file name.  
     DMatrix4d   m_sourceToWorld;    //! Transformation from source(lower-left origin) to BIM coordinate. 
                                     //! This transform may contains a reprojection approximation(source Gcs to BIM Gcs) if one was required.
 
@@ -49,7 +49,7 @@ public:
         {
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
-        Utf8String m_fileId;
+        Utf8String m_fileUri;
         DMatrix4dCP m_sourceToWorldP;   //! Optional transformation from source(lower-left origin) to BIM coordinate. If not provide we use source georeference.
 
         public:
@@ -59,10 +59,10 @@ public:
             //! Parameters to create a new instance of a RasterFileModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] code The Code for the DgnModel
-            //! @param[in] fileId File Id of the raster file.
+            //! @param[in] fileUri File URI of the raster file.
             //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4dCP sourceToWorld) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId), m_sourceToWorldP(sourceToWorld)
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileUri, DMatrix4dCP sourceToWorld) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileUri(fileUri), m_sourceToWorldP(sourceToWorld)
                 {}
         };
 
@@ -87,6 +87,8 @@ protected:
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _Load(Dgn::Render::SystemP renderSys) const override;
+
+    bool _IsParallelToGround() const override;
     
 public:
 
