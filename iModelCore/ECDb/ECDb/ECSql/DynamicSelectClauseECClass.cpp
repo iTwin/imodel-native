@@ -23,18 +23,16 @@ Utf8CP const DynamicSelectClauseECClass::CLASSNAME = "ECSqlSelectClause";
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DynamicSelectClauseECClass::DynamicSelectClauseECClass ()
-: m_schema (nullptr), m_class (nullptr)
-    {
-    }
+DynamicSelectClauseECClass::DynamicSelectClauseECClass()
+    : m_schema(nullptr), m_class(nullptr)
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DynamicSelectClauseECClass::DynamicSelectClauseECClass (DynamicSelectClauseECClass const& rhs)
-    : m_schema (rhs.m_schema), m_class (rhs.m_class)
-    {
-    }
+DynamicSelectClauseECClass::DynamicSelectClauseECClass(DynamicSelectClauseECClass const& rhs)
+    : m_schema(rhs.m_schema), m_class(rhs.m_class)
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
@@ -53,10 +51,9 @@ DynamicSelectClauseECClass& DynamicSelectClauseECClass::operator= (DynamicSelect
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DynamicSelectClauseECClass::DynamicSelectClauseECClass (DynamicSelectClauseECClass&& rhs)
-    : m_schema (move (rhs.m_schema)), m_class (move (rhs.m_class))
-    {
-    }
+DynamicSelectClauseECClass::DynamicSelectClauseECClass(DynamicSelectClauseECClass&& rhs)
+    : m_schema(move(rhs.m_schema)), m_class(move(rhs.m_class))
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
@@ -65,8 +62,8 @@ DynamicSelectClauseECClass& DynamicSelectClauseECClass::operator= (DynamicSelect
     {
     if (this != &rhs)
         {
-        m_schema = move (rhs.m_schema);
-        m_class = move (rhs.m_class);
+        m_schema = move(rhs.m_schema);
+        m_class = move(rhs.m_class);
         }
 
     return *this;
@@ -94,17 +91,17 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
+ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
     {
-    if (selectClauseItemExp.GetExpression ()->GetType() != Exp::Type::PropertyName)
+    if (selectClauseItemExp.GetExpression()->GetType() != Exp::Type::PropertyName)
         {
         return ECSqlStatus::Success;
         }
 
     auto propertyNameExp = static_cast<PropertyNameExp const*>(selectClauseItemExp.GetExpression());
-    if (propertyNameExp->IsPropertyRef ())
+    if (propertyNameExp->IsPropertyRef())
         {
-        auto endPointPropertyName = propertyNameExp->GetPropertyRef ()->GetEndPointPropertyNameIfAny ();
+        auto endPointPropertyName = propertyNameExp->GetPropertyRef()->GetEndPointPropertyNameIfAny();
         if (endPointPropertyName == nullptr)
             return ECSqlStatus::Success;
 
@@ -113,7 +110,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
 
 
     auto ctx = ECSchemaReadContext::CreateContext();
-    ctx->AddSchemaLocater(ecdb.GetSchemaLocater ());
+    ctx->AddSchemaLocater(ecdb.GetSchemaLocater());
     auto bscaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
     auto bsca = ctx->LocateSchema(bscaKey, SchemaMatchType::Latest);
     if (bsca.IsNull())
@@ -123,7 +120,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
         }
 
     auto defMetaData = bsca->GetClassCP("DefinitionMetaData");
-    if(defMetaData == nullptr)
+    if (defMetaData == nullptr)
         {
         LOG.error("Failed to find class DefinitionMetaData in Bentley_Standard_CustomAttributes schema");
         return ECSqlStatus::Error;
@@ -131,16 +128,16 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
 
     auto defMetaDataInst = defMetaData->GetDefaultStandaloneEnabler()->CreateInstance();
     BeAssert(defMetaDataInst != nullptr);
-    
+
     Utf8String qualifiedPropertyPath;
     if (SUCCESS != propertyNameExp->GetPropertyPath().TryGetQualifiedPath(qualifiedPropertyPath))
         return ECSqlStatus::Error;
 
 
-    if (defMetaDataInst->SetValue("DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECObjectsStatus::Success)
+    if (defMetaDataInst->SetValue("DefinitionBackReference", ECValue(qualifiedPropertyPath.c_str(), false)) != ECObjectsStatus::Success)
         return ECSqlStatus::Error;
 
-    ECSqlStatus status = AddReferenceToStructSchema (*bsca);
+    ECSqlStatus status = AddReferenceToStructSchema(*bsca);
     if (!status.IsSuccess())
         return status;
 
@@ -203,19 +200,19 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
                 if (suffixNr > 1000) //arbitrary threshold to avoid end-less loop
                     {
                     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
-                                                             selectClauseItemExp.ToECSql().c_str());
+                                                                           selectClauseItemExp.ToECSql().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
 
                 } while (m_selectClauseNames.find(uniquePropName) != m_selectClauseNames.end());
 
-            propName = uniquePropName;
-            //now the name is not duplicate anymore
-            isDuplicateName = false;
+                propName = uniquePropName;
+                //now the name is not duplicate anymore
+                isDuplicateName = false;
             }
 
         BeAssert(m_selectClauseNames.find(propName) == m_selectClauseNames.end() && "at this point select clause item name should be unique");
-        ECSqlStatus stat = AddProperty(generatedProperty, ctx, propName.c_str(), selectClauseItemExp, ecdb);
+        ECSqlStatus stat = AddProperty(generatedProperty, ctx, propName, selectClauseItemExp, ecdb);
         if (!stat.IsSuccess())
             return stat;
         }
@@ -229,32 +226,31 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8CP propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
+ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
     {
- 
     ECSqlTypeInfo const& typeInfo = selectClauseItemExp.GetExpression()->GetTypeInfo();
     const ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
 
+    Utf8String encodedPropName;
+    ECNameValidation::EncodeToValidName(encodedPropName, propName);
+
     switch (typeKind)
         {
-        case ECSqlTypeInfo::Kind::Primitive:
-        case ECSqlTypeInfo::Kind::Null:
+            case ECSqlTypeInfo::Kind::Primitive:
+            case ECSqlTypeInfo::Kind::Null:
             {
             PrimitiveECPropertyP primProp = nullptr;
-            Utf8String encodedName;
-            ECNameValidation::EncodeToValidName(encodedName, propName);
-            auto ecstat = GetClassR().CreatePrimitiveProperty(primProp, encodedName.c_str(), typeInfo.GetPrimitiveType());            
-            if (ecstat != ECObjectsStatus::Success)
+            if (ECObjectsStatus::Success != GetClassR().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
 
             generatedProperty = primProp;
             break;
             }
 
-        case ECSqlTypeInfo::Kind::Struct:
+            case ECSqlTypeInfo::Kind::Struct:
             {
-            auto const& structType = typeInfo.GetStructType ();
-            auto stat = AddReferenceToStructSchema (structType.GetSchema ());
+            ECStructClassCR structType = typeInfo.GetStructType();
+            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -263,28 +259,26 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 return ECSqlStatus::Error;
 
             StructECPropertyP structProp = nullptr;
-            auto ecstat = GetClassR ().CreateStructProperty (structProp, propName, *asStruct);
-            if (ecstat != ECObjectsStatus::Success)
+            if (ECObjectsStatus::Success != GetClassR().CreateStructProperty(structProp, encodedPropName, *asStruct))
                 return ECSqlStatus::Error;
 
             generatedProperty = structProp;
             break;
             }
 
-        case ECSqlTypeInfo::Kind::PrimitiveArray:
+            case ECSqlTypeInfo::Kind::PrimitiveArray:
             {
             ArrayECPropertyP arrayProp = nullptr;
-            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propName, typeInfo.GetPrimitiveType ());
-            if (ecstat != ECObjectsStatus::Success)
+            if (ECObjectsStatus::Success != GetClassR().CreateArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
 
             generatedProperty = arrayProp;
             break;
             }
-        case ECSqlTypeInfo::Kind::StructArray:
+            case ECSqlTypeInfo::Kind::StructArray:
             {
-            auto const& structType = typeInfo.GetStructType ();
-            auto stat = AddReferenceToStructSchema (structType.GetSchema ());
+            ECStructClassCR structType = typeInfo.GetStructType();
+            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -293,30 +287,31 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 return ECSqlStatus::Error;
 
             StructArrayECPropertyP structArrayProp = nullptr;
-            auto ecstat = GetClassR ().CreateStructArrayProperty (structArrayProp, propName, asStruct);
-            if (ecstat != ECObjectsStatus::Success)
+            if (ECObjectsStatus::Success != GetClassR().CreateStructArrayProperty(structArrayProp, encodedPropName, asStruct))
                 return ECSqlStatus::Error;
 
             generatedProperty = structArrayProp;
             break;
             }
-        default:
-            BeAssert ("Adding dynamic select clause property failed because of unexpected and unhandled property type.");
-            return ECSqlStatus::Error;
+            default:
+                BeAssert("Adding dynamic select clause property failed because of unexpected and unhandled property type.");
+                return ECSqlStatus::Error;
         }
 
-    return SetBackReferenceToPropertyPath (*const_cast<ECPropertyP>(generatedProperty), selectClauseItemExp, ecdb);
+    const_cast<ECPropertyP>(generatedProperty)->SetDisplayLabel(propName);
+
+    return SetBackReferenceToPropertyPath(*const_cast<ECPropertyP>(generatedProperty), selectClauseItemExp, ecdb);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema (ECSchemaCR structSchema) const
+ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema(ECSchemaCR structSchema) const
     {
-    if (ECSchema::IsSchemaReferenced (GetSchemaR (), structSchema))
+    if (ECSchema::IsSchemaReferenced(GetSchemaR(), structSchema))
         return ECSqlStatus::Success;
 
-    auto stat = GetSchemaR ().AddReferencedSchema (const_cast<ECSchemaR> (structSchema));
+    auto stat = GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR> (structSchema));
     return stat == ECObjectsStatus::Success ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 

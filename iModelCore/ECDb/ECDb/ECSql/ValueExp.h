@@ -99,7 +99,9 @@ struct CastExp : ValueExp
     {
     DEFINE_EXPR_TYPE(Cast)
     private:
+        Utf8String m_castTargetSchemaName;
         Utf8String m_castTargetType;
+        bool m_castTargetIsArray;
         size_t m_castOperandIndex;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
@@ -108,15 +110,23 @@ struct CastExp : ValueExp
         virtual Utf8String _ToString() const override;
 
     public:
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetType)
-            : ValueExp(castOperand->IsConstant()), m_castTargetType(castTargetType)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetPrimitiveType, bool castTargetIsArray)
+            : ValueExp(castOperand->IsConstant()), m_castTargetType(castTargetPrimitiveType), m_castTargetIsArray(castTargetIsArray)
+            {
+            m_castOperandIndex = AddChild(std::move(castOperand));
+            }
+
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetClassName, bool castTargetIsArray)
+            : ValueExp(castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetType(castTargetClassName), m_castTargetIsArray(castTargetIsArray)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
 
         ValueExp const* GetCastOperand() const { return GetChild<ValueExp>(m_castOperandIndex); }
-        Utf8String GetCastTargetType() const { return m_castTargetType; }
-
+        Utf8StringCR GetCastTargetSchemaName() const { return m_castTargetSchemaName; }
+        Utf8StringCR GetCastTargetClassName() const { BeAssert(!m_castTargetSchemaName.empty()); return m_castTargetType; }
+        Utf8StringCR GetCastTargetPrimitiveType() const { BeAssert(m_castTargetSchemaName.empty()); return m_castTargetType; }
+        bool CastTargetIsArray() const { return m_castTargetIsArray; }
         bool NeedsCasting() const;
     };
 

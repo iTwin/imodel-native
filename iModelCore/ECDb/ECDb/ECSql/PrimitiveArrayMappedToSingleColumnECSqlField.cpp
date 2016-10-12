@@ -18,8 +18,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
-: ECSqlField (ecsqlStatement, move (ecsqlColumnInfo), true, true), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
+PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
+: ECSqlField (ecsqlStatement, ecsqlColumnInfo, true, true), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
     {
     //for empty arrays we cache some information so that we don't have to compute it for each step
     m_emptyArrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateInstance();

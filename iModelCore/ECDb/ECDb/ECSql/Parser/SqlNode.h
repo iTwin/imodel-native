@@ -152,6 +152,8 @@ namespace connectivity
                 boolean_term,
                 boolean_test,
                 cast_spec,
+                cast_target_scalar,
+                cast_target_array,
                 catalog_name,
                 char_factor,
                 char_substring_fct,

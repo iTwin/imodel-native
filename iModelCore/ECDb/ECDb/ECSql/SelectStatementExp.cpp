@@ -17,10 +17,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp)
-: QueryExp ()
+SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp)
+    : QueryExp()
     {
-    AddChild (std::move (selectExp));
+    AddChild(std::move(selectExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -28,15 +28,15 @@ SubqueryExp::SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp)
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp const* SubqueryExp::_FindProperty(Utf8CP propertyName) const
     {
-    return GetQuery ()->FindProperty (propertyName);
+    return GetQuery()->FindProperty(propertyName);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectClauseExp const* SubqueryExp::_GetSelection () const 
+SelectClauseExp const* SubqueryExp::_GetSelection() const
     {
-    return GetQuery ()->GetSelection ();
+    return GetQuery()->GetSelection();
     }
 
 //*************************** AllOrAnyExp ******************************************
@@ -44,10 +44,10 @@ SelectClauseExp const* SubqueryExp::_GetSelection () const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, BooleanSqlOperator op, SqlCompareListType type, unique_ptr<SubqueryExp> subquery)
-    : BooleanExp (), m_type(type), m_operator(op)
+    : BooleanExp(), m_type(type), m_operator(op)
     {
-    m_operandExpIndex = AddChild (move (operand));
-    m_subqueryExpIndex = AddChild (move (subquery));
+    m_operandExpIndex = AddChild(move(operand));
+    m_subqueryExpIndex = AddChild(move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -63,10 +63,10 @@ void AllOrAnyExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String AllOrAnyExp::_ToString() const 
+Utf8String AllOrAnyExp::_ToString() const
     {
-    Utf8String str ("AllOrAny [Type: ");
-    str.append (ExpHelper::ToSql (m_type)).append (", Operator: ").append (ExpHelper::ToSql (m_operator)).append ("]");
+    Utf8String str("AllOrAny [Type: ");
+    str.append(ExpHelper::ToSql(m_type)).append(", Operator: ").append(ExpHelper::ToSql(m_operator)).append("]");
     return str;
     }
 
@@ -75,35 +75,32 @@ Utf8String AllOrAnyExp::_ToString() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp::DerivedPropertyExp(unique_ptr<ValueExp> valueExp, Utf8CP columnAlias)
-    : Exp (), m_columnAlias (columnAlias)
+    : Exp(), m_columnAlias(columnAlias)
     {
-    AddChild (move (valueExp));
+    AddChild(move(valueExp));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String DerivedPropertyExp::GetName () const
-    {     
-    Utf8StringCR columnAlias = GetColumnAlias ();
-    if (!columnAlias.empty ())
+Utf8String DerivedPropertyExp::GetName() const
+    {
+    Utf8StringCR columnAlias = GetColumnAlias();
+    if (!columnAlias.empty())
         return columnAlias;
 
-
-    if (GetExpression ()->GetType () == Exp::Type::PropertyName)
+    if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression ());
-        if (propertyNameExp->IsPropertyRef ())
-            {
-            return propertyNameExp->GetPropertyRef ()->LinkedTo ().GetName ();
-            }
-        else
-            return propertyNameExp->GetPropertyPath ().ToString ();
+        PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
+        if (propertyNameExp->IsPropertyRef())
+            return propertyNameExp->GetPropertyRef()->LinkedTo().GetName();
+
+        return propertyNameExp->GetPropertyPath().ToString();
         }
 
-    auto expr = GetExpression()->ToECSql();
-    expr.ReplaceAll("[","");
-    expr.ReplaceAll("]","");
+    Utf8String expr = GetExpression()->ToECSql();
+    expr.ReplaceAll("[", "");
+    expr.ReplaceAll("]", "");
     return expr;
     }
 
@@ -111,17 +108,17 @@ Utf8String DerivedPropertyExp::GetName () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-Utf8StringCR DerivedPropertyExp::GetColumnAlias () const
+Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
     {
-    if (!m_columnAlias.empty ())
+    if (!m_columnAlias.empty())
         return m_columnAlias;
 
-    if (GetExpression ()->GetType () == Exp::Type::PropertyName)
+    if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression ());
-        if (propertyNameExp->IsPropertyRef ())
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(GetExpression());
+        if (propertyNameExp->IsPropertyRef())
             {
-            return propertyNameExp->GetPropertyRef ()->LinkedTo ().GetColumnAlias ();
+            return propertyNameExp->GetPropertyRef()->LinkedTo().GetColumnAlias();
             }
         }
 
@@ -131,12 +128,12 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String DerivedPropertyExp::_ToECSql () const
+Utf8String DerivedPropertyExp::_ToECSql() const
     {
     if (m_columnAlias.empty())
-        return GetExpression ()->ToECSql();
+        return GetExpression()->ToECSql();
 
-    return "(" + GetExpression ()->ToECSql() + ") AS " + m_columnAlias;
+    return "(" + GetExpression()->ToECSql() + ") AS " + m_columnAlias;
     }
 
 
@@ -161,9 +158,9 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             continue;
             }
 
-        if (classExp->GetId ().EqualsI (classExpComparand->GetId ()))
+        if (classExp->GetId().EqualsI(classExpComparand->GetId()))
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql ().c_str ());
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -176,8 +173,8 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 //+---------------+---------------+---------------+---------------+---------------+------
 void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs) const
     {
-    for(auto classRef : GetChildren ())
-        FindRangeClassRefs (classRefs, *static_cast<ClassRefExp const*> (classRef));
+    for (auto classRef : GetChildren())
+        FindRangeClassRefs(classRefs, *static_cast<ClassRefExp const*> (classRef));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -185,15 +182,15 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs) const
 //+---------------+---------------+---------------+---------------+---------------+------
 void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const& classRef) const
     {
-    switch(classRef.GetType())
+    switch (classRef.GetType())
         {
-        case Type::ClassName:
-        case Type::SubqueryRef:
-            classRefs.push_back(static_cast<RangeClassRefExp const*>(&classRef)); break;
-        case Type::QualifiedJoin:
-        case Type::NaturalJoin:
-        case Type::CrossJoin:
-        case Type::ECRelationshipJoin:
+            case Type::ClassName:
+            case Type::SubqueryRef:
+                classRefs.push_back(static_cast<RangeClassRefExp const*>(&classRef)); break;
+            case Type::QualifiedJoin:
+            case Type::NaturalJoin:
+            case Type::CrossJoin:
+            case Type::ECRelationshipJoin:
             {
             JoinExp const& join = static_cast<JoinExp const&>(classRef);
             FindRangeClassRefs(classRefs, join.GetFromClassRef());
@@ -202,8 +199,8 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const
                 FindRangeClassRefs(classRefs, static_cast<ECRelationshipJoinExp const&>(join).GetRelationshipClass());
             break;
             }
-        default:
-            BeAssert(false && "Case not handled");
+            default:
+                BeAssert(false && "Case not handled");
         };
     }
 
@@ -214,7 +211,7 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
     {
     if (classRefExp == nullptr)
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
@@ -223,7 +220,7 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
 
     RangeClassRefList newRangeClassRefs;
 
-    FindRangeClassRefs (newRangeClassRefs, *classRefExp);
+    FindRangeClassRefs(newRangeClassRefs, *classRefExp);
     for (auto newRangeCRef : newRangeClassRefs)
         {
         for (auto existingRangeCRef : existingRangeClassRefs)
@@ -237,16 +234,16 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
             }
         }
 
-    AddChild (move(classRefExp));
+    AddChild(move(classRefExp));
     return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions () const
+unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions() const
     {
-    auto rangeClassRefs = unique_ptr<RangeClassRefList> (new RangeClassRefList ());
+    auto rangeClassRefs = unique_ptr<RangeClassRefList>(new RangeClassRefList());
     FindRangeClassRefs(*rangeClassRefs);
     return rangeClassRefs;
     }
@@ -258,12 +255,12 @@ Utf8String FromExp::_ToECSql() const
     {
     Utf8String tmp = "FROM ";
     bool isFirstItem = true;
-    for(auto classRefExp : GetChildren ())
+    for (auto classRefExp : GetChildren())
         {
         if (!isFirstItem)
-            tmp.append (", ");
+            tmp.append(", ");
 
-        tmp.append (classRefExp->ToECSql ());
+        tmp.append(classRefExp->ToECSql());
         isFirstItem = false;
         }
 
@@ -358,27 +355,27 @@ Utf8String HavingExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-LimitOffsetExp::LimitOffsetExp (std::unique_ptr<ValueExp> limitExp, std::unique_ptr<ValueExp> offsetExp)
-: Exp (), m_offsetExpIndex (UNSET_CHILDINDEX)
+LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_ptr<ValueExp> offsetExp)
+    : Exp(), m_offsetExpIndex(UNSET_CHILDINDEX)
     {
-    BeAssert (limitExp != nullptr);
-    m_limitExpIndex = AddChild (std::move (limitExp));
-    
+    BeAssert(limitExp != nullptr);
+    m_limitExpIndex = AddChild(std::move(limitExp));
+
     if (offsetExp != nullptr)
-        m_offsetExpIndex = static_cast<int> (AddChild (std::move (offsetExp)));
+        m_offsetExpIndex = static_cast<int> (AddChild(std::move(offsetExp)));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String LimitOffsetExp::_ToECSql () const 
+Utf8String LimitOffsetExp::_ToECSql() const
     {
-    Utf8String str ("LIMIT ");
-    str.append (GetLimitExp ()->ToECSql ());
-    if (HasOffset ())
-        str.append (" OFFSET ").append (GetOffsetExp ()->ToECSql ());
+    Utf8String str("LIMIT ");
+    str.append(GetLimitExp()->ToECSql());
+    if (HasOffset())
+        str.append(" OFFSET ").append(GetOffsetExp()->ToECSql());
 
-    return str; 
+    return str;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -386,7 +383,7 @@ Utf8String LimitOffsetExp::_ToECSql () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    BeAssert (GetLimitExp () != nullptr);
+    BeAssert(GetLimitExp() != nullptr);
 
     switch (mode)
         {
@@ -394,21 +391,21 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
                 return FinalizeParseStatus::NotCompleted;
 
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
+            {
+            if (!IsValidChildExp(*GetLimitExp()))
                 {
-                if (!IsValidChildExp(*GetLimitExp()))
-                    {
-                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
-                    return FinalizeParseStatus::Error;
-                    }
-
-                if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
-                    {
-                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
-                    return FinalizeParseStatus::Error;
-                    }
-
-                return FinalizeParseStatus::Completed;
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
                 }
+
+            if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
+                {
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
+            return FinalizeParseStatus::Completed;
+            }
 
             default:
                 BeAssert(false);
@@ -430,28 +427,28 @@ bool LimitOffsetExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Param
 // @bsimethod                                    Affan.Khan                       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool LimitOffsetExp::IsValidChildExp (ValueExp const& exp)
+bool LimitOffsetExp::IsValidChildExp(ValueExp const& exp)
     {
     //parameter exp get their type later, so ignore them here
     if (exp.IsParameterExp())
         return true;
 
     // we allow non-integral numeric expressions as well, assuming that the underlying db will handle casting
-    return exp.GetTypeInfo().IsNumeric(); 
+    return exp.GetTypeInfo().IsNumeric();
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ValueExp const* LimitOffsetExp::GetLimitExp () const
+ValueExp const* LimitOffsetExp::GetLimitExp() const
     {
-    return GetChild<ValueExp> (m_limitExpIndex);
+    return GetChild<ValueExp>(m_limitExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool LimitOffsetExp::HasOffset () const
+bool LimitOffsetExp::HasOffset() const
     {
     return m_offsetExpIndex >= 0;
     }
@@ -459,12 +456,12 @@ bool LimitOffsetExp::HasOffset () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ValueExp const* LimitOffsetExp::GetOffsetExp () const
+ValueExp const* LimitOffsetExp::GetOffsetExp() const
     {
-    if (!HasOffset ())
+    if (!HasOffset())
         return nullptr;
 
-    return GetChild<ValueExp> ((size_t) m_offsetExpIndex);
+    return GetChild<ValueExp>((size_t) m_offsetExpIndex);
     }
 
 
@@ -475,7 +472,7 @@ ValueExp const* LimitOffsetExp::GetOffsetExp () const
 OrderBySpecExp::OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction)
     : m_direction(direction)
     {
-    AddChild (move(expr));
+    AddChild(move(expr));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -486,8 +483,8 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    auto const& typeInfo = GetSortExpression ()->GetTypeInfo ();
-    if (!typeInfo.IsPrimitive () || typeInfo.IsPoint () || typeInfo.IsGeometry ())
+    auto const& typeInfo = GetSortExpression()->GetTypeInfo();
+    if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
         ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
@@ -500,44 +497,44 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-Utf8String OrderBySpecExp::_ToECSql () const
+Utf8String OrderBySpecExp::_ToECSql() const
     {
     auto ecsql = GetSortExpression()->ToECSql();
-    AppendSortDirection (ecsql, true);
+    AppendSortDirection(ecsql, true);
     return ecsql;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String OrderBySpecExp::_ToString() const 
+Utf8String OrderBySpecExp::_ToString() const
     {
-    Utf8String str ("OrderBySpec [SortDirection: ");
-    AppendSortDirection (str, false);
-    str.append ("]");
+    Utf8String str("OrderBySpec [SortDirection: ");
+    AppendSortDirection(str, false);
+    str.append("]");
     return str;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void OrderBySpecExp::AppendSortDirection (Utf8String& str, bool addLeadingBlank) const
+void OrderBySpecExp::AppendSortDirection(Utf8String& str, bool addLeadingBlank) const
     {
     if (addLeadingBlank && m_direction != SortDirection::NotSpecified)
-        str.append (" ");
+        str.append(" ");
 
     switch (m_direction)
         {
-        case SortDirection::Ascending:
-            str.append ("ASC");
-            break;
+            case SortDirection::Ascending:
+                str.append("ASC");
+                break;
 
-        case SortDirection::Descending:
-            str.append ("DESC");
-            break;
+            case SortDirection::Descending:
+                str.append("DESC");
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
     }
 
@@ -546,22 +543,22 @@ void OrderBySpecExp::AppendSortDirection (Utf8String& str, bool addLeadingBlank)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassRefList const& rangeClassRefs)
     {
     vector<DerivedPropertyExp const*> propertyNameExpList;
-    for(auto childExp : GetChildren())
+    for (auto childExp : GetChildren())
         {
         auto derivedPropExp = static_cast<DerivedPropertyExp const*> (childExp);
         if (derivedPropExp->GetExpression()->GetType() == Exp::Type::PropertyName)
             propertyNameExpList.push_back(derivedPropExp);
         }
 
-    for(auto propertyNameExp : propertyNameExpList)
+    for (auto propertyNameExp : propertyNameExpList)
         {
         PropertyNameExp const* innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
-        if (Exp::IsAsteriskToken (innerExp->GetPropertyName ()))
+        if (Exp::IsAsteriskToken(innerExp->GetPropertyName()))
             {
-            auto stat = ReplaceAsteriskExpression (*propertyNameExp, rangeClassRefs);
+            auto stat = ReplaceAsteriskExpression(*propertyNameExp, rangeClassRefs);
             if (stat != SUCCESS)
                 return stat;
 
@@ -570,19 +567,19 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList con
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        auto const& propertyPath = innerExp->GetPropertyPath ();
+        auto const& propertyPath = innerExp->GetPropertyPath();
         //case: SELECT a.* from FOO a
-        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken (propertyPath[1].GetPropertyName ()))
+        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetPropertyName()))
             {
             Utf8CP alias = propertyPath[0].GetPropertyName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
-            for(auto classRef : rangeClassRefs)
+            for (auto classRef : rangeClassRefs)
                 {
                 if (classRef->GetId().Equals(alias))
                     {
                     RangeClassRefList classRefList;
-                    classRefList.push_back (classRef);
-                    auto stat = ReplaceAsteriskExpression (*propertyNameExp, classRefList);
+                    classRefList.push_back(classRef);
+                    auto stat = ReplaceAsteriskExpression(*propertyNameExp, classRefList);
                     if (stat != SUCCESS)
                         return stat;
 
@@ -598,20 +595,20 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList con
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
     {
     vector<unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (unique_ptr<PropertyNameExp>& propNameExp)
         {
-        derivedPropExpList.push_back (unique_ptr<Exp> (new DerivedPropertyExp (move (propNameExp), nullptr)));
+        derivedPropExpList.push_back(unique_ptr<Exp>(new DerivedPropertyExp(move(propNameExp), nullptr)));
         };
 
     for (auto classRef : rangeClassRefs)
-        classRef->CreatePropertyNameExpList (addDelegate);
+        classRef->CreatePropertyNameExpList(addDelegate);
 
-    if (!GetChildrenR ().Replace (asteriskExp, derivedPropExpList))
+    if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
         {
-        BeAssert (false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
+        BeAssert(false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
         return ERROR;
         }
 
@@ -625,11 +622,11 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto finalizeParseArgs = ctx.GetFinalizeParseArg ();
-        BeAssert (finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
+        auto finalizeParseArgs = ctx.GetFinalizeParseArg();
+        BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
         RangeClassRefList const* rangeClassRefList = static_cast<RangeClassRefList const*> (finalizeParseArgs);
-        BeAssert (rangeClassRefList != nullptr);
-        const auto stat = ReplaceAsteriskExpressions (*rangeClassRefList);
+        BeAssert(rangeClassRefList != nullptr);
+        const auto stat = ReplaceAsteriskExpressions(*rangeClassRefList);
         if (stat != SUCCESS)
             {
             ctx.Issues().Report(ECDbIssueSeverity::Error, "Asterisk replacement in select clause failed unexpectedly.");
@@ -694,7 +691,7 @@ SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionTyp
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propertyName) const
     {
-    for(auto selectClauseExp : GetSelection ()->GetChildren ())
+    for (auto selectClauseExp : GetSelection()->GetChildren())
         {
         auto derivedPropertyExp = static_cast<DerivedPropertyExp const*> (selectClauseExp);
         if (!derivedPropertyExp->GetColumnAlias().empty())
@@ -723,13 +720,13 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions ();
-        ctx.PushFinalizeParseArg (m_finalizeParsingArgCache.get ());
+        m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
+        ctx.PushFinalizeParseArg(m_finalizeParsingArgCache.get());
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
-        ctx.PopFinalizeParseArg ();
+        ctx.PopFinalizeParseArg();
         m_finalizeParsingArgCache = nullptr;
         return FinalizeParseStatus::Completed;
         }
@@ -738,23 +735,23 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String SingleSelectStatementExp::_ToString() const 
+Utf8String SingleSelectStatementExp::_ToString() const
     {
-    Utf8String str ("Select [Modifier: ");
-    str.append (ExpHelper::ToSql (m_selectionType)).append ("]");
+    Utf8String str("Select [Modifier: ");
+    str.append(ExpHelper::ToSql(m_selectionType)).append("]");
     return str;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String SingleSelectStatementExp::_ToECSql() const 
+Utf8String SingleSelectStatementExp::_ToECSql() const
     {
-    Utf8String tmp ("SELECT ");
+    Utf8String tmp("SELECT ");
 
     Utf8String selectionType = ExpHelper::ToSql(GetSelectionType());
     if (!selectionType.empty())
-        tmp.append (selectionType).append (" ");
+        tmp.append(selectionType).append(" ");
 
     tmp.append(GetSelection()->ToECSql()).append(" ").append(GetFrom()->ToECSql());
 
@@ -771,7 +768,7 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
         tmp.append(" ").append(GetHaving()->ToECSql());
 
     if (GetLimitOffset() != nullptr)
-        tmp.append (" ").append (GetLimitOffset ()->ToECSql ());
+        tmp.append(" ").append(GetLimitOffset()->ToECSql());
 
     if (GetOptions() != nullptr)
         tmp.append(" ").append(GetOptions()->ToECSql());
@@ -785,7 +782,7 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String SubqueryExp::_ToECSql() const
     {
-    return "(" + GetQuery ()->ToECSql() + ")";
+    return "(" + GetQuery()->ToECSql() + ")";
     }
 
 
@@ -804,14 +801,14 @@ SubqueryRefExp::SubqueryRefExp(unique_ptr<SubqueryExp> subquery, Utf8StringCR al
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
-    for(auto expr : GetSubquery ()->GetSelection()->GetChildren ())
+    for (auto expr : GetSubquery()->GetSelection()->GetChildren())
         {
         auto selectClauseItemExp = static_cast<DerivedPropertyExp const*> (expr);
-        auto propertyNameExp = unique_ptr<PropertyNameExp> (new PropertyNameExp(*this, *selectClauseItemExp));
+        auto propertyNameExp = unique_ptr<PropertyNameExp>(new PropertyNameExp(*this, *selectClauseItemExp));
 
-        addDelegate (propertyNameExp);
+        addDelegate(propertyNameExp);
         }
 
     return SUCCESS;
@@ -841,10 +838,10 @@ Utf8String SubqueryRefExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryTestExp::SubqueryTestExp (SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery) 
-    : BooleanExp (), m_op (op)
+SubqueryTestExp::SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery)
+    : BooleanExp(), m_op(op)
     {
-    AddChild (move (subquery));
+    AddChild(move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -852,16 +849,16 @@ SubqueryTestExp::SubqueryTestExp (SubqueryTestOperator op, std::unique_ptr<Subqu
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryTestExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append(ExpHelper::ToSql(m_op)).append(" ").append(GetQuery ()->ToECSql());
+    ecsql.append(ExpHelper::ToSql(m_op)).append(" ").append(GetQuery()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SubqueryTestExp::_ToString() const 
+Utf8String SubqueryTestExp::_ToString() const
     {
-    Utf8String str ("SubqueryTest [Operator: ");
-    str.append (ExpHelper::ToSql (m_op)).append ("]");
+    Utf8String str("SubqueryTest [Operator: ");
+    str.append(ExpHelper::ToSql(m_op)).append("]");
     return str;
     }
 
@@ -872,10 +869,10 @@ Utf8String SubqueryTestExp::_ToString() const
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
-    : ValueExp ()
+    : ValueExp()
     {
     SetHasParentheses(); //subquery value exp always wrapped in parentheses
-    AddChild (move (subquery));
+    AddChild(move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -886,15 +883,15 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    auto selectClauseExp = GetQuery ()->GetSelection ();
+    auto selectClauseExp = GetQuery()->GetSelection();
 
-    if (selectClauseExp->GetChildren ().size() != 1)
+    if (selectClauseExp->GetChildren().size() != 1)
         {
         ctx.Issues().Report(ECDbIssueSeverity::Error, "Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
-    SetTypeInfo (selectClauseExp->GetChildren ().Get<DerivedPropertyExp> (0)->GetExpression ()->GetTypeInfo ());
+    SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
 
     return FinalizeParseStatus::Completed;
     }
@@ -954,15 +951,15 @@ Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
     {
     switch (op)
         {
-        case CompoundOperator::Union:
-            return "UNION";
-        case CompoundOperator::Intersect:
-            return "INTERSECT";
-        case CompoundOperator::Except:
-            return "EXCEPT";
-        default:
-            BeAssert(false && "Programmer error");
-            return nullptr;
+            case CompoundOperator::Union:
+                return "UNION";
+            case CompoundOperator::Intersect:
+                return "INTERSECT";
+            case CompoundOperator::Except:
+                return "EXCEPT";
+            default:
+                BeAssert(false && "Programmer error");
+                return nullptr;
         }
     }
 

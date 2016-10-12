@@ -184,14 +184,35 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             return FinalizeParseStatus::Error;
             }
 
-        ECN::PrimitiveType targetType;
-        if (ExpHelper::ToPrimitiveType(targetType, m_castTargetType) != SUCCESS)
+        if (m_castTargetSchemaName.empty())
             {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
-            return FinalizeParseStatus::Error;
+            ECN::PrimitiveType targetType;
+            if (ExpHelper::ToPrimitiveType(targetType, GetCastTargetPrimitiveType()) != SUCCESS)
+                {
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s'. Valid target types are the EC primitive types, a fully qualified EC struct type or arrays of those.", GetCastTargetPrimitiveType().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
+            SetTypeInfo(ECSqlTypeInfo(targetType, m_castTargetIsArray, nullptr));
+            }
+        else
+            {
+            ECClassCP targetType = ctx.Schemas().GetECClass(m_castTargetSchemaName, GetCastTargetClassName(), ResolveSchema::AutoDetect);
+            if (targetType == nullptr)
+                {
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
+            if (!targetType->IsStructClass())
+                {
+                ctx.Issues().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s.%s'. The type is not an EC struct.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
+            SetTypeInfo(ECSqlTypeInfo(*targetType->GetStructClassCP(), m_castTargetIsArray));
             }
 
-        SetTypeInfo(ECSqlTypeInfo(targetType));
         return FinalizeParseStatus::NotCompleted;
         }
 
@@ -239,7 +260,17 @@ bool CastExp::NeedsCasting() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void CastExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append("CAST (").append(GetCastOperand()->ToECSql()).append(" AS ").append(m_castTargetType).append(")");
+    ecsql.append("CAST (").append(GetCastOperand()->ToECSql()).append(" AS ");
+    
+    if (!m_castTargetSchemaName.empty())
+        ecsql.append(m_castTargetSchemaName).append(".");
+
+    ecsql.append(m_castTargetType);
+    
+    if (m_castTargetIsArray)
+        ecsql.append("[]");
+
+    ecsql.append(")");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -248,7 +279,15 @@ void CastExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String CastExp::_ToString() const
     {
     Utf8String str("Cast [Target type: ");
-    str.append(m_castTargetType.c_str()).append("]");
+    if (!m_castTargetSchemaName.empty())
+        str.append(m_castTargetSchemaName).append(".");
+
+    str.append(m_castTargetType);
+
+    if (m_castTargetIsArray)
+        str.append("[] ");
+
+    str.append("]");
     return str;
     }
 
@@ -849,7 +888,7 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
             }
 
         DateTimeInfo dtMetadata(dtInfo);
-        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, &dtMetadata));
+        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dtMetadata));
         }
 
     return SUCCESS;

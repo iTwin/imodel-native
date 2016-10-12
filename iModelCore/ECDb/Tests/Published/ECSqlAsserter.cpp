@@ -77,11 +77,11 @@ void ECSqlAsserter::AssertPrepare(bool& prepareSucceeded, ECSqlTestItem const& t
     prepareSucceeded = stat == ECSqlStatus::Success;
 
     if (expectedToSucceed)
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly.";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly: " << ecsql;
 
     if (stat != ECSqlStatus::Success)
         {
-        ASSERT_FALSE(expectedToSucceed) << "Preparation did not fail with expected error code.";
+        ASSERT_FALSE(expectedToSucceed) << "Preparation did not fail with expected error code. " << ecsql;
         return;
         }
 
@@ -89,12 +89,12 @@ void ECSqlAsserter::AssertPrepare(bool& prepareSucceeded, ECSqlTestItem const& t
     prepareSucceeded = stat == ECSqlStatus::Success;
 
     if (expectedToSucceed)
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Binding parameters failed unexpectedly.";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Binding parameters failed unexpectedly. " << ecsql;
     else
         {
         Utf8CP assertMessage = nullptr;
         if (testItem.GetParameterValues().empty())
-            assertMessage = "Preparation did not fail with expected error code.";
+            assertMessage = "Preparation did not fail with expected error code. ";
         else
             assertMessage = "Preparation or binding did not fail with expected error code.";
 

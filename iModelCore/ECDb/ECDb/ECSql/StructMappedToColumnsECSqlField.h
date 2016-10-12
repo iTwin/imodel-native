@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,7 +29,7 @@ private:
 
     bool CanRead (int columnIndex) const;
 public:
-    StructMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo);
+    StructMappedToColumnsECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&);
 
     //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
     //Otherwise the flags m_needsInit and m_needsReset might become wrong

@@ -314,20 +314,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const* exp)
     {
-    auto castOperand = exp->GetCastOperand();
+    ValueExp const* castOperand = exp->GetCastOperand();
     if (!exp->NeedsCasting())
         return PrepareValueExp(nativeSqlSnippets, ctx, castOperand);
 
     const bool castOperandIsNull = IsNullExp(*castOperand);
-    NativeSqlBuilder::List operandNativeSqlSnippets;
     if (castOperandIsNull)
-        PrepareNullLiteralValueExp(operandNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (castOperand), 1);
-    else
-        {
-        auto stat = PrepareValueExp(operandNativeSqlSnippets, ctx, castOperand);
+        return PrepareNullCastExp(nativeSqlSnippets, ctx, *exp);
+
+    NativeSqlBuilder::List operandNativeSqlSnippets;
+    const ECSqlStatus stat = PrepareValueExp(operandNativeSqlSnippets, ctx, castOperand);
         if (!stat.IsSuccess())
             return stat;
-        }
 
     if (operandNativeSqlSnippets.empty())
         {
@@ -336,37 +334,106 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         }
 
     BeAssert(exp->GetTypeInfo().IsPrimitive() && "For now only primitive types supported as CAST target type.");
-    const auto targetType = exp->GetTypeInfo().GetPrimitiveType();
+    const PrimitiveType targetType = exp->GetTypeInfo().GetPrimitiveType();
 
-    if (targetType == PRIMITIVETYPE_Point2D || targetType == PRIMITIVETYPE_Point3D)
+    for (size_t i = 0; i < operandNativeSqlSnippets.size(); i++)
         {
-        size_t expectedOperandSnippetCount = targetType == PRIMITIVETYPE_Point2D ? 2 : 3;
-        for (size_t i = 0; i < expectedOperandSnippetCount; i++)
-            {
-            NativeSqlBuilder nativeSqlBuilder;
-            if (exp->HasParentheses())
-                nativeSqlBuilder.AppendParenLeft();
+        NativeSqlBuilder nativeSqlBuilder;
+        if (exp->HasParentheses())
+            nativeSqlBuilder.AppendParenLeft();
 
-            //if cast operand is null, the snippet list contains a single NULL snippet. In this case we simply
-            //reuse the same snippet for all coordinates of the point.
-            auto const& operandSqlSnippet = castOperandIsNull ? operandNativeSqlSnippets[0] : operandNativeSqlSnippets[i];
-            nativeSqlBuilder.Append("CAST(").Append(operandSqlSnippet).Append(" AS DOUBLE)");
+        Utf8String castExpSnippet;
+        if (SUCCESS != PrepareCastExpForPrimitive(castExpSnippet, targetType, operandNativeSqlSnippets[i].ToString()))
+            return ECSqlStatus::Error;
 
-            if (exp->HasParentheses())
-                nativeSqlBuilder.AppendParenRight();
+        nativeSqlBuilder.Append(castExpSnippet.c_str(), false);
 
-            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
-            }
-        return ECSqlStatus::Success;
+        if (exp->HasParentheses())
+            nativeSqlBuilder.AppendParenRight();
+
+        nativeSqlSnippets.push_back(move(nativeSqlBuilder));
         }
 
+    return ECSqlStatus::Success;
+    }
 
-    NativeSqlBuilder nativeSqlBuilder;
-    if (exp->HasParentheses())
-        nativeSqlBuilder.AppendParenLeft();
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const& nullCastExp)
+    {
+    size_t sqliteSnippetCount = 1;
+    ECSqlTypeInfo const& castTargetTypeInfo = nullCastExp.GetTypeInfo();
+    if (castTargetTypeInfo.IsPrimitive())
+        {
+        switch (castTargetTypeInfo.GetPrimitiveType())
+            {
+                case PRIMITIVETYPE_Point2D:
+                    sqliteSnippetCount = 2;
+                    break;
 
+                case PRIMITIVETYPE_Point3D:
+                    sqliteSnippetCount = 3;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    else if (castTargetTypeInfo.IsStruct())
+        {
+        std::function<void(int& colCount, ECStructClassCR structType)> countColumns;
+        countColumns = [&countColumns] (int& colCount, ECStructClassCR structType)
+            {
+            for (ECPropertyCP prop : structType.GetProperties())
+                {
+                if (prop->GetIsPrimitive())
+                    {
+                    switch (prop->GetAsPrimitiveProperty()->GetType())
+                        {
+                            case PRIMITIVETYPE_Point2D:
+                                colCount += 2;
+                                continue;
+
+                            case PRIMITIVETYPE_Point3D:
+                                colCount += 3;
+                                continue;
+
+                            default:
+                                colCount++;
+                                continue;
+                        }
+                    }
+
+                if (prop->GetIsStruct())
+                    {
+                    countColumns(colCount, *prop->GetAsStructProperty()->GetClass().GetStructClassCP());
+                    continue;
+                    }
+
+                colCount++;
+                }
+            };
+        }
+
+    for (size_t i = 0; i < sqliteSnippetCount; i++)
+        {
+        nativeSqlSnippets.push_back(NativeSqlBuilder("NULL"));
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippet, ECN::PrimitiveType primTargetType, Utf8CP castOperandSnippet)
+    {
     Utf8CP castFormat = nullptr;
-    switch (targetType)
+    switch (primTargetType)
         {
             case PRIMITIVETYPE_Binary:
             case PRIMITIVETYPE_IGeometry:
@@ -379,6 +446,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
                 castFormat = "CAST(%s AS TIMESTAMP)";
                 break;
             case PRIMITIVETYPE_Double:
+            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point3D:
                 castFormat = "CAST(%s AS REAL)";
                 break;
             case PRIMITIVETYPE_Long:
@@ -390,18 +459,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
                 break;
             default:
                 BeAssert(false && "Unexpected cast target type during preparation");
-                return ECSqlStatus::Error;
+                return ERROR;
         }
 
-    Utf8String castExpStr;
-    castExpStr.Sprintf(castFormat, operandNativeSqlSnippets[0].ToString());
-    nativeSqlBuilder.Append(castExpStr.c_str(), false);
-
-    if (exp->HasParentheses())
-        nativeSqlBuilder.AppendParenRight();
-
-    nativeSqlSnippets.push_back(move(nativeSqlBuilder));
-    return ECSqlStatus::Success;
+    sqlSnippet.Sprintf(castFormat, castOperandSnippet);
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

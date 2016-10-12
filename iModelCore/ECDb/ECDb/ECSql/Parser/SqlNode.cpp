@@ -1351,6 +1351,8 @@ namespace connectivity
                         {OSQLParseNode::boolean_term, "boolean_term"},
                         {OSQLParseNode::boolean_test, "boolean_test"},
                         {OSQLParseNode::cast_spec, "cast_spec"},
+                        {OSQLParseNode::cast_target_scalar, "cast_target_scalar"},
+                        {OSQLParseNode::cast_target_array, "cast_target_array"},
                         {OSQLParseNode::catalog_name, "catalog_name"},
                         {OSQLParseNode::char_factor, "char_factor"},
                         {OSQLParseNode::char_substring_fct, "char_substring_fct"},

@@ -207,7 +207,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     ecsql = "SELECT CAST (NULL AS BINARY) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-   
+
+    ecsql = "SELECT CAST (NULL AS BINARY[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (Bi_Array AS BINARY[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
 
     ecsql = "SELECT CAST (B AS BOOLEAN) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -245,11 +251,18 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (Unknown AS BOOLEAN) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "SQL-99 keyword UNKNOWN not supported in ECSQL as ECObjects doesn't have a counterpart for it.");
 
+    ecsql = "SELECT CAST (B AS BOOL) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT CAST (NULL AS BOOLEAN) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT CAST (B AS BOOL) FROM ecsql.PSA";
+    ecsql = "SELECT CAST (NULL AS BOOLEAN[]) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (B_Array AS BOOLEAN[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
 
     ecsql = "SELECT CAST (Bi AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
@@ -308,8 +321,23 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (PStructProp AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
+    ecsql = "SELECT CAST (NULL AS TIMESTAMP) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS TIMESTAMP[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (DtUtc_Array AS TIMESTAMP[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
     ecsql = "SELECT CAST (NULL AS DATE) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS DATE[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (Dt_Array AS DATE[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
 
     
     ecsql = "SELECT CAST (Bi AS DOUBLE) FROM ecsql.PSA";
@@ -333,7 +361,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS DOUBLE) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    
+    ecsql = "SELECT CAST (NULL AS DOUBLE[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (D_Array AS DOUBLE[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
+
     ecsql = "SELECT CAST (Bi AS INT) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
@@ -358,7 +392,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS INT) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    
+    ecsql = "SELECT CAST (NULL AS INT[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (I_Array AS INT[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
+
     ecsql = "SELECT CAST (Bi AS LONG) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
@@ -382,6 +422,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
 
     ecsql = "SELECT CAST (NULL AS LONG) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS LONG[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (L_Array AS LONG[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
 
 
     ecsql = "SELECT CAST (B AS STRING) FROM ecsql.PSA";
@@ -420,6 +466,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS STRING) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT CAST (NULL AS STRING[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (S_ARRAY AS STRING[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
 
     ecsql = "SELECT CAST (Bi AS POINT2D) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -442,6 +494,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS POINT2D) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT CAST (NULL AS POINT2D[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (P2D_Array AS POINT2D[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
     ecsql = "SELECT CAST (Bi AS POINT3D) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
@@ -463,11 +521,14 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS POINT3D) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT CAST (NULL AS POINT3D[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT CAST (D AS POINT2D) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ecsql = "SELECT CAST (P3D_Array AS POINT3D[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
 
-    ecsql = "SELECT CAST (3.134 AS POINT2D) FROM ecsql.PSA";
+
+    ecsql = "SELECT CAST (3.134 AS POINT3D) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (L AS POINT3D) FROM ecsql.PSA";
@@ -481,10 +542,36 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (PStructProp AS ecsql.PStruct) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For structs and arrays only CAST (NULL as <>) is supported");
+
+    ecsql = "SELECT CAST (PStruct_Array AS PStruct[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For structs and arrays only CAST (NULL as <>) is supported");
 
     ecsql = "SELECT CAST (NULL AS ecsql.PStruct) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS ecsql.PStruct[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT CAST (NULL AS PStruct) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target struct must be fully qualified");
+
+    ecsql = "SELECT CAST (NULL AS PStruct[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target struct must be fully qualified");
+
+    ecsql = "SELECT CAST (NULL AS ecsql.P) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target is not a struct");
+
+    ecsql = "SELECT CAST (NULL AS ecsql.P[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target is not a struct");
+
+    ecsql = "SELECT CAST (NULL AS Bla) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target struct does not exist");
+
+    ecsql = "SELECT CAST (NULL AS Bla[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "CAST target struct does not exist");
+
+
 
     ecsql = "SELECT CAST (I AS IGeometry) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -498,9 +585,14 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS Geometry) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT CAST (NULL AS IGeometry[]) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT CAST (S AS I) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ecsql = "SELECT CAST (Geometry_Array AS IGeometry[]) FROM ecsql.PASpatial";
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "For arrays only CAST (NULL as Type[]) is supported");
+
+   
+   
 
     ecsql = "SELECT CAST (? AS INT) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);

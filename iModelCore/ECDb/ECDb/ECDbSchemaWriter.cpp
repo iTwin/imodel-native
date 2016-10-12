@@ -1908,7 +1908,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             else
                 {
                 //Fail we do not want to delete a sql column right now
-                Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported as property mapped to a none-shared column.",
+                Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting ECProperty '%s' from an ECClass is not supported as it is not mapped to a shared column.",
                                           deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
                 return ERROR;
                 }

@@ -459,8 +459,8 @@ IECSqlValue const* ArrayJsonECSqlValue::_GetCurrent() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructArrayJsonECSqlField::StructArrayJsonECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex)
-    : ECSqlField(ecsqlStatement, std::move(ecsqlColumnInfo), true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(Json::arrayValue), m_value(nullptr)
+StructArrayJsonECSqlField::StructArrayJsonECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
+    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(Json::arrayValue), m_value(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------

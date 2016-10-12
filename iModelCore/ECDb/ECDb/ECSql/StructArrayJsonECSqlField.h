@@ -149,7 +149,7 @@ private:
     void DoReset() const;
 
 public:
-    StructArrayJsonECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex);
+    StructArrayJsonECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex);
     ~StructArrayJsonECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -89,7 +89,7 @@ private:
     ECN::IECInstanceCP GetArrayValueECInstance() const;
 
 public:
-    PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
+    PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
     ~PrimitiveArrayMappedToSingleColumnECSqlField() {}
     };
 

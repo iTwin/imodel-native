@@ -20,22 +20,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECSqlFieldFactory
     {
-private:
-    //static class
-    ECSqlFieldFactory ();
-    ~ECSqlFieldFactory ();
+    private:
+        //static class
+        ECSqlFieldFactory();
+        ~ECSqlFieldFactory();
 
-    static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo&&, ECN::PrimitiveType);
-    static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo&&, PropertyNameExp const*);
-    static ECSqlStatus CreatePrimitiveArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo&&, ECN::PrimitiveType);
-    static ECSqlStatus CreateStructArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo&&);
-    static ECSqlStatus CreateStructMemberFields(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, StructPropertyMap const&, ECSqlColumnInfo&&);
+        static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
+        static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
+        static ECSqlStatus CreatePrimitiveArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
+        static ECSqlStatus CreateStructArrayField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
+        static ECSqlStatus CreateStructMemberFields(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECN::ECStructClassCR, ECSqlColumnInfo const&);
+        static ECSqlStatus CreateStructMemberField(std::unique_ptr<ECSqlField>& memberField, ECSqlPrepareContext&, int& sqlColumnIndex, ECSqlColumnInfo const& structFieldColumnInfo, ECN::ECPropertyCR structMemberProperty);
 
-    static ECSqlColumnInfo CreateECSqlColumnInfoFromPropertyNameExp (ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp);
-    static ECSqlColumnInfo CreateECSqlColumnInfoFromGeneratedProperty (ECSqlPrepareContext const& ctx, ECN::ECPropertyCR generatedProperty);
+        static ECSqlColumnInfo CreateECSqlColumnInfoFromPropertyNameExp(ECSqlPrepareContext const&, PropertyNameExp const&);
+        static ECSqlColumnInfo CreateECSqlColumnInfoFromGeneratedProperty(ECSqlPrepareContext const&, ECN::ECPropertyCR generatedProperty);
 
-public:
-    static ECSqlStatus CreateField (ECSqlPrepareContext& ctx, DerivedPropertyExp const* derivedProperty, int startColumnIndex);
+    public:
+        static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

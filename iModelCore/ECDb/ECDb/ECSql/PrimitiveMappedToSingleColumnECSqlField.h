@@ -40,7 +40,7 @@ private:
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
 public:
-    PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int ecsqlColumnIndex);
+    PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
     ~PrimitiveMappedToSingleColumnECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

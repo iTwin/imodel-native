@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,8 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PointMappedToColumnsECSqlField::PointMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex) 
-    : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo), false, false), m_xColumnIndex (xColumnIndex), m_yColumnIndex (yColumnIndex), m_zColumnIndex (zColumnIndex)
+PointMappedToColumnsECSqlField::PointMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex) 
+    : ECSqlField (ecsqlStatement, ecsqlColumnInfo, false, false), m_xColumnIndex (xColumnIndex), m_yColumnIndex (yColumnIndex), m_zColumnIndex (zColumnIndex)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -208,14 +208,6 @@ IECSqlStructValue const& PointMappedToColumnsECSqlField::_GetStruct () const
     ReportError (ECSqlStatus::Error, "GetStruct cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetStruct cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool PointMappedToColumnsECSqlField::IsPoint3D () const
-    {
-    return m_zColumnIndex >= 0;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

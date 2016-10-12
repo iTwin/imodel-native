@@ -14,9 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo)
-    : ECSqlField (ecsqlStatement, std::move (ecsqlColumnInfo), false, false)
-    {}
+StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo)
+    : ECSqlField (ecsqlStatement, ecsqlColumnInfo, false, false) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013

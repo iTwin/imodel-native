@@ -31,23 +31,23 @@ struct ECSqlTypeInfo
         Kind m_kind;
         ECN::PrimitiveType m_primitiveType;
         ECN::DateTimeInfo m_dateTimeInfo;
-        ECN::ECClassCP m_structType;
+        ECN::ECStructClassCP m_structType;
         uint32_t m_minOccurs;
         uint32_t m_maxOccurs;
         PropertyMapCP m_propertyMap;
 
         void DetermineTypeInfo(ECN::ECPropertyCR ecProperty);
 
-        void Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, ECN::DateTimeInfo const* dateTimeInfo);
+        void Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP, int minOccurs, int maxOccurs, ECN::DateTimeInfo const* dateTimeInfo);
 
         bool DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const;
 
     public:
         explicit ECSqlTypeInfo(Kind kind = Kind::Unset);
-        explicit ECSqlTypeInfo(ECN::PrimitiveType primitiveType, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
-        ECSqlTypeInfo(ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
-        explicit ECSqlTypeInfo(ECN::ECClassCR structType);
-        ECSqlTypeInfo(ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs);
+        explicit ECSqlTypeInfo(ECN::PrimitiveType primitiveType) : ECSqlTypeInfo(primitiveType, false, nullptr) {}
+        ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, ECN::DateTimeInfo const* dateTimeInfo);
+        explicit ECSqlTypeInfo(ECN::ECStructClassCR structType) : ECSqlTypeInfo(structType, false) {}
+        ECSqlTypeInfo(ECN::ECStructClassCR, bool isArray);
         explicit ECSqlTypeInfo(PropertyMapCR propertyMap);
         explicit ECSqlTypeInfo(ECN::ECPropertyCR ecProperty);
 
@@ -60,7 +60,7 @@ struct ECSqlTypeInfo
 
         //! Compares the two ECSqlTypeInfo for exact equality, i.e. GetKind, GetPrimitiveType and GetStructType must match.
         bool Equals(ECSqlTypeInfo const& rhs) const;
-        //! Compares the two ECSqlTypeInfo for comparibility in ECSQL.
+        //! Compares the two ECSqlTypeInfo for compatibility in ECSQL.
         bool CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessage = nullptr) const;
 
         Kind GetKind() const { return m_kind; }
@@ -97,7 +97,7 @@ struct ECSqlTypeInfo
 
         ECN::PrimitiveType GetPrimitiveType() const { return m_primitiveType; }
         ECN::DateTimeInfo const& GetDateTimeInfo() const { return m_dateTimeInfo; }
-        ECN::ECClassCR GetStructType() const { return *m_structType; }
+        ECN::ECStructClassCR GetStructType() const { return *m_structType; }
         ECN::ArrayKind GetArrayKind() const { return (m_structType != nullptr) ? ECN::ARRAYKIND_Struct : ECN::ARRAYKIND_Primitive; }
 
         uint32_t GetArrayMinOccurs() const { return m_minOccurs; }

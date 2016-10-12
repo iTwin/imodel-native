@@ -222,7 +222,7 @@ using namespace connectivity;
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 %type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
-%type <pParseNode> cast_operand cast_target factor datetime_value_exp datetime_term datetime_factor
+%type <pParseNode> cast_operand cast_target cast_target_primitive_type cast_target_scalar cast_target_array factor datetime_value_exp datetime_term datetime_factor
 %type <pParseNode> datetime_primary datetime_value_fct /*time_zone time_zone_specifier interval_term */ interval_qualifier
 %type <pParseNode> start_field non_second_datetime_field end_field single_datetime_field extract_field datetime_field /*time_zone_field opt_with_or_without_time_zone*/
 %type <pParseNode> char_length_exp octet_length_exp bit_length_exp select_sublist string_value_exp
@@ -1303,15 +1303,6 @@ opt_escape:
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);}
-    /* This syntax is not compliant with SQL-99 and doesn't seem to be necessary for us anyways. Might remove this completely later.
-    |    '{' SQL_TOKEN_ESCAPE SQL_TOKEN_STRING '}'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1 = newNode("{", SQL_NODE_PUNCTUATION));
-            $$->append($2);
-            $$->append($3);
-            $$->append($4 = newNode("}", SQL_NODE_PUNCTUATION));
-        } */
     ;
 
 null_predicate_part_2:
@@ -1530,8 +1521,7 @@ op_like:
 */
 
 literal:
-/*        SQL_TOKEN_STRING
-    |   */SQL_TOKEN_INT
+        SQL_TOKEN_INT
     |   SQL_TOKEN_REAL_NUM
     |   SQL_TOKEN_INTNUM
     |   SQL_TOKEN_APPROXNUM
@@ -2368,9 +2358,9 @@ cast_operand:
         value_exp
     ;
 
-cast_target:
-    SQL_TOKEN_BINARY 
-    | SQL_TOKEN_BOOLEAN
+cast_target_primitive_type:
+SQL_TOKEN_BINARY 
+   | SQL_TOKEN_BOOLEAN
     | SQL_TOKEN_DOUBLE
     | SQL_TOKEN_INTEGER
     | SQL_TOKEN_INT
@@ -2381,7 +2371,36 @@ cast_target:
     | SQL_TOKEN_DATE
     | SQL_TOKEN_TIMESTAMP
     | SQL_TOKEN_NAME
-  ;
+    ;
+
+cast_target_scalar:
+    cast_target_primitive_type 
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }  
+    | SQL_TOKEN_NAME '.' SQL_TOKEN_NAME
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = newNode(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }  
+        ;
+
+cast_target_array:
+    cast_target_scalar SQL_TOKEN_ARRAY_INDEX
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }  
+        ;
+
+cast_target:
+    cast_target_scalar
+    | cast_target_array
+        ;
 
 cast_spec:
       SQL_TOKEN_CAST '(' cast_operand SQL_TOKEN_AS cast_target ')'

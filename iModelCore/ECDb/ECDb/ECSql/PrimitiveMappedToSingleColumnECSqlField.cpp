@@ -17,8 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int columnIndex)
-    : ECSqlField(ecsqlStatement, move(ecsqlColumnInfo), false, false), m_sqliteColumnIndex(columnIndex)
+PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
+    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
     {
     if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {

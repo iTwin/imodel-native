@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,10 +41,11 @@ private:
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
-    bool IsPoint3D() const;
+    bool IsPoint3D() const { return m_zColumnIndex >= 0; }
 
 public:
-    PointMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo &&ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex = -1);
+    PointMappedToColumnsECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int xColumnIndex, int yColumnIndex, int zColumnIndex);
+    PointMappedToColumnsECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointMappedToColumnsECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointMappedToColumnsECSqlField() {}
     };
 

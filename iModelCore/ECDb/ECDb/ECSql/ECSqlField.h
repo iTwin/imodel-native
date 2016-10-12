@@ -39,8 +39,8 @@ protected:
     bool m_requiresOnAfterStep;
     bool m_requiresOnAfterReset;
 
-    ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+    ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
     ECSqlStatus ReportError(ECSqlStatus status, Utf8CP errorMessage) const;
