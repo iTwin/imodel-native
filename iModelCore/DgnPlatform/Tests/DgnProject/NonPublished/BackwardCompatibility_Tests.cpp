@@ -204,7 +204,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
             }
 
         BeFileName sourceFilesPath = dirName;
-        sourceFilesPath.AppendToPath(L"*.ibim");
+        sourceFilesPath.AppendToPath(L"*.idgndb");
 
         BeFileListIterator filesIterator(sourceFilesPath, false);
         BeFileName dbName;
