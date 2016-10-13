@@ -1027,12 +1027,12 @@ NodePtr         ECEvaluator::ParsePrimary
                 switch (m_lexer->GetTokenType())
                     {
                     case TOKEN_RCurly:
-                        result = Node::CreatePoint2DLiteral (DPoint2d::From (x, y));
+                        result = Node::CreatePoint2dLiteral (DPoint2d::From (x, y));
                         break;
                     case TOKEN_Comma:
                         m_lexer->Advance();
                         EXTRACT_COORDINATE(z)
-                        result = Node::CreatePoint3DLiteral (DPoint3d::FromXYZ (x, y, z));
+                        result = Node::CreatePoint3dLiteral (DPoint3d::FromXYZ (x, y, z));
                         break;
                     default:
                         return GetErrorNode ("PointLiteralExpected");

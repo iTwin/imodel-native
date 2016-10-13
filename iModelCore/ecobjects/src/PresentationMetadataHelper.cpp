@@ -250,7 +250,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecproperty, bool andArrayMembers) const
     {
-    if (NULL != ecproperty.GetAsPrimitiveProperty() && PRIMITIVETYPE_Point3D != ecproperty.GetAsPrimitiveProperty()->GetType())
+    if (NULL != ecproperty.GetAsPrimitiveProperty() && PRIMITIVETYPE_Point3d != ecproperty.GetAsPrimitiveProperty()->GetType())
         {
         BeAssert (false);
         LOG.error ("AlwaysExpand custom attribute only valid for complex properties");

@@ -875,23 +875,23 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_PropertyAccessor)
     // GetPoint2d
     DPoint2d   point2dInput = {1.0, 2.0};
     DPoint2d   point2dOutput = {0.0, 0.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, "APoint2d", point2dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, "APoint2d"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2dValue(*instance, "APoint2d", point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2d(*instance, point2dOutput, "APoint2d"));
     EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
     point2dInput = {3.0, 4.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, "SomePoint2ds[0]", point2dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, "SomePoint2ds[0]"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2dValue(*instance, "SomePoint2ds[0]", point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2d(*instance, point2dOutput, "SomePoint2ds[0]"));
     EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
 
     // GetPoint3d
     DPoint3d   point3dInput = {1.0, 2.0, 3.0};
     DPoint3d   point3dOutput = {0.0, 0.0, 0.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, "APoint3d", point3dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, "APoint3d"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3dValue(*instance, "APoint3d", point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3d(*instance, point3dOutput, "APoint3d"));
     EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
     point3dInput = {4.0, 5.0, 6.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, "SomePoint3ds[0]", point3dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, "SomePoint3ds[0]"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3dValue(*instance, "SomePoint3ds[0]", point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3d(*instance, point3dOutput, "SomePoint3ds[0]"));
     EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
 
     // GetDateTime
@@ -1007,8 +1007,8 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_ECValueAccessor)
         GetAccessor_start("APoint2d")
         DPoint2d   point2dInput = {1.0, 2.0};
     DPoint2d   point2dOutput = {0.0, 0.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, ACCESSOR, point2dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, ACCESSOR));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2dValue(*instance, ACCESSOR, point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2d(*instance, point2dOutput, ACCESSOR));
     EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
     GetAccessor_end()
 
@@ -1016,8 +1016,8 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_ECValueAccessor)
         GetAccessor_start("APoint3d")
         DPoint3d   point3dInput = {1.0, 2.0, 3.0};
     DPoint3d   point3dOutput = {0.0, 0.0, 0.0};
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, ACCESSOR, point3dInput));
-    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, ACCESSOR));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3dValue(*instance, ACCESSOR, point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3d(*instance, point3dOutput, ACCESSOR));
     EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
     GetAccessor_end()
 
@@ -1309,18 +1309,18 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
 
     DPoint2d   point2dInput0 = {1.0, 2.0};
     DPoint2d   point2dInput1 = {3.0, 4.0};
-    v1.SetPoint2D(point2dInput0);
-    v2.SetPoint2D(point2dInput0);
+    v1.SetPoint2d(point2dInput0);
+    v2.SetPoint2d(point2dInput0);
     EXPECT_TRUE(v1.Equals(v2));
-    v2.SetPoint2D(point2dInput1);
+    v2.SetPoint2d(point2dInput1);
     EXPECT_FALSE(v1.Equals(v2));
 
     DPoint3d   point3dInput0 = {1.0, 2.0, -10.0};
     DPoint3d   point3dInput1 = {3.0, 4.0, -123.0};
-    v1.SetPoint3D(point3dInput0);
-    v2.SetPoint3D(point3dInput0);
+    v1.SetPoint3d(point3dInput0);
+    v2.SetPoint3d(point3dInput0);
     EXPECT_TRUE(v1.Equals(v2));
-    v2.SetPoint3D(point3dInput1);
+    v2.SetPoint3d(point3dInput1);
     EXPECT_FALSE(v1.Equals(v2));
 
     ECN::StandaloneECInstancePtr testInstance0 = enabler->CreateInstance();
@@ -1849,10 +1849,10 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Integer, 0, false);
     expectedValues.push_back(AccessStringValuePair("SomeInts", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point3D, 0, false);
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point3d, 0, false);
     expectedValues.push_back(AccessStringValuePair("SomePoint3ds", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point2D, 0, false);
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point2d, 0, false);
     expectedValues.push_back(AccessStringValuePair("SomePoint2ds", arrayValue));
 
     arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Double, 0, false);
@@ -2395,13 +2395,13 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Field_Tested"));
     EXPECT_TRUE(ecValue.GetBoolean() == inTest);
     EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Size"));
-    DPoint2d    point2d = ecValue.GetPoint2D();
+    DPoint2d    point2d = ecValue.GetPoint2d();
     EXPECT_TRUE(SUCCESS == memcmp(&inSize, &point2d, sizeof(DPoint2d)));
     EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "StartPoint"));
-    DPoint3d    point3d = ecValue.GetPoint3D();
+    DPoint3d    point3d = ecValue.GetPoint3d();
     EXPECT_TRUE(SUCCESS == memcmp(&inPoint1, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "EndPoint"));
-    point3d = ecValue.GetPoint3D();
+    point3d = ecValue.GetPoint3d();
     EXPECT_TRUE(SUCCESS == memcmp(&inPoint2, &point3d, sizeof(DPoint3d)));
     //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
     //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
@@ -2580,8 +2580,8 @@ TEST_F(MemoryLayoutTests, Values)
     //DPoint3d
     DPoint3d inPoint3 = {10.0, 100.0, 1000.0};
     ECValue pntVal3(inPoint3);
-    DPoint3d outPoint3 = pntVal3.GetPoint3D();
-    EXPECT_TRUE(pntVal3.IsPoint3D());
+    DPoint3d outPoint3 = pntVal3.GetPoint3d();
+    EXPECT_TRUE(pntVal3.IsPoint3d());
     EXPECT_TRUE(0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
     Utf8String point3Str = pntVal3.ToString();
     EXPECT_TRUE(0 == point3Str.compare("10,100,1000"));
@@ -2589,8 +2589,8 @@ TEST_F(MemoryLayoutTests, Values)
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
     ECValue pntVal2(inPoint2);
-    EXPECT_TRUE(pntVal2.IsPoint2D());
-    DPoint2d outPoint2 = pntVal2.GetPoint2D();
+    EXPECT_TRUE(pntVal2.IsPoint2d());
+    DPoint2d outPoint2 = pntVal2.GetPoint2d();
     EXPECT_TRUE(0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
     Utf8String point2Str = pntVal2.ToString();
     EXPECT_TRUE(0 == point2Str.compare("10,100"));

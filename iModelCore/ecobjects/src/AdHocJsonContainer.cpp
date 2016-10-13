@@ -117,26 +117,26 @@ void AdHocJsonPropertyValue::SetValueText(Utf8CP value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonPropertyValue::SetValuePoint2D(DPoint2dCR value)
+void AdHocJsonPropertyValue::SetValuePoint2d(DPoint2dCR value)
     {
     Utf8CP name = m_name.c_str();
     m_value[name] = Json::objectValue;
     m_value[name]["x"] = value.x;
     m_value[name]["y"] = value.y;
-    SetType(PRIMITIVETYPE_Point2D);
+    SetType(PRIMITIVETYPE_Point2d);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonPropertyValue::SetValuePoint3D(DPoint3dCR value)
+void AdHocJsonPropertyValue::SetValuePoint3d(DPoint3dCR value)
     {
     Utf8CP name = m_name.c_str();
     m_value[name] = Json::objectValue;
     m_value[name]["x"] = value.x;
     m_value[name]["y"] = value.y;
     m_value[name]["z"] = value.z;
-    SetType(PRIMITIVETYPE_Point3D);
+    SetType(PRIMITIVETYPE_Point3d);
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,11 +184,11 @@ BentleyStatus AdHocJsonPropertyValue::SetValueEC(ECN::ECValueCR value)
         case PRIMITIVETYPE_Long:
             SetValueInt64(value.GetLong());
             break;
-        case PRIMITIVETYPE_Point2D:
-            SetValuePoint2D(value.GetPoint2D());
+        case PRIMITIVETYPE_Point2d:
+            SetValuePoint2d(value.GetPoint2d());
             break;
-        case PRIMITIVETYPE_Point3D:
-            SetValuePoint3D(value.GetPoint3D());
+        case PRIMITIVETYPE_Point3d:
+            SetValuePoint3d(value.GetPoint3d());
             break;
         case PRIMITIVETYPE_String:
             SetValueText(value.GetUtf8CP());
@@ -281,7 +281,7 @@ int64_t AdHocJsonPropertyValue::GetValueInt64() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-DPoint2d AdHocJsonPropertyValue::GetValuePoint2D() const
+DPoint2d AdHocJsonPropertyValue::GetValuePoint2d() const
     {
     Json::Value const* value = GetJsonValue();
     return value ? DPoint2d::From((*value)["x"].asDouble(), (*value)["y"].asDouble()) : DPoint2d::From(0.0, 0.0);
@@ -290,7 +290,7 @@ DPoint2d AdHocJsonPropertyValue::GetValuePoint2D() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-DPoint3d AdHocJsonPropertyValue::GetValuePoint3D() const
+DPoint3d AdHocJsonPropertyValue::GetValuePoint3d() const
     {
     Json::Value const* value = GetJsonValue();
     return value ? DPoint3d::From((*value)["x"].asDouble(), (*value)["y"].asDouble(), (*value)["z"].asDouble()) : DPoint3d::From(0.0, 0.0, 0.0);
@@ -337,10 +337,10 @@ ECValue AdHocJsonPropertyValue::GetValueEC() const
             return ECValue(GetValueInt());
         case PRIMITIVETYPE_Long:
             return ECValue(GetValueInt64());
-        case PRIMITIVETYPE_Point2D:
-            return ECValue(GetValuePoint2D());
-        case PRIMITIVETYPE_Point3D:
-            return ECValue(GetValuePoint3D());
+        case PRIMITIVETYPE_Point2d:
+            return ECValue(GetValuePoint2d());
+        case PRIMITIVETYPE_Point3d:
+            return ECValue(GetValuePoint3d());
         case PRIMITIVETYPE_String:
             return ECValue(GetValueText());
         default:

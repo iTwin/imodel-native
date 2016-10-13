@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,7 +119,7 @@ public:
     //! @return ECObjectsStatus::Success if the priority was applied to the property
     ECOBJECTS_EXPORT ECObjectsStatus    SetPriority (ECPropertyR ecproperty, int32_t priority) const;
 
-    //! Applies a custom attribute which prevents the Z coordinate of a Point3D property from being displayed in the UI
+    //! Applies a custom attribute which prevents the Z coordinate of a Point3d property from being displayed in the UI
     //! @param ecproperty   The property to which to apply the custom attribute
     //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetIgnoreZ (ECPropertyR ecproperty) const;
@@ -129,8 +129,8 @@ public:
     //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetMembersIndependent (ECPropertyR ecproperty) const;
 
-    //! Applies a custom attribute to a Point3D, array, or struct property which causes the UI to to expand the property's members
-    //! @param ecproperty       The property to which to apply the custom attribute. Must be a Point3D, array, or struct property.
+    //! Applies a custom attribute to a Point3d, array, or struct property which causes the UI to to expand the property's members
+    //! @param ecproperty       The property to which to apply the custom attribute. Must be a Point3d, array, or struct property.
     //! @param andArrayMembers  If true, and ecproperty is an array of structures, members of the structures are expanded as well. Ignored otherwise.
     //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetAlwaysExpand (ECPropertyR ecproperty, bool andArrayMembers = false) const;

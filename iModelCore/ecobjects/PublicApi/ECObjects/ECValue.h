@@ -278,11 +278,11 @@ public:
     //! @param[in] size Size in bytes of the blob
     ECOBJECTS_EXPORT explicit ECValue (const Byte * blob, size_t size);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to BentleyApi::ECN::PRIMITIVETYPE_Point2D
+    //! Initializes a new instance of ECValue from the given value.  Type is set to BentleyApi::ECN::PRIMITIVETYPE_Point2d
     //! @param[in] point2d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to BentleyApi::ECN::PRIMITIVETYPE_Point3D
+    //! Initializes a new instance of ECValue from the given value.  Type is set to BentleyApi::ECN::PRIMITIVETYPE_Point3d
     //! @param[in] point3d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
 
@@ -375,12 +375,12 @@ public:
     //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_Boolean. false otherwise.
     ECOBJECTS_EXPORT bool           IsBoolean () const;
 
-    //! Indicates whether the content of this ECValue is of type BentleyApi::ECN::PRIMITIVETYPE_Point2D.
-    //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_Point2D. false otherwise.
-    ECOBJECTS_EXPORT bool           IsPoint2D () const;
-    //! Indicates whether the content of this ECValue is of type BentleyApi::ECN::PRIMITIVETYPE_Point3D.
-    //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_Point3D. false otherwise.
-    ECOBJECTS_EXPORT bool           IsPoint3D () const;
+    //! Indicates whether the content of this ECValue is of type BentleyApi::ECN::PRIMITIVETYPE_Point2d.
+    //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_Point2d. false otherwise.
+    ECOBJECTS_EXPORT bool           IsPoint2d () const;
+    //! Indicates whether the content of this ECValue is of type BentleyApi::ECN::PRIMITIVETYPE_Point3d.
+    //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_Point3d. false otherwise.
+    ECOBJECTS_EXPORT bool           IsPoint3d () const;
     //! Indicates whether the content of this ECValue is of type BentleyApi::ECN::PRIMITIVETYPE_DateTime.
     //! @return true if the ECValue content is of type BentleyApi::ECN::PRIMITIVETYPE_DateTime. false otherwise.
     ECOBJECTS_EXPORT bool           IsDateTime () const;
@@ -621,18 +621,18 @@ public:
 //__PUBLISH_SECTION_START__
 //
     //! Returns the DPoint2d value, if this ECValue holds a Point2d
-    ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
+    ECOBJECTS_EXPORT DPoint2d       GetPoint2d() const;
     //! Sets the value of this ECValue to the given DPoint2d
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DPoint2d primitive
     //! @param[in] value   The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
+    ECOBJECTS_EXPORT BentleyStatus  SetPoint2d (DPoint2dCR value);
 
     //! Returns the DPoint3d value, if this ECValue holds a Point3d
-    ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
+    ECOBJECTS_EXPORT DPoint3d       GetPoint3d() const;
     //! Sets the value of this ECValue to the given DPoint3d
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DPoint3d primitive
     //! @param[in] value   The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetPoint3D (DPoint3dCR value);
+    ECOBJECTS_EXPORT BentleyStatus  SetPoint3d (DPoint3dCR value);
 
     //! For fixed primitive types, returns the number of bytes required to represent the type
     //! @param[in]  primitiveType   The type to measure

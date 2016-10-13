@@ -79,8 +79,8 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         case PRIMITIVETYPE_Long:
         case PRIMITIVETYPE_Double:
         case PRIMITIVETYPE_Boolean:
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point3d:
         case PRIMITIVETYPE_DateTime: 
             return true;
         case PRIMITIVETYPE_String:
@@ -2668,18 +2668,18 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 v.SetBoolean (value);
                 break;
                 } 
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 {
                 DPoint2d value;
                 memcpy (&value, pValue, sizeof(value));
-                v.SetPoint2D (value);
+                v.SetPoint2d (value);
                 break;
                 }       
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 {
                 DPoint3d value;
                 memcpy (&value, pValue, sizeof(value));
-                v.SetPoint3D (value);
+                v.SetPoint3d (value);
                 break;
                 }       
             case PRIMITIVETYPE_DateTime:
@@ -3037,12 +3037,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             result = ModifyData (valueP, &value, sizeof(value));
             }       
             break;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {
-            if (!v.IsPoint2D ())
+            if (!v.IsPoint2d ())
                 return ECObjectsStatus::DataTypeMismatch;
 
-            DPoint2d value = v.GetPoint2D();
+            DPoint2d value = v.GetPoint2d();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECObjectsStatus::PropertyValueMatchesNoChange;
@@ -3050,12 +3050,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             result = ModifyData (valueP, &value, sizeof(value));
             }       
             break;
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            if (!v.IsPoint3D ())
+            if (!v.IsPoint3d ())
                 return ECObjectsStatus::DataTypeMismatch;
 
-            DPoint3d value = v.GetPoint3D();
+            DPoint3d value = v.GetPoint3d();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECObjectsStatus::PropertyValueMatchesNoChange;

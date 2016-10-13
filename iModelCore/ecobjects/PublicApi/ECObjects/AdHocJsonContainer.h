@@ -100,11 +100,11 @@ public:
 
     //! Set a DPoint2d value
     //! @param[in] value Value of the property
-    ECOBJECTS_EXPORT void SetValuePoint2D(DPoint2dCR value);
+    ECOBJECTS_EXPORT void SetValuePoint2d(DPoint2dCR value);
 
     //! Set an DPoint3d value
     //! @param[in] value Value of the property
-    ECOBJECTS_EXPORT void SetValuePoint3D(DPoint3dCR value);
+    ECOBJECTS_EXPORT void SetValuePoint3d(DPoint3dCR value);
 
     //! Set a DateTime value
     //! @param[in] value Value of the property
@@ -144,10 +144,10 @@ public:
     ECOBJECTS_EXPORT int64_t GetValueInt64() const;
 
     //! Get a DPoint2d value
-    ECOBJECTS_EXPORT DPoint2d GetValuePoint2D() const;
+    ECOBJECTS_EXPORT DPoint2d GetValuePoint2d() const;
 
     //! Get a DPoint3d value
-    ECOBJECTS_EXPORT DPoint3d GetValuePoint3D() const;
+    ECOBJECTS_EXPORT DPoint3d GetValuePoint3d() const;
 
     //! Get a DateTime value
     ECOBJECTS_EXPORT DateTime GetValueDateTime() const;

@@ -525,9 +525,9 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     PrimitiveECPropertyP primitiveProperty7;
     entityClass->CreatePrimitiveProperty(primitiveProperty7, "Primitive7", PrimitiveType::PRIMITIVETYPE_Long);
     PrimitiveECPropertyP primitiveProperty8;
-    entityClass->CreatePrimitiveProperty(primitiveProperty8, "Primitive8", PrimitiveType::PRIMITIVETYPE_Point2D);
+    entityClass->CreatePrimitiveProperty(primitiveProperty8, "Primitive8", PrimitiveType::PRIMITIVETYPE_Point2d);
     PrimitiveECPropertyP primitiveProperty9;
-    entityClass->CreatePrimitiveProperty(primitiveProperty9, "Primitive9", PrimitiveType::PRIMITIVETYPE_Point3D);
+    entityClass->CreatePrimitiveProperty(primitiveProperty9, "Primitive9", PrimitiveType::PRIMITIVETYPE_Point3d);
     PrimitiveECPropertyP primitiveProperty10;
     entityClass->CreatePrimitiveProperty(primitiveProperty10, "Primitive10", PrimitiveType::PRIMITIVETYPE_String);
     PrimitiveECPropertyP calculatedProperty;
@@ -1130,8 +1130,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreatePrimitiveProperty(doubleProperty, "DoubleProp");
     class1->CreatePrimitiveProperty(integerProperty, "IntProp");
     class1->CreatePrimitiveProperty(longProperty, "LongProp");
-    class1->CreatePrimitiveProperty(point2DProperty, "Point2DProp");
-    class1->CreatePrimitiveProperty(point3DProperty, "Point3DProp");
+    class1->CreatePrimitiveProperty(point2DProperty, "Point2dProp");
+    class1->CreatePrimitiveProperty(point3DProperty, "Point3dProp");
 
     EXPECT_EQ(ECObjectsStatus::ParseError, binaryProperty->SetTypeName("fake"));
 
@@ -1150,8 +1150,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point2d == point2DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point3d == point3DProperty->GetType());
 
     class1->CreatePrimitiveProperty(binaryProperty, "BinaryProp2", PRIMITIVETYPE_Binary);
     class1->CreatePrimitiveProperty(booleanProperty, "BooleanProp2", PRIMITIVETYPE_Boolean);
@@ -1159,8 +1159,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreatePrimitiveProperty(doubleProperty, "DoubleProp2", PRIMITIVETYPE_Double);
     class1->CreatePrimitiveProperty(integerProperty, "IntProp2", PRIMITIVETYPE_Integer);
     class1->CreatePrimitiveProperty(longProperty, "LongProp2", PRIMITIVETYPE_Long);
-    class1->CreatePrimitiveProperty(point2DProperty, "Point2DProp2", PRIMITIVETYPE_Point2D);
-    class1->CreatePrimitiveProperty(point3DProperty, "Point3DProp2", PRIMITIVETYPE_Point3D);
+    class1->CreatePrimitiveProperty(point2DProperty, "Point2dProp2", PRIMITIVETYPE_Point2d);
+    class1->CreatePrimitiveProperty(point3DProperty, "Point3dProp2", PRIMITIVETYPE_Point3d);
 
     EXPECT_TRUE(PRIMITIVETYPE_Binary == binaryProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Boolean == booleanProperty->GetType());
@@ -1168,8 +1168,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->GetType());
-    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point2d == point2DProperty->GetType());
+    EXPECT_TRUE(PRIMITIVETYPE_Point3d == point3DProperty->GetType());
 
     class1->CreateStructProperty(structProp, "StructMember2", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray2", structClass);

@@ -249,7 +249,7 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     PrimitiveECPropertyP extendedProperty;
     baseClass->CreatePrimitiveProperty(extendedProperty, "Extended", PrimitiveType::PRIMITIVETYPE_Double);
     ArrayECPropertyP extendedArrayProperty;
-    baseClass->CreateArrayProperty(extendedArrayProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    baseClass->CreateArrayProperty(extendedArrayProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
     PrimitiveECPropertyP extendedInDerivedProperty;
     baseClass->CreatePrimitiveProperty(extendedInDerivedProperty, "ExtendedLater", PrimitiveType::PRIMITIVETYPE_Binary);
     
@@ -268,7 +268,7 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     
     // Verify that property override added before extended type set is extended
     ArrayECPropertyP extendedArrayOverrideProperty;
-    derivedClass1->CreateArrayProperty(extendedArrayOverrideProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    derivedClass1->CreateArrayProperty(extendedArrayOverrideProperty, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
     VerifyExtendedTypeSet(extendedArrayProperty, "Pear", false, false);
     VerifyExtendedTypeOnProperty("Pear", "ExtendedArray", derivedClass1, "Override created before type set.  ");
 
@@ -287,13 +287,13 @@ TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     testSchema->CreateEntityClass(derivedClass2, "DerivedClass2");
     derivedClass2->AddBaseClass(*derivedClass1);
     ArrayECPropertyP extendedArrayOverride2;
-    derivedClass2->CreateArrayProperty(extendedArrayOverride2, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    derivedClass2->CreateArrayProperty(extendedArrayOverride2, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
 
     ECEntityClassP derivedClass3;
     testSchema->CreateEntityClass(derivedClass3, "DerivedClass3");
     derivedClass3->AddBaseClass(*derivedClass2);
     ArrayECPropertyP extendedArrayOverride3;
-    derivedClass3->CreateArrayProperty(extendedArrayOverride3, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2D);
+    derivedClass3->CreateArrayProperty(extendedArrayOverride3, "ExtendedArray", PrimitiveType::PRIMITIVETYPE_Point2d);
 
     VerifyExtendedTypeSet(extendedArrayOverride2, "SubPear", false, false);
     VerifyExtendedTypeOnProperty("SubPear", "ExtendedArray", derivedClass3);

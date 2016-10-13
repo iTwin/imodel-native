@@ -65,10 +65,10 @@ TEST_F(ValueTests, ECValueToString)
     EXPECT_EQ (value.SetLong(1234567890L), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "1234567890");
     
-    EXPECT_EQ (value.SetPoint2D(point2d), SUCCESS);
+    EXPECT_EQ (value.SetPoint2d(point2d), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "123.456,456.78899999999999");
     
-    EXPECT_EQ (value.SetPoint3D(point3d), SUCCESS);
+    EXPECT_EQ (value.SetPoint3d(point3d), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "1.2,-3.3999999999999999,5.5999999999999996");
     };
     

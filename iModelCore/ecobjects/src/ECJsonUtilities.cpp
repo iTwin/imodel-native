@@ -55,7 +55,7 @@ BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value c
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::Point2DToJson(Json::Value& json, DPoint2d pt)
+BentleyStatus ECJsonUtilities::Point2dToJson(Json::Value& json, DPoint2d pt)
     {
     json = Json::Value(Json::objectValue);
     json[JSON_POINT_X_KEY] = pt.x;
@@ -67,7 +67,7 @@ BentleyStatus ECJsonUtilities::Point2DToJson(Json::Value& json, DPoint2d pt)
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::JsonToPoint2D(DPoint2d& pt, Json::Value const& json)
+BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, Json::Value const& json)
     {
     double x = 0.0;
     double y = 0.0;
@@ -84,7 +84,7 @@ BentleyStatus ECJsonUtilities::JsonToPoint2D(DPoint2d& pt, Json::Value const& js
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::Point3DToJson(Json::Value& json, DPoint3d pt)
+BentleyStatus ECJsonUtilities::Point3dToJson(Json::Value& json, DPoint3d pt)
     {
     json = Json::Value(Json::objectValue);
     json[JSON_POINT_X_KEY] = pt.x;
@@ -97,7 +97,7 @@ BentleyStatus ECJsonUtilities::Point3DToJson(Json::Value& json, DPoint3d pt)
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::JsonToPoint3D(DPoint3d& pt, Json::Value const& json)
+BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, Json::Value const& json)
     {
     double x = 0.0;
     double y = 0.0;
@@ -140,22 +140,22 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, const 
     BentleyStatus status = SUCCESS;
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
-            if (JsonToPoint2D(point2d, jsonValue))
+            if (JsonToPoint2d(point2d, jsonValue))
                 return ERROR;
 
-            status = ecValue.SetPoint2D(point2d);
+            status = ecValue.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
-            if (JsonToPoint3D(point3d, jsonValue))
+            if (JsonToPoint3d(point3d, jsonValue))
                 return ERROR;
 
-            status = ecValue.SetPoint3D(point3d);
+            status = ecValue.SetPoint3d(point3d);
             break;
             }
             case PRIMITIVETYPE_Integer:
@@ -469,7 +469,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToBinary(bvector<Byte>& binary, RapidJso
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::Point2DToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECRapidJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
@@ -483,7 +483,7 @@ BentleyStatus ECRapidJsonUtilities::Point2DToJson(RapidJsonValueR json, DPoint2d
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToPoint2D(DPoint2d& pt, RapidJsonValueCR json)
+BentleyStatus ECRapidJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
         return ERROR;
@@ -503,7 +503,7 @@ BentleyStatus ECRapidJsonUtilities::JsonToPoint2D(DPoint2d& pt, RapidJsonValueCR
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::Point3DToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECRapidJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator)
     {
     json.SetObject();
     rapidjson::Value coordVal(pt.x);
@@ -519,7 +519,7 @@ BentleyStatus ECRapidJsonUtilities::Point3DToJson(RapidJsonValueR json, DPoint3d
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECRapidJsonUtilities::JsonToPoint3D(DPoint3d& pt, RapidJsonValueCR json)
+BentleyStatus ECRapidJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
         return ERROR;
@@ -560,21 +560,21 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJson(ECValueR ecValue, R
     {
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
-            if (SUCCESS != JsonToPoint2D(point2d, jsonValue))
+            if (SUCCESS != JsonToPoint2d(point2d, jsonValue))
                 return ERROR;
 
-            return ecValue.SetPoint2D(point2d);
+            return ecValue.SetPoint2d(point2d);
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
-            if (SUCCESS != JsonToPoint3D(point3d, jsonValue))
+            if (SUCCESS != JsonToPoint3d(point3d, jsonValue))
                 return ERROR;
 
-            return ecValue.SetPoint3D(point3d);
+            return ecValue.SetPoint3d(point3d);
             }
             case PRIMITIVETYPE_Integer:
                 if (!jsonValue.IsInt())
