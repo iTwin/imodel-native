@@ -3739,10 +3739,10 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint2d boxLow = stmt.GetValuePoint2D(params.GetSelectIndex(GEOM_Box_Low)),
-             boxHi  = stmt.GetValuePoint2D(params.GetSelectIndex(GEOM_Box_High));
+    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(GEOM_Box_Low)),
+             boxHi  = stmt.GetValuePoint2d(params.GetSelectIndex(GEOM_Box_High));
 
-    m_placement = Placement2d(stmt.GetValuePoint2D(originIndex),
+    m_placement = Placement2d(stmt.GetValuePoint2d(originIndex),
                               AngleInDegrees::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(GEOM2_Rotation))),
                               ElementAlignedBox2d(boxLow.x, boxLow.y, boxHi.x, boxHi.y));
 
@@ -3764,14 +3764,14 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint3d boxLow = stmt.GetValuePoint3D(params.GetSelectIndex(GEOM_Box_Low)),
-             boxHi  = stmt.GetValuePoint3D(params.GetSelectIndex(GEOM_Box_High));
+    DPoint3d boxLow = stmt.GetValuePoint3d(params.GetSelectIndex(GEOM_Box_Low)),
+             boxHi  = stmt.GetValuePoint3d(params.GetSelectIndex(GEOM_Box_High));
 
     double yaw      = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Yaw)),
            pitch    = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Pitch)),
            roll     = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Roll));
 
-    m_placement = Placement3d(stmt.GetValuePoint3D(originIndex),
+    m_placement = Placement3d(stmt.GetValuePoint3d(originIndex),
                               YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
                               ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
 
@@ -3792,10 +3792,10 @@ DgnDbStatus GeometricElement2d::BindParams(ECSqlStatement& stmt)
         }
     else
         {
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
         stmt.BindDouble(stmt.GetParameterIndex(GEOM2_Rotation), m_placement.GetAngle().Degrees());
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
+        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -3846,12 +3846,12 @@ DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
         }
     else
         {
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
         stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Yaw), m_placement.GetAngles().GetYaw().Degrees());
         stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Pitch), m_placement.GetAngles().GetPitch().Degrees());
         stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Roll), m_placement.GetAngles().GetRoll().Degrees());
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
+        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
