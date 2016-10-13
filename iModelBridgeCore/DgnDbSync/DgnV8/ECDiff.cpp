@@ -1554,17 +1554,17 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
             n.GetValue (direction).SetValue (v.GetInteger()); break;
         case PRIMITIVETYPE_Long:
             n.GetValue (direction).SetValue (v.GetLong()); break;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {              
-            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
-            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2d().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2d().y); 
             break;
             }
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
-            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
-            n.Add ("z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().y); 
+            n.Add ("z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3d().z); 
             break;
             }
         case PRIMITIVETYPE_String:
@@ -1615,10 +1615,10 @@ bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType,
         primitiveType = PRIMITIVETYPE_Integer;
     else if (primtiveTypeValue.CompareToI ("Long") == 0)
         primitiveType = PRIMITIVETYPE_Long;
-    else if (primtiveTypeValue.CompareToI ("Point2D") == 0)
-        primitiveType = PRIMITIVETYPE_Point2D;
-    else if (primtiveTypeValue.CompareToI ("Point3D") == 0)
-        primitiveType = PRIMITIVETYPE_Point3D;
+    else if (primtiveTypeValue.CompareToI ("Point2d") == 0)
+        primitiveType = PRIMITIVETYPE_Point2d;
+    else if (primtiveTypeValue.CompareToI ("Point3d") == 0)
+        primitiveType = PRIMITIVETYPE_Point3d;
     else
         return false;
     return true;
