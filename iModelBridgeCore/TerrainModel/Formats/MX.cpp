@@ -435,6 +435,7 @@ bool IsValidStringName(WCharCP name)
 
 MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, NamedDTM const& namedDtm, bool allowOverwrite) //AddToCurrentModelFile?
     {
+    BcDTMPtr transformedDTM;
     BcDTMP dtm = namedDtm.GetBcDTMP();
     if (WString::IsNullOrEmpty(filename) || WString::IsNullOrEmpty(inModelName) || WString::IsNullOrEmpty(inStringName) || nullptr == dtm)
         return MXExportError::Error;
@@ -456,6 +457,16 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
             {
             return MXExportError::Error;
             }
+
+        BC_DTM_OBJ *dtmHandleP = nullptr;
+
+        bcdtmObject_cloneDtmObject(dtm->GetTinHandle(), (BC_DTM_OBJ **)&dtmHandleP);
+
+        // Create a new Digital TM instance
+        transformedDTM = BcDTM::CreateFromDtmHandle(*dtmHandleP);
+
+        transformedDTM->Transform(transform);
+        dtm = transformedDTM.get();
         }
 
     WString wModelName(inModelName);

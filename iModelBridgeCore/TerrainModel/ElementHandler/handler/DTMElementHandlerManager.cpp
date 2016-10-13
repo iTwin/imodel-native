@@ -440,8 +440,8 @@ void DTMElementHandlerManager::CheckAndCreateElementDescr (EditElementHandleR el
         ElementHandlerXAttribute handlerTag (handlerId, MISSING_HANDLER_PERMISSION_None);
         ElementHandlerManager::AddHandlerToElement (elemHandle, handlerTag);
 
-        SetStorageToUORMatrix(trsf, elemHandle);
         }
+    SetStorageToUORMatrix(trsf, elemHandle);
     }
 
 //=======================================================================================
