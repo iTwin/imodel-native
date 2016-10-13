@@ -206,6 +206,7 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 #define STMT_SelectCodesInSet "SELECT " CODE_Columns " FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
+#define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_AuthorityId "=? AND " CODE_NameSpace "=? AND " CODE_Value "=?"
 
 enum CodeColumn { AuthorityId=0, NameSpace, Value };
 
@@ -461,24 +462,28 @@ struct VirtualCodeSet : VirtualSet
 void BriefcaseManager::Cull(DgnCodeSet& codes)
     {
     // Don't bother asking server to reserve codes which we've already reserved...
-    VirtualCodeSet vset(codes);
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCodesInSet);
-    stmt->BindVirtualSet(1, vset);
-    while (BE_SQLITE_ROW == stmt->Step())
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCode);
+    auto iter = codes.begin();
+    while (iter != codes.end())
         {
-        DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::NameSpace));
-        codes.erase(code);
-        }
+        auto const& code = *iter;
 
-    // Don't bother asking server to reserve empty codes...
-    for (auto iter = codes.begin(); iter != codes.end(); /* */)
-        {
-        BeAssert(!iter->IsEmpty());
-        BeAssert(iter->IsValid());
-        if (iter->IsEmpty() || !iter->IsValid())
+        // Don't bother asking server to reserve empty codes...
+        if (code.IsEmpty())
+            {
+            iter = codes.erase(iter);
+            continue;
+            }
+
+        stmt->BindId(CodeColumn::AuthorityId+1, code.GetAuthority());
+        stmt->BindText(CodeColumn::NameSpace+1, code.GetNamespace(), Statement::MakeCopy::No);
+        stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == stmt->Step())
             iter = codes.erase(iter);
         else
             ++iter;
+
+        stmt->Reset();
         }
     }
 
