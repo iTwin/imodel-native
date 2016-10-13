@@ -1501,30 +1501,6 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElements::CachedSelectStatement::Release()
-    {
-    BeDbMutexHolder lock(m_mutex);
-
-    const bool isInCache = m_isInCache;
-    const uint32_t countWas = m_refCount.DecrementAtomicPost();
-    if (1 == countWas)
-        {
-        delete this;
-        return 0;
-        }
-
-    if (isInCache && 2 == countWas && IsPrepared())
-        {
-        Reset();
-        ClearBindings();
-        }
-
-    return countWas - 1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericClassParamsProvider : IECSqlClassParamsProvider
@@ -1568,30 +1544,19 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
+ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
     DgnClassId classId = el.GetElementClassId();
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;
 
-    ClassInfo& classInfo = m_classInfos[classId];
+    ECSqlClassInfo& classInfo = m_classInfos[classId];
     ECSqlClassParams const& params = GetECSqlClassParams(classId);
 
     bool populated = params.BuildClassInfo(classInfo, GetDgnDb(), classId);
     BeAssert(populated);
     UNUSED_VARIABLE(populated);
-
-    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
-    if (!selectECSql.empty())
-        {
-        classInfo.m_selectStmt = new CachedSelectStatement(m_mutex, true);
-        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
-            {
-            BeAssert(false);
-            classInfo.m_selectStmt = nullptr;
-            }
-        }
 
     return classInfo;
     }
@@ -1601,24 +1566,10 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
-    // Select statemens cached per ECClass to speed up loading of elements.
     BeDbMutexHolder _v(m_mutex);
 
     auto& classInfo = FindClassInfo(el);
-    CachedSelectStatementPtr stmt = classInfo.m_selectStmt;
-    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
-        {
-        // The cached statement is already in use...create a new one for this caller
-        stmt = new CachedSelectStatement(m_mutex, false);
-        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
-            {
-            BeAssert(false);
-            stmt = nullptr;
-            }
-        }
-
-    if (stmt.IsValid())
-        stmt->BindId(1, el.GetElementId());
+    auto stmt = FindClassInfo(el).GetSelectStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
 
     return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }
