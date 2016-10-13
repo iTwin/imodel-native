@@ -1211,36 +1211,21 @@ void ColumnFactory::Update(bool includeDerivedClasses) const
 //------------------------------------------------------------------------------------------
 BentleyStatus ColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>& columns) const
  {
-    Utf8CP sql = " WITH RECURSIVE "
-         "   BaseClassList(ClassId, BaseClassId) AS "
-         "    ("
-         "    VALUES(?1, ?1) "
-         "    UNION "
-         "    SELECT BC.ClassId, DCL.BaseClassId"
-         "           FROM BaseClassList DCL "
-         "                INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.ClassId"
-         "    )"
-         " SELECT ec_Column.Name FROM BaseClassList "
-         "   INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = BaseClassList.ClassId"
-         "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassId = ec_ClassMap.ClassId"
-        "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
-         "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-         " WHERE ec_Table.Name = ?2"
-         " GROUP BY ec_Column.Name";
-    
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql
-     /*   "SELECT c.Name FROM ec_Column c "
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT c.Name FROM ec_Column c "
         "              JOIN ec_PropertyMap pm ON c.Id = pm.ColumnId "
         "              JOIN ec_ClassMap cm ON cm.ClassId = pm.ClassId "
         "              JOIN " ECDB_CACHETABLE_ClassHierarchy " ch ON ch.ClassId = cm.ClassId "
         "              JOIN ec_Table t on t.Id = c.TableId "
-        "WHERE ch.BaseClassId=? AND t.Name=? "
-        "GROUP BY c.Name" */);
+        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & 1024 <> 0 "
+        "GROUP BY c.Name");
+    static_assert(1024 == (int) DbColumn::Kind::SharedDataColumn, "Value of DbColumn::Kind::SharedDataColumn has changed. The SQL in ColumnFactory::GetDerivedColumnList must be adjusted accordingly.");
+
     if (stmt == nullptr)
         return ERROR;
-
     stmt->BindId(1, m_classMap.GetClass().GetId());
     stmt->BindText(2, GetTable().GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(3, Enum::ToInt(DbColumn::Kind::SharedDataColumn));
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         columns.push_back(GetTable().FindColumn(stmt->GetValueText(0)));

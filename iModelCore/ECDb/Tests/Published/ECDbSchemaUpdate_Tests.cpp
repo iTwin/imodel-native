@@ -1834,6 +1834,98 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
+    {
+    SetupECDb("schemaupdate.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00' />"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub' modifier='None' >"
+        "      <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Prop1' typeName='string' />"
+        "        <ECProperty propertyName='Prop2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(Prop1,Prop2) VALUES ('Instance1 Prop1', 'Instance1 Prop2')"));
+    ECInstanceKey row1;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(row1));
+    stmt.Finalize();
+    GetECDb().SaveChanges();
+
+    //reopen test file
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+
+    SchemaItem modifiedSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00' />"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='BaseProp1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub' modifier='None' >"
+        "      <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Prop1' typeName='string' />"
+        "        <ECProperty propertyName='Prop2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    //do schema update
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifiedSchema);
+    ASSERT_FALSE(asserted);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Sub(BaseProp1,Prop1,Prop2) VALUES ('Instance2 BaseProp1', 'Instance2 Prop1', 'Instance2 Prop2')"));
+    ECInstanceKey row2;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(row2));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT BaseProp1, Prop1, Prop2 FROM ts.Sub WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row1.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_TRUE(stmt.IsValueNull(0));
+    ASSERT_STREQ("Instance1 Prop1", stmt.GetValueText(1));
+    ASSERT_STREQ("Instance1 Prop2", stmt.GetValueText(2));
+    stmt.ClearBindings();
+    stmt.Reset();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row2.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Instance2 BaseProp1", stmt.GetValueText(0));
+    ASSERT_STREQ("Instance2 Prop1", stmt.GetValueText(1));
+    ASSERT_STREQ("Instance2 Prop2", stmt.GetValueText(2));
+    stmt.Finalize();
+
+    //verify that all three props map to different columns
+    Statement stmt2;
+    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(GetECDb(), 
+                "select count(distinct pm.ColumnId) FROM ec_PropertyPath pp JOIN ec_PropertyMap pm "
+                "ON pm.PropertyPathId = pp.Id JOIN ec_Property p ON p.Id = pp.RootPropertyId "
+                "WHERE p.Name IN ('BaseProp1', 'Prop1', 'Prop2')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_EQ(3, stmt2.GetValueInt(0)) << "The three properties of ECClass Sub must map to 3 different columns";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
