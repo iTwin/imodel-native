@@ -322,6 +322,8 @@ void DTMSideSlopeInput::RemovePoint (DTMSideSlopeInputPoint^ sideSlopePoint)
 TMTransformHelper* DTMSideSlopeInput::GetTMTransformHelper()
     {
     DTMSideSlopeInputPoint^ pt = dynamic_cast<DTMSideSlopeInputPoint^>(InnerList[0]);
+    if (pt->SlopeToDTM == nullptr)
+        return nullptr;
     TMTransformHelper *transformHelperP = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer())->GetTransformHelper();
     return transformHelperP;
     }
@@ -342,7 +344,8 @@ DTM_SIDE_SLOPE_TABLE* DTMSideSlopeInput::CreateSideSlopeInputTable ()
         {
         DPoint3d nativePoint;
         DTMSideSlopeInputPoint^ pt = dynamic_cast<DTMSideSlopeInputPoint^>(InnerList[i]);
-        TMTransformHelper *transformHelperP = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer())->GetTransformHelper();
+        TMTransformHelper *transformHelperP = 
+            pt->SlopeToDTM != nullptr ? ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer())->GetTransformHelper() : nullptr;
         // Set the native point
         nativePoint.x = pt->StartPoint.X;
         nativePoint.y = pt->StartPoint.Y;
@@ -355,7 +358,7 @@ DTM_SIDE_SLOPE_TABLE* DTMSideSlopeInput::CreateSideSlopeInputTable ()
         sideSlopeInputTableP[i].useSlopeTable = 0;
         sideSlopeInputTableP[i].radialOption = (int)pt->RadialOption;
         sideSlopeInputTableP[i].sideSlopeOption = (int)pt->SideSlopeOption;
-        if (pt->SlopeToDTM) sideSlopeInputTableP[i].slopeToTin = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer ())->GetTinHandle ();
+        if (pt->SlopeToDTM != nullptr) sideSlopeInputTableP[i].slopeToTin = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer ())->GetTinHandle ();
 
         if (transformHelperP != NULL)
             {
