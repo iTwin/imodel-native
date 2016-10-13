@@ -602,6 +602,7 @@ void WmsDataSourceNet::SetMapSettings(String^ mapSettings)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::WmsDataSourceNet(String^ uri)
+    : RealityDataSourceNet(UriNet::Create(uri), "wms")
     {
     // Managed to native reality data source.
     Utf8String uriUtf8;
@@ -614,6 +615,7 @@ WmsDataSourceNet::WmsDataSourceNet(String^ uri)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::WmsDataSourceNet(UriNet^ uri)
+    : RealityDataSourceNet(uri, "wms")
     {
     // Managed to native reality data source.    
     m_pSource = new WmsDataSourcePtr(WmsDataSource::Create(*ManagedToNativeUri(uri)));
@@ -675,6 +677,7 @@ void OsmDataSourceNet::SetOsmResource(String^ osmResource)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 OsmDataSourceNet::OsmDataSourceNet(String^ uri, double bboxMinX, double bboxMinY, double bboxMaxX, double bboxMaxY)
+    : RealityDataSourceNet(UriNet::Create(uri), "osm")
     {
     // Managed to native reality data source.
     Utf8String uriUtf8;

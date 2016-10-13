@@ -182,12 +182,12 @@ Utf8CP RealityDataSource::_GetElementName() const
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourcePtr WmsDataSource::Create(UriR uri)
-{
+    {
     if (uri.ToString().empty())
         return NULL;
 
     return new WmsDataSource(uri);
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
