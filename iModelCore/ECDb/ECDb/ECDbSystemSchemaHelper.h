@@ -21,7 +21,12 @@ enum class ECSqlSystemProperty
     SourceECInstanceId,
     SourceECClassId,
     TargetECInstanceId,
-    TargetECClassId
+    TargetECClassId,
+    Id,
+    RelECClassId,
+    X,
+    Y,
+    Z
     };
 
 //=======================================================================================
@@ -37,6 +42,11 @@ struct ECDbSystemSchemaHelper : NonCopyableClass
         static Utf8CP const SOURCEECCLASSID_PROPNAME;
         static Utf8CP const TARGETECINSTANCEID_PROPNAME;
         static Utf8CP const TARGETECCLASSID_PROPNAME;
+        static Utf8CP const ID_PROPNAME;
+        static Utf8CP const RELECCLASSID_PROPNAME;
+        static Utf8CP const X_PROPNAME;
+        static Utf8CP const Y_PROPNAME;
+        static Utf8CP const Z_PROPNAME;
 
 private:
     static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
+    <ClCompile Include="ClassMapper.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="ClassMappingInfoHelper.cpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="SchemaImportContext.cpp" />
     <ClCompile Include="SystemPropertyMap.cpp" />
     <ClCompile Include="ViewGenerator.cpp" />
+    <ClCompile Include="WipPropertyMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
@@ -140,6 +142,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
+    <ClInclude Include="ClassMapper.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbSchema.h" />
@@ -225,6 +228,7 @@
     <ClInclude Include="SchemaImportContext.h" />
     <ClInclude Include="SystemPropertyMap.h" />
     <ClInclude Include="ViewGenerator.h" />
+    <ClInclude Include="WipPropertyMap.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="docs\source\ECDbExamples.doxpage" />

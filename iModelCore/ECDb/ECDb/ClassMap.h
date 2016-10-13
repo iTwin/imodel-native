@@ -23,7 +23,7 @@ struct ClassMapLoadContext : NonCopyableClass
     {
 private:
     std::set<ECN::ECClassCP> m_constraintClasses;
-    std::vector<NavigationPropertyMap*> m_navPropMaps;
+    std::vector<WipNavigationPropertyMap*> m_navPropMaps;
     
 public:
     ClassMapLoadContext() {}
@@ -33,7 +33,7 @@ public:
         //LOG.debugv("ClassMapLoadContext> Added ECRelationshipConstraint ECClass '%s' to context %p.", ecClass.GetFullName(), this);
         m_constraintClasses.insert(&ecClass);
         }
-    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) 
+    void AddNavigationPropertyMap(WipNavigationPropertyMap& propMap) 
         { 
         //LOG.debugv("ClassMapLoadContext> Added NavPropMap '%s.%s' to context %p.",propMap.GetProperty().GetClass().GetFullName(), propMap.GetProperty().GetName().c_str(), this);
         m_navPropMaps.push_back(&propMap); 
@@ -56,10 +56,10 @@ struct ColumnFactory : NonCopyableClass
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
-        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
+        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
         DbColumn* ApplySharedColumnStrategy() const;
 
-        ECN::ECClassId GetPersistenceClassId(PropertyMapCR) const;
+        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8CP accessString) const;
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
         bool IsColumnInUseByClassMap(DbColumn const&) const;
         void CacheUsedColumn(DbColumn const&) const;
@@ -69,7 +69,7 @@ struct ColumnFactory : NonCopyableClass
         explicit ColumnFactory(ClassMapCR classMap);
         ~ColumnFactory() {}
 
-        DbColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
+        DbColumn* CreateColumn(ECN::ECPropertyCR, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
         void Update();
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
@@ -124,7 +124,7 @@ struct ClassMap : RefCountedBase
         ECDb const& m_ecdb;
         Type m_type;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
-        PropertyMapCollection m_propertyMaps;
+        WipPropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
         bool m_isDirty;
         bool m_isECInstanceIdAutogenerationDisabled;
@@ -151,7 +151,7 @@ struct ClassMap : RefCountedBase
 
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
         void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
-        PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
+
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
@@ -164,11 +164,10 @@ struct ClassMap : RefCountedBase
         //! Called during schema import when creating the class map from the imported ECClass 
         MappingStatus Map(SchemaImportContext&, ClassMappingInfo const&);
         BentleyStatus Save(DbMapSaveContext&);
-
-        PropertyMapCollection const& GetPropertyMaps() const { return m_propertyMaps; }
-        PropertyMapCP GetPropertyMap(Utf8CP propertyName) const;
-        ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
-        ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
+        WipPropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
+        WipPropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
+        WipECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
+        WipECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
         BentleyStatus ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk = false);
         BentleyStatus ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk = false);
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;

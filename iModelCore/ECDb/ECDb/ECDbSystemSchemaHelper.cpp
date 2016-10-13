@@ -22,6 +22,11 @@ Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInst
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME = "TargetECClassId";
+Utf8CP const ECDbSystemSchemaHelper::ID_PROPNAME = "Id";
+Utf8CP const ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME = "RelECClassId";
+Utf8CP const ECDbSystemSchemaHelper::X_PROPNAME = "X";
+Utf8CP const ECDbSystemSchemaHelper::Y_PROPNAME = "Y";
+Utf8CP const ECDbSystemSchemaHelper::Z_PROPNAME = "Z";
 
 Utf8CP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = "ECSqlSystemProperties";
 
@@ -100,6 +105,16 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
                 return TARGETECINSTANCEID_PROPNAME;
             case ECSqlSystemProperty::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME;
+            case ECSqlSystemProperty::Id:
+                return ID_PROPNAME;
+            case ECSqlSystemProperty::RelECClassId:
+                return RELECCLASSID_PROPNAME;
+            case ECSqlSystemProperty::X:
+                return X_PROPNAME;
+            case ECSqlSystemProperty::Y:
+                return Y_PROPNAME;
+            case ECSqlSystemProperty::Z:
+                return X_PROPNAME;
             default:
                 BeAssert(false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
@@ -154,6 +169,37 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemProperty& kind,
         return true;
         }
 
+    candidateKind = ECSqlSystemProperty::Id;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::RelECClassId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+    candidateKind = ECSqlSystemProperty::X;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+    candidateKind = ECSqlSystemProperty::Y;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+    candidateKind = ECSqlSystemProperty::Z;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
     return false;
     }
 

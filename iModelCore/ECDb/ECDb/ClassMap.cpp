@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : m_ecdb(ecdb), m_type(type), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr)
+    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr), m_propertyMaps(*this)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
@@ -119,14 +119,10 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         return MappingStatus::Success;
 
     //does not exist yet
-    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(m_ecdb.Schemas(), *this);
-    if (ecInstanceIdPropertyMap == nullptr)
-        //log and assert already done in child method
+    if (ClassMapper::CreateECInstanceIdPropertyMap(*this) != SUCCESS)
         return MappingStatus::Error;
 
-    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
-        return MappingStatus::Error;
-
+   
     return MappingStatus::Success;
     }
 
@@ -238,18 +234,13 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeStampProp)
     {
-    PropertyMapCP propertyMap = GetPropertyMap(currentTimeStampProp.GetName().c_str());
+    WipPrimitivePropertyMap const* propertyMap = dynamic_cast<WipPrimitivePropertyMap const*>(GetPropertyMaps().Find(currentTimeStampProp.GetName().c_str()));
     if (propertyMap == nullptr)
         return SUCCESS;
 
-    DbColumn* currentTimeStampColumn = const_cast<DbColumn*>(propertyMap->GetSingleColumn());
-    if (currentTimeStampColumn == nullptr)
-        {
-        BeAssert(currentTimeStampColumn != nullptr && "TimeStamp column cannot be null");
-        return ERROR;
-        }
 
-    if (currentTimeStampColumn->IsShared())
+    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propertyMap->GetColumn());
+    if (currentTimeStampColumn.IsShared())
         {
         Issues().Report(ECDbIssueSeverity::Warning,
                    "ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
@@ -259,21 +250,21 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
         return SUCCESS;
         }
 
-    BeAssert(currentTimeStampColumn->GetType() == DbColumn::Type::TimeStamp);
-    currentTimeStampColumn->GetConstraintsR().SetDefaultValueExpression(CURRENTIMESTAMP_SQLEXP);
-    currentTimeStampColumn->GetConstraintsR().SetNotNullConstraint();
+    BeAssert(currentTimeStampColumn.GetType() == DbColumn::Type::TimeStamp);
+    currentTimeStampColumn.GetConstraintsR().SetDefaultValueExpression(CURRENTIMESTAMP_SQLEXP);
+    currentTimeStampColumn.GetConstraintsR().SetNotNullConstraint();
 
-    PropertyMapCP idPropMap = GetECInstanceIdPropertyMap();
+    WipECInstanceIdPropertyMap const* idPropMap = GetECInstanceIdPropertyMap();
     if (idPropMap == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    DbTable& table = currentTimeStampColumn->GetTableR();
+    DbTable& table = currentTimeStampColumn.GetTableR();
     Utf8CP tableName = table.GetName().c_str();
-    Utf8CP instanceIdColName = idPropMap->GetSingleColumn()->GetName().c_str();
-    Utf8CP currentTimeStampColName = currentTimeStampColumn->GetName().c_str();
+    Utf8CP instanceIdColName = idPropMap->FindVerticalPropertyMap(tableName)->GetColumn().GetName().c_str();
+    Utf8CP currentTimeStampColName = currentTimeStampColumn.GetName().c_str();
 
     Utf8String triggerName;
     //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
@@ -298,19 +289,22 @@ BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& c
         return ERROR;
         }
 
-    PropertyMapCP classIdPropertyMap = GetECClassIdPropertyMap();
+    WipECClassIdPropertyMap const* classIdPropertyMap = GetECClassIdPropertyMap();
     if (classIdPropertyMap == nullptr)
         {
-        PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(m_ecdb.Schemas(), *this, columns);
+        RefCountedPtr<WipECClassIdPropertyMap> ecclassIdPropertyMap = WipPropertyMapFactory::CreateECClassIdPropertyMap(*this, GetClass().GetId(), columns);
         if (ecclassIdPropertyMap == nullptr)
             //log and assert already done in child method
             return ERROR;
 
-        return GetPropertyMapsR().AddPropertyMap(ecclassIdPropertyMap, 1);
+        return GetPropertyMapsR().Insert(ecclassIdPropertyMap, 1);
         }
+
+    //!WIP_MAPS Fix this though its just a check that Configure is not called twice on a ClassMap with different parameters
+    /*
     std::vector<DbColumn const*>  existingColumns;
-    classIdPropertyMap->GetColumns(existingColumns);
-    if (existingColumns.size() != columns.size())
+    std::vector<WipColumnVerticalPropertyMap const*> vps = classIdPropertyMap->GetPropertyMaps();
+    if (vps.size() != columns.size())
         {
         BeAssert(false && "Invalid classMap");
         return ERROR;
@@ -333,7 +327,7 @@ BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& c
             return ERROR;
             }
         }
-
+     */
     return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
@@ -382,10 +376,10 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             }
 
         //look for the base class' property map as property is inherited
-        PropertyMapPtr baseClassPropMap = nullptr;
+        WipVerticalPropertyMap const* baseClassPropMap = nullptr;
         for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
-            if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(baseClassPropMap, property->GetName().c_str()))
+            if (baseClassPropMap = dynamic_cast<WipVerticalPropertyMap const*>(baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
                 break;
             }
 
@@ -396,8 +390,8 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             continue;
             }
 
-        PropertyMapPtr propertyMap = PropertyMapFactory::ClonePropertyMap(ctx.GetClassMapLoadContext(), *baseClassPropMap, m_ecClass, nullptr);
-        if (GetPropertyMapsR().AddPropertyMap(propertyMap) != SUCCESS)
+        RefCountedPtr<WipVerticalPropertyMap> propertyMap = baseClassPropMap->CreateCopy(*this);        
+        if (GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
             return MappingStatus::Error;
         }
 
@@ -406,18 +400,19 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx.GetClassMapLoadContext(), m_ecdb, GetClass(), *property, propertyAccessString, nullptr);
-        if (propMap == nullptr)
-            return MappingStatus::Error;
-
-        if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
+        if (WipPropertyMap* newProperyMap = ClassMapper::MapProperty(*this, *property))
+            {
+            if (property->GetIsNavigation())
+                {
+                WipNavigationPropertyMap* navPropertyMap = static_cast<WipNavigationPropertyMap*>(newProperyMap);
+                ctx.GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
+                }
+            }
+        else
             {
             BeAssert(false);
             return MappingStatus::Error;
             }
-
-        if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
-            return MappingStatus::Error;
         }
     return MappingStatus::Success;
     }
@@ -438,7 +433,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
         bset<DbTable const*> involvedTables;
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
-            PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
+            WipPropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
@@ -459,8 +454,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            std::vector<DbColumn const*> columns;
-            propertyMap->GetColumns(columns);
+            WipPropertyMapColumnDispatcher columnDispatcher(GetJoinedTable());
+            propertyMap->Accept(columnDispatcher);
+            std::vector<DbColumn const*> const& columns = columnDispatcher.GetColumns();
             if (0 == columns.size())
                 {
                 BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
@@ -601,10 +597,12 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
         }
 
     DbClassMapSaveContext classMapSaveContext(ctx);
-    for (PropertyMapCP propertyMap : GetPropertyMaps())
+    WipPropertyMapSaveDispatcher saveDispatcher(classMapSaveContext);
+    for (WipPropertyMap const* propertyMap : GetPropertyMaps())
         {
         BeAssert(GetClass().GetId() == propertyMap->GetOwnerClassMapId());
-        if (SUCCESS != propertyMap->Save(classMapSaveContext))
+        propertyMap->Accept(saveDispatcher);
+        if (saveDispatcher.GetStatus() != SUCCESS)
             return ERROR;
         }
 
@@ -664,18 +662,30 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (mapColumnsList == nullptr)
         return ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(m_ecdb.Schemas(), *this, *mapColumnsList);
-    if (mapColumnsList == nullptr)
+    //Load ECInstanceId================================================
+    RefCountedPtr<WipECInstanceIdPropertyMap> ecInstanceIdPropertyMap = WipPropertyMapFactory::CreateECInstanceIdPropertyMap(*this, *mapColumnsList);
+    if (ecInstanceIdPropertyMap != nullptr)
+        {
+        BeAssert(false && "Failed to create property map");
         return ERROR;
+        }
 
-    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
+    if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0LL) != SUCCESS)
         return ERROR;
 
     mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
     if (mapColumnsList == nullptr)
         return ERROR;
 
-    if (ConfigureECClassId(*mapColumnsList, true) != SUCCESS)
+    //Load ECClassId   ================================================
+    RefCountedPtr<WipECClassIdPropertyMap> ecClassIdPropertyMap = WipPropertyMapFactory::CreateECClassIdPropertyMap(*this,GetClass().GetId(), *mapColumnsList);
+    if (ecClassIdPropertyMap != nullptr)
+        {
+        BeAssert(false && "Failed to create property map");
+        return ERROR;
+        }
+
+    if (GetPropertyMapsR().Insert(ecClassIdPropertyMap, 1LL) != SUCCESS)
         return ERROR;
 
     return LoadPropertyMaps(ctx, dbLoadCtx);
@@ -707,59 +717,59 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        PropertyMapPtr tphBaseClassPropMap = nullptr;
+        WipPropertyMap const*  tphBaseClassPropMap = nullptr;
         if (&property->GetClass() != &m_ecClass && inheritanceMode == PropertyMapInheritanceMode::Clone)
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
-                if (baseClassMap->GetPropertyMaps().TryGetPropertyMap(tphBaseClassPropMap, property->GetName().c_str()))
+            	if (tphBaseClassPropMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str()))
                     break;
                 }
             }
 
-        PropertyMapPtr propMap = nullptr;
+        if (GetPropertyMapsR().Insert(const_cast<WipPropertyMap*>(tphBaseClassPropMap)) != SUCCESS)
         if (tphBaseClassPropMap == nullptr)
             {
-            propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecdb, GetClass(), *property, property->GetName().c_str(), nullptr);
+        RefCountedPtr<WipPropertyMap> propMap = ClassMapper::LoadPropertyMap(*this, *property, dbCtx);
             if (propMap == nullptr)
-                return ERROR;
-
-            if (ERROR == propMap->Load(dbCtx))
-                {
-                BeAssert(GetDbMap().IsImportingSchema() && "This code must only be reached if in schema import");
-
-                //ECSchema Upgrade
-                GetColumnFactoryR().Update();
-                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
+            {
+            //ECSchema Upgrade
+            GetColumnFactoryR().Update();
+            propMap = ClassMapper::MapProperty(*this, *property);
+            if (propMap == nullptr)
                     {
                     BeAssert(false);
                     return ERROR;
                     }
+            WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap.get());
+            if (vMap == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
                 //! ECSchema update added new property for which we need to save property map
                 DbMapSaveContext ctx(m_ecdb);
                 //First make sure table is updated on disk. The table must already exist for this operation to work.
-                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+            if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
                     {
                     BeAssert(false && "Failed to save table");
                     return ERROR;
                     }
 
                 ctx.BeginSaving(*this);
+
                 DbClassMapSaveContext classMapContext(ctx);
-                propMap->Save(classMapContext);
+            WipPropertyMapSaveDispatcher saveDispatcher(classMapContext);
+            propMap->Accept(saveDispatcher);
                 ctx.EndSaving(*this);
                 }
             }
         else
             {
             propMap = PropertyMapFactory::ClonePropertyMap(ctx, *tphBaseClassPropMap, GetClass(), nullptr);
-
             if (propMap == nullptr)
                 return ERROR;
             }
-
-        if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
-            return ERROR;
         }
 
     return SUCCESS;
@@ -768,25 +778,17 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
+WipECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     {
-    PropertyMapPtr propMap = nullptr;
-    if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
-        return static_cast<ECInstanceIdPropertyMap const*>(propMap.get());
-
-    return nullptr;
+    return static_cast<WipECInstanceIdPropertyMap const*> (GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
+WipECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     {
-    PropertyMapPtr propMap = nullptr;
-    if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECCLASSID_PROPNAME))
-        return static_cast<ECClassIdPropertyMap const*>(propMap.get());
-
-    return nullptr;
+    return static_cast<WipECClassIdPropertyMap const*>(GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME));
     }
 
 //---------------------------------------------------------------------------------------
@@ -794,17 +796,6 @@ ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP ClassMap::GetPropertyMap(Utf8CP propertyName) const
-    {
-    PropertyMapCP propMap = nullptr;
-    if (GetPropertyMaps().TryGetPropertyMap(propMap, propertyName, true))
-        return propMap;
-
-    return nullptr;
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
@@ -985,7 +976,7 @@ ColumnFactory::ColumnFactory(ClassMapCR classMap) : m_classMap(classMap), m_uses
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
+DbColumn* ColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
@@ -996,14 +987,14 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
             m_classMap.GetDbMap().Issues().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
                                                           "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
                                                           "The column is created without constraints.",
-                                                          propMap.GetProperty().GetName().c_str(), propMap.GetProperty().GetClass().GetFullName());
+                                                          ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
 
             }
 
         outColumn = ApplySharedColumnStrategy();
         }
     else
-        outColumn = ApplyDefaultStrategy(requestedColumnName, propMap, colType, addNotNullConstraint, addUniqueConstraint, collation);
+        outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
 
     if (outColumn == nullptr)
         {
@@ -1018,7 +1009,7 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //-----------------------------------------------------------------------------------------
-DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR propMap, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
+DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR ecProp, Utf8CP accessString, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
     BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
 
@@ -1038,7 +1029,7 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
                      existingColumn->GetName().c_str(), GetTable().GetName().c_str());
         }
 
-    const ECClassId classId = GetPersistenceClassId(propMap);
+    const ECClassId classId = GetPersistenceClassId(ecProp, accessString);
     if (!classId.IsValid())
         return nullptr;
 
@@ -1120,9 +1111,9 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECClassId ColumnFactory::GetPersistenceClassId(PropertyMapCR propMap) const
+ECClassId ColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8CP accessString) const
     {
-    Utf8String propAccessString(propMap.GetPropertyAccessString());
+    Utf8String propAccessString(accessString);
     const size_t dotPosition = propAccessString.find(".");
     ECPropertyCP property = nullptr;
     if (dotPosition != Utf8String::npos)
@@ -1185,17 +1176,10 @@ bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
 void ColumnFactory::Update()
     {
     m_idsOfColumnsInUseByClassMap.clear();
-    std::vector<DbColumn const*> columnsInUse;
-    m_classMap.GetPropertyMaps().Traverse(
-        [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        if (propMap->GetType() != PropertyMap::Type::Navigation)
-            propMap->GetColumns(columnsInUse);
+    WipPropertyMapColumnDispatcher navigationProperytMapColumns(PropertyMapType::NavigationPropertyMap);
+    m_classMap.GetPropertyMaps().Accept(navigationProperytMapColumns);
 
-        feedback = TraversalFeedback::Next;
-        }, true);
-
-    for (DbColumn const* columnInUse : columnsInUse)
+    for (DbColumn const* columnInUse : navigationProperytMapColumns.GetColumns())
         {
         if (columnInUse != nullptr)
             CacheUsedColumn(*columnInUse);
@@ -1225,9 +1209,9 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
             }
         }
 
-    for (NavigationPropertyMap* propMap : m_navPropMaps)
+    for (WipNavigationPropertyMap* propMap : m_navPropMaps)
         {
-        if (SUCCESS != propMap->Postprocess(ecdbMap))
+        if (SUCCESS != ClassMapper::SetupNavigationPropertyMap(*propMap))
             return ERROR;
         }
 
