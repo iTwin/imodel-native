@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlValue.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -115,17 +115,17 @@ Utf8CP IECSqlValue::GetText () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d IECSqlValue::GetPoint2D () const
+DPoint2d IECSqlValue::GetPoint2d () const
     {
-    return _GetPrimitive ()._GetPoint2D ();
+    return _GetPrimitive ()._GetPoint2d ();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d IECSqlValue::GetPoint3D () const
+DPoint3d IECSqlValue::GetPoint3d () const
     {
-    return _GetPrimitive ()._GetPoint3D ();
+    return _GetPrimitive ()._GetPoint3d ();
     }
 
 //--------------------------------------------------------------------------------------

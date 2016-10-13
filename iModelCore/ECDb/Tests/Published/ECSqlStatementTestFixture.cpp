@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlStatementTestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -53,9 +53,9 @@ void ECSqlStatementTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlSta
                         stat = binder.BindDateTime (dt);
                         }
                     else if (type.EqualsI ("point2d"))
-                        stat = binder.BindPoint2D (DPoint2d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble ()));
+                        stat = binder.BindPoint2d (DPoint2d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble ()));
                     else if (type.EqualsI ("point3d"))
-                        stat = binder.BindPoint3D (DPoint3d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble (), jsonValue["z"].asDouble ()));
+                        stat = binder.BindPoint3d (DPoint3d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble (), jsonValue["z"].asDouble ()));
                     }
                 else //struct
                     {
@@ -158,14 +158,14 @@ void ECSqlStatementTestFixture::VerifyECSqlValue (ECSqlStatement const& statemen
             else if (typeStr.EqualsI ("point2d"))
                 {
                 ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point2D) << "Property: " << name.c_str ();;
-                DPoint2d actualVal = actualValue.GetPoint2D ();
+                DPoint2d actualVal = actualValue.GetPoint2d ();
                 ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
                 ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;
                 }
             else if (typeStr.EqualsI ("point3d"))
                 {
                 ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point3D) << "Property: " << name.c_str ();;
-                DPoint3d actualVal = actualValue.GetPoint3D ();
+                DPoint3d actualVal = actualValue.GetPoint3d ();
                 ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
                 ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;
                 ASSERT_EQ (expectedValue["z"].asDouble (), actualVal.z) << "Property: " << name.c_str ();;

@@ -281,7 +281,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt64(in
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint2D (DPoint2dCR value)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint2d (DPoint2dCR value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Point2D);
     if (!status.IsSuccess())
@@ -293,7 +293,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint2D 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint3D (DPoint3dCR value)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint3d (DPoint3dCR value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Point3D);
     if (!status.IsSuccess())

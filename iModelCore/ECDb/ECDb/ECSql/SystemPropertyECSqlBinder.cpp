@@ -103,18 +103,18 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindPoint2D (DPoint2dCR value)
+ECSqlStatus SystemPropertyECSqlBinder::_BindPoint2d (DPoint2dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point2d value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindPoint3D (DPoint3dCR value)
+ECSqlStatus SystemPropertyECSqlBinder::_BindPoint3d (DPoint3dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3d value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::Error;
     }
 

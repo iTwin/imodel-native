@@ -34,8 +34,8 @@ private:
     virtual int _GetInt() const override;
     virtual int64_t _GetInt64() const override;
     virtual Utf8CP _GetText() const override;
-    virtual DPoint2d _GetPoint2D() const override;
-    virtual DPoint3d _GetPoint3D() const override;
+    virtual DPoint2d _GetPoint2d() const override;
+    virtual DPoint3d _GetPoint3d() const override;
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 

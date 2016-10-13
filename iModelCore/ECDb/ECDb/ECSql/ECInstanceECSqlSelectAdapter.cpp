@@ -373,13 +373,13 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             }
             case ECN::PRIMITIVETYPE_Point2D:
             {
-            auto d = value.GetPoint2D();
+            DPoint2d d = value.GetPoint2d();
             val.SetPoint2D(d);
             break;
             }
             case ECN::PRIMITIVETYPE_Point3D:
             {
-            auto d = value.GetPoint3D();
+            DPoint3d d = value.GetPoint3d();
             val.SetPoint3D(d);
             break;
             }

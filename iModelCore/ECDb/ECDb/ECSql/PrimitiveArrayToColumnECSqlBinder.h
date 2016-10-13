@@ -45,8 +45,8 @@ private:
         virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
         virtual ECSqlStatus _BindInt(int value) override;
         virtual ECSqlStatus _BindInt64(int64_t value) override;
-        virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
-        virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
+        virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
+        virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
         virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
         ECSqlStatus VerifyType(ECN::PrimitiveType) const;

@@ -65,9 +65,9 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
         case PRIMITIVETYPE_Long:
             return "Long";
         case PRIMITIVETYPE_Point2D:
-            return "Point2D";
+            return "Point2d";
         case PRIMITIVETYPE_Point3D:
-            return "Point3D";
+            return "Point3d";
         case PRIMITIVETYPE_String:
             return "String";
         

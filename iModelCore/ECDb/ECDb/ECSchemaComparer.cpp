@@ -1970,12 +1970,12 @@ Utf8String DateTimeChange::_ToString(ValueId id) const
     }
 
 //======================================================================================>
-//Point2DChange
+//Point2dChange
 //======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String Point2DChange::_ToString(ValueId id) const
+Utf8String Point2dChange::_ToString(ValueId id) const
     {
     Utf8String str;
     auto& v = GetValue(id);
@@ -1987,12 +1987,12 @@ Utf8String Point2DChange::_ToString(ValueId id) const
     }
 
 //======================================================================================>
-//Point3DChange
+//Point3dChange
 //======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String Point3DChange::_ToString(ValueId id) const
+Utf8String Point3dChange::_ToString(ValueId id) const
     {
     Utf8String str;
     auto& v = GetValue(id);
@@ -2156,9 +2156,9 @@ BentleyStatus ECPropertyValueChange::SetValue(ValueId id, ECValueCR value)
             case PRIMITIVETYPE_Long:
                 return GetLong()->SetValue(id, value.GetLong());
             case PRIMITIVETYPE_Point2D:
-                return GetPoint2D()->SetValue(id, value.GetPoint2D());
+                return GetPoint2d()->SetValue(id, value.GetPoint2D());
             case PRIMITIVETYPE_Point3D:
-                return GetPoint3D()->SetValue(id, value.GetPoint3D());
+                return GetPoint3d()->SetValue(id, value.GetPoint3D());
             case PRIMITIVETYPE_String:
                 return GetString()->SetValue(id, value.GetUtf8CP());
         }
@@ -2212,9 +2212,9 @@ BentleyStatus ECPropertyValueChange::SetValue(ECValueCR oldValue, ECValueCR newV
             case PRIMITIVETYPE_Long:
                 return GetLong()->SetValue(Converter<int64_t>::Copy(oldValue), Converter<int64_t>::Copy(newValue));
             case PRIMITIVETYPE_Point2D:
-                return GetPoint2D()->SetValue(Converter<DPoint2d>::Copy(oldValue), Converter<DPoint2d>::Copy(newValue));
+                return GetPoint2d()->SetValue(Converter<DPoint2d>::Copy(oldValue), Converter<DPoint2d>::Copy(newValue));
             case PRIMITIVETYPE_Point3D:
-                return GetPoint3D()->SetValue(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
+                return GetPoint3d()->SetValue(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
             case PRIMITIVETYPE_String:
                 return GetString()->SetValue(Converter<Utf8String>::Copy(oldValue), Converter<Utf8String>::Copy(newValue));
         }
@@ -2312,9 +2312,9 @@ BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
             case ECN::PRIMITIVETYPE_Long:
                 m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
             case ECN::PRIMITIVETYPE_Point2D:
-                m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Point2dChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
             case ECN::PRIMITIVETYPE_Point3D:
-                m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Point3dChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
             case ECN::PRIMITIVETYPE_String:
                 m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
             default:

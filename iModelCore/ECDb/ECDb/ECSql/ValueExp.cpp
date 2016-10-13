@@ -431,14 +431,14 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
     ECSqlTypeInfo const& argTypeInfo = argExp->GetTypeInfo();
     if (!argTypeInfo.IsPoint() || argExp->GetType() == Exp::Type::Parameter)
         {
-        ctx.Issues().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point2D or Point3D arguments.",
+        ctx.Issues().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point2d or Point3d arguments.",
                                       ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
     if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3D)
         {
-        ctx.Issues().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point3D arguments.",
+        ctx.Issues().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point3d arguments.",
                                       ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }

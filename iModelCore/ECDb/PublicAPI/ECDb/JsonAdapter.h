@@ -200,8 +200,8 @@ private:
     bool JsonFromDouble (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromInt (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromInt64 (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-    bool JsonFromPoint2D (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-    bool JsonFromPoint3D (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
+    bool JsonFromPoint2d (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
+    bool JsonFromPoint3d (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromString (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromCG(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
 
@@ -319,7 +319,7 @@ public:
     //!     Integer: "2"
     //!     Double: "3 feet 6 inches"
     //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-    //!     Point3D: "1.1, 2.2, 3.3"
+    //!     Point3d: "1.1, 2.2, 3.3"
     //!     String: "Test"
     //! @endcode
     ECDB_EXPORT bool GetRow(JsonValueR currentRow) const;

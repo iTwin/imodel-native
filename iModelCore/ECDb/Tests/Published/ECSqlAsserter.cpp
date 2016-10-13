@@ -209,12 +209,12 @@ ECSqlStatus ECSqlAsserter::BindParameters(ECSqlStatement& statement, vector<ECSq
                 }
                 case ECN::PRIMITIVETYPE_Point2D:
                 {
-                stat = statement.BindPoint2D(parameterIndex, value.GetPoint2D());
+                stat = statement.BindPoint2d(parameterIndex, value.GetPoint2D());
                 break;
                 }
                 case ECN::PRIMITIVETYPE_Point3D:
                 {
-                stat = statement.BindPoint3D(parameterIndex, value.GetPoint3D());
+                stat = statement.BindPoint3d(parameterIndex, value.GetPoint3D());
                 break;
                 }
                 case ECN::PRIMITIVETYPE_String:
@@ -487,9 +487,9 @@ ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallLis
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
                                 [&value] () { value.GetInt64(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point2D),
-                                [&value] () { value.GetPoint2D(); }));
+                                [&value] () { value.GetPoint2d(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point3D),
-                                [&value] () { value.GetPoint3D(); }));
+                                [&value] () { value.GetPoint3d(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_String),
                                 [&value] () { value.GetText(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreateStructTypeDescriptor(),

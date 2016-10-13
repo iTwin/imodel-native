@@ -253,8 +253,8 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
 
     ECSqlStatement stmt;
     ECSqlStatus prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
-    stmt.BindPoint2D(1, DPoint2d::From(0, 0));
-    stmt.BindPoint3D(2, DPoint3d::From(0, 0, 0));
+    stmt.BindPoint2d(1, DPoint2d::From(0, 0));
+    stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
     DbResult stepStatus = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
     }

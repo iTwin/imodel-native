@@ -258,18 +258,18 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2D (DPoint2dCR value)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2d (DPoint2dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2D value can only be bound to parameter of same type.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2d value can only be bound to parameter of same type.");
     return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3D (DPoint3dCR value)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3d (DPoint3dCR value)
     {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3D value can only be bound to parameter of same type.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3d value can only be bound to parameter of same type.");
     return ECSqlStatus::Error;
     }
 

@@ -278,11 +278,11 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint2D(DPoint2dCR value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint2d(DPoint2dCR value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Point2D)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2D values can only be bound to Point2D parameter values.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2d values can only be bound to Point2d parameter values.");
         return ECSqlStatus::Error;
         }
 
@@ -292,11 +292,11 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint2D(DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint3D(DPoint3dCR value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint3d(DPoint3dCR value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Point3D)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3D values can only be bound to Point3D parameter values.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3d values can only be bound to Point3d parameter values.");
         return ECSqlStatus::Error;
         }
 
