@@ -31,9 +31,9 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
+HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
     {
-    return new HttpClient(serverUrl, serverName);
+    return new HttpClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification);
     }
 
 SpatialEntityDataPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
@@ -44,7 +44,7 @@ SpatialEntityDataPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName) : SpatialEntityClient(serverUrl, serverName)
+HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification) : SpatialEntityClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification)
     {
     m_certificatePath = BeFileName();
 
@@ -277,8 +277,10 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
         DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
 
     pExtractedData->SetDate(date);
-    
-    // Resolution.
+
+
+
+    // Resolution and geocoding.
     RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
     if (pRasterData != NULL)
         {

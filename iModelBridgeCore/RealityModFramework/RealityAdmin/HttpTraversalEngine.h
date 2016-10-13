@@ -24,10 +24,10 @@ struct HttpClient : public SpatialEntityClient
     {
     public:
         //! Create http client by setting the url/root.
-        REALITYDATAPLATFORM_EXPORT static HttpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL);
+        REALITYDATAPLATFORM_EXPORT static HttpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL, Utf8CP datasetName = NULL, Utf8CP filePattern = NULL, bool extractThumbnails = false, Utf8CP classification = NULL);
         
     protected:
-        HttpClient(Utf8CP serverUrl, Utf8CP serverName);
+        HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification);
 
         //! Recurse into sub directories and create a list of all files.
         SpatialEntityStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const override;

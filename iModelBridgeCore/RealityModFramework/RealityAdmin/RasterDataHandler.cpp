@@ -193,7 +193,7 @@ const Utf8String RasterData::ComputeResolutionInMeters()
         // Get extent.
         bvector<DPoint2d> footprint = bvector<DPoint2d>();
         DRange2d footprintExtents = DRange2d();
-        if (SUCCESS != ExtractFootprint(&footprint, &footprintExtents) || footprint.size() > 0)
+        if (SUCCESS != ExtractFootprint(&footprint, &footprintExtents) || footprint.size() == 0)
             return NULL;
 
         // Get width and height.
