@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -391,6 +391,7 @@ struct GCS::Impl : public ShareableObjectTypeTrait<Impl>::type
 
     bool                                    m_hasUnit;
     Unit                                    m_horizontalUnit;
+    Unit                                    m_verticalUnit;
 
     bool                                    m_hasLocalTransform;
     LocalTransform                          m_localTransform;
@@ -402,7 +403,8 @@ struct GCS::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_hasUnit(0 != unitP),
             m_horizontalUnit(m_hasUnit ? *unitP : Unit::GetMeter()) ,
             m_hasLocalTransform(0 != localTransformP),
-            m_localTransform(m_hasLocalTransform ? *localTransformP : LocalTransform::GetIdentity())
+            m_localTransform(m_hasLocalTransform ? *localTransformP : LocalTransform::GetIdentity()),
+            m_verticalUnit(m_horizontalUnit.IsLinear() ? m_horizontalUnit : Unit::GetMeter())
         {
         }
 
@@ -413,7 +415,8 @@ struct GCS::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_hasUnit(0 != unitP),
             m_horizontalUnit(m_hasUnit ? *unitP : Unit::GetMeter()) ,
             m_hasLocalTransform(0 != localTransformP),
-            m_localTransform(m_hasLocalTransform ? *localTransformP : LocalTransform::GetIdentity())
+            m_localTransform(m_hasLocalTransform ? *localTransformP : LocalTransform::GetIdentity()),
+            m_verticalUnit(m_horizontalUnit.IsLinear() ? m_horizontalUnit : Unit::GetMeter())
         {
         }
 
@@ -698,7 +701,18 @@ const Unit& GCS::GetHorizontalUnit () const
 const Unit& GCS::GetVerticalUnit () const
     {
     assert(m_implP->m_hasUnit); 
-    return m_implP->m_horizontalUnit.IsLinear() ? m_implP->m_horizontalUnit : Unit::GetMeter();
+    return m_implP->m_verticalUnit;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                  Raymond.Gauthier   09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void GCS::SetVerticalUnit(const Unit& unit)
+    {
+    assert(unit.IsLinear());
+    
+    m_implP->m_verticalUnit = unit;
     }
 
 /*---------------------------------------------------------------------------------**//**
