@@ -1141,12 +1141,12 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Yaw"), placement.GetAngles().GetYaw().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Pitch"), placement.GetAngles().GetPitch().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Roll"), placement.GetAngles().GetRoll().Degrees()));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
         }
 
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -1260,12 +1260,12 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Yaw"), placement.GetAngles().GetYaw().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Pitch"), placement.GetAngles().GetPitch().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Roll"), placement.GetAngles().GetRoll().Degrees()));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
         }
 
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))

@@ -315,7 +315,7 @@ struct JsECSqlValue : RefCountedBaseWithCreate
     Utf8String GetText() { return m_value->GetText(); }
     Utf8String GetDateTime() { return m_value->GetDateTime().ToUtf8String(); }
     double GetDouble() { return m_value->GetDouble(); }
-    JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3D()); }
+    JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3d()); }
     int32_t GetInt() { return m_value->GetInt(); }
     JsDgnObjectIdP GetId() { return new JsDgnObjectId(m_value->GetUInt64()); }
     JsECSqlArrayValue* GetArray();

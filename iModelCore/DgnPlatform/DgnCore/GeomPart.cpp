@@ -32,8 +32,8 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
         return status;
 
     m_facetCount = statement.GetValueUInt64(params.GetSelectIndex(PARAM_FacetCount));
-    DPoint3d bboxLow = statement.GetValuePoint3D(params.GetSelectIndex(PARAM_BBoxLow));
-    DPoint3d bboxHigh = statement.GetValuePoint3D(params.GetSelectIndex(PARAM_BBoxHigh));
+    DPoint3d bboxLow = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxLow));
+    DPoint3d bboxHigh = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxHigh));
     m_bbox = ElementAlignedBox3d(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
     return DgnDbStatus::Success;
     }
@@ -43,8 +43,8 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnGeometryPart::BindParams(ECSqlStatement& statement)
     {
-    statement.BindPoint3D(statement.GetParameterIndex(PARAM_BBoxLow), m_bbox.low);
-    statement.BindPoint3D(statement.GetParameterIndex(PARAM_BBoxHigh), m_bbox.high);
+    statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxLow), m_bbox.low);
+    statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxHigh), m_bbox.high);
     statement.BindInt64(statement.GetParameterIndex(PARAM_FacetCount), static_cast<int64_t>(m_facetCount));
     return m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
     }
@@ -192,8 +192,8 @@ BentleyStatus DgnGeometryPart::QueryRangeAndFacetCount(DRange3dR range, size_t* 
     if (BE_SQLITE_ROW != statement->Step())
         return BentleyStatus::ERROR;
 
-    DPoint3d bboxLow = statement->GetValuePoint3D(0);
-    DPoint3d bboxHigh = statement->GetValuePoint3D(1);
+    DPoint3d bboxLow = statement->GetValuePoint3d(0);
+    DPoint3d bboxHigh = statement->GetValuePoint3d(1);
     ElementAlignedBox3d bbox(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
     range = bbox;
 

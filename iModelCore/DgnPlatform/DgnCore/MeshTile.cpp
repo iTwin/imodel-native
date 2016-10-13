@@ -1294,9 +1294,9 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
         TileGeometrySource::GeomBlob geomBlob(stmt, 1);
 
 #if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-        DPoint3d origin = stmt.GetValuePoint3D(5),
-                 boxLo  = stmt.GetValuePoint3D(6),
-                 boxHi  = stmt.GetValuePoint3D(7);
+        DPoint3d origin = stmt.GetValuePoint3d(5),
+                 boxLo  = stmt.GetValuePoint3d(6),
+                 boxHi  = stmt.GetValuePoint3d(7);
 #else
         DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7)),
                  boxLo  = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10)),

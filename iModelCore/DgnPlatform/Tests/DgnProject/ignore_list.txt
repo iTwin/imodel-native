@@ -131,3 +131,6 @@ RealityDataThreadPool.SpawnsThreads
     # [  FAILED  ] RealityDataThreadPool.SpawnsThreads (5172 ms)
 
 CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
+
+TextAnnotationTest.BasicCrud2d # WIP_VIEW_DEFINITION
+
