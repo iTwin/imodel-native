@@ -1120,8 +1120,15 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 
     ElementInstanceAdapter ecThis(*this);
     ElementInstanceAdapter ecOther(other);
-    if (ecThis.IsValid() && ecOther.IsValid())
-        ecThis.CopyDataBuffer(ecOther, true);
+    if (ecOther.IsValid())
+        {
+        if (ecThis.IsValid()) // Can be false if we are copying between elements of different classes, where other has EC props and this does not.
+            {
+            // If both have EC properties, we must copy, whether they are dirty or not. This must get other's properties.
+            BeDataAssert((PropState::Dirty != m_flags.m_propState) && "WARNING: Overwriting unsaved changes to EC properties");
+            ecThis.CopyDataBuffer(ecOther, true);
+            }
+        }
 
     CopyUserProperties(other);
     }
@@ -4217,22 +4224,27 @@ BentleyStatus ElementInstanceAdapter::LoadProperties()
     BeAssert(DgnElement::PropState::Unknown == m_element.m_flags.m_propState);
     BeAssert(nullptr == m_element.m_ecPropertyData);
     
-    // *** WIP_AUTO_HANDLED_PROPERTIES -- We should cache this select argument list, not build it every time.
-
-    Utf8String props;
-    Utf8CP comma = "";
-    bvector<ECN::ECPropertyCP> autoHandledProperties;
-    for (auto prop : AutoHandledPropertiesCollection(*m_eclass, m_element.GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
+    ECSqlClassInfo& classInfo = m_element.GetDgnDb().Elements().FindClassInfo(m_element); // Note: This "Find" method will create a ClassInfo if necessary
+    if (classInfo.GetSelectEcPropsECSql().empty())
         {
-        Utf8StringCR propName = prop->GetName();
-        props.append(comma).append("[").append(propName).append("]");
-        comma = ",";
-        }
+        Utf8String props;
+        Utf8CP comma = "";
+        bvector<ECN::ECPropertyCP> autoHandledProperties;
+        for (auto prop : AutoHandledPropertiesCollection(*m_eclass, m_element.GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
+            {
+            Utf8StringCR propName = prop->GetName();
+            props.append(comma).append("[").append(propName).append("]");
+            comma = ",";
+            }
 
-    if (props.empty())
-        {
-        m_element.m_flags.m_propState = DgnElement::PropState::NotFound;
-        return BSIERROR;
+        if (props.empty())
+            {
+            m_element.m_flags.m_propState = DgnElement::PropState::NotFound;
+            return BSIERROR;
+            }
+
+        classInfo.SetSelectEcPropsECSql(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter", 
+                                                             props.c_str(), m_eclass->GetECSqlName().c_str()));
         }
 
     // *********************************************************************************************************
@@ -4242,7 +4254,7 @@ BentleyStatus ElementInstanceAdapter::LoadProperties()
 
     m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
 
-    auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), m_eclass->GetECSqlName().c_str()).c_str());
+    auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
 
     auto const& classLayout = _GetClassLayout();
     m_element.m_ecPropertyDataSize = CalculateInitialAllocation(classLayout);

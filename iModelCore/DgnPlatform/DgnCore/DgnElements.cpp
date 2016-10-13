@@ -1568,7 +1568,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
     {
     BeDbMutexHolder _v(m_mutex);
 
-    auto& classInfo = FindClassInfo(el);
+    /* unused - auto& classInfo = FindClassInfo(el);*/
     auto stmt = FindClassInfo(el).GetSelectStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
 
     return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
