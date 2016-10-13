@@ -27,8 +27,8 @@
 //        {
 //        switch (primitiveProperty->GetType())
 //            {
-//                case PRIMITIVETYPE_Point2D:
-//                case PRIMITIVETYPE_Point3D:
+//                case PRIMITIVETYPE_Point2d:
+//                case PRIMITIVETYPE_Point3d:
                     return PointPropertyMap::Create(*primitiveProperty, propertyAccessString, parentPropertyMap);
 //
 //                default:
@@ -819,10 +819,10 @@ PointPropertyMap::PointPropertyMap(PrimitiveECPropertyCR pointProperty, Utf8CP p
 //    {
 //    switch (pointProperty.GetType())
 //        {
-//            case PRIMITIVETYPE_Point3D:
+//            case PRIMITIVETYPE_Point3d:
 //                m_is3d = true;
 //                break;
-//            case PRIMITIVETYPE_Point2D:
+//            case PRIMITIVETYPE_Point2d:
 //                m_is3d = false;
 //                break;
 //

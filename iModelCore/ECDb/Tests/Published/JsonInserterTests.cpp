@@ -390,16 +390,16 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
                     break;
                     }
 
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                     {
-                    if (ECRapidJsonUtilities::Point2DToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                    if (ECRapidJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
 
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                     {
-                    if (ECRapidJsonUtilities::Point3DToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                    if (ECRapidJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
                         return ERROR;
                     break;
                     }
@@ -531,10 +531,10 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     break;
                     }
 
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                     {
                     DPoint2d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2D(pt, *it))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -543,10 +543,10 @@ BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
                     break;
                     }
 
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                     {
                     DPoint3d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3D(pt, *it))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -589,8 +589,8 @@ Utf8CP PrimArrayJsonInserterTests::PrimitiveTypeToString(ECN::PrimitiveType prim
             case PRIMITIVETYPE_IGeometry: return "IGeometry";
             case PRIMITIVETYPE_Integer: return "Integer";
             case PRIMITIVETYPE_Long: return "Long";
-            case PRIMITIVETYPE_Point2D: return "Point2D";
-            case PRIMITIVETYPE_Point3D: return "Point3D";
+            case PRIMITIVETYPE_Point2d: return "Point2D";
+            case PRIMITIVETYPE_Point3d: return "Point3D";
             case PRIMITIVETYPE_String: return "String";
             default:
                 BeAssert(false);
@@ -649,8 +649,8 @@ TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Point2D)
     {
     ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
 
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point2D));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point2D));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point2d));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point2d));
     }
 
 //---------------------------------------------------------------------------------------
@@ -660,8 +660,8 @@ TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Point3D)
     {
     ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
 
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3d));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d));
     }
 
 //---------------------------------------------------------------------------------------

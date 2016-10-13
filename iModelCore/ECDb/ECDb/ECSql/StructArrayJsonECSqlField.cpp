@@ -241,11 +241,11 @@ Utf8CP PrimitiveJsonECSqlValue::_GetText() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point2D))
+    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point2d))
         return NoopECSqlValue::GetSingleton().GetPoint2d();
 
     DPoint2d pt;
-    if (SUCCESS != ECJsonUtilities::JsonToPoint2D(pt, GetJson()))
+    if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, GetJson()))
         {
         Utf8String msg;
         msg.Sprintf("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.",
@@ -262,11 +262,11 @@ DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint3d PrimitiveJsonECSqlValue::_GetPoint3d() const
     {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point3D))
+    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point3d))
         return NoopECSqlValue::GetSingleton().GetPoint3d();
 
     DPoint3d pt;
-    if (SUCCESS != ECJsonUtilities::JsonToPoint3D(pt, GetJson()))
+    if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, GetJson()))
         {
         Utf8String msg;
         msg.Sprintf("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.",

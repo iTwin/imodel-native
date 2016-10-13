@@ -137,21 +137,21 @@ void PopulatePrimitiveValueWithCustomDataSet(ECValueR value, PrimitiveType primi
             value.SetBinary(blob, 10);
             break;
             }
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             point2d.x = 33.11;
             point2d.y = 44.12;
-            value.SetPoint2D(point2d);
+            value.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x = 12.33;
             point3d.y = 44.54;
             point3d.z = 21.55;
-            value.SetPoint3D(point3d);
+            value.SetPoint3d(point3d);
             break;
             }
         }

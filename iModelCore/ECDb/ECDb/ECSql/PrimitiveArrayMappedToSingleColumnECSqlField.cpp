@@ -338,10 +338,10 @@ Utf8CP PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetText
 //---------------------------------------------------------------------------------------
 DPoint2d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPoint2d() const
     {
-    if (!CanRead(PRIMITIVETYPE_Point2D))
+    if (!CanRead(PRIMITIVETYPE_Point2d))
         return NoopECSqlValue::GetSingleton().GetPoint2d();
 
-    return m_value.GetPoint2D();
+    return m_value.GetPoint2d();
     }
 
 //---------------------------------------------------------------------------------------
@@ -349,10 +349,10 @@ DPoint2d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPo
 //---------------------------------------------------------------------------------------
 DPoint3d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPoint3d() const
     {
-    if (!CanRead(PRIMITIVETYPE_Point3D))
+    if (!CanRead(PRIMITIVETYPE_Point3d))
         return NoopECSqlValue::GetSingleton().GetPoint3d();
 
-    return m_value.GetPoint3D();
+    return m_value.GetPoint3d();
     }
 
 

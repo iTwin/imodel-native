@@ -953,13 +953,13 @@ struct ECPropertyValueChange : ECChange
                 static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint2D();
+                    return v.GetPoint2d();
                     }
                 template< typename U = T >
                 static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint3D();
+                    return v.GetPoint3d();
                     }
                 template< typename U = T >
                 static resolvedType< std::is_same<U, double>::value, U > Copy(ECN::ECValueCR v)
@@ -990,8 +990,8 @@ struct ECPropertyValueChange : ECChange
         DoubleChange* GetDouble() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Double); if (m_type != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
         Int32Change* GetInteger() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Integer); if (m_type != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
         Int64Change* GetLong() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Long); if (m_type != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
-        Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2D); if (m_type != ECN::PRIMITIVETYPE_Point2D) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
-        Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3D); if (m_type != ECN::PRIMITIVETYPE_Point3D) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
+        Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2d); if (m_type != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
+        Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3d); if (m_type != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
         BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
         BentleyStatus SetValue(ValueId id, ECN::ECValueCR value);
         BentleyStatus SetValue(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);

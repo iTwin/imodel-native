@@ -38,9 +38,9 @@ BentleyStatus IPropertyValueGenerator::NextPrimitiveValue(ECValueR value, Primit
             r = _NextInteger(value); break;
         case PrimitiveType::PRIMITIVETYPE_Long:
             r = _NextLong(value); break;
-        case PrimitiveType::PRIMITIVETYPE_Point2D:
+        case PrimitiveType::PRIMITIVETYPE_Point2d:
             r = _NextPoint2d(value); break;
-        case PrimitiveType::PRIMITIVETYPE_Point3D:
+        case PrimitiveType::PRIMITIVETYPE_Point3d:
             r = _NextPoint3d(value); break;
         case PrimitiveType::PRIMITIVETYPE_String:
             r = _NextString(value); break;
@@ -98,7 +98,7 @@ BentleyStatus DefaultPropertyValueGenerator::_NextString   (ECValueR value)
 BentleyStatus DefaultPropertyValueGenerator::_NextPoint2d  (ECValueR value)
     {
     m_currentPoint2d.Add(m_incrementPoint2d) ;
-    return value.SetPoint2D(m_currentPoint2d);
+    return value.SetPoint2d(m_currentPoint2d);
     }
 
 //---------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ BentleyStatus DefaultPropertyValueGenerator::_NextPoint2d  (ECValueR value)
 BentleyStatus DefaultPropertyValueGenerator::_NextPoint3d  (ECValueR value)
     {
     m_currentPoint3d.Add(m_incrementPoint3d) ;
-    return value.SetPoint3D(m_currentPoint3d);
+    return value.SetPoint3d(m_currentPoint3d);
     }
 
 //---------------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ BentleyStatus RandomPropertyValueGenerator::_NextPoint2d(ECN::ECValueR value)
     DPoint2d point2d;
     point2d.x=randomNumber * 1.0;
     point2d.y=randomNumber * 1.8;
-    return value.SetPoint2D(point2d);
+    return value.SetPoint2d(point2d);
     }
 
 BentleyStatus RandomPropertyValueGenerator::_NextPoint3d(ECN::ECValueR value)
@@ -354,7 +354,7 @@ BentleyStatus RandomPropertyValueGenerator::_NextPoint3d(ECN::ECValueR value)
     point3d.x=randomNumber * 1.0;
     point3d.y=randomNumber * 1.8;
     point3d.z=randomNumber * 2.9;
-    return value.SetPoint3D(point3d);
+    return value.SetPoint3d(point3d);
     }
 
 BentleyStatus RandomPropertyValueGenerator::_NextString(ECN::ECValueR value)

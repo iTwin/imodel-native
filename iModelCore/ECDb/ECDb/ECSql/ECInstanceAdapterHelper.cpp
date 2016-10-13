@@ -416,12 +416,12 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
                 stat = binder.BindInt64(value.GetLong());
                 break;
 
-            case ECN::PRIMITIVETYPE_Point2D:
-                stat = binder.BindPoint2d(value.GetPoint2D());
+            case ECN::PRIMITIVETYPE_Point2d:
+                stat = binder.BindPoint2d(value.GetPoint2d());
                 break;
 
-            case ECN::PRIMITIVETYPE_Point3D:
-                stat = binder.BindPoint3d(value.GetPoint3D());
+            case ECN::PRIMITIVETYPE_Point3d:
+                stat = binder.BindPoint3d(value.GetPoint3d());
                 break;
 
             case ECN::PRIMITIVETYPE_String:

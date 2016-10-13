@@ -389,10 +389,10 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_With
                     case ECN::PRIMITIVETYPE_Long:
                         ecsqlValue.GetInt64();
                         break;
-                    case ECN::PRIMITIVETYPE_Point2D:
+                    case ECN::PRIMITIVETYPE_Point2d:
                         ecsqlValue.GetPoint2d();
                         break;
-                    case ECN::PRIMITIVETYPE_Point3D:
+                    case ECN::PRIMITIVETYPE_Point3d:
                         ecsqlValue.GetPoint3d();
                         break;
                     case ECN::PRIMITIVETYPE_String:

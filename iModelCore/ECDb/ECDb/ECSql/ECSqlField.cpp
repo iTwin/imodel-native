@@ -115,9 +115,9 @@ Utf8CP ECSqlField::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType)
                 return "GetInt";
             case PRIMITIVETYPE_Long:
                 return "GetInt64";
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 return "GetPoint2d";
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 return "GetPoint3d";
             case PRIMITIVETYPE_String:
                 return "GetText";

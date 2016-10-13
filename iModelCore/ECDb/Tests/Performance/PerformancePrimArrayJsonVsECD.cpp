@@ -84,7 +84,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_SmallArray)
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -100,7 +100,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_SmallArray)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -116,7 +116,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_LargeArray)
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -132,7 +132,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_LargeArray)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -148,7 +148,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_SmallArray)
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -165,7 +165,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_SmallArray)
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -181,7 +181,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_LargeArray)
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -198,7 +198,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_LargeArray)
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -292,16 +292,16 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                     ECRapidJsonUtilities::Int64ToStringJsonValue(arrayElementJson, INT64VALUE, json.GetAllocator());
                     break;
                     }
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                     {
-                    if (ECRapidJsonUtilities::Point2DToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                    if (ECRapidJsonUtilities::Point2dToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
                         return ERROR;
 
                     break;
                     }
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                     {
-                    if (ECRapidJsonUtilities::Point3DToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                    if (ECRapidJsonUtilities::Point3dToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
                         return ERROR;
 
                     break;
@@ -458,10 +458,10 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     break;
                     }
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                     {
                     DPoint2d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2D(pt, *it))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -469,10 +469,10 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     break;
                     }
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                     {
                     DPoint3d pt;
-                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3D(pt, *it))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -567,12 +567,12 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
                 arrayElementVal.SetUtf8CP(STRINGVALUE);
                 break;
 
-            case PRIMITIVETYPE_Point2D:
-                arrayElementVal.SetPoint2D(GetTestPoint2d());
+            case PRIMITIVETYPE_Point2d:
+                arrayElementVal.SetPoint2d(GetTestPoint2d());
                 break;
 
-            case PRIMITIVETYPE_Point3D:
-                arrayElementVal.SetPoint3D(GetTestPoint3d());
+            case PRIMITIVETYPE_Point3d:
+                arrayElementVal.SetPoint3d(GetTestPoint3d());
                 break;
 
             default:
@@ -749,23 +749,23 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
                     break;
                     }
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                     {
-                    if (arrayInfo.GetElementPrimitiveType() != PRIMITIVETYPE_Point2D)
+                    if (arrayInfo.GetElementPrimitiveType() != PRIMITIVETYPE_Point2d)
                         return ERROR;
 
-                    DPoint2d pt = val.GetPoint2D();
+                    DPoint2d pt = val.GetPoint2d();
                     if (!pt.AlmostEqual(GetTestPoint2d()))
                         return ERROR;
 
                     break;
                     }
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                     {
-                    if (arrayInfo.GetElementPrimitiveType() != PRIMITIVETYPE_Point3D)
+                    if (arrayInfo.GetElementPrimitiveType() != PRIMITIVETYPE_Point3d)
                         return ERROR;
 
-                    DPoint3d pt = val.GetPoint3D();
+                    DPoint3d pt = val.GetPoint3d();
                     if (!pt.AlmostEqual(GetTestPoint3d()))
                         return ERROR;
 
@@ -860,8 +860,8 @@ Utf8CP PerformancePrimArrayJsonVsECDTests::PrimitiveTypeToString(ECN::PrimitiveT
             case PRIMITIVETYPE_IGeometry: return "IGeometry";
             case PRIMITIVETYPE_Integer: return "Integer";
             case PRIMITIVETYPE_Long: return "Long";
-            case PRIMITIVETYPE_Point2D: return "Point2D";
-            case PRIMITIVETYPE_Point3D: return "Point3D";
+            case PRIMITIVETYPE_Point2d: return "Point2D";
+            case PRIMITIVETYPE_Point3d: return "Point3D";
             case PRIMITIVETYPE_String: return "String";
             default:
                 BeAssert(false);

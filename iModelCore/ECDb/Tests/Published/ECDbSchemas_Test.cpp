@@ -781,7 +781,7 @@ void CreateCustomAttributeTestSchema(ECSchemaPtr& testSchema, ECSchemaCachePtr& 
     caClass->CreatePrimitiveProperty(doubleProp, "doubleprop", PRIMITIVETYPE_Double);
 
     PrimitiveECPropertyP pointProp = nullptr;
-    caClass->CreatePrimitiveProperty(pointProp, "pointprop", PRIMITIVETYPE_Point3D);
+    caClass->CreatePrimitiveProperty(pointProp, "pointprop", PRIMITIVETYPE_Point3d);
 
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);

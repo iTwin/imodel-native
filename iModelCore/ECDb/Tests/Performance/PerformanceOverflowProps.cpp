@@ -96,7 +96,7 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
 TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
     {
     const int propCount = 100;
-    ASSERT_EQ(SUCCESS, SetupTest(ECDb::OpenParams(Db::OpenMode::Readonly), PRIMITIVETYPE_Point3D, propCount));
+    ASSERT_EQ(SUCCESS, SetupTest(ECDb::OpenParams(Db::OpenMode::Readonly), PRIMITIVETYPE_Point3d, propCount));
 
     Utf8String colName;
     GetColumnName(colName, propCount / 2);
@@ -114,7 +114,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
         ASSERT_FALSE(document.Parse<0>(stmt.GetValueText(0)).HasParseError());
 
         DPoint3d pt;
-        ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::JsonToPoint3D(pt, document));
+        ASSERT_EQ(SUCCESS, ECRapidJsonUtilities::JsonToPoint3d(pt, document));
         ASSERT_TRUE(pt.AlmostEqual(GetTestPoint3d()));
         actualRowCount++;
         }
@@ -122,7 +122,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
     stmt.Finalize();
     timer.Stop();
     ASSERT_EQ(INITIALROWCOUNT, actualRowCount);
-    LogTiming(timer, "SELECT - Overflow Property - as compound - parsed with rapidjson", PRIMITIVETYPE_Point3D, propCount, INITIALROWCOUNT);
+    LogTiming(timer, "SELECT - Overflow Property - as compound - parsed with rapidjson", PRIMITIVETYPE_Point3d, propCount, INITIALROWCOUNT);
 
     Utf8String expandedSql;
     expandedSql.Sprintf("SELECT json_extract(" OVERFLOWPROP_NAME ",'$.%s.x'), json_extract(" OVERFLOWPROP_NAME ",'$.%s.y'), json_extract(" OVERFLOWPROP_NAME ",'$.%s.z') FROM " TABLE_NAME,
@@ -143,7 +143,7 @@ TEST_F(PerformanceOverflowPropsTests, Point3DOverflowRetrieval)
     timer.Stop();
     ASSERT_EQ(INITIALROWCOUNT, actualRowCount);
 
-    LogTiming(timer, "SELECT - Overflow Property - expanded", PRIMITIVETYPE_Point3D, propCount, INITIALROWCOUNT);
+    LogTiming(timer, "SELECT - Overflow Property - expanded", PRIMITIVETYPE_Point3d, propCount, INITIALROWCOUNT);
 
     GetECDb().CloseDb();
     }
@@ -212,7 +212,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertRegular_FewProps)
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -227,7 +227,7 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_FewProps)
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
     }
@@ -242,7 +242,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertRegular_ManyProps)
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -257,7 +257,7 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
     }
@@ -272,7 +272,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps_JsonCpp)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -287,7 +287,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps_RapidJson)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -302,7 +302,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps_StringApi)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -320,8 +320,8 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_FewProps)
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
 
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, JsonApi::JsonCpp));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, JsonApi::RapidJson));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::JsonCpp));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::RapidJson));
 
     }
 
@@ -335,7 +335,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps_JsonCpp)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::JsonCpp, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -350,7 +350,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps_RapidJson)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::RapidJson, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -365,7 +365,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps_StringApi)
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Point3d, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(JsonApi::String, PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
@@ -383,8 +383,8 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_ManyProps)
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount));
 
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, JsonApi::JsonCpp));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, JsonApi::RapidJson));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::JsonCpp));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3d, propCount, JsonApi::RapidJson));
     }
 
 
@@ -412,12 +412,12 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(PrimitiveT
 
         switch (propertyType)
             {
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                     sql.append(colName).append("_X, ").append(colName).append("_Y");
                     valuesClause.append("?,?");
                     break;
 
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                     sql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
                     valuesClause.append("?,?,?");
                     break;
@@ -469,10 +469,10 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
     GetColumnName(colName, propNo);
     switch (propertyType)
         {
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 sql.append(colName).append("_X, ").append(colName).append("_Y");
                 break;
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 sql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
                 break;
 
@@ -559,7 +559,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
 
                 break;
                 }
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
                 DPoint2d pt = DPoint2d::From(stmt.GetValueDouble(0), stmt.GetValueDouble(1));
                 if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -567,7 +567,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
 
                 break;
                 }
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
                 DPoint3d pt = DPoint3d::From(stmt.GetValueDouble(0), stmt.GetValueDouble(1), stmt.GetValueDouble(2));
                 if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -732,7 +732,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
 
                 break;
                 }
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
                 switch (pointxdJsonApi)
                     {
@@ -744,7 +744,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint2d pt;
-                        if (SUCCESS != ECJsonUtilities::JsonToPoint2D(pt, json))
+                        if (SUCCESS != ECJsonUtilities::JsonToPoint2d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -760,7 +760,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint2d pt;
-                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2D(pt, json))
+                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -775,7 +775,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
 
                 break;
                 }
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
                 switch (pointxdJsonApi)
                     {
@@ -787,7 +787,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint3d pt;
-                        if (SUCCESS != ECJsonUtilities::JsonToPoint3D(pt, json))
+                        if (SUCCESS != ECJsonUtilities::JsonToPoint3d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -803,7 +803,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                             return ERROR;
 
                         DPoint3d pt;
-                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3D(pt, json))
+                        if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3d(pt, json))
                             return ERROR;
 
                         if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -842,7 +842,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
         }
 
     Utf8String message("SELECT - OverflowProperty");
-    if (propertyType == PRIMITIVETYPE_Point2D || propertyType == PRIMITIVETYPE_Point3D)
+    if (propertyType == PRIMITIVETYPE_Point2d || propertyType == PRIMITIVETYPE_Point3d)
         message.Sprintf("SELECT - OverflowProperty - JSON API: %s", JsonApiToString(pointxdJsonApi));
 
     LogTiming(timer, message.c_str(), propertyType, propCount, INITIALROWCOUNT);
@@ -913,7 +913,7 @@ BentleyStatus PerformanceOverflowPropsTests::BindRegularPropsForInsert(Statement
 
                     break;
 
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
                 if (BE_SQLITE_OK != stmt.BindDouble(2 * j + 1, POINTXVALUE) ||
                     BE_SQLITE_OK != stmt.BindDouble(2 * j + 2, POINTYVALUE))
@@ -922,7 +922,7 @@ BentleyStatus PerformanceOverflowPropsTests::BindRegularPropsForInsert(Statement
                 break;
                 }
 
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
                 if (BE_SQLITE_OK != stmt.BindDouble(3 * j + 1, POINTXVALUE) ||
                     BE_SQLITE_OK != stmt.BindDouble(3 * j + 2, POINTYVALUE) ||
@@ -1045,14 +1045,14 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 json.append(str);
                 break;
                 }
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
                 Utf8String str;
                 str.Sprintf("{\"x\":%f,\"y\":%f}", POINTXVALUE, POINTYVALUE);
                 json.append(str);
                 break;
                 }
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
                 Utf8String str;
                 str.Sprintf("{\"x\":%f,\"y\":%f,\"z\":%f}", POINTXVALUE, POINTYVALUE, POINTZVALUE);
@@ -1138,16 +1138,16 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 ECRapidJsonUtilities::Int64ToStringJsonValue(v, INT64VALUE, json.GetAllocator());
                 break;
                 }
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
-                if (ECRapidJsonUtilities::Point2DToJson(v, GetTestPoint2d(), json.GetAllocator()))
+                if (ECRapidJsonUtilities::Point2dToJson(v, GetTestPoint2d(), json.GetAllocator()))
                     return ERROR;
 
                 break;
                 }
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
-                if (ECRapidJsonUtilities::Point3DToJson(v, GetTestPoint3d(), json.GetAllocator()))
+                if (ECRapidJsonUtilities::Point3dToJson(v, GetTestPoint3d(), json.GetAllocator()))
                     return ERROR;
 
                 break;
@@ -1237,16 +1237,16 @@ BentleyStatus PerformanceOverflowPropsTests::CreateOverflowPropsStringForInsertW
                 val = BeJsonUtilities::StringValueFromInt64(INT64VALUE);
                 break;
                 }
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                 {
-                if (SUCCESS != ECJsonUtilities::Point2DToJson(val, GetTestPoint2d()))
+                if (SUCCESS != ECJsonUtilities::Point2dToJson(val, GetTestPoint2d()))
                     return ERROR;
 
                 break;
                 }
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                 {
-                if (SUCCESS != ECJsonUtilities::Point3DToJson(val, GetTestPoint3d()))
+                if (SUCCESS != ECJsonUtilities::Point3dToJson(val, GetTestPoint3d()))
                     return ERROR;
 
                 break;
@@ -1322,7 +1322,7 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
                         insertValuesClause.append("?");
                         break;
 
-                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point2d:
                         tableDdl.append(colName).append("_X REAL, ").append(colName).append("_Y REAL");
 
                         insertSql.append(colName).append("_X, ").append(colName).append("_Y");
@@ -1330,7 +1330,7 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
 
                         break;
 
-                    case PRIMITIVETYPE_Point3D:
+                    case PRIMITIVETYPE_Point3d:
                         tableDdl.append(colName).append("_X REAL, ").append(colName).append("_Y REAL, ").append(colName).append("_Z REAL");
                         insertSql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
                         insertValuesClause.append("?,?,?");
@@ -1358,9 +1358,9 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
             return ERROR;
 
         int overflowParameterIndex = propCount + 1;
-        if (propType == PRIMITIVETYPE_Point2D)
+        if (propType == PRIMITIVETYPE_Point2d)
             overflowParameterIndex = propCount * 2 + 1;
-        else if (propType == PRIMITIVETYPE_Point3D)
+        else if (propType == PRIMITIVETYPE_Point3d)
             overflowParameterIndex = propCount * 3 + 1;
 
         for (int i = 0; i < INITIALROWCOUNT; i++)
@@ -1418,8 +1418,8 @@ Utf8CP PerformanceOverflowPropsTests::PrimitiveTypeToString(ECN::PrimitiveType p
             case PRIMITIVETYPE_IGeometry: return "IGeometry";
             case PRIMITIVETYPE_Integer: return "Integer";
             case PRIMITIVETYPE_Long: return "Long";
-            case PRIMITIVETYPE_Point2D: return "Point2D";
-            case PRIMITIVETYPE_Point3D: return "Point3D";
+            case PRIMITIVETYPE_Point2d: return "Point2D";
+            case PRIMITIVETYPE_Point3d: return "Point3D";
             case PRIMITIVETYPE_String: return "String";
             default:
                 BeAssert(false);

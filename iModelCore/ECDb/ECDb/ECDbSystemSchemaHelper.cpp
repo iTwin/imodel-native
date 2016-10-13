@@ -235,9 +235,9 @@ ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECDb
                 return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "IntegerArray");
             case PRIMITIVETYPE_Long:
                 return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "LongArray");
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "Point2dArray");
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "Point3dArray");
             case PRIMITIVETYPE_String:
                 return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "StringArray");

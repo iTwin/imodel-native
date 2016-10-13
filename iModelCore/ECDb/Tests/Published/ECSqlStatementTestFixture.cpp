@@ -157,14 +157,14 @@ void ECSqlStatementTestFixture::VerifyECSqlValue (ECSqlStatement const& statemen
                 }
             else if (typeStr.EqualsI ("point2d"))
                 {
-                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point2D) << "Property: " << name.c_str ();;
+                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point2d) << "Property: " << name.c_str ();;
                 DPoint2d actualVal = actualValue.GetPoint2d ();
                 ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
                 ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;
                 }
             else if (typeStr.EqualsI ("point3d"))
                 {
-                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point3D) << "Property: " << name.c_str ();;
+                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point3d) << "Property: " << name.c_str ();;
                 DPoint3d actualVal = actualValue.GetPoint3d ();
                 ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
                 ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;

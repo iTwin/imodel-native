@@ -72,7 +72,7 @@ struct ECSqlTypeInfo
         bool IsString() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_String); }
         bool IsDateTime() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_DateTime); }
         bool IsBinary() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_Binary); }
-        bool IsPoint() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_Point2D || m_primitiveType == ECN::PRIMITIVETYPE_Point3D); }
+        bool IsPoint() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_Point2d || m_primitiveType == ECN::PRIMITIVETYPE_Point3d); }
         bool IsGeometry() const { return IsPrimitive() && (m_primitiveType == ECN::PRIMITIVETYPE_IGeometry); }
         bool IsStruct() const { return m_kind == Kind::Struct; }
         bool IsArray() const { return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray; }

@@ -369,11 +369,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
         {
         switch (castTargetTypeInfo.GetPrimitiveType())
             {
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                     sqliteSnippetCount = 2;
                     break;
 
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                     sqliteSnippetCount = 3;
                     break;
 
@@ -395,11 +395,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
                     {
                     switch (prop->GetAsPrimitiveProperty()->GetType())
                         {
-                            case PRIMITIVETYPE_Point2D:
+                            case PRIMITIVETYPE_Point2d:
                                 colCount += 2;
                                 continue;
 
-                            case PRIMITIVETYPE_Point3D:
+                            case PRIMITIVETYPE_Point3d:
                                 colCount += 3;
                                 continue;
 
@@ -453,8 +453,8 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
                 castFormat = "CAST(%s AS TIMESTAMP)";
                 break;
             case PRIMITIVETYPE_Double:
-            case PRIMITIVETYPE_Point2D:
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point2d:
+            case PRIMITIVETYPE_Point3d:
                 castFormat = "CAST(%s AS REAL)";
                 break;
             case PRIMITIVETYPE_Long:
@@ -1697,7 +1697,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings(ECSqlPrepareContext& cont
     //Parameter index mapping: Vector index = SQLite parameter index (minus 1)
     //                         Vector value = pair of ECSQL parameter index and index of parameter component (for types that map to more than one SQLite parameter)
     //                                        the SQLite parameter maps to
-    // Ex: ECSQL: SELECT * FROM Foo WHERE IntProp = ? AND Point3DProp = ? would yield these mappings:
+    // Ex: ECSQL: SELECT * FROM Foo WHERE IntProp = ? AND Point3dProp = ? would yield these mappings:
     //     { {1, 0}, // First entry: SQLite index 1 -> Maps to first ECSQL parameter of type Integer. Only one component.
     //       {2, 0}, // Second entry: SQLite index 2 -> Maps to second ECSQL parameter's first component (X column)
     //       {2, 1}, // Third entry: SQLite index 3 -> Maps to second ECSQL parameter's second component (Y column)

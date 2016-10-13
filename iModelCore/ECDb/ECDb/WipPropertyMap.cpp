@@ -514,7 +514,7 @@ RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipConstraintECInstanceIdI
 BentleyStatus WipPrimitivePropertyMap::_Validate() const
     {
     ECN::PrimitiveECPropertyCP property = GetProperty().GetAsPrimitiveProperty();
-    return property->GetType() != PRIMITIVETYPE_Point2D && property->GetType() != PRIMITIVETYPE_Point3D ? SUCCESS : ERROR;
+    return property->GetType() != PRIMITIVETYPE_Point2d && property->GetType() != PRIMITIVETYPE_Point3d ? SUCCESS : ERROR;
     }
 
 //=======================================================================================
@@ -523,7 +523,7 @@ BentleyStatus WipPrimitivePropertyMap::_Validate() const
 //static 
 RefCountedPtr<WipPrimitivePropertyMap> WipPrimitivePropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
     {
-    if (ecProperty.GetType() == PRIMITIVETYPE_Point2D || ecProperty.GetType() == PRIMITIVETYPE_Point3D)
+    if (ecProperty.GetType() == PRIMITIVETYPE_Point2d || ecProperty.GetType() == PRIMITIVETYPE_Point3d)
         {
         BeAssert(false && "Do not support Point2d or Point3d property");
         return nullptr;
@@ -538,7 +538,7 @@ RefCountedPtr<WipPrimitivePropertyMap> WipPrimitivePropertyMap::CreateInstance(C
 //static 
 RefCountedPtr<WipPrimitivePropertyMap> WipPrimitivePropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
     {
-    if (ecProperty.GetType() == PRIMITIVETYPE_Point2D || ecProperty.GetType() == PRIMITIVETYPE_Point3D)
+    if (ecProperty.GetType() == PRIMITIVETYPE_Point2d || ecProperty.GetType() == PRIMITIVETYPE_Point3d)
         {
         BeAssert(false && "Do not support Point2d or Point3d property");
         return nullptr;
@@ -782,7 +782,7 @@ BentleyStatus WipPoint2dPropertyMap::_Validate() const
 //static 
 RefCountedPtr<WipPoint2dPropertyMap> WipPoint2dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
     {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2D)
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
         {
         BeAssert(false && "PrimitiveType must be Point2d");
         return nullptr;
@@ -800,7 +800,7 @@ RefCountedPtr<WipPoint2dPropertyMap> WipPoint2dPropertyMap::CreateInstance(Class
 //static 
 RefCountedPtr<WipPoint2dPropertyMap> WipPoint2dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y)
     {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2D)
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
         {
         BeAssert(false && "PrimitiveType must be Point2d");
         return nullptr;
@@ -880,7 +880,7 @@ BentleyStatus WipPoint3dPropertyMap::_Validate() const
 //static 
 RefCountedPtr<WipPoint3dPropertyMap> WipPoint3dPropertyMap::CreateInstance(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3D)
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
         {
         BeAssert(false && "PrimitiveType must be Point3d");
         return nullptr;
@@ -899,7 +899,7 @@ RefCountedPtr<WipPoint3dPropertyMap> WipPoint3dPropertyMap::CreateInstance(Class
 //static 
 RefCountedPtr<WipPoint3dPropertyMap> WipPoint3dPropertyMap::CreateInstance(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
-    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3D)
+    if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
         {
         BeAssert(false && "PrimitiveType must be Point3d");
         return nullptr;

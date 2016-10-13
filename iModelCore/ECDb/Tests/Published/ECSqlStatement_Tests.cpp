@@ -303,7 +303,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CAST(NULL AS Point3D) FROM ecsql.PASpatial LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(PRIMITIVETYPE_Point3D, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+    ASSERT_EQ(PRIMITIVETYPE_Point3d, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
     ASSERT_TRUE(stmt.IsValueNull(0));
     }
 
@@ -358,7 +358,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
         int actualRowCount = 0;
         while (BE_SQLITE_ROW == stmt.Step())
             {
-            ASSERT_EQ(PRIMITIVETYPE_Point3D, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType()) << ecsql;
+            ASSERT_EQ(PRIMITIVETYPE_Point3d, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType()) << ecsql;
             actualRowCount++;
             }
         ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;

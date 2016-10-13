@@ -207,14 +207,14 @@ ECSqlStatus ECSqlAsserter::BindParameters(ECSqlStatement& statement, vector<ECSq
                 stat = statement.BindInt64(parameterIndex, value.GetLong());
                 break;
                 }
-                case ECN::PRIMITIVETYPE_Point2D:
+                case ECN::PRIMITIVETYPE_Point2d:
                 {
-                stat = statement.BindPoint2d(parameterIndex, value.GetPoint2D());
+                stat = statement.BindPoint2d(parameterIndex, value.GetPoint2d());
                 break;
                 }
-                case ECN::PRIMITIVETYPE_Point3D:
+                case ECN::PRIMITIVETYPE_Point3d:
                 {
-                stat = statement.BindPoint3d(parameterIndex, value.GetPoint3D());
+                stat = statement.BindPoint3d(parameterIndex, value.GetPoint3d());
                 break;
                 }
                 case ECN::PRIMITIVETYPE_String:
@@ -486,9 +486,9 @@ ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallLis
                                 [&value] () { value.GetInt(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
                                 [&value] () { value.GetInt64(); }));
-    list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point2D),
+    list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point2d),
                                 [&value] () { value.GetPoint2d(); }));
-    list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point3D),
+    list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Point3d),
                                 [&value] () { value.GetPoint3d(); }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_String),
                                 [&value] () { value.GetText(); }));
@@ -529,8 +529,8 @@ std::function<bool(ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIsE
             {
             const ECN::PrimitiveType primType = dataType.GetPrimitiveType();
             const ECN::PrimitiveType requestedPrimType = requestedDataType.GetPrimitiveType();
-            if (primType == PRIMITIVETYPE_Point2D || requestedPrimType == PRIMITIVETYPE_Point2D ||
-                primType == PRIMITIVETYPE_Point3D || requestedPrimType == PRIMITIVETYPE_Point3D ||
+            if (primType == PRIMITIVETYPE_Point2d || requestedPrimType == PRIMITIVETYPE_Point2d ||
+                primType == PRIMITIVETYPE_Point3d || requestedPrimType == PRIMITIVETYPE_Point3d ||
                 requestedPrimType == PRIMITIVETYPE_IGeometry) //for IGeometry only GetIGeometry will fail, but calling GetXX on geometry column will succeed
                 return primType == requestedPrimType;
             }
@@ -589,10 +589,10 @@ Utf8String ECSqlSelectAsserter::DataTypeToString(ECTypeDescriptor const& dataTyp
                 case PRIMITIVETYPE_Long:
                     return "int64_t";
 
-                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point2d:
                     return "Point2D";
 
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point3d:
                     return "Point3D";
 
                 case PRIMITIVETYPE_String:

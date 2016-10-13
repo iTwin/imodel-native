@@ -451,21 +451,21 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
                 return false;
             break;
             }
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             if (jsonValueType != Json::objectValue)
                 return false;
-            DPoint2d referenceNativeValue = referenceValue.GetPoint2D();
+            DPoint2d referenceNativeValue = referenceValue.GetPoint2d();
             DPoint2d jsonNativeValue = DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble());
             if (!referenceNativeValue.IsEqual(jsonNativeValue))
                 return false;
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             if (jsonValueType != Json::objectValue)
                 return false;
-            DPoint3d referenceNativeValue = referenceValue.GetPoint3D();
+            DPoint3d referenceNativeValue = referenceValue.GetPoint3d();
             DPoint3d jsonNativeValue = DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble());
             if (!referenceNativeValue.IsEqual(jsonNativeValue))
                 return false;
@@ -1063,21 +1063,21 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
             }
             break;
 
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             point2d.x = randomNumber * 1.0;
             point2d.y = randomNumber * 1.8;
-            value.SetPoint2D(point2d);
+            value.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x = randomNumber * 1.0;
             point3d.y = randomNumber * 1.8;
             point3d.z = randomNumber * 2.9;
-            value.SetPoint3D(point3d);
+            value.SetPoint3d(point3d);
             break;
             }
 
@@ -1152,21 +1152,21 @@ void ECDbTestUtility::PopulatePrimitiveValue(ECValueR value, PrimitiveType primi
             }
             case PRIMITIVETYPE_Boolean:
                 value.SetBoolean(true); break;
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             point2d.x = 11.25;
             point2d.y = 22.16;
-            value.SetPoint2D(point2d);
+            value.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x = 11.23;
             point3d.y = 22.14;
             point3d.z = 33.12;
-            value.SetPoint3D(point3d);
+            value.SetPoint3d(point3d);
             break;
             }
 
@@ -1230,21 +1230,21 @@ void ECDbTestUtility::PopulatePrimitiveValueWithRandomValues(ECValueR ecValue, P
             }
             break;
 
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             point2d.x = randomNumber * 1.0;
             point2d.y = randomNumber * 1.8;
-            ecValue.SetPoint2D(point2d);
+            ecValue.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x = randomNumber * 1.0;
             point3d.y = randomNumber * 1.8;
             point3d.z = randomNumber * 2.9;
-            ecValue.SetPoint3D(point3d);
+            ecValue.SetPoint3d(point3d);
             break;
             }
 

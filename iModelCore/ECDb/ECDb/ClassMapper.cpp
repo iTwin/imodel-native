@@ -244,7 +244,7 @@ DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf
 //static 
 RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
     {
-    if (property.GetType() != PRIMITIVETYPE_Point2D)
+    if (property.GetType() != PRIMITIVETYPE_Point2d)
         return nullptr;
 
     const DbColumn* x = nullptr, *y = nullptr;
@@ -311,7 +311,7 @@ RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primit
 //static 
 RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
     {
-    if (property.GetType() != PRIMITIVETYPE_Point3D)
+    if (property.GetType() != PRIMITIVETYPE_Point3d)
         return nullptr;
 
     const DbColumn *x = nullptr, *y = nullptr, *z = nullptr;
@@ -406,10 +406,10 @@ Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, WipVer
 //static 
 RefCountedPtr<WipVerticalPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, WipVerticalPropertyMap const* parent)
     {
-    if (property.GetType() == PRIMITIVETYPE_Point2D)
+    if (property.GetType() == PRIMITIVETYPE_Point2d)
         return MapPoint2dProperty(property, parent);
 
-    if (property.GetType() == PRIMITIVETYPE_Point3D)
+    if (property.GetType() == PRIMITIVETYPE_Point3d)
         return MapPoint3dProperty(property, parent);
 
     DbColumn const*  column = nullptr;

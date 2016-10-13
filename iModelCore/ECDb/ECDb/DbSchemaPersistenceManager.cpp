@@ -797,8 +797,8 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) PrimitiveType::PRIMITIVETYPE_IGeometry == 0xa01 &&
                   (int) PrimitiveType::PRIMITIVETYPE_Integer == 0x501 &&
                   (int) PrimitiveType::PRIMITIVETYPE_Long == 0x601 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Point2D == 0x701 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Point3D == 0x801 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Point2d == 0x701 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Point3d == 0x801 &&
                   (int) PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
     }
 
