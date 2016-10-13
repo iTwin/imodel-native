@@ -675,6 +675,15 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
             }
         }
 
+    //! We always create a virtual ECClassId column and later change it persistenceType to Persisted if required to.
+    // Index is created on it later in FinishTableDefinition
+    DbColumn* column = table->CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
+    if (column == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
     return table;
     }
 

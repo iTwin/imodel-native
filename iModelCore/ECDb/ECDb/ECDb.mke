@@ -114,6 +114,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)WipPropertyMap.h \
+                $(baseDir)ClassMapper.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
 
@@ -344,6 +345,7 @@ $(o)ClassMappingInfoHelper$(oext):                            $(baseDir)ClassMap
 
 $(o)WipPropertyMap$(oext):                            $(baseDir)WipPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ClassMapper$(oext):                            $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

@@ -78,3 +78,4 @@
 #include "ECSchemaComparer.h"
 #include "LightweightCache.h"
 #include "WipPropertyMap.h"
+#include "ClassMapper.h"

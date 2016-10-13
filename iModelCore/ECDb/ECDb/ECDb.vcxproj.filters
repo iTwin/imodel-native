@@ -392,6 +392,12 @@
     <ClInclude Include="ClassMapPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="WipPropertyMap.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassMapper.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -720,6 +726,12 @@
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMapPersistenceManager.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="WipPropertyMap.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassMapper.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

@@ -136,7 +136,7 @@ RelationshipEndColumns const& RelationshipClassMap::GetEndColumnsMapping(Relatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-PropertyMapCP RelationshipClassMap::GetConstraintECInstanceIdPropMap(ECRelationshipEnd constraintEnd) const
+WipConstraintECInstanceIdIdPropertyMap const* RelationshipClassMap::GetConstraintECInstanceIdPropMap(ECRelationshipEnd constraintEnd) const
     {
     if (constraintEnd == ECRelationshipEnd_Source)
         return GetSourceECInstanceIdPropMap();
@@ -147,7 +147,7 @@ PropertyMapCP RelationshipClassMap::GetConstraintECInstanceIdPropMap(ECRelations
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-RelConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClassIdPropMap(ECRelationshipEnd constraintEnd) const
+WipConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClassIdPropMap(ECRelationshipEnd constraintEnd) const
     {
     if (constraintEnd == ECRelationshipEnd_Source)
         return GetSourceECClassIdPropMap();
@@ -161,8 +161,15 @@ RelConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECCl
 //---------------------------------------------------------------------------------------
 bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
     {
-    RelConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    return !referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables();
+    WipConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+    if (referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().size() != 1LL)
+        {
+        BeAssert(false && "Expecting exactly one property map");
+        return false;
+        }
+
+    WipColumnVerticalPropertyMap const* vm = static_cast<WipColumnVerticalPropertyMap const*>(referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().front());
+    return vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables();
     }
 
 //************************ RelationshipConstraintMap ******************************************
@@ -257,19 +264,24 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
         return false;
 
     auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-    if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
+    if (referencedEndClassIdPropertyMap->IsMappedToSingleTable())
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    WipColumnVerticalPropertyMap const* vm = static_cast<WipColumnVerticalPropertyMap const*>(referencedEndClassIdPropertyMap->GetVerticalPropertyMaps().front());
+    if (vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables())
         return true;
 
-    std::vector<DbColumn const*> sourceColumns, targetColumns;
-    GetSourceECClassIdPropMap()->GetColumns(sourceColumns);
-    GetTargetECClassIdPropMap()->GetColumns(targetColumns);
-
     //SELF JOIN case
-    if (sourceColumns.size() == 1 && targetColumns.size() == 1)
+    if (GetSourceECClassIdPropMap()->IsMappedToSingleTable() && GetTargetECClassIdPropMap()->IsMappedToSingleTable())
         {
-        return  sourceColumns.front() == targetColumns.front()
-            && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted
-            && targetColumns.front()->GetPersistenceType() == PersistenceType::Persisted;
+        auto source = GetSourceECClassIdPropMap()->GetVerticalPropertyMaps().front();
+        auto target = GetTargetECClassIdPropMap()->GetVerticalPropertyMaps().front();
+
+        return  &source->GetColumn() == &target->GetColumn()
+            && source->GetColumn().GetPersistenceType() == PersistenceType::Persisted;
         }
 
     return false;
@@ -403,7 +415,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     std::set<DbTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables() : classMappingInfo.GetTargetTables();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-
+    PersistenceType relECClassIdPersistenceType = GetRelationshipClass().GetClassModifier() == ECClassModifier::Sealed ? PersistenceType::Virtual : PersistenceType::Persisted;
     //! table must meet following constraint though these are already validated at MapStrategy evaluation time.
     BeAssert(foreignEndTables.size() >= 1 && "ForeignEnd Tables must be >= 1");
     BeAssert(GetReferencedEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables().size() == 1 : classMappingInfo.GetTargetTables().size() == 1 && "ReferencedEnd Tables must be == 1");

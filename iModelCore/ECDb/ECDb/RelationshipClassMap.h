@@ -21,17 +21,17 @@ struct RelationshipConstraintMap : NonCopyableClass
         ECN::ECClassId m_relClassId;
         ECN::ECRelationshipEnd m_constraintEnd;
         ECN::ECRelationshipConstraintCR m_constraint;
-        PropertyMapCP m_ecInstanceIdPropMap;
-        RelConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
+        WipConstraintECInstanceIdIdPropertyMap const* m_ecInstanceIdPropMap;
+        WipConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
         bool m_anyClassMatches;
 
     public:
         RelationshipConstraintMap(ECDbMap const&, ECN::ECClassId relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
 
-        PropertyMapCP GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
-        void SetECInstanceIdPropMap(PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
-        RelConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
-        void SetECClassIdPropMap(RelConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
+        WipConstraintECInstanceIdIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
+        void SetECInstanceIdPropMap(WipConstraintECInstanceIdIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
+        WipConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
+        void SetECClassIdPropMap(WipConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
 
         bool ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const;
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
@@ -74,13 +74,13 @@ struct RelationshipClassMap : ClassMap
 
         ECN::ECRelationshipClassCR GetRelationshipClass() const { return *(GetClass().GetRelationshipClassCP()); }
         RelationshipConstraintMap const& GetConstraintMap(ECN::ECRelationshipEnd constraintEnd) const;
-        PropertyMapCP GetConstraintECInstanceIdPropMap(ECN::ECRelationshipEnd constraintEnd) const;
-        RelConstraintECClassIdPropertyMap const* GetConstraintECClassIdPropMap(ECN::ECRelationshipEnd) const;
+        WipConstraintECInstanceIdIdPropertyMap const* GetConstraintECInstanceIdPropMap(ECN::ECRelationshipEnd constraintEnd) const;
+        WipConstraintECClassIdPropertyMap const* GetConstraintECClassIdPropMap(ECN::ECRelationshipEnd) const;
 
-        PropertyMapCP GetSourceECInstanceIdPropMap() const { return m_sourceConstraintMap.GetECInstanceIdPropMap(); }
-        RelConstraintECClassIdPropertyMap const* GetSourceECClassIdPropMap() const { return m_sourceConstraintMap.GetECClassIdPropMap(); }
-        PropertyMapCP GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
-        RelConstraintECClassIdPropertyMap const* GetTargetECClassIdPropMap() const { return m_targetConstraintMap.GetECClassIdPropMap(); }
+        WipConstraintECInstanceIdIdPropertyMap const* GetSourceECInstanceIdPropMap() const { return m_sourceConstraintMap.GetECInstanceIdPropMap(); }
+        WipConstraintECClassIdPropertyMap const* GetSourceECClassIdPropMap() const { return m_sourceConstraintMap.GetECClassIdPropMap(); }
+        WipConstraintECInstanceIdIdPropertyMap const* GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
+        WipConstraintECClassIdPropertyMap const* GetTargetECClassIdPropMap() const { return m_targetConstraintMap.GetECClassIdPropMap(); }
 
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const = 0;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const;
@@ -99,6 +99,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
             std::vector<DbColumn const*> m_relECClassIdColumnsPerFkTable; //Rel ECClassId
             std::vector<DbColumn const*> m_ecInstanceIdColumnsPerFkTable; //ForeignEnd ECInstanceId
             std::vector<DbColumn const*> m_classIdColumnsPerFkTable; //ForeignEnd ECClassId
+            std::vector<DbColumn const*> m_relClassIdColumnsPerFkTable; //ForeignEnd ECClassId
             std::vector<DbColumn const*> m_fkColumnsPerFkTable; //ReferencedEnd ECInstanceId
             //The referenced end class id cols are either from the FK table, or if the referenced table has its own class id column, that one is taken.
             //WIP_FOR_AFFAN: Is this safe enough? Does consuming code know that the prop map has columns to another table??
@@ -117,13 +118,13 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 bool m_canImplyFromNavigationProperty;
                 Utf8String m_impliedColumnName;
                 bool m_appendToEnd;
-                PropertyMapCP m_propMapBeforeNavProp;
-                PropertyMapCP m_propMapAfterNavProp;
+                WipPropertyMap const* m_propMapBeforeNavProp;
+                WipPropertyMap const* m_propMapAfterNavProp;
 
             public:
                 ForeignKeyColumnInfo() : m_canImplyFromNavigationProperty(false), m_appendToEnd(true), m_propMapBeforeNavProp(nullptr), m_propMapAfterNavProp(nullptr) {}
 
-                void Assign(Utf8CP impliedColName, bool appendToEnd, PropertyMapCP propMapBeforeNavProp, PropertyMapCP propMapAfterNavProp)
+                void Assign(Utf8CP impliedColName, bool appendToEnd, WipPropertyMap const* propMapBeforeNavProp, WipPropertyMap const* propMapAfterNavProp)
                     {
                     m_canImplyFromNavigationProperty = true;
                     m_impliedColumnName.assign(impliedColName);
@@ -144,8 +145,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
                 Utf8StringCR GetImpliedColumnName() const { return m_impliedColumnName; }
                 bool AppendToEnd() const { return m_appendToEnd; }
-                PropertyMapCP GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
-                PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
+                WipPropertyMap const* GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
+                WipPropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
 
         bool m_hasKeyPropertyFk;
@@ -183,8 +184,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
 
-        PropertyMapCP GetForeignEndECInstanceIdPropMap() const;
-        PropertyMapCP GetReferencedEndECInstanceIdPropMap() const;
+        WipPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
+        WipPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         RelConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
 
         static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
