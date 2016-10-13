@@ -106,6 +106,18 @@ WipPropertyMap::WipPropertyMap(ECN::ECPropertyCR ecProperty, WipPropertyMap cons
     : m_ecProperty(ecProperty), m_classMap(parentPropertyMap.GetClassMap()), m_parentPropertMap(&parentPropertyMap), m_propertyAccessString(parentPropertyMap.GetAccessString() + EC_ACCESSSTRING_DELIMITER + ecProperty.GetName()), m_isInEditMode(true)
     {}
 
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+WipPropertyMap const& WipPropertyMap::GetRoot() const
+    {
+    WipPropertyMap const* root = this;
+    while (this->GetParent() != nullptr)
+        root = this->GetParent();
+
+    return *root;
+    }
+
 //************************************WipCompoundPropertyMap::Collection********
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
@@ -119,6 +131,21 @@ WipVerticalPropertyMap const* WipCompoundPropertyMap::Collection::Find(Utf8CP ac
     return nullptr;
     }
 
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipCompoundPropertyMap::AcceptChildren(IPropertyMapDispatcher const&  dispatcher) const
+    {
+    DispatcherFeedback fb = DispatcherFeedback::Next;
+    for (WipVerticalPropertyMap const* pm : *this)
+        {
+        fb = pm->Accept(dispatcher);
+        if (fb == DispatcherFeedback::Cancel)
+            return fb;
+        }
+
+    return fb;
+    }
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
@@ -1042,6 +1069,72 @@ RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipPropertyMapFactory::Cre
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
+RefCountedPtr<WipHorizontalPropertyMap> WipPropertyMapFactory::CreateCopy(WipHorizontalPropertyMap const& propertyMap, ClassMap const& newContext)
+    {
+    WipColumnHorizontalPropertyMap const* pm = dynamic_cast<WipColumnHorizontalPropertyMap const*>(&propertyMap);
+    if (pm == nullptr)
+        return nullptr;
+
+    std::vector<DbColumn const*> columns;
+    for (WipColumnVerticalPropertyMap const* child : pm->GetVerticalPropertyMaps())
+        {
+        columns.push_back(&child->GetColumn());
+        }
+
+    if (auto pm = dynamic_cast<WipECInstanceIdPropertyMap const*>(&propertyMap))
+        {
+        return CreateECInstanceIdPropertyMap(newContext, columns);
+        }
+
+    if (auto pm = dynamic_cast<WipECClassIdPropertyMap const*>(&propertyMap))
+        {
+        return CreateECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);
+        }
+
+    if (auto pm = dynamic_cast<WipConstraintECInstanceIdIdPropertyMap const*>(&propertyMap))
+        {
+        if (pm->IsSource())
+            return CreateSourceECInstanceIdPropertyMap(newContext, columns);
+
+        return CreateTargetECInstanceIdPropertyMap(newContext, columns);
+        }
+
+    if (auto pm = dynamic_cast<WipConstraintECClassIdPropertyMap const*>(&propertyMap))
+        {
+        if (pm->IsSource())
+            return CreateSourceECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);
+
+        return CreateTargetECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);
+        }
+
+    BeAssert(false && "Unhandled case");
+    return nullptr;
+    }
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+ RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipPropertyMapFactory::CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
+     {
+     if (end == ECRelationshipEnd_Source)
+         return CreateSourceECInstanceIdPropertyMap(classMap, columns);
+
+     return CreateTargetECInstanceIdPropertyMap(classMap, columns);
+     }
+
+ //=======================================================================================
+ // @bsimethod                                                   Affan.Khan          07/16
+ //+===============+===============+===============+===============+===============+======
+ RefCountedPtr<WipConstraintECClassIdPropertyMap> WipPropertyMapFactory::CreateConstraintECClassIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
+     {
+     if (end == ECRelationshipEnd_Source)
+         return CreateSourceECClassIdPropertyMap(classMap, defaultEClassId, columns);
+
+     return CreateTargetECClassIdPropertyMap(classMap, defaultEClassId, columns);
+     }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
 //static 
 RefCountedPtr<WipVerticalPropertyMap> WipPropertyMapFactory::CreateCopy(WipVerticalPropertyMap const& propertyMap, ClassMap const& newContext)
     {
@@ -1212,4 +1305,51 @@ DispatcherFeedback WipPropertyMapColumnDispatcher::_Dispatch(PropertyMapType map
     return DispatcherFeedback::Next;
     }
 
+//************************************WipPropertyMapSaveDispatcher*************************************
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSaveDispatcher::_Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const
+    {
+    const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
+    Utf8StringCR accessString = propertyMap.GetAccessString();
+    if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), propertyMap.GetColumn().GetId()) != SUCCESS)
+        {
+        BeAssert(false);
+        m_status = ERROR;
+        m_failedMap = &propertyMap;
+        return DispatcherFeedback::Cancel;
+        }
+
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSaveDispatcher::_Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const
+    {
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSaveDispatcher::_Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const
+    {
+    const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
+    Utf8StringCR accessString = propertyMap.GetAccessString();
+    for (WipColumnVerticalPropertyMap const* childMap : propertyMap.GetVerticalPropertyMaps())
+        {
+        if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
+            {
+            BeAssert(false);
+            m_status = ERROR;
+            m_failedMap = &propertyMap;
+            return DispatcherFeedback::Cancel;
+            }
+        }
+
+    return DispatcherFeedback::Next;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

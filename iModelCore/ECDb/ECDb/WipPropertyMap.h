@@ -138,10 +138,12 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         ClassMap const& m_classMap;
         virtual BentleyStatus _Validate() const = 0;
         bool m_isInEditMode;
+
     protected:
         WipPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty);
         WipPropertyMap(ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap);
         virtual ~WipPropertyMap() {}
+
     public:
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
@@ -151,14 +153,7 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
         WipPropertyMap const* GetParent() const { return m_parentPropertMap; }
         ClassMap const& GetClassMap() const { return m_classMap; }
-        WipPropertyMap const& GetRoot() const
-            {
-            WipPropertyMap const* root = this;
-            while (this->GetParent() != nullptr)
-                root = this->GetParent();
-
-            return *root;
-            }
+        WipPropertyMap const& GetRoot() const;
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
     };
 
@@ -236,19 +231,7 @@ struct WipCompoundPropertyMap : WipVerticalPropertyMap
             {}
         virtual ~WipCompoundPropertyMap() {}
         virtual BentleyStatus _Validate() const override;
-        DispatcherFeedback AcceptChildren(IPropertyMapDispatcher const&  dispatcher) const
-            {
-            DispatcherFeedback fb = DispatcherFeedback::Next;
-            for (WipVerticalPropertyMap const* pm : *this)
-                {
-                fb = pm->Accept(dispatcher);
-                if (fb == DispatcherFeedback::Cancel)
-                    return fb;
-                }
-         
-            return fb;
-            }
-
+        DispatcherFeedback AcceptChildren(IPropertyMapDispatcher const&  dispatcher) const;
     public:
         bool IsReadonly() const { return m_readonly; }
         void MakeReadOnly() { m_readonly = true; }
@@ -630,9 +613,10 @@ struct WipPropertyMapFactory final
         static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipVerticalPropertyMap> CreateCopy(WipVerticalPropertyMap const& propertyMap, ClassMap const& newContext);
+        static RefCountedPtr<WipHorizontalPropertyMap> CreateCopy(WipHorizontalPropertyMap const& propertyMap, ClassMap const& newContext);
+        static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<WipConstraintECClassIdPropertyMap> CreateConstraintECClassIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
     };
-
-
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
@@ -674,41 +658,9 @@ struct WipPropertyMapSaveDispatcher  final : IPropertyMapDispatcher
         mutable WipPropertyMap const* m_failedMap;
 
     private:
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override
-            {
-            const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
-            Utf8StringCR accessString = propertyMap.GetAccessString();
-            if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), propertyMap.GetColumn().GetId()) != SUCCESS)
-                {
-                BeAssert(false);
-                m_status = ERROR;
-                m_failedMap = &propertyMap;
-                return DispatcherFeedback::Cancel;
-                }
-
-            return DispatcherFeedback::Next;
-            }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override
-            {
-            return DispatcherFeedback::Next;
-            }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override
-            {
-            const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
-            Utf8StringCR accessString = propertyMap.GetAccessString();
-            for (WipColumnVerticalPropertyMap const* childMap : propertyMap.GetVerticalPropertyMaps())
-                {
-                if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
-                    {
-                    BeAssert(false);
-                    m_status = ERROR;
-                    m_failedMap = &propertyMap;
-                    return DispatcherFeedback::Cancel;
-                    }
-                }
-
-            return DispatcherFeedback::Next;
-            }
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
         WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx): m_context(ctx), m_status(SUCCESS), m_failedMap(nullptr) {}
