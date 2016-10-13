@@ -111,15 +111,21 @@ void IScalableMeshProgressiveQueryEngine::SetActiveClips(const bset<uint64_t>& a
     return _SetActiveClips(activeClips, scalableMeshPtr);
     }
 
+void IScalableMeshProgressiveQueryEngine::InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
+    {
+    return _InitScalableMesh(scalableMeshPtr);
+    }
+
 
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
-                                                              const bvector<bool>&                                                     clipVisibilities)
+                                                              const bvector<bool>&                                                     clipVisibilities,
+                                                              IScalableMeshPtr&                                                         smPtr)
     {
-    return _StartQuery(queryId, queryParam, startingNodes, loadTexture, clipVisibilities);
+    return _StartQuery(queryId, queryParam, startingNodes, loadTexture, clipVisibilities, smPtr);
     }
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::StopQuery(int queryId)
@@ -922,10 +928,9 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
  
 ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
     {
-    m_scalableMeshPtr = scalableMeshPtr;
     m_displayCacheManagerPtr = displayCacheManagerPtr;            
         
-    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)m_scalableMeshPtr.get())->GetRootNode());    
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)scalableMeshPtr.get())->GetRootNode());
 
     PreloadOverview(rootNodePtr);        
     }
@@ -1035,11 +1040,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
-       // ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBlock(extentToCover.low, extentToCover.high, false, ClipMask::None, nullptr);
-        //ClipVectorPtr clipVector(ClipVector::CreateFromPrimitive(clipPrimitive));
 
-       // ClipVectorPtr clipVector(ClipVector::Create());
-      //  std::cout << "overview node " << meshNodePtr->GetNodeId() << " chosen " << std::endl;
         ConvexClipPlaneSet clipPlaneSet;
         DPlane3d planes[4] = { DPlane3d::From3Points(DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z)),
             DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z)),
@@ -1051,8 +1052,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             clipPlaneSet.push_back(ClipPlane(planes[i].normal.ValidatedNormalize(), planes[i].origin));
             }
 
-        //ClipVector::AppendPlanes(clipVector, clipPlaneSet);
-       // ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromClipPlanes(clipPlaneSet);
+
         CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
         ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
         clipPrimitive->SetIsMask(false);
@@ -1296,7 +1296,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     {
     static int s_maxLevel = 2;
        
-    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)m_scalableMeshPtr.get())->GetRootNode());
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)newQuery.m_meshToQuery.get())->GetRootNode());
 
     assert(rootNodePtr != 0);
     
@@ -1326,7 +1326,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> searchingNodes;
     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> toLoadNodes;
               
-    ComputeOverviewSearchToLoadNodes(newQuery, lowerResOverviewNodes, searchingNodes, toLoadNodes, nodesToSearch, currentInd, foundNodes, m_activeClips, m_scalableMeshPtr);    
+    ComputeOverviewSearchToLoadNodes(newQuery, lowerResOverviewNodes, searchingNodes, toLoadNodes, nodesToSearch, currentInd, foundNodes, m_activeClips, newQuery.m_meshToQuery);
 
     //assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd - 1) == 0);
 
@@ -1347,7 +1347,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         std::sort(newQuery.m_overviewMeshNodes.begin(), newQuery.m_overviewMeshNodes.end(), ContentExtentGreater);                        
         }
     
-    s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, searchingNodes, toLoadNodes, newQuery.m_loadTexture, m_activeClips, m_scalableMeshPtr, m_displayCacheManagerPtr);        
+    s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, searchingNodes, toLoadNodes, newQuery.m_loadTexture, m_activeClips, newQuery.m_meshToQuery, m_displayCacheManagerPtr);
     }
       
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
@@ -1372,11 +1372,19 @@ void ScalableMeshProgressiveQueryEngine::_SetActiveClips(const bset<uint64_t>& a
     UpdatePreloadOverview();
     }
 
+void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
+    {
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)scalableMeshPtr.get())->GetRootNode());
+
+    PreloadOverview(rootNodePtr);
+    }
+
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
-                                                              const bvector<bool>&                                                     clipVisibilities)
+                                                              const bvector<bool>&                                                     clipVisibilities,
+                                                              IScalableMeshPtr&                                                        smPtr)
     {
     assert(_IsQueryComplete(queryId) == true);
 
@@ -1387,6 +1395,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
     requestedQuery.m_fetchLastCompletedNodes = false;
     requestedQuery.m_loadTexture = loadTexture;
     requestedQuery.m_clipVisibilities = clipVisibilities;
+    requestedQuery.m_meshToQuery = smPtr; 
 
     ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP;
 
@@ -1511,6 +1520,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StopQuery(int queryId)
             requestedQueryP = &(*queryIter);
             break;
         }
+        queryIter++;
     }
 
     if (requestedQueryP != 0)
