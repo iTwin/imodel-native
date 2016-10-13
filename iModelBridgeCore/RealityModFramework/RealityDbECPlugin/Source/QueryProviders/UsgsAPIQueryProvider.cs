@@ -1140,9 +1140,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         if ( (scheme != null) && (scheme == "The National Map Collection Thesaurus") )
                             {
                             var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
-                            instance["Dataset"].StringValue = cat.SbDatasetTag;
                             if ( cat != null )
                                 {
+                                instance["Dataset"].StringValue = cat.SbDatasetTag;
                                 instance["Classification"].StringValue = cat.Classification;
                                 IUSGSDataExtractor dataExtractor = ReturnDataExtractor(cat.SbDatasetTag);
                                 DateTime? date;

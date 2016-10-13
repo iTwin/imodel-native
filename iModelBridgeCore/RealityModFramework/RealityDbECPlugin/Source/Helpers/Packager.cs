@@ -93,7 +93,7 @@ namespace IndexECPlugin.Source.Helpers
                     {
                     if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
                         {
-                        if ( indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == null) || requestedEntity.SpatialDataSourceID == null )
+                        if ( indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && (e.SpatialDataSourceID == null || requestedEntity.SpatialDataSourceID == null)) )
                             {
                             throw new UserFriendlyException("Please specify a SpatialDataSourceID when requesting multiple entities having the same ID");
                             }
@@ -158,7 +158,27 @@ namespace IndexECPlugin.Source.Helpers
             package.SetMinorVersion(minor);
             package.SetOrigin("");
 
-            if(!package.Write(Path.GetTempPath() + name))
+            foreach(ImageryDataNet img in imgGroup)
+                {
+                package.AddImageryData(img);
+                }
+
+            foreach ( ModelDataNet model in modelGroup )
+                {
+                package.AddModelData(model);
+                }
+
+            foreach ( PinnedDataNet pin in pinnedGroup )
+                {
+                package.AddPinnedData(pin);
+                }
+
+            foreach ( TerrainDataNet terrain in terrainGroup )
+                {
+                package.AddTerrainData(terrain);
+                }
+
+            if(!package.Write(Path.GetTempPath() + name + ".xrdp"))
                 {
                 throw new UserFriendlyException("Package creation failed.");
                 }
@@ -267,14 +287,8 @@ namespace IndexECPlugin.Source.Helpers
                 if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
                     {
                     //This is a WMS source
-                    List<double> corners = new List<double>();
-                    PolygonModel polyModel = DbGeometryHelpers.CreatePolygonModelFromJson(spatialEntity["Footprint"].StringValue);
+                    List<double> corners = ExtractCornersList(spatialEntity["Footprint"].StringValue);
 
-                    foreach (Double[] point in polyModel.points)
-                        {
-                        corners.Add(point[0]);
-                        corners.Add(point[1]);
-                        }
                     if ( !RDNList.Any(rdn => rdn.GetDataId() == spatialEntity.InstanceId) )
                         {
                         string dataset = (spatialEntity.GetPropertyValue("Dataset") == null || spatialEntity.GetPropertyValue("Dataset").IsNull) ? null : spatialEntity.GetPropertyValue("Dataset").StringValue;
@@ -339,30 +353,39 @@ namespace IndexECPlugin.Source.Helpers
                     blueBandFileSize = Math.Max(0, blueBandFileSize);
                     panchromaticBandFileSize = Math.Max(0, panchromaticBandFileSize);
 
-                    List<UriNet> redBandSisterFiles = redBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
-                    List<UriNet> greenBandSisterFiles = greenBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
-                    List<UriNet> blueBandSisterFiles = blueBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
                     List<UriNet> panchromaticBandSisterFiles = panchromaticBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
 
                     RealityDataSourceNet redBandSN = RealityDataSourceNet.Create(UriNet.Create(redBandURL), genericInfo.Type);
                     SetRdsnFields(redBandSN, genericInfo);
                     redBandSN.SetSize((ulong) redBandFileSize);
-                    redBandSN.SetSisterFiles(redBandSisterFiles);
+                    if ( redBandSisterFilesString != null )
+                        {
+                        redBandSN.SetSisterFiles(redBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
+                        }
 
                     RealityDataSourceNet greenBandSN = RealityDataSourceNet.Create(UriNet.Create(greenBandURL), genericInfo.Type);
                     SetRdsnFields(greenBandSN, genericInfo);
                     greenBandSN.SetSize((ulong) greenBandFileSize);
-                    greenBandSN.SetSisterFiles(greenBandSisterFiles);
+                    if ( greenBandSisterFilesString != null )
+                        {
+                        greenBandSN.SetSisterFiles(greenBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
+                        }
 
                     RealityDataSourceNet blueBandSN = RealityDataSourceNet.Create(UriNet.Create(blueBandURL), genericInfo.Type);
                     SetRdsnFields(blueBandSN, genericInfo);
                     blueBandSN.SetSize((ulong) blueBandFileSize);
-                    blueBandSN.SetSisterFiles(blueBandSisterFiles);
+                    if ( blueBandSisterFilesString != null )
+                        {
+                        blueBandSN.SetSisterFiles(blueBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
+                        }
 
                     RealityDataSourceNet panchromaticBandSN = RealityDataSourceNet.Create(UriNet.Create(panchromaticBandURL), genericInfo.Type);
                     SetRdsnFields(panchromaticBandSN, genericInfo);
                     panchromaticBandSN.SetSize((ulong) panchromaticBandFileSize);
-                    panchromaticBandSN.SetSisterFiles(panchromaticBandSisterFiles);
+                    if ( panchromaticBandSisterFilesString != null )
+                        {
+                        panchromaticBandSN.SetSisterFiles(panchromaticBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
+                        }
 
                     msn.SetRedBand(redBandSN);
                     msn.SetGreenBand(greenBandSN);
@@ -409,15 +432,36 @@ namespace IndexECPlugin.Source.Helpers
 
         private static void SetRdsnFields (RealityDataSourceNet rdsn, GenericInfo genericInfo)
             {
-            rdsn.SetCopyright(genericInfo.Copyright);
-            rdsn.SetGeoCS(genericInfo.CoordinateSystem);
-            rdsn.SetTermOfUse(genericInfo.TermsOfUse);
-            rdsn.SetNoDataValue(genericInfo.NoDataValue);
+            if ( genericInfo.Copyright != null )
+                {
+                rdsn.SetCopyright(genericInfo.Copyright);
+                }
+            if ( genericInfo.CoordinateSystem != null )
+                {
+                rdsn.SetGeoCS(genericInfo.CoordinateSystem);
+                }
+            if ( genericInfo.TermsOfUse != null )
+                {
+                rdsn.SetTermOfUse(genericInfo.TermsOfUse);
+                }
+            if ( genericInfo.NoDataValue != null )
+                {
+                rdsn.SetNoDataValue(genericInfo.NoDataValue);
+                }
             rdsn.SetId(genericInfo.SpatialDataSourceID);
-            rdsn.SetMetadata(genericInfo.Metadata);
-            rdsn.SetProvider(genericInfo.Provider);
+            if ( genericInfo.Metadata != null )
+                {
+                rdsn.SetMetadata(genericInfo.Metadata);
+                }
+            if ( genericInfo.Provider != null )
+                {
+                rdsn.SetProvider(genericInfo.Provider);
+                }
             rdsn.SetSize(genericInfo.FileSize);
-            rdsn.SetSisterFiles(genericInfo.SisterFiles.Select(sf => UriNet.Create(sf)).ToList());
+            if ( genericInfo.SisterFiles != null )
+                {
+                rdsn.SetSisterFiles(genericInfo.SisterFiles);
+                }
             }
 
         private static GenericInfo ExtractGenericInfo(IECInstance spatialEntity, RequestedEntity requestedEntity)
@@ -471,7 +515,7 @@ namespace IndexECPlugin.Source.Helpers
         string sisterFilesString = (firstSpatialDataSource.GetPropertyValue("SisterFiles") == null || firstSpatialDataSource.GetPropertyValue("SisterFiles").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("SisterFiles").StringValue;
         if ( sisterFilesString != null )
             {
-            genericInfo.SisterFiles = sisterFilesString.Split('|').ToList();
+            genericInfo.SisterFiles = sisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
             }
         else
             {
@@ -644,6 +688,7 @@ namespace IndexECPlugin.Source.Helpers
             ECQuery query = new ECQuery(spatialEntityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Name"));
             query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
@@ -660,9 +705,9 @@ namespace IndexECPlugin.Source.Helpers
             IECInstance spatialDataSource = relInst.Target;
 
             string mainURL = spatialDataSource.GetPropertyValue("MainURL").StringValue;
-            string alternateURL1 = spatialDataSource.GetPropertyValue("AlternateURL1").StringValue;
-            string alternateURL2 = spatialDataSource.GetPropertyValue("AlternateURL2").StringValue;
-            string cs = spatialDataSource.GetPropertyValue("CoordinateSystem").StringValue;
+            string alternateURL1 = (spatialDataSource.GetPropertyValue("AlternateURL1") == null || spatialDataSource.GetPropertyValue("AlternateURL1").IsNull) ? null : spatialDataSource.GetPropertyValue("AlternateURL1").StringValue;
+            string alternateURL2 = (spatialDataSource.GetPropertyValue("AlternateURL2") == null || spatialDataSource.GetPropertyValue("AlternateURL2").IsNull) ? null : spatialDataSource.GetPropertyValue("AlternateURL2").StringValue;
+            string cs = (spatialDataSource.GetPropertyValue("CoordinateSystem") == null || spatialDataSource.GetPropertyValue("CoordinateSystem").IsNull) ? null : spatialDataSource.GetPropertyValue("CoordinateSystem").StringValue;
 
             relInst = spatialEntity.GetRelationshipInstances().First(x => x.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
             IECInstance metadata = relInst.Target;
@@ -670,8 +715,14 @@ namespace IndexECPlugin.Source.Helpers
             string legal = metadata.GetPropertyValue("Legal").StringValue;
 
             List<string> alternateUrls = new List<string>();
-            alternateUrls.Add(alternateURL1);
-            alternateUrls.Add(alternateURL2);
+            if ( alternateURL1 != null )
+                {
+                alternateUrls.Add(alternateURL1);
+                }
+            if ( alternateURL2 != null )
+                {
+                alternateUrls.Add(alternateURL2);
+                }
 
             IEnumerator<double> pointsIt = regionOfInterest.GetEnumerator();
             double minX = 90.0;
@@ -715,8 +766,14 @@ namespace IndexECPlugin.Source.Helpers
             mdn.SetDataName(spatialEntity["Name"].StringValue);
 
             odsn.SetId(spatialDataSource.InstanceId);
-            odsn.SetCopyright(legal);
-            odsn.SetGeoCS(cs);
+            if ( legal != null )
+                {
+                odsn.SetCopyright(legal);
+                }
+            if ( cs != null )
+                {
+                odsn.SetGeoCS(cs);
+                }
             odsn.SetSize(0);
 
             return mdn;
@@ -849,7 +906,10 @@ namespace IndexECPlugin.Source.Helpers
 
             dataNet.SetDataId(spatialEntityID);
             dataNet.SetDataName(name);
-            dataNet.SetDataset(dataset);
+            if ( dataset != null )
+                {
+                dataNet.SetDataset(dataset);
+                }
 
             return dataNet;
             }
@@ -859,11 +919,27 @@ namespace IndexECPlugin.Source.Helpers
             List<double> corners = new List<double>();
             PolygonModel polyModel = DbGeometryHelpers.CreatePolygonModelFromJson(footprint);
 
+            double minX = double.MaxValue;
+            double maxX = double.MinValue;
+            double minY = double.MaxValue;
+            double maxY = double.MinValue;
+
             foreach ( Double[] point in polyModel.points )
                 {
-                corners.Add(point[0]);
-                corners.Add(point[1]);
+                minX = Math.Min(minX, point[0]);
+                maxX = Math.Max(maxX, point[0]);
+                minY = Math.Min(minY, point[1]);
+                maxY = Math.Max(maxY, point[1]);
                 }
+
+            corners.Add(minX);
+            corners.Add(minY);
+            corners.Add(maxX);
+            corners.Add(minY);
+            corners.Add(maxX);
+            corners.Add(maxY);
+            corners.Add(minX);
+            corners.Add(maxY);
             return corners;
             }
 

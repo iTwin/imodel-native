@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RealityPackageNet;
 
 namespace IndexECPlugin.Source
     {
@@ -406,7 +407,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public List<string> SisterFiles
+        public List<UriNet> SisterFiles
             {
             get;
             set;
