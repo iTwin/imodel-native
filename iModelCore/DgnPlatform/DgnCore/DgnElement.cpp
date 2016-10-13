@@ -96,7 +96,6 @@ struct ElementECDBuffer : ECN::ECDBuffer
     void _ClearValues() override;
     ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
     ECN::ClassLayoutCR _GetClassLayout() const override;
-
 };
 
 //=======================================================================================

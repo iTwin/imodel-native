@@ -254,7 +254,7 @@ public:
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_categories.Contains(categoryId);}
     void AddCategory(DgnCategoryId id) {m_categories.insert(id);}
     bool DropCategory(DgnCategoryId id) {return 0 != m_categories.erase(id);}
-	
+
     //! Query the list of category selectors
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 

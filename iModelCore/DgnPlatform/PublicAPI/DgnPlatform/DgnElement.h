@@ -2385,7 +2385,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     struct CachedSelectStatement : BeSQLite::EC::ECSqlStatement
     {
         friend struct DgnElements;
-    private:
+    private:                                         
         mutable BeAtomic<uint32_t>  m_refCount;
         bool                        m_isInCache;
         BeSQLite::BeDbMutex&        m_mutex;

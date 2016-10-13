@@ -732,8 +732,8 @@ void CategorySelector::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOf
         m_categories.insert(categoryId);
     else
         m_categories.erase(categoryId);
-	}
-	
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  10/2016
 //---------------------------------------------------------------------------------------
@@ -750,7 +750,6 @@ DgnElementIdSet CategorySelector::QuerySelectors(DgnDbR db)
 
     return ids;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
