@@ -203,8 +203,8 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
         }
 
     //Points / IGeometry must be same on both sides, too. For all other cases, do what SQLite does with it
-    canCompare = (lhsType != PRIMITIVETYPE_Point2D && rhsType != PRIMITIVETYPE_Point2D &&
-                  lhsType != PRIMITIVETYPE_Point3D && rhsType != PRIMITIVETYPE_Point3D &&
+    canCompare = (lhsType != PRIMITIVETYPE_Point2d && rhsType != PRIMITIVETYPE_Point2d &&
+                  lhsType != PRIMITIVETYPE_Point3d && rhsType != PRIMITIVETYPE_Point3d &&
                   lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
 
     if (!canCompare && errorMessage != nullptr)

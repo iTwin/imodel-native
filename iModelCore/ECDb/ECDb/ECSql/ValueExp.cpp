@@ -436,7 +436,7 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
         return FinalizeParseStatus::Error;
         }
 
-    if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3D)
+    if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3d)
         {
         ctx.Issues().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point3d arguments.",
                                       ToECSql().c_str());

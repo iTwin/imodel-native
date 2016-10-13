@@ -83,7 +83,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
 
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             int xColumnIndex = sqlColumnIndex++;
             int yColumnIndex = sqlColumnIndex++;
@@ -91,7 +91,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
             field = std::unique_ptr<ECSqlField>(new PointMappedToColumnsECSqlField(ecsqlStmt, ecsqlColumnInfo, xColumnIndex, yColumnIndex));
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             int xColumnIndex = sqlColumnIndex++;
             int yColumnIndex = sqlColumnIndex++;

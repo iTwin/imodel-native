@@ -740,7 +740,7 @@ bool JsonECSqlSelectAdapter::JsonFromPoint2d(JsonValueR jsonValue, IECSqlValue c
     else
         {
         ECValue ecValue;
-        ecValue.SetPoint2D(value);
+        ecValue.SetPoint2d(value);
         return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
         }
     }
@@ -761,7 +761,7 @@ bool JsonECSqlSelectAdapter::JsonFromPoint3d(JsonValueR jsonValue, IECSqlValue c
     else
         {
         ECValue ecValue;
-        ecValue.SetPoint3D(value);
+        ecValue.SetPoint3d(value);
         return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
         }
     }
@@ -829,12 +829,12 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue
             status = JsonFromInt64(jsonValue, ecsqlValue, ecProperty, isArrayMember);
             break;
             }
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             status = JsonFromPoint2d(jsonValue, ecsqlValue, ecProperty, isArrayMember);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             status = JsonFromPoint3d(jsonValue, ecsqlValue, ecProperty, isArrayMember);
             break;

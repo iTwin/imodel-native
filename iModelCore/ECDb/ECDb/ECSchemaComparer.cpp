@@ -2155,10 +2155,10 @@ BentleyStatus ECPropertyValueChange::SetValue(ValueId id, ECValueCR value)
                 return GetInteger()->SetValue(id, value.GetInteger());
             case PRIMITIVETYPE_Long:
                 return GetLong()->SetValue(id, value.GetLong());
-            case PRIMITIVETYPE_Point2D:
-                return GetPoint2d()->SetValue(id, value.GetPoint2D());
-            case PRIMITIVETYPE_Point3D:
-                return GetPoint3d()->SetValue(id, value.GetPoint3D());
+            case PRIMITIVETYPE_Point2d:
+                return GetPoint2d()->SetValue(id, value.GetPoint2d());
+            case PRIMITIVETYPE_Point3d:
+                return GetPoint3d()->SetValue(id, value.GetPoint3d());
             case PRIMITIVETYPE_String:
                 return GetString()->SetValue(id, value.GetUtf8CP());
         }
@@ -2211,9 +2211,9 @@ BentleyStatus ECPropertyValueChange::SetValue(ECValueCR oldValue, ECValueCR newV
                 return GetInteger()->SetValue(Converter<int>::Copy(oldValue), Converter<int>::Copy(newValue));
             case PRIMITIVETYPE_Long:
                 return GetLong()->SetValue(Converter<int64_t>::Copy(oldValue), Converter<int64_t>::Copy(newValue));
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 return GetPoint2d()->SetValue(Converter<DPoint2d>::Copy(oldValue), Converter<DPoint2d>::Copy(newValue));
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 return GetPoint3d()->SetValue(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
             case PRIMITIVETYPE_String:
                 return GetString()->SetValue(Converter<Utf8String>::Copy(oldValue), Converter<Utf8String>::Copy(newValue));
@@ -2311,9 +2311,9 @@ BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
                 m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
             case ECN::PRIMITIVETYPE_Long:
                 m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
-            case ECN::PRIMITIVETYPE_Point2D:
+            case ECN::PRIMITIVETYPE_Point2d:
                 m_value = std::unique_ptr<ECChange>(new Point2dChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-            case ECN::PRIMITIVETYPE_Point3D:
+            case ECN::PRIMITIVETYPE_Point3d:
                 m_value = std::unique_ptr<ECChange>(new Point3dChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
             case ECN::PRIMITIVETYPE_String:
                 m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;

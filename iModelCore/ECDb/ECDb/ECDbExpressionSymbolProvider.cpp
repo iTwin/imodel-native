@@ -340,8 +340,8 @@ static ECValue GetECValueFromSqlValue(IECSqlValue const& sqlValue)
         case PrimitiveType::PRIMITIVETYPE_Double: return ECValue(sqlValue.GetDouble());
         case PrimitiveType::PRIMITIVETYPE_Integer: return ECValue(sqlValue.GetInt());
         case PrimitiveType::PRIMITIVETYPE_Long: return ECValue(sqlValue.GetInt64());
-        case PrimitiveType::PRIMITIVETYPE_Point2D: return ECValue(sqlValue.GetPoint2d());
-        case PrimitiveType::PRIMITIVETYPE_Point3D: return ECValue(sqlValue.GetPoint3d());
+        case PrimitiveType::PRIMITIVETYPE_Point2d: return ECValue(sqlValue.GetPoint2d());
+        case PrimitiveType::PRIMITIVETYPE_Point3d: return ECValue(sqlValue.GetPoint3d());
         case PrimitiveType::PRIMITIVETYPE_String: return ECValue(sqlValue.GetText());
         case PrimitiveType::PRIMITIVETYPE_Binary: return ECValue();
         case PrimitiveType::PRIMITIVETYPE_IGeometry: return ECValue();

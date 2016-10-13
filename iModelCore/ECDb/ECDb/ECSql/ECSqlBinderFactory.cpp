@@ -61,10 +61,10 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase
                     case ECN::PRIMITIVETYPE_String:
                         return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
-                    case ECN::PRIMITIVETYPE_Point2D:
+                    case ECN::PRIMITIVETYPE_Point2d:
                         return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, false));
 
-                    case ECN::PRIMITIVETYPE_Point3D:
+                    case ECN::PRIMITIVETYPE_Point3d:
                         return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, true));
 
                     default:

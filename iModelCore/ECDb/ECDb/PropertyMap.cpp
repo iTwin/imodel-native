@@ -27,8 +27,8 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
         {
         switch (primitiveProperty->GetType())
             {
-                case PRIMITIVETYPE_Point2D:
-                case PRIMITIVETYPE_Point3D:
+                case PRIMITIVETYPE_Point2d:
+                case PRIMITIVETYPE_Point3d:
                     return PointPropertyMap::Create(ecClass.GetId(),  *primitiveProperty, propertyAccessString, parentPropertyMap);
 
                 default:
@@ -817,10 +817,10 @@ PointPropertyMap::PointPropertyMap(ECClassId ownerClassMapId, PrimitiveECPropert
     {
     switch (pointProperty.GetType())
         {
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
                 m_is3d = true;
                 break;
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
                 m_is3d = false;
                 break;
 

@@ -30,9 +30,9 @@ BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8Stri
     else if (type.EqualsI("binary") || type.EqualsI("blob"))
         primitiveType = PRIMITIVETYPE_Binary;
     else if (type.EqualsI("point2d"))
-        primitiveType = PRIMITIVETYPE_Point2D;
+        primitiveType = PRIMITIVETYPE_Point2d;
     else if (type.EqualsI("point3d"))
-        primitiveType = PRIMITIVETYPE_Point3D;
+        primitiveType = PRIMITIVETYPE_Point3d;
     else if (type.EqualsI("boolean") || type.EqualsI("bool"))
         primitiveType = PRIMITIVETYPE_Boolean;
     else if (type.EqualsI("geometry") || type.EqualsI("igeometry"))
@@ -64,9 +64,9 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
             return "Integer";
         case PRIMITIVETYPE_Long:
             return "Long";
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             return "Point2d";
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             return "Point3d";
         case PRIMITIVETYPE_String:
             return "String";

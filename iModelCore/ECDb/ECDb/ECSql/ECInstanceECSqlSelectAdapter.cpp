@@ -371,16 +371,16 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             val.SetBinary(b, size, false);
             break;
             }
-            case ECN::PRIMITIVETYPE_Point2D:
+            case ECN::PRIMITIVETYPE_Point2d:
             {
             DPoint2d d = value.GetPoint2d();
-            val.SetPoint2D(d);
+            val.SetPoint2d(d);
             break;
             }
-            case ECN::PRIMITIVETYPE_Point3D:
+            case ECN::PRIMITIVETYPE_Point3d:
             {
             DPoint3d d = value.GetPoint3d();
-            val.SetPoint3D(d);
+            val.SetPoint3d(d);
             break;
             }
             case ECN::PRIMITIVETYPE_DateTime:
