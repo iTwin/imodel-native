@@ -600,7 +600,7 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
     WipPropertyMapSaveDispatcher saveDispatcher(classMapSaveContext);
     for (WipPropertyMap const* propertyMap : GetPropertyMaps())
         {
-        BeAssert(GetClass().GetId() == propertyMap->GetOwnerClassMapId());
+        BeAssert(GetClass().GetId() == propertyMap->GetClassMap().GetClass().GetId());
         propertyMap->Accept(saveDispatcher);
         if (saveDispatcher.GetStatus() != SUCCESS)
             return ERROR;
@@ -717,40 +717,39 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        WipPropertyMap const*  tphBaseClassPropMap = nullptr;
+        WipVerticalPropertyMap const*  tphBaseClassPropMap = nullptr;
         if (&property->GetClass() != &m_ecClass && inheritanceMode == PropertyMapInheritanceMode::Clone)
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
-            	if (tphBaseClassPropMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str()))
+                if (tphBaseClassPropMap = dynamic_cast<WipVerticalPropertyMap const*> (baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
                     break;
                 }
             }
 
-        if (GetPropertyMapsR().Insert(const_cast<WipPropertyMap*>(tphBaseClassPropMap)) != SUCCESS)
         if (tphBaseClassPropMap == nullptr)
             {
-        RefCountedPtr<WipPropertyMap> propMap = ClassMapper::LoadPropertyMap(*this, *property, dbCtx);
+            RefCountedPtr<WipPropertyMap> propMap = ClassMapper::LoadPropertyMap(*this, *property, dbCtx);
             if (propMap == nullptr)
-            {
-            //ECSchema Upgrade
-            GetColumnFactoryR().Update();
-            propMap = ClassMapper::MapProperty(*this, *property);
-            if (propMap == nullptr)
+                {
+                //ECSchema Upgrade
+                GetColumnFactoryR().Update();
+                propMap = ClassMapper::MapProperty(*this, *property);
+                if (propMap == nullptr)
                     {
                     BeAssert(false);
                     return ERROR;
                     }
-            WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap.get());
-            if (vMap == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
+                WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap.get());
+                if (vMap == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
                 //! ECSchema update added new property for which we need to save property map
                 DbMapSaveContext ctx(m_ecdb);
                 //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(vMap->GetTable()) != SUCCESS)
                     {
                     BeAssert(false && "Failed to save table");
                     return ERROR;
@@ -759,14 +758,14 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 ctx.BeginSaving(*this);
 
                 DbClassMapSaveContext classMapContext(ctx);
-            WipPropertyMapSaveDispatcher saveDispatcher(classMapContext);
-            propMap->Accept(saveDispatcher);
+                WipPropertyMapSaveDispatcher saveDispatcher(classMapContext);
+                propMap->Accept(saveDispatcher);
                 ctx.EndSaving(*this);
                 }
             }
         else
             {
-            propMap = PropertyMapFactory::ClonePropertyMap(ctx, *tphBaseClassPropMap, GetClass(), nullptr);
+            propMap = tphBaseClassPropMap->CreateCopy(*this);
             if (propMap == nullptr)
                 return ERROR;
             }

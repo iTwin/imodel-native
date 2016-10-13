@@ -89,7 +89,7 @@ ECN::ECClass const& WipPropertyMapContainer::GetClass() const { return m_classMa
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-ECDbCR WipPropertyMapContainer::GetECDb() const { return m_classMap.GetECDbMap().GetECDb(); }
+ECDbCR WipPropertyMapContainer::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //************************************WipPropertyMap*************************************
 //=======================================================================================
@@ -400,7 +400,7 @@ std::vector<WipColumnVerticalPropertyMap const*> const& WipColumnHorizontalPrope
 //static 
 BentleyStatus WipSystemPropertyMap::TryCreateVerticalMaps(std::vector<RefCountedPtr<WipPrimitivePropertyMap>>& propertyMaps, ECSqlSystemProperty systemProperty, ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    ECDbSchemaManagerCR schemaManger = classMap.GetECDbMap().GetECDb().Schemas();
+    ECDbSchemaManagerCR schemaManger = classMap.GetDbMap().GetECDb().Schemas();
     ECPropertyCP ecProperty = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, systemProperty);
     if (ecProperty == nullptr)
         {
@@ -618,7 +618,7 @@ RefCountedPtr<WipStructArrayPropertyMap> WipStructArrayPropertyMap::CreateInstan
 //static 
 RefCountedPtr<WipNavigationPropertyMap::RelECClassIdPropertyMap> WipNavigationPropertyMap::RelECClassIdPropertyMap::CreateInstance(WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId)
     {
-    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetECDbMap().GetECDb().Schemas();
+    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
     ECPropertyCP relECClassIdProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::RelECClassId);
     if (relECClassIdProp == nullptr)
         return nullptr;
@@ -633,7 +633,7 @@ RefCountedPtr<WipNavigationPropertyMap::RelECClassIdPropertyMap> WipNavigationPr
 //static
 RefCountedPtr<WipNavigationPropertyMap::IdPropertyMap> WipNavigationPropertyMap::IdPropertyMap::CreateInstance(WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
     {
-    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetECDbMap().GetECDb().Schemas();
+    ECDbSchemaManagerCR schemaManger = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas();
     ECPropertyCP idProp = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::Id);
     if (idProp == nullptr)
         return nullptr;
@@ -729,7 +729,7 @@ BentleyStatus WipPoint2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
         return ERROR;
         }
 
-    ECDbSchemaManagerCR schemaManger = GetClassMap().GetECDbMap().GetECDb().Schemas();
+    ECDbSchemaManagerCR schemaManger = GetClassMap().GetDbMap().GetECDb().Schemas();
     ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::X);
     if (propX == nullptr)
         return ERROR;
@@ -818,7 +818,7 @@ RefCountedPtr<WipPoint2dPropertyMap> WipPoint2dPropertyMap::CreateInstance(ECN::
 //+===============+===============+===============+===============+===============+======
 BentleyStatus WipPoint3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
-    ECDbSchemaManagerCR schemaManger = GetClassMap().GetECDbMap().GetECDb().Schemas();
+    ECDbSchemaManagerCR schemaManger = GetClassMap().GetDbMap().GetECDb().Schemas();
     ECPropertyCP propX = ECDbSystemSchemaHelper::GetSystemProperty(schemaManger, ECSqlSystemProperty::X);
     if (propX == nullptr)
         return ERROR;

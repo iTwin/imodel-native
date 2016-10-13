@@ -124,7 +124,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& 
         BeAssert(false);
         return SUCCESS;
         }
-    ECDbMap const& ecdbMap = propertyMap.GetClassMap().GetECDbMap();
+    ECDbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
     ECN::NavigationECPropertyCP navigationProperty = propertyMap.GetProperty().GetAsNavigationProperty();
     RelationshipClassMap const* relClassMap = static_cast<RelationshipClassMap const*> (ecdbMap.GetClassMap(*navigationProperty->GetRelationshipClass()));
     if (relClassMap == nullptr)
@@ -225,7 +225,7 @@ DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, m_classMap.GetECDbMap().GetECDb(), ecProperty, accessString))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), ecProperty, accessString))
         return nullptr;
 
     DbColumn* col = m_classMap.GetColumnFactory().CreateColumn(ecProperty, accessString, colName.c_str(), colType, !isNullable, isUnique, collation);
@@ -276,7 +276,7 @@ RefCountedPtr<WipPoint2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primit
         bool isUnique = false;
         DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
         const DbColumn::Type colType = DbColumn::Type::Real;
-        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetECDbMap().GetECDb(), property, accessString.c_str()))
+        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), property, accessString.c_str()))
             return nullptr;
 
         x = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_X").c_str(), colType, !isNullable, isUnique, collation);
@@ -351,7 +351,7 @@ RefCountedPtr<WipPoint3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primit
         bool isUnique = false;
         DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
         const DbColumn::Type colType = DbColumn::Type::Real;
-        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetECDbMap().GetECDb(), property, accessString.c_str()))
+        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), property, accessString.c_str()))
             return nullptr;
 
         x = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_X").c_str(), colType, !isNullable, isUnique, collation);
