@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaDiff.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1196,17 +1196,17 @@ bool ECSchemaDiff::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::ValueDire
             n.GetValue (direction).SetValue (v.GetInteger()); break;
         case PRIMITIVETYPE_Long:
             n.GetValue (direction).SetValue (v.GetLong()); break;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             {              
-            n.Add (L"x")->GetValue (direction).SetValue (v.GetPoint2D().x); 
-            n.Add (L"y")->GetValue (direction).SetValue (v.GetPoint2D().y); 
+            n.Add (L"x")->GetValue (direction).SetValue (v.GetPoint2d().x); 
+            n.Add (L"y")->GetValue (direction).SetValue (v.GetPoint2d().y); 
             break;
             }
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
-            n.Add (L"x")->GetValue (direction).SetValue (v.GetPoint3D().x); 
-            n.Add (L"y")->GetValue (direction).SetValue (v.GetPoint3D().y); 
-            n.Add (L"z")->GetValue (direction).SetValue (v.GetPoint3D().z); 
+            n.Add (L"x")->GetValue (direction).SetValue (v.GetPoint3d().x); 
+            n.Add (L"y")->GetValue (direction).SetValue (v.GetPoint3d().y); 
+            n.Add (L"z")->GetValue (direction).SetValue (v.GetPoint3d().z); 
             break;
             }
         case PRIMITIVETYPE_String:
