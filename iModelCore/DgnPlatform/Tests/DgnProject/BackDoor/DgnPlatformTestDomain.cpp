@@ -202,10 +202,10 @@ DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     m_doubleProps[1] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty2));
     m_doubleProps[2] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty3));
     m_doubleProps[3] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty4));
-    m_pointProps[0] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty1));
-    m_pointProps[1] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty2));
-    m_pointProps[2] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty3));
-    m_pointProps[3] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty4));
+    m_pointProps[0] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty1));
+    m_pointProps[1] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty2));
+    m_pointProps[2] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty3));
+    m_pointProps[3] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty4));
 
     return DgnDbStatus::Success;
     }
@@ -236,10 +236,10 @@ void TestElement::BindParams(ECSqlStatement& stmt) const
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty2), m_doubleProps[1]);
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty3), m_doubleProps[2]);
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty4), m_doubleProps[3]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty1), m_pointProps[0]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty1), m_pointProps[0]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
     }
 
 /*---------------------------------------------------------------------------------**//**
