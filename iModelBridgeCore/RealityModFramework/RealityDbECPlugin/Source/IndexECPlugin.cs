@@ -21,7 +21,6 @@ using Bentley.ECSystem.Extensibility;
 using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
 using Bentley.Exceptions;
-using RealityDataPackageWrapper;
 using IndexECPlugin.Source.FileRetrievalControllers;
 using IndexECPlugin.Source.Helpers;
 using IndexECPlugin.Source.QueryProviders;
@@ -341,7 +340,7 @@ namespace IndexECPlugin.Source
                 }
             catch ( Exception e )
                 {
-                Log.Logger.error(String.Format("Aborting retrieval of instance {0}. Error message : {1}", instance.InstanceId, e.Message));
+                Log.Logger.error(String.Format("Aborting retrieval of instance {0}. Error message : {1}. Stack trace : {2}", instance.InstanceId, e.Message, e.StackTrace));
                 if ( e is UserFriendlyException )
                     {
                     throw;
@@ -371,9 +370,19 @@ namespace IndexECPlugin.Source
                 switch ( className )
                     {
                     case "PackageRequest":
-                        Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
-                        packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
-                        return;
+                        int version;
+                        if ( (operation.ExtendedData.ContainsKey("version")) && (operation.ExtendedData["version"].ToString() == "2") )
+                            {
+                            version = 2;
+                            }
+                        else
+                            {
+                            version = 1;
+                            }
+                            Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
+                            packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0);
+                            return;
+                            
                     //case "AutomaticRequest":
                     //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
                     //    return;
@@ -385,7 +394,7 @@ namespace IndexECPlugin.Source
                 }
             catch ( Exception e )
                 {
-                Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}", e.Message, instance.InstanceId));
+                Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}. Stack trace : {2}", e.Message, instance.InstanceId, e.StackTrace));
                 if ( e is UserFriendlyException )
                     {
                     throw;

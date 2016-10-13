@@ -8,6 +8,10 @@
 
 // Package.
 #include "RealityDataPackageNet.h"
+#include "RealityDataSourceNet.h"
+
+#include <Bentley/BeFileName.h>
+
 
 using namespace RealityPackage;
 using namespace RealityPackageNet;
@@ -23,6 +27,241 @@ using namespace msclr::interop;
 using namespace System::Runtime::InteropServices;
 
 
+//=======================================================================================
+//                              Utility functions
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+UriPtr ManagedToNativeUri2(UriNet^ managedUri)
+    {
+    Utf8String uriUtf8;
+    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedUri->ToStr()).ToPointer()));
+
+    return RealityPackage::Uri::Create(uriUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ managedSource)
+    {
+    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
+
+    Utf8String nativeType;
+    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
+
+    // Create source with required parameters.
+    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
+
+    // Id.
+    Utf8String nativeId;
+    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
+    nativeSource->SetId(nativeId.c_str());
+
+    // Copyright.
+    Utf8String nativeCopyright;
+    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
+    nativeSource->SetCopyright(nativeCopyright.c_str());
+
+    // Provider.
+    Utf8String nativeProvider;
+    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
+    nativeSource->SetProvider(nativeProvider.c_str());
+
+    // Size.
+    nativeSource->SetSize(managedSource->GetSize());
+
+    // Metadata.
+    Utf8String nativeMetadata;
+    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
+    nativeSource->SetMetadata(nativeMetadata.c_str());
+
+    // Metadata type.
+    Utf8String nativeMetadataType;
+    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
+    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+
+    // GeoCS.
+    Utf8String nativeGeoCS;
+    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
+    nativeSource->SetGeoCS(nativeGeoCS.c_str());
+
+    // No data value.
+    Utf8String nativeNoDataValue;
+    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
+    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
+
+    // Sister files.
+    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
+    bvector<UriPtr> nativeSisterFiles;
+    for each (UriNet^ managedSisterFile in managedSisterFiles)
+    {
+        nativeSisterFiles.push_back(ManagedToNativeUri2(managedSisterFile));
+    }
+    nativeSource->SetSisterFiles(nativeSisterFiles);
+
+    return nativeSource;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
+    {
+    // Create with main source.
+    ImageryDataPtr pData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Set corners.
+    List<double>^ corners = managedData->GetCornersCP();
+    if (0 != corners->Count)
+        {
+        DPoint2d cornerPts[4];
+
+        int j = 0;
+        for (int i = 0; i < 4; ++i)
+            {
+            cornerPts[i].x = corners[j++];
+            cornerPts[i].y = corners[j++];
+            }
+
+        pData->SetCorners(cornerPts);
+        }
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }    
+
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
+    {
+    // Create with main source.
+    ModelDataPtr pData = ModelData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
+    {
+    // Create with main source.
+    PinnedDataPtr pData = PinnedData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), 0, 0);
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Set location.
+    List<double>^ location = managedData->GetLocation();
+    DPoint2d longlat;
+    longlat.x = location[0];
+    longlat.y = location[1];
+    pData->SetLocation(longlat);
+
+    // Set area.
+    List<double>^ polygonPts = managedData->GetAreaCP();
+    DPoint2d pts[4];
+    int j = 0;
+    for (int i = 0; i < polygonPts->Count; ++i)
+        {
+        pts[i].x = polygonPts[j++];
+        pts[i].y = polygonPts[j++];
+        }
+    pData->SetArea(*BoundingPolygon::Create(pts, polygonPts->Count));
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
+    {
+    // Create with main source.
+    TerrainDataPtr pData = TerrainData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+
+    // Set basic members.
+    Utf8String id;
+    BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
+    pData->SetDataId(id.c_str());
+
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
+    pData->SetDataName(name.c_str());
+
+    Utf8String dataset;
+    BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
+    pData->SetDataset(dataset.c_str());
+
+    // Add alternate sources.
+    for (int i = 1; i < managedData->GetNumSources(); ++i)
+        {
+        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        }
+
+    return pData;
+    }
+
+
+//=======================================================================================
+//                                      Package
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
@@ -36,7 +275,17 @@ RealityDataPackageNet^ RealityDataPackageNet::Create(String^ name)
 //-------------------------------------------------------------------------------------
 bool RealityDataPackageNet::Write(String^ filename)
     {
-    return false;
+    Utf8String filenameUtf8;
+    BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(filename).ToPointer()));
+    BeFileName nativeFilename(filenameUtf8);
+
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    status = (*m_pPackage)->Write(nativeFilename);
+
+    if (RealityPackageStatus::Success != status)
+        return false;
+
+    return true;
     }
 
 //-------------------------------------------------------------------------------------
@@ -192,6 +441,38 @@ void RealityDataPackageNet::SetBoundingPolygon(List<double>^ polygonPts)
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::AddImageryData(ImageryDataNet^ data)
+    {
+    (*m_pPackage)->GetImageryGroupR().push_back(ManagedToNativeImageryData(data));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::AddModelData(ModelDataNet^ data)
+    {
+    (*m_pPackage)->GetModelGroupR().push_back(ManagedToNativeModelData(data));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::AddPinnedData(PinnedDataNet^ data)
+    {
+    (*m_pPackage)->GetPinnedGroupR().push_back(ManagedToNativePinnedData(data));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::AddTerrainData(TerrainDataNet^ data)
+    {
+    (*m_pPackage)->GetTerrainGroupR().push_back(ManagedToNativeTerrainData(data));
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
 int RealityDataPackageNet::GetMajorVersion()
@@ -255,6 +536,9 @@ RealityDataPackageNet::!RealityDataPackageNet()
     }
 
 
+//=======================================================================================
+//                                    Reality Data
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
@@ -336,6 +620,10 @@ RealityDataNet::RealityDataNet(RealityDataSourceNet^ dataSource)
     m_sources->Add(dataSource);
     }
 
+
+//=======================================================================================
+//                                    Imagery Data
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
@@ -430,6 +718,10 @@ ImageryDataNet::!ImageryDataNet()
         }
     }
         
+
+//=======================================================================================
+//                                    Model Data
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
@@ -469,6 +761,10 @@ ModelDataNet::!ModelDataNet()
         }
     }
 
+
+//=======================================================================================
+//                                    Pinned Data
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
@@ -578,6 +874,11 @@ PinnedDataNet::!PinnedDataNet()
         m_pPinnedData = 0;
         }
     }
+
+
+//=======================================================================================
+//                                 Terrain Data
+//=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------

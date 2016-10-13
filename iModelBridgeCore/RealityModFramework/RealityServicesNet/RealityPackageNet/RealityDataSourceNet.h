@@ -78,8 +78,8 @@ namespace RealityPackageNet
             void SetProvider(System::String^ provider);
 
             //! Get/Set the size in kilobytes. Default to 0.
-            int GetSize();
-            void SetSize(int sizeInKB);
+            uint64_t GetSize();
+            void SetSize(uint64_t sizeInKB);
 
             //! Get/Set the metadata. Might be empty.
             System::String^ GetMetadata();
@@ -125,7 +125,7 @@ namespace RealityPackageNet
 
             //! Get/Set The source data.
             //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
-            //! You can take a look at PublicApi/RealityPlatform/WmsSource.h for more details on the structure of a WmsMapSettings object.
+            //! You can take a look at RealityServicesNet/WmsSourceNet.h for more details on the structure of a WmsMapSettings object.
             System::String^ GetMapSettings();
             void SetMapSettings(System::String^ mapSettings);
 

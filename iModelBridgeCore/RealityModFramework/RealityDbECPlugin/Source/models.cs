@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RealityPackageNet;
 
 namespace IndexECPlugin.Source
     {
@@ -36,7 +37,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// TO BE DONE
         /// </summary>
-        public virtual IEnumerable<double[]> points
+        public List<double[]> points
             {
             get;
             set;
@@ -289,7 +290,52 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public string ID
+        public string TermsOfUse
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Provider
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string SpatialEntityID
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Name
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Footprint
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string SpatialDataSourceID
             {
             get;
             set;
@@ -307,6 +353,15 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
+        public string CoordinateSystem
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public string Classification
             {
             get;
@@ -316,11 +371,48 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public UInt64 FileSize
+        public string NoDataValue
             {
             get;
             set;
             }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ulong FileSize
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Metadata
+            {
+            get;
+            set;
+            }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Dataset
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<UriNet> SisterFiles
+            {
+            get;
+            set;
+            }
+
         }
 
     /// <summary>

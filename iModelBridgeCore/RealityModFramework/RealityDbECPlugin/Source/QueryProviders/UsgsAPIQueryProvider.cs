@@ -648,6 +648,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance["DataProviderName"].StringValue = instanceSEB["DataProviderName"].StringValue;
                 }
+            if ( instanceSEB["Dataset"] != null && !instanceSEB["Dataset"].IsNull )
+                {
+                instance["Dataset"].StringValue = instanceSEB["Dataset"].StringValue;
+                }
 
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
             return instance;
@@ -1138,6 +1142,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
                             if ( cat != null )
                                 {
+                                instance["Dataset"].StringValue = cat.SbDatasetTag;
                                 instance["Classification"].StringValue = cat.Classification;
                                 IUSGSDataExtractor dataExtractor = ReturnDataExtractor(cat.SbDatasetTag);
                                 DateTime? date;
@@ -1333,7 +1338,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         IECInstance instance = ecClass.CreateInstance();
 
-                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId);
+                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId, bundle.Dataset);
 
                         InitializePropertiesToNull(instance, ecClass);
 
@@ -1371,6 +1376,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         instance["DataProvider"].StringValue = dataProviderString;
                         instance["DataProviderName"].StringValue = dataProviderNameString;
+                        instance["Dataset"].StringValue = bundle.Dataset;
 
                         if ( item.Date.HasValue )
                             {
@@ -1463,7 +1469,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 
             }
 
-        private void CreateIncompleteCacheInstances (USGSExtractedResult item, string classification, string parentId)
+        private void CreateIncompleteCacheInstances (USGSExtractedResult item, string classification, string parentId, string parentName)
             {
             IECInstance SEBInstance = m_schema.GetClass("SpatialEntityBase").CreateInstance();
             IECInstance metadataInstance = m_schema.GetClass("Metadata").CreateInstance();
@@ -1519,6 +1525,8 @@ namespace IndexECPlugin.Source.QueryProviders
 
             SEBInstance["DataProvider"].StringValue = dataProviderString;
             SEBInstance["DataProviderName"].StringValue = dataProviderNameString;
+
+            SEBInstance["Dataset"].StringValue = parentName;
 
             SEBInstance["Classification"].StringValue = classification;
 
