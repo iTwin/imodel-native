@@ -100,6 +100,23 @@ public:
     void TimeReserveCodes(uint32_t numCodes);
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/16
+//=======================================================================================
+struct LocksPerformanceTest : BriefcasePerformanceTest
+{
+protected:
+    uint64_t        m_elementId = 0x00ff000000ff0000;
+    DgnDbPtr        m_db;
+public:
+    void Setup(WCharCP testFile) { m_db = SetupDb(testFile); }
+
+    DgnElementId GetNextElementId() { return DgnElementId(m_elementId++); }
+
+    LockRequest PopulateLockRequest(uint32_t numLocks);
+    void TimeAcquireLocks(uint32_t numLocks);
+};
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,6 +210,28 @@ void CodesPerformanceTest::TimeReserveCodes(uint32_t numCodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+LockRequest LocksPerformanceTest::PopulateLockRequest(uint32_t numLocks)
+    {
+    LockRequest req;
+    for (uint32_t i = 0; i < numLocks; i++)
+        req.GetLockSet().insert(DgnLock(GetNextElementId(), LockLevel::Exclusive));
+
+    return req;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void LocksPerformanceTest::TimeAcquireLocks(uint32_t numLocks)
+    {
+    LockRequest req = PopulateLockRequest(numLocks);
+    Utf8PrintfString descr("Acquire %u locks", numLocks);
+    Time(descr.c_str(), [&]() { EXPECT_STATUS(Success, m_db->BriefcaseManager().AcquireLocks(req).Result()); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesPerformanceTest, ReserveCodes)
     {
     Setup(L"ReserveCodes.bim");
@@ -208,10 +247,32 @@ TEST_F(CodesPerformanceTest, ReserveCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesPerformanceTest, ReserveCodesInChunksOf100)
     {
-    Setup(L"ReserveCodes.bim");
+    Setup(L"ReserveCodesInChunksOf100.bim");
 
     for (uint32_t i = 0; i < 100; i++)
         TimeReserveCodes(100);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LocksPerformanceTest, AcquireLocks)
+    {
+    Setup(L"AcquireLocks.bim");
+
+    for (uint32_t numLocks = 1; numLocks <= 100000; numLocks *= 10)
+        TimeAcquireLocks(numLocks);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LocksPerformanceTest, AcquireLocksInChunks)
+    {
+    Setup(L"AcquireLocksInChunks.bim");
+
+    for (uint32_t i = 0; i < 100; i++)
+        TimeAcquireLocks(100);
     }
 
 

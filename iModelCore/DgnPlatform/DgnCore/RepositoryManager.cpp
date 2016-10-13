@@ -770,22 +770,6 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     return result;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockSetContains(DgnLockSet const& locks, DgnLockCR lock, bool matchExactLevel=false)
-    {
-    auto iter = locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
-    if (locks.end() == iter)
-        return false;
-    else if (matchExactLevel && iter->GetLevel() != lock.GetLevel())
-        return false;
-    else if (iter->GetLevel() > lock.GetLevel())
-        return false;
-    else
-        return true;
-    }
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
@@ -807,19 +791,19 @@ struct VirtualLockSet : VirtualSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManager::Cull(DgnLockSet& locks)
     {
-    struct VSet : VirtualLockSet
-    {
-        VSet(DgnLockSet const& locks) : VirtualLockSet(locks) { }
-        virtual bool _IsLockInSet(DgnLockCR lock) const override { return lockSetContains(m_locks, lock); }
-    };
-
-    VSet vset(locks);
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectLocksInSet);
-    stmt->BindVirtualSet(1, vset);
-    while (BE_SQLITE_ROW == stmt->Step())
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectExistingLock);
+    auto iter = locks.begin();
+    while (iter != locks.end())
         {
-        LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
-        locks.erase(locks.find(DgnLock(id, LockLevel::Exclusive)));
+        auto const& lock = *iter;
+        bindEnum(*stmt, 1, lock.GetType());
+        stmt->BindId(2, lock.GetId());
+        if (BE_SQLITE_ROW != stmt->Step() || lock.GetLevel() > static_cast<LockLevel>(stmt->GetValueInt(0)))
+            ++iter;
+        else
+            iter = locks.erase(iter);
+
+        stmt->Reset();
         }
     }
 
