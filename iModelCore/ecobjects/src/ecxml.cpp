@@ -44,9 +44,9 @@ Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
             return ECXML_TYPENAME_INTEGER;
         case PRIMITIVETYPE_Long:
             return ECXML_TYPENAME_LONG;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             return ECXML_TYPENAME_POINT2D;
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             return ECXML_TYPENAME_POINT3D;
         case PRIMITIVETYPE_String:
             return ECXML_TYPENAME_STRING;
@@ -78,9 +78,9 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8Str
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT2D))
-        primitiveType = PRIMITIVETYPE_Point2D;
+        primitiveType = PRIMITIVETYPE_Point2d;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT3D))
-        primitiveType = PRIMITIVETYPE_Point3D;
+        primitiveType = PRIMITIVETYPE_Point3d;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_DATETIME))
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (typeName.EqualsIAscii(ECXML_TYPENAME_BINARY))

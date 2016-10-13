@@ -373,8 +373,8 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Double                    = 0x401,
     PRIMITIVETYPE_Integer                   = 0x501,
     PRIMITIVETYPE_Long                      = 0x601,
-    PRIMITIVETYPE_Point2D                   = 0x701,
-    PRIMITIVETYPE_Point3D                   = 0x801,
+    PRIMITIVETYPE_Point2d                   = 0x701,
+    PRIMITIVETYPE_Point3d                   = 0x801,
     PRIMITIVETYPE_String                    = 0x901,
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };

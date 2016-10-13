@@ -713,8 +713,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,    Utf8CP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, Utf8StringR value, Utf8CP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,      Utf8CP managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,   Utf8CP managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,   Utf8CP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2d       (IECInstanceCR, DPoint2dR value,   Utf8CP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3d       (IECInstanceCR, DPoint3dR value,   Utf8CP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,   Utf8CP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, int64_t & value,   Utf8CP managedPropertyAccessor);
 
@@ -724,8 +724,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, Utf8CP managedPropertyAccessor, Utf8CP value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, Utf8CP managedPropertyAccessor, double value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, Utf8CP managedPropertyAccessor, bool value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, Utf8CP managedPropertyAccessor, DPoint2dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, Utf8CP managedPropertyAccessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2dValue  (IECInstanceR, Utf8CP managedPropertyAccessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3dValue  (IECInstanceR, Utf8CP managedPropertyAccessor, DPoint3dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, Utf8CP managedPropertyAccessor, DateTimeCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, Utf8CP managedPropertyAccessor, int64_t value);
 
@@ -734,8 +734,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,    ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, Utf8StringR value, ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,      ECValueAccessorCR accessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,   ECValueAccessorCR accessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,   ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2d       (IECInstanceCR, DPoint2dR value,   ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3d       (IECInstanceCR, DPoint3dR value,   ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,   ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, int64_t & value,   ECValueAccessorCR accessor);
 
@@ -745,8 +745,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, ECValueAccessorCR accessor, Utf8CP value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, ECValueAccessorCR accessor, double value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, ECValueAccessorCR accessor, bool value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint2dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2dValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3dValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint3dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, ECValueAccessorCR accessor, DateTimeCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, ECValueAccessorCR accessor, int64_t value);
 

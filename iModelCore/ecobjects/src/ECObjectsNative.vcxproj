@@ -51,6 +51,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdHocJsonContainer.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
@@ -128,6 +129,7 @@
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonContainer.h" />
     <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />

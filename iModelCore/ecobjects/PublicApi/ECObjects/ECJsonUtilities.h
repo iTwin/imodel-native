@@ -62,25 +62,25 @@ public:
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point2DToJson(Json::Value& json, DPoint2d pt);
+    ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(Json::Value& json, DPoint2d pt);
     //! Converts the specified Json value to a DPoint2d
     //! The Json value must hold the point as Json object with keys "x" and "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d& pt, Json::Value const& json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, Json::Value const& json);
     //! Converts the specified DPoint3d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point3DToJson(Json::Value& json, DPoint3d pt);
+    ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(Json::Value& json, DPoint3d pt);
     //! Converts the specified Json value to a DPoint3d
     //! The Json value must hold the point as Json object with keys "x", "y" and "z"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3D(DPoint3d& pt, Json::Value const& json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3d(DPoint3d& pt, Json::Value const& json);
     };
 
 /*=================================================================================**//**
@@ -135,26 +135,26 @@ public:
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point2DToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified Json value to a DPoint2d
     //! The Json value must hold the point as Json object with keys "x" and "y"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d& pt, RapidJsonValueCR json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json);
     //! Converts the specified DPoint3d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus Point3DToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified Json value to a DPoint3d
     //! The Json value must hold the point as Json object with keys "x", "y" and "z"
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3D(DPoint3d& pt, RapidJsonValueCR json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json);
 
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJson(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue);
     };

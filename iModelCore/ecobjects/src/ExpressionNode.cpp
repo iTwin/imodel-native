@@ -1549,8 +1549,8 @@ ResolvedTypeNodePtr Node::_GetResolvedTree(ExpressionResolverR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)   { return LiteralNode::CreateBoolean (literalValue); }
 ResolvedTypeNodePtr Node::CreateNullLiteral()                       { return LiteralNode::CreateNull(); }
-ResolvedTypeNodePtr Node::CreatePoint2DLiteral (DPoint2dCR pt)      { return LiteralNode::CreatePoint2D (pt); }
-ResolvedTypeNodePtr Node::CreatePoint3DLiteral (DPoint3dCR pt)      { return LiteralNode::CreatePoint3D (pt); }
+ResolvedTypeNodePtr Node::CreatePoint2dLiteral (DPoint2dCR pt)      { return LiteralNode::CreatePoint2d (pt); }
+ResolvedTypeNodePtr Node::CreatePoint3dLiteral (DPoint3dCR pt)      { return LiteralNode::CreatePoint3d (pt); }
 ResolvedTypeNodePtr Node::CreateDateTimeLiteral (int64_t ticks)       { return LiteralNode::CreateDateTime (ticks); }
 ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)          { return LiteralNode::CreateInteger (value); }
 ResolvedTypeNodePtr Node::CreateInt64Literal(int64_t value)           { return LiteralNode::CreateLong (value); }

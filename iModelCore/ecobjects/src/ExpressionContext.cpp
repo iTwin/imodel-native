@@ -341,10 +341,10 @@ static bool isPointProperty (bool& is2d, PrimitiveType primType)
     {
     switch (primType)
         {
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             is2d = false;
             return true;
-        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point2d:
             is2d = true;
             return true;
         default:
@@ -486,10 +486,10 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         if (IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
             {
-            if (ecval.IsNull() || (is2d && !ecval.IsPoint2D()) || (!is2d && !ecval.IsPoint3D()))
+            if (ecval.IsNull() || (is2d && !ecval.IsPoint2d()) || (!is2d && !ecval.IsPoint3d()))
                 return ExpressionStatus::DotNotSupported;
 
-            DPoint3d pt = !is2d ? ecval.GetPoint3D() : DPoint3d::From (ecval.GetPoint2D().x, ecval.GetPoint2D().y, 0.0);
+            DPoint3d pt = !is2d ? ecval.GetPoint3d() : DPoint3d::From (ecval.GetPoint2d().x, ecval.GetPoint2d().y, 0.0);
             double* component = (&pt.x) + componentIndex;
             ecval.SetDouble (*component);
             }
@@ -558,10 +558,10 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         if (isPrimitive && IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
             {
-            if (arrayVal.IsNull() || (is2d && !arrayVal.IsPoint3D()) || (!is2d && !arrayVal.IsPoint3D()))
+            if (arrayVal.IsNull() || (is2d && !arrayVal.IsPoint3d()) || (!is2d && !arrayVal.IsPoint3d()))
                 return ExpressionStatus::DotNotSupported;
 
-            DPoint3d pt = !is2d ? arrayVal.GetPoint3D() : DPoint3d::From (arrayVal.GetPoint2D().x, arrayVal.GetPoint2D().y, 0.0);
+            DPoint3d pt = !is2d ? arrayVal.GetPoint3d() : DPoint3d::From (arrayVal.GetPoint2d().x, arrayVal.GetPoint2d().y, 0.0);
             double* component = (&pt.x) + componentIndex;
             arrayVal.SetDouble (*component);
             }

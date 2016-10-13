@@ -510,7 +510,7 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     schema->CreateEntityClass (ecclass, "TestClass");
     ecclass->CreatePrimitiveProperty (primProp, "PrimitiveProperty", PRIMITIVETYPE_String);
     ecclass->CreateArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
-    ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3D);
+    ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3d);
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
 
