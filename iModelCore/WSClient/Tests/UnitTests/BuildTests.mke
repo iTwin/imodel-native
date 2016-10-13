@@ -18,6 +18,11 @@ baseDir = $(_MakeFilePath)
     %include cdefapnd.mki
 %endif
 
+%ifdef ENABLE_DGNDBSERVER_UNIT_TESTS
+	nameToDefine = DGNDBSERVER_UNIT_TESTS=1
+	%include cdefapnd.mki
+%endif	
+
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)WebServices
 BEGTEST_INPUT = $(baseDir)$(TestDir)/

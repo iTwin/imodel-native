@@ -355,7 +355,7 @@
 
     <Part Name="UnitTests-Published" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
-        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi"
+        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS"
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
