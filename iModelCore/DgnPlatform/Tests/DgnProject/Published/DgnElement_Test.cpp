@@ -906,7 +906,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
         ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
-        ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+        ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
 
         // Now, make sure that we can actually insert the element
         auto persistentEl = ele->Insert();
@@ -937,7 +937,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
-    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1050,13 +1050,13 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
 
         checkValue = point2dProperty.GetValueEC();
-        EXPECT_EQ(point2d.x, checkValue.GetPoint2D().x);
-        EXPECT_EQ(point2d.y, checkValue.GetPoint2D().y);
+        EXPECT_EQ(point2d.x, checkValue.GetPoint2d().x);
+        EXPECT_EQ(point2d.y, checkValue.GetPoint2d().y);
 
         checkValue = point3dProperty.GetValueEC();
-        EXPECT_EQ(point3d.x, checkValue.GetPoint3D().x);
-        EXPECT_EQ(point3d.y, checkValue.GetPoint3D().y);
-        EXPECT_EQ(point3d.z, checkValue.GetPoint3D().z);
+        EXPECT_EQ(point3d.x, checkValue.GetPoint3d().x);
+        EXPECT_EQ(point3d.y, checkValue.GetPoint3d().y);
+        EXPECT_EQ(point3d.z, checkValue.GetPoint3d().z);
 
         //  Insert the element
         persistentEl = el.Insert();

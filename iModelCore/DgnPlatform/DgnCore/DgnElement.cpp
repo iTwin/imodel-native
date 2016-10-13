@@ -2513,7 +2513,7 @@ DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     {
     bool isplcprop;
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint3D(GetPlacement().GetOrigin());
+        value.SetPoint3d(GetPlacement().GetOrigin());
     else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
         value.SetDouble(GetPlacement().GetAngles().GetYaw().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
@@ -2521,9 +2521,9 @@ DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     else if ((isplcprop = (0 == strcmp(name, "Roll"))))
         value.SetDouble(GetPlacement().GetAngles().GetRoll().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint3D(GetPlacement().GetElementBox().low);
+        value.SetPoint3d(GetPlacement().GetElementBox().low);
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint3D(GetPlacement().GetElementBox().high);
+        value.SetPoint3d(GetPlacement().GetElementBox().high);
         
     return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
@@ -2537,7 +2537,7 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     bool isplcprop;
 
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint3D();
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint3d();
     else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
         (plc = GetPlacement()).GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()));
     else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
@@ -2545,9 +2545,9 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     else if ((isplcprop = (0 == strcmp(name, "Roll"))))
         (plc = GetPlacement()).GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()));
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3D();
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3d();
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3D();
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3d();
         
    if (!isplcprop)
        return DgnDbStatus::NotFound;
@@ -2576,7 +2576,7 @@ DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArray
     DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3D();
+    return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3d();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
@@ -2587,7 +2587,7 @@ DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArray
     DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2D();
+    return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2d();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
@@ -2980,13 +2980,13 @@ DgnDbStatus GeometricElement2d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     {
     bool isplcprop;
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint2D(GetPlacement().GetOrigin());
+        value.SetPoint2d(GetPlacement().GetOrigin());
     else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
         value.SetDouble(GetPlacement().GetAngle().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint2D(GetPlacement().GetElementBox().low);
+        value.SetPoint2d(GetPlacement().GetElementBox().low);
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint2D(GetPlacement().GetElementBox().high);
+        value.SetPoint2d(GetPlacement().GetElementBox().high);
         
     return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
@@ -3000,13 +3000,13 @@ DgnDbStatus GeometricElement2d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     bool isplcprop;
 
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint2D();
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint2d();
     else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
         (plc = GetPlacement()).GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2D();
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2d();
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2D();
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2d();
         
    if (!isplcprop)
        return DgnDbStatus::NotFound;

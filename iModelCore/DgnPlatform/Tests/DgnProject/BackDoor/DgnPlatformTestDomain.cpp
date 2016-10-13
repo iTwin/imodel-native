@@ -138,7 +138,7 @@ DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value
 #define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
 #define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
 #define SETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetDouble(); return DgnDbStatus::Success;}
-#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3D(); return DgnDbStatus::Success;}
+#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3d(); return DgnDbStatus::Success;}
 
     SETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
     SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
