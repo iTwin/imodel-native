@@ -265,7 +265,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     DbTable& table = currentTimeStampColumn.GetTableR();
     Utf8CP tableName = table.GetName().c_str();
-    Utf8CP instanceIdColName = idPropMap->GetPropertyMap(tableName)->GetColumn().GetName().c_str();
+    Utf8CP instanceIdColName = idPropMap->FindVerticalPropertyMap(tableName)->GetColumn().GetName().c_str();
     Utf8CP currentTimeStampColName = currentTimeStampColumn.GetName().c_str();
 
     Utf8String triggerName;
