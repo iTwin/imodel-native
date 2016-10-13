@@ -249,6 +249,8 @@ struct HRFiTiffCreator : public HRFiTiffCreatorBase
     virtual Utf8String                 GetLabel() const;
     virtual Utf8String                 GetExtensions() const;
 
+    virtual Utf8String GetShortName() const override { return "iTIFF"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();
@@ -276,6 +278,8 @@ struct HRFiTiff64Creator : public HRFiTiffCreatorBase
     // Identification information
     virtual Utf8String                   GetLabel() const;
     virtual Utf8String                   GetExtensions() const;
+
+    virtual Utf8String GetShortName() const { return "iTIFF64"; }
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

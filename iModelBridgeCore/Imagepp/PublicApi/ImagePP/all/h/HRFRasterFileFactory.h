@@ -100,6 +100,12 @@ public:
 
     bool IsKindOfFile(HCLASS_ID rasterFileClassID, HFCPtr<HFCURL> const& pUrl) const;
 
+    uint64_t GetCreationTimeAsUnixMillis() const;
+    
+    // used during ATP. We want to compare files so we need all of them on the same time.
+    IMAGEPP_EXPORT void __test__hijackFileCreationTime(bool hijack);
+
+
 
 protected:
 
@@ -113,6 +119,7 @@ private:
     CreatorsMap m_ReadCreatorsMap;
     CreatorsMap m_WriteCreatorsMap;
     CreatorsMap m_CreateCreatorsMap;
+    bool        m_hijackFileCreationTime = false;
 
     typedef map<HCLASS_ID, Utf8String> DllDirMap;
     DllDirMap   m_DllDir;

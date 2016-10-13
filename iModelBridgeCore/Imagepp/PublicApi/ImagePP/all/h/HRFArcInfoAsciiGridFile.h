@@ -50,6 +50,8 @@ struct HRFArcInfoAsciiGridCreator : public HRFRasterFileCreator
 
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFArcInfoAsciiGridCreator)
 
+    virtual Utf8String GetShortName() const override {return "AAIG";}
+
 private:
 
     // Disabled methods

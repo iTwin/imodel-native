@@ -42,6 +42,8 @@ struct HRFDtedCreator : public HRFRasterFileCreator
     virtual Utf8String                   GetSchemes() const;
     virtual Utf8String                   GetExtensions() const;
 
+    virtual Utf8String GetShortName() const override { return "DTED"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

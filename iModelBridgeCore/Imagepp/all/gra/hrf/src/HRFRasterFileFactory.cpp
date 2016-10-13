@@ -548,3 +548,19 @@ bool HRFRasterFileFactory::IsKindOfFile(HCLASS_ID rasterFileClassID, HFCPtr<HFCU
 
     return pCreator->IsKindOfFile(pUrl);    
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+uint64_t HRFRasterFileFactory::GetCreationTimeAsUnixMillis() const
+    {
+    if (m_hijackFileCreationTime)
+        return 0;
+
+    return BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+void HRFRasterFileFactory::__test__hijackFileCreationTime(bool hijack) {m_hijackFileCreationTime = hijack;}

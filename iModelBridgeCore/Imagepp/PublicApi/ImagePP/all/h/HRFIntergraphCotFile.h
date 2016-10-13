@@ -73,6 +73,8 @@ struct HRFIntergraphCotCreator : public HRFIntergraphFile::Creator
     virtual Utf8String     GetLabel() const;
     virtual Utf8String     GetExtensions() const;
 
+    virtual Utf8String GetShortName() const { return "COT"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

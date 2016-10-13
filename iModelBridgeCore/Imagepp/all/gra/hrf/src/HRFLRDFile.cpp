@@ -33,6 +33,7 @@
 #include <Imagepp/all/h/HGF2DIdentity.h>
 
 #include <Imagepp/all/h/HCDCodecLRDRLE.h>
+#include <Imagepp/all/h/HRFRasterFileFactory.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
@@ -470,10 +471,10 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
 
             if (BufferSize < 512)
                 {
-                uint16_t* pPaddingBuffer = new uint16_t[BufferSize / 2];
-                memset(pPaddingBuffer, 0, BufferSize / 2);
+                std::unique_ptr<Byte[]> pPaddingBuffer(new Byte[BufferSize]);
+                memset(pPaddingBuffer.get(), 0, BufferSize);
 
-                m_pLRDFile->Write(pPaddingBuffer, BufferSize);
+                m_pLRDFile->Write(pPaddingBuffer.get(), BufferSize);
                 HASSERT(!(m_pLRDFile->GetSize() % 512));
                 }
             else
@@ -499,7 +500,7 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
             if (WriteHeader)
                 {
                 m_pLRDFile->SeekToBegin();
-                m_pLRDFile->Write(m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
+                m_pLRDFile->Write(m_pLRDHeader.get(), sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
                 }
 
             m_pLRDFile->Flush();
@@ -512,8 +513,7 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
             // Close and flush the BinStream
             m_pLRDFile = 0;
 
-            delete m_pLRDHeader;
-            m_pLRDHeader = 0;
+            m_pLRDHeader.reset();
 
             // Set the open flag to false
             m_IsOpen = false;
@@ -595,8 +595,9 @@ bool HRFLRDFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_pLRDHeader->VecLevel    = 1;
         m_pLRDHeader->Recordcount = 1;
 
-        AsciiDate (m_pLRDHeader->Date);   // Should look like : "22-Jun-04"
-        AsciiTime (m_pLRDHeader->Time);   // Should look like : "15:22:59"
+        GetAsciiDateTime(m_pLRDHeader->Date,    // Should look like : "22-Jun-04"
+                         m_pLRDHeader->Time);   // Should look like : "15:22:59"
+
         memset(m_pLRDHeader->rFile, 0, 40);
 
         m_pLRDHeader->bStart      = 1;
@@ -648,7 +649,7 @@ bool HRFLRDFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_pLRDHeader->Matrix[15]  = 1.0;
 
         // Write freshly created header physically into the file...
-        m_pLRDFile->Write(m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
+        m_pLRDFile->Write(m_pLRDHeader.get(), sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
 
         // Initialise some members and read file header Read
         m_HasHeaderFilled = true;
@@ -676,10 +677,10 @@ bool HRFLRDFile::CreateHeaderBlock(HRFResolutionDescriptor* pi_pResolutionDescri
     bool Result = true;
 
     // Use the most well recognized format.
-    m_pLRDHeader = new LRDHeaderBlock;
+    m_pLRDHeader.reset(new LRDHeaderBlock);
 
     // Construct a standard header block information...
-    memset(m_pLRDHeader, 0, sizeof(LRDHeaderBlock));
+    memset(m_pLRDHeader.get(), 0, sizeof(LRDHeaderBlock));
 
     return Result;
     }
@@ -696,12 +697,12 @@ void HRFLRDFile::InitOpenedFile()
 
     if (!GetAccessMode().m_HasCreateAccess)
         {
-        m_pLRDHeader = new LRDHeaderBlock;
+        m_pLRDHeader.reset(new LRDHeaderBlock);
 
         m_pLRDFile->SeekToBegin();
 
         // Read and fill the Type1BlockHeader
-        m_pLRDFile->Read(m_pLRDHeader, sizeof(LRDHeaderBlock) ); // HRF_LRD_BLOCK_SIZE);
+        m_pLRDFile->Read(m_pLRDHeader.get(), sizeof(LRDHeaderBlock) ); // HRF_LRD_BLOCK_SIZE);
         m_HasHeaderFilled = true;
         }
 
@@ -1039,16 +1040,12 @@ void HRFLRDFile::WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfo
 //
 //-----------------------------------------------------------------------------
 
-void HRFLRDFile::AsciiDate (char adate[])
+void HRFLRDFile::GetAsciiDateTime(char adate[], char atime[])
     {
-    time_t t;
-    char* s;
+    uint64_t tt = HRFRasterFileFactory::GetInstance()->GetCreationTimeAsUnixMillis();
+    time_t time = (time_t)(tt / 1000.0);   // Convert in second
 
-    uint64_t tt = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    tt = (uint64_t)(tt / 1000.0);   // Convert in second
-
-    t = (time_t)tt;
-    s=ctime(&t);
+    char* s=ctime(&time);
 
     adate[0]=s[8];
     adate[1]=s[9];
@@ -1059,29 +1056,11 @@ void HRFLRDFile::AsciiDate (char adate[])
     adate[6]='-';
     adate[7]=s[22];
     adate[8]=s[23];
-    adate[9]=0;
-    }
+    adate[9]=0;    
 
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-void HRFLRDFile::AsciiTime (char atime[])
-    {
-    time_t t;
-    char* s;
-    int32_t i;
-
-    uint64_t tt = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    tt = (uint64_t)(tt / 1000.0);   // Convert in second
-
-    t = (time_t)tt;
-    t=time(0L);
-    s=ctime(&t);
-
-    for (i=0; i<=7; i++)
-        atime[i] = s[11+i];
-    atime[8]=0;
+    for (auto i = 0; i <= 7; i++)
+        atime[i] = s[11 + i];
+    atime[8] = 0;
     }
 
 //-----------------------------------------------------------------------------

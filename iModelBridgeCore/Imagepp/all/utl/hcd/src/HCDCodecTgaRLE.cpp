@@ -83,19 +83,15 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
     {
     HPRECONDITION (m_NumberOfBitsPerPixelInOutput != 0);
 
-    uint32_t          i;
-    uint32_t          j;
     uint32_t          Len;
     Byte           BytesPerPixel   = (m_NumberOfBitsPerPixelInOutput + 1) / 8;
     size_t           NbPixel         = pi_InDataSize * 8 / GetBitsPerPixel();
     Byte*          pCode;
     Byte*          pDest           = (Byte*) po_pOutBuffer;
-    Byte           Swap;
-    HAutoPtr<Byte> pBuffer;
-    pBuffer                          = new Byte[pi_InDataSize];
-    Byte*          pPixel          = (Byte*) pBuffer;
+    std::unique_ptr<Byte[]> pTempBuffer; 
 
-
+    Byte const* pPixel = (Byte const*) pi_pInData;
+    
     po_OutBufferSize = 0;
 
     if (GetSubsetPosY() == 0)
@@ -105,8 +101,10 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
     // else, we use the raster data in pi_pInData without conversion.
     if (BytesPerPixel == 2)
         {
+        pTempBuffer.reset(new Byte[pi_InDataSize]);
+        Byte* pBuffer = pTempBuffer.get();
         uint16_t pOutput;
-        for (i = 0, j = 0; j < pi_InDataSize; j+=3)
+        for (uint32_t i = 0, j = 0; j < pi_InDataSize; j+=3)
             {
             pOutput = ((Byte*)pi_pInData)[j] >> 3;
             pOutput <<= 5;
@@ -117,17 +115,17 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
             *(pBuffer+i++) = *(Byte*)&pOutput;
             *(pBuffer+i++) = *(((Byte*)&pOutput)+1);
             }
-        }
-    else
-        memcpy (pBuffer, pi_pInData, pi_InDataSize * sizeof(Byte));
 
-    while (NbPixel > 0)
+        pPixel = pTempBuffer.get();
+        }
+
+    while (NbPixel > 1)
         {
         if (0 == memcmp (pPixel, pPixel+BytesPerPixel, BytesPerPixel))
             {
             // The to consecutive pixels are equal. This is a packet of equal pixels
             Len = 0;
-            while ((0 == memcmp(pPixel, pPixel+(BytesPerPixel), BytesPerPixel)) && (Len < 0x7f) && NbPixel - Len > 1)
+            while ((NbPixel - Len > 1) && (Len < 0x7f) && (0 == memcmp(pPixel, pPixel+(BytesPerPixel), BytesPerPixel)))
                 {
                 Len++;          // Len is always one smaller than the real number of pixel
                 pPixel += BytesPerPixel;
@@ -136,19 +134,17 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
             // Write the code and the pixel of the packet in the buffer
             *pDest = (Byte)(0x80 | Len);
 
+            memcpy(pDest + 1, pPixel, BytesPerPixel);
+
             // Conversion for the pixel
             if (BytesPerPixel >= 3)
                 {
-                Swap = pPixel[0];
-                pPixel[0] = pPixel[2];
-                pPixel[2] = Swap;
-
+                std::swap(pDest[1], pDest[1 + 2]);  // swap red and blue
+                
                 if ((BytesPerPixel == 4) && (m_AlphaChannelBits == 0))
-                    pPixel[3] = 255;            // Fake the maximum opacity
-
+                    pDest[1 + 3] = 255;            // Fake the maximum opacity
                 }
 
-            memcpy (pDest+1, pPixel, BytesPerPixel);
             pDest += BytesPerPixel + 1;
             pPixel += BytesPerPixel;
             po_OutBufferSize += BytesPerPixel + 1;
@@ -160,20 +156,19 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
             Len = 0;
             pCode = pDest++;            // Keep the position of the code for update at the end.
 
-            while ((0 != memcmp (pPixel, pPixel+BytesPerPixel, BytesPerPixel)) && (Len < 0x80) && (NbPixel - Len > 0))
+            while ((NbPixel - Len > 0) && (Len < 0x80) && (0 != memcmp (pPixel, pPixel+BytesPerPixel, BytesPerPixel)))
                 {
+                memcpy(pDest, pPixel, BytesPerPixel);
+
                 // Conversion for the pixel
                 if (BytesPerPixel >= 3)
                     {
-                    Swap = pPixel[0];
-                    pPixel[0] = pPixel[2];
-                    pPixel[2] = Swap;
+                    std::swap(pDest[0], pDest[2]);  // swap red and blue
 
                     if ((BytesPerPixel == 4) && (m_AlphaChannelBits == 0))
-                        pPixel[3] = 255;            // Fake the maximum opacity
+                        pDest[3] = 255;            // Fake the maximum opacity
                     }
 
-                memcpy (pDest, pPixel, BytesPerPixel);
                 pDest += BytesPerPixel;
                 pPixel += BytesPerPixel;
                 Len++;
@@ -183,6 +178,28 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
             po_OutBufferSize += (BytesPerPixel * Len) + 1;
             NbPixel -= Len;
             }
+        }
+
+    if (1 == NbPixel)   // last pixel is a raw.
+        {
+//      Len = 1;
+        *pDest = 0; // (Len-1)
+        ++pDest;
+
+        memcpy(pDest, pPixel, BytesPerPixel);
+
+        // Conversion for the pixel
+        if (BytesPerPixel >= 3)
+            {
+            std::swap(pDest[0], pDest[2]);  // swap red and blue
+
+            if ((BytesPerPixel == 4) && (m_AlphaChannelBits == 0))
+                pDest[3] = 255;            // Fake the maximum opacity
+            }
+
+        po_OutBufferSize += (BytesPerPixel * 1/*len*/) + 1;
+
+        --NbPixel;
         }
 
     HASSERT (NbPixel == 0);

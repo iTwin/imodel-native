@@ -162,6 +162,8 @@ public :
     virtual Utf8String                   GetSchemes    ()  const;
     virtual Utf8String                   GetExtensions ()  const;
 
+    virtual Utf8String GetShortName() const override { return "USGSFAST"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities();
 

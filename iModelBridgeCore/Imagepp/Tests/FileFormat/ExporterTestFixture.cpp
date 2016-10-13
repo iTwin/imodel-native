@@ -50,6 +50,11 @@ RasterTestInfo::RasterTestInfo(BeFileNameCR rasterPath)
 #else
     m_buildType = "Debug";
 #endif
+
+// Probably not valid on non windows platforms.
+#ifndef BENTLEY_WINRT
+    m_computerName = getenv("COMPUTERNAME");
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -71,6 +76,8 @@ bool RasterTestInfo::Load()
     if (!Json::Reader::Parse(infoString, value))
         return false;
 
+    m_creationDate = value["Date"].asString();
+    m_computerName = value["ComputerName"].asString();
     m_buildType = value["BuildType"].asString();
     m_exportDuration = value["DurationMs"].asUInt64();
     m_md5 = value["MD5"].asString();
@@ -83,7 +90,12 @@ bool RasterTestInfo::Load()
 //----------------------------------------------------------------------------------------
 bool RasterTestInfo::Store()
     {
+    time_t time = (time_t) (BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000.0);   // Convert in second
+    m_creationDate = ctime(&time);
+    
     Json::Value value;
+    value["Date"] = m_creationDate;
+    value["ComputerName"] = m_computerName;
     value["BuildType"] = m_buildType;
     value["DurationMs"] = m_exportDuration;
     value["MD5"] = m_md5.c_str();

@@ -136,16 +136,15 @@ private:
 
     HFCPtr<HCDCodecLRDRLE>  m_pCodec;
 
-    LRDHeaderBlock*         m_pLRDHeader;
+    std::unique_ptr<LRDHeaderBlock> m_pLRDHeader;
 
     // Method
     void            SaveLRDFile(bool pi_CloseFile);
     void            InitOpenedFile();
     void            InitScanlineOrientation();
 
-    void            AsciiDate (char adate[]);
-    void            AsciiTime (char atime[]);
-
+    void            GetAsciiDateTime (char adate[], char atime[]);
+    
 
     HFCPtr<HGF2DTransfoModel>
     GetTransfoModel() const;
@@ -184,6 +183,8 @@ struct HRFLRDCreator : public HRFRasterFileCreator
     virtual Utf8String                   GetLabel()      const;
     virtual Utf8String                   GetSchemes()    const;
     virtual Utf8String                   GetExtensions() const;
+
+    virtual Utf8String GetShortName() const override { return "LRD"; }
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
