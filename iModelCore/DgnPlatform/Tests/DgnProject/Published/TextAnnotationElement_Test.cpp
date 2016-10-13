@@ -98,8 +98,8 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
-        EXPECT_TRUE(viewDef->Insert().IsValid());
+        // auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
+        // EXPECT_TRUE(viewDef->Insert().IsValid());
         }
 
     // Read the element back out, modify, and rewrite.
