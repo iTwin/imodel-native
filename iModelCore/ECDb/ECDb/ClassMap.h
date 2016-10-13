@@ -50,6 +50,7 @@ struct StorageDescription;
 struct ColumnFactory : NonCopyableClass
     {
     private:
+        ECDbCR m_ecdb;
         ClassMapCR m_classMap;
         bool m_usesSharedColumnStrategy;
         mutable bset<DbColumnId> m_idsOfColumnsInUseByClassMap;
@@ -63,14 +64,17 @@ struct ColumnFactory : NonCopyableClass
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
         bool IsColumnInUseByClassMap(DbColumn const&) const;
         void CacheUsedColumn(DbColumn const&) const;
+
+        BentleyStatus GetDerivedColumnList(std::vector<DbColumn const*>&) const;
+
         DbTable& GetTable() const;
 
     public:
-        explicit ColumnFactory(ClassMapCR classMap);
+        ColumnFactory(ECDbCR ecdb, ClassMapCR classMap);
         ~ColumnFactory() {}
 
         DbColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-        void Update();
+        void Update(bool includeDerivedClasses) const;
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
     };
@@ -160,9 +164,9 @@ struct ClassMap : RefCountedBase
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
 
         //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx);
+        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
-        MappingStatus Map(SchemaImportContext&, ClassMappingInfo const&);
+        MappingStatus Map(SchemaImportContext& ctx, ClassMappingInfo const& info) { return _Map(ctx, info); }
         BentleyStatus Save(DbMapSaveContext&);
 
         PropertyMapCollection const& GetPropertyMaps() const { return m_propertyMaps; }
@@ -177,7 +181,6 @@ struct ClassMap : RefCountedBase
         bool IsDirty() const { return m_isDirty; }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
-        ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
 
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }

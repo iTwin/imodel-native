@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : m_ecdb(ecdb), m_type(type), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr)
+    m_isDirty(setIsDirty), m_columnFactory(ecdb, *this), m_isECInstanceIdAutogenerationDisabled(false), m_tphHelper(nullptr)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
@@ -29,15 +29,6 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
         BeAssert(false && "InitializeDisableECInstanceIdAutogeneration failed");
         }
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      06/2013
-//---------------------------------------------------------------------------------------
-MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
-    {
-    return _Map(schemaImportContext, mapInfo);
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
@@ -401,7 +392,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             return MappingStatus::Error;
         }
 
-    GetColumnFactoryR().Update();
+    GetColumnFactory().Update(false);
 
     for (ECPropertyCP property : propertiesToMap)
         {
@@ -616,14 +607,6 @@ BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
-    {
-    return _Load(ctx, dbLoadCtx);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      01/2015
-//---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx)
     {
     std::set<DbTable*> tables;
@@ -705,6 +688,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
 
+    bvector<PropertyMapPtr> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         PropertyMapPtr tphBaseClassPropMap = nullptr;
@@ -727,27 +711,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             if (ERROR == propMap->Load(dbCtx))
                 {
                 BeAssert(GetDbMap().IsImportingSchema() && "This code must only be reached if in schema import");
-
-                //ECSchema Upgrade
-                GetColumnFactoryR().Update();
-                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
-                //! ECSchema update added new property for which we need to save property map
-                DbMapSaveContext ctx(m_ecdb);
-                //First make sure table is updated on disk. The table must already exist for this operation to work.
-                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
-                    {
-                    BeAssert(false && "Failed to save table");
-                    return ERROR;
-                    }
-
-                ctx.BeginSaving(*this);
-                DbClassMapSaveContext classMapContext(ctx);
-                propMap->Save(classMapContext);
-                ctx.EndSaving(*this);
+                failedToLoadProperties.push_back(propMap);
                 }
             }
         else
@@ -760,6 +724,33 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
         if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
             return ERROR;
+        }
+
+    if (!failedToLoadProperties.empty())
+        {
+        GetColumnFactory().Update(true);
+        for (PropertyMapPtr& propMap : failedToLoadProperties)
+            {
+            if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            //! ECSchema update added new property for which we need to save property map
+            DbMapSaveContext ctx(m_ecdb);
+            //First make sure table is updated on disk. The table must already exist for this operation to work.
+            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+                {
+                BeAssert(false && "Failed to save table");
+                return ERROR;
+                }
+
+            ctx.BeginSaving(*this);
+            DbClassMapSaveContext classMapContext(ctx);
+            propMap->Save(classMapContext);
+            ctx.EndSaving(*this);
+            }
         }
 
     return SUCCESS;
@@ -974,12 +965,12 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ColumnFactory::ColumnFactory(ClassMapCR classMap) : m_classMap(classMap), m_usesSharedColumnStrategy(false)
+ColumnFactory::ColumnFactory(ECDbCR ecdb, ClassMapCR classMap) : m_ecdb(ecdb), m_classMap(classMap), m_usesSharedColumnStrategy(false)
     {
     TablePerHierarchyInfo const& tphInfo = m_classMap.GetMapStrategy().GetTphInfo();
     m_usesSharedColumnStrategy = tphInfo.IsValid() && tphInfo.UseSharedColumns();
     BeAssert(!m_usesSharedColumnStrategy || m_classMap.GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
-    Update();
+    Update(false);
     }
 
 //------------------------------------------------------------------------------------------
@@ -993,7 +984,7 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
         // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
         if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
             {
-            m_classMap.GetDbMap().Issues().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
                                                           "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
                                                           "The column is created without constraints.",
                                                           propMap.GetProperty().GetName().c_str(), propMap.GetProperty().GetClass().GetFullName());
@@ -1182,7 +1173,7 @@ bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ColumnFactory::Update()
+void ColumnFactory::Update(bool includeDerivedClasses) const
     {
     m_idsOfColumnsInUseByClassMap.clear();
     std::vector<DbColumn const*> columnsInUse;
@@ -1197,9 +1188,65 @@ void ColumnFactory::Update()
 
     for (DbColumn const* columnInUse : columnsInUse)
         {
+        //WIP Why can the column ever be nullptr at all??
         if (columnInUse != nullptr)
             CacheUsedColumn(*columnInUse);
         }
+
+    if (includeDerivedClasses)
+        {
+        std::vector<DbColumn const*> columns;
+        GetDerivedColumnList(columns);
+        for (DbColumn const* columnInUse : columns)
+            {
+            //WIP Why can the column ever be nullptr at all??
+            if (columnInUse != nullptr)
+                CacheUsedColumn(*columnInUse);
+            }
+        }
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       10 / 2016
+//------------------------------------------------------------------------------------------
+BentleyStatus ColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>& columns) const
+ {
+    Utf8CP sql = " WITH RECURSIVE "
+         "   BaseClassList(ClassId, BaseClassId) AS "
+         "    ("
+         "    VALUES(?1, ?1) "
+         "    UNION "
+         "    SELECT BC.ClassId, DCL.BaseClassId"
+         "           FROM BaseClassList DCL "
+         "                INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.ClassId"
+         "    )"
+         " SELECT ec_Column.Name FROM BaseClassList "
+         "   INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = BaseClassList.ClassId"
+         "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassId = ec_ClassMap.ClassId"
+        "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
+         "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+         " WHERE ec_Table.Name = ?2"
+         " GROUP BY ec_Column.Name";
+    
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql
+     /*   "SELECT c.Name FROM ec_Column c "
+        "              JOIN ec_PropertyMap pm ON c.Id = pm.ColumnId "
+        "              JOIN ec_ClassMap cm ON cm.ClassId = pm.ClassId "
+        "              JOIN " ECDB_CACHETABLE_ClassHierarchy " ch ON ch.ClassId = cm.ClassId "
+        "              JOIN ec_Table t on t.Id = c.TableId "
+        "WHERE ch.BaseClassId=? AND t.Name=? "
+        "GROUP BY c.Name" */);
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, m_classMap.GetClass().GetId());
+    stmt->BindText(2, GetTable().GetName().c_str(), Statement::MakeCopy::No);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        columns.push_back(GetTable().FindColumn(stmt->GetValueText(0)));
+        }
+
+    return SUCCESS;
     }
 
 //------------------------------------------------------------------------------------------
