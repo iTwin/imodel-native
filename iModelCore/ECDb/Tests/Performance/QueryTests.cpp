@@ -113,7 +113,7 @@ struct PopulateKitchenSinkDb : public ::testing::Test
                     }
                 }
 
-                ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3D(9, DPoint3d::From((i + 2) / val, (i + 3) / val, (i + 4) / val)));
+                ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(9, DPoint3d::From((i + 2) / val, (i + 3) / val, (i + 4) / val)));
                 {
                 IECSqlArrayBinder& ArrayBinder = stmt.BindArray(10, arraySize);
                 for (int j = 0; j < arraySize; j++)
@@ -152,7 +152,7 @@ struct PopulateKitchenSinkDb : public ::testing::Test
                 IECSqlArrayBinder& ArrayBinder = stmt.BindArray(17, arraySize);
                 for (int j = 0; j < arraySize; j++)
                     {
-                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindPoint3D(DPoint3d::From(i, i + 1, i + 2)));
+                    ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.AddArrayElement().BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
                     }
                 }
 
@@ -170,7 +170,7 @@ struct PopulateKitchenSinkDb : public ::testing::Test
                     }
                 }
 
-                ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3D(20, DPoint3d::From((i + 10) / val, (i + 100) / val, (i + 1000) / val)));
+                ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(20, DPoint3d::From((i + 10) / val, (i + 100) / val, (i + 1000) / val)));
                 {
                 StringArray.Sprintf("Sample-%d", i);
                 IECSqlArrayBinder& ArrayBinder = stmt.BindArray(21, arraySize);
@@ -390,10 +390,10 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_With
                         ecsqlValue.GetInt64();
                         break;
                     case ECN::PRIMITIVETYPE_Point2D:
-                        ecsqlValue.GetPoint2D();
+                        ecsqlValue.GetPoint2d();
                         break;
                     case ECN::PRIMITIVETYPE_Point3D:
-                        ecsqlValue.GetPoint3D();
+                        ecsqlValue.GetPoint3d();
                         break;
                     case ECN::PRIMITIVETYPE_String:
                         ecsqlValue.GetText();

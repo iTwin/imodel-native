@@ -239,19 +239,19 @@ Utf8CP PrimitiveJsonECSqlValue::_GetText() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d PrimitiveJsonECSqlValue::_GetPoint2D() const
+DPoint2d PrimitiveJsonECSqlValue::_GetPoint2d() const
     {
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point2D))
-        return NoopECSqlValue::GetSingleton().GetPoint2D();
+        return NoopECSqlValue::GetSingleton().GetPoint2d();
 
     DPoint2d pt;
     if (SUCCESS != ECJsonUtilities::JsonToPoint2D(pt, GetJson()))
         {
         Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetPoint2D failed for '%s'. Invalid JSON format for Point2D.",
+        msg.Sprintf("IECSqlValue::GetPoint2d failed for '%s'. Invalid JSON format for Point2d.",
                     GetColumnInfo().GetPropertyPath().ToString().c_str());
         ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetPoint2D();
+        return NoopECSqlValue::GetSingleton().GetPoint2d();
         }
 
     return pt;
@@ -260,19 +260,19 @@ DPoint2d PrimitiveJsonECSqlValue::_GetPoint2D() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d PrimitiveJsonECSqlValue::_GetPoint3D() const
+DPoint3d PrimitiveJsonECSqlValue::_GetPoint3d() const
     {
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Point3D))
-        return NoopECSqlValue::GetSingleton().GetPoint3D();
+        return NoopECSqlValue::GetSingleton().GetPoint3d();
 
     DPoint3d pt;
     if (SUCCESS != ECJsonUtilities::JsonToPoint3D(pt, GetJson()))
         {
         Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetPoint3D failed for '%s'. Invalid JSON format for Point3D.",
+        msg.Sprintf("IECSqlValue::GetPoint3d failed for '%s'. Invalid JSON format for Point3d.",
                     GetColumnInfo().GetPropertyPath().ToString().c_str());
         ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetPoint3D();
+        return NoopECSqlValue::GetSingleton().GetPoint3d();
         }
 
     return pt;

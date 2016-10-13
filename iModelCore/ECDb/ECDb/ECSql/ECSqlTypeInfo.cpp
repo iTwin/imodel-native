@@ -208,7 +208,7 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
                   lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
 
     if (!canCompare && errorMessage != nullptr)
-        *errorMessage = "Left and right side of expression must both have Point2D / Point3D / IGeometry type.";
+        *errorMessage = "Left and right side of expression must both have Point2d / Point3d / IGeometry type.";
 
     return canCompare;
     }

@@ -119,15 +119,15 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindInt64(int64_t value);
 
-    //! Binds a Point2D value to the parameter
+    //! Binds a Point2d value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint2D(DPoint2dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint2d(DPoint2dCR value);
 
-    //! Binds a Point3D value to the parameter
+    //! Binds a Point3d value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint3D(DPoint3dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint3d(DPoint3dCR value);
 
     //! Binds a UTF-8 encoded string to the parameter
     //! @param[in] value Value to bind

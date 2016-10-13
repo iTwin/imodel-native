@@ -1227,9 +1227,9 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -1268,9 +1268,9 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUpdate)
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -2866,7 +2866,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
 
     issueListener.Reset();
     BeTest::SetFailOnAssert(false);
-    stat = stmt.BindPoint2D(1, DPoint2d::From(1.0, 1.0));
+    stat = stmt.BindPoint2d(1, DPoint2d::From(1.0, 1.0));
     ASSERT_EQ(ECSqlStatus::Error, stat) << "Cannot bind points to int parameter";
     ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "Cannot bind points to int parameter";
     BeTest::SetFailOnAssert(true);
@@ -2916,7 +2916,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
         stmt.GetValueDouble(1);
         ASSERT_FALSE(issueListener.GetIssue().IsIssue());
         BeTest::SetFailOnAssert(false);
-        stmt.GetValuePoint2D(1);
+        stmt.GetValuePoint2d(1);
         BeTest::SetFailOnAssert(true);
         ASSERT_TRUE(issueListener.GetIssue().IsIssue());
         }
@@ -3236,8 +3236,8 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
         ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("d").BindDouble(i * PI));
         ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("i").BindInt(i * 2));
         ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("l").BindInt64(i * 3));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1)));
-        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2)));
+        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1)));
+        ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "Step for '" << ecsql << "' failed";
@@ -3280,9 +3280,9 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -3398,9 +3398,9 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -3501,9 +3501,9 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -3532,9 +3532,9 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(-count);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2d(DPoint2d::From(i, i + 1));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
-        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3d(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
@@ -3813,7 +3813,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Sub1(Prop1,Center) VALUES(1.1,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3D(1, DPoint3d::From(1.0, 2.0, 3.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(1, DPoint3d::From(1.0, 2.0, 3.0)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     uint64_t sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId().GetValue();

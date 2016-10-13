@@ -264,11 +264,11 @@ private:
                 break;
 
             case PRIMITIVETYPE_Point2D:
-                ecsqlStat = stmt.BindPoint2D(parameterIndex, v.GetPoint2D());
+                ecsqlStat = stmt.BindPoint2d(parameterIndex, v.GetPoint2D());
                 break;
 
             case PRIMITIVETYPE_Point3D:
-                ecsqlStat = stmt.BindPoint3D(parameterIndex, v.GetPoint3D());
+                ecsqlStat = stmt.BindPoint3d(parameterIndex, v.GetPoint3D());
                 break;
 
             case PRIMITIVETYPE_String:

@@ -239,9 +239,9 @@
 
     Function|Description
     --------|-----------
-    <c>GetX</c>|Returns the X coordinate of a Point2D or Point3D ECProperty. E.g. <c>...WHERE GetX(MyLowerLeftPoint)>=?</c>
-    <c>GetY</c>|Returns the Y coordinate of a Point2D or Point3D ECProperty. E.g. <c>...WHERE GetY(MyLowerLeftPoint)>=?</c>
-    <c>GetZ</c>|Returns the Z coordinate of a Point3D ECProperty. E.g. <c>...WHERE GetZ(MyLowerLeftPoint)>=?</c>
+    <c>GetX</c>|Returns the X coordinate of a Point2d or Point3d ECProperty. E.g. <c>...WHERE GetX(MyLowerLeftPoint)>=?</c>
+    <c>GetY</c>|Returns the Y coordinate of a Point2d or Point3d ECProperty. E.g. <c>...WHERE GetY(MyLowerLeftPoint)>=?</c>
+    <c>GetZ</c>|Returns the Z coordinate of a Point3d ECProperty. E.g. <c>...WHERE GetZ(MyLowerLeftPoint)>=?</c>
 
     @section ECSQLSamplesSQLiteFunctions Using SQLite SQL Functions
     Any built-in or custom SQLite SQL function can be used in ECSQL to operate on the primitive types

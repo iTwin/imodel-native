@@ -827,7 +827,7 @@ PointPropertyMap::PointPropertyMap(PrimitiveECPropertyCR pointProperty, Utf8CP p
 //                break;
 //
 //            default:
-//                BeAssert(false && "PointPropertyMap ctr must be called with a Point2D or Point3D ECProperty");
+                BeAssert(false && "PointPropertyMap ctr must be called with a Point2d or Point3d ECProperty");
 //                break;
 //        }
 //    }

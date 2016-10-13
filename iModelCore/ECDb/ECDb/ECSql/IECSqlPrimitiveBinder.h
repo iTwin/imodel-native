@@ -30,8 +30,8 @@ public:
     virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) = 0;
     virtual ECSqlStatus _BindInt(int value) = 0;
     virtual ECSqlStatus _BindInt64(int64_t value) = 0;
-    virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) = 0;
-    virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) = 0;
+    virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) = 0;
+    virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) = 0;
     virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) = 0;
     };
 

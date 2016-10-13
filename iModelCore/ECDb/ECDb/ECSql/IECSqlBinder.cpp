@@ -120,17 +120,17 @@ ECSqlStatus IECSqlBinder::BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindPoint2D(DPoint2dCR value)
+ECSqlStatus IECSqlBinder::BindPoint2d(DPoint2dCR value)
     {
-    return _BindPrimitive()._BindPoint2D(value);
+    return _BindPrimitive()._BindPoint2d(value);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindPoint3D(DPoint3dCR value)
+ECSqlStatus IECSqlBinder::BindPoint3d(DPoint3dCR value)
     {
-    return _BindPrimitive()._BindPoint3D(value);
+    return _BindPrimitive()._BindPoint3d(value);
     }
 
 //---------------------------------------------------------------------------------------

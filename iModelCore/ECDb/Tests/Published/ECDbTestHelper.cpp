@@ -85,7 +85,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry(int Parameterindex, IGe
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(int Parameterindex, DPoint2dCR value)
     {
-    return m_parent.stmt.BindPoint2D(Parameterindex, value);
+    return m_parent.stmt.BindPoint2d(Parameterindex, value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(int Parameterindex, DPoi
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D(int Parameterindex, DPoint3dCR value)
     {
-    return m_parent.stmt.BindPoint3D(Parameterindex, value);
+    return m_parent.stmt.BindPoint3d(Parameterindex, value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindGeometry(Utf8CP ParameterName, I
 ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(Utf8CP ParameterName, DPoint2dCR value)
     {
     int index = m_parent.stmt.GetParameterIndex(ParameterName);
-    return m_parent.stmt.BindPoint2D(index, value);
+    return m_parent.stmt.BindPoint2d(index, value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint2D(Utf8CP ParameterName, DP
 ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D(Utf8CP ParameterName, DPoint3dCR value)
     {
     int index = m_parent.stmt.GetParameterIndex(ParameterName);
-    return m_parent.stmt.BindPoint3D(index, value);
+    return m_parent.stmt.BindPoint3d(index, value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -415,7 +415,7 @@ template <class TBeInt64Id> TBeInt64Id ECSqlStatementHelper::assertId(int column
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint2d ECSqlStatementHelper::assertPoint2D(int columnIndex, double X, double Y)
     {
-    return stmt.GetValuePoint2D(columnIndex);
+    return stmt.GetValuePoint2d(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -423,7 +423,7 @@ DPoint2d ECSqlStatementHelper::assertPoint2D(int columnIndex, double X, double Y
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint3d ECSqlStatementHelper::assertPoint3D(int columnIndex, double X, double Y, double Z)
     {
-    return stmt.GetValuePoint3D(columnIndex);
+    return stmt.GetValuePoint3d(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------

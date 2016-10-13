@@ -18,6 +18,18 @@ struct SchemaImportContext;
 #endif
 
 //=======================================================================================
+//! Options for how to specify the ECSchema when calling ECDbSchemaManager::GetECClass
+//! @ingroup ECDbGroup
+// @bsiclass                                                Muhammad.Zaighum      10/2014
+//+===============+===============+===============+===============+===============+======
+enum class ResolveSchema
+    {
+    BySchemaName, //!< ECClass is qualified by schema name
+    BySchemaAlias, //!< ECClass is qualified by schema alias
+    AutoDetect//!< Detect automatically whether ECClass is qualified by schema name or alias
+    };
+
+//=======================================================================================
 //! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
 //! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or 
 //! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %ECDbSchemaManager.

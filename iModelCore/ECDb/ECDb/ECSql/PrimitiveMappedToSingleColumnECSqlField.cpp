@@ -155,21 +155,21 @@ void const* PrimitiveMappedToSingleColumnECSqlField::_GetGeometryBlob(int* blobS
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2D() const
+DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2d() const
     {
-    ReportError(ECSqlStatus::Error, "GetPoint2D cannot be called for columns which are not of the Point2D type.");
-    BeAssert(false && "GetPoint2D cannot be called for columns which are not of the Point2D type.");
-    return NoopECSqlValue::GetSingleton().GetPoint2D();
+    ReportError(ECSqlStatus::Error, "GetPoint2d cannot be called for columns which are not of the Point2d type.");
+    BeAssert(false && "GetPoint2d cannot be called for columns which are not of the Point2d type.");
+    return NoopECSqlValue::GetSingleton().GetPoint2d();
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3D() const
+DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3d() const
     {
-    ReportError(ECSqlStatus::Error, "GetPoint3D cannot be called for columns which are not of the Point3D type.");
-    BeAssert(false && "GetPoint3D cannot be called for columns which are not of the Point3D type.");
-    return NoopECSqlValue::GetSingleton().GetPoint3D();
+    ReportError(ECSqlStatus::Error, "GetPoint3d cannot be called for columns which are not of the Point3d type.");
+    BeAssert(false && "GetPoint3d cannot be called for columns which are not of the Point3d type.");
+    return NoopECSqlValue::GetSingleton().GetPoint3d();
     }
 
 //-----------------------------------------------------------------------------------------

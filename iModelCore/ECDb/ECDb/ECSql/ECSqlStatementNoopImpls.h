@@ -42,8 +42,8 @@ struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStruc
         virtual ECSqlStatus _BindGeometryBlob(void const* value, int blobSize, IECSqlBinder::MakeCopy) override { return m_errorStatus; }
         virtual ECSqlStatus _BindInt(int value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindInt64(int64_t value) override { return m_errorStatus; }
-        virtual ECSqlStatus _BindPoint2D(DPoint2dCR value) override { return m_errorStatus; }
-        virtual ECSqlStatus _BindPoint3D(DPoint3dCR value) override { return m_errorStatus; }
+        virtual ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_errorStatus; }
+        virtual ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy, int byteCount) override { return m_errorStatus; }
 
         // IECSqlStructBinder
@@ -93,8 +93,8 @@ struct NoopECSqlValue : public IECSqlValue, IECSqlPrimitiveValue, IECSqlStructVa
         virtual int _GetInt() const override { return 0; }
         virtual int64_t _GetInt64() const override { return INT64_C(0); }
         virtual Utf8CP _GetText() const override { return nullptr; }
-        virtual DPoint2d _GetPoint2D() const override { return DPoint2d::From(0.0, 0.0); }
-        virtual DPoint3d _GetPoint3D() const override { return DPoint3d::From(0.0, 0.0, 0.0); }
+        virtual DPoint2d _GetPoint2d() const override { return DPoint2d::From(0.0, 0.0); }
+        virtual DPoint3d _GetPoint3d() const override { return DPoint3d::From(0.0, 0.0, 0.0); }
         virtual IGeometryPtr _GetGeometry() const override { return nullptr; }
         virtual void const* _GetGeometryBlob(int* blobSize) const override;
 

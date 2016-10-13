@@ -45,19 +45,3 @@
 
 #define ECINSTANCE_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname,BeSQLite::EC::ECInstanceId)
 
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-//=======================================================================================
-//! Options for how to specify the ECSchema when calling ECDbSchemaManager::GetECClass
-//! @ingroup ECDbGroup
-// @bsiclass                                                Muhammad.zaighum      10/2014
-//+===============+===============+===============+===============+===============+======
-enum class ResolveSchema
-    {
-    BySchemaName, //!< ECClass is qualified by schema name
-    BySchemaAlias, //!< ECClass is qualified by schema alias
-    AutoDetect//!< Detect automatically whether ECClass is qualified by schema name or alias
-    };
-
-END_BENTLEY_SQLITE_EC_NAMESPACE
-
