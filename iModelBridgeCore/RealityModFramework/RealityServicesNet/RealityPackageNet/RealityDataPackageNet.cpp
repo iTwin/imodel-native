@@ -277,7 +277,7 @@ bool RealityDataPackageNet::Write(String^ filename)
     {
     Utf8String filenameUtf8;
     BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(filename).ToPointer()));
-    BeFileName nativeFilename(filenameUtf8);
+    BeFileName nativeFilename(filenameUtf8.c_str());
 
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
     status = (*m_pPackage)->Write(nativeFilename);
