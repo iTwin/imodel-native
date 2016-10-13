@@ -35,8 +35,11 @@ public:
 #define DEBUG_REF_COUNTING
 #if defined DEBUG_REF_COUNTING
     # define REFCOUNT_RELASE_CHECK(val) BeAssert(0!=val)
+    # define REFCOUNT_EXCESSIVE 500000
+    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < REFCOUNT_EXCESSIVE && "Unusually large number of referents to this object");
     #else
     # define REFCOUNT_RELASE_CHECK(val)
+    # define REFCOUNT_EXCESSIVE_CHECK(val)
 #endif
 
 // You can use this macro to implement IRefCounted directly on your class.
@@ -53,7 +56,12 @@ private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre(std::memory_order_relaxed);} \
+    uint32_t AddRef() const                             \
+        {                                               \
+        auto result = m_refCount.IncrementAtomicPre(std::memory_order_relaxed); \
+        REFCOUNT_EXCESSIVE_CHECK(result);               \
+        return result;                                  \
+        }                                               \
     uint32_t Release() const                            \
         {                                               \
         uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);  \
