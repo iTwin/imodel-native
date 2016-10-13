@@ -214,7 +214,7 @@ Utf8String StubHttpResponseInvalidDeletedEvent()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseEmptyContentType()
+Utf8String StubHttpResponseEmptyContentType()
     {
     return "";
     }
@@ -222,7 +222,7 @@ Utf8CP StubHttpResponseEmptyContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidContentType()
+Utf8String StubHttpResponseInvalidContentType()
     {
     return "SomeContentType";
     }
@@ -230,7 +230,7 @@ Utf8CP StubHttpResponseInvalidContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseValidLockEventContentType()
+Utf8String StubHttpResponseValidLockEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str();
     }
@@ -238,7 +238,7 @@ Utf8CP StubHttpResponseValidLockEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidLockEventContentType()
+Utf8String StubHttpResponseInvalidLockEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
@@ -246,7 +246,7 @@ Utf8CP StubHttpResponseInvalidLockEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseValidRevisionEventContentType()
+Utf8String StubHttpResponseValidRevisionEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str();
     }
@@ -254,7 +254,7 @@ Utf8CP StubHttpResponseValidRevisionEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidRevisionEventContentType()
+Utf8String StubHttpResponseInvalidRevisionEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
@@ -262,7 +262,7 @@ Utf8CP StubHttpResponseInvalidRevisionEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseValidCodeEventContentType()
+Utf8String StubHttpResponseValidCodeEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::CodeEvent).c_str();
     }
@@ -270,7 +270,7 @@ Utf8CP StubHttpResponseValidCodeEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidCodeEventContentType()
+Utf8String StubHttpResponseInvalidCodeEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
@@ -278,7 +278,7 @@ Utf8CP StubHttpResponseInvalidCodeEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseValidLocksDeletedContentType()
+Utf8String StubHttpResponseValidLocksDeletedContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent).c_str();
     }
@@ -286,7 +286,7 @@ Utf8CP StubHttpResponseValidLocksDeletedContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseValidCodesDeletedContentType()
+Utf8String StubHttpResponseValidCodesDeletedContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent).c_str();
     }
@@ -294,7 +294,7 @@ Utf8CP StubHttpResponseValidCodesDeletedContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidLocksDeletedContentType()
+Utf8String StubHttpResponseInvalidLocksDeletedContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
@@ -302,7 +302,7 @@ Utf8CP StubHttpResponseInvalidLocksDeletedContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-Utf8CP StubHttpResponseInvalidCodesDeletedContentType()
+Utf8String StubHttpResponseInvalidCodesDeletedContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
@@ -321,7 +321,7 @@ void DgnDbServerEventParserTests::SetUp()
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
-    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, validPtr->GetEventType());
     DgnDbServerLockEvent& lockEvent1 = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
@@ -339,7 +339,7 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
 TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
-    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, validPtr->GetEventType());
     DgnDbServerRevisionEvent& revisionEvent1 = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
@@ -355,7 +355,7 @@ TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
 TEST_F(DgnDbServerEventParserTests, CodeEventTests)
     {
     //Check for valid values
-    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidCodeEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseValidCodeEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::CodeEvent, validPtr->GetEventType());
     DgnDbServerCodeEvent& codeEvent1 = dynamic_cast<DgnDbServerCodeEvent&>(*validPtr);
@@ -373,7 +373,7 @@ TEST_F(DgnDbServerEventParserTests, CodeEventTests)
 TEST_F(DgnDbServerEventParserTests, LocksDeletedEventTests)
     {
     //Check for valid values
-    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseValidDeletedEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent, validPtr->GetEventType());
     DgnDbServerDeletedEvent& deletedEvent1 = dynamic_cast<DgnDbServerDeletedEvent&>(*validPtr);
@@ -389,7 +389,7 @@ TEST_F(DgnDbServerEventParserTests, LocksDeletedEventTests)
 TEST_F(DgnDbServerEventParserTests, CodesDeletedEventTests)
     {
     //Check for valid values
-    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseValidDeletedEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent, validPtr->GetEventType());
     DgnDbServerDeletedEvent& deletedEvent1 = dynamic_cast<DgnDbServerDeletedEvent&>(*validPtr);
@@ -404,60 +404,60 @@ TEST_F(DgnDbServerEventParserTests, CodesDeletedEventTests)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     {
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidCodeEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidCodeEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalidLockEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalidLockEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalidRevisionEvent()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalidCodeEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseInvalidCodeEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLockEventContentType().c_str(), StubHttpResponseValidCodeEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidCodeEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidCodeEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalidLockEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalidLockEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalidRevisionEvent()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalidCodeEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseInvalidCodeEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidRevisionEventContentType().c_str(), StubHttpResponseValidCodeEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidLockEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidLockEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidCodeEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidCodeEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalidLockEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalidLockEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalidRevisionEvent()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalidCodeEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseInvalidCodeEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodeEventContentType().c_str(), StubHttpResponseValidRevisionEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidLockEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidLockEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidRevisionEvent()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidCodeEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidCodeEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidLockEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidLockEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidRevisionEvent()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseValidRevisionEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidLockEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidLockEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidRevisionEvent()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidCodeEvent1()));
-	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidCodeEvent2()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidLockEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidLockEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidRevisionEvent()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent1()));
+	EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseValidRevisionEvent()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -465,36 +465,36 @@ TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     {
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidLockEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidRevisionEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidCodeEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidCodeEvent()));
 
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidDeletedEvent()));
-    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseEmptyContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidRevisionEventContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent()));
     }
 #endif
