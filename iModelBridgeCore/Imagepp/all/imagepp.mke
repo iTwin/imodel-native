@@ -1390,12 +1390,8 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
-                    $(BaseGeocoordLib) 
-                   
-%if $(TARGET_PLATFORM)!="WinRT"
-    # TODO: DgnClientSdk uses "Casablanca" library on WinRT
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
-%endif                
+                    $(BaseGeocoordLib) \
+                    $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows"
         # For HRFWebFile.cpp
