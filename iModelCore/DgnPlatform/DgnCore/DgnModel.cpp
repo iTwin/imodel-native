@@ -1683,7 +1683,7 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     {
-    statement.BindPoint2D(statement.GetParameterIndex(SHEET_MODEL_PROP_SheetSize), m_size);
+    statement.BindPoint2d(statement.GetParameterIndex(SHEET_MODEL_PROP_SheetSize), m_size);
     return DgnDbStatus::Success;
     }
 
@@ -1714,7 +1714,7 @@ DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassP
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_size = statement.GetValuePoint2D(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
+    m_size = statement.GetValuePoint2d(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
     return DgnDbStatus::Success;
     }
 

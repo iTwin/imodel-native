@@ -227,13 +227,13 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbR project, Utf
                     }
                     case ECN::PRIMITIVETYPE_Point2D:
                     {
-                    auto d = statement.GetValuePoint2D (i);
+                    auto d = statement.GetValuePoint2d (i);
                     val.SetPoint2D (d);
                     break;
                     }
                     case ECN::PRIMITIVETYPE_Point3D:
                     {
-                    auto d = statement.GetValuePoint3D (i);
+                    auto d = statement.GetValuePoint3d (i);
                     val.SetPoint3D (d);
                     break;
                     }
