@@ -697,8 +697,8 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
-
-    bvector<PropertyMapPtr> failedToLoadProperties;
+   
+    bvector<ECPropertyCP> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         WipVerticalPropertyMap const*  tphBaseClassPropMap = nullptr;
@@ -713,16 +713,18 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
         if (tphBaseClassPropMap == nullptr)
             {
-            RefCountedPtr<WipPropertyMap> propMap = ClassMapper::LoadPropertyMap(*this, *property, dbCtx);
-            if (propMap == nullptr)
+            if (ClassMapper::LoadPropertyMap(*this, *property, dbCtx) == nullptr)
                 {
-                failedToLoadProperties.push_back(propMap);
+                failedToLoadProperties.push_back(property);
                 }
             }
         else
             {
-            propMap = tphBaseClassPropMap->CreateCopy(*this);
+            RefCountedPtr<WipPropertyMap> propMap = tphBaseClassPropMap->CreateCopy(*this);
             if (propMap == nullptr)
+                return ERROR;
+
+            if (GetPropertyMapsR().Insert(propMap) != SUCCESS)
                 return ERROR;
             }
         }
@@ -730,15 +732,16 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     if (!failedToLoadProperties.empty())
         {
         GetColumnFactory().Update(true);
-        for (PropertyMapPtr& propMap : failedToLoadProperties)
+        for (ECPropertyCP property : failedToLoadProperties)
             {
-            propMap = ClassMapper::MapProperty(*this, *property);
+            WipPropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
             if (propMap == nullptr)
             	{
                 BeAssert(false);
                 return ERROR;
                 }
-            WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap.get());
+
+            WipVerticalPropertyMap* vMap = dynamic_cast<WipVerticalPropertyMap*>(propMap);
             if (vMap == nullptr)
                 {
                 BeAssert(false);
