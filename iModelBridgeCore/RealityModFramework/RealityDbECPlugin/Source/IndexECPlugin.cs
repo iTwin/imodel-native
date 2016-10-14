@@ -371,7 +371,7 @@ namespace IndexECPlugin.Source
                     {
                     case "PackageRequest":
                         int version;
-                        if ( (operation.ExtendedData.ContainsKey("version")) && (operation.ExtendedData["version"].ToString() == "2") )
+                        if ( (extendedParameters.ContainsKey("version")) && (extendedParameters["version"].ToString() == "2") )
                             {
                             version = 2;
                             }
