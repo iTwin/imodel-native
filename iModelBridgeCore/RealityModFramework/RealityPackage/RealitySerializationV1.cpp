@@ -468,11 +468,13 @@ RealityPackageStatus RealityDataSerializerV1::WritePackageInfo(BeXmlNodeR node, 
     node.AddNamespace(NULL, PACKAGE_V1_NAMESPACE);       // Set as default namespace.
     node.AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
-    // Root children
-    node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
-    node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
-
     // Optional fields, if empty don't add them to the package.
+    if (!package.GetName().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
+
+    if (!package.GetCreationDate().ToString().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
+    
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_PackageOrigin, package.GetOrigin().c_str());
 
