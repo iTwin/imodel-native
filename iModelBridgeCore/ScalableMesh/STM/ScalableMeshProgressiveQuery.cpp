@@ -877,7 +877,7 @@ public:
 
 static QueryProcessor s_queryProcessor;
 
-#define MAX_PRELOAD_OVERVIEW_LEVEL 2
+#define MAX_PRELOAD_OVERVIEW_LEVEL 1
 
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
