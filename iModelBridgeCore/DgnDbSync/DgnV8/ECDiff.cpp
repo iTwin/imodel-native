@@ -1222,7 +1222,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
     diff->Add (DiffNodeId::Multiplicity)->GetValue(direction).SetValue (relationshipConstraint.GetMultiplicity().ToString());
     diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
     diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
-    diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
+    //diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
     if (!relationshipConstraint.GetClasses().empty())
