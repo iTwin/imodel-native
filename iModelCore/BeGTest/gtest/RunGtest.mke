@@ -25,6 +25,7 @@ runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     always:
         -$(rmdirRecursiveCmd) $(runDir)
+
     %return
 %endif
 
