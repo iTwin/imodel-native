@@ -25,4 +25,5 @@ void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ExportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ImportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile);

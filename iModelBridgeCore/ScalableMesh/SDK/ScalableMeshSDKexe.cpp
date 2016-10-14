@@ -135,8 +135,8 @@ namespace ScalableMeshSDKexe
 #if 0 
 
 bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
-	{
-	char coordinateBuffer[300];   
+    {
+    char coordinateBuffer[300];   
     int  NbChars;        
 
     for (size_t PointInd = 0; PointInd < nbOfPoints; PointInd++)
@@ -155,7 +155,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     fflush(s_pPointResultFile);
 
     return true;
-	}
+    }
 #endif
 
         
