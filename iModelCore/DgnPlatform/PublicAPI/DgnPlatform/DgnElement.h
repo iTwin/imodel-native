@@ -1227,6 +1227,10 @@ protected:
     virtual DocumentCP _ToDocumentElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertPropertyArrayItems (uint32_t propertyIndex, uint32_t index, uint32_t size);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ClearPropertyArray (uint32_t propertyIndex);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR, SetPropertyFilter const& filter);
@@ -1473,12 +1477,17 @@ public:
     //! Clear all the user properties on this DgnElement. Also see @ref ElementProperties.
     DGNPLATFORM_EXPORT void ClearUserProperties();
 
+    //! Get the index of the property
+    //! @param[out] index       The index of the property in the ECClass
+    //! @praam[in] accessString The access setring. For simple properties, this is the name of the property. For struct members, this is the dot-separated path to the member.
+    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyIndex(uint32_t& index, Utf8CP accessString);
+
     //! Get the value of a property. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
     //! @param aidx Optional. If the property is an array, you must specify the index of the item to get.
     //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
-    DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx = PropertyArrayIndex()) const {return _GetPropertyValue(value, name, aidx);}
+    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx = PropertyArrayIndex()) const;
 
     //! Set the value of a property. 
     //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
@@ -1487,15 +1496,42 @@ public:
     //! @param name The name of the property
     //! @param aidx Optional. If the property is an array, you must specify the index of the item to set.
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
-    DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex()) {return _SetPropertyValue(name, value, aidx);}
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex());
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
     //! @param instance The source of the properties that are to be copied to this element
     //! @param filter   Optional. The properties to exclude.
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter 
-                                                     = SetPropertyFilter(SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping)) 
-        {return _SetPropertyValues(instance, filter);}
+                                                     = SetPropertyFilter(SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping));
+
+    //! Given a property index, will insert size number of empty array items at the given index
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] index    The starting index of the array at which to insert the new items
+    //! @param[in] size The number of empty array items to insert
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    //! @see GetPropertyIndex
+    DGNPLATFORM_EXPORT DgnDbStatus InsertPropertyArrayItems(uint32_t propertyIndex, uint32_t index, uint32_t size);
+
+    //! Given a property index and an array index, will remove a single array item
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] index    The index of the item to remove
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    //! @see GetPropertyIndex
+    DGNPLATFORM_EXPORT DgnDbStatus RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index);
+
+    //! Given a property index, will add size number of empty array items to the end of the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] size The number of empty array items to add
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    //! @see GetPropertyIndex
+    DGNPLATFORM_EXPORT DgnDbStatus AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size);
+
+    //! Given a property index, removes all array items from the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    //! @see GetPropertyIndex
+    DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
 
     //! @}
 };

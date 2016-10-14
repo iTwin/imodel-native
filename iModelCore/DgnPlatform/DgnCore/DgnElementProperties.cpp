@@ -12,25 +12,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementR el) 
-    : m_element(el), m_eclass(el.GetElementClass()), m_readOnly(false)
-    {
-    AddRef(); // protect against somebody else doing AddRef + Release and deleting this
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementCR el) 
-    : m_element(const_cast<DgnElement&>(el)), m_eclass(el.GetElementClass()), m_readOnly(true)
-    {
-    AddRef(); // protect against somebody else doing AddRef + Release and deleting this
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ElementECInstanceAdapter::ToECObjectsStatus(DgnDbStatus status)
+static ECObjectsStatus toECObjectsStatus(DgnDbStatus status)
     {
     switch (status)
         {
@@ -44,7 +26,7 @@ ECObjectsStatus ElementECInstanceAdapter::ToECObjectsStatus(DgnDbStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECInstanceAdapter::ToDgnDbWriteStatus(ECObjectsStatus status)
+static DgnDbStatus toDgnDbWriteStatus(ECObjectsStatus status)
     {
     switch (status)
         {
@@ -54,6 +36,24 @@ DgnDbStatus ElementECInstanceAdapter::ToDgnDbWriteStatus(ECObjectsStatus status)
         }
 
     return DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementR el) 
+    : m_element(el), m_eclass(el.GetElementClass()), m_readOnly(false)
+    {
+    AddRef(); // protect against somebody else doing AddRef + Release and deleting this
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementCR el) 
+    : m_element(const_cast<DgnElement&>(el)), m_eclass(el.GetElementClass()), m_readOnly(true)
+    {
+    AddRef(); // protect against somebody else doing AddRef + Release and deleting this
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,7 +77,7 @@ ECObjectsStatus ElementECInstanceAdapter::_GetValue (ECValueR v, uint32_t proper
     {
     DgnElement::PropertyArrayIndex ai(useArrayIndex, arrayIndex);
     auto stat = m_element.GetPropertyValue(v, GetPropName(propertyIndex).c_str(), ai);
-    return ToECObjectsStatus(stat);
+    return toECObjectsStatus(stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,7 +92,7 @@ ECObjectsStatus ElementECInstanceAdapter::_SetValue (uint32_t propertyIndex, ECV
         }
     DgnElement::PropertyArrayIndex ai(useArrayIndex, arrayIndex);
     auto stat = m_element.SetPropertyValue(GetPropName(propertyIndex).c_str(), v, ai);
-    return ToECObjectsStatus(stat);
+    return toECObjectsStatus(stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,7 +290,7 @@ DgnDbStatus ElementECInstanceAdapter::CopyPropertiesFrom(ECValuesCollectionCR so
                 if (!filter._IgnoreErrors() && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
                     {
                     BeDataAssert(false);
-                    return ToDgnDbWriteStatus(ecStatus);
+                    return toDgnDbWriteStatus(ecStatus);
                     }
                 }
             }
@@ -1153,3 +1153,81 @@ DgnDbStatus DgnElement::SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP 
         return status;
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_InsertPropertyArrayItems (uint32_t propertyIndex, uint32_t index, uint32_t size)
+    {
+    // Only auto-handled properties can be arrays
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    if (!ecPropAccess.IsValid())
+        return DgnDbStatus::BadArg;
+    return toDgnDbWriteStatus(ecPropAccess._InsertArrayElements(propertyIndex, index, size));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size)
+    {
+    // Only auto-handled properties can be arrays
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    if (!ecPropAccess.IsValid())
+        return DgnDbStatus::BadArg;
+    return toDgnDbWriteStatus(ecPropAccess._AddArrayElements(propertyIndex, size));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index)
+    {
+    // Only auto-handled properties can be arrays
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    if (!ecPropAccess.IsValid())
+        return DgnDbStatus::BadArg;
+    return toDgnDbWriteStatus(ecPropAccess._RemoveArrayElement(propertyIndex, index));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_ClearPropertyArray (uint32_t propertyIndex)
+    {
+    // Only auto-handled properties can be arrays
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    if (!ecPropAccess.IsValid())
+        return DgnDbStatus::BadArg;
+    return toDgnDbWriteStatus(ecPropAccess._ClearArray(propertyIndex));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GetPropertyIndex(uint32_t& index, Utf8CP accessString)
+    {
+    auto& classLayout = GetElementClass()->GetDefaultStandaloneEnabler()->GetClassLayout();
+    return toDgnDbWriteStatus(classLayout.GetPropertyIndex(index, accessString));
+    }
+
+DgnDbStatus DgnElement::SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter) 
+    {return _SetPropertyValues(instance, filter);}
+
+DgnDbStatus DgnElement::InsertPropertyArrayItems(uint32_t propertyIndex, uint32_t index, uint32_t size)
+    {return _InsertPropertyArrayItems(propertyIndex, index, size);}
+
+DgnDbStatus DgnElement::RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index)
+    {return _RemovePropertyArrayItem(propertyIndex, index);}
+
+DgnDbStatus DgnElement::AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size)
+    {return _AddPropertyArrayItems(propertyIndex, size);}
+
+DgnDbStatus DgnElement::ClearPropertyArray(uint32_t propertyIndex)
+    {return _ClearPropertyArray(propertyIndex);}
+
+DgnDbStatus DgnElement::GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx) const 
+    {return _GetPropertyValue(value, name, aidx);}
+
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx)
+    {return _SetPropertyValue(name, value, aidx);}

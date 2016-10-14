@@ -124,8 +124,6 @@ public:
     ElementECInstanceAdapter(DgnElementR);
     ElementECInstanceAdapter(DgnElementCR el);
 
-    static ECObjectsStatus ToECObjectsStatus(DgnDbStatus);
-    static DgnDbStatus ToDgnDbWriteStatus(ECObjectsStatus);
     Utf8String GetPropName(uint32_t index) const;
     ECN::ClassLayoutCR GetClassLayout() const {return m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();}
     bool ArePropertiesEqualTo(ECValuesCollectionCR expected);
