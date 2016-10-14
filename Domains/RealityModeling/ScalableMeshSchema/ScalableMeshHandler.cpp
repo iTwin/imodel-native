@@ -705,7 +705,7 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
-    {    
+    {       
     if (m_smPtr == 0 && !m_tryOpen)
         {
         //BeFileName smFileName(((this)->m_properties).m_fileId);
@@ -726,6 +726,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
     nextDrawingInfoPtr->m_smPtr = m_smPtr.get();
     nextDrawingInfoPtr->m_currentQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);
+    nextDrawingInfoPtr->m_terrainQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFFFFFF | 0xAFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+
+    
+
     bvector<bvector<DPoint3d>> coverages;
     m_smPtr->GetAllCoverages(coverages);
 
@@ -740,9 +744,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                 {
                 auto smPtr = m_smPtr->GetTerrainSM();
                 m_progressiveQueryEngine->InitScalableMesh(smPtr);
-                }
-            nextDrawingInfoPtr->m_hasCoverage = true;
-
+                }            
 
             for (auto& coverageVal : coverages)
                 {
@@ -755,7 +757,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             nextDrawingInfoPtr->m_coverageClips = clipFromCoverageSet;
             }
 
+        nextDrawingInfoPtr->m_hasCoverage = true;
         }
+
     if ((m_currentDrawingInfoPtr != nullptr) &&
         (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic))
         {
@@ -879,7 +883,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (!clipFromCoverageSet.empty())
         {
         m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
-        terrainQueryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) | 0xAFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+        terrainQueryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFFFFFF | 0xAFFF);//nextDrawingInfoPtr->GetViewNumber();                 
         m_currentDrawingInfoPtr->m_terrainQuery = terrainQueryId;
         bvector<bool> clips;
         /*NEEDS_WORK_SM : Get clips
