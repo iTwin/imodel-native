@@ -648,6 +648,45 @@ struct WipPropertyMapColumnDispatcher  final: IPropertyMapDispatcher
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
+// Search PropertyMap with a given type
+//+===============+===============+===============+===============+===============+======
+struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
+    {
+    private:
+        mutable std::vector<WipPropertyMap const*> m_propertyMaps;
+        PropertyMapType m_filter;
+    private:
+        DispatcherFeedback Record(PropertyMapType mapType, WipPropertyMap const& propertyMap) const
+            {
+            if (Enum::Contains(m_filter, mapType))
+                m_propertyMaps.push_back(&propertyMap);
+
+            return DispatcherFeedback::Next;
+            }
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override
+            {
+            return Record(mapType, propertyMap);
+            }
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override
+            {
+            return Record(mapType, propertyMap);
+            }
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override
+            {
+            return Record(mapType, propertyMap);
+            }
+
+    public:
+        WipPropertyMapTypeDispatcher(PropertyMapType filter = PropertyMapType::All)
+            :m_filter(filter)
+            {}
+        ~WipPropertyMapTypeDispatcher() {}
+        void Reset() { m_propertyMaps.clear(); }
+        std::vector<WipPropertyMap const*> const& ResultSet() const { return m_propertyMaps; }        
+      
+    };
+//=======================================================================================
+// @bsiclass                                                   Affan.Khan          07/16
 // Allow to collect columns from property maps
 //+===============+===============+===============+===============+===============+======
 struct WipPropertyMapSaveDispatcher  final : IPropertyMapDispatcher

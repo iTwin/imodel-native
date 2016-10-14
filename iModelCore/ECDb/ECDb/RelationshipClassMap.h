@@ -184,9 +184,9 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
 
-        WipPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
-        WipPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
-        RelConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
+        WipConstraintECInstanceIdIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
+        WipConstraintECInstanceIdIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
+        WipConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
 
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
