@@ -36,7 +36,19 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct SectionDrawing; struct Sheet; struct Definition; struct PhysicalType; struct GraphicalType2d; struct Subject; struct Role;};
+namespace dgn_ElementHandler 
+{
+    struct Element; 
+    struct InformationCarrier; 
+    struct InformationContent; struct GroupInformation; struct Subject;
+    struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
+    struct Definition; struct PhysicalType; struct GraphicalType2d; 
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
+    struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
+    struct Geometric3d; struct Physical; struct SpatialLocation; 
+    struct Role;
+};
+
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -459,6 +471,7 @@ public:
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
+        void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
         void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnElement created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
@@ -1050,22 +1063,22 @@ protected:
     //! Subclasses may override this method to control which DgnModel types are valid to model this element.
     //! @param[in] model the new DgnModel
     //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_OnModelInsert, forwarding its status.
-    virtual DgnDbStatus _OnModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+    //! @note If you override this method, you @em must call T_Super::_OnSubModelInsert, forwarding its status.
+    virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
 
     //! Called after this element has been <i>modeled</i> by a new DgnModel.
-    //! @note If you override this method, you @em must call T_Super::_OnModelInserted.
-    virtual void _OnModelInserted(DgnModelCR model) const {}
+    //! @note If you override this method, you @em must call T_Super::_OnSubModelInserted.
+    virtual void _OnSubModelInserted(DgnModelCR model) const {}
 
     //! Called when a delete of a DgnModel modeling this element is in progress. Subclasses may override this method to block the deletion.
     //! @param[in] model the DgnModel being deleted
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_OnModelDelete, forwarding its status.
-    virtual DgnDbStatus _OnModelDelete(DgnModelCR model) const {return DgnDbStatus::Success;}
+    //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
+    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const {return DgnDbStatus::Success;}
 
     //! Called after a delete of a DgnModel modeling this element has completed.
-    //! @note If you override this method, you @em must call T_Super::_OnModelDeleted.
-    virtual void _OnModelDeleted(DgnModelCR model) const {}
+    //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.
+    virtual void _OnSubModelDeleted(DgnModelCR model) const {}
 
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
@@ -1307,9 +1320,15 @@ public:
 
     //! Get the DgnModelId of this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
-
     //! Get the DgnModel of this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
+
+    //! Get the (optional) DgnModelId of the DgnModel that is modeling this DgnElement.  That is, the DgnModel that is beneath this element in the hierarchy.
+    //! @return Invalid if model does not exist
+    DGNPLATFORM_EXPORT DgnModelId GetSubModelId() const;
+    //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
+    //! @return Invalid if model does not exist
+    DGNPLATFORM_EXPORT DgnModelPtr GetSubModel() const;
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
@@ -2247,6 +2266,143 @@ protected:
 };
 
 //=======================================================================================
+//! An InformationPartitionElement provides a starting point for a DgnModel hierarchy
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationPartitionElement : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationPartitionElement, InformationContentElement);
+    friend struct dgn_ElementHandler::InformationPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler);
+    explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Get the description of this InformationPartitionElement
+    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
+    //! Set the description of this InformationPartitionElement
+    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+};
+
+//=======================================================================================
+//! A DefinitionPartition provides a starting point for a DefinitionModel hierarchy
+//! @note DefinitionPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::DefinitionPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit DefinitionPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new DefinitionPartition
+    //! @param[in] parentSubject The new DefinitionPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this DefinitionPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static DefinitionPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new DefinitionPartition
+    //! @param[in] parentSubject The new DefinitionPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this DefinitionPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static DefinitionPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! A DocumentPartition provides a starting point for a DocumentListModel hierarchy
+//! @note DocumentPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DocumentPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DocumentPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::DocumentPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit DocumentPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new DocumentPartition
+    //! @param[in] parentSubject The new DocumentPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this DocumentPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static DocumentPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new DocumentPartition
+    //! @param[in] parentSubject The new DocumentPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this DocumentPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static DocumentPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! A GroupInformationPartition provides a starting point for a GroupInformationModel hierarchy
+//! @note GroupInformationPartition elements only reside in the RepositoryModel
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GroupInformationPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::GroupInformationPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit GroupInformationPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new GroupInformationPartition
+    //! @param[in] parentSubject The new GroupInformationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this GroupInformationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static GroupInformationPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new GroupInformationPartition
+    //! @param[in] parentSubject The new GroupInformationPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this GroupInformationPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static GroupInformationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! A PhysicalPartition provides a starting point for a PhysicalModel hierarchy
+//! @note PhysicalPartition elements only reside in the RepositoryModel
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::PhysicalPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit PhysicalPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new PhysicalPartition
+    //! @param[in] parentSubject The new PhysicalPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this PhysicalPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static PhysicalPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new PhysicalPartition
+    //! @param[in] parentSubject The new PhysicalPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this PhysicalPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
@@ -2270,8 +2426,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationReferenceElement
     friend struct dgn_ElementHandler::Subject;
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
@@ -2285,6 +2442,20 @@ public:
 
     Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
     void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+};
+
+//=======================================================================================
+//! A GroupInformationElement resides in (and only in) a GroupInformationModel.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, InformationReferenceElement);
+    friend struct dgn_ElementHandler::GroupInformation;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -2507,7 +2678,9 @@ public:
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
     //! Get the RepositoryLink for @b this DgnDb
-    DgnElementId GetRepositoryLinkId() const {return DgnElementId((uint64_t)16LL);}
+    DgnElementId GetRepositoryLinkId() const {return DgnElementId((uint64_t)15LL);}
+    //! Get the DgnElementId of the Dictionary partition for @b this DgnDb
+    DgnElementId GetDictionaryPartitionId() const {return DgnElementId((uint64_t)16LL);}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.

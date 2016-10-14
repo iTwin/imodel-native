@@ -225,11 +225,7 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
 
     m_testDb->SaveChanges();
 
-    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
-    EXPECT_TRUE(csModel.IsValid());
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
 
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
@@ -629,14 +625,8 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
-    EXPECT_TRUE(csModel.IsValid());
-
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
-
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
     ChangeSummary changeSummary(*m_testDb);
@@ -866,12 +856,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
-    EXPECT_TRUE(csModel.IsValid());
-
+    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("ChangeSummaryModel"));
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);

@@ -637,9 +637,7 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    PhysicalModelPtr targetModel = PhysicalModel::Create(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode(modelCode));
-    EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(modelCode));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 

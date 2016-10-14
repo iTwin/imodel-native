@@ -27,14 +27,7 @@ struct ElementDisplayProperties : public DgnDbTestFixture
 TEST_F (ElementDisplayProperties, SetGradient)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE (model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -57,7 +50,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     gradient->SetKeys(2, keyColors, keyValues);
     ep.SetGradient(gradient.get());
 
-    DgnElementCPtr pE1 = InsertElement(ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
@@ -89,14 +82,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 TEST_F(ElementDisplayProperties, SetDisplayPattern)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE(model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -108,7 +94,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     ep.SetPatternParams(pattern.get());
     EXPECT_TRUE(NULL != ep.GetPatternParams());
 
-    auto keyE1 = InsertElement(ep, m3id);
+    auto keyE1 = InsertElement(ep, model->GetModelId());
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
 
@@ -137,19 +123,13 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 TEST_F (ElementDisplayProperties, SetTransparency)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE (model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetTransparency(0.5);
 
-    DgnElementCPtr pE1 = InsertElement( ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
@@ -175,18 +155,12 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 TEST_F (ElementDisplayProperties, SetCategory)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE (model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
-    DgnElementCPtr pE1 = InsertElement( ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
@@ -215,20 +189,14 @@ TEST_F (ElementDisplayProperties, SetCategory)
 TEST_F (ElementDisplayProperties, SetDisplayParams)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE (model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
     ep.SetDisplayPriority(2);
 
-    DgnElementCPtr pE1 = InsertElement( ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
@@ -256,13 +224,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 TEST_F (ElementDisplayProperties, FillProperties)
     {
     SetupSeedProject();
-
-    auto seedModelId3 = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
-    ASSERT_TRUE (model3 != nullptr);
-    model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(TEST_NAME));
 
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -270,7 +232,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
     ep.SetFillColor(ColorDef::Red());
     ep.SetFillTransparency(0.8);
 
-    DgnElementCPtr pE1 = InsertElement(ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(ep, model->GetModelId());
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
