@@ -1012,21 +1012,21 @@ namespace IndexECPlugin.Source.Helpers
                     dbCommand.Parameters.Add(param2);
 
                     DbParameter param3 = dbCommand.CreateParameter();
-                    param0.DbType = DbType.String;
-                    param0.ParameterName = "@param3";
-                    param0.Value = version;
+                    param3.DbType = DbType.String;
+                    param3.ParameterName = "@param3";
+                    param3.Value = (version == null) ? (object) DBNull.Value : (object) version;
                     dbCommand.Parameters.Add(param3);
 
                     DbParameter param4 = dbCommand.CreateParameter();
-                    param0.DbType = DbType.String;
-                    param0.ParameterName = "@param4";
-                    param0.Value = requestor;
+                    param4.DbType = DbType.String;
+                    param4.ParameterName = "@param4";
+                    param4.Value = (requestor == null) ? (object) DBNull.Value : (object) requestor;
                     dbCommand.Parameters.Add(param4);
 
                     DbParameter param5 = dbCommand.CreateParameter();
-                    param0.DbType = DbType.String;
-                    param0.ParameterName = "@param5";
-                    param0.Value = requestorVersion;
+                    param5.DbType = DbType.String;
+                    param5.ParameterName = "@param5";
+                    param5.Value = (requestorVersion == null) ? (object) DBNull.Value : (object) requestorVersion;
                     dbCommand.Parameters.Add(param5);
 
                     dbCommand.ExecuteNonQuery();
