@@ -348,6 +348,124 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore)
+    {
+    assert(pi_pDataStore != nullptr);
+
+    if (!IsLoaded())
+        Load();
+    //auto* node = this;
+    RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+        {
+#ifndef VANCOUVER_API
+        if (node->m_nodeHeader.m_nodeCount > 0)
+            {
+            // Gather all data in one place
+            AllDataTypes3DTilesBase nodeData;
+            uint64_t nodeDataSize = 0;
+
+            // Points
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+            if (pointsPtr->size() != 0)
+                {
+                nodeData.m_pointData = const_cast<DPoint3d*>(&(*pointsPtr)[0]);
+                nodeDataSize += pointsPtr->size() * sizeof(DPoint3d);
+                }
+
+            // Indices
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+
+            if (indicePtr.IsValid() && indicePtr->size() > 0)
+                {
+                nodeData.m_indicesData = const_cast<int*>(&(*indicePtr)[0]);
+                nodeDataSize += indicePtr->size() * sizeof(int);
+                }
+
+            if (node->m_nodeHeader.m_isTextured)
+                {
+                // UVs
+                RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+
+                if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                    {
+                    nodeData.m_uvs = const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]);
+                    nodeDataSize += uvCoordsPtr->size() * sizeof(DPoint2d);
+                    }
+
+                // UVIndices
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+                if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
+                    {
+                    nodeData.m_indicesData = const_cast<int*>(&(*uvIndicePtr)[0]);
+                    nodeDataSize += uvIndicePtr->size() * sizeof(int);
+                    }
+
+                // texture
+                ISMTextureDataStorePtr textureDataStore;
+                bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
+                assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
+                auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
+                bvector<Byte> textureData(countTextureData);
+                if (countTextureData > 0)
+                    {
+                    size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
+                    nodeData.m_texture = textureData.data();
+                    nodeDataSize += newCount;
+                    }
+                }
+
+            // Store data
+            ISMAllDataTypes3DTilesDataStorePtr tileStore;
+            bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
+            assert(result == true); // problem getting the indice data store for streaming
+
+            tileStore->StoreBlock(&nodeData, nodeDataSize, node->GetBlockID());
+            }
+
+        // Store header
+        pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
+
+#else
+        assert(false && "Make this compile on Vancouver!");
+#endif
+
+        SetThreadAvailableAsync(threadId);
+        }, this, std::placeholders::_1));
+    auto loadNodeHelper = [](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+        {
+        //node->LoadTreeNode(nLoaded, level, headersOnly);
+        if (!node->IsLoaded())
+            node->Load();
+        SetThreadAvailableAsync(threadId);
+        };
+    if (m_pSubNodeNoSplit != nullptr)
+        {
+        RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore);
+        }
+    else
+        {
+        for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+            {
+            if (m_apSubNodes[indexNode] != nullptr)
+                {
+                RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNode], std::placeholders::_1));
+                }
+            }
+        for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+            {
+            if (m_apSubNodes[indexNode] != nullptr)
+                {
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore);
+                }
+            }
+        }
+    if (m_nodeHeader.m_level == 0)
+        WaitForThreadStop();
+    }
+
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore)
     {
     assert(pi_pDataStore != nullptr);
@@ -4426,11 +4544,26 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
     }
 
 /**----------------------------------------------------------------------------
+Publish Cesium ready format
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
+    {
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress, false, false, L"", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
+
+    //this->SaveMasterHeaderToCloud(pDataStore);
+    // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
+
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore);
+
+    return SUCCESS;
+    }
+
+/**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
     {
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, SMStreamingStore<EXTENT>::FormatType::Binary, pi_pCompress);
 
     this->SaveMasterHeaderToCloud(pDataStore);
 

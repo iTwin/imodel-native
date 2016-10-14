@@ -36,13 +36,21 @@ class DataSourceAccount;
 
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {
+    public:
+        enum FormatType
+            {
+            Binary,
+            Json,
+            Cesium3DTiles
+            };
     private : 
         
+        bool m_use_node_header_grouping;
+        bool m_use_virtual_grouping;
+        FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
         WString m_rootDirectory;        
         DataSourceURL m_pathToHeaders;
-        bool m_use_node_header_grouping;
-        bool m_use_virtual_grouping;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
 
@@ -63,7 +71,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
     public : 
     
-        SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
        
         virtual ~SMStreamingStore();
 
@@ -71,10 +79,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         DataSourceAccount *GetDataSourceAccount(void) const;
 
-        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);        
+        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
+
+        void SetDataFormatType(FormatType formatType);
 
         void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
-            
+
+        void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
+
         void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);   
                    
         //Inherited from ISMDataStore
@@ -110,9 +122,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
+        virtual bool GetNodeDataStore(ISMAllDataTypes3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
         {
-        return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
+        return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
         }
         //Inherited from ISMDataStore - End
                              

@@ -549,6 +549,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
+    void         Publish3DTile(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
+
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
     virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
@@ -719,6 +721,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
+        StatusInt           Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+
         StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);

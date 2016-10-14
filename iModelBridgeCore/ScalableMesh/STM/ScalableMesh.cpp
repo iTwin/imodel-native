@@ -2063,7 +2063,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         }
     else if (server == SMCloudServerType::LocalDiskCURL)
         {
-        // Setup streaming stores to use local disk (relative to attached stm file location)
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
         s_stream_from_disk = true;
         s_stream_using_curl = true;
 
@@ -2076,7 +2076,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         {
         assert(server == SMCloudServerType::LocalDisk);
 
-        // Setup streaming stores to use local disk (relative to attached stm file location)
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
         s_stream_from_disk = true;
 
         const auto smFileName = BeFileName(this->GetPath());
@@ -2087,7 +2087,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     
     //s_stream_from_grouped_store = false;
 
-    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
+    //return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
+    return m_scmIndexPtr->Publish3DTiles(&this->GetDataSourceManager(), path, true);
     }
 
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)

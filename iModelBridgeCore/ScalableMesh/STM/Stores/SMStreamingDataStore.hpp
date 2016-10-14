@@ -24,11 +24,12 @@ USING_NAMESPACE_IMAGEPP
 
 
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
     : SMSQLiteSisterFile(nullptr),
      m_pathToHeaders(headers_path.c_str()),
      m_use_node_header_grouping(areNodeHeadersGrouped),
-     m_use_virtual_grouping(isVirtualGrouping)
+     m_use_virtual_grouping(isVirtualGrouping),
+     m_formatType(formatType)
     {
     InitializeDataSourceAccount(dataSourceManager, path);
 
@@ -509,6 +510,70 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
     po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
+    {
+    (void)header;
+    (void)blockID;
+
+    Json::Value node;
+
+    //BeFileName  binaryDataFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath(m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
+    //
+    //// .b3dm file
+    //Json::Value sceneJson(Json::objectValue);
+    //
+    //ProcessMeshes(sceneJson);
+    //
+    //Utf8String sceneStr = Json::FastWriter().write(sceneJson);
+    //
+    //Json::Value batchTableJson(Json::objectValue);
+    //m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb());
+    //Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
+    //uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+    //
+    //m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
+    //
+    //// GLTF header = 5 32-bit values
+    //static const size_t s_gltfHeaderSize = 20;
+    //static const char s_gltfMagic[] = "glTF";
+    //static const uint32_t s_gltfVersion = 1;
+    //static const uint32_t s_gltfSceneFormat = 0;
+    //uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
+    //uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
+    //
+    //// B3DM header = 6 32-bit values
+    //// Header immediately followed by batch table json
+    //static const size_t s_b3dmHeaderSize = 24;
+    //static const char s_b3dmMagic[] = "b3dm";
+    //static const uint32_t s_b3dmVersion = 1;
+    //uint32_t b3dmNumBatches = m_batchIds.Count();
+    //uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
+    //
+    //std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
+    //AppendUInt32(s_b3dmVersion);
+    //AppendUInt32(b3dmLength);
+    //AppendUInt32(batchTableStrLen);
+    //AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
+    //AppendUInt32(b3dmNumBatches);
+    //std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
+    //
+    //std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
+    //AppendUInt32(s_gltfVersion);
+    //AppendUInt32(gltfLength);
+    //AppendUInt32(sceneStrLength);
+    //AppendUInt32(s_gltfSceneFormat);
+    //
+    //std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
+    //if (!m_binaryData.empty())
+    //    std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
+    //
+    //std::fclose(m_outputFile);
+    //m_outputFile = NULL;
+
+    auto utf8Node = Json::FastWriter().write(node);
+    po_pBinaryData.reset(new Byte[utf8Node.size()]);
+    memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
+    }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
     {
@@ -657,8 +722,30 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     {
     uint32_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
-    SerializeHeaderToBinary(header, headerData, headerSize);
-    //SerializeHeaderToJSON(header, blockID, block);
+    switch (m_formatType)
+        {
+        case FormatType::Binary:
+            {
+            SerializeHeaderToBinary(header, headerData, headerSize);
+            break;
+            }
+        case FormatType::Json:
+            {
+            Json::Value block;
+            SerializeHeaderToJSON(header, blockID, block);
+            auto utf8Block = Json::FastWriter().write(block);
+            headerData.reset(new Byte[utf8Block.size()]);
+            memcpy(headerData.get(), utf8Block.data(), utf8Block.size());
+            break;
+            }
+        case FormatType::Cesium3DTiles:
+            {
+            SerializeHeaderToCesium3DTile(header, blockID, headerData, headerSize);
+            break;
+            }
+        default:
+            assert(false); // unknown format type for streaming
+        }
 
     DataSourceURL dataSourceURL = m_pathToHeaders;
     dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin"));
@@ -1020,6 +1107,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
     return false;    
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMAllDataTypes3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMStreamingNodeDataStore<AllDataTypes3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::AllDataTypes3DTiles, nodeHeader);
+    return true;
+    }
+
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
     {
     if (this->GetDataSourceAccount() == nullptr)
@@ -1046,6 +1139,12 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
     m_dataSourceAccount = dataSourceAccount;
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatType formatType)
+    {
+    m_formatType = formatType;
+    }
+
+
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
@@ -1070,6 +1169,8 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             break;
         case SMStoreDataType::Texture:
             m_dataSourceURL = L"textures";
+            break;
+        case SMStoreDataType::AllDataTypes3DTiles:
             break;
         default:
             assert(!"Unkown data type for streaming");

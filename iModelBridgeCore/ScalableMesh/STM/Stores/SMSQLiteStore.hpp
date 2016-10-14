@@ -182,6 +182,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTri
     return true;    
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMAllDataTypes3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {
+    dataStore = new SMSQLiteNodeDataStore<AllDataTypes3DTilesBase, EXTENT>(SMStoreDataType::AllDataTypes3DTiles, nodeHeader, m_smSQLiteFile);
+    return true;
+    }
 
 
 template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
@@ -261,7 +266,7 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);        
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::AllDataTypes3DTiles);
 
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
@@ -364,7 +369,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::AllDataTypes3DTiles);
     
     return GetBlockDataCount(blockID, m_dataType);    
     }
@@ -437,7 +442,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
 template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::AllDataTypes3DTiles);
 
     ModifyBlockDataCount(blockID, countDelta, m_dataType);
     }

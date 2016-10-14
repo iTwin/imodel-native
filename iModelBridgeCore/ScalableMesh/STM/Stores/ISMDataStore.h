@@ -49,6 +49,7 @@ enum class SMStoreDataType
     BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
+    AllDataTypes3DTiles,
     MeshParts,
     Metadata,
     //Not persisted data type
@@ -148,6 +149,14 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
+struct AllDataTypes3DTilesBase
+    {
+    DPoint3d* m_pointData;
+    int32_t*  m_indicesData;
+    Byte*     m_texture;
+    DPoint2d* m_uvs;
+    };
+
 typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>>      ISM3DPtDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DifferenceSet>> ISDiffSetDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
@@ -158,6 +167,7 @@ typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<AllDataTypes3DTilesBase>>  ISMAllDataTypes3DTilesDataStorePtr;
 
 
 
@@ -222,5 +232,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
-                                            
+
+        virtual bool GetNodeDataStore(ISMAllDataTypes3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+
     };

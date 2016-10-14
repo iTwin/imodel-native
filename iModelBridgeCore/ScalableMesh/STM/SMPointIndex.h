@@ -1051,6 +1051,11 @@ protected:
     -----------------------------------------------------------------------------*/
     void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
+    /**----------------------------------------------------------------------------
+    Publishes node header and point data in Cesium 3D tile format.
+    -----------------------------------------------------------------------------*/
+    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
+
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
         
