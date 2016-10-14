@@ -1479,7 +1479,8 @@ public:
 
     //! Get the index of the property
     //! @param[out] index       The index of the property in the ECClass
-    //! @praam[in] accessString The access setring. For simple properties, this is the name of the property. For struct members, this is the dot-separated path to the member.
+    //! @param[in] accessString The access setring. For simple properties, this is the name of the property. For struct members, this is the dot-separated path to the member.
+    //! @return non-zero error status if accessString does not identify a property.
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyIndex(uint32_t& index, Utf8CP accessString);
 
     //! Get the value of a property. Also see @ref ElementProperties.
