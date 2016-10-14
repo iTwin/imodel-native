@@ -128,6 +128,11 @@ struct SmCachedDisplayMeshData
             textureID = m_textureID;
             return true;
             }
+
+        IScalableMeshDisplayCacheManager* GetDisplayCacheManager() const
+            {
+            return m_displayCacheManagerPtr.get();
+            }
     };
 
 struct SmCachedDisplayTextureData
@@ -175,6 +180,11 @@ struct SmCachedDisplayTextureData
         SmCachedDisplayTexture* GetCachedDisplayTexture() const
             {
             return m_cachedDisplayTexture;
+            }
+
+        IScalableMeshDisplayCacheManager* GetDisplayCacheManager() const
+            {
+            return m_displayCacheManagerPtr.get();
             }
     };
 

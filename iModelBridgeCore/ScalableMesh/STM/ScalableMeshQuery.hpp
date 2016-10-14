@@ -1696,6 +1696,16 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
     return m_cachedDisplayMeshData.IsValid();
     }
 
+template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
+    {
+    if (!m_cachedDisplayMeshData.IsValid()) return false;
+    for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
+        {
+        if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
+        }
+    return true;
+    }
+
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
     assert(IsLoaded() == true);
@@ -1787,7 +1797,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
             for(auto& texId: textureIDs)
                 {
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetDisplayTexture(texId);
-                if (!displayTextureDataPtr.IsValid())
+                if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                     {
                     auto texPtr = meshNode->GetTexturePtr(texId);
                     if (texPtr.IsValid())
@@ -1831,7 +1841,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
             {
 #endif
             RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetSingleDisplayTexture();
-            if (!displayTextureDataPtr.IsValid())
+            if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                 {
                 auto texPtr = meshNode->GetTexturePtr();
                 if (texPtr.IsValid())

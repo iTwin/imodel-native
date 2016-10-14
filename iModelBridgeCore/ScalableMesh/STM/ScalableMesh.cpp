@@ -48,6 +48,7 @@ extern bool   GET_HIGHEST_RES;
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
+#include <ScalableMesh/ScalableMeshLib.h>
 //#include "CGALEdgeCollapse.h"
 
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
@@ -465,7 +466,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     StatusInt&              status)
 {
     status = BSISUCCESS;
-
+    if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
     if(0 != _waccess(filePath, 04))
     {
         status = BSISUCCESS;
@@ -736,6 +737,10 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
     IScalableMeshPtr scmP(scmPtr);
     scmP->SetEditFilesBasePath(baseEditsFilePath);
     status = scmPtr->Open();
+    if (status == BSISUCCESS)
+        {
+        ScalableMeshLib::GetHost().RegisterScalableMesh(filePath, scmP);
+        }
     return (BSISUCCESS == status ? scmP : 0);
 }
 
@@ -941,6 +946,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+    ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
     m_viewedNodes.clear();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
         ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
