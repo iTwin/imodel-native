@@ -45,13 +45,13 @@ struct RasterTestInfo
         Utf8StringCR GetComputerName() const { return m_computerName; }
 
     private:
+        Utf8String GetImagePPSourcePath() const;
+
         BeFileName m_rasterPath;
         BeFileName m_infoPath;
         Utf8String m_md5;
         uint64_t   m_exportDuration;
         Utf8String m_buildType;
-        Utf8String m_creationDate;
-
         Utf8String m_computerName;
     };
 

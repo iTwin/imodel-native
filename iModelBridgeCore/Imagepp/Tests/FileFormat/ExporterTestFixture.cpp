@@ -58,6 +58,21 @@ RasterTestInfo::RasterTestInfo(BeFileNameCR rasterPath)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+Utf8String RasterTestInfo::GetImagePPSourcePath() const
+    {
+    Utf8String sourcePath = __FILE__;
+    sourcePath.ToLower();
+    auto result = sourcePath.find("\\imagepp\\");
+    BeAssert(std::string::npos != result);
+    if (std::string::npos != result)
+        sourcePath.resize(result + strlen("\\imagepp\\"));
+
+    return sourcePath;
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2016
 //----------------------------------------------------------------------------------------
 bool RasterTestInfo::Load()
@@ -76,11 +91,18 @@ bool RasterTestInfo::Load()
     if (!Json::Reader::Parse(infoString, value))
         return false;
 
-    m_creationDate = value["Date"].asString();
-    m_computerName = value["ComputerName"].asString();
-    m_buildType = value["BuildType"].asString();
-    m_exportDuration = value["DurationMs"].asUInt64();
-    m_md5 = value["MD5"].asString();
+    // Run info
+    auto& vRun = value["Run"];
+    // runDate = vRun["Date"].asString();
+    m_computerName = vRun["ComputerName"].asString();
+    m_exportDuration = vRun["DurationMs"].asUInt64();
+    m_md5 = vRun["MD5"].asString();
+
+    // Build info
+    auto& vBuild = value["Build"];
+    // buildDate = vBuild["Date"].asString();
+    m_buildType = vBuild["Type"].asString();
+    // sourcePath = vBuild["Source"].asString();
 
     return true;
     }
@@ -90,15 +112,25 @@ bool RasterTestInfo::Load()
 //----------------------------------------------------------------------------------------
 bool RasterTestInfo::Store()
     {
-    time_t time = (time_t) (BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000.0);   // Convert in second
-    m_creationDate = ctime(&time);
-    
+    time_t time = (time_t) (BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000.0); time;  // Convert in second   
+    Utf8String timeString = ctime(&time);
+    timeString.Trim();
+
     Json::Value value;
-    value["Date"] = m_creationDate;
-    value["ComputerName"] = m_computerName;
-    value["BuildType"] = m_buildType;
-    value["DurationMs"] = m_exportDuration;
-    value["MD5"] = m_md5.c_str();
+
+    // Run info
+    auto& vRun = value["Run"];
+    vRun["Date"] = timeString;
+    vRun["ComputerName"] = m_computerName;
+    vRun["DurationMs"] = m_exportDuration;
+    vRun["MD5"] = m_md5.c_str();
+
+    // Build information
+    auto& vBuild = value["Build"];
+    vBuild["Date"] = __DATE__ " " __TIME__;
+    vBuild["Type"] = m_buildType;
+    vBuild["Source"] = GetImagePPSourcePath();
+
 
     Utf8StringAlias infoString = Json::FastWriter::ToString(value);
 

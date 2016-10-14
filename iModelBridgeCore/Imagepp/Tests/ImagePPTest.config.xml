@@ -41,11 +41,16 @@
              from the output. 'Dir' must point to one level higher than 'FFT' directory-->
         <BaseLine Enable="false" Dir="D:\_ATPBaseLine\">            
             <!-- Validate with checksum -->
+            <!-- *** Not that some file won't binary compare in debug vs release because of double precision error ***
+                Known Issues: 
+                - Binary rasters. Might have one more or less pixel depending on sampling factor.
+                - ErdasImg store palette in doubles so result may differ.            
+            -->
             <Md5 Enable="true"/>  
             <!-- Performance:  -->
             <!-- 'ThresholdMs' : Do not validate duration if the export time is under this threshold -->
-            <!-- 'ToleranceRatio' : Fails when there is more difference than the specified ratio. Use 0.05 for 5% -->
-            <Duration Enable="false" ThresholdMs="100" ToleranceRatio="0.10"/>            
+            <!-- 'ToleranceRatio' : Fails when there is more difference than the specified ratio. Use 0.10 for 10% -->
+            <Duration Enable="true" ThresholdMs="500" ToleranceRatio="0.10"/>            
         </BaseLine>       
         
     </FileFormatTester>        
