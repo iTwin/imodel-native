@@ -234,7 +234,7 @@ DgnTextureId JsonRenderMaterial::TextureMap::Relocate(DgnImportContext& context)
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley     08/2016
+// @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
 static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, JsonRenderMaterial::TextureMap::Units units)
     {
@@ -248,6 +248,71 @@ static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visit
         uvTransform.Multiply (params[i], param);
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     10/2016
+//---------------------------------------------------------------------------------------
+static void computePlanarUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform)
+    {
+    DPoint3dCP  points = visitor.GetPointCP ();
+    DPoint3d    upVector, sideVector, normal;
+
+    if (NULL == visitor.GetNormalCP())
+        normal.CrossProductToPoints (points[0], points[1], points[2]);
+    else
+        normal = *visitor.GetNormalCP();
+
+    normal.Normalize ();
+
+    /* adjust U texture coordinate to be a continuous length starting at the
+       origin.  V coordinate stays the same. This mode assumes Z is up vector. */
+
+    // Flipping the normal puts us in a planar coordinate system consistent with MicroStation's display system.
+    normal.Scale (-1.0);
+
+    /* pick the first vertex normal */
+    sideVector.x =  normal.y;
+    sideVector.y = -normal.x;
+    sideVector.z =  0.0;
+
+    /* if the magnitude of the normal is near zero, the real normal points
+       almost straight up).  In this case, use Y as the up vector in order to
+       match QV */
+
+    if (sideVector.Normalize () < 1e-3)
+        {
+        normal.Init (0.0, 0.0, -1.0);
+        sideVector.Init (1.0, 0.0, 0.0);
+        }
+
+    upVector.NormalizedCrossProduct (sideVector, normal);
+    for (size_t i = 0, count = visitor.NumEdgesThisFace(); i<count; i++)
+        {
+        DPoint2dP   outParam    = params + i;
+        DPoint3d    point       = *(points + i);
+
+        outParam->x = point.DotProduct (sideVector);
+        outParam->y = point.DotProduct (upVector);
+
+        uvTransform.Multiply (*outParam, *outParam);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     10/2016
+//---------------------------------------------------------------------------------------
+static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform)
+    {
+    for (size_t i = 0, count = visitor.NumEdgesThisFace(); i<count; i++)
+        {
+        DPoint3d    point        = *(visitor.GetPointCP() + i);
+        DPoint2dP   outParam    = params + i;
+
+        outParam->Init (point);
+        uvTransform.Multiply (*outParam, *outParam);
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
@@ -267,27 +332,24 @@ BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>
             computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
             return SUCCESS;
 
-#ifdef WIP
         case Render::Material::MapMode::Planar:
             {
-            Int32 const*        normalIndices =visitor.GetClientNormalIndexCP();
-
-            calculateUVTransformFromLayer (patternFaceScale, uvTransform, *this, layer, ignoreLayerTransform);
+            int32_t const*        normalIndices =visitor.GetClientNormalIndexCP();
 
             // We ignore planar mode unless master or sub units for scaleMode (TR# 162118) and facet is planar.
-            if (MapUnits::Relative == layer.GetUnits () || (NULL != visitor.GetNormalCP () && (normalIndices[0] != normalIndices[1] || normalIndices[0] != normalIndices[2])))
-                computeParametricUVParams (&params[0], visitor, patternFaceScale, uvTransform, pTransformToRoot, layer);
+            if (Units::Relative == GetUnits () || (NULL != visitor.GetNormalCP () && (normalIndices[0] != normalIndices[1] || normalIndices[0] != normalIndices[2])))
+                computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
             else
-                computePlanarUVParams (&params[0], visitor, pTransformToRoot, patternFaceScale, uvTransform);
+                computePlanarUVParams (&params[0], visitor, uvTransform);
 
             return SUCCESS;
             }
 
         case Render::Material::MapMode::ElevationDrape:
-            calculateUVTransformFromLayer (patternFaceScale, uvTransform, *this, layer, ignoreLayerTransform);
-            computeElevationDrapeUVParams (&params[0], visitor, pTransformToRoot, *this, patternFaceScale, uvTransform);
+            computeElevationDrapeUVParams (&params[0], visitor, uvTransform);
             return SUCCESS;
 
+#ifdef WIP
         default:
             if (!projectionFromElement)
                 { BeAssert (false); return ERROR; }

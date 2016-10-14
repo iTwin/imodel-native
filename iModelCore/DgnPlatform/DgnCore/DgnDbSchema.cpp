@@ -139,7 +139,7 @@ static DgnVersion getCurrentSchemaVerion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importBisCoreSchema(DgnDbR db)
+static void importBisCoreSchema(DgnDbCR db)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
     ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());

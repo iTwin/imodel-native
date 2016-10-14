@@ -872,10 +872,14 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         {
         ECN::ECClassCP testClass = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
         auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        DgnCode code = DgnCode::CreateEmpty();
         // custom-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthorityId", ECN::ECValue(code.GetAuthority().GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
@@ -902,7 +906,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
         ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
-        ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+        ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
 
         // Now, make sure that we can actually insert the element
         auto persistentEl = ele->Insert();
@@ -933,7 +937,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
-    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1046,13 +1050,13 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
 
         checkValue = point2dProperty.GetValueEC();
-        EXPECT_EQ(point2d.x, checkValue.GetPoint2D().x);
-        EXPECT_EQ(point2d.y, checkValue.GetPoint2D().y);
+        EXPECT_EQ(point2d.x, checkValue.GetPoint2d().x);
+        EXPECT_EQ(point2d.y, checkValue.GetPoint2d().y);
 
         checkValue = point3dProperty.GetValueEC();
-        EXPECT_EQ(point3d.x, checkValue.GetPoint3D().x);
-        EXPECT_EQ(point3d.y, checkValue.GetPoint3D().y);
-        EXPECT_EQ(point3d.z, checkValue.GetPoint3D().z);
+        EXPECT_EQ(point3d.x, checkValue.GetPoint3d().x);
+        EXPECT_EQ(point3d.y, checkValue.GetPoint3d().y);
+        EXPECT_EQ(point3d.z, checkValue.GetPoint3d().z);
 
         //  Insert the element
         persistentEl = el.Insert();

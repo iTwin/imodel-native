@@ -129,26 +129,27 @@ protected:
     friend struct DgnElement;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    Utf8String      m_fileName;
-    DgnElements     m_elements;
-    DgnModels       m_models;
-    DgnVersion      m_schemaVersion;
-    DgnDomains      m_domains;
-    DgnFonts        m_fonts;
-    DgnStyles       m_styles;
-    DgnUnits        m_units;
-    DgnAuthorities  m_authorities;
-    TxnManagerPtr   m_txnManager;
-    MemoryManager   m_memoryManager;
+    Utf8String          m_fileName;
+    DgnElements         m_elements;
+    DgnModels           m_models;
+    DgnVersion          m_schemaVersion;
+    DgnDomains          m_domains;
+    DgnFonts            m_fonts;
+    DgnLineStylesPtr    m_lineStyles;
+    DgnUnits            m_units;
+    DgnAuthorities      m_authorities;
+    TxnManagerPtr       m_txnManager;
+    MemoryManager       m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
-    BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
+    mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     DgnQueryQueue m_queryQueue;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
+    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
@@ -167,7 +168,7 @@ public:
     DgnDb();
     virtual ~DgnDb();
 
-    //! Get ae BeFileName for this DgnDb.
+    //! Get the BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
     BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
@@ -199,7 +200,7 @@ public:
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
-    DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
+    DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb

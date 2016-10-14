@@ -104,9 +104,6 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     if (SUCCESS != m_db->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas()))
         return ERROR;
     m_db->SaveChanges();
-
-    m_db->ClearECDbCache();
-
     return SUCCESS;
     }
 

@@ -320,19 +320,19 @@ bool LsPointComponent::_ProcessSymbol(LineStyleContextR context, Centerline cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsPointComponent::_PostProcessLoad (DgnModelP modelRef)
+void            LsPointComponent::_PostProcessLoad ()
     {
     if (m_postProcessed)
         return;
         
     m_postProcessed = true;
     if (NULL != m_strokeComponent.get ())
-        m_strokeComponent->_PostProcessLoad (modelRef);
+        m_strokeComponent->_PostProcessLoad ();
         
     for (T_SymbolsCollectionConstIter curr = m_symbols.begin (); curr != m_symbols.end (); ++curr)
         {
         if (NULL != curr->m_symbol.get ())
-            curr->m_symbol->_PostProcessLoad (modelRef);
+            curr->m_symbol->_PostProcessLoad ();
         }
     }
 
@@ -503,13 +503,13 @@ LsComponentP    other
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          LsPointComponent::_GetMaxWidth (DgnModelP modelRef) const
+double          LsPointComponent::_GetMaxWidth () const
     {
     double width = 0.0;
 
     for (size_t i=0; i<GetNumberSymbols(); i++)
         {
-        double thisWidth = GetSymbolCP(i)->_GetMaxWidth(modelRef);
+        double thisWidth = GetSymbolCP(i)->_GetMaxWidth();
 
         if (thisWidth > width)
             width = thisWidth;

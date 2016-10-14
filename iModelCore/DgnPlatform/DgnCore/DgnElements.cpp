@@ -896,6 +896,13 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_stmts.Empty();
     m_classInfos.clear();
+    for (bpair<const DgnClassId, ECInstanceUpdater*>& kvPair : m_updaterCache)
+        {
+        if (kvPair.second != nullptr)
+            delete kvPair.second;
+        }
+
+    m_updaterCache.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -999,8 +1006,10 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_userLabel(params.m_userLabel), m_userProperties(nullptr)
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
+    m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), 
+    m_userLabel(params.m_userLabel), m_userProperties(nullptr), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1015,6 +1024,9 @@ DgnElement::~DgnElement()
 
     if (m_userProperties)
         UnloadUserProperties();
+
+    if (nullptr != m_ecPropertyData)
+        bentleyAllocator_free(m_ecPropertyData);
 
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1260,8 +1272,13 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
+#ifdef __clang__
+    if (0 != strcmp(typeid(element).name(), element.GetElementHandler()._ElementType().name()))
+#else
     if (typeid(element) != element.GetElementHandler()._ElementType())
+#endif
         {
+        LOG.errorv("InsertElement element must have its own handler: element typeid=%s, handler typeid=%s", typeid(element).name(), element.GetElementHandler()._ElementType().name());
         BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
@@ -1300,10 +1317,6 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
-
-    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
-    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
-    (*const_cast<DgnElementP>(&original)).m_autoHandledProperties = nullptr;
 
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
@@ -1488,30 +1501,6 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnElements::CachedSelectStatement::Release()
-    {
-    BeDbMutexHolder lock(m_mutex);
-
-    const bool isInCache = m_isInCache;
-    const uint32_t countWas = m_refCount.DecrementAtomicPost();
-    if (1 == countWas)
-        {
-        delete this;
-        return 0;
-        }
-
-    if (isInCache && 2 == countWas && IsPrepared())
-        {
-        Reset();
-        ClearBindings();
-        }
-
-    return countWas - 1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericClassParamsProvider : IECSqlClassParamsProvider
@@ -1555,30 +1544,19 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
+ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
     DgnClassId classId = el.GetElementClassId();
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;
 
-    ClassInfo& classInfo = m_classInfos[classId];
+    ECSqlClassInfo& classInfo = m_classInfos[classId];
     ECSqlClassParams const& params = GetECSqlClassParams(classId);
 
     bool populated = params.BuildClassInfo(classInfo, GetDgnDb(), classId);
     BeAssert(populated);
     UNUSED_VARIABLE(populated);
-
-    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
-    if (!selectECSql.empty())
-        {
-        classInfo.m_selectStmt = new CachedSelectStatement(m_mutex, true);
-        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
-            {
-            BeAssert(false);
-            classInfo.m_selectStmt = nullptr;
-            }
-        }
 
     return classInfo;
     }
@@ -1588,24 +1566,10 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
-    // Select statemens cached per ECClass to speed up loading of elements.
     BeDbMutexHolder _v(m_mutex);
 
-    auto& classInfo = FindClassInfo(el);
-    CachedSelectStatementPtr stmt = classInfo.m_selectStmt;
-    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
-        {
-        // The cached statement is already in use...create a new one for this caller
-        stmt = new CachedSelectStatement(m_mutex, false);
-        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
-            {
-            BeAssert(false);
-            stmt = nullptr;
-            }
-        }
-
-    if (stmt.IsValid())
-        stmt->BindId(1, el.GetElementId());
+    /* unused - auto& classInfo = FindClassInfo(el);*/
+    auto stmt = FindClassInfo(el).GetSelectStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
 
     return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }

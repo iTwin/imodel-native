@@ -20,7 +20,7 @@ DgnAuthorityId DgnAuthorities::QueryAuthorityId (Utf8CP name) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
+DgnAuthorityId DgnImportContext::_RemapAuthorityId(DgnAuthorityId source)
     {
     if (!IsBetweenDbs())
         return source;

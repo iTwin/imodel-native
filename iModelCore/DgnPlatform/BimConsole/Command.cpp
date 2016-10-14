@@ -179,7 +179,6 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-
     if (session.IsFileLoaded(true))
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
@@ -1152,6 +1151,9 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
         return;
         }
 
+    if (!session.IsFileLoaded(true))
+        return;
+
     Utf8StringCR switchArg = args[1];
 
     if (switchArg.EqualsI("search"))
@@ -1279,26 +1281,29 @@ Utf8String ClassMappingCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
     {
-    if (args.size() < 2 || args.size() > 3)
+    if (args.size() < 1 || args.size() > 3)
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    Json::Value json;
-    Utf8StringCR schemaName = args[1];
+    if (!session.IsFileLoaded(true))
+        return;
 
-    if (args.size() == 2)
+    Json::Value json;
+
+    if (args.size() == 1)
         {
-        if (schemaName.EqualsI("*"))
+        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
             {
-            if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
-                {
-                Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
-                return;
-                }
+            Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
+            return;
             }
-        else
+        }
+    else
+        {
+        Utf8StringCR schemaName = args[1];
+        if (args.size() == 2)
             {
             if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), schemaName, false))
                 {
@@ -1306,13 +1311,13 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
                 return;
                 }
             }
-        }
-    else
-        {
-        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName, args[2]))
+        else
             {
-            Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
-            return;
+            if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName, args[2]))
+                {
+                Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
+                return;
+                }
             }
         }
 

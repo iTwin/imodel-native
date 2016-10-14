@@ -147,7 +147,7 @@ bool ECSqlClassParams::BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnCla
         return false;
         }
 
-    ecsql.append(" WHERE ECInstanceId=?");
+    ecsql.append(" WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter");
     return true;
     }
 

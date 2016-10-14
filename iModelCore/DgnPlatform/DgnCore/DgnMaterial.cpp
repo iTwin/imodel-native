@@ -260,7 +260,7 @@ void DgnMaterial::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
+DgnMaterialId DgnImportContext::_RemapMaterialId(DgnMaterialId source)
     {
     if (!IsBetweenDbs())
         return source;

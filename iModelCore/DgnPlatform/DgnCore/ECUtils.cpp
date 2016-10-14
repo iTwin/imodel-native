@@ -62,8 +62,8 @@ Utf8CP ECUtils::ECPrimtiveTypeToString(ECN::PrimitiveType pt)
         case ECN::PRIMITIVETYPE_Integer:    return "integer";
         case ECN::PRIMITIVETYPE_Long:       return "long";
         case ECN::PRIMITIVETYPE_String:     return "string";
-        case ECN::PRIMITIVETYPE_Point2D:    return "point2d";
-        case ECN::PRIMITIVETYPE_Point3D:    return "point3d";
+        case ECN::PRIMITIVETYPE_Point2d:    return "point2d";
+        case ECN::PRIMITIVETYPE_Point3d:    return "point3d";
         }
     
     return "binary";
@@ -97,7 +97,7 @@ ECN::PrimitiveType ECUtils::ECPrimtiveTypeFromString(Utf8CP str)
             }
 
         case 'p':
-            return (0==BeStringUtilities::Stricmp(str, "dpoint2d"))? ECN::PRIMITIVETYPE_Point2D: ECN::PRIMITIVETYPE_Point3D;
+            return (0==BeStringUtilities::Stricmp(str, "dpoint2d"))? ECN::PRIMITIVETYPE_Point2d: ECN::PRIMITIVETYPE_Point3d;
             
         case 'i': 
             {
@@ -142,8 +142,8 @@ BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const&
         case ECN::PRIMITIVETYPE_Long:       jv = v.GetLong(); break;
         case ECN::PRIMITIVETYPE_String:     jv = v.GetUtf8CP(); break;
         
-        case ECN::PRIMITIVETYPE_Point2D:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2D()); break;
-        case ECN::PRIMITIVETYPE_Point3D:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3D()); break;
+        case ECN::PRIMITIVETYPE_Point2d:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2d()); break;
+        case ECN::PRIMITIVETYPE_Point3d:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3d()); break;
 
         case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime().ToUtf8String().c_str(); break;
 

@@ -77,6 +77,7 @@ namespace dgn_ElementHandler
         DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
+        DGNPLATFORM_EXPORT virtual DgnElement::CreateParams _InitCreateParams(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties);
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR);
         virtual ElementHandlerP _ToElementHandler() {return this;}

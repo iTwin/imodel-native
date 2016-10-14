@@ -131,21 +131,21 @@ ECPropertyCR ecProperty
             }
             break;
 
-        case PRIMITIVETYPE_Point2D: 
+        case PRIMITIVETYPE_Point2d: 
             {
             DPoint2d point2d;
             point2d.x=randomNumber * 1.0;
             point2d.y=randomNumber * 1.8;
-            ecValue.SetPoint2D(point2d);
+            ecValue.SetPoint2d(point2d);
             break;
             }
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x=randomNumber * 1.0;
             point3d.y=randomNumber * 1.8;
             point3d.z=randomNumber * 2.9;
-            ecValue.SetPoint3D(point3d);
+            ecValue.SetPoint3d(point3d);
             break;
             }
 

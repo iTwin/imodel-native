@@ -404,7 +404,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     if (!styleId.IsValid())
         return;
 
-    LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
+    LsCacheP lsCache = &context.GetDgnDb().LineStyles().GetCache();
     LsDefinitionP nameRec = lsCache->GetLineStyleP(styleId);
 
     if (nullptr == nameRec)
@@ -413,7 +413,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // Make this call before IsContinuous() to force the components to load.  Loading the components
     // will make some linestyles into "continuous" because early DWG styles did not set this bit correctly,
     // so there are a lot of unlabeled continuous styles out there.
-    LsComponentCP topComponent = nameRec->GetComponentCP(nullptr);
+    LsComponentCP topComponent = nameRec->GetComponentCP();
 
     // If the line style definition can be loaded correctly we set it up as the current line style.
     if (nullptr == topComponent)

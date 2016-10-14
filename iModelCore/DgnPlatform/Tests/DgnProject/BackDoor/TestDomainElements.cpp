@@ -260,7 +260,7 @@ TestElementSub3CPtr TestElementSub3::Update()
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus TestElementComplex::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
-    if ((ECSqlStatus::Success != statement.BindPoint3D(statement.GetParameterIndex("Prop_point3d"), m_prop_DPoint3d)) )
+    if ((ECSqlStatus::Success != statement.BindPoint3d(statement.GetParameterIndex("Prop_point3d"), m_prop_DPoint3d)) )
         return DgnDbStatus::BadArg;
     IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex("Prop_struct"));
 

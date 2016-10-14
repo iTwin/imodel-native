@@ -379,6 +379,14 @@ public:
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
 
+    //! Create a new, non-persistent model from the supplied ECInstance.
+    //! Ths supplied instance must contain the model's Code.
+    //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.
+    //! @param properties The instance that contains all of the model's business properties
+    //! @return a new, non-persistent model if successful, or an invalid ptr if not.
+    //! @note The returned model, if any, is non-persistent. The caller must call the model's Insert method to add it to the bim.
+    DGNPLATFORM_EXPORT DgnModelPtr CreateModel(DgnDbStatus* stat, ECN::IECInstanceCR properties);
+
     //! Get a DgnModel from this DgnDb by its DgnModelId.
     //! @param[in] modelId The DgnModelId of the model
     //! @remarks The model is loaded from the database if necessary. If the model is already loaded, a pointer to the existing DgnModel is returned.
@@ -571,7 +579,7 @@ public:
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
-    void Update();
+    DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
     DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
@@ -718,25 +726,6 @@ public:
     static double const OneMillimeter() {return OneMeter() / 1000.0;}
     static double const OneCentimeter() {return OneMeter() / 100.0;}
     static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
-};
-
-//=======================================================================================
-//! @see DgnDb::Styles
-// @bsiclass
-//=======================================================================================
-struct DgnStyles : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    struct DgnLineStyles* m_lineStyles;
-
-    explicit DgnStyles(DgnDbR);
-    ~DgnStyles();
-
-public:
-    //! Provides accessors for line styles.
-    DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
 };
 
 //=======================================================================================

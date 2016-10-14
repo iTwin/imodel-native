@@ -325,7 +325,7 @@ struct GeometryStreamIO
     //! @param dest     The output GeometryStream
     //! @param source   The input GeometryStream
     //! @param remapper  The ID remapper
-    static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
+    DGNPLATFORM_EXPORT static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
 }; // GeometryStreamIO
 

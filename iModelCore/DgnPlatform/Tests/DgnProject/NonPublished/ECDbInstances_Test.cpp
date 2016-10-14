@@ -679,21 +679,21 @@ void DgnECInstanceTests::PopulatePrimitiveValueWithRandomValues(ECValueR ecValue
             }
             break;
 
-            case PRIMITIVETYPE_Point2D:
+            case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             point2d.x = randomNumber * 1.0;
             point2d.y = randomNumber * 1.8;
-            ecValue.SetPoint2D(point2d);
+            ecValue.SetPoint2d(point2d);
             break;
             }
-            case PRIMITIVETYPE_Point3D:
+            case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             point3d.x = randomNumber * 1.0;
             point3d.y = randomNumber * 1.8;
             point3d.z = randomNumber * 2.9;
-            ecValue.SetPoint3D(point3d);
+            ecValue.SetPoint3d(point3d);
             break;
             }
 
@@ -766,7 +766,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
     widgetClass->CreatePrimitiveProperty(longProp, L"LongValue", PRIMITIVETYPE_Long);
     widgetClass->CreatePrimitiveProperty(dateTimeProp, L"Created", PRIMITIVETYPE_DateTime);
     widgetClass->CreatePrimitiveProperty(boolProp, L"Bool", PRIMITIVETYPE_Boolean);
-    widgetClass->CreatePrimitiveProperty(point2dProp, L"StartPoint", PRIMITIVETYPE_Point2D);
+    widgetClass->CreatePrimitiveProperty(point2dProp, L"StartPoint", PRIMITIVETYPE_Point2d);
 
     PrimitiveECPropertyP fooNameProp;
     fooClass->CreatePrimitiveProperty(fooNameProp, L"Name", PRIMITIVETYPE_String);
@@ -958,7 +958,6 @@ TEST(ECDbInstances3, BGRJoinedTable)
     schemaContext->RemoveSchemaLocater(dgnDb->GetSchemaLocater());
 
     dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
-    dgnDb->ClearECDbCache();
     dgnDb->SaveChanges();
 
     //BeFileName bgr(L"f:\\temp\\BGRSubset.i.ibim");
