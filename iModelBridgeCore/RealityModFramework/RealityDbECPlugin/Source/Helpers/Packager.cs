@@ -353,8 +353,6 @@ namespace IndexECPlugin.Source.Helpers
                     blueBandFileSize = Math.Max(0, blueBandFileSize);
                     panchromaticBandFileSize = Math.Max(0, panchromaticBandFileSize);
 
-                    List<UriNet> panchromaticBandSisterFiles = panchromaticBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList();
-
                     RealityDataSourceNet redBandSN = RealityDataSourceNet.Create(UriNet.Create(redBandURL), genericInfo.Type);
                     SetRdsnFields(redBandSN, genericInfo);
                     redBandSN.SetSize((ulong) redBandFileSize);
