@@ -2875,9 +2875,9 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR dateTime)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR dateTime, PropertyArrayIndex const& arrayIdx)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(dateTime));
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(dateTime), arrayIdx);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
