@@ -516,6 +516,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     (void)header;
     (void)blockID;
 
+    TileNode tileNode;
     Json::Value tile;
     tile["refine"] = "replace";
     tile["geometricError"] = 1.E06/*rootTile.GetTolerance()*/; // SM_NEEDS_WORK : what value should this be?
