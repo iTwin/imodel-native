@@ -14,8 +14,8 @@ baseDir         = $(_MakeFilePath)
 %include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
 
 ##  Symlink all src PublicAPI folders into build output PublicAPI folder
-#always:
-#   ~linkdir "$(BuildPublicApi)TerrainModel/AutomaticGroundDetection=$(TerrainModelGroundDetectDir)PublicAPI"
+always:
+    ~linkdir "$(BuildPublicApi)TerrainModel/AutomaticGroundDetection=$(TerrainModelGroundDetectDir)PublicAPI"
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -30,7 +30,7 @@ always:
 #----------------------------------------------------------------------
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
-   
+  
 
 CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
 

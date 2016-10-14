@@ -6,7 +6,7 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -128,6 +128,18 @@ $(o)LidarImporter$(oext) : $(formatsDir)LidarImporter.cpp $(DependsOnHeaders) $(
 $(o)ImagePP$(oext) : $(formatsDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)TriangulationPreserver$(oext) : $(formatsDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+
+#----------------------------------------------------------------------
+#MaXML
+#----------------------------------------------------------------------
+#$(o)MaXml$(oext) : $(formatsDir)MaXML\MaXml.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXml.h ${MultiCompileDepends}
+
+#$(o)MaXmlAlignment$(oext) : $(formatsDir)MaXML\MaXmlAlignment.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlAlignment.h ${MultiCompileDepends}
+
+#$(o)MaXmlDocument$(oext) : $(formatsDir)MaXML\MaXmlDocument.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlDocument.h ${MultiCompileDepends}
+
+#$(o)MaXmlElement$(oext) : $(formatsDir)MaXML\MaXmlElement.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlElement.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
