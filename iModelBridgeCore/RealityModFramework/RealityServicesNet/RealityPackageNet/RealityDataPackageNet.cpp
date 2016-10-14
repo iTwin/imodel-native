@@ -64,6 +64,11 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ man
     BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
     nativeSource->SetCopyright(nativeCopyright.c_str());
 
+    // Term of use.
+    Utf8String nativeTermOfUse;
+    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
+    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+
     // Provider.
     Utf8String nativeProvider;
     BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));

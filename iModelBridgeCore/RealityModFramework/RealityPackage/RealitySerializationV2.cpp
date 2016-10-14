@@ -901,50 +901,54 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
 
         // Dataset.
         if (!pImgData->GetDataset().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());
-
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());      
 
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
-            {
-            // Split sources by type (source, multibandsource, etc.).
-            RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
-            Utf8String sourceName = source.GetElementName();
-            if (sourceName.Equals(PACKAGE_ELEMENT_Source))
+        if (0 != pImgData->GetNumSources())
+            { 
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
+                Utf8String sourceName = source.GetElementName();
+                if (sourceName.Equals(PACKAGE_ELEMENT_Source))
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_WmsSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_OsmSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_MultiBandSource))
-                {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                else if (sourceName.Equals(PACKAGE_ELEMENT_WmsSource))
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    //&&JFC TODO
+                    //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                    //    {
+                    //    pGroupNode->RemoveChildNode(pDataNode);
+                    //    continue;
+                    //    }
                     }
-                }         
-            }    
+                else if (sourceName.Equals(PACKAGE_ELEMENT_OsmSource))
+                    {
+                    //&&JFC TODO
+                    //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                    //    {
+                    //    pGroupNode->RemoveChildNode(pDataNode);
+                    //    continue;
+                    //    }
+                    }
+                else if (sourceName.Equals(PACKAGE_ELEMENT_MultiBandSource))
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }         
+                }  
+            }
 
         // Write ImageryData specific.
         DPoint2dCP pCorners = pImgData->GetCornersCP();
@@ -1005,12 +1009,17 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pModelData->GetDataset().c_str());
 
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
+        if (0 != pModelData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pModelData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pModelData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }
                 }
             }
         }
@@ -1057,14 +1066,18 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
         if (!pPinnedData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pPinnedData->GetDataset().c_str());
 
-
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
+        if (0 != pPinnedData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pPinnedData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pPinnedData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }
                 }
             }
 
@@ -1116,14 +1129,18 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
         if (!pTerrainData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pTerrainData->GetDataset().c_str());
 
-
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
+        if (0 != pTerrainData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pTerrainData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetSource(sourceIndex)))
+                    {
+                    pGroupNode->RemoveChildNode(pDataNode);
+                    continue;
+                    }
                 }
             }
         }
@@ -1150,6 +1167,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
 
+    if (!source.GetTermOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
+
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
 
@@ -1162,11 +1182,15 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetMetadata().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
 
+    //&&JFC TODO MetadataType
+
     if (!source.GetGeoCS().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
 
     if (!source.GetNoDataValue().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
+
+    //&&JFC TODO SisterFiles
 
     return RealityPackageStatus::Success;
     }
@@ -1190,6 +1214,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteMultiBandSource(BeXmlNodeR no
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
 
+    if (!source.GetTermOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
+
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
 
@@ -1202,11 +1229,15 @@ RealityPackageStatus RealityDataSerializerV2::WriteMultiBandSource(BeXmlNodeR no
     if (!source.GetMetadata().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
 
+    //&&JFC TODO MetadataType
+
     if (!source.GetGeoCS().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
 
     if (!source.GetNoDataValue().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
+
+    //&&JFC TODO SisterFiles
 
     // Write specific multiband source data.
     if (source.GetRedBand() != NULL)
