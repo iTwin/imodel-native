@@ -209,6 +209,8 @@ TEST_P(ExportAllTester, ToAllFormats)
 
     HFCPtr<HFCURL> pSourceUrl = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + sourceFilename.GetNameUtf8());
 
+    printf("[ TRACE    ] Exporting: %s\n", creator.GetLabel().c_str());
+
     try
         {
         HFCPtr<HRFRasterFile> pRasterFileSource = HRFRasterFileFactory::GetInstance()->OpenFile(pSourceUrl, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);

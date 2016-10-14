@@ -178,12 +178,13 @@ std::list<std::wstring> ImagePPTestConfig::BuildFileList(BeFileNameCR directory)
 
     BeDirectoryIterator::WalkDirsAndMatch(fileList, directory, glob.c_str(), true);
 
-    // Scan the fileList and skipping not supported rasters and folders
+    // Scan the fileList and skip not supported rasters and folders
     for (auto& actualName : fileList)
         {
         if (actualName.IsDirectory() ||
             actualName.ContainsI(L"thumb.db") ||                // Ignore windows thumbnail.
-            actualName.ContainsI(L"\\PSS\\")                    // Skip PSS for now.
+            actualName.ContainsI(L"NITF\\ISO Profile 1 Test Code Streams\\J2K") ||  // Tested as part of NITF.
+            actualName.ContainsI(L"\\PSS\\")                   // Skip PSS for now.
             )
             continue;
 
