@@ -58,6 +58,7 @@ void ScalableMeshLib::Host::Initialize()
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
+    m_smPaths = new bmap<WString, IScalableMeshPtr>();
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
@@ -84,8 +85,27 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     m_hostVar.clear();
                                 
     TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
+    delete m_smPaths;
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
+    }
+
+
+
+IScalableMeshPtr ScalableMeshLib::Host::GetRegisteredScalableMesh(const WString& path)
+    {
+    if (m_smPaths->count(path) > 0) return (*m_smPaths)[path];
+    return nullptr;
+    }
+
+void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WString& path)
+    {
+    m_smPaths->erase(path);
+    }
+
+void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
+    {
+    m_smPaths->insert(make_bpair(path, ref));
     }
 
 /*======================================================================+

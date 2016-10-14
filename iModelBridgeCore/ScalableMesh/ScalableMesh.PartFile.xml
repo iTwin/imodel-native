@@ -295,8 +295,8 @@
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
-        <ProductDirectory Name="Libs" Deliver="false" />
-        <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+        <ProductDirectory Name="Libs" Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="ScalableMeshLibs"  Path="Libs" Deliver="true"/>
       <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
       <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
       <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
@@ -304,6 +304,9 @@
       <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
       <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
       <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+      <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
+      <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
+      <ProductDirectory Name="TerrainModelNativeCoreLibs"  Path="Libs" Deliver="true"/>
     </ProductDirectoryList>   
       
     <Product Name="ScalableMeshCommandLine">
