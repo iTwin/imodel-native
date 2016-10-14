@@ -793,6 +793,15 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
         EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
+        // Set a struct valued property
+        BeTest::SetFailOnAssert(false);
+        ASSERT_NE(DgnDbStatus::Success, el.SetPropertyValue("Location", ECN::ECValue("<<you cannot set a struct directly>>")));
+        BeTest::SetFailOnAssert(true);
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.Street", ECN::ECValue("690 Pennsylvania Drive")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.Name", ECN::ECValue("Exton")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.State", ECN::ECValue("PA")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.Zip", ECN::ECValue(19341)));
+
         //  Insert the element
         persistentEl = el.Insert();
         }
@@ -801,6 +810,18 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.Street"));
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Name"));
+    EXPECT_STREQ("Exton", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Country"));
+    EXPECT_TRUE(checkValue.IsNull()) << "I never set the Location.City.Country property, so it should be null";
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Zip"));
+    EXPECT_EQ(19341, checkValue.GetInteger());
+
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -1604,8 +1625,9 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
     bset<Utf8String> ignoreProps;
     ignoreProps.insert("ModelId");
-    ASSERT_TRUE(elementA->Equals(*elementB, ignoreProps));
+    DgnElement::ComparePropertyFilter filter(ignoreProps);
+    ASSERT_TRUE(elementA->Equals(*elementB, filter));
 
     elementB->SetUserLabel("label for b");
-    ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
+    ASSERT_FALSE(elementA->Equals(*elementB, filter)) << " UserLabels should differ";
     }

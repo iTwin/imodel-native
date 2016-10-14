@@ -40,7 +40,7 @@ namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometr
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct ElementECPropertyAccessor;
-struct ElementInstanceAdapter;
+struct ElementAutoHandledPropertiesECInstanceAdapter;
 
 //=======================================================================================
 //! Holds Id remapping tables
@@ -408,13 +408,16 @@ struct AutoHandledPropertiesCollection
 * When you define a subclass of dgn.Element in your domain's schema and you define properties for it, you don't have to write
 * any code to enable applications to work with those properties. The base class implementation of the functions that load, store, and copy properties
 * will automatically detect and handle all properties defined in the schema. This is called "auto-handling" of properties, and it is the default.
-* The base class implementation of DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue will provide access to all custom-handled properties.
-* New or updated auto-handled properties are automatically written to the Db when the element is inserted or updated.
+* The base class implementation of DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue will provide access to all auto-handled properties.
+* New or updated auto-handled properties are automatically written to the database when the element is inserted or updated.
 *
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, in order to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
 * the DgnElement::_SetPropertyValue method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
+* Note that _CopyFrom does <em>not</em> always call _SetPropertyValue on each copied property. If the element subclass needs to validate 
+* specific auto-handled properties even during copying, then it must <em>also</em> override _CopyFrom, call the superclass method to do the copying,
+* and then apply validation logic after the copy is done.
 *
 * <h3>Custom Properties</h3>
 * If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
@@ -455,7 +458,7 @@ public:
     friend struct MultiAspect;
     friend struct GeometrySource;
     friend struct ElementECPropertyAccessor;
-    friend struct ElementInstanceAdapter;
+    friend struct ElementAutoHandledPropertiesECInstanceAdapter;
 
     //! Parameters for creating a new DgnElement
     struct CreateParams
@@ -489,7 +492,60 @@ public:
         uint32_t m_index;
         PropertyArrayIndex() : m_hasIndex(0) {}
         PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
+        PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
         };
+
+    //! Property filter to be use when comparing elements
+    struct ComparePropertyFilter
+    {
+        enum Ignore {
+            None      = 0, 
+            WriteOnly = 0x02,  //! Ignore properties such as LastMod
+            ElementId = 0x10,  //! Ignore ElementIds
+            };
+
+        Ignore m_ignore;
+        bset<Utf8String> m_ignoreList;
+
+        ComparePropertyFilter(Ignore ignore, bset<Utf8String> const& list = bset<Utf8String>()) 
+            : m_ignore(ignore), m_ignoreList(list) {}
+
+        ComparePropertyFilter(bset<Utf8String> const& list) : m_ignore(Ignore::None), m_ignoreList(list) {}
+
+        virtual bool _ExcludeElementId() const {return 0 != (Ignore::ElementId & m_ignore);}
+        DGNPLATFORM_EXPORT virtual bool _ExcludeProperty(ECN::ECPropertyValueCR) const;
+    };
+
+    //! Property filter to be used when setting properties
+    struct SetPropertyFilter
+    {
+        enum Ignore {
+            None          = 0, 
+            Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
+            WriteOnly     = 0x02,  //! Don't set properties such as LastMod
+            Null          = 0x08,  //! Don't set the property if the supplied value is null
+            ElementId     = 0x10,  //! Don't set ElementId
+            WriteOnlyNullBootstrapping = WriteOnly|Null|Bootstrapping|ElementId,
+            };
+
+        Ignore m_ignore;
+        bool m_ignoreErrors;
+        bset<Utf8String> m_ignoreList;
+
+        SetPropertyFilter(Ignore ignore = None, bool ignoreErrors = false, 
+                       bset<Utf8String> const& ignoreProps = bset<Utf8String>()) 
+            : m_ignore(ignore), m_ignoreErrors(ignoreErrors), m_ignoreList(ignoreProps) {}
+
+        SetPropertyFilter(bset<Utf8String> const& ignore) 
+            : m_ignore(Ignore::None), m_ignoreErrors(false), m_ignoreList(ignore) {}
+
+        DGNPLATFORM_EXPORT static bool IsBootStrappingProperty(Utf8StringCR);
+
+        virtual bool _ExcludeElementId() const {return 0 != (ElementId & m_ignore);}
+        DGNPLATFORM_EXPORT virtual bool _ExcludeProperty(ECN::ECPropertyValueCR) const;
+        virtual bool _IgnoreErrors() const {return m_ignoreErrors;}
+    };
+
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
     enum class Hilited : uint8_t
@@ -777,9 +833,6 @@ private:
     void UnloadUserProperties() const;
     DgnDbStatus SaveUserProperties() const;
     void CopyUserProperties(DgnElementCR other);
-
-    bool IsCustomHandledProperty(Utf8CP) const;
-    bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
 
 protected:
     //! @private
@@ -1176,23 +1229,20 @@ protected:
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR);
-    DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR, SetPropertyFilter const& filter);
+    DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, ComparePropertyFilter const&) const;
     //! Test if the value of the specified property on this element is equivalent to the value of the same property on the other element
-    //! @param prop The property to be compared
-    //! @param other The other element
-    //! @param ignore The list of properties to be ignored
-    //! @param arrayIdx Optional. If the property is an array, you must specify the index of the item to compare.
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore, PropertyArrayIndex const& arrayIdx) const;
+    //! @param expected The property to be compared and its expected value
+    //! @param other    The other element
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const;
 
-    DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
+    DGNPLATFORM_EXPORT virtual void _Dump(Utf8StringR str, ComparePropertyFilter const&) const;
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
     void ClearAllAppData(){m_appData.clear();}//< @private
     
-
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
@@ -1206,6 +1256,9 @@ public:
     static Utf8CP MyHandlerECClassName() {return BIS_CLASS_Element;}                //!< @private
     Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
     Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
+
+    bool IsCustomHandledProperty(Utf8CP) const;
+    bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
@@ -1301,17 +1354,15 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-    //! Get the list of properties that are normally ignored when comparing elements for equality.
-    DGNPLATFORM_EXPORT static bset<Utf8String> const& GetStandardPropertyIgnoreList();
-
     //! Check if this element is equal to source. Two elements are considered to be "equal" if they are instances of the same ECClass and if their properties have equivalent data.
     //! The element's identity and user properties may be excluded from the comparison.
     //! @param source   The element to compare with
-    //! @param ignore   Optional. The properties to exclude from the comparison.
+    //! @param filter   Optional. The properties to exclude from the comparison.
     //! @return true if this element's properties are equivalent to the source element's properties.
-    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = GetStandardPropertyIgnoreList()) const {return _Equals(source, ignore);}
+    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, ComparePropertyFilter const& filter = 
+                                   ComparePropertyFilter(ComparePropertyFilter::Ignore::WriteOnly)) const;
 
-    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, ComparePropertyFilter const& filter) const;
 
     //! @name AppData Management
     //! @{
@@ -1440,8 +1491,11 @@ public:
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
     //! @param instance The source of the properties that are to be copied to this element
+    //! @param filter   Optional. The properties to exclude.
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance) {return _SetPropertyValues(instance);}
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter 
+                                                     = SetPropertyFilter(SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping)) 
+        {return _SetPropertyValues(instance, filter);}
 
     //! @}
 };
@@ -1739,7 +1793,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&, PropertyArrayIndex const& arrayIdx) const; // Handles GeometryStream
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
     DGNPLATFORM_EXPORT DgnDbStatus GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const;
     DGNPLATFORM_EXPORT DgnDbStatus SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value);
 
@@ -2362,7 +2416,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
-    friend struct ElementInstanceAdapter;
+    friend struct ElementAutoHandledPropertiesECInstanceAdapter;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -2635,14 +2689,14 @@ public:
     //! Destroy this collection
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
 
-    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
-    DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const;
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const;
+    DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const&) const;
 
     //! See if this collection and \a other have the equivalement set of elements
     //! @param other    The other collection
-    //! @param ignore   Optional. The properties to exclude from the comparison.
+    //! @param filter   The properties to exclude from the comparison.
     //! @return true if the collections are equivalent
-    DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, bset<Utf8String> const& ignore = DgnElement::GetStandardPropertyIgnoreList()) const;
+    DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, DgnElement::ComparePropertyFilter const& filter) const;
 
     //! Add the specified editable copy of an element to the collection. 
     //! @param el  The editable copy to be added
