@@ -11,14 +11,15 @@
 
 #include "SMStreamingDataStore.h"
 #include "SMSQLiteStore.h"
-#include "../Threading\LightThreadPool.h"
+#include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
-#include <CloudDataSource/DataSourceAccount.h>
+#include <TilePublisher\TilePublisher.h>
+#include <CloudDataSource\DataSourceAccount.h>
 #include <CloudDataSource\DataSourceBuffered.h>
 
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
-#include "ScalableMesh/ScalableMeshLib.h"
+#include "ScalableMesh\ScalableMeshLib.h"
 
 USING_NAMESPACE_IMAGEPP
 
@@ -515,62 +516,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     (void)header;
     (void)blockID;
 
-    Json::Value node;
+    Json::Value tile;
+    tile["refine"] = "replace";
+    tile["geometricError"] = 1.E06/*rootTile.GetTolerance()*/; // SM_NEEDS_WORK : what value should this be?
+    TilePublisher::WriteBoundingVolume(tile, header->m_nodeExtent);
 
-    //BeFileName  binaryDataFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath(m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
-    //
-    //// .b3dm file
-    //Json::Value sceneJson(Json::objectValue);
-    //
-    //ProcessMeshes(sceneJson);
-    //
-    //Utf8String sceneStr = Json::FastWriter().write(sceneJson);
-    //
-    //Json::Value batchTableJson(Json::objectValue);
-    //m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb());
-    //Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
-    //uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    //
-    //m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
-    //
-    //// GLTF header = 5 32-bit values
-    //static const size_t s_gltfHeaderSize = 20;
-    //static const char s_gltfMagic[] = "glTF";
-    //static const uint32_t s_gltfVersion = 1;
-    //static const uint32_t s_gltfSceneFormat = 0;
-    //uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
-    //uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
-    //
-    //// B3DM header = 6 32-bit values
-    //// Header immediately followed by batch table json
-    //static const size_t s_b3dmHeaderSize = 24;
-    //static const char s_b3dmMagic[] = "b3dm";
-    //static const uint32_t s_b3dmVersion = 1;
-    //uint32_t b3dmNumBatches = m_batchIds.Count();
-    //uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
-    //
-    //std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
-    //AppendUInt32(s_b3dmVersion);
-    //AppendUInt32(b3dmLength);
-    //AppendUInt32(batchTableStrLen);
-    //AppendUInt32(0); // length of binary portion of batch table - we have no binary batch table data
-    //AppendUInt32(b3dmNumBatches);
-    //std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
-    //
-    //std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
-    //AppendUInt32(s_gltfVersion);
-    //AppendUInt32(gltfLength);
-    //AppendUInt32(sceneStrLength);
-    //AppendUInt32(s_gltfSceneFormat);
-    //
-    //std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
-    //if (!m_binaryData.empty())
-    //    std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
-    //
-    //std::fclose(m_outputFile);
-    //m_outputFile = NULL;
+    //tile["content"]["url"] = Utf8String(rootTile.GetRelativePath(name.c_str(), s_metadataExtension).c_str());
 
-    auto utf8Node = Json::FastWriter().write(node);
+    auto utf8Node = Json::FastWriter().write(tile);
     po_pBinaryData.reset(new Byte[utf8Node.size()]);
     memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
     }
