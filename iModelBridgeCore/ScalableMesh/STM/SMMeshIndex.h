@@ -105,6 +105,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     SMMeshIndexNode(size_t pi_SplitTreshold,
                                      const EXTENT& pi_rExtent,
                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
     
     SMMeshIndexNode(size_t pi_SplitTreshold,
                                      const EXTENT& pi_rExtent,
@@ -112,6 +117,18 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                      bool IsUnsplitSubLevel);
 
     SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    SMMeshIndex<POINT, EXTENT>* meshIndex,
+                    ISMPointIndexFilter<POINT, EXTENT>* filter,
+                    bool balanced,
+                    bool textured,
+                    bool propagateDataDown,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
+                    CreatedNodeMap*                      createdNodeMap);
 
     SMMeshIndexNode(size_t pi_SplitTreshold,
                         const EXTENT& pi_rExtent,                                                
@@ -139,6 +156,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void Init();
     
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -765,6 +783,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SharedTextureManager* TextureManager() { return &m_texMgr; }
 
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
+        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
