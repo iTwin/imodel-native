@@ -45,14 +45,19 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
 
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(const IScalableMeshNodePtr& parentNode,
                                                        DRange3d& extent,
-                                                            StatusInt&                  status);
+                                                            StatusInt&                  status,
+                                                            bool computeNodeID = true,
+                                                            uint64_t nodeId = 0);
 
-        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(StatusInt&                  status);
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(StatusInt&                  status,
+                                                           bool computeNodeID = true,
+                                                           uint64_t nodeId = 0);
 
-        BENTLEY_SM_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
+        BENTLEY_SM_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
 
         BENTLEY_SM_EXPORT void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
-                                                                          StatusInt&                  status);
+                                                                          StatusInt&                  status,
+                                                                          bool computeNeighbors = true);
 
 
     };

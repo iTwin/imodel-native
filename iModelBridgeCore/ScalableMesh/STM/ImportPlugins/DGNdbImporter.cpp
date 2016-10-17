@@ -453,13 +453,13 @@ private:
                                     else if (renderMat->_GetBool(RENDER_MATERIAL_FlagHasBaseColor))
                                         {
                                         RgbFactor diffuseColor = renderMat->_GetColor(RENDER_MATERIAL_Color);
-                                        if (m_mapOfTexColorIds.count(diffuseColor.ToIntColor()) == 0)
+                                        if (m_mapOfTexColorIds.count(/*diffuseColor.ToIntColor()*/0) == 0)
                                             {
                                             MakeColorTile(tex.back(), 4, 4, diffuseColor);
                                             currentTexId = (int64_t)m_nextTexId;
-                                            m_mapOfTexColorIds[diffuseColor.ToIntColor()] = m_nextTexId++;
+                                            m_mapOfTexColorIds[/*diffuseColor.ToIntColor()*/0] = m_nextTexId++;
                                             }
-                                        else currentTexId = (int64_t)m_mapOfTexColorIds[diffuseColor.ToIntColor()];
+                                        else currentTexId = (int64_t)m_mapOfTexColorIds[/*diffuseColor.ToIntColor()*/0];
                                         /* int width = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[0], height = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[1];
                                          AppendTextureToExisting(tex, uvMapBottomLeft, uvMapTopRight,4, 4,colorTileRgb.data(), ImageBuffer::Format::Rgb);
                                          DPoint2d maxUv = DPoint2d::From(1, 1);

@@ -156,7 +156,14 @@ public:
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMPointIndexNode<POINT, EXTENT>(uint64_t nodeId,
+                                    size_t pi_SplitTreshold,
+                                    const EXTENT& pi_rExtent,
+                                    const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
     
+
+
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode,
@@ -185,7 +192,8 @@ public:
         {
         return false;
         }
-        
+       
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -656,7 +664,7 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SplitNode(POINT splitPosition, bool propagateSplit = true);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
     
     void SortSubNodes();
 
@@ -1285,6 +1293,7 @@ public:
     /*
     This method is used as a factory to create the right type of node.
     */
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
@@ -1404,6 +1413,8 @@ public:
 
    -----------------------------------------------------------------------------*/        
     HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();       
+
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
       
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent. This extent is the node extent

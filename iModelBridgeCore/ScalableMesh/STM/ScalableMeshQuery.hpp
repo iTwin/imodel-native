@@ -2572,6 +2572,72 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
+    pointsPtr->clear();
+
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_isTextured = true;
+
+    if (texID != -1)
+        m_meshNode->m_nodeHeader.m_textureID = texID;
+
+
+    size_t nIndicesCount = 0;
+    vector<POINT> nodePts(vertices.size());
+
+    for (size_t pointInd = 0; pointInd < vertices.size(); pointInd++)
+        {
+        nodePts[pointInd].x = vertices[pointInd].x;
+        nodePts[pointInd].y = vertices[pointInd].y;
+        nodePts[pointInd].z = vertices[pointInd].z;
+        }
+
+    pointsPtr->push_back(&nodePts[0], nodePts.size());
+    m_meshNode->PushUV(&uv[0], uv.size());
+
+    vector<int32_t> indicesLine;
+
+    
+    nIndicesCount += ptsIndices.size();
+    m_meshNode->PushPtsIndices(&ptsIndices[0], ptsIndices.size());
+    m_meshNode->PushUVsIndices(0, &uvIndices[0], uvIndices.size());
+    indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
+
+
+    bvector<int> componentPointsId;
+    // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+    MTGGraph* newGraphP = new MTGGraph();
+    CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
+
+    graphPtr->SetData(newGraphP);
+    graphPtr->SetDirty();
+
+
+    if (componentPointsId.size() > 0)
+        {
+        if (m_meshNode->m_nodeHeader.m_meshComponents == nullptr) m_meshNode->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+        else if (m_meshNode->m_nodeHeader.m_numberOfMeshComponents != componentPointsId.size())
+            {
+            delete[] m_meshNode->m_nodeHeader.m_meshComponents;
+            m_meshNode->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+            }
+        m_meshNode->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
+        memcpy(m_meshNode->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
+        }
+
+    m_meshNode->m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
+    m_meshNode->m_nodeHeader.m_nbUvIndexes = uv.size();
+    m_meshNode->IncreaseTotalCount(m_meshNode->GetNbPoints());
+
+    m_meshNode->SetDirty(true);
+
+    return BSISUCCESS;
+    }
+
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());    
@@ -2646,7 +2712,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvector<Byte>& data, bool sibling)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvector<Byte>& data)
     {
     assert(m_node->m_nodeHeader.m_isTextured == false);
 
