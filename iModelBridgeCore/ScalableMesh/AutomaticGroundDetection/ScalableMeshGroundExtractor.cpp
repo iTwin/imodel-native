@@ -147,8 +147,9 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
     GroundDetectionParametersPtr params(GroundDetectionParameters::Create());        
     params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
     params->SetTriangleEdgeThreshold(0.05);
-    params->SetAnglePercentileFactor(95.000000000000000);
-    params->SetHeightPercentileFactor(95.000000000000000);
+ 
+    params->SetAnglePercentileFactor(30);
+    params->SetHeightPercentileFactor(60);
 
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
