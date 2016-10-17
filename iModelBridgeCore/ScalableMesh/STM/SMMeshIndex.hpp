@@ -340,7 +340,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
 
-    //GetDiffSetPtr();
+    GetDiffSetPtr();
     
     assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
