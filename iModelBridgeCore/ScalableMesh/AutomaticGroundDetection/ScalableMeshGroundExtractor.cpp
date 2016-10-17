@@ -19,6 +19,9 @@
 #include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
 #include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
 
+#include <ScalableMesh\IScalableMeshSourceCreator.h>
+#include <ScalableMesh\IScalableMeshSources.h>
+
 USING_NAMESPACE_GROUND_DETECTION
 
 /*----------------------------------------------+
@@ -29,15 +32,20 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundExtractor - Begin
 +----------------------------------------------------------------------------*/
-IScalableMeshGroundExtractorPtr IScalableMeshGroundExtractor::Create(IScalableMeshPtr& scalableMesh)
+IScalableMeshGroundExtractorPtr IScalableMeshGroundExtractor::Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh)
     {
-    IScalableMeshGroundExtractorPtr groundExtractor(ScalableMeshGroundExtractor::Create(scalableMesh).get());
+    IScalableMeshGroundExtractorPtr groundExtractor(ScalableMeshGroundExtractor::Create(smTerrainPath, scalableMesh).get());
     return groundExtractor;
     }
 
 StatusInt IScalableMeshGroundExtractor::ExtractAndEmbed()
     {
     return _ExtractAndEmbed();
+    }        
+
+StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d>& area)
+    {
+    return _SetExtractionArea(area);
     }        
 
 /*----------------------------------------------------------------------------+
@@ -81,34 +89,80 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             fclose(m_xyzFile);
             }
 
+        void Close()
+            {
+            fclose(m_xyzFile);
+            }
+
     };
 
 
 
-ScalableMeshGroundExtractorPtr ScalableMeshGroundExtractor::Create(IScalableMeshPtr& scalableMesh)
+ScalableMeshGroundExtractorPtr ScalableMeshGroundExtractor::Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh)
     {
-    return new ScalableMeshGroundExtractor(scalableMesh);
+    return new ScalableMeshGroundExtractor(smTerrainPath, scalableMesh);
     }
 
-ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(IScalableMeshPtr& scalableMesh)
+ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh)
     {
     m_scalableMesh = scalableMesh;
+    m_smTerrainPath = smTerrainPath;
     }
 
 ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
     {
     }
 
+StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
+    {
+    StatusInt status;
+            
+    IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), status));
+
+    assert(status == SUCCESS);
+        
+    if (m_scalableMesh->GetBaseGCS().IsValid())
+        status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
+
+    assert(status == SUCCESS);
+
+    IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, L"D:\\MyDoc\\RM - SM - Sprint 15\\AutoGroundDetect\\ATP\\detectGround.xyz"));
+    terrainCreator->EditSources().Add(groundPtsSource);
+
+    status = terrainCreator->Create();
+    assert(status == SUCCESS);
+    terrainCreator->SaveToFile();
+    terrainCreator = nullptr;
+
+    return status;
+    }
+
+#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
+
 StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
     {    
     IGroundDetectionServices* serviceP(GroundDetectionManager::GetServices());
 
     bvector<DPoint3d> seedpoints;    
-    GroundDetectionParametersPtr params(GroundDetectionParameters::Create());    
-    params->SetLargestStructureSize(60);
+    GroundDetectionParametersPtr params(GroundDetectionParameters::Create());        
+    params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
+    params->SetTriangleEdgeThreshold(0.05);
+    params->SetAnglePercentileFactor(95.000000000000000);
+    params->SetHeightPercentileFactor(95.000000000000000);
 
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
+    smPtsProviderCreator->SetExtractionArea(m_extractionArea);
 
+    DRange3d availableRange;
+    smPtsProviderCreator->GetAvailableRange(availableRange);
+
+    double maxLength = std::max(availableRange.XLength(), availableRange.YLength());
+
+    if (maxLength < LARGEST_STRUCTURE_SIZE_DEFAULT * 2)
+        {
+        params->SetLargestStructureSize(maxLength / 2);
+        }
+    
     IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());     
     params->SetPointsProviderCreator(ptsProviderCreator);        
 
@@ -123,8 +177,22 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     assert(status == SUCCESS);
+
+    IGroundPointsAccumulatorPtr nullAcc;
+
+    params->SetGroundPointsAccumulator(nullAcc);
+    accumPtr = 0;
+
+    status = CreateSmTerrain();
     
     return status;        
+    } 
+
+StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
+    {
+    m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+    return SUCCESS;
     }
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -127,25 +127,36 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
         {
         DRange3d queryRange;
         clip->GetRange(queryRange, &m_transform);
+
+        if (queryRange.XLength() == 0 || queryRange.YLength() == 0)
+            return SUCCESS; 
+
         queryRange.Get8Corners(box);
         nPts = 8;
         }
-
+      
     bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
     meshQueryInterface->Query(nodes, nPts> 0 ? box : nullptr, (int)nPts, params);
 
-    size_t offset = 0;
-    for (auto& node: nodes)
-        {
-        ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
-        flags->SetLoadGraph(false);
-        auto mesh = node->GetMesh(flags);
+    ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+    flags->SetLoadGraph(false);
+    flags->SetLoadTexture(false);
+    flags->SetLoadIndices(false);
 
-        offset = points.size();
-        int nOfPts = (int)((offset + mesh->GetNbPoints() > 5000000) ? (5000000 - offset) : mesh->GetNbPoints());
-        if (points.size() < 5000000) points.resize(points.size() + nOfPts);
-        else break;
-        if(nOfPts > 0) memcpy(&points[offset], mesh->GetPolyfaceQuery()->GetPointCP(), nOfPts * sizeof(DPoint3d));
+    for (auto& node: nodes)
+        {        
+        auto mesh = node->GetMesh(flags);
+                
+        for (size_t ptInd = 0; ptInd <  mesh->GetNbPoints(); ptInd++)
+            {            
+            points.push_back(mesh->EditPoints()[ptInd]);
+            }
+                
+        if (points.size() > 5000000) 
+            {
+            assert(!"Do many points covering grid");
+            break;
+            }        
         }
 
     Transform inverseTrans;
@@ -506,12 +517,31 @@ IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider()
     return ScalableMeshPointsProvider::CreateFrom(m_smesh, range);
     }
 
-
 void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRange) 
-    {    
-    DTMStatusInt status = m_smesh->GetRange(availableRange);
+    {   
+    DRange3d smRange;
+    DTMStatusInt status = m_smesh->GetRange(smRange);
 
     assert(status == SUCCESS);           
+
+    if (m_extractionArea.size() > 0)
+        {
+        DRange3d areaRange(DRange3d::From(&m_extractionArea[0], (int)m_extractionArea.size()));
+        areaRange.low.z = smRange.low.z;
+        areaRange.high.z = smRange.high.z;
+        availableRange.IntersectionOf(smRange, areaRange);
+
+        assert(!availableRange.IsEmpty());
+        }    
+    else
+        {
+        availableRange = smRange;
+        }
+    }
+
+void ScalableMeshPointsProviderCreator::SetExtractionArea(const bvector<DPoint3d>& area)
+    {    
+    m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());   
     }
             
 END_BENTLEY_SCALABLEMESH_NAMESPACE

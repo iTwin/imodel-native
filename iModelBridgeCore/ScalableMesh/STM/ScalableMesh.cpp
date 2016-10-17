@@ -32,8 +32,10 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #include <ScalableMesh\IScalableMeshSourceCollection.h>
 #include <ScalableMesh\IScalableMeshDocumentEnv.h>
+#include <ScalableMesh\IScalableMeshGroundExtractor.h>
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
+
 
 #include <CloudDataSource/DataSourceManager.h>
 
@@ -2080,8 +2082,41 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
+static bool s_doGroundExtract = false; 
+
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
     {
+    if (s_doGroundExtract)
+        {        
+        IScalableMeshPtr scalableMeshPtr(this);
+
+        WString newPath = m_path + L"_terrain.3sm";
+        m_scmTerrainIndexPtr = 0;
+        m_terrainP = 0;
+        /*
+        int result = _wremove(newPath.c_str());
+        assert(result == 0);
+        */
+
+        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));        
+
+        smGroundExtractor->SetExtractionArea(coverageData);
+
+        StatusInt status = smGroundExtractor->ExtractAndEmbed();                
+
+        assert(status == SUCCESS);    
+                
+        Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain";
+        StatusInt openStatus;
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+        if (openStatus && smSQLiteFile != nullptr)
+            {
+            m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
+            m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+            }                
+        }
+
+
     if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
     bvector<bvector<DPoint3d>> skirts;

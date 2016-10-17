@@ -1182,13 +1182,17 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
     {
     protected:
 
+        //NEEDS_WORK_SM : Load graph required since removed from file?
         bool m_loadGraph;
+        bool m_loadIndices;
         bool m_loadTexture;
 
         virtual bool _ShouldLoadTexture() const override;
+        virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
 
         virtual void _SetLoadTexture(bool loadTexture) override;
+        virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
 
     public:
@@ -1196,6 +1200,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             {
             m_loadGraph = false;
             m_loadTexture = false;
+            m_loadIndices = true;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
