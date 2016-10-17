@@ -1922,23 +1922,24 @@ struct DbFile
 
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
+    typedef RefCountedPtr<BusyRetry> BusyRetryPtr;
+    typedef bvector<Savepoint*> DbTxns;
+    typedef DbTxns::iterator DbTxnIter;
 
     bool            m_settingsTableCreated;
     bool            m_settingsDirty;
     bool            m_allowImplicitTxns;
     bool            m_inCommit;
-    SqlDbP          m_sqlDb;
     uint64_t        m_dataVersion; // for detecting changes from another process
-    RefCountedPtr<BusyRetry> m_retry;
+    SqlDbP          m_sqlDb;
+    BusyRetryPtr    m_retry;
+    ChangeTrackerPtr m_tracker;
     mutable void*   m_cachedProps;
     BriefcaseLocalValueCache m_blvCache;
     BeGuid          m_dbGuid;
     Savepoint       m_defaultTxn;
     BeBriefcaseId  m_briefcaseId;
-    ChangeTrackerPtr m_tracker;
     StatementCache  m_statements;
-    typedef bvector<Savepoint*> DbTxns;
-    typedef DbTxns::iterator DbTxnIter;
     DbTxns          m_txns;
 
     mutable struct
@@ -1962,17 +1963,6 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
-public:
-#if !defined (DOCUMENTATION_GENERATOR)
-    Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
-    int OnCommit();
-    bool UseSettingsTable(PropertySpecCR spec) const;
-#endif
-    void OnSettingsDirtied() {m_settingsDirty=true;}
-    bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
-    SqlDbP GetSqlDb() const {return m_sqlDb;}
-
-protected:
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -1985,6 +1975,14 @@ protected:
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetBLVCache();
+
+public:
+    Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
+    int OnCommit();
+    bool UseSettingsTable(PropertySpecCR spec) const;
+    void OnSettingsDirtied() {m_settingsDirty=true;}
+    bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
+    SqlDbP GetSqlDb() const {return m_sqlDb;}
 };
 
 //=======================================================================================

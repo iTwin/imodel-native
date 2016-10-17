@@ -589,11 +589,8 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     m_dataVersion = 0;
     memset(&m_flags, 0, sizeof(m_flags));
 
-    if (retry)
-        {
-        m_retry = retry;
-        sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
-        }
+    m_retry = retry ? retry : new BusyRetry();
+    sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
     }
 
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
