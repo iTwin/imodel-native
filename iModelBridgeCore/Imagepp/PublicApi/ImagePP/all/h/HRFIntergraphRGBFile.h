@@ -69,6 +69,8 @@ struct HRFIntergraphRGBCreator : public HRFIntergraphFile::Creator
     virtual Utf8String     GetLabel() const;
     virtual Utf8String     GetExtensions() const;
 
+    virtual Utf8String GetShortName() const { return "IntgrRGB"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

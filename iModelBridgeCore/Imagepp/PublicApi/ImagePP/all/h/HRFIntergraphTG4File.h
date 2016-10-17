@@ -73,6 +73,8 @@ struct HRFIntergraphTG4Creator : public HRFIntergraphFile::Creator
     virtual Utf8String     GetLabel() const;
     virtual Utf8String     GetExtensions() const;
 
+    virtual Utf8String GetShortName() const { return "TG4"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

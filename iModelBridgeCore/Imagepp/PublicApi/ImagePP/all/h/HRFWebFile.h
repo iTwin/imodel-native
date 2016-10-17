@@ -115,6 +115,8 @@ struct HRFWebFileCreator : public HRFRasterFileCreator
     virtual Utf8String      GetLabel() const;
     virtual Utf8String      GetSchemes() const;
 
+    virtual Utf8String GetShortName() const override { return "WEB"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities> & GetCapabilities();
 

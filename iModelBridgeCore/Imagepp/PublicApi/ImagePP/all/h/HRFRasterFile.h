@@ -327,6 +327,9 @@ struct HRFRasterFileCreator
     IMAGEPP_EXPORT virtual Utf8String               GetDefaultExtension() const;
     virtual Utf8String               GetExtensions() const = 0;
 
+    //! Unique non translated short name. Used in tests. 
+    virtual Utf8String GetShortName() const = 0;
+
     // Get the supported access mode for this file - logic const function
     IMAGEPP_EXPORT virtual HFCAccessMode         GetSupportedAccessMode() const;
 

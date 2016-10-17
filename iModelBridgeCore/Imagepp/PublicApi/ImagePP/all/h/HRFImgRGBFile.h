@@ -129,6 +129,8 @@ struct HRFImgRGBCreator : public HRFRasterFileCreator
     virtual Utf8String               GetSchemes() const;
     virtual Utf8String               GetExtensions() const;
 
+    virtual Utf8String GetShortName() const override { return "RGB"; }
+
     //:> File format is multi-file
     virtual bool                 GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
                                                  ListOfRelatedURLs&    pio_rRelatedURLs) const;

@@ -32,15 +32,19 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
 
     BeFileNameCR GetSourceDir() const { return m_sourceDir; }   
 
-    BeFileNameCR GetOutputDir() const { return m_outputDir; }
+    BeFileNameCR GetFileFormatOutputDir() const {return m_fileFormatOutputDir;}
 
     BeFileNameCR GetBaselineDir() const { return m_baselineDir; }
 
+    bool CompareAgainsBaseline() const { return !GetBaselineDir().IsEmpty(); }
+
+    bool DoMd5() const { return m_md5Validation; }
+
     bool ValidateExportDuration() const {return m_validateDuration;}
 
-    uint64_t DuratationThreshold() const { return m_durationThreshold; }
+    uint64_t GetDuratationThreshold() const { return m_durationThresholdMs; }
 
-    float   GetToleranceRatio() const { return m_toleranceRatio; }
+    double GetToleranceRatio() const { return m_toleranceRatio; }
 
    private:
         std::list<std::wstring> BuildFileList(BeFileNameCR directory);
@@ -48,10 +52,10 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
         BeFileName              m_baselineDir;
         BeFileName              m_sourceDir;
         std::list<std::wstring> m_sourceFileList;
-        BeFileName              m_outputDir;
+        BeFileName              m_fileFormatOutputDir;
 
-        
-        bool                    m_validateDuration;
-        float                   m_toleranceRatio;
-        uint64_t                m_durationThreshold;
+        bool                    m_md5Validation = false;
+        bool                    m_validateDuration = false;     
+        double                  m_toleranceRatio = 10;          //! Fails when there is more than 10% difference
+        uint64_t                m_durationThresholdMs = 5000;   //! Anything under the threshold is not validated
     };

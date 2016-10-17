@@ -214,6 +214,8 @@ struct HRFEcwCreator : public HRFRasterFileCreator
     virtual Utf8String                   GetSchemes() const;
     virtual Utf8String                   GetExtensions() const;
 
+    virtual Utf8String GetShortName() const { return "ECW"; }
+
     // Capability - The Generic SupportsURL function can be overwrite
     virtual bool                     SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
 
@@ -258,6 +260,8 @@ struct HRFJpeg2000Creator : public HRFRasterFileCreator
     virtual Utf8String                   GetLabel() const;
     virtual Utf8String                   GetSchemes() const;
     virtual Utf8String                   GetExtensions() const;
+
+    virtual Utf8String GetShortName() const { return "JP2"; }
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

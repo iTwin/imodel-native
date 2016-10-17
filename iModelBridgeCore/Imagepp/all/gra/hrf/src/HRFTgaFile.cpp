@@ -16,6 +16,7 @@
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFException.h>
+#include <Imagepp/all/h/HRFRasterFileFactory.h>
 
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
@@ -1676,9 +1677,6 @@ void HRFTgaFile::InitializeFileFooter()
     HPRECONDITION (m_pTgaExtentionArea != 0);
     HPRECONDITION (m_pTgaExtTableArea != 0);
 
-    time_t    Timer;
-    struct tm Gm;
-
     // Initialise default field of the extension et footer of the file
     m_pTgaFileFooter->m_ExtensionAreaOffset        = 0;
     m_pTgaFileFooter->m_DeveloperDirectoryOffset   = 0;
@@ -1697,8 +1695,8 @@ void HRFTgaFile::InitializeFileFooter()
     memset (m_pTgaExtentionArea->m_AuthorComments, 0x00, 324);
 
     // Get the time and hour of the file creation
-    time (&Timer);
-    Gm = *localtime (&Timer);
+    time_t Timer = (time_t)(HRFRasterFileFactory::GetInstance()->GetCreationTimeAsUnixMillis() / 1000);
+    struct tm Gm = *localtime (&Timer);
     m_pTgaExtentionArea->m_Year                       = (uint16_t)(1900 + Gm.tm_year);
     m_pTgaExtentionArea->m_Month                      = (uint16_t)(1 + Gm.tm_mon);
     m_pTgaExtentionArea->m_Day                        = (uint16_t)Gm.tm_mday;

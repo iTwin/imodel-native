@@ -63,7 +63,7 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         if (pSrcCreator == nullptr)
             return;
 
-        //printf("[ TRACE    ] Exporting: %s\n", sourceFileName.GetNameUtf8().c_str());
+        printf("[ TRACE    ]   Exporting: %s\n", sourceFileName.GetNameUtf8().c_str());
 
         HFCPtr<HRFRasterFile> pRasterFileSource = pSrcCreator->Create(pSourceUrl, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
         //Verify that the Rasterfile created is valid
@@ -85,6 +85,7 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
 
 #endif
+        auto& config = ImagePPTestConfig::GetConfig();
 
         // Use BestMatchSelectedValues for exportation
         ASSERT_NO_THROW(exporter->BestMatchSelectedValues());
@@ -93,19 +94,17 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         //      - select NEAREAST instead of average?  might run faster
         //      - MrSid is very slow. reduce dataset.
 
-        //&&MM avoid hard copying the name and make BuildRelativeOutputFileName private?
-        BeFileName relativeOutFilename = BuildRelativeOutputFileName(L"ExportiTiffTester\\ToBestiTiff", sourceFileName, *exporter->GetSelectedExportFileFormat());
+        BeFileName relativeOutFilename = BuildRelativeOutputFileName(L"ExportToBestiTiff", sourceFileName, *exporter->GetSelectedExportFileFormat());
         
-        BeFileName outputFilePath(ImagePPTestConfig::GetConfig().GetOutputDir());
-        if (outputFilePath.empty())
-            BeTest::GetHost().GetOutputRoot(outputFilePath);    // outputRoot if not specify in the config
+        BeFileName outputFilePath(config.GetFileFormatOutputDir());
+        ASSERT_FALSE(outputFilePath.IsEmpty());
 
         // Build output: outputRoot + testName + sourceSubDir + outputExtension
         // ex: ....\Product\ImagePP-GTest\run\Output\ + ExportiTiffTester\toBestiTiff\ + Image\jpeg\24bit.jpg + .iTiff
         outputFilePath.AppendToPath(relativeOutFilename);
 
-//         if (!outputFilePath.GetDirectoryName().DoesPathExist())
-//             ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outputFilePath.GetDirectoryName().c_str()));
+        if (!outputFilePath.GetDirectoryName().DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outputFilePath.GetDirectoryName().c_str()));
 
         HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outputFilePath.GetNameUtf8());
         exporter->SelectExportFilename(pURL);
@@ -116,10 +115,6 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         ASSERT_TRUE(pFile.GetPtr() != nullptr);
         pFile = nullptr;    // Close the RasterFile in order to be able to open it for UpdateTiffHistogramTimestamp()
         uint64_t endTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-
-        //&&MM can we do that while we export instead of reopening the file afterward?
-        //Adjust the time stamp to "9999:99:99 99:99:99"       
-        ASSERT_TRUE(UpdateTiffHistogramTimestamp(pURL));
 
         //*** Generate export info...
         RasterTestInfo outputInfo(outputFilePath);
@@ -134,9 +129,9 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
             }
         
         // *** validate against baseline.
-        BeFileNameCR baseLineDir = ImagePPTestConfig::GetConfig().GetBaselineDir();
-        if(!baseLineDir.empty())
+        if (config.CompareAgainsBaseline())
             {
+            BeFileNameCR baseLineDir = config.GetBaselineDir();
             ASSERT_TRUE(baseLineDir.DoesPathExist());
 
             BeFileName baselineFilePath = baseLineDir;
@@ -150,9 +145,23 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
             if (!baselineInfo.Load())
                 FAIL() << "Baseline info file is missing : " << baselineInfo.GetInfoFilename().c_str();
                 
-            ASSERT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed";
-            }
-        
+            if (config.DoMd5())
+                ASSERT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed";
+
+            if (config.ValidateExportDuration())
+                {
+                EXPECT_STREQ(baselineInfo.GetBuildType().c_str(), outputInfo.GetBuildType().c_str()) << "Build must be of same build type for duration validation";
+                EXPECT_STREQ(baselineInfo.GetComputerName().c_str(), outputInfo.GetComputerName().c_str()) << "Baseline must be from the same machine for duration validation";
+
+                if (outputInfo.GetExportDuration() > config.GetDuratationThreshold())
+                    {
+                    double exportDelta = (double) outputInfo.GetExportDuration() - (double) baselineInfo.GetExportDuration();
+                    double exportRatio = exportDelta / baselineInfo.GetExportDuration();
+                    ASSERT_LE(exportRatio, config.GetToleranceRatio())
+                        << "Base time: " << baselineInfo.GetExportDuration() << "ms New time: " << outputInfo.GetExportDuration() << "ms";
+                    }
+                }
+            }        
         }
     catch (HFCException& e)
         {

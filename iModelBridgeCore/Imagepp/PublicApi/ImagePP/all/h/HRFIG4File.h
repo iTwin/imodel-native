@@ -143,6 +143,8 @@ struct HRFIG4Creator : public HRFRasterFileCreator
     virtual Utf8String                   GetSchemes() const;
     virtual Utf8String                   GetExtensions() const;
 
+    virtual Utf8String GetShortName() const override { return "IG4"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

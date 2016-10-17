@@ -27,6 +27,33 @@
 
 USING_NAMESPACE_IMAGEPP
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+class HRFTester : public ::testing::Test
+    {
+    protected:
+    HRFTester() {};
+    ~HRFTester() {};
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+TEST_F(HRFTester, UniqueShortName)
+    {
+    ImagePPTestConfig::GetConfig().SetUp();
+    HRFRasterFileFactory::CreatorsMap const& creators = HRFRasterFileFactory::GetInstance()->GetCreatorsMap(HFC_CREATE_ONLY);
+
+    std::set<Utf8String> shortNameSet;
+
+    for (auto& entry : creators)
+        {
+        auto insertResult = shortNameSet.insert(entry.second->GetShortName());
+        ASSERT_TRUE(insertResult.second) << "not unique: " << entry.second->GetShortName();
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Class definition
 * @bsimethod                                             Laurent.Robert-Veillette 04/2016
@@ -56,7 +83,7 @@ class ExportAllTester : public ExporterTestFixture < ::testing::TestWithParam< :
                 {                
                 if (HRFPWRasterFile::CLASS_ID == entry.first || // Causes a crash to export to this format.
                     HRFRawFile::CLASS_ID == entry.first      || // They cannot be reopened
-                    HRFEpsFile::CLASS_ID == entry.first         // They cannot be reopened    
+                    HRFEpsFile::CLASS_ID == entry.first        // They cannot be reopened    
                     )
                     continue;
 
@@ -79,8 +106,7 @@ class ExportAllTester : public ExporterTestFixture < ::testing::TestWithParam< :
                 BeFileName sourceDir = ImagePPTestConfig::GetConfig().GetSourceDir();
                 if (!sourceDir.IsEmpty())   // Empty mean disabled
                     {
-                    s_sourceList.push_back(L"Images\\iTIFF\\TA00T1A2\\TS1_32bits_None_Tile.iTIFF");
-                    //s_sourceList.push_back(L"Images\\iTIFF\\1A02S142\\TS1_2C_Alpha_CCITT4_Strip.iTIFF");
+                    s_sourceList.push_back(L"Images\\iTIFF\\pattern.itiff");
                     }
 
                 s_created = true;
@@ -113,140 +139,35 @@ class ExportAllTester : public ExporterTestFixture < ::testing::TestWithParam< :
 * Format the name of the file with the specific options of the export
 * @bsimethod                                         Laurent.Robert-Veillette     04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName s_GetProfileID(const HFCPtr<HRFRasterFile>&   pi_rpRasterFile,
-                                 HCLASS_ID                      pixelTypeClassKey,
-                                 HCLASS_ID                      codecClassKey,
-                                 HRFBlockType                   blockType)
+static BeFileName s_GetProfileID(HCLASS_ID pixelTypeClassKey, HCLASS_ID codecClassKey, HRFBlockType blockType)
     {
     Utf8String ComposedFilename;
 
-    HRFResolutionDescriptor ResolutionDescriptor(*(pi_rpRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)));
-
-    //------------------------------------
-    // Color space (Pixel Type)
     ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodePixelType(pixelTypeClassKey);
-
-    //------------------------------------
-    // Compression Codec
-    //const HCDCodecsList::ListCodecs& rList = ResolutionDescriptor.GetCodec()->GetList();
-    //HCDCodecsList::ListCodecs::const_iterator Itr(rList.begin());
     ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodeCodec(codecClassKey);
 
-    //------------------------------------
-    // Raster organisation...
-    if (blockType == HRFBlockType::LINE)
-        ComposedFilename += "L";
-    else if (blockType == HRFBlockType::STRIP)
+    switch (blockType.m_BlockType)
         {
-        if (ResolutionDescriptor.GetBlockType() == blockType)
-            {
-            if (ResolutionDescriptor.GetBlockHeight() == 1)
-                ComposedFilename += "C";
-            else if (!(ResolutionDescriptor.GetBlockHeight() % 16))
-                ComposedFilename += "S";
-            else
-                ComposedFilename += "Z";
-            }
-        else
-            {
-            ComposedFilename += "C";     // default value when setting a new block type
-            }
-        }
-    else if (blockType == HRFBlockType::TILE)
-        {
-        if (ResolutionDescriptor.GetBlockType() == blockType)
-            {
-            if (!(ResolutionDescriptor.GetBlockWidth() % 256))
-                ComposedFilename += "T";
-            else  if (ResolutionDescriptor.GetBlockWidth() == 64)
-                ComposedFilename += "R";
-            else if (!(ResolutionDescriptor.GetBlockWidth() % 32))
-                ComposedFilename += "M";
-            else if (!(ResolutionDescriptor.GetBlockWidth() % 16))
-                ComposedFilename += "X";
-            else
-                ComposedFilename += "Z";
-            }
-        else
-            {
-            ComposedFilename += "T";     // default value when setting a new block type
-            }
-        }
-    else if (blockType == HRFBlockType::IMAGE)
-        ComposedFilename += "I";
+        case HRFBlockType::LINE:
+            ComposedFilename += "L";
+            break;
 
-    //------------------------------------
-    // Resolution...
-    if (pi_rpRasterFile->GetPageDescriptor(0)->CountResolutions() > 1)
-        {
-        // At this time we may only generate 2x multi-resolution...
-        ComposedFilename += "1";
-        /*
-        ComposedFilename += AtpAStr("2");
+        case HRFBlockType::TILE:
+            ComposedFilename += "T";
+            break;
 
-        ComposedFilename += AtpAStr("3");
-        */
-        }
-    else
-        ComposedFilename += "0";
+        case HRFBlockType::STRIP:
+            ComposedFilename += "S";
+            break;
 
-
-    //------------------------------------
-    // iTiff Specific part
-    if (pi_rpRasterFile->IsCompatibleWith(HRFiTiffFile::CLASS_ID))
-        {
-        //------------------------------------
-        // Downsampling used
-        if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NEAREST_NEIGHBOUR)
-            ComposedFilename += "N";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::AVERAGE)
-            ComposedFilename += "A";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::VECTOR_AWARENESS)
-            ComposedFilename += "V";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::UNKOWN)
-            ComposedFilename += "U";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::ORING4)
-            ComposedFilename += "4";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NONE)
-            ComposedFilename += "Z";
-
-        //------------------------------------
-        // Version..
-        ComposedFilename += "2";
+        case HRFBlockType::IMAGE:
+            ComposedFilename += "I";
+            break;
+        default:
+            BeAssert(!"unknown HRFBlockType");
+            break;
         }
-
-    //------------------------------------
-    // BMP Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFBmpFile::CLASS_ID))
-        {
-        ComposedFilename += "W";
-        }
-    //------------------------------------
-    // HMR Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFHMRFile::CLASS_ID))
-        {
-        ComposedFilename += "1";
-        }
-    //------------------------------------
-    // JPEG Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFJpegFile::CLASS_ID))
-        {
-        ComposedFilename += "1";
-        }
-    //------------------------------------
-    // Intergraph Specific part.
-    else if ((pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCot29File::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCitFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCotFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRGBFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRleFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphTG4File::CLASS_ID)))
-        {
-        char Buffer[4];
-
-        itoa(ResolutionDescriptor.GetScanlineOrientation().m_ScanlineOrientation, Buffer, 10);
-        ComposedFilename += Buffer;
-        }
+    
 
     return BeFileName(ComposedFilename);
     }
@@ -261,7 +182,9 @@ TEST_P(ExportAllTester, ToAllFormats)
     //    - Skip some pixeltype in binary case.  Maybe it deserves its own test. BinaryToAllBinaryFormats
     //    -  Add a dump with info of build.  Source location, build type, date of run... do it in base 'ExporterTestFixture'.
 
-    BeFileName sourceDir = ImagePPTestConfig::GetConfig().GetSourceDir();
+    auto& config = ImagePPTestConfig::GetConfig();
+
+    BeFileName sourceDir = config.GetSourceDir();
     if (sourceDir.IsEmpty())   // Empty mean disabled
         return;
     
@@ -276,17 +199,17 @@ TEST_P(ExportAllTester, ToAllFormats)
     if (outExtension.StartsWith(L"*."))
         outExtension.erase(0, 2);
 
-    BeFileName outputRoot(ImagePPTestConfig::GetConfig().GetOutputDir());
-    if (outputRoot.empty())
-        BeTest::GetHost().GetOutputRoot(outputRoot);
+    BeFileName outputRoot(config.GetFileFormatOutputDir());
+    ASSERT_FALSE(outputRoot.IsEmpty());
 
-    BeFileName baseRelativeOutName("ExportAllTester\\ToAllFormats\\"); //&&MM avoid hard copying the name.
-    //relativeOutName += L"Images_iTIFF_1A02S142_";
-    //relativeOutName += L"Images_iTIFF_TA00T1A2_";
-    //relativeOutName += sourceFilename.GetFileNameWithoutExtension();
+    BeFileName baseRelativeOutName("ExportToAll\\");
+    baseRelativeOutName.AppendUtf8(creator.GetShortName().c_str());
+    baseRelativeOutName += L"_";
     baseRelativeOutName += sourceFilename.GetFileNameAndExtension();
 
     HFCPtr<HFCURL> pSourceUrl = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + sourceFilename.GetNameUtf8());
+
+    printf("[ TRACE    ]   Exporting: %s\n", creator.GetLabel().c_str());
 
     try
         {
@@ -303,6 +226,7 @@ TEST_P(ExportAllTester, ToAllFormats)
 
             // *** Codec
             HFCPtr<HRFRasterFileCapabilities> codecCaps = pCurrentPixelType->GetCodecCapabilities();
+
             for (uint32_t codecIndex=0; codecIndex < codecCaps->CountCapabilities(); ++codecIndex)
                 {
                 HFCPtr<HRFCodecCapability> pCurrentCodec = (HFCPtr<HRFCodecCapability>&) codecCaps->GetCapability(codecIndex);
@@ -319,11 +243,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                     if (!pCurrentBlock->GetAccessMode().m_HasCreateAccess)
                         continue;
 
-                    //&&MM do better. not unique for file with the same extension. ex: geotiff + tiff.
-                    WString ID = s_GetProfileID(pRasterFileSource,
-                                              pCurrentPixelType->GetPixelTypeClassID(),
-                                              pCurrentCodec->GetCodecClassID(),
-                                              pCurrentBlock->GetBlockType());
+                    WString ID = s_GetProfileID(pCurrentPixelType->GetPixelTypeClassID(), pCurrentCodec->GetCodecClassID(), pCurrentBlock->GetBlockType());
 
                     BeFileName outRelativeName(baseRelativeOutName);
                     outRelativeName.AppendString(L"_");
@@ -333,7 +253,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                     BeFileName outFilename(outputRoot);
                     outFilename.AppendToPath(outRelativeName.c_str());
 
-                    //ASSERT_FALSE(outFilename.DoesPathExist()) << outFilename.c_str();
+                    ASSERT_FALSE(outFilename.DoesPathExist()) << outFilename.c_str();
 
                     HFCPtr<HFCURL> pOutputUrl = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outFilename.GetNameUtf8());
 
@@ -344,45 +264,39 @@ TEST_P(ExportAllTester, ToAllFormats)
                     ASSERT_TRUE(pRaster != nullptr);
 
                     std::unique_ptr<HUTImportFromRasterExportToFile> exporter(new HUTImportFromRasterExportToFile(pRaster, *pRaster->GetEffectiveShape(), GetWorld()));
-                                        
-                    exporter->SelectExportFileFormat(&creator);
+                    
                     exporter->SelectExportFilename(pOutputUrl);
-                    exporter->SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
-                    exporter->SelectCodec(pCurrentCodec->GetCodecClassID());
-                    exporter->SelectBlockType(pCurrentBlock->GetBlockType());
 
+                    exporter->SelectExportFileFormat(&creator);
+                    ASSERT_EQ(&creator, exporter->GetSelectedExportFileFormat());
+                                        
+                    exporter->SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
+                    ASSERT_EQ(pCurrentPixelType->GetPixelTypeClassID(), exporter->GetSelectedPixelType());
+
+                    exporter->SelectCodec(pCurrentCodec->GetCodecClassID());
+                    ASSERT_EQ(pCurrentCodec->GetCodecClassID(), exporter->GetSelectedCodec());
+
+                    exporter->SelectBlockType(pCurrentBlock->GetBlockType());
+                    ASSERT_EQ(pCurrentBlock->GetBlockType(), exporter->GetSelectedBlockType());
+
+                    // *** Export the file.....
                     uint64_t startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
                     HFCPtr<HRFRasterFile> pFile = exporter->StartExport();
-                    ASSERT_TRUE(pFile.GetPtr() != nullptr);
-                    bool isTiff = pFile->IsCompatibleWith(HRFFileId_Tiff);
-                    if (!isTiff && pFile->IsCompatibleWith(HRFRasterFileExtender::CLASS_ID))
-                        isTiff = reinterpret_cast<HFCPtr<HRFRasterFileExtender>&>(pFile)->GetOriginalFile()->IsCompatibleWith(HRFFileId_Tiff);
-                        
+                    ASSERT_TRUE(pFile.GetPtr() != nullptr);                        
                     exporter.reset();
                     pFile = nullptr;                    
                     uint64_t endTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
-                    //&&MM can we do that while we export instead of reopening the file afterward?
-                    //Adjust the time stamp to "9999:99:99 99:99:99"       
-                    if(isTiff)
-                        ASSERT_TRUE(UpdateTiffHistogramTimestamp(pOutputUrl));
-
-                    // *** Generate export info...
+                    // *** Generate export info.
                     RasterTestInfo outputInfo(outFilename);
+                    outputInfo.SetExportDuration(endTime - startTime);
+                    ASSERT_TRUE(outputInfo.ComputeMD5());
+                    ASSERT_TRUE(outputInfo.Store());
 
-                    static bool s_writeTestInfo = true;
-                    if (s_writeTestInfo)
+                    // *** Validate against baseline.
+                    if (config.CompareAgainsBaseline())
                         {
-                        outputInfo.SetExportDuration(endTime - startTime);
-
-                        ASSERT_TRUE(outputInfo.ComputeMD5());
-                        ASSERT_TRUE(outputInfo.Store());
-                        }
-
-                    // *** validate against baseline.
-                    BeFileNameCR baseLineDir = ImagePPTestConfig::GetConfig().GetBaselineDir();
-                    if (!baseLineDir.empty())
-                        {
+                        BeFileNameCR baseLineDir = config.GetBaselineDir();
                         ASSERT_TRUE(baseLineDir.DoesPathExist());
 
                         BeFileName baselineFilename(baseLineDir);
@@ -396,7 +310,22 @@ TEST_P(ExportAllTester, ToAllFormats)
                         if (!baselineInfo.Load())
                             FAIL() << "Baseline info file is missing : " << baselineInfo.GetInfoFilename().c_str();
 
-                        ASSERT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed";
+                        if(config.DoMd5())
+                            ASSERT_STREQ(baselineInfo.GetMD5().c_str(), outputInfo.GetMD5().c_str()) << "MD5 check failed";
+
+                        if (config.ValidateExportDuration())
+                            {
+                            EXPECT_STREQ(baselineInfo.GetBuildType().c_str(), outputInfo.GetBuildType().c_str()) << "Build must be of same build type for duration validation";
+                            EXPECT_STREQ(baselineInfo.GetComputerName().c_str(), outputInfo.GetComputerName().c_str()) << "Baseline must be from the same machine for duration validation";
+
+                            if (outputInfo.GetExportDuration() > config.GetDuratationThreshold())
+                                {
+                                double exportDelta = (double) outputInfo.GetExportDuration() - (double) baselineInfo.GetExportDuration();
+                                double exportRatio = exportDelta / baselineInfo.GetExportDuration();
+                                ASSERT_LE(exportRatio, config.GetToleranceRatio())
+                                    << "Base time: " << baselineInfo.GetExportDuration() << "ms New time: " << outputInfo.GetExportDuration() << "ms";
+                                }
+                            }
                         }
                     }
                 }
@@ -408,12 +337,9 @@ TEST_P(ExportAllTester, ToAllFormats)
         }
     }
 
-INSTANTIATE_TEST_CASE_P(FormatTests, ExportAllTester,
-                                           // Path reliative to sourceDir
-                        ::testing::Combine(::testing::Values(L"Images\\iTIFF\\TA00T1A2\\TS1_32bits_None_Tile.iTIFF"),
-                                           //::testing::ValuesIn(ExportAllTester::GetSourceList())
-                                           ::testing::ValuesIn(ExportAllTester::GetCreatorList())
-                                           ));
+INSTANTIATE_TEST_CASE_P(FormatTests, ExportAllTester, 
+                        ::testing::Combine(::testing::ValuesIn(ExportAllTester::GetSourceList()),
+                                           ::testing::ValuesIn(ExportAllTester::GetCreatorList())));
 
 // #else
 // 

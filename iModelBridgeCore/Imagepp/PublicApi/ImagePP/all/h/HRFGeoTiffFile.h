@@ -131,6 +131,8 @@ struct HRFGeoTiffCreator : public HRFTiffCreator
     // Identification information
     virtual Utf8String                   GetLabel() const;
 
+    virtual Utf8String GetShortName() const override { return "GeoTIF"; }
+
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();

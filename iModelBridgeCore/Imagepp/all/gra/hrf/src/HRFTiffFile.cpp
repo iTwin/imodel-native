@@ -19,6 +19,7 @@
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFException.h>
+#include <Imagepp/all/h/HRFRasterFileFactory.h>
 
 #include <Imagepp/all/h/HTIFFFile.h>
 #include <ImagePP/all/h/HTIFFDirectory.h>
@@ -1157,11 +1158,8 @@ void HRFTiffFile::ScanDirectories ()
 
 void HRFTiffFile::GetSystemDateTime (char* datetime)
     {
-    time_t timer;
-    struct tm gm;
-
-    time (&timer);
-    gm = *localtime (&timer);
+    time_t timer = (time_t)(HRFRasterFileFactory::GetInstance()->GetCreationTimeAsUnixMillis() / 1000);
+    struct tm gm = *localtime (&timer);
 
     sprintf ((char*)datetime, "%4d:%02d:%02d %02d:%02d:%02d",1900+gm.tm_year,
              1+gm.tm_mon,
