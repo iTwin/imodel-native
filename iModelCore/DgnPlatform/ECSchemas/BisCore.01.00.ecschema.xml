@@ -1839,7 +1839,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
-        <ECProperty propertyName="SubCategoryOverrides" typeName="string" displayLabel="JSON string consisting of array of SubCategoryOverrides"/>
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle">
         <BaseClass>DefinitionElement</BaseClass>

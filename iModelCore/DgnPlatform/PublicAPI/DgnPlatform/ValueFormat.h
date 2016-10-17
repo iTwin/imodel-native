@@ -396,12 +396,10 @@ public:
     //! @param[in] model Initialize the formatter from the settings in this model.
     static DistanceFormatterPtr Create(GeometricModelCR model) {DistanceFormatterPtr formatter = Create(); formatter->InitModelSettings(model); return formatter;}
 
-#if defined (NEEDS_WORK_TARGET_MODEL)
     //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
     //! target model and the scale from the viewport's ACS.
     //! @param[in] vp                       Initialize the formatter from the settings in this viewport.
     static DGNPLATFORM_EXPORT DistanceFormatterPtr Create(DgnViewportR vp);
-#endif
 
     //! Construct a formatter which is a duplicate of an existing formatter.
     DistanceFormatterPtr Clone() const {return new DistanceFormatter(*this);}

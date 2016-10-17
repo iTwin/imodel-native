@@ -117,6 +117,7 @@ protected:
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual bool _Is3d() const {return false;}
+    virtual GeometricModelP _GetTargetModel() const = 0;
 
     //! @return true to project un-snapped points to the view's ACS plane.
     //! @note Normally true for a 3d view. A 3d digitizier supplying real z values would not want this...maybe this would be a special ViewController?
@@ -348,13 +349,15 @@ public:
     //! Get the Appearance of a DgnSubCategory for this view.
     //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
-    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetCategorySelector().GetSubCategoryAppearance(id);}
+    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetSubCategoryAppearance(id);}
 
     //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
 
     //! determine whether a DgnModel is displayed in this view
     bool IsModelViewed(DgnModelId modelId) const {return m_definition->ViewsModel(modelId);}
+
+    GeometricModelP GetTargetModel() const {return _GetTargetModel();}
 
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
@@ -619,6 +622,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
+    DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
@@ -927,6 +931,7 @@ protected:
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
+    DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 

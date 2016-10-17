@@ -36,7 +36,7 @@ namespace ViewProperties
     static Utf8CP str_Styles() {return "Styles";}
     static Utf8CP str_Details() {return "Details";}
     static Utf8CP str_SubCategory() {return "SubCategory";}
-    static Utf8CP str_SubCategoryOverrides() {return "SubCategoryOverrides";}
+    static Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
     static Utf8CP str_LensAngle() {return "LensAngle";}
     static Utf8CP str_FocusDistance() {return "FocusDistance";}
     static Utf8CP str_EyePoint() {return "EyePoint";}
@@ -53,6 +53,24 @@ namespace ViewProperties
 using namespace ViewProperties;
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(ViewControllerOverride)
+
+BEGIN_UNNAMED_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T> static RefCountedPtr<T> getAndCopy(DgnDbR db, DgnElementId id)
+    {
+    BeAssert(id.IsValid());
+    auto el = db.Elements().Get<T>(id);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return el->MakeCopy<T>();
+    }
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -87,7 +105,6 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
         return nullptr;
 
     controller->LoadState();
-
     return controller;
     }
 
@@ -96,6 +113,9 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::_EqualState(ViewDefinitionCR other) const
     {
+    SaveState();
+    other.SaveState();
+
     if (!m_categorySelector->EqualState(*other.m_categorySelector))
         return false;
 
@@ -106,30 +126,80 @@ bool ViewDefinition::_EqualState(ViewDefinitionCR other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SaveState() const
+    {
+    if (!m_displayStyle->GetElementId().IsValid())
+        {
+        m_displayStyle->Insert();
+        m_dirty = true;
+        }
+    if (!m_categorySelector->GetElementId().IsValid())
+        {
+        m_categorySelector->Insert();
+        m_dirty = true;
+        }
+
+    if (!m_dirty)
+        return;
+
+    ViewDefinitionR ncThis = const_cast<ViewDefinitionR>(*this);
+    ncThis.SetPropertyValue(str_DisplayStyle(), m_displayStyle->GetElementId());
+    ncThis.SetPropertyValue(str_CategorySelector(), m_categorySelector->GetElementId());
+    ncThis.SetPropertyValue(str_Details(), Json::FastWriter::ToString(m_details).c_str());
+    m_dirty=false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::_LoadFromDb() 
+    {
+    auto stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // Note: every instance of a view definition must have its own copy of its member elements
+    m_categorySelector = getAndCopy<CategorySelector>(m_dgndb, GetPropertyValueId<DgnElementId>(str_CategorySelector()));
+    m_displayStyle = getAndCopy<DisplayStyle>(m_dgndb, GetPropertyValueId<DgnElementId>(str_DisplayStyle()));
+
+    if (!m_categorySelector.IsValid() || !m_displayStyle.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadElement;
+        }
+
+    Json::Reader::Parse(GetPropertyValueString(str_Details()), m_details);
+    m_dirty = false;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_CopyFrom(DgnElementCR el) 
+    {
+    auto& other = static_cast<ViewDefinitionCR>(el);
+    other.SaveState();
+
+    T_Super::_CopyFrom(el);
+
+    BeAssert(other.m_categorySelector.IsValid());
+    BeAssert(other.m_displayStyle.IsValid());
+
+    m_categorySelector = other.m_categorySelector->MakeCopy<CategorySelector>();
+    m_displayStyle = other.m_displayStyle->MakeCopy<DisplayStyle>();
+    m_details = other.m_details;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
     {
     return new OrthographicViewController(*this);
     }
-
-BEGIN_UNNAMED_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> static RefCountedPtr<T> getAndCopy(DgnDbR db, DgnElementId id)
-    {
-    BeAssert(id.IsValid());
-    auto el = db.Elements().Get<T>(id);
-    if (!el.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return el->MakeCopy<T>();
-    }
-END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -162,62 +232,6 @@ double DrawingViewDefinition::GetAspectRatioSkew() const
     {
     auto& val = GetDetail(str_AspectSkew());
     return val.isNull() ? 1.0 : val.asDouble();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::SaveDefinition()
-    {
-    if (!m_displayStyle->GetElementId().IsValid())
-        m_displayStyle->Insert();
-
-    if (!m_categorySelector->GetElementId().IsValid())
-        m_categorySelector->Insert();
-
-    SetPropertyValue(str_DisplayStyle(), m_displayStyle->GetElementId());
-    SetPropertyValue(str_CategorySelector(), m_categorySelector->GetElementId());
-    SetPropertyValue(str_Details(), Json::FastWriter::ToString(m_details).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_LoadFromDb() 
-    {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    // Note: every instance of a view definition must have its own copy of its member elements
-    m_categorySelector = getAndCopy<CategorySelector>(m_dgndb, GetPropertyValueId<DgnElementId>(str_CategorySelector()));
-    m_displayStyle = getAndCopy<DisplayStyle>(m_dgndb, GetPropertyValueId<DgnElementId>(str_DisplayStyle()));
-
-    if (!m_categorySelector.IsValid() || !m_displayStyle.IsValid())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
-
-    Json::Reader::Parse(GetPropertyValueString(str_Details()), m_details);
-    
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_CopyFrom(DgnElementCR el) 
-    {
-    T_Super::_CopyFrom(el);
-    auto other = dynamic_cast<ViewDefinitionCP>(&el);
-
-    BeAssert(other->m_categorySelector.IsValid());
-    BeAssert(other->m_displayStyle.IsValid());
-
-    m_categorySelector = other->m_categorySelector->MakeCopy<CategorySelector>();
-    m_displayStyle = other->m_displayStyle->MakeCopy<DisplayStyle>();
-    m_details = other->m_details;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,7 +343,7 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionCR in) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA("ViewDefinition");
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -438,7 +452,7 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
     {
-    static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA("ViewDefinition");
     
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -493,74 +507,6 @@ void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* load a subcategory appearance into its unmodified state
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::Appearance CategorySelector::LoadSubCategory(DgnSubCategoryId id) const
-    {
-    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
-    BeAssert(unmodified.IsValid());
-    if (!unmodified.IsValid())
-        return DgnSubCategory::Appearance();
-
-    BeMutexHolder _v(m_mutex);
-    auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
-    if (!result.second)
-        result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it to unmodified state
-
-    return unmodified->GetAppearance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
-    {
-    if (!id.IsValid())
-        return;
-
-    m_dirty = true;
-    auto result = m_subCategoryOverrides.Insert(id, ovr);
-    if (!result.second)
-        result.first->second = ovr; // we already had this override; change it.
-
-    LoadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
-
-    // now apply this override to the unmodified SubCategory appearance
-    auto it = m_subCategories.find(id);
-    if (it != m_subCategories.end())
-        ovr.ApplyTo(it->second);
-    else
-        BeAssert(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::Appearance CategorySelector::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
-    {
-    if (true)
-        {
-        BeMutexHolder _v(m_mutex);
-        auto const entry = m_subCategories.find(subCategoryId);
-        if (entry != m_subCategories.end())
-            return entry->second;
-        }
-
-    return LoadSubCategory(subCategoryId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::DropSubCategoryOverride(DgnSubCategoryId id)
-    {
-    m_dirty = true;
-    m_subCategoryOverrides.erase(id);
-    LoadSubCategory(id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
@@ -577,14 +523,9 @@ bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CategorySelector::_CopyFrom(DgnElementCR in) 
     {
-    auto const& other = (CategorySelector const&) in;
-    other.SaveState();
     T_Super::_CopyFrom(in);
-
-    m_dirty = false;
+    auto const& other = (CategorySelector const&) in;
     m_categories = other.m_categories; 
-    m_subCategories = other.m_subCategories;
-    m_subCategoryOverrides = other.m_subCategoryOverrides;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -604,13 +545,7 @@ DgnDbStatus CategorySelector::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::EqualState(CategorySelectorCR other) const 
     {
-    if (m_categories != other.m_categories)
-        return false;
-
-    SaveState();
-    other.SaveState();
-
-    return GetPropertyValueString(str_SubCategoryOverrides()) == other.GetPropertyValueString(str_SubCategoryOverrides());
+    return m_categories == other.m_categories;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -622,31 +557,11 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
     
-    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE (SourceECInstanceId=?)");
+    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)");
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
     return WriteCategories();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::SaveState() const
-    {
-    if (!m_dirty)
-        return;
-    m_dirty = false;
-
-    Json::Value ovrJson;
-    int i=0;
-    for (auto const& it : m_subCategoryOverrides)
-        {
-        ovrJson[i][str_SubCategory()] = it.first.GetValue();
-        it.second.ToJson(ovrJson[i++]);
-        }
-
-    ((CategorySelector*) this)->SetPropertyValue(str_SubCategoryOverrides(), Json::FastWriter::ToString(ovrJson).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -660,7 +575,7 @@ DgnDbStatus CategorySelector::WriteCategories()
         return DgnDbStatus::MissingId;
         }
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA("CategorySelectorRefersToCategories") " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -674,7 +589,6 @@ DgnDbStatus CategorySelector::WriteCategories()
             return DgnDbStatus::WriteError;
         }
 
-    SaveState();
     return DgnDbStatus::Success;
     }
 
@@ -687,7 +601,7 @@ DgnDbStatus CategorySelector::_LoadFromDb()
     if (stat  != DgnDbStatus::Success)
         return stat;
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE SourceECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::BadSchema;
 
@@ -695,30 +609,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
 
     while (BE_SQLITE_ROW == statement->Step())
         m_categories.insert(statement->GetValueId<DgnCategoryId>(0));
-
-    auto jsonStr = GetPropertyValueString(str_SubCategoryOverrides());
-    if (0 == jsonStr.length())
-        return DgnDbStatus::Success;
-
-    Json::Value arr(Json::arrayValue);
-    if (!Json::Reader::Parse(jsonStr, arr))
-        {
-        BeAssert(false && "invalid json");
-        return DgnDbStatus::Success;
-        }
-
-    for (Json::ArrayIndex i = 0; i<arr.size(); ++i)
-        {
-        JsonValueCR val = arr[i];
-        DgnSubCategoryId subCategoryId(val[str_SubCategory()].asUInt64());
-        if (!subCategoryId.IsValid())
-            {
-            BeDataAssert(false && "SubCategoryOverride refers to missing SubCategory");
-            continue;
-            }
-        OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
-        }
-    m_dirty = false;
 
     return DgnDbStatus::Success;
     }
@@ -1085,6 +975,74 @@ BentleyStatus ViewDefinition::SetStandardViewRotation(StandardView standardView)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* load a subcategory appearance into its unmodified state
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) const
+    {
+    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
+    BeAssert(unmodified.IsValid());
+    if (!unmodified.IsValid())
+        return DgnSubCategory::Appearance();
+
+    BeMutexHolder _v(m_mutex);
+    auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
+    if (!result.second)
+        result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it to unmodified state
+
+    return unmodified->GetAppearance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
+    {
+    if (!id.IsValid())
+        return;
+
+    m_dirty = true;
+    auto result = m_subCategoryOverrides.Insert(id, ovr);
+    if (!result.second)
+        result.first->second = ovr; // we already had this override; change it.
+
+    LoadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
+
+    // now apply this override to the unmodified SubCategory appearance
+    auto it = m_subCategories.find(id);
+    if (it != m_subCategories.end())
+        ovr.ApplyTo(it->second);
+    else
+        BeAssert(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Appearance DisplayStyle::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
+    {
+    if (true)
+        {
+        BeMutexHolder _v(m_mutex);
+        auto const entry = m_subCategories.find(subCategoryId);
+        if (entry != m_subCategories.end())
+            return entry->second;
+        }
+
+    return LoadSubCategory(subCategoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::DropSubCategoryOverride(DgnSubCategoryId id)
+    {
+    m_dirty = true;
+    m_subCategoryOverrides.erase(id);
+    LoadSubCategory(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DisplayStyle::_LoadFromDb() 
@@ -1096,6 +1054,19 @@ DgnDbStatus DisplayStyle::_LoadFromDb()
     Json::Reader::Parse(GetPropertyValueString(str_Styles()), m_styles);
     m_viewFlags.FromJson(GetStyle(str_ViewFlags()));
 
+    JsonValueCR overrides = GetStyle(str_SubCategoryOverrides());
+    for (Json::ArrayIndex i = 0; i<overrides.size(); ++i)
+        {
+        JsonValueCR val = overrides[i];
+        DgnSubCategoryId subCategoryId(val[str_SubCategory()].asUInt64());
+        if (!subCategoryId.IsValid())
+            {
+            BeDataAssert(false && "SubCategoryOverride refers to missing SubCategory");
+            continue;
+            }
+        OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
+        }
+
     return DgnDbStatus::Success;
     }
 
@@ -1104,19 +1075,49 @@ DgnDbStatus DisplayStyle::_LoadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::_CopyFrom(DgnElementCR el) 
     {
+    auto& other = static_cast<DisplayStyleCR>(el);
+    other.SaveStyles();
     T_Super::_CopyFrom(el);
-    auto other = static_cast<DisplayStyleCP>(&el);
-    m_styles = other->m_styles;
-    m_viewFlags = other->m_viewFlags;
+
+    m_styles = other.m_styles;
+    m_viewFlags = other.m_viewFlags;
+    m_subCategories = other.m_subCategories;
+    m_subCategoryOverrides = other.m_subCategoryOverrides;
+    m_dirty = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle::SaveStyles()
+void DisplayStyle::SaveStyles() const
     {
-    SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
-    SetPropertyValue(str_Styles(), Json::FastWriter::ToString(m_styles).c_str());
+    if (!m_dirty)
+        return;
+
+    auto& ncThis = const_cast<DisplayStyleR>(*this);
+    ncThis.SetStyle(str_ViewFlags(), m_viewFlags.ToJson());
+
+    if (m_subCategoryOverrides.empty())
+        {
+        ncThis.RemoveStyle(str_SubCategoryOverrides());
+        }
+    else
+        {
+        Json::Value ovrJson;
+        int i=0;
+        for (auto const& it : m_subCategoryOverrides)
+            {
+            ovrJson[i][str_SubCategory()] = it.first.GetValue();
+            it.second.ToJson(ovrJson[i++]);
+            }
+        ncThis.SetStyle(str_SubCategoryOverrides(), ovrJson);
+        }
+
+    if (ColorDef::Black() == GetBackgroundColor())
+        ncThis.RemoveStyle(str_BackgroundColor());
+
+    ncThis.SetPropertyValue(str_Styles(), Json::FastWriter::ToString(m_styles).c_str());
+    m_dirty = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1133,10 +1134,7 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val) 
     {
-    if (ColorDef::Black() == val)
-        RemoveStyle(str_BackgroundColor());
-    else
-        SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
 
 OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController() const { auto vc = T_Super::LoadViewController(); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr; }

@@ -91,7 +91,6 @@
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 #define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 

@@ -48,7 +48,11 @@ enum class DgnViewSource
 };
 
 //=======================================================================================
-//! The Display Style for a view
+//! The Display Style for a view. Display styles define the "styling" parameters for rendering the contents of a view.
+//! A DisplayStyle is a definition element with a name and id. It can be used by many ViewDefinitions. When a
+//! ViewDefinition is loaded into memory, it makes a copy of its DisplayStyle, so any in-memory changes do not affect the original.
+//! Changes are not saved unless someone calls Update on the modified copy.
+//! A DisplayStyle is composed of various named "Styles". A Style is defined in Json and is stored in the DisplayStyle element.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
@@ -60,10 +64,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 
 protected:
     mutable Json::Value m_styles;
+    mutable bool m_dirty;
+    mutable BeMutex m_mutex;
+    mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
+    mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    DGNPLATFORM_EXPORT void SaveStyles();
-    bool EqualState(DisplayStyleCR other) const {return m_styles==other.m_styles;}
+    DGNPLATFORM_EXPORT void SaveStyles() const;
+    DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
+    bool EqualState(DisplayStyleCR other) const {SaveStyles(); other.SaveStyles(); return m_styles==other.m_styles;}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DgnDbStatus _InsertInDb() override {SaveStyles(); return T_Super::_InsertInDb();}
@@ -72,27 +81,52 @@ protected:
 
 public:
     //! Construct a new DisplayStyle.
+    //! @param[in] db The DgnDb to hold the DisplayStyle
+    //! @param[in] name The name of the DisplayStyle. Must be unique across all DisplayStyles
     DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
+    //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
+    //! @param[in] name The name of the Style 
     JsonValueCR GetStyle(Utf8CP name) const {return m_styles[name];}
-    void SetStyle(Utf8CP name, JsonValueCR value) {m_styles[name] = value;}
-    void RemoveStyle(Utf8CP name) {m_styles.removeMember(name);}
 
+    //! Set a Style in this DisplayStyle.
+    //! @param[in] name The name of the Style 
+    //! @param[in] value The value for the the Style 
+    //! @note  This only changes the Style in memory. It will be saved when the DisplayStyle is saved.
+    void SetStyle(Utf8CP name, JsonValueCR value) {m_styles[name] = value;  m_dirty=true;}
+
+    //! Remove a Style from this DisplayStyle.
+    //! @param[in] name The name of the Style 
+    //! @note  This only changes the Style in memory. It will be saved when the DisplayStyle is saved.
+    void RemoveStyle(Utf8CP name) {m_styles.removeMember(name);  m_dirty=true;}
+
+    //! Get the background color for this DisplayStyle
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
-    DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef);
 
+    //! Set the background color for this DisplayStyle
+    //! @param[in] val the new background color for this DisplayStyle
+    DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef val);
+
+    //! Get the Rendering flags for this DisplayStyle
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
-    void SetViewFlags(Render::ViewFlags flags) {m_viewFlags=flags;}
 
-    //! Gets a reference to the ViewFlags.
-    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
+    //! Set the Rendering flags for this DisplayStyle
+    void SetViewFlags(Render::ViewFlags flags) {m_viewFlags=flags; m_dirty=true;}
 
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle);}
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}
+    //! Get a reference to the ViewFlags of this DisplayStyle
+    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags; m_dirty=true;}
+
+    bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
+    DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
+    DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
+
+    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle);}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
 //=======================================================================================
-//! The Display Style for a view
+//! The Display Style for a 3d view.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
@@ -102,27 +136,28 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
     friend struct dgn_ElementHandler::DisplayStyle3dDef;
 
 public:
+    //! The "environment" Style for this DisplayStyle3d. The environment provides visuals cue of the orientation of the view relative to the earth.
     struct EnvironmentDisplay
     {
+        //! A circle drawn at a Z elevation, whose diameter is the the XY diagonal of the project extents
         struct GroundPlane
         {
             bool m_enabled = false;
-            double m_elevation = 0.0;
-            ColorDef m_aboveColor;
-            ColorDef m_belowColor;
+            double m_elevation = 0.0;   //!< the Z height to draw the ground plane
+            ColorDef m_aboveColor;      //!< the color to draw the ground plane if the view shows the ground from above
+            ColorDef m_belowColor;      //!< the color to draw the ground plane if the view shows the ground from below
         };
         struct SkyBox
         {
             bool m_enabled = false;
-            Utf8String m_jpegFile;
-            ColorDef m_zenithColor;
-            ColorDef m_nadirColor;
-            ColorDef m_groundColor;
-            ColorDef m_skyColor;
-            double m_groundExponent=4.0;
-            double m_skyExponent=4.0;
+            Utf8String m_jpegFile;  //!< the name of a jpeg file with a spherical skybox
+            ColorDef m_zenithColor; //!< if no jpeg file, the color of the zenith part of the sky gradient (shown when looking straight up.)
+            ColorDef m_nadirColor;  //!< if no jpeg file, the color of the nadir part of the ground gradient (shown when looking straight down.)
+            ColorDef m_groundColor; //!< if no jpeg file, the color of the ground part of the ground gradient 
+            ColorDef m_skyColor;    //!< if no jpeg file, the color of the sky part of the sky gradient 
+            double m_groundExponent=4.0; //!< the cutoff between ground and nadir
+            double m_skyExponent=4.0;    //!< the cutoff between sky and zenith
         };
-        bool m_enabled = false;
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 
@@ -142,29 +177,30 @@ protected:
 
 public:
     //! Construct a new DisplayStyle3d.
+    //! @param[in] db The DgnDb to hold the DisplayStyle3d
+    //! @param[in] name The name of the DisplayStyle3d. Must be unique across all DisplayStyles
     DisplayStyle3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {m_environment.Initialize();}
 
     /** @name Environment Display*/
     /** @{ */
-    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
-    bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
-    //! Determine whether the SkyBox is displayed in this view.
-    bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
-    //! Determine whether the Ground Plane is displayed in this view.
-    bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
-    //! Get the current values for the Environment Display for this view
-
+    //! Determine whether the SkyBox is displayed in this DisplayStyle3d.
+    bool IsSkyBoxEnabled() const {return m_environment.m_skybox.m_enabled;}
+    //! Determine whether the Ground Plane is displayed in this DisplayStyle3d.
+    bool IsGroundPlaneEnabled() const {return m_environment.m_groundPlane.m_enabled;}
+    //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
 
-    //! Change the current values for the Environment Display for this view
+    //! Change the current values for the Environment Display for this DisplayStyle3d
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment = val;}
     /** @} */
 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle3d));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle3d));}//!< @private
 };
 
 //=======================================================================================
-//! A list of DgnModels for a spatial view
+//! A list of GeometricModels for a SpatialViewDefinition.
+//! When a SpatialViewDefinition is loaded into memory, it makes a copy of its ModelSelector, so any in-memory changes do not affect the original.
+//! Changes are not saved unless someone calls Update on the modified copy.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
@@ -191,11 +227,14 @@ protected:
     DgnDbStatus WriteModels();
 
 public:
-    //! Construct a new modelselector. You should then call SetModelIds.
+    //! Construct a new ModelSelector. 
+    //! @param[in] db The DgnDb to hold the ModelSelector
+    //! @param[in] name The name of the ModelSelector. Must be unique across all ModelSelectors
     ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
-    Utf8String GetName() const {return GetCode().GetValue();} //!< The name of the view definition
 
-    //! Query if the specified DgnModelId is in this selector
+    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ModelSelector
+
+    //! Query if the specified DgnModelId is selected by this ModelSelector
     bool ContainsModel(DgnModelId modelId) const {return m_models.Contains(modelId);}
 
     DgnModelIdSet const& GetModels() const {return m_models;}
@@ -203,13 +242,15 @@ public:
     void AddModel(DgnModelId id) {m_models.insert(id);}
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
-    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
-    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector);}
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}
+    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector);}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
 //=======================================================================================
-//! A of Categories for a view
+//! A list of Categories to be displayed in a view. Additionally, 
+//! When a ViewDefinition is loaded into memory, it makes a copy of its CategorySelector, so any in-memory changes do not affect the original.
+//! Changes are not saved unless someone calls Update on the modified copy.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
@@ -220,11 +261,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
     friend struct ViewDefinition;
 
 protected:
-    mutable bool m_dirty;
-    mutable BeMutex m_mutex;
     mutable DgnCategoryIdSet m_categories;
-    mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
-    mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
     DGNPLATFORM_EXPORT bool EqualState(CategorySelectorCR other) const;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
@@ -234,16 +271,14 @@ protected:
     DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
     DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
 
-    void SaveState() const;
     DgnDbStatus WriteCategories();
-    DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Construct a new CategorySelector prior to inserting it.
+    //! Construct a new CategorySelector
     CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
-    Utf8String GetName() const {return GetCode().GetValue();} //!< The name of the view definition
+    Utf8String GetName() const {return GetCode().GetValue();} //!< The name of this CategorySelector
 
     //! Get the set of currently displayed DgnCategories 
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
@@ -258,14 +293,10 @@ public:
     //! Query the list of category selectors
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 
-    bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
-    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
-    DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
-    DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));}
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector);}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector);} //!< @private
 };
 
 //=======================================================================================
@@ -296,18 +327,19 @@ public:
     };
 
 protected:
-    CategorySelectorPtr m_categorySelector;
-    DisplayStylePtr m_displayStyle;
+    mutable bool m_dirty;
+    mutable CategorySelectorPtr m_categorySelector;
+    mutable DisplayStylePtr m_displayStyle;
     mutable Json::Value m_details;
 
-    DGNPLATFORM_EXPORT void SaveDefinition();
+    DGNPLATFORM_EXPORT void SaveState() const;
     static bool IsValidCode(DgnCode const& code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {SetCategorySelector(params.m_categorySelector); SetDisplayStyle(params.m_displayStyle);}
 
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionCR) const;
-    DgnDbStatus _OnInsert() override {SaveDefinition(); return T_Super::_OnInsert();}
-    DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveDefinition(); return T_Super::_OnUpdate(original);}
+    DgnDbStatus _OnInsert() override {SaveState(); return T_Super::_OnInsert();}
+    DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveState(); return T_Super::_OnUpdate(original);}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
     virtual DgnCode _GenerateDefaultCode() const override {return DgnCode();}
@@ -347,8 +379,8 @@ public:
     DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(name));} //!< Change this view definition's name
 
     JsonValueCR GetDetail(Utf8CP name) const {return m_details[name];}
-    void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value;}
-    void RemoveDetail(Utf8CP name) {m_details.removeMember(name);}
+    void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value; m_dirty=true;}
+    void RemoveDetail(Utf8CP name) {m_details.removeMember(name); m_dirty=true;}
 
     //! Inserts into the database and returns the new persistent copy.
     ViewDefinitionCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status);}
@@ -499,16 +531,21 @@ public:
     DisplayStyleR GetDisplayStyleR() {return *m_displayStyle;}
 
     //! Set the Categories displayed in a view. 
-    void SetCategorySelector(CategorySelectorCP categories) {m_categorySelector = categories ? categories->MakeCopy<CategorySelector>() : new CategorySelector(m_dgndb, "");}
+    void SetCategorySelector(CategorySelectorCP categories) {m_categorySelector = categories ? categories->MakeCopy<CategorySelector>() : new CategorySelector(m_dgndb, ""); m_dirty=true;}
 
     //! Set the DisplayStyle for this view.
-    void SetDisplayStyle(DisplayStyleCP style) {m_displayStyle = style ? style->MakeCopy<DisplayStyle>() : new DisplayStyle(m_dgndb, "");}
+    void SetDisplayStyle(DisplayStyleCP style) {m_displayStyle = style ? style->MakeCopy<DisplayStyle>() : new DisplayStyle(m_dgndb, ""); m_dirty=true;}
 
     //! Query if the specified model is displayed in this view 
     bool ViewsModel(DgnModelId modelId) const {return _ViewsModel(modelId);}
     
     //! Query if the specified Category is displayed in this view
     bool ViewsCategory(DgnCategoryId id) const {m_categorySelector->IsCategoryViewed(id);}
+
+    bool HasSubCategoryOverride() const {return m_displayStyle->HasSubCategoryOverride();}
+    void OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr) {m_displayStyle->OverrideSubCategory(id, ovr);}
+    void DropSubCategoryOverride(DgnSubCategoryId id) {m_displayStyle->DropSubCategoryOverride(id);}
+    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_displayStyle->GetSubCategoryAppearance(id);}
 
     DPoint3d GetOrigin() const {return _GetOrigin();}
     DVec3d GetExtents() const {return _GetExtents();}

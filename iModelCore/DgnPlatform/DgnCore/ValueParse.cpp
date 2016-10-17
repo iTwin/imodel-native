@@ -878,7 +878,6 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
     return parser;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -900,7 +899,6 @@ DistanceParserPtr       DistanceParser::Create(DgnViewportR viewport)
 
     return parser;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
@@ -1001,7 +999,6 @@ PointParserPtr         PointParser::Create(GeometricModelCR model)
     return parser;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1025,7 +1022,6 @@ PointParserPtr          PointParser::Create(DgnViewportR viewport)
 
     return parser;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
@@ -1193,7 +1189,6 @@ AreaParserPtr       AreaParser::Create(GeometricModelCR model)
     return parser;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1237,6 +1232,5 @@ VolumeParserPtr       VolumeParser::Create(DgnViewportR viewport)
 
     return parser;
     }
-#endif
 
 END_BENTLEY_DGN_NAMESPACE

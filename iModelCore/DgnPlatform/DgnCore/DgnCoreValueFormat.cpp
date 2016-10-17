@@ -731,7 +731,6 @@ StatusInt DistanceFormatter::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefini
     return SUCCESS;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -754,7 +753,6 @@ DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
 
     return formatter;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    05/2005
@@ -1067,7 +1065,6 @@ PointFormatterPtr   PointFormatter::Create(GeometricModelCR model, bool addGloba
     return formatter;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1091,7 +1088,6 @@ PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
 
     return formatter;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
@@ -1215,7 +1211,6 @@ AreaFormatterPtr    AreaFormatter::Create(GeometricModelCR model)
     return formatter;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1237,7 +1232,6 @@ AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
 
     return formatter;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
@@ -1303,8 +1297,6 @@ VolumeFormatterPtr VolumeFormatter::Create(GeometricModelCR model)
     return formatter;
     }
 
-#if defined (NEEDS_WORK_VIEWS)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1326,7 +1318,6 @@ VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
 
     return formatter;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12

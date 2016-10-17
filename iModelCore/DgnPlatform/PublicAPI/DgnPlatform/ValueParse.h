@@ -205,12 +205,10 @@ public:
     //! @param[in] model Initialize the parser from the settings in this model.
     static DGNPLATFORM_EXPORT  DistanceParserPtr Create(GeometricModelCR model);
 
-#if defined (NEEDS_WORK_TARGET_MODEL)
     //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's
     //! target model and the scale from the viewport's ACS.
     //! @param[in] vp Initialize the parser from the settings in this viewport.
     static DGNPLATFORM_EXPORT  DistanceParserPtr Create(DgnViewportR vp);
-#endif
 
     //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.
     //! The ACS provides the scale for the parser.

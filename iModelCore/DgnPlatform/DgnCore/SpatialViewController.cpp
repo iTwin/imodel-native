@@ -1354,3 +1354,14 @@ DgnElementId SpatialViewController::SpatialQuery::StepRtree()
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricModelP SpatialViewController::_GetTargetModel() const 
+    {
+#if defined (NEEDS_WORK_TARGET_MODEL)
+#endif
+    DgnModelId model = *GetViewedModels().begin();
+    return GetDgnDb().Models().Get<GeometricModel>(model).get();
+    }
