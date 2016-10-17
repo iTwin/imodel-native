@@ -25,9 +25,11 @@
 #define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
+#define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
 #define BIS_CLASS_Document                  "Document"
 #define BIS_CLASS_DocumentListModel         "DocumentListModel"
+#define BIS_CLASS_DocumentPartition         "DocumentPartition"
 #define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
 #define BIS_CLASS_Drawing                   "Drawing"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
@@ -48,8 +50,12 @@
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
+#define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
+#define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
+#define BIS_CLASS_GroupInformationPartition "GroupInformationPartition"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
+#define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
@@ -57,8 +63,10 @@
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelAuthority            "ModelAuthority"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
+#define BIS_CLASS_PartitionAuthority        "PartitionAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
+#define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
 #define BIS_CLASS_PhysicalType              "PhysicalType"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
@@ -379,9 +387,10 @@ public:
     //! @note The returned model, if any, is non-persistent. The caller must call the model's Insert method to add it to the bim.
     DGNPLATFORM_EXPORT DgnModelPtr CreateModel(DgnDbStatus* stat, ECN::IECInstanceCR properties);
 
-    //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
-    //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
-    //! @param[in] modelId The Id of the model to load.
+    //! Get a DgnModel from this DgnDb by its DgnModelId.
+    //! @param[in] modelId The DgnModelId of the model
+    //! @remarks The model is loaded from the database if necessary. If the model is already loaded, a pointer to the existing DgnModel is returned.
+    //! @return Invalid if the model does not exist.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel(DgnModelId modelId);
 
     template<class T> RefCountedPtr<T> Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id).get());}

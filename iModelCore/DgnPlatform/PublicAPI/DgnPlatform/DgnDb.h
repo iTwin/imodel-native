@@ -157,6 +157,7 @@ protected:
     BeSQLite::DbResult CreateRepositoryModel();
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateRepositoryLink(CreateDgnDbParams const& params);
+    BeSQLite::DbResult CreateDefinitionPartition(DgnElementId, DgnCodeCR);
     BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));

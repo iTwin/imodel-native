@@ -115,8 +115,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
-    ASSERT_TRUE(model != nullptr);
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
@@ -180,8 +179,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
-    ASSERT_TRUE(model != nullptr);
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
@@ -252,8 +250,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
-    ASSERT_TRUE(model != nullptr);
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("Instances"));
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
@@ -314,6 +311,19 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
 
 struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
     {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2016
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceElementsTests, DISABLED_ElementsInsertStrategies)
+    {
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 0, false, 0); // null FederationGuid, sequential IDs
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 1, true, 0); // random FederationGuid, sequential IDs
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 2, false, 1); // null FederationGuid, time-based IDs
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 3, true, 1); // random FederationGuid, time-based IDs
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 4, false, 2); // null FederationGuid, alternating briefcase IDs
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 5, true, 2); // random FederationGuid, alternating briefcase IDs
+    }
 
 static bool needSqlECSql = true;
 //---------------------------------------------------------------------------------------

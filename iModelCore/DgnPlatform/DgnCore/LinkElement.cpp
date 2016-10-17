@@ -26,10 +26,53 @@ namespace dgn_ModelHandler
 
 namespace dgn_ElementHandler
 {
+    HANDLER_DEFINE_MEMBERS(LinkPartitionHandler)
     HANDLER_DEFINE_MEMBERS(UrlLinkHandler)
     HANDLER_DEFINE_MEMBERS(RepositoryLinkHandler)
     HANDLER_DEFINE_MEMBERS(EmbeddedFileLinkHandler)
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    if (nullptr == dynamic_cast<LinkModelCP>(&model))
+        {
+        BeAssert(false && "A LinkPartition can only be modeled by a LinkModel");
+        return DgnDbStatus::ElementBlockedChange;
+        }
+
+    return T_Super::_OnSubModelInsert(model);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2016
+//---------------------------------------------------------------------------------------
+LinkPartitionPtr LinkPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, label, dgn_ElementHandler::LinkPartitionHandler::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    LinkPartitionPtr partition = new LinkPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2016
+//---------------------------------------------------------------------------------------
+LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+    {
+    LinkPartitionPtr partition = Create(parentSubject, label, description);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<LinkPartition>(*partition);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016

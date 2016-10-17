@@ -17,6 +17,7 @@
 
 #define BIS_CLASS_LinkElement           "LinkElement"
 #define BIS_CLASS_LinkModel             "LinkModel"
+#define BIS_CLASS_LinkPartition         "LinkPartition"
 #define BIS_CLASS_UrlLink               "UrlLink"
 #define BIS_CLASS_EmbeddedFileLink      "EmbeddedFileLink"
 #define BIS_CLASS_RepositoryLink        "RepositoryLink"
@@ -27,7 +28,36 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler { struct UrlLinkHandler; struct RepositoryLinkHandler; struct EmbeddedFileLinkHandler; }
+namespace dgn_ElementHandler { struct UrlLinkHandler; struct RepositoryLinkHandler; struct EmbeddedFileLinkHandler; struct LinkPartitionHandler; }
+
+//=======================================================================================
+//! A LinkPartition provides a starting point for a LinkModel hierarchy
+//! @note LinkPartition elements only reside in the RepositoryModel
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LinkPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::LinkPartitionHandler;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit LinkPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new LinkPartition
+    //! @param[in] parentSubject The new LinkPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this LinkPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static LinkPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new LinkPartition
+    //! @param[in] parentSubject The new LinkPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this LinkPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static LinkPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
 
 //=======================================================================================
 //! A model which contains only links - LinkElement-s and classes derived from it.
@@ -493,6 +523,12 @@ namespace dgn_ModelHandler
 
 namespace dgn_ElementHandler
 {
+    //! The handler for LinkPartition
+    struct LinkPartitionHandler : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkPartition, LinkPartition, LinkPartitionHandler, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+    
     //! The handler for UrlLink elements
     struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
     {

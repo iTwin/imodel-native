@@ -179,7 +179,6 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-
     if (session.IsFileLoaded(true))
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
@@ -1152,6 +1151,9 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
         return;
         }
 
+    if (!session.IsFileLoaded(true))
+        return;
+
     Utf8StringCR switchArg = args[1];
 
     if (switchArg.EqualsI("search"))
@@ -1284,6 +1286,9 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
+
+    if (!session.IsFileLoaded(true))
+        return;
 
     Json::Value json;
 

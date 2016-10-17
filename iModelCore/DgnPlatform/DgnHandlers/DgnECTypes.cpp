@@ -257,8 +257,8 @@ DgnECTypeRegistry::BasicType DgnECTypeRegistry::BasicTypeForPrimitive (Primitive
     case PRIMITIVETYPE_Long:        return BasicType_Long;
     case PRIMITIVETYPE_Double:      return BasicType_Double;
     case PRIMITIVETYPE_String:      return BasicType_String;
-    case PRIMITIVETYPE_Point2D:     return BasicType_Point2D;
-    case PRIMITIVETYPE_Point3D:     return BasicType_Point3D;
+    case PRIMITIVETYPE_Point2d:     return BasicType_Point2D;
+    case PRIMITIVETYPE_Point3d:     return BasicType_Point3D;
     case PRIMITIVETYPE_DateTime:    return BasicType_DateTime;
     case PRIMITIVETYPE_Binary:      return BasicType_Binary;
     default:

@@ -115,9 +115,9 @@ public:
 //! @see GenericGroup
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : InformationModel
+struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : GroupInformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, InformationModel);
+    DGNMODEL_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GroupInformationModel);
     friend struct generic_ModelHandler::GenericGroupModelHandler;
 
 protected:
@@ -134,9 +134,9 @@ public:
 //! @see GenericGroupModel
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericGroup : InformationReferenceElement, IElementGroupOf<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE GenericGroup : GroupInformationElement, IElementGroupOf<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Group, InformationReferenceElement)
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Group, GroupInformationElement)
     friend struct generic_ElementHandler::GenericGroupHandler;
 
 protected:
@@ -156,9 +156,9 @@ namespace generic_ModelHandler
 {
     //! The ModelHandler for GroupModel
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::Information
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::GroupInformation
     {
-        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::Information, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::GroupInformation, DGNPLATFORM_EXPORT)
     };
 }
 
@@ -191,9 +191,9 @@ namespace generic_ElementHandler
     
     //! The ElementHandler for GenericGroup
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupHandler : dgn_ElementHandler::InformationContent
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupHandler : dgn_ElementHandler::GroupInformation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Group, GenericGroup, GenericGroupHandler, dgn_ElementHandler::InformationContent, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Group, GenericGroup, GenericGroupHandler, dgn_ElementHandler::GroupInformation, DGNPLATFORM_EXPORT)
     };
 }
 

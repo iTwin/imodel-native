@@ -63,6 +63,23 @@ DgnModelPtr DgnElement::GetModel() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DgnElement::GetSubModel() const
+    {
+    return m_dgndb.Models().GetModel(GetSubModelId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnElement::GetSubModelId() const
+    {
+    // The DgnModelId value for the sub-model is the same as this element's DgnElementId value
+    return DgnModelId(GetElementId().GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
@@ -275,27 +292,30 @@ DgnDbStatus Subject::_OnDelete() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    BeAssert(false && "A Subject is not directly modeled. Insert a child InformationPartitionElement to be modeled instead.");
+    return DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnElementId parentId = parentSubject.GetElementId();
+    DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
+    DgnElementId parentId = parentSubject.GetElementId();
 
     if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
-    SubjectPtr subject = new Subject(CreateParams(db, DgnModel::RepositoryModelId(), classId, DgnCode(), label, parentId));
-
+    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId));
     if (description && *description)
-        {
-        if (DgnDbStatus::Success != subject->SetPropertyValue("Descr", ECValue(description)))
-            return nullptr;
-        }
+        subject->SetDescription(description);
 
     return subject;
     }
@@ -310,6 +330,199 @@ SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8
         return nullptr;
 
     return parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnElementId parentId = parentSubject.GetElementId();
+    DgnCode code = PartitionAuthority::CreatePartitionCode(name, parentId);
+
+    if (!parentId.IsValid() || !classId.IsValid() || !name || !*name)
+        modelId.Invalidate(); // mark CreateParams as invalid
+
+    return CreateParams(db, modelId, classId, code, nullptr, parentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationPartitionElement::_OnInsert()
+    {
+    if (!GetParentId().IsValid() || !GetDgnDb().Elements().Get<Subject>(GetParentId()).IsValid())
+        {
+        BeAssert(false && "InformationPartitionElements must be parented to a Subject");
+        return DgnDbStatus::InvalidParent;
+        }
+
+    // InformationPartitionElements can only reside in the RepositoryModel
+    return DgnModel::RepositoryModelId() == GetModel()->GetModelId() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DefinitionPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // A DefinitionPartition can only be modeled by an DefinitionModel
+    return model.IsDefinitionModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::DefinitionPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    DefinitionPartitionPtr partition = new DefinitionPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    DefinitionPartitionPtr partition = Create(parentSubject, name, description);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DocumentPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // A DocumentPartition can only be modeled by an InformationModel
+    return model.IsInformationModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::DocumentPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    DocumentPartitionPtr partition = new DocumentPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    DocumentPartitionPtr partition = Create(parentSubject, name, description);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    if (nullptr == dynamic_cast<GroupInformationModelCP>(&model))
+        {
+        BeAssert(false && "A GroupInformationPartition can only be modeled by a GroupInformationModel");
+        return DgnDbStatus::ElementBlockedChange;
+        }
+
+    return T_Super::_OnSubModelInsert(model);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, label, dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    GroupInformationPartitionPtr partition = new GroupInformationPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+    {
+    GroupInformationPartitionPtr partition = Create(parentSubject, label, description);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // A PhysicalPartition can only be modeled by a PhysicalModel
+    return model.IsPhysicalModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::PhysicalPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    PhysicalPartitionPtr partition = new PhysicalPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    PhysicalPartitionPtr partition = Create(parentSubject, name, description);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationElement::_OnInsert()
+    {
+    return GetModel()->IsInformationModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2312,7 +2525,7 @@ DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     {
     bool isplcprop;
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint3D(GetPlacement().GetOrigin());
+        value.SetPoint3d(GetPlacement().GetOrigin());
     else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
         value.SetDouble(GetPlacement().GetAngles().GetYaw().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
@@ -2320,9 +2533,9 @@ DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     else if ((isplcprop = (0 == strcmp(name, "Roll"))))
         value.SetDouble(GetPlacement().GetAngles().GetRoll().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint3D(GetPlacement().GetElementBox().low);
+        value.SetPoint3d(GetPlacement().GetElementBox().low);
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint3D(GetPlacement().GetElementBox().high);
+        value.SetPoint3d(GetPlacement().GetElementBox().high);
         
     return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
@@ -2336,7 +2549,7 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     bool isplcprop;
 
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint3D();
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint3d();
     else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
         (plc = GetPlacement()).GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()));
     else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
@@ -2344,9 +2557,9 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     else if ((isplcprop = (0 == strcmp(name, "Roll"))))
         (plc = GetPlacement()).GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()));
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3D();
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3d();
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3D();
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3d();
         
    if (!isplcprop)
        return DgnDbStatus::NotFound;
@@ -2586,13 +2799,13 @@ DgnDbStatus GeometricElement2d::GetPlacementProperty(ECN::ECValueR value, Utf8CP
     {
     bool isplcprop;
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint2D(GetPlacement().GetOrigin());
+        value.SetPoint2d(GetPlacement().GetOrigin());
     else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
         value.SetDouble(GetPlacement().GetAngle().Degrees());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint2D(GetPlacement().GetElementBox().low);
+        value.SetPoint2d(GetPlacement().GetElementBox().low);
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint2D(GetPlacement().GetElementBox().high);
+        value.SetPoint2d(GetPlacement().GetElementBox().high);
         
     return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
@@ -2606,13 +2819,13 @@ DgnDbStatus GeometricElement2d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
     bool isplcprop;
 
     if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint2D();
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint2d();
     else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
         (plc = GetPlacement()).GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble());
     else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2D();
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2d();
     else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2D();
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2d();
         
    if (!isplcprop)
        return DgnDbStatus::NotFound;

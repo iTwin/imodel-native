@@ -14,6 +14,8 @@ DGNPLATFORM_TYPEDEFS(ICodedEntity);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+namespace dgn_AuthorityHandler {struct Model; struct Partition;};
+
 //=======================================================================================
 //! Interface adopted by an object which possesses an authority-issued DgnCode, such as a DgnModel or DgnElement.
 // @bsistruct                                                    Paul.Connelly   01/16
@@ -156,13 +158,32 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 struct ModelAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Model;
+
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
-public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
+public:
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId);
+};
+
+//=======================================================================================
+//! The default code-issuing authority for InformationPartitionElements.
+// @bsistruct                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct PartitionAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Partition;
+
+protected:
+    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    PartitionAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId);
 };
 
 //=======================================================================================
@@ -287,6 +308,11 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Model : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelAuthority, ModelAuthority, Model, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Partition : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_PartitionAuthority, PartitionAuthority, Partition, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE TrueColor : Authority

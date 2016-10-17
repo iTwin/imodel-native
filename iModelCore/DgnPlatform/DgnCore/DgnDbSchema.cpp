@@ -173,10 +173,10 @@ static void importBisCoreSchema(DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCodeCR modelCode)
+static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId, DgnCodeCR modelCode)
     {
     Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,Visibility) VALUES(?,?,?,?,?,?,0)");
-    stmt.BindId(1, modelId);
+    stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
     stmt.BindId(4, modelCode.GetAuthority());
@@ -189,14 +189,50 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId cla
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateDefinitionPartition(DgnElementId partitionId, DgnCodeCR partitionCode)
+    {
+    // element handlers are not initialized yet, so insert DefinitionPartition directly
+    ECSqlStatement statement;
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_DefinitionPartition) " (ECInstanceId,ModelId,ParentId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)"))
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    statement.BindId(1, partitionId);
+    statement.BindId(2, DgnModel::RepositoryModelId());
+    statement.BindId(3, Elements().GetRootSubjectId());
+    statement.BindId(4, partitionCode.GetAuthority());
+    statement.BindText(5, partitionCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+
+    DbResult result = statement.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDictionaryModel()
     {
-    DgnModelId modelId = DgnModel::DictionaryId();
+    DgnElementId modeledElementId = Elements().GetDictionaryPartitionId();
+    BeAssert(modeledElementId.GetValue() == DgnModel::DictionaryId().GetValue());
+
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
+    BeAssert(classId.IsValid());
+
+    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_CLASS_DictionaryModel, Elements().GetRootSubjectId());
     DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_DictionaryModel, BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
+
+    DbResult result = CreateDefinitionPartition(modeledElementId, partitionCode);
+    if (BE_SQLITE_DONE != result)
+        return result;
+
+    return insertIntoDgnModel(*this, modeledElementId, classId, modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,10 +240,12 @@ DbResult DgnDb::CreateDictionaryModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRepositoryModel()
     {
-    DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
     DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_RepositoryModel, BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
+
+    BeAssert(DgnModel::RepositoryModelId().GetValue() == Elements().GetRootSubjectId().GetValue());
+
+    return insertIntoDgnModel(*this, Elements().GetRootSubjectId(), classId, modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**

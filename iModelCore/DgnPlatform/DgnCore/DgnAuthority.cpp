@@ -347,6 +347,7 @@ struct SystemAuthority
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
         Model = 6LL,
+        Partition = 7LL,
 
         // ............     Introduce new BuiltinIds here
         
@@ -407,6 +408,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
+            { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
         };
 
@@ -502,6 +504,14 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
     {
     // unnamed textures are supported.
     return name.empty() ? DgnCode::CreateEmpty() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_Texture);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Partition, codeValue, scopeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -681,6 +691,22 @@ DgnDbStatus ModelAuthority::_ValidateCode(ICodedEntityCR entity) const
     if (nullptr == entity.ToDgnModel())
         return DgnDbStatus::InvalidCodeAuthority;
 
+    return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PartitionAuthority::_ValidateCode(ICodedEntityCR entity) const
+    {
+    DgnDbStatus status = T_Super::_ValidateCode(entity);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    if (nullptr == entity.ToDgnElement())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    // Partitions use the same name validation function as Models
     return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
     }
 
