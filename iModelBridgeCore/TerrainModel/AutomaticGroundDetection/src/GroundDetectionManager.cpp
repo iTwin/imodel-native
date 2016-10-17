@@ -12,7 +12,7 @@
 #include "GroundDetectionManagerDc.h"
 
 BEGIN_GROUND_DETECTION_NAMESPACE
-
+  
 static IGroundDetectionServices* s_pGroundDetectionManagerImpl = GroundDetectionManagerDc::GetServices();
 
 /*---------------------------------------------------------------------------------**//**
