@@ -914,8 +914,17 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
                 {
                 // Split sources by type (source, multibandsource, etc.).
                 RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
-                Utf8String sourceName = source.GetElementName();
-                if (sourceName.Equals(PACKAGE_ELEMENT_Source))
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
+                    {
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                else
                     {
                     if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
                         {
@@ -923,32 +932,8 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
                         continue;
                         }
                     }
-                else if (sourceName.Equals(PACKAGE_ELEMENT_WmsSource))
-                    {
-                    //&&JFC TODO
-                    //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                    //    {
-                    //    pGroupNode->RemoveChildNode(pDataNode);
-                    //    continue;
-                    //    }
-                    }
-                else if (sourceName.Equals(PACKAGE_ELEMENT_OsmSource))
-                    {
-                    //&&JFC TODO
-                    //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                    //    {
-                    //    pGroupNode->RemoveChildNode(pDataNode);
-                    //    continue;
-                    //    }
-                    }
-                else if (sourceName.Equals(PACKAGE_ELEMENT_MultiBandSource))
-                    {
-                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
-                        {
-                        pGroupNode->RemoveChildNode(pDataNode);
-                        continue;
-                        }
-                    }         
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }  
             }
 
@@ -1017,11 +1002,28 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
 
             for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pModelData->GetSource(sourceIndex)))
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pModelData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
         }
@@ -1075,11 +1077,28 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
 
             for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pPinnedData->GetSource(sourceIndex)))
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pPinnedData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
 
@@ -1138,11 +1157,28 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
 
             for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetSource(sourceIndex)))
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pTerrainData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
         }
