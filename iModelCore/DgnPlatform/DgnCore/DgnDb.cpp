@@ -56,6 +56,7 @@ void DgnDb::Destroy()
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
+    Elements().ClearUpdaterCache();
     DELETE_AND_CLEAR(m_revisionManager)
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
@@ -84,7 +85,7 @@ DgnDb::~DgnDb()
 void DgnDb::_OnDbClose() 
     {
     Domains().OnDbClose();
-    Destroy(); 
+    Destroy();
     T_Super::_OnDbClose();
     }
 
@@ -465,14 +466,48 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryModelPtr DgnDb::GetRepositoryModel()
+    {
+    RepositoryModelPtr model = Models().Get<RepositoryModel>(DgnModel::RepositoryModelId());
+    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_RepositoryModel);
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DictionaryModelR DgnDb::GetDictionaryModel()
     {
     // NB: Once loaded, a model is never dropped unless it is deleted (or its creation is undone). This cannot occur for dictionary model so returning a reference is safe
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
-    BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
+    BeAssert(dict.IsValid() && "A DgnDb always has a " BIS_CLASS_DictionaryModel);
     return *dict;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SessionModelPtr DgnDb::GetSessionModel()
+    {
+    DefinitionPartitionCPtr partition = Elements().Get<DefinitionPartition>(Elements().GetSessionPartitionId());
+    BeAssert(partition.IsValid() && "A DgnDb always has a sessions partition");
+    SessionModelPtr model = Models().Get<SessionModel>(partition->GetSubModelId());
+    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_SessionModel);
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LinkModelPtr DgnDb::GetRealityDataSourcesModel()
+    {
+    LinkPartitionCPtr partition = Elements().Get<LinkPartition>(Elements().GetRealityDataSourcesPartitionId());
+    BeAssert(partition.IsValid() && "A DgnDb always has a reality data sources partition");
+    LinkModelPtr model = Models().Get<LinkModel>(partition->GetSubModelId());
+    BeAssert(model.IsValid() && "A DgnDb always has a reality data sources model");
+    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**

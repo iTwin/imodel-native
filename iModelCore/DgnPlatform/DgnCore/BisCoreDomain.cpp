@@ -36,6 +36,7 @@ HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
+HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -127,6 +128,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Session::GetHandler());
     RegisterHandler(dgn_ModelHandler::Repository::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
