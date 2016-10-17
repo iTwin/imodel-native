@@ -73,6 +73,8 @@
         <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" LibType="static"/>
         <ProductDirectory Name="PlanningAssemblies"                 Path="Assemblies"/>
         <ProductDirectory Name="PlanningAssemblies"                 Deliver="false" LibType="static"/>
+        <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" LibType="static"/>
         <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
