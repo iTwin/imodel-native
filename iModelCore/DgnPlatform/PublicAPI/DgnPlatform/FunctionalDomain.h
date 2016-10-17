@@ -10,9 +10,11 @@
 
 #include <DgnPlatform/DgnDomain.h>
 
+DGNPLATFORM_TYPEDEFS(FunctionalPartition)
 DGNPLATFORM_TYPEDEFS(FunctionalModel)
 DGNPLATFORM_TYPEDEFS(FunctionalType)
 
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalPartition)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalModel)
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 
@@ -20,6 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 #define FUNCTIONAL_DOMAIN_NAME                  "Functional"
 #define FUNCTIONAL_SCHEMA(className)            FUNCTIONAL_DOMAIN_NAME "." className
 
+#define FUNC_CLASS_FunctionalPartition          "FunctionalPartition"
 #define FUNC_CLASS_FunctionalModel              "FunctionalModel"
 #define FUNC_CLASS_FunctionalElement            "FunctionalElement"
 #define FUNC_CLASS_FunctionalBreakdownElement   "FunctionalBreakdownElement"
@@ -29,7 +32,7 @@ DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace func_ModelHandler {struct Functional;};
-namespace func_ElementHandler {struct FunctionalBreakdownElementHandler; struct FunctionalComponentElementHandler; struct FunctionalTypeHandler;};
+namespace func_ElementHandler {struct FunctionalBreakdownElementHandler; struct FunctionalComponentElementHandler; struct FunctionalPartitionHandler; struct FunctionalTypeHandler;};
 
 //=======================================================================================
 //! The Functional DgnDomain
@@ -49,6 +52,35 @@ public:
 };
 
 //=======================================================================================
+//! A FunctionalPartition provides a starting point for a FunctionalModel hierarchy
+//! @note FunctionalPartition elements only reside in the RepositoryModel
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalPartition, InformationPartitionElement);
+    friend struct func_ElementHandler::FunctionalPartitionHandler;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit FunctionalPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new FunctionalPartition
+    //! @param[in] parentSubject The new FunctionalPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this FunctionalPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static FunctionalPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new FunctionalPartition
+    //! @param[in] parentSubject The new FunctionalPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this FunctionalPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static FunctionalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
 //! A model which contains only FunctionalElements.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    05/16
@@ -63,7 +95,7 @@ protected:
     explicit FunctionalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static FunctionalModelPtr Create(DgnElementCR modeledElement);
+    DGNPLATFORM_EXPORT static FunctionalModelPtr Create(FunctionalPartitionCR modeledElement);
 };
 
 //=======================================================================================
@@ -153,6 +185,13 @@ namespace func_ModelHandler
 //=======================================================================================
 namespace func_ElementHandler
 {
+    //! The ElementHandler for FunctionalPartition
+    //! @private
+    struct FunctionalPartitionHandler : Dgn::dgn_ElementHandler::InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalPartition, FunctionalPartition, FunctionalPartitionHandler, Dgn::dgn_ElementHandler::InformationPartition, DGNPLATFORM_EXPORT)
+    };
+    
     //! The ElementHandler for FunctionalBreakdownElement
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElementHandler : dgn_ElementHandler::Role

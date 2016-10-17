@@ -30,11 +30,15 @@ private:
     friend struct ECSqlClassParams;
 
     Utf8String  m_select;
+    Utf8String  m_selectEcProps;
     Utf8String  m_insert;
     Utf8String  m_update;
     uint16_t    m_updateParameterIndex;
 public:
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
+
+    void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
+    Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
 
     Utf8StringCR GetSelectECSql() const { return m_select; }
     Utf8StringCR GetInsertECSql() const { return m_insert; }

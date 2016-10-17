@@ -75,11 +75,7 @@ void ChangeTestFixture::_CreateDgnDb()
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
-    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, "TestSubject"); // create a placeholder Subject for the DgnModel to describe
-    ASSERT_TRUE(modelSubject.IsValid());
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("TestModel"));
-    ASSERT_TRUE(model.IsValid());
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, DgnModel::CreateModelCode("TestModel"));
     m_testModelId = model->GetModelId();
 
     m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);

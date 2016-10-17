@@ -149,15 +149,18 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
-    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); }
+    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
+    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateAuthorities();
     BeSQLite::DbResult CreateRepositoryModel();
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateRepositoryLink(CreateDgnDbParams const& params);
+    BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, DgnCodeCR);
     BeSQLite::DbResult CreateDictionaryModel();
+    BeSQLite::DbResult CreateSessionModel();
+    BeSQLite::DbResult CreateRealityDataSourcesModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
@@ -225,7 +228,10 @@ public:
     //! Determine whether this DgnDb is a stand-alone briefcase; that is, a transactable briefcase not associated with any master copy.
     bool IsStandaloneBriefcase() const {return GetBriefcaseId().IsStandaloneId();}
 
+    DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
+    DGNPLATFORM_EXPORT LinkModelPtr GetRealityDataSourcesModel(); //!< Return the LinkModel listing the reality data sources for this DgnDb.
+    DGNPLATFORM_EXPORT SessionModelPtr GetSessionModel(); //!< Return the SessionModel for this DgnDb.
 
 /** @name DgnPlatform Threads */
 /** @{ */

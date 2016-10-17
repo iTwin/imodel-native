@@ -52,10 +52,11 @@ DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, DgnCodeC
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*modelSubject, modelCode);
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a partition to model
+    EXPECT_TRUE(partition.IsValid());
+    DocumentListModelPtr model = DocumentListModel::CreateAndInsert(*partition, modelCode);
     EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
     }
 
@@ -105,6 +106,7 @@ DrawingModelPtr DgnDbTestUtils::InsertDrawingModel(DrawingCR drawing, DgnCodeCR 
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(drawing.GetSubModelId(), model->GetModelId());
     return model;
     }
 
@@ -118,6 +120,7 @@ SheetModelPtr DgnDbTestUtils::InsertSheetModel(SheetCR sheet, DgnCode modelCode,
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(sheet.GetSubModelId(), model->GetModelId());
     return model;
     }
 
@@ -128,12 +131,13 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, modelSubject->GetElementId(), modelCode));
+    LinkPartitionCPtr partition = LinkPartition::CreateAndInsert(*rootSubject, Utf8PrintfString("Partition for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(partition.IsValid());
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(db, partition->GetElementId(), modelCode));
     EXPECT_TRUE(model.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, model->Insert());
     EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
     }
 
@@ -144,10 +148,12 @@ PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelC
     {
     MUST_HAVE_HOST(nullptr);
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
-    EXPECT_TRUE(modelSubject.IsValid());
-    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, modelCode);
+    Utf8PrintfString partitionLabel("Partition for %s", modelCode.GetValueCP());
+    PhysicalPartitionCPtr partition = PhysicalPartition::CreateAndInsert(*rootSubject, partitionLabel.c_str());
+    EXPECT_TRUE(partition.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition, modelCode);
     EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     return model;
     }
 

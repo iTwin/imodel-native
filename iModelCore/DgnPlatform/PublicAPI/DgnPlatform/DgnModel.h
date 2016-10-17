@@ -17,15 +17,15 @@
 
 DGNPLATFORM_TYPEDEFS(GeometricModel)
 DGNPLATFORM_TYPEDEFS(DefinitionModel)
-DGNPLATFORM_TYPEDEFS(RepositoryModel)
-DGNPLATFORM_TYPEDEFS(GeometricModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
+DGNPLATFORM_TYPEDEFS(SessionModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
+DGNPLATFORM_REF_COUNTED_PTR(SessionModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
@@ -33,7 +33,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct Information; struct Physical; struct Role; struct Spatial;};
+namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial;};
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -416,9 +416,10 @@ protected:
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
     //! Generate the CreateParams to use for _CloneForImport
-    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @param[in] destinationElementToModel After import, the copy of the source model will model this element
     //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
-    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer, DgnElementCR destinationElementToModel) const;
 
     static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
@@ -569,16 +570,18 @@ public:
     /** @} */
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
+    //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
     //! @param[in] newCode The code for the new DgnModel.
-    //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
+    //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this DgnModel, it does NOT clone the elements of this DgnModel.
     //! @see CopyModel, Import
-    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnCode newCode) const;
+    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnElementId newModeledElementId, DgnCodeCR newCode) const;
 
     //! Make a persitent copy of the specified DgnModel and its contents.
     //! @param[in] model The model to copy
+    //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
     //! @param[in] newCode The DgnCode for the new DgnModel.
     //! @see Import
-    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnCode newCode);
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId, DgnCodeCR newCode);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -601,18 +604,19 @@ public:
     //! cause the new model object to read its properties from this (source) model's properties. That will 
     //! take of populating most if not all subclass members.
     //! @return the copy of the model
-    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the clone fails.
-    //! @param importer     Used by elements when copying between DgnDbs.
+    //! @param[out] stat Optional. If not null, then an error code is stored here in case the clone fails.
+    //! @param[in] importer Used by elements when copying between DgnDbs.
+    //! @param[in] destinationElementToModel after import, the copy of the source model will model this element
     //! @see GetCreateParamsForImport
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const;
 
     //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb from \a sourceModel.
     //! This base class implemenation calls the following methods, in order:
     //!     -# _ImportElementsFrom
     //!     -# _ImportElementAspectsFrom
     //!     -# _ImportECRelationshipsFrom
-    //! @param sourceModel The model to copy
-    //! @param importer     Used by elements when copying between DgnDbs.
+    //! @param[in] sourceModel The model to copy
+    //! @param[in] importer Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
@@ -622,18 +626,20 @@ public:
     //!     -# Insert
     //!     -# _CopyContentsFrom
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
-    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
-    //! @param sourceModel The model to copy
+    //! @param[in] sourceModel The model to copy
+    //! @param[in] importer Enables the model to copy the definitions that it needs (if copying between DgnDbs)
+    //! @param[in] destinationElementToModel after import, the copy of the sourceModel will model this element
     //! @return the copied model, already inserted into the destination Db.
-    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer, DgnElementCR destinationElementToModel);
 
     //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
-    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
-    //! @param sourceModel  The model to copy
-    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
+    //! @param[out] stat Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //! @param[in] sourceModel The model to copy
+    //! @param[in] importer Enables the model to copy the definitions that it needs (if copying between DgnDbs)
+    //! @param[in] destinationElementToModel after import, the copy of the sourceModel will model this element
     //! @return the copied model
     //! @see ImportModel
-    template<typename T> static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
+    template<typename T> static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer, DgnElementCR destinationElementToModel) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer, destinationElementToModel).get());}
 
     //! Returns the DgnModelId used by the RepositoryModel associated with each DgnDb
     static DgnModelId RepositoryModelId() {return DgnModelId((uint64_t)1LL);}
@@ -931,13 +937,19 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : SpatialModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_PhysicalModel, SpatialModel);
     friend struct dgn_ModelHandler::Physical;
 
+private:
+    static PhysicalModelPtr Create(DgnDbR db, DgnElementId modeledElementId, DgnCodeCR code);
+
 protected:
     PhysicalModelCP _ToPhysicalModel() const override final {return this;}
     explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalPartitionCR modeledElement, DgnCodeCR code);
+
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement, DgnCodeCR code);
 };
 
 //=======================================================================================
@@ -1002,8 +1014,23 @@ protected:
     explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
-    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr Create(DocumentPartitionCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static DocumentListModelPtr CreateAndInsert(DocumentPartitionCR modeledElement, DgnCodeCR code);
+};
+
+//=======================================================================================
+//! A model which contains GroupInformationElements
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, InformationModel);
+    friend struct dgn_ModelHandler::GroupInformation;
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1014,12 +1041,11 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : InformationModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, InformationModel);
+    friend struct dgn_ModelHandler::Repository;
+
 protected:
-
-    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-
-public:
     explicit RepositoryModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1039,9 +1065,24 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 protected:
     virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
+protected:
+    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
+public:
+    explicit SessionModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1255,10 +1296,22 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DocumentListModel, DocumentListModel, DocumentList, Information, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for GroupInformationModel
+    struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : Information
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, GroupInformationModel, GroupInformation, Information, DGNPLATFORM_EXPORT)
+    };
+
     //! The ModelHandler for DictionaryModel
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SessionModel
+    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SessionModel, SessionModel, Session, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RepositoryModel

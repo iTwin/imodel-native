@@ -373,7 +373,9 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
     DgnDbStatus status;
 
     //  Create a ScriptLibraryModel to hold the scripts
-    auto scriptLib = ScriptLibraryModel::Create(*m_db, DgnModel::CreateModelCode("scripts"));
+    DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "TestScripts");
+    ASSERT_TRUE(partition.IsValid());
+    ScriptLibraryModelPtr scriptLib = ScriptLibraryModel::Create(*partition, DgnModel::CreateModelCode("scripts"));
     ASSERT_TRUE(scriptLib.IsValid());
     status = scriptLib->Insert();
     ASSERT_EQ(DgnDbStatus::Success, status);

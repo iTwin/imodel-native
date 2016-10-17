@@ -637,9 +637,7 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    PhysicalModelPtr targetModel = PhysicalModel::Create(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode(modelCode));
-    EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(modelCode));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
@@ -1720,9 +1718,28 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql(Utf8CP className, Utf8St
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+static DgnElementId generateTimeBasedId(int counter)
+    {
+    uint64_t part1 = BeTimeUtilities::QueryMillisecondsCounter() << 12;
+    uint64_t part2 = counter & 0xFFF;
+    return DgnElementId(part1 + part2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+static DgnElementId generateAlternatingBriefcaseId(int counter)
+    {
+    BeBriefcaseId briefcaseId((counter/100)%10+2);
+    return DgnElementId(BeBriefcaseBasedId(briefcaseId, counter).GetValue());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int initialInstanceCount, int opCount, bool setFederationGuid, int idStrategy)
     {
     WString wClassName;
     wClassName.AssignUtf8(className);
@@ -1733,9 +1750,20 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     CreateElements(opCount, className, testElements, "ElementApiInstances", true);
     ASSERT_EQ(opCount, (int) testElements.size());
 
+    int i=0;
     StopWatch timer(true);
     for (DgnElementPtr& element : testElements)
         {
+        // optionally allow FederationGuid to be set as part of the performance test
+        if (setFederationGuid)
+            element->SetFederationGuid(BeGuid(true));
+
+        // optionally allow a different ID allocation strategy for performance comparison purposes
+        if (1 == idStrategy)
+            element->ForceElementIdForInsert(generateTimeBasedId(++i));
+        else if (2 == idStrategy)
+            element->ForceElementIdForInsert(generateAlternatingBriefcaseId(++i));
+
         DgnDbStatus stat = DgnDbStatus::Success;
         element->Insert(&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);

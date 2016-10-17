@@ -334,12 +334,25 @@ DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
+* @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
+    {
+    if (nullptr == dynamic_cast<GroupInformationElementCP>(&element))
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    return T_Super::_OnInsertElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId, DgnCodeCR code)
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
-    DgnDbR db = modeledElement.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(handler);
     if (!classId.IsValid())
         {
@@ -347,7 +360,7 @@ PhysicalModelPtr PhysicalModel::Create(DgnElementCR modeledElement, DgnCodeCR co
         return nullptr;
         }
 
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId, code));
     if (!model.IsValid())
         {
         BeAssert(false);
@@ -358,9 +371,40 @@ PhysicalModelPtr PhysicalModel::Create(DgnElementCR modeledElement, DgnCodeCR co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
+* @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+PhysicalModelPtr PhysicalModel::Create(PhysicalPartitionCR modeledElement, DgnCodeCR code)
+    {
+    return Create(modeledElement.GetDgnDb(), modeledElement.GetElementId(), code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement, DgnCodeCR code)
+    {
+    return Create(modeledElement.GetDgnDb(), modeledElement.GetElementId(), code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement, DgnCodeCR code)
+    {
+    PhysicalModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement, DgnCodeCR code)
     {
     PhysicalModelPtr model = Create(modeledElement, code);
     if (!model.IsValid())
@@ -403,6 +447,16 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SessionModel::_OnInsertElement(DgnElementR element)
+    {
+    // SessionModel can contain *only* Session elements
+    // WIP: waiting for Session element to be introduced!
+    return T_Super::_OnInsertElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
@@ -414,7 +468,7 @@ DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DocumentListModelPtr DocumentListModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElement, DgnCodeCR code)
     {
     DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::DocumentList::GetHandler();
@@ -439,7 +493,7 @@ DocumentListModelPtr DocumentListModel::Create(DgnElementCR modeledElement, DgnC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DocumentListModelPtr DocumentListModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR modeledElement, DgnCodeCR code)
     {
     DocumentListModelPtr model = Create(modeledElement, code);
     if (!model.IsValid())
@@ -610,10 +664,13 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
         (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
-    if (m_modeledElementId.IsValid())
-        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
-    else
-        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_ModeledElementId));
+    if (!m_modeledElementId.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadElement;
+        }
+
+    statement.BindId(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId);
 
     if (m_federationGuid.IsValid())
         statement.BindBinary(statement.GetParameterIndex(MODEL_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
@@ -1093,14 +1150,6 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-#if 0 // WIP: not ready to enforce this yet!
-    if (!GetModeledElementId().IsValid())
-        {
-        BeAssert(false && "A DgnModel must be modeling an element (that is above it in the hiearchy)");
-        return DgnDbStatus::BadElement;
-        }
-#endif
-
     if (!DgnModels::IsValidName(m_code.GetValue()))
         {
         BeAssert(false);
@@ -1138,14 +1187,12 @@ DgnDbStatus DgnModel::Delete()
     if (!m_persistent)
         return DgnDbStatus::WrongModel;
 
-    if (m_modeledElementId.IsValid())
-        {
-        // give the element being modeled a chance to reject the delete
-        DgnDbStatus status;
-        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
-        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelDelete(*this))))
-            return status;
-        }
+    // give the element being modeled a chance to reject the delete
+    DgnDbStatus status;
+    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+    BeAssert(modeledElement.IsValid());
+    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelDelete(*this))))
+        return status;
 
     DgnDbStatus stat = _OnDelete();
     if (DgnDbStatus::Success != stat)
@@ -1158,13 +1205,9 @@ DgnDbStatus DgnModel::Delete()
 
     _OnDeleted();
 
-    if (m_modeledElementId.IsValid())
-        {
-        // notify the element being modeled that the DgnModel has been deleted
-        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
-        if (modeledElement.IsValid())
-            modeledElement->_OnModelDeleted(*this);
-        }
+    // notify the element being modeled that the DgnModel has been deleted
+    if (modeledElement.IsValid())
+        modeledElement->_OnSubModelDeleted(*this);
 
     return DgnDbStatus::Success;
     }
@@ -1174,6 +1217,12 @@ DgnDbStatus DgnModel::Delete()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Insert()
     {
+    if (!m_modeledElementId.IsValid())
+        {
+        BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hiearchy)");
+        return DgnDbStatus::BadElement;
+        }
+
     DgnDbStatus status = _OnInsert();
     if (DgnDbStatus::Success != status)
         return status;
@@ -1181,15 +1230,14 @@ DgnDbStatus DgnModel::Insert()
     if (GetDgnDb().Models().QueryModelId(m_code).IsValid() || GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateCode;
 
-    m_modelId = DgnModelId(m_dgndb, BIS_TABLE(BIS_CLASS_Model), "Id");
+    // A DgnModel's ID has the same value as the DgnElement that it is modeling
+    m_modelId = DgnModelId(m_modeledElementId.GetValue());
 
-    if (m_modeledElementId.IsValid())
-        {
-        // give the element being modeled a chance to reject the insert
-        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
-        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelInsert(*this))))
-            return status;
-        }
+    // give the element being modeled a chance to reject the insert
+    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+    BeAssert(modeledElement.IsValid());
+    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
+        return status;
 
     CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
     if (stmt.IsNull())
@@ -1212,21 +1260,16 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::WriteError;
         }
         
-    // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
-    // involved in locks for models created locally.
+    // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be involved in locks for models created locally.
     GetDgnDb().BriefcaseManager().OnModelInserted(GetModelId());
     status = Update();
     BeAssert(status == DgnDbStatus::Success);
 
     _OnInserted();
 
-    if (m_modeledElementId.IsValid())
-        {
-        // notify the element being modeled about the new DgnModel
-        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
-        if (modeledElement.IsValid())
-            modeledElement->_OnModelInserted(*this);
-        }
+    // notify the element being modeled about the new DgnModel
+    if (modeledElement.IsValid())
+        modeledElement->_OnSubModelInserted(*this);
 
     return DgnDbStatus::Success;
     }
@@ -1765,28 +1808,33 @@ static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
+DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer, DgnElementCR destinationElementToModel) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModeledElementId(), GetCode());
+    CreateParams params(importer.GetDestinationDb(), GetClassId(), DgnElementId(), GetCode());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
-        parms.m_code = GetCode();
+        params.m_code = GetCode();
 
-        parms.RelocateToDestinationDb(importer);
+        params.RelocateToDestinationDb(importer);
         }
-    return parms;
+
+    params.SetModeledElementId(destinationElementToModel.GetElementId());
+    return params;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::Clone(DgnCode newCode) const
+DgnModelPtr DgnModel::Clone(DgnElementId newModeledElementId, DgnCodeCR newCode) const
     {
+    if (!newModeledElementId.IsValid())
+        return nullptr;
+
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
         return nullptr;
 
-    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, m_modeledElementId, newCode)); // WIP: Is this even valid?  Do we have to clone the modeled element?
+    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newModeledElementId, newCode));
     newModel->_InitFrom(*this);
     return newModel;
     }
@@ -1794,12 +1842,13 @@ DgnModelPtr DgnModel::Clone(DgnCode newCode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const
     {
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
-    DgnModel::CreateParams params = GetCreateParamsForImport(importer); // remaps classid
+    DgnModel::CreateParams params = GetCreateParamsForImport(importer, destinationElementToModel); // remaps classid
+    params.SetModeledElementId(destinationElementToModel.GetElementId());
 
     if (!params.m_code.IsValid())
         params.m_code = GetCode();
@@ -2031,7 +2080,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, DgnImportContext& importer)
+DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, DgnImportContext& importer, DgnElementCR destinationElementToModel)
     {
     StopWatch totalTimer(true);
 
@@ -2040,7 +2089,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 
     BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
 
-    DgnModelPtr newModel = sourceModel._CloneForImport(&stat, importer);
+    DgnModelPtr newModel = sourceModel._CloneForImport(&stat, importer, destinationElementToModel);
     if (!newModel.IsValid())
         return nullptr;
 
@@ -2060,11 +2109,11 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnCode newCode)
+DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnElementId newModeledElementId, DgnCodeCR newCode)
     {
     DgnDbR db = model.GetDgnDb();
 
-    DgnModelPtr model2 = model.Clone(newCode);
+    DgnModelPtr model2 = model.Clone(newModeledElementId, newCode);
     if (DgnDbStatus::Success != model2->Insert())   
         return nullptr;
 
@@ -2078,12 +2127,24 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnCode newCode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const
     {
     if (nullptr != stat)
         *stat = DgnDbStatus::WrongModel;
 
     BeAssert(false && "The dictionary model cannot be cloned");
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr SessionModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::WrongModel;
+
+    BeAssert(false && "The SessionModel cannot be cloned");
     return nullptr;
     }
 

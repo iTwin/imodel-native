@@ -220,8 +220,8 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
-    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, DgnElement::ComparePropertyFilter const&) const override;
 
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus WriteModels();
@@ -268,8 +268,8 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
-    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, DgnElement::ComparePropertyFilter const&) const override;
 
     DgnDbStatus WriteCategories();
     explicit CategorySelector(CreateParams const& params) : T_Super(params) {}

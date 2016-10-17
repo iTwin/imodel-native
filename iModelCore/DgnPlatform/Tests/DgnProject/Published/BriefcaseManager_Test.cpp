@@ -1022,11 +1022,11 @@ public:
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
         {
         SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-        SubjectPtr modelSubject = Subject::Create(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
-        EXPECT_TRUE(modelSubject.IsValid());
-        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*modelSubject));
-        EXPECT_TRUE(db.Elements().Insert<Subject>(*modelSubject).IsValid());
-        PhysicalModelPtr model = PhysicalModel::Create(*modelSubject, DgnModel::CreateModelCode(name));
+        PhysicalPartitionPtr partition = PhysicalPartition::Create(*rootSubject, name);
+        EXPECT_TRUE(partition.IsValid());
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*partition));
+        EXPECT_TRUE(db.Elements().Insert<PhysicalPartition>(*partition).IsValid());
+        PhysicalModelPtr model = PhysicalModel::Create(*partition, DgnModel::CreateModelCode(name));
         EXPECT_TRUE(model.IsValid());
         IBriefcaseManager::Request req;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));

@@ -52,7 +52,7 @@ __PUBLISH_INSERT_FILE__ ToyTile_QueryGeometryPartId.sampleCode
 The following code demonstrates how to reference a geometry part so that its geometry gets shared by (and at display-time, incorporated into) the GeometricElement.
 @note Each time a geometry part is used, a placement (DPoint3d origin + YawPitchRollAngles rotation) or Transform must also be supplied.  This places the part relative to the element's local origin.
 
-__PUBLISH_INSERT_FILE__ ToyTileElement_StaticCreate.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_StaticCreate.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->

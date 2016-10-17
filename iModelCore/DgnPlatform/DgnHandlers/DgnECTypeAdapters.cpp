@@ -1734,7 +1734,7 @@ bool PrimitiveAdapterBase::_Validate (ECN::ECValueCR v, IDgnECTypeAdapterContext
     else if (!v.IsPrimitive())
         return false;
     else if (-1 != context.GetComponentIndex())
-        return (m_primitiveType == PRIMITIVETYPE_Point3D || m_primitiveType == PRIMITIVETYPE_Point2D) && v.IsDouble();
+        return (m_primitiveType == PRIMITIVETYPE_Point3d || m_primitiveType == PRIMITIVETYPE_Point2d) && v.IsDouble();
     else
         return v.GetPrimitiveType() == m_primitiveType;
     }
@@ -1818,9 +1818,9 @@ static double& getPointComponent (DPoint3dR point, uint32_t index)
 bool PointFormatTypeAdapter::_GetPlaceholderValue (ECValueR v, IDgnECTypeAdapterContextCR context) const
     {
     if (_Is2d())
-        v.SetPoint2D (DPoint2d::From (12.34, 56.78));
+        v.SetPoint2d (DPoint2d::From (12.34, 56.78));
     else
-        v.SetPoint3D (DPoint3d::FromXYZ (12.34, 56.78, 0.9));
+        v.SetPoint3d (DPoint3d::FromXYZ (12.34, 56.78, 0.9));
 
     return true;
     }
@@ -1834,10 +1834,10 @@ bool PointFormatTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR 
         {
         if (v.IsDouble())
             return _AllowDoubleType();
-        else if (v.IsPoint2D())
+        else if (v.IsPoint2d())
             return _Is2d();
         else
-            return v.IsPoint3D() && !_Is2d();
+            return v.IsPoint3d() && !_Is2d();
         }
     else
         {
@@ -1851,8 +1851,8 @@ bool PointFormatTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR 
 ECValue PointFormatTypeAdapter::FromStorageType (ECValueCR in) const
     {
     ECValue out = in;
-    if (in.IsPoint2D())
-        out.SetPoint3D (DPoint3d::FromXYZ (in.GetPoint2D().x, in.GetPoint2D().y, 0.0));
+    if (in.IsPoint2d())
+        out.SetPoint3d (DPoint3d::FromXYZ (in.GetPoint2d().x, in.GetPoint2d().y, 0.0));
 
     return out;
     }
@@ -1863,8 +1863,8 @@ ECValue PointFormatTypeAdapter::FromStorageType (ECValueCR in) const
 ECValue PointFormatTypeAdapter::ToStorageType (ECValueCR in) const
     {
     ECValue out = in;
-    if (in.IsPoint3D() && _Is2d())
-        out.SetPoint2D (DPoint2d::From (in.GetPoint3D().x, in.GetPoint3D().y));
+    if (in.IsPoint3d() && _Is2d())
+        out.SetPoint2d (DPoint2d::From (in.GetPoint3d().x, in.GetPoint3d().y));
 
     return out;
     }
@@ -1883,7 +1883,7 @@ bool PointFormatTypeAdapter::ExtractOptions(DPoint3d& pt, bool& useX, bool& useY
         componentIndex = 2;
         }
 
-    if ((componentIndex == -1 && !v.IsPoint3D()) || (componentIndex != -1 && !v.IsDouble()))
+    if ((componentIndex == -1 && !v.IsPoint3d()) || (componentIndex != -1 && !v.IsDouble()))
         return false;
 
     switch (componentIndex)
@@ -1918,7 +1918,7 @@ bool PointFormatTypeAdapter::ExtractOptions(DPoint3d& pt, bool& useX, bool& useY
             useZ = coordOpts != 0xffffffff;
             }
 
-        pt = v.GetPoint3D();
+        pt = v.GetPoint3d();
         }
         break;
     default:
@@ -1970,7 +1970,7 @@ bool PointFormatTypeAdapter::Parse (ECValueR v, Utf8CP str, IDgnECTypeAdapterCon
         if (SUCCESS != parser->ToValue (point, str))
             return false;
 
-        v.SetPoint3D (point);
+        v.SetPoint3d (point);
         v = ToStorageType (v);
         return true;
         }
@@ -2789,7 +2789,7 @@ bool CoordinatesTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP str, IDgnECT
         }
 
     DPoint3d ptForStorage = DPoint3d::FromXYZ (pt.x, pt.y, context.Is3d() ? pt.z : 0.0);
-    v.SetPoint3D (ptForStorage);
+    v.SetPoint3d (ptForStorage);
     return true;
     }
 

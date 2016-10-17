@@ -493,9 +493,9 @@ bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetVie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+void CategorySelector::_Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& filter) const
     {
-    T_Super::_Dump(str, ignore);
+    T_Super::_Dump(str, filter);
     str.append("{");
     Utf8CP comma = "";
     for (auto id : m_categories)
@@ -509,9 +509,9 @@ void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+bool CategorySelector::_Equals(DgnElementCR rhsElement, DgnElement::ComparePropertyFilter const& filter) const
     {
-    if (!T_Super::_Equals(rhsElement, ignore))
+    if (!T_Super::_Equals(rhsElement, filter))
         return false;
 
     auto const& rhs = (CategorySelector const&)rhsElement;

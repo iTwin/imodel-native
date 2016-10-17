@@ -171,8 +171,8 @@ enum class ECPropertyPrimitiveType : uint32_t
     Double                    = 0x0401,//ECN::PRIMITIVETYPE_Double,
     Integer                   = 0x0501,//ECN::PRIMITIVETYPE_Integer,
     Long                      = 0x0601,//ECN::PRIMITIVETYPE_Long,
-    Point2D                   = 0x0701,//ECN::PRIMITIVETYPE_Point2D,
-    Point3D                   = 0x0801,//ECN::PRIMITIVETYPE_Point3D,
+    Point2D                   = 0x0701,//ECN::PRIMITIVETYPE_Point2d,
+    Point3D                   = 0x0801,//ECN::PRIMITIVETYPE_Point3d,
     String                    = 0x0901,//ECN::PRIMITIVETYPE_String,
     IGeometry                 = 0x0a01 //ECN::PRIMITIVETYPE_IGeometry
     };
@@ -1212,7 +1212,7 @@ struct JsECValue : RefCountedBaseWithCreate
     bool GetIsNull() const {return m_value.IsNull();}
     ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
     Utf8String GetString() const {return m_value.IsNull()? "": m_value.ToString();}
-    JsDPoint3dP GetPoint3d() const {return m_value.IsNull()? nullptr: new JsDPoint3d(m_value.GetPoint3D());}
+    JsDPoint3dP GetPoint3d() const {return m_value.IsNull()? nullptr: new JsDPoint3d(m_value.GetPoint3d());}
     Utf8String GetDateTime() const 
         {
         if (m_value.IsNull())

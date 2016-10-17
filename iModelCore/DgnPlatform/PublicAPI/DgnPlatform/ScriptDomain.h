@@ -49,10 +49,12 @@ struct ScriptLibraryModel : DefinitionModel
     {
     DGNMODEL_DECLARE_MEMBERS(SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel, DefinitionModel);
     friend struct ScriptLibraryModelHandler;
+
+  protected:
     explicit ScriptLibraryModel(CreateParams const& params) : T_Super(params) {}
 
   public:
-    DGNPLATFORM_EXPORT static ScriptLibraryModelPtr Create(DgnDbR, DgnCode, Utf8CP sourceUrl="");
+    DGNPLATFORM_EXPORT static ScriptLibraryModelPtr Create(DefinitionPartitionCR, DgnCodeCR, Utf8CP sourceUrl="");
     };
 
 //! @private

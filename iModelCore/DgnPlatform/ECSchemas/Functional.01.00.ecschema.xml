@@ -4,6 +4,13 @@
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
+    <ECEntityClass typeName="FunctionalPartition" modifier="Sealed">
+        <BaseClass>bis:InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="FunctionalModel">
         <BaseClass>bis:RoleModel</BaseClass>
         <ECCustomAttributes>
@@ -48,7 +55,7 @@
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="FunctionalType"/>
         </Target>
     </ECRelationshipClass>

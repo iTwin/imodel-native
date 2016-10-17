@@ -178,6 +178,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for GroupInformationElement
+    struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, Dgn::GroupInformationElement, GroupInformation, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for PhysicalType
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
     {
@@ -194,6 +200,36 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationPartitionElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationPartition : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationPartitionElement, InformationPartitionElement, InformationPartition, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for DefinitionPartition
+    struct EXPORT_VTABLE_ATTRIBUTE DefinitionPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionPartition, Dgn::DefinitionPartition, DefinitionPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for DocumentPartition
+    struct EXPORT_VTABLE_ATTRIBUTE DocumentPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DocumentPartition, Dgn::DocumentPartition, DocumentPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for GroupInformationPartition
+    struct EXPORT_VTABLE_ATTRIBUTE GroupInformationPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationPartition, Dgn::GroupInformationPartition, GroupInformationPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for PhysicalPartition
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalPartition, Dgn::PhysicalPartition, PhysicalPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 };
 

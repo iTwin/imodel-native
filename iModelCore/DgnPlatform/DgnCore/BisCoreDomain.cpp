@@ -36,7 +36,9 @@ HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
+HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(DocumentList)
+HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(Repository)
 };
@@ -59,6 +61,7 @@ HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(InformationContent)
+HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -68,6 +71,11 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(Subject)
+HANDLER_DEFINE_MEMBERS(InformationPartition)
+HANDLER_DEFINE_MEMBERS(DefinitionPartition)
+HANDLER_DEFINE_MEMBERS(DocumentPartition)
+HANDLER_DEFINE_MEMBERS(GroupInformationPartition)
+HANDLER_DEFINE_MEMBERS(PhysicalPartition)
 };
 
 namespace dgn_AspectHandler
@@ -82,6 +90,7 @@ HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
 HANDLER_DEFINE_MEMBERS(Material)
 HANDLER_DEFINE_MEMBERS(Model)
+HANDLER_DEFINE_MEMBERS(Partition)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Category)
@@ -116,12 +125,15 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Information::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
+    RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Session::GetHandler());
     RegisterHandler(dgn_ModelHandler::Repository::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationContent::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationCarrier::GetHandler());
     RegisterHandler(dgn_ElementHandler::Document::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
@@ -153,6 +165,12 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
     RegisterHandler(dgn_ElementHandler::Role::GetHandler());
+    RegisterHandler(dgn_ElementHandler::InformationPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::DefinitionPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::DocumentPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::LinkPartitionHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
 
 #if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
@@ -180,6 +198,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Partition::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
