@@ -132,7 +132,7 @@ TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetr
 
 TEST_F(ImsClientTests, GetToken_ByCredentialsToAnyEnvironment_ValidatesCertificate)
     {
-    GetHandler().ForAnyRequest([&] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
         EXPECT_TRUE(request.GetValidateCertificate());
         return StubHttpResponse();
@@ -156,7 +156,7 @@ TEST_F(ImsClientTests, GetToken_ByCredentialsToAnyEnvironment_ValidatesCertifica
 
 TEST_F(ImsClientTests, GetToken_ByTokenToAnyEnvironment_ValidatesCertificate)
     {
-    GetHandler().ForAnyRequest([&] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
         EXPECT_TRUE(request.GetValidateCertificate());
         return StubHttpResponse();

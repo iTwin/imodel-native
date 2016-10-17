@@ -35,7 +35,7 @@ struct AsyncTestCheckpoint
         //! Call in async code to mark that checkpoint is reached.
         void Checkin()
             {
-            m_reached = true;
+            m_reached.store(true);
             }
 
         //! Call in controlling code to make async code continue from checkpoint.

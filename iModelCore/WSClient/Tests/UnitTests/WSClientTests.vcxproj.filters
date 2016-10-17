@@ -160,6 +160,11 @@
     <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.h" />
+    <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
+    <ClInclude Include="Published\Utils\SeedFile.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
+    <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -333,6 +338,9 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
+    <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Published\Utils\SeedFile.cpp" />
+    <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
@@ -344,6 +352,7 @@
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\12.zip" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

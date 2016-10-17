@@ -289,7 +289,7 @@ void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     m_userSignInHandler = handler;
     }
 
@@ -298,7 +298,7 @@ void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     m_userSignOutHandler = handler;
     }
 

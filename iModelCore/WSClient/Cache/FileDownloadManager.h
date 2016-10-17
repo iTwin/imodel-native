@@ -8,7 +8,7 @@
 #pragma once
 
 #include <WebServices/Cache/ICachingDataSource.h>
-#include <MobileDgn/Utils/Http/HttpRequest.h>
+#include <BeHttp/HttpRequest.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -60,7 +60,7 @@ struct FileDownloadManager
             ObjectId objectId,
             Utf8StringCR fileName,
             FileCache cacheLocation,
-            HttpRequest::ProgressCallbackCR onProgress,
+            Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             );
     };
@@ -72,18 +72,18 @@ struct FileDownloadManager::FileDownloadListener : ICancellationListener, std::e
     {
     private:
         std::shared_ptr<PromiseAsyncTask<ICachingDataSource::Result>> m_promise;
-        HttpRequest::ProgressCallback m_onProgress;
+        Http::Request::ProgressCallback m_onProgress;
 
         std::shared_ptr<FileDownload> m_fileDownload;
 
     private:
-        FileDownloadListener(HttpRequest::ProgressCallbackCR onProgress, std::shared_ptr<FileDownload> fileDownload);
+        FileDownloadListener(Http::Request::ProgressCallbackCR onProgress, std::shared_ptr<FileDownload> fileDownload);
 
     public:
         static std::shared_ptr<FileDownloadListener> Create
             (
             ICancellationTokenPtr ct,
-            HttpRequest::ProgressCallbackCR onProgress,
+            Http::Request::ProgressCallbackCR onProgress,
             std::shared_ptr<FileDownload> fileDownload
             );
 
