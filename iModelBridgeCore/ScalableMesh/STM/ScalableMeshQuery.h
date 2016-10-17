@@ -1451,6 +1451,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
             bool IsLoaded() const;
+            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;
                 
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
@@ -1492,7 +1493,9 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
         // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
-        virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
+        virtual StatusInt _AddTextures(bvector<Byte>& data) override;
+
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID) override;
         

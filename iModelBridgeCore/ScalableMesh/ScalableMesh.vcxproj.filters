@@ -684,9 +684,6 @@
     <ClInclude Include="STM\ScalableMeshDraping.h">
       <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h">
-      <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshLib.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
@@ -962,6 +959,30 @@
     </ClInclude>
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h">
       <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SmCachedDisplayData.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SharedTextureManager.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMSQLiteDiffsetFile.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMSQLiteClipDefinitionsFile.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMSQLiteFeatureFile.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h">
+      <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1386,6 +1407,21 @@
     <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
       <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

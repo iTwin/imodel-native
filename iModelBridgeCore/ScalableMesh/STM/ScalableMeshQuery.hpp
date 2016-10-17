@@ -1212,6 +1212,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
     IScalableMeshMeshPtr meshP;
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
     if (flags->ShouldLoadGraph())
         {
 //        m_meshNode->PinGraph();
@@ -1228,12 +1230,19 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", loadAttempts);
         IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", loadMisses);
 #endif
+        ScalableMeshMeshWithGraphPtr meshPtr;
+        if (graphPtr->GetSize() > 1)
+           meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
+        else
+            {
+            MTGGraph * graph = new MTGGraph();
+            bvector<int> componentPointsId;
+            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
-        ScalableMeshMeshWithGraphPtr meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
+            meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
+            }
 
 
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
         
         int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
         assert(status == SUCCESS);
@@ -1242,7 +1251,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     else
         {               
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly  
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
+        
         if (pointsPtr->size() > 0)
             {           
             ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
@@ -1749,6 +1758,16 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
     return m_cachedDisplayMeshData.IsValid();
     }
 
+template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( IScalableMeshDisplayCacheManager* mgr ) const
+    {
+    if (!m_cachedDisplayMeshData.IsValid()) return false;
+    for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
+        {
+        if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
+        }
+    return true;
+    }
+
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
     assert(IsLoaded() == true);
@@ -1840,7 +1859,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
             for(auto& texId: textureIDs)
                 {
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetDisplayTexture(texId);
-                if (!displayTextureDataPtr.IsValid())
+                if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                     {
                     auto texPtr = meshNode->GetTexturePtr(texId);
                     if (texPtr.IsValid())
@@ -1884,7 +1903,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
             {
 #endif
             RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetSingleDisplayTexture();
-            if (!displayTextureDataPtr.IsValid())
+            if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                 {
                 auto texPtr = meshNode->GetTexturePtr();
                 if (texPtr.IsValid())
@@ -1907,7 +1926,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                                                                                       );
                     displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
                     }
-
+                else assert(false);
 
                 }
             m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
@@ -1986,6 +2005,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                  assert(status == SUCCESS);
                  }*/
+                if (!IsHeaderLoaded()) LoadNodeHeader();
                 texLoaded = GetOrLoadAllTextureData(displayCacheManagerPtr);
                 }
 
@@ -2181,10 +2201,13 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         }
 
                     // Update the pointers passed to QV so that they point to the new arrays
-                    finalPointPtr = (float*)newPoints.data();
-                    finalUVPtr = (float*)newUVs.data();
+                    if (!newPoints.empty()) finalPointPtr = (float*)newPoints.data();
+                    else finalPointPtr = nullptr;
+                    if (!newUVs.empty()) finalUVPtr = (float*)newUVs.data();
+                    else finalUVPtr = nullptr;
                     finalPointNb = newPoints.size();
-                    finalIndexPtr = newIndices.data();
+                    if(!newIndices.empty()) finalIndexPtr = newIndices.data();
+                    else finalIndexPtr = nullptr;
                     finalIndexNb = newIndices.size();
                     }
 
@@ -2429,6 +2452,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsHeaderLoaded() const
 template <class POINT> bool ScalableMeshNode<POINT>::_IsMeshLoaded() const
     {   
     LOAD_NODE
+
     //NEEDS_WORK_SM : Only good for points, not whole mesh.
     assert(!"Only good for points, not whole mesh.");
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));
@@ -2608,6 +2632,72 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
+    pointsPtr->clear();
+
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_isTextured = true;
+
+    if (texID != -1)
+        m_meshNode->m_nodeHeader.m_textureID = texID;
+
+
+    size_t nIndicesCount = 0;
+    vector<POINT> nodePts(vertices.size());
+
+    for (size_t pointInd = 0; pointInd < vertices.size(); pointInd++)
+        {
+        nodePts[pointInd].x = vertices[pointInd].x;
+        nodePts[pointInd].y = vertices[pointInd].y;
+        nodePts[pointInd].z = vertices[pointInd].z;
+        }
+
+    pointsPtr->push_back(&nodePts[0], nodePts.size());
+    m_meshNode->PushUV(&uv[0], uv.size());
+
+    vector<int32_t> indicesLine;
+
+    
+    nIndicesCount += ptsIndices.size();
+    m_meshNode->PushPtsIndices(&ptsIndices[0], ptsIndices.size());
+    m_meshNode->PushUVsIndices(0, &uvIndices[0], uvIndices.size());
+    indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
+
+
+    bvector<int> componentPointsId;
+    // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+    MTGGraph* newGraphP = new MTGGraph();
+    CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
+
+    graphPtr->SetData(newGraphP);
+    graphPtr->SetDirty();
+
+
+    if (componentPointsId.size() > 0)
+        {
+        if (m_meshNode->m_nodeHeader.m_meshComponents == nullptr) m_meshNode->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+        else if (m_meshNode->m_nodeHeader.m_numberOfMeshComponents != componentPointsId.size())
+            {
+            delete[] m_meshNode->m_nodeHeader.m_meshComponents;
+            m_meshNode->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+            }
+        m_meshNode->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
+        memcpy(m_meshNode->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
+        }
+
+    m_meshNode->m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
+    m_meshNode->m_nodeHeader.m_nbUvIndexes = uv.size();
+    m_meshNode->IncreaseTotalCount(m_meshNode->GetNbPoints());
+
+    m_meshNode->SetDirty(true);
+
+    return BSISUCCESS;
+    }
+
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());    
@@ -2682,7 +2772,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvector<Byte>& data, bool sibling)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvector<Byte>& data)
     {
     assert(m_node->m_nodeHeader.m_isTextured == false);
 
@@ -2764,10 +2854,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
     if (flags->ShouldLoadGraph())
         {
         auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-        if (m_meshNode->GetGraphPtr() == NULL)
-            {
-            m_meshNode->LoadGraph();
-            }
+
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
 

@@ -98,6 +98,7 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
     private: 
 
         SMSQLiteFilePtr            m_smSQLiteFile;
+       
 
     public :
 
@@ -110,6 +111,8 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
         virtual void SetMetadata(uint64_t id, double importance, int nDimensions) override;
 
         virtual void GetAllIDs(bvector<uint64_t>& allIds) override;
+
+        virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) override;
 
         virtual void SetAutoCommit(bool autoCommit) override;
     };

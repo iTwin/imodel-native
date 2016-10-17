@@ -1556,10 +1556,11 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
     PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
     clippedMesh->CopyFrom(*meshP);
     s_nclip++;
+
     bool dbg = false;
     if (dbg)
         {
-        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-09-07\\") + L"fpreclipmeshregion_";
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-10-10\\") + L"fpreclipmeshregion_";
         nameBefore.append(to_wstring(s_nclip).c_str());
         nameBefore.append(L".m");
         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
@@ -1572,7 +1573,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         fclose(meshBeforeClip);
         for (size_t j = 0; j < polygons.size(); ++j)
             {
-            WString namePoly = WString(L"E:\\output\\scmesh\\2016-09-07\\") + L"fpreclippolyreg_";
+            WString namePoly = WString(L"E:\\output\\scmesh\\2016-10-10\\") + L"fpreclippolyreg_";
             namePoly.append(to_wstring(s_nclip).c_str());
             namePoly.append(L"_");
             namePoly.append(to_wstring(j).c_str());
@@ -1600,7 +1601,23 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
         clipPolys.push_back(cp);
         }
-     return Process3dRegions(polyfaces, clippedMesh, clipPolys);
+     bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys);
+
+     if (dbg)
+         {
+         WString nameBefore = WString(L"E:\\output\\scmesh\\2016-10-10\\") + L"fpostclipmeshregion_";
+         nameBefore.append(to_wstring(s_nclip).c_str());
+         nameBefore.append(L".m");
+         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
+         size_t count = polyfaces[0][0]->GetPointCount();
+         fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
+         fwrite(polyfaces[0][0]->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
+         count = polyfaces[0][0]->GetPointIndexCount();
+         fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
+         fwrite(polyfaces[0][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
+         fclose(meshBeforeClip);
+         }
+     return ret;
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

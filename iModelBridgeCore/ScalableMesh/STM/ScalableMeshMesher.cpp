@@ -31,6 +31,10 @@
  
 //template class ScalableMesh3DDelaunayMesher<DPoint3d, ISMStore::Extent3d64f>;
 
+
+
+
+
 template class ScalableMesh2DDelaunayMesher<DPoint3d, DRange3d>;
 
 void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, bvector<bvector<int32_t>>& featureDefs)

@@ -54,8 +54,8 @@ static FILE*  s_pPointResultFile = 0;
 static FILE*  s_pFeatureResultFile = 0;
 
 bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
-	{
-	char coordinateBuffer[300];   
+    {
+    char coordinateBuffer[300];   
     int  NbChars;        
 
     for (size_t PointInd = 0; PointInd < nbOfPoints; PointInd++)
@@ -74,7 +74,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     fflush(s_pPointResultFile);
 
     return true;
-	}
+    }
 
 bool WriteFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
     {               
@@ -213,7 +213,7 @@ AppHost appHost;
 
 
 int _tmain(int argc, _TCHAR* argv[])
-	{  
+    {  
     appHost.Startup ();            
    
     DgnFileOpenParams fileOpenParams(L"D:\\MyDoc\\RM - SM - Sprint 3\\Acute3d importer\\MyTestDGN3dStandAloneSeed.dgn", false, DgnFilePurpose::MasterFile);
@@ -228,7 +228,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     MrDTMElementDisplayHandler::OnModelRefActivate(*modelRef, 0);
     //DgnModelP modelRef(dgnFilePtr->GetFirstModelRef ());
-  	    
+          
     s_pPointResultFile = fopen("D:\\MyDoc\\RM - SM - Sprint 3\\Acute3d importer\\output\\021l14_0200_dem.xyz", "w+");                
 
     assert(s_pPointResultFile);
@@ -272,11 +272,11 @@ int _tmain(int argc, _TCHAR* argv[])
         assert(status == SUCCESS);
         }
 
-	sourceImporterPtr->EditSources().Add(sourcePtr);
+    sourceImporterPtr->EditSources().Add(sourcePtr);
 
-	StatusInt status = sourceImporterPtr->Import();
+    StatusInt status = sourceImporterPtr->Import();
 
-	assert(status == SUCCESS);
+    assert(status == SUCCESS);
 
     fclose(s_pPointResultFile);
 
@@ -284,6 +284,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
     appHost.Terminate ();       
 
-	return 0;
-	}
+    return 0;
+    }
 
