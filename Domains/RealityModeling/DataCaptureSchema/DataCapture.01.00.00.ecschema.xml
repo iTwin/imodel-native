@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DataCapture" nameSpaceAlias="dc" version="01.00.00" 
+description="Base schema for Data Capture Physical domains." 
+xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0"
+xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.3.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="ecschema ECSchema.xsd">
+
+    <ECSchemaReference name="dgn" version="02.00.00" prefix="dgn" />
+
+    <!-- BEGIN Camera element classes -->
+    <ECStructClass typeName="ImageDimensionType" >
+        <ECProperty propertyName="Width"  typeName="double" />
+        <ECProperty propertyName="Height" typeName="double" />
+    </ECStructClass>
+
+    <ECStructClass typeName="CameraDistorsionType" >
+        <ECProperty propertyName="K1" typeName="double" />
+        <ECProperty propertyName="K2" typeName="double" />
+        <ECProperty propertyName="K3" typeName="double" />
+        <ECProperty propertyName="P1" typeName="double" />
+        <ECProperty propertyName="P2" typeName="double" />
+    </ECStructClass>
+
+    <ECEntityClass typeName="Camera" modifier="Sealed" description="The camera model type.">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECProperty         propertyName="CameraModel"          typeName="string"               displayLabel="Camera Model" />
+        <ECProperty         propertyName="FocalLenghtPixels"    typeName="double"               displayLabel="Focal Lenght"    />
+        <ECStructProperty   propertyName="ImageDimension"       typeName="ImageDimensionType"   displayLabel="Image Dimension" />
+        <ECProperty         propertyName="PrincipalPoint"       typeName="point2d"              displayLabel="Principal Point"/>
+        <ECStructProperty   propertyName="Distortion"           typeName="CameraDistorsionType" displayLabel="Distortion" />
+        <ECProperty         propertyName="AspectRatio"          typeName="double"               displayLabel="Aspect Ratio" />
+        <ECProperty         propertyName="Skew"                 typeName="double"               displayLabel="Skew" />
+    </ECEntityClass>
+    <!-- END Camera element classes -->
+
+    <!-- BEGIN Photo element classes -->
+    <ECStructClass typeName="RotationMatrix"  description="Rotation matrix">
+        <ECProperty propertyName="M_00" typeName="double" />
+        <ECProperty propertyName="M_01" typeName="double" />
+        <ECProperty propertyName="M_02" typeName="double" />
+        <ECProperty propertyName="M_10" typeName="double" />
+        <ECProperty propertyName="M_11" typeName="double" />
+        <ECProperty propertyName="M_12" typeName="double" />
+        <ECProperty propertyName="M_20" typeName="double" />
+        <ECProperty propertyName="M_21" typeName="double" />
+        <ECProperty propertyName="M_22" typeName="double" />
+    </ECStructClass>
+
+    <ECStructClass typeName="PoseType"  description="Camera cone position in space">
+        <ECProperty         propertyName="Center"   typeName="point3d"          displayLabel="Center"/>
+        <ECStructProperty   propertyName="Rotation" typeName="RotationMatrix"   displayLabel="Rotation"/> 
+    </ECStructClass>
+
+    <ECEntityClass typeName="Photo" description="Photo taken by a camera at a position and orientation.">
+        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECProperty         propertyName="Id"   typeName="int"      displayLabel="Id"/>
+        <ECStructProperty   propertyName="Pose" typeName="PoseType" displayLabel="Pose"/> 
+    </ECEntityClass>
+    <!-- END Photo element classes -->
+
+    <!-- BEGIN Photogroup element classes -->
+    <!--NOT NOW <ECEntityClass typeName="Photogroup" description="List of all photo for a camera.">
+    </ECEntityClass> -->
+    <!-- END Photogroup element classes -->
+
+
+
+</ECSchema>

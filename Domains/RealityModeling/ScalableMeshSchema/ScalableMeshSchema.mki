@@ -18,6 +18,6 @@ IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 #----------------------------------------------------------------------
 # We're building the ScalableMeshSchema lib
 #----------------------------------------------------------------------
-nameToDefine = __SCALABLEMESHSCHEMA_BUILD__
+nameToDefine = __SCALABLEMESH_SCHEMA_BUILD__
 %include cdefapnd.mki
 

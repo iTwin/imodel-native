@@ -1,14 +1,14 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: ScalableMeshSchema/ScalableMeshSchema.prewire.mke $
+#     $Source: DataCaptureSchema/DataCaptureSchema.prewire.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/ScalableMeshSchema : $(_MakeFilePath)../PublicAPI/ScalableMeshSchema
+$(BuildContext)PublicAPI/DataCaptureSchema : $(_MakeFilePath)../PublicAPI/DataCaptureSchema
     $(LinkFirstDepToFirstTargetAsDirectory)
-    
-$(BuildContext)ECSchemas/Domain/ScalableMesh.01.00.ecschema.xml : $(_MakeFilePath)ScalableMesh.01.00.ecschema.xml
+
+$(BuildContext)ECSchemas/Domain/DataCapture.01.00.00.ecschema.xml : $(_MakeFilePath)DataCapture.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)

@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxSchemaInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@
 #include <ThreeMxSchema/ThreeMxHandler.h>
 
 #include "Reader/ThreeMxReader.h"
-#include "MrMesh/MRMesh.h"
+#include "MRMesh/MRMesh.h"
 
 #if defined (__THREEMXSCHEMA_BUILD__)
 #   define THREEMXSCHEMA_EXPORT      EXPORT_ATTRIBUTE
