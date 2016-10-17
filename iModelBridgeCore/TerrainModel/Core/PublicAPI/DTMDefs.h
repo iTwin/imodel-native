@@ -943,7 +943,7 @@ struct BC_DTM_OBJ_VER_200
 #define DTMIOHeaderSize_VER200  offsetof(BC_DTM_OBJ_VER_200, DTMAllocationClass)
 struct DTMRollbackData;
 
-struct BC_DTM_OBJ_EXTENDED 
+struct BC_DTM_OBJ_EXTENDED
 {
   int         (*triangulationCheckStopCallBackP)(DTMFeatureType  dtmFeatureType) ;
   struct DTMRollbackData* rollBackInfoP;
@@ -1033,7 +1033,7 @@ private:
     };
 #define DTMIOHeaderSize  offsetof(BC_DTM_OBJ,refCount)
 // BcDTMSize this is the data size andy classes with destructors etc should be excluded.
-#define BCDTMSize  offsetof(BC_DTM_OBJ,appData) 
+#define BCDTMSize  offsetof(BC_DTM_OBJ,appData)
 
 /*__PUBLISH_SECTION_START__*/
 /*--------------------------------------------------------------------------------------+
@@ -1335,9 +1335,9 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 //  Defines For Core Debugging And Development
 
 #ifdef DTM_TRACE_DEBUG
-#define DTM_TRACE_VALUE(n)   n 
+#define DTM_TRACE_VALUE(n)   n
 #else
-#define DTM_TRACE_VALUE(n)   0 
+#define DTM_TRACE_VALUE(n)   0
 #endif
 #ifdef DTM_CHECK_DEBUG
 #define DTM_CHECK_VALUE(n)   n
@@ -1347,7 +1347,7 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 #ifdef DTM_TIME_DEBUG
 #define DTM_TIME_VALUE(n)   n
 #else
-#define DTM_TIME_VALUE(n)   0 
+#define DTM_TIME_VALUE(n)   0
 #endif
 
 /*__PUBLISH_SECTION_START__*/

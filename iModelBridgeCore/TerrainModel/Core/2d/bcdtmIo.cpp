@@ -9,6 +9,8 @@
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
 #include "bcDTMStream.h"
+
+BENTLEYDTM_EXPORT bool sOutputToConsole = false;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -63,15 +65,16 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
 /*
 **  Write to Standard Out
 */
-#ifdef OUTPUTTOCONSOLE
+    if (sOutputToConsole)
+        {
 #ifndef _WIN32_WCE
-   if(stdout)
-    {
-    if( fpLOG == NULL )
-        bcdtmUtl_getDateAndTime(Dstr,Tstr) ;
-    printf("%s %s\n",Tstr,Message) ;
-    }
-#endif
+        if (stdout)
+            {
+            if (fpLOG == NULL)
+                bcdtmUtl_getDateAndTime(Dstr, Tstr);
+            printf("%s %s\n", Tstr, Message);
+            }
+        }
 #endif
    /*
 **  Update Global DTM Error Register

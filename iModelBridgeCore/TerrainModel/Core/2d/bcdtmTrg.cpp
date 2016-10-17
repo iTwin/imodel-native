@@ -7633,13 +7633,23 @@ int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
         auto n = nodeAddrP(dtmP, pt);
         auto flPtr = n->fPtr;
         int numberType2 = 0;
+        int numberType1 = 0;
         while (flPtr != dtmP->nullPtr)
             {
             auto flist = flistAddrP(dtmP, flPtr);
             if (flist->pntType == 2)  // None Feature Point
+                {
                 numberType2++;
+                }
+            else
+                {
+                numberType1++;
+                break;
+                }
             flPtr = flist->nextPtr;
             }
+        if (numberType1)
+            continue;// This is a real point but also has been inserted into a triangle we have to fail.
         if (numberType2 > 2)// This has intersecting triangles, this is okish.
             continue;
         if (0 != numberType2)
@@ -7667,7 +7677,9 @@ int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
                 deletedPoint = true;
                 }
             else
+                {
                 failedToDeleteAPoint = true;
+                }
             }
         if (deletedPoint)
             hasDeletedPoints = true;

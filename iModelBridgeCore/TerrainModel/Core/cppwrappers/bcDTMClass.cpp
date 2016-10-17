@@ -1507,6 +1507,27 @@ BC_END:;
     BC_END_RETURNSTATUS();
     }
 
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    Daryl.Holmwood   10/16
+//---------------+---------------+---------------+---------------+---------------+------
+BcDTMPtr GetDTMForExport(BcDTMR dtm)
+    {
+    Transform trfs;
+    if (dtm.GetTransformation(trfs))
+        return nullptr;
+
+    BC_DTM_OBJ *dtmHandleP = nullptr;
+
+    bcdtmObject_cloneDtmObject(dtm.GetTinHandle(), (BC_DTM_OBJ **)&dtmHandleP);
+
+    // Create a new Digital TM instance
+    BcDTMPtr transformed = BcDTM::CreateFromDtmHandle(*dtmHandleP);
+
+    transformed->Transform(trfs);
+    return transformed;
+    }
+
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   spu.03jul2002   -  Created.                                         |
@@ -1517,10 +1538,11 @@ DTMStatusInt BcDTM::Save
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation???
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_toFileDtmObject (GetTinHandle (), fileNameP);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_toFileDtmObject(transformedDTM->GetTinHandle(), fileNameP);
+    return (DTMStatusInt)bcdtmWrite_toFileDtmObject(GetTinHandle(), fileNameP);
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1532,10 +1554,12 @@ DTMStatusInt BcDTM::SaveAsGeopakDat
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject (GetTinHandle (), fileNameP);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(transformedDTM->GetTinHandle(), fileNameP);
+    
+    return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(GetTinHandle(), fileNameP);
     }
 
 /*----------------------------------------------------------------------+
@@ -1549,10 +1573,11 @@ DTMStatusInt BcDTM::SaveAsGeopakAsciiDat
     int numDecPts
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject (GetTinHandle (), fileNameP, numDecPts);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject (transformedDTM->GetTinHandle (), fileNameP, numDecPts);
+    return (DTMStatusInt)bcdtmWrite_asciiGeopakDatFileFromDtmObject(GetTinHandle(), fileNameP, numDecPts);
     }
 
 /*----------------------------------------------------------------------+
@@ -1565,10 +1590,12 @@ DTMStatusInt BcDTM::SaveToStream
     IBcDtmStreamR streamP
     )
     {
-    // ToDo Translatation
-    DTMStatusInt status = (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject (GetTinHandle (), &streamP, 0);
-    if (status != DTM_SUCCESS) return DTM_ERROR;
-    return DTM_SUCCESS;
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject(transformedDTM->GetTinHandle(), &streamP, 0);
+
+    return (DTMStatusInt)bcdtmWriteStream_atFilePositionDtmObject (GetTinHandle (), &streamP, 0);
     }
 
 /*----------------------------------------------------------------------+
@@ -1581,8 +1608,11 @@ DTMStatusInt BcDTM::SaveAsGeopakTinFile
     WCharCP fileNameP
     )
     {
-    // ToDo Translatation
-    return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject (GetTinHandle (), fileNameP));
+    BcDTMPtr transformedDTM = GetDTMForExport(*this);
+
+    if (transformedDTM.IsValid())
+        return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject(transformedDTM->GetTinHandle(), fileNameP));
+    return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject(GetTinHandle(), fileNameP));
     }
 
 /*----------------------------------------------------------------------+

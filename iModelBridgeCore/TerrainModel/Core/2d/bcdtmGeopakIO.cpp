@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmGeopakIO.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2500,10 +2500,10 @@ DTM_GUID nullGuid=DTM_NULL_GUID ;
  tinP->nullGuid           = nullGuid      ; 
  tinP->iniMemPts          = tinObj.SmemPolyPts  ;
  tinP->incMemPts          = tinObj.ImemPolyPts  ;
- tinP->iniMemFeatureTable = tinObj.MFINI  ;
- tinP->incMemFeatureTable = tinObj.MFINC  ;
- tinP->iniMemFeatureList  = tinObj.MLINI  ;
- tinP->incMemFeatureList  = tinObj.MLINC  ;
+ tinP->iniMemFeatureTable = tinObj.MFINI == 0 ? 100 : tinObj.MFINI;
+ tinP->incMemFeatureTable = tinObj.MFINC == 0 ? 100 : tinObj.MFINC;
+ tinP->iniMemFeatureList  = tinObj.MLINI == 0 ? 100 : tinObj.MLINI;
+ tinP->incMemFeatureList  = tinObj.MLINC == 0 ? 100 : tinObj.MLINC;
  tinP->creationTime       = tinObj.CreationTime ;
  tinP->modifiedTime       = tinObj.ModifiedTime ;
  tinP->userTime           = tinObj.UserTime ;

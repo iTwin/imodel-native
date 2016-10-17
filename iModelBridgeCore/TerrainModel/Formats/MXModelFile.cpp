@@ -3459,7 +3459,7 @@ ErrorStatus MXTriangleString::close()
 ErrorStatus MXTriangleString::saveData(ArrayClass<ElementTriangleString>& _data)
     {
     assertWriteEnabled();
-    if((isModified() || isNewRecord()) && !isErased())
+    if((isModified() || isNewRecord()) && !isErased() && _data.size() != 0)
         {
         _numPoints = (int)_data.size();
         return saveData(&_data[0]);
@@ -3539,6 +3539,7 @@ ErrorStatus MXTriangleString::saveData(ElementTriangleString* _data)
                 _modelFile->writeRecord(&rec, recordNumber);
             }
         }
+
     return eOk; //StringTableRecord::close();
     //                    return StringTableRecord::close();
     }
@@ -3680,7 +3681,7 @@ ErrorStatus MXTriangleString::saveData(MXTriangle* tri)
                 _modelFile->writeRecords(&rec[0], recordNumber, k);
             }
         }
-    return eOk; //StringTableRecord::close();
+        return eOk; //StringTableRecord::close();
     }
 
 void MXTriangleString::UpdateData()

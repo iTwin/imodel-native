@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/bcdtmMX.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/TerrainModel.h"
@@ -1298,6 +1298,9 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmImport_MXTriangulationToDtmObject(BC_DTM_OBJ* 
     MXTriangle::TriangleArray& triPtr = *(MXTriangle::TriangleArray*)triPtrP;
     MXTriangle::PointArray& pointsPtr = *(MXTriangle::PointArray*)pointsPtrP;
     long startTime = bcdtmClock() ;
+
+    if (triPtr.size() == 0)
+        return DTM_SUCCESS;
     MXDTM mxdtmHelper(triPtr, pointsPtr, dtmP);
     TriangleToDTMHelper<MXDTM> mxdtm(mxdtmHelper, dtmP);
     // Check the inputs.
