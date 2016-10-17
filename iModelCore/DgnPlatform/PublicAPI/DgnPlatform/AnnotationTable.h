@@ -802,6 +802,7 @@ public:
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableR);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other, bool isNew);
+    virtual                         ~AnnotationTableEdgeRun() {}
     void                            Initialize (EdgeRunHostType, uint32_t hostIndex);
 
     AnnotationTableEdgeRunR         operator= (AnnotationTableEdgeRunCR other);
