@@ -163,6 +163,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::FinalizeSignIn()
     {
+    m_cs.Enter();
     auto currentPersistence = m_persistence;
 
     m_persistence = GetPersistenceMatchingAuthenticationType();
@@ -170,6 +171,10 @@ void ConnectSignInManager::FinalizeSignIn()
     m_persistence->SetCredentials(currentPersistence->GetCredentials());
 
     StoreAuthenticationType(m_authType);
+    m_cs.Leave();
+
+    if (m_userSignInHandler)
+        m_userSignInHandler();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -186,9 +191,14 @@ bool ConnectSignInManager::IsSignedIn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SignOut()
     {
-    BeMutexHolder lock(m_cs);
+    m_cs.Enter();
     ClearSignInData();
+
     LOG.infov("ConnectSignOut");
+    m_cs.Leave();
+
+    if (m_userSignOutHandler)
+        m_userSignOutHandler();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -272,6 +282,24 @@ void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
     BeMutexHolder lock(m_cs);
     m_userChangeHandler = handler;
     CheckUserChange();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_userSignInHandler = handler;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_userSignOutHandler = handler;
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -9,13 +9,17 @@
 #include <WebServices/Configuration/BuddiClient.h>
 #include <BeHttp/HttpError.h>
 
+#define BUDDI_URL "https://buddi.bentley.com/discovery.asmx"
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                Julija.Semenenko    06/2015
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BuddiClient::BuddiClient(IHttpHandlerPtr customHandler, Utf8String url) :
-m_client(nullptr, customHandler), m_url(url)
+BuddiClient::BuddiClient(IHttpHandlerPtr customHandler, Utf8String url, ITaskSchedulerPtr sheduler) :
+m_client(nullptr, customHandler),
+m_url(url.empty() ? BUDDI_URL : url),
+m_sheduler(sheduler ? sheduler : AsyncTasksManager::GetDefaultScheduler())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -37,7 +41,7 @@ AsyncTaskPtr<BuddiRegionsResult> BuddiClient::GetRegions()
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 
-    return request.PerformAsync()->Then<BuddiRegionsResult>([=] (Http::Response& response)
+    return request.PerformAsync()->Then<BuddiRegionsResult>(m_sheduler, [=] (Http::Response& response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK ||
             response.GetHttpStatus() != HttpStatus::OK)
@@ -109,7 +113,7 @@ AsyncTaskPtr<BuddiUrlResult> BuddiClient::GetUrl(Utf8StringCR url, uint32_t id)
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 
-    return request.PerformAsync()->Then<BuddiUrlResult>([=] (Http::Response& response)
+    return request.PerformAsync()->Then<BuddiUrlResult>(m_sheduler, [=] (Http::Response& response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK ||
             response.GetHttpStatus() != HttpStatus::OK)

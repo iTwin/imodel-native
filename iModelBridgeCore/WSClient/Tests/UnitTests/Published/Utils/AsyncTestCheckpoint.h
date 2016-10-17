@@ -32,6 +32,12 @@ struct AsyncTestCheckpoint
             while (m_wait);
             }
 
+        //! Call in async code to mark that checkpoint is reached.
+        void Checkin()
+            {
+            m_reached = true;
+            }
+
         //! Call in controlling code to make async code continue from checkpoint.
         void Continue()
             {

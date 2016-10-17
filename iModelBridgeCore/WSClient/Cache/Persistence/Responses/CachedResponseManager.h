@@ -64,12 +64,12 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
 
         BentleyStatus InsertInfo(CachedResponseInfoR info);
         ECInstanceKeyMultiMap FindInfosContainingInstance(CachedObjectInfoKeyCR instanceInfoKey);
-        CacheNodeKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
+        CacheNodeKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial);
         CacheNodeKey FindPage(CachedResponseInfoCR info, uint64_t page);
         bvector<CacheNodeKey> FindPages(CacheNodeKeyCR responseKey);
         bvector<ECInstanceKey> FindPagesContainingInstance(CachedObjectInfoKeyCR instanceInfoKey);
-        CacheNodeKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
-        BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag);
+        CacheNodeKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial);
+        BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag, bool isPartial);
         BentleyStatus UpdatePageCacheDate(ECInstanceId pageId);
         BentleyStatus ClearPageCacheTag(ECInstanceId pageId);
         ECSqlStatementPtr GetSelectPagePropertyStatement
@@ -172,6 +172,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
 
         //! Invalidates cache tag for responses that contain specified instance
         BentleyStatus InvalidateResponsePagesContainingInstance(CachedInstanceKeyCR cachedKey);
+        BentleyStatus InvalidateFullResponsePagesContainingInstances(const ECInstanceKeyMultiMap& instances);
     };
 
 typedef const CachedResponseManager& QueryManagerCR;
