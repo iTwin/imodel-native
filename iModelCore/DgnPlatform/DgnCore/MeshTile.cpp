@@ -1021,46 +1021,47 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
     {
-    bool            isLeaf;
-    double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
     auto            threadPool = &BeFolly::IOThreadPool::GetPool();
-    auto&           host = T_HOST;
-
-    if (false != (isLeaf = (tileTolerance < leafTolerance || !tile.ExceedsFacetCount(maxPointsPerTile, m_cache))))
-        tile.SetTolerance (leafTolerance);
-    else
-        tile.SetTolerance (tileTolerance);
 
     folly::via(threadPool, [&]()
         {
-        DgnPlatformLib::AdoptHost(host);
+        bool            isLeaf;
+        double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
+        auto&           host = T_HOST;
+
+        if (false != (isLeaf = (tileTolerance < leafTolerance || !tile.ExceedsFacetCount(maxPointsPerTile, m_cache))))
+            tile.SetTolerance (leafTolerance);
+        else
+            tile.SetTolerance (tileTolerance);
+
+            DgnPlatformLib::AdoptHost(host);
 
         collector._AcceptTile(tile);
         m_completedTiles++;
 
         DgnPlatformLib::ForgetHost();
 
-        return;
-        });
 
-    if (isLeaf)
+        if (!isLeaf)
+            {
+            size_t              siblingIndex = 0;
+            bvector<DRange3d>   subRanges;
+
+            tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
+            for (auto& subRange : subRanges)
+                {
+                m_totalTiles++;
+                ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+                Status                  status;
+
+                if (Status::Success != (status = ProcessTile (*child, collector, leafTolerance, maxPointsPerTile)))
+                    return status;
+
+                tile.GetChildren().push_back (child);
+                }
+            }
         return Status::Success;
-
-    size_t              siblingIndex = 0;
-    bvector<DRange3d>   subRanges;
-
-    tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
-    for (auto& subRange : subRanges)
-        {
-        m_totalTiles++;
-        ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-        Status                  status;
-
-        if (Status::Success != (status = ProcessTile (*child, collector, leafTolerance, maxPointsPerTile)))
-            return status;
-
-        tile.GetChildren().push_back (child);
-        }
+        });
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 

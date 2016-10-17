@@ -1245,7 +1245,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     TileNodePtr             rootTile;
     static size_t           s_maxPointsPerTile = 200000;
 
-#define GENERATE_AND_COLLECT
+// #define GENERATE_AND_COLLECT
 #ifdef GENERATE_AND_COLLECT
     return ConvertStatus (generator.GenerateAndCollectTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile));
 #else

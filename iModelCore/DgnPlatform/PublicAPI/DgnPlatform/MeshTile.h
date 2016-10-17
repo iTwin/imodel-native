@@ -506,6 +506,9 @@ public:
 //=======================================================================================
 struct ElementTileNode : TileNode
 {
+private:
+    TileGeometryList        m_geometries;
+
 protected:
     ElementTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn) { }
     ElementTileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
