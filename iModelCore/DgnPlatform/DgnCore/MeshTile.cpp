@@ -877,7 +877,9 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
         {
         polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
         polyface->Transform(Transform::FromProduct(GetTransform(), m_entity->GetEntityTransform()));
+    
         }
+
 
     return polyface;
     }
@@ -1010,6 +1012,71 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
+
+#ifdef WIP
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     10/2016
+//=======================================================================================
+struct TileProcessContext
+{
+    
+    double      m_leafTolerance;
+    size_t      m_maxPointsPerTile;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProcessTile (TileNodeR tile)
+    {
+    if (
+
+    }
+
+};  // TileProcessContext
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TileGenerator::GenerateAndCollectTiles(TileNodePtr& root, TileNodeR root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
+    {
+    bvector<TileNodeP> tileQueue;
+
+    tileQueue.push_back (root.get());
+
+    auto threadPool = &BeFolly::IOThreadPool::GetPool();
+    BeAtomic<uint32_t> numCompletedTiles;
+
+    
+    TileProcessContext  context (collector, leafTolerance, maxPointsPerTile);
+    
+    folly::via(threadPool, [&]()
+        {
+        DgnPlatformLib::AdoptHost(host);
+
+        // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
+        context.ProcessTile (root):
+
+        DgnPlatformLib::ForgetHost();
+
+        return status;
+        });
+
+    // Spin until all tiles complete, periodically notifying progress meter
+    // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
+    static const uint32_t s_sleepMillis = 1000.0;
+    StopWatch timer(true);
+    do
+        {
+        m_progressMeter._IndicateProgress (context.GetCompletedTiles(), context.TotalTiles());
+        BeThreadUtilities::BeSleep(s_sleepMillis);
+        }
+    while (context.ProcessingRemains())
+
+    }
+#endif
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -1593,16 +1660,17 @@ TileMeshList ElementTileNode::_GenerateMeshes(TileGenerationCacheCR cache, DgnDb
     double facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
 
     // Collect geometry from elements in this node, sorted by size
-    IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
-    TileGeometryProcessorContext context(processor, db, cache);
+    IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
+    TileGeometryProcessor           processor(cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn);
+    TileGeometryProcessorContext    context(processor, db, cache);
+
     processor._OutputGraphics(context);
 
     // Convert to meshes
-    MeshBuilderMap builderMap;
-    size_t      geometryCount = 0;
-    DRange3d    myTileRange = GetTileRange();
-    bool        isLeaf = m_children.empty();
+    MeshBuilderMap  builderMap;
+    size_t          geometryCount = 0;
+    DRange3d        myTileRange = GetTileRange();
+    bool            isLeaf = m_children.empty();
 
     for (auto& geom : processor.GetGeometries())
         {
