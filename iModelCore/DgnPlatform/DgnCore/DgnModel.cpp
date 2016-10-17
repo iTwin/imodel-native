@@ -1205,11 +1205,13 @@ DgnDbStatus DgnModel::Delete()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Insert()
     {
+#ifdef NOTNOW_WAITING_ON_FIX_FROM_SHAUN_FOR_REALITY_MODELS
     if (!m_modeledElementId.IsValid())
         {
         BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hiearchy)");
         return DgnDbStatus::BadElement;
         }
+#endif
 
     DgnDbStatus status = _OnInsert();
     if (DgnDbStatus::Success != status)
@@ -1218,14 +1220,18 @@ DgnDbStatus DgnModel::Insert()
     if (GetDgnDb().Models().QueryModelId(m_code).IsValid() || GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateCode;
 
-    // A DgnModel's ID has the same value as the DgnElement that it is modeling
+#ifdef NOTNOW_WAITING_ON_FIX_FROM_SHAUN_FOR_REALITY_MODELS
     m_modelId = DgnModelId(m_modeledElementId.GetValue());
-
+    
     // give the element being modeled a chance to reject the insert
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
     BeAssert(modeledElement.IsValid());
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
-        return status;
+
+#else
+   // A DgnModel's ID has the same value as the DgnElement that it is modeling
+    m_modelId = DgnModelId(m_dgndb, BIS_TABLE(BIS_CLASS_Model), "Id");
+#endif
 
     CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
     if (stmt.IsNull())
