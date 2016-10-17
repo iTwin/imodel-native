@@ -1592,10 +1592,19 @@ DTMStatusInt BcDTM::SaveAsGeopakTinFile
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_ExportToGeopakTinFile 
     (
-    WCharCP fileNameP
+    WCharCP fileNameP, 
+    TransformCP transformation
     )
     {
-    return SaveAsGeopakTinFile(fileNameP);
+    BcDTMPtr bcDtmToExport(this);
+
+    if (transformation != nullptr && !transformation->IsIdentity ())
+        {
+        bcDtmToExport = this->Clone ();
+        bcDtmToExport->Transform(*transformation);
+        }
+
+    return bcDtmToExport->SaveAsGeopakTinFile(fileNameP);
     }
 
 /*----------------------------------------------------------------------+

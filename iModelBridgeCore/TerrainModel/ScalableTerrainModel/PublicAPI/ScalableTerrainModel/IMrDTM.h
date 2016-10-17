@@ -67,8 +67,8 @@ struct IMrDTM abstract:  Bentley::TerrainModel::IDTM
 
         virtual IDTMVolumeP _GetDTMVolume() override { return nullptr; }
 
-        virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override { return DTM_ERROR; }
 
+        virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override { return DTM_ERROR; }
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
