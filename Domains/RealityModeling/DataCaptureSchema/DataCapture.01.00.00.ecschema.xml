@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DataCapture" nameSpaceAlias="dc" version="01.00.00" 
+<ECSchema schemaName="DataCapture" nameSpacePrefix="datacapture" version="01.00.00" 
 description="Base schema for Data Capture Physical domains." 
 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0"
 xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.3.0"

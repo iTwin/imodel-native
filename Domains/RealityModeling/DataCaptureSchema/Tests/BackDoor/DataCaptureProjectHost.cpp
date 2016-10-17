@@ -170,6 +170,7 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     BeFileName schemaRootDir = assetsRootDir;
     schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
 
+    DgnDbStatus status;
     BeFileName DataCaptureSchemaFileName = schemaRootDir;
     DataCaptureSchemaFileName.AppendToPath(BDCP_SCHEMA_FILE);
     if (DgnDbStatus::Success != (status = DataCapture::DataCaptureDomain::GetDomain().ImportSchema(*projectPtr, DataCaptureSchemaFileName)))
@@ -284,7 +285,7 @@ DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetB
     {
     BeAssert(nullptr != m_host);
 
-    const WCharCP testSeedName = L"TestSeed.bim";
+    const WCharCP testSeedName = L"TestSeed.dgndb";
     const BeFileName testSeedPath = m_host->BuildProjectFileName(testSeedName);
     const BeFileName projectName = m_host->BuildProjectFileName(baseName);
 
