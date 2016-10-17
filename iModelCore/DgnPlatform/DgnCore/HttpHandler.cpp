@@ -128,7 +128,7 @@ HttpRequestStatus HttpHandler::Request(HttpResponsePtr& response, HttpRequest co
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &responseBody);
     curl_easy_setopt(curl.Get(), CURLOPT_HEADERFUNCTION, &HttpHandler::HttpHeaderParser);
     curl_easy_setopt(curl.Get(), CURLOPT_HEADERDATA, &responseHeader);
-#if (0)
+#if (1) //YII RealityData Services
     // ONLY USE FOR TESTING ON SERVERS WITHOUT VALID CERTIFICATES
     curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYHOST, 0);
     curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYPEER, 0);
