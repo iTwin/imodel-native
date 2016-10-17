@@ -81,9 +81,7 @@ $(o)ThreadCurlHttpHandler$(oext)          : $(BeHttpSourceDir)Curl/ThreadCurlHtt
     CCPchOpts = 
     CPchOpts =
 
-    %if $(HTTP_LIB) == "CURL"
-        $(o)ApplicationEvents$(oext) : $(BeHttpSourceDir)Curl/ApplicationEvents.mm $(HttpHeaders) ${MultiCompileDepends}
-    %endif
+    $(o)ApplicationEvents$(oext) : $(BeHttpSourceDir)Curl/ApplicationEvents.mm $(HttpHeaders) ${MultiCompileDepends}
     
     $(o)NetworkIndicator$(oext) : $(BeHttpSourceDir)NetworkIndicator.mm $(HttpHeaders) ${MultiCompileDepends}
 
