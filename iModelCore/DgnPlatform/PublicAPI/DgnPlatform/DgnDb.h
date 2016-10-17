@@ -149,7 +149,8 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
-    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); }
+    // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
+    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);

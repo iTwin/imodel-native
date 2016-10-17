@@ -84,7 +84,8 @@ DgnDb::~DgnDb()
 void DgnDb::_OnDbClose() 
     {
     Domains().OnDbClose();
-    Destroy(); 
+    Destroy();
+    Elements().ClearUpdaterCache();
     T_Super::_OnDbClose();
     }
 
