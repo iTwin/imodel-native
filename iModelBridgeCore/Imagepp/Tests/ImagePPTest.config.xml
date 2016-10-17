@@ -50,7 +50,8 @@
             <!-- Performance:  -->
             <!-- 'ThresholdMs' : Do not validate duration if the export time is under this threshold -->
             <!-- 'ToleranceRatio' : Fails when there is more difference than the specified ratio. Use 0.10 for 10% -->
-            <Duration Enable="true" ThresholdMs="500" ToleranceRatio="0.10"/>            
+            <!-- *** May need to be tweaked: old ATP had a relative(20%) and absolute error(25 sec) but that doesn't test a lot of cases.*** -->
+            <Duration Enable="false" ThresholdMs="30000" ToleranceRatio="0.15"/>            
         </BaseLine>       
         
     </FileFormatTester>        

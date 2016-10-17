@@ -63,7 +63,7 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
         if (pSrcCreator == nullptr)
             return;
 
-        printf("[ TRACE    ] Exporting: %s\n", sourceFileName.GetNameUtf8().c_str());
+        printf("[ TRACE    ]   Exporting: %s\n", sourceFileName.GetNameUtf8().c_str());
 
         HFCPtr<HRFRasterFile> pRasterFileSource = pSrcCreator->Create(pSourceUrl, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
         //Verify that the Rasterfile created is valid
@@ -156,7 +156,7 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
                 if (outputInfo.GetExportDuration() > config.GetDuratationThreshold())
                     {
                     double exportDelta = (double) outputInfo.GetExportDuration() - (double) baselineInfo.GetExportDuration();
-                    double exportRatio = fabs(exportDelta) / baselineInfo.GetExportDuration();
+                    double exportRatio = exportDelta / baselineInfo.GetExportDuration();
                     ASSERT_LE(exportRatio, config.GetToleranceRatio())
                         << "Base time: " << baselineInfo.GetExportDuration() << "ms New time: " << outputInfo.GetExportDuration() << "ms";
                     }

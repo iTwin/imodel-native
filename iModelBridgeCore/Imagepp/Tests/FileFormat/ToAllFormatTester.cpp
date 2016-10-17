@@ -209,7 +209,7 @@ TEST_P(ExportAllTester, ToAllFormats)
 
     HFCPtr<HFCURL> pSourceUrl = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + sourceFilename.GetNameUtf8());
 
-    printf("[ TRACE    ] Exporting: %s\n", creator.GetLabel().c_str());
+    printf("[ TRACE    ]   Exporting: %s\n", creator.GetLabel().c_str());
 
     try
         {
@@ -321,7 +321,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                             if (outputInfo.GetExportDuration() > config.GetDuratationThreshold())
                                 {
                                 double exportDelta = (double) outputInfo.GetExportDuration() - (double) baselineInfo.GetExportDuration();
-                                double exportRatio = fabs(exportDelta) / baselineInfo.GetExportDuration();
+                                double exportRatio = exportDelta / baselineInfo.GetExportDuration();
                                 ASSERT_LE(exportRatio, config.GetToleranceRatio())
                                     << "Base time: " << baselineInfo.GetExportDuration() << "ms New time: " << outputInfo.GetExportDuration() << "ms";
                                 }
