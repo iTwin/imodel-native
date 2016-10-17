@@ -176,9 +176,9 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
 
     // Multiband source specific info.
     nativeSource->SetRedBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
-    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
-    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
-    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
+    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource2(managedSource->GetGreenBand()));
+    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource2(managedSource->GetBlueBand()));
+    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource2(managedSource->GetPanchromaticBand()));
 
     return nativeSource;
     }
