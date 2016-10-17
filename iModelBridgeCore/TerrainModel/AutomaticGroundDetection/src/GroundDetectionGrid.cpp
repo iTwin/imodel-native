@@ -439,6 +439,8 @@ GroundDetectionGridPtr GroundDetectionGrid::Create(GroundDetectionParameters con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_testGreaterGrid = true;
+
 GroundDetectionGrid::GroundDetectionGrid(GroundDetectionParameters const& params)
 :m_gridCellSize(params.GetLargestStructureSize()),
 m_density(params.GetDensity())
@@ -471,16 +473,39 @@ m_density(params.GetDensity())
     NbRow = max(1.0, NbRow);
     NbCol = max(1.0, NbCol);
     //Use at minimum a 2 x 2 grid so we get at minimum 3 pts to form a triangle.
+    /*
     if ((NbRow*NbCol) < 4)
         {
         NbRow = max(2.0, NbRow);
         NbCol = max(3.0, NbCol);
-        }
+        }    
+        */
+
     double requiredLargestStructInUorsY = (hightInUors.y - lowInUors.y) / NbRow;
     double requiredLargestStructInUorsX = (hightInUors.x - lowInUors.x) / NbCol;
-    for (double row = 0; row < NbRow; row++)
+
+    double row;
+    double col;
+
+    if (s_testGreaterGrid)
         {
-        for (double col = 0; col < NbCol; col++)
+        NbRow += 2;
+        NbCol += 2;
+        row = -1;        
+        }
+    else
+        {
+        row = 0;        
+        }
+
+    for (; row < NbRow; row++)
+        {
+        if (s_testGreaterGrid)
+            col = -1;
+        else
+            col = 0;
+            
+        for (; col < NbCol; col++)
             {
             DRange3d gridRange;
             gridRange.low.x = lowInUors.x + col*requiredLargestStructInUorsX;
@@ -490,8 +515,11 @@ m_density(params.GetDensity())
             gridRange.high.y = gridRange.low.y + requiredLargestStructInUorsY;
             gridRange.high.z = hightInUors.z;
             //Limit to maximum range
-            gridRange.high.x = min(hightInUors.x, gridRange.high.x);
-            gridRange.high.y = min(hightInUors.y, gridRange.high.y);
+            if (!s_testGreaterGrid)
+                {
+                gridRange.high.x = min(hightInUors.x, gridRange.high.x);
+                gridRange.high.y = min(hightInUors.y, gridRange.high.y);
+                }
 
             GridCellEntryPtr pEntry;
             int position(GridCellEntry::GetPositionFlags(row, col, NbRow, NbCol));
