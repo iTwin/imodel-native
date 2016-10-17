@@ -74,7 +74,7 @@ static CommandParam s_paramTable[] =
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
         { L"pl", L"polylines", L"Publish polylines", false, true },
-        { L"l",  L"geographicLocation", L"Geographic location (latitude, longitude)", false },
+        { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider" L"Imagery Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
     };
@@ -312,7 +312,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 m_polylines = true;
                 break;
             case ParamId::GeographicLocation:
-                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.latitude, &m_geoLocation.longitude))
+                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
                     {
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
