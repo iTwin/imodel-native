@@ -102,7 +102,7 @@ DateTimeCR RepositoryInfo::GetCreatedDate() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
+DgnDbServerRepositoryResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
     {
     const Utf8String methodName = "RepositoryInfo::ReadRepositoryInfo";
     Utf8String serverUrl;
@@ -113,13 +113,11 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
         status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryId, id);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         {
-        m_serverUrl = serverUrl;
-        m_id        = id;
-        return DgnDbServerStatusResult::Success();
+        return DgnDbServerRepositoryResult::Success(Create(serverUrl, id));
         }
     auto error = DgnDbServerError(db, status);
     DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-    return DgnDbServerStatusResult::Error(error);
+    return DgnDbServerRepositoryResult::Error(error);
     }
 
 //---------------------------------------------------------------------------------------
@@ -154,6 +152,8 @@ DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, BeSQ
 //---------------------------------------------------------------------------------------
 RepositoryInfoPtr RepositoryInfo::FromJson(JsonValueCR json, Utf8StringCR url)
     {
+    if (json.isNull())
+        return nullptr;
     Utf8String repositoryInstanceId = json[ServerSchema::InstanceId].asString();
     JsonValueCR properties = json[ServerSchema::Properties];
     Utf8String name = properties[ServerSchema::Property::RepositoryName].asString();

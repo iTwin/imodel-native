@@ -142,12 +142,11 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionTaskPtr DgnDbRepositoryConnection::Create
+DgnDbRepositoryConnectionResult DgnDbRepositoryConnection::Create
 (
 RepositoryInfoCR         repository,
 CredentialsCR            credentials,
 ClientInfoPtr            clientInfo,
-ICancellationTokenPtr    cancellationToken,
 IHttpHandlerPtr          customHandler
 )
     {
@@ -156,17 +155,17 @@ IHttpHandlerPtr          customHandler
     if (repository.GetId().empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
+        return DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryName);
         }
     if (repository.GetServerURL().empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL);
         }
     if (!credentials.IsValid() && !customHandler)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        return DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet);
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -178,7 +177,7 @@ IHttpHandlerPtr          customHandler
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-    return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
+    return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1884,8 +1883,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
                 }
 
             JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            JsonValueCR properties = instance[ServerSchema::Properties];
-            return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::FromJson(properties));
+            return DgnDbServerBriefcaseInfoResult::Success(DgnDbServerBriefcaseInfo::FromJson(instance));
             });
         });
     }

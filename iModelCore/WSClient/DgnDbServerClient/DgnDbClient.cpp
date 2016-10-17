@@ -43,24 +43,63 @@ void DgnDbClient::Initialize()
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken) const
+DgnDbRepositoryConnectionResult DgnDbClient::CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const
     {
-    const Utf8String methodName = "DgnDbClient::ConnectToRepository";
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return DgnDbRepositoryConnection::Create(repository, m_credentials, m_clientInfo, cancellationToken, m_customHandler);
+    return DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_customHandler);
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
+DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbClient::ConnectToRepository";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (m_serverUrl.empty() || m_serverUrl != repositoryInfo.GetServerURL())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        }
+
+    return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(CreateRepositoryConnection(repositoryInfo));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
 DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::ConnectToRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    RepositoryInfoPtr repository = RepositoryInfo::Create(m_serverUrl, repositoryId);
-    return ConnectToRepository(*repository, cancellationToken);
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (m_serverUrl.empty())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        }
+
+    return GetRepositoryById(repositoryId, cancellationToken)
+        ->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerRepositoryResultCR result)
+        {
+        if (!result.IsSuccess())
+            {
+            return DgnDbRepositoryConnectionResult::Error(result.GetError());
+            }
+        return CreateRepositoryConnection(*result.GetValue());
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -82,7 +121,7 @@ Json::Value BasicUserCreationJson(Credentials credentials, bool isAdmin = false)
     instance[ServerSchema::ClassName] = ServerSchema::Class::UserDefinition;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::Name] = credentials.GetUsername();
-    properties[ServerSchema::Property::Password] = credentials.GetPassword();;
+    properties[ServerSchema::Property::Password] = credentials.GetPassword();
     properties[ServerSchema::Property::IsAdmin] = isAdmin;
     return repositoryCreation;
     }
@@ -249,6 +288,98 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
         return DgnDbServerRepositoriesResult::Success(repositories);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryByName(Utf8StringCR repositoryName, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbClient::GetRepositoryByName";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (m_serverUrl.empty())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        }
+
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repository with name %s.", repositoryName.c_str());
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
+    Utf8String filter;
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::RepositoryName, repositoryName.c_str());
+    query.SetFilter(filter);
+
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, "");
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
+    client->SetCredentials(m_credentials);
+
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRepositoryResult>([=] (WSObjectsResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerRepositoryResult::Error(result.GetError());
+            }
+
+        RepositoryInfoPtr repositoryInfo = RepositoryInfo::FromJson(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        return DgnDbServerRepositoryResult::Success(repositoryInfo);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryById(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbClient::GetRepositoryById";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (m_serverUrl.empty())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        }
+
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repository with id %s.", repositoryId.c_str());
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, repositoryId);
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
+    client->SetCredentials(m_credentials);
+
+    return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoryResult>([=] (WSObjectsResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerRepositoryResult::Error(result.GetError());
+            }
+
+        RepositoryInfoPtr repositoryInfo = RepositoryInfo::FromJson(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+        return DgnDbServerRepositoryResult::Success(repositoryInfo);
         });
     }
 
@@ -524,18 +655,23 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    RepositoryInfo repositoryInfo;
     FileInfoPtr fileInfo = FileInfo::Create(*db, "");
-    auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
+    auto readResult = RepositoryInfo::ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
+    RepositoryInfoPtr repositoryInfo = readResult.GetValue();
+    if (repositoryInfo->GetServerURL() != m_serverUrl)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Briefcase belongs to another server.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        }
     std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
-    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo->GetName().c_str());
+    return ConnectToRepository(*repositoryInfo, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
         {
         if (!connectionResult.IsSuccess())
             {
@@ -607,19 +743,19 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    RepositoryInfo repositoryInfo;
-    auto readResult = repositoryInfo.ReadRepositoryInfo(*db);
+    auto readResult = RepositoryInfo::ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
+    RepositoryInfoPtr repositoryInfo = readResult.GetValue();
     BeFileName originalFilePath = db->GetFileName();
 
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
-    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo->GetName().c_str());
+    return ConnectToRepository(*repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (!connectionResult.IsSuccess())
             {
@@ -783,11 +919,6 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
-        }
-    if (repositoryInfo.GetServerURL().empty())
-        {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
-        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {

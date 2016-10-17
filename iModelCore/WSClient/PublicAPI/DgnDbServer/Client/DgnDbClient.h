@@ -23,7 +23,6 @@ USING_NAMESPACE_BENTLEY_DGN
 
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbClient);
-DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryManagerPtr, DgnDbRepositoryManager);
@@ -58,6 +57,8 @@ private:
                                                ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
+    DgnDbRepositoryConnectionResult CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const;
+    DgnDbServerRepositoryTaskPtr GetRepositoryFromQuery(WSQueryCR query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
     //! Set custom handler.
@@ -109,13 +110,27 @@ public:
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr  ConnectToRepository(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr ConnectToRepository(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get list of available repostiories for this client.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has a collection of repository information as the result. See RepositoryInfo.
     //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoriesTaskPtr GetRepositories(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Gets repository with the specified name.
+    //! @param[in] repositoryName
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has repository information as the result. See RepositoryInfo.
+    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr GetRepositoryByName(Utf8StringCR repositoryName, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Gets repository with the specified id.
+    //! @param[in] repositoryId
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has repository information as the result. See RepositoryInfo.
+    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr GetRepositoryById(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.

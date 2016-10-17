@@ -14,6 +14,7 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 typedef std::shared_ptr<struct RepositoryInfo> RepositoryInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(RepositoryInfo);
+DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 
 //=======================================================================================
 //! Information about revision file that is on server.
@@ -34,16 +35,16 @@ private:
     RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 //__PUBLISH_SECTION_START__
 public:
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
-
     //__PUBLISH_SECTION_END__
+    RepositoryInfo();
+
     bool operator==(RepositoryInfoCR rhs) const;
     static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
+    static RepositoryInfoPtr Create (Utf8StringCR serverUrl, Utf8StringCR id);
     //__PUBLISH_SECTION_START__
 
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create (Utf8StringCR serverUrl, Utf8StringCR id);
 
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult ReadRepositoryInfo(Dgn::DgnDbCR db);
+    DGNDBSERVERCLIENT_EXPORT static DgnDbServerRepositoryResult ReadRepositoryInfo(Dgn::DgnDbCR db);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledRevisionId = false) const;
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const;
