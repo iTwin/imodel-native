@@ -12,7 +12,7 @@
 
 class ImsClientTests : public BaseMockHttpHandlerTest
     {
-    private:
+    public:
         std::shared_ptr<StubBuddiClient> m_buddiClient;
         StubLocalState m_localState;
 

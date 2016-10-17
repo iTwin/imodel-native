@@ -55,7 +55,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsNotSet_ReturnsNull)
 
     EXPECT_CALL(*persistence, GetCredentials()).WillOnce(Return(Credentials()));
 
-    EXPECT_EQ(nullptr, provider.UpdateToken());
+    EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
     }
 
 TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken)
@@ -68,7 +68,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSet_CallsImsServerToRet
     EXPECT_CALL(*persistence, GetCredentials()).WillOnce(Return(creds));
     EXPECT_CALL(*client, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(HttpError()))));
 
-    provider.UpdateToken();
+    provider.UpdateToken()->GetResult();
     }
 
 TEST_F(ConnectTokenProviderTests, UpdateToken_TokenRequestReturnsError_Nullptr)
@@ -82,7 +82,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_TokenRequestReturnsError_Nullptr)
     EXPECT_CALL(*client, RequestToken(creds, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(HttpError(StubHttpResponse(ConnectionStatus::CouldNotConnect))))));
 
-    EXPECT_EQ(nullptr, provider.UpdateToken());
+    EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
     }
 
 TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSetAndTokenRecieved_SetsTokenToPersistenceAndReturns)
@@ -103,7 +103,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSetAndTokenRecieved_Set
     EXPECT_CALL(*client, RequestToken(creds, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newToken))));
 
-    SamlTokenPtr updatedToken = provider.UpdateToken();
+    SamlTokenPtr updatedToken = provider.UpdateToken()->GetResult();
     EXPECT_EQ(newToken->AsString(), updatedToken->AsString());
     }
 #endif

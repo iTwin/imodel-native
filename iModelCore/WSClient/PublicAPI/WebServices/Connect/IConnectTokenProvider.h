@@ -24,7 +24,7 @@ struct IConnectTokenProvider
 
         //! Retrieves new token, caches and returns it.
         //! Returns null if token cannot be retrieved.
-        virtual SamlTokenPtr UpdateToken() = 0;
+        virtual AsyncTaskPtr<SamlTokenPtr> UpdateToken() = 0;
 
         //! Returns cached token.
         //! Returns null if token is not cached - calling UpdateToken() would be next step.

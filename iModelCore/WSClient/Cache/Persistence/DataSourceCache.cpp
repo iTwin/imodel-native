@@ -1553,6 +1553,12 @@ ICancellationTokenPtr ct
             {
             return ERROR;
             }
+
+        if (nullptr != partialCachingState &&
+            SUCCESS != m_state->GetCachedResponseManager().InvalidateFullResponsePagesContainingInstances(partialCachingState->GetOverriddenFullInstances()))
+            {
+            return ERROR;
+            }
         }
 
     if (response.IsFinal())

@@ -37,6 +37,7 @@ struct CachingDataSource :
         friend struct DownloadFilesTask;
         friend struct SyncLocalChangesTask;
         friend struct SyncCachedDataTask;
+        friend struct FileDownloadManager;
 
         typedef AsyncResult<CachingDataSourcePtr, Error> OpenResult;
 
@@ -48,6 +49,7 @@ struct CachingDataSource :
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
         std::unique_ptr<struct SessionInfo>         m_sessionInfo;
+        std::shared_ptr<struct FileDownloadManager> m_fileDownloadManager;
 
         WorkerThreadPtr                             m_cacheAccessThread;
         SimpleCancellationTokenPtr                  m_cancellationToken;
@@ -111,6 +113,14 @@ struct CachingDataSource :
             SyncProgressCallback onProgress,
             ICancellationTokenPtr ct,
             SyncOptions options
+            );
+
+        AsyncTaskPtr<BatchResult> DownloadAndCacheFiles
+            (
+            bset<ObjectId> filesToDownload,
+            FileCache fileCacheLocation,
+            CachingDataSource::LabeledProgressCallback onProgress,
+            ICancellationTokenPtr ct
             );
 
     public:
