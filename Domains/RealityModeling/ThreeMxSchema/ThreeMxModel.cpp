@@ -190,14 +190,15 @@ void ThreeMxModel::Load(SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelNameIn, Utf8CP sceneFile, TransformCP trans, ClipVectorCP clip)
+DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP modelNameIn, Utf8CP sceneFile, TransformCP trans, ClipVectorCP clip)
     {
+    DgnDbR db = modeledElement.GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
 
     Utf8String modelName(db.Models().GetUniqueModelName(modelNameIn));
 
-    ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, ThreeMxModel::CreateModelCode(modelName)));
+    ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), ThreeMxModel::CreateModelCode(modelName)));
 
     model->SetSceneFile(sceneFile);
     if (trans)
