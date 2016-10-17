@@ -29,8 +29,10 @@ struct RangeTreeNode
     RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
 };
 
-static const double s_minRangeBoxSize    = 0.5; // Threshold below which we consider geometry/element too small to contribute to tile mesh
-static const size_t s_maxGeometryIdCount = 0xffff; // Max batch table ID - 16-bit unsigned integers
+static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
+static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
+static const double s_minToleranceRatio = 100.0;
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -919,8 +921,8 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter, ITileGenerationProgressMonitorP progress)
-    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb),
-    m_cache(TileGenerationCache::Options::CacheGeometrySources)
+    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_transformFromDgn(transformFromDgn), m_dgndb(dgndb), 
+      m_totalTiles(0), m_completedTiles(0), m_cache(TileGenerationCache::Options::CacheGeometrySources)
     {
     StopWatch timer(true);
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::PopulatingCache);
@@ -1013,68 +1015,72 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 
-#ifdef WIP
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     10/2016
-//=======================================================================================
-struct TileProcessContext
-{
-    
-    double      m_leafTolerance;
-    size_t      m_maxPointsPerTile;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessTile (TileNodeR tile)
+TileGenerator::Status TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
     {
-    if (
+    bool            isLeaf;
+    double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
+    auto            threadPool = &BeFolly::IOThreadPool::GetPool();
+    auto&           host = T_HOST;
 
-    }
+    if (false != (isLeaf = (tileTolerance < leafTolerance || !tile.ExceedsFacetCount(maxPointsPerTile, m_cache))))
+        tile.SetTolerance (leafTolerance);
+    else
+        tile.SetTolerance (tileTolerance);
 
-};  // TileProcessContext
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::GenerateAndCollectTiles(TileNodePtr& root, TileNodeR root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
-    {
-    bvector<TileNodeP> tileQueue;
-
-    tileQueue.push_back (root.get());
-
-    auto threadPool = &BeFolly::IOThreadPool::GetPool();
-    BeAtomic<uint32_t> numCompletedTiles;
-
-    
-    TileProcessContext  context (collector, leafTolerance, maxPointsPerTile);
-    
     folly::via(threadPool, [&]()
         {
         DgnPlatformLib::AdoptHost(host);
 
-        // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
-        context.ProcessTile (root):
+        collector._AcceptTile(tile);
+        m_completedTiles++;
 
         DgnPlatformLib::ForgetHost();
 
-        return status;
+        return;
         });
 
-    // Spin until all tiles complete, periodically notifying progress meter
-    // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
-    static const uint32_t s_sleepMillis = 1000.0;
-    StopWatch timer(true);
-    do
-        {
-        m_progressMeter._IndicateProgress (context.GetCompletedTiles(), context.TotalTiles());
-        BeThreadUtilities::BeSleep(s_sleepMillis);
-        }
-    while (context.ProcessingRemains())
+    if (isLeaf)
+        return Status::Success;
 
+    size_t              siblingIndex = 0;
+    bvector<DRange3d>   subRanges;
+
+    tile.ComputeChildTileRanges (subRanges, tile.GetDgnRange(), s_splitCount);
+    for (auto& subRange : subRanges)
+        {
+        m_totalTiles++;
+        ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
+        Status                  status;
+
+        if (Status::Success != (status = ProcessTile (*child, collector, leafTolerance, maxPointsPerTile)))
+            return status;
+
+        tile.GetChildren().push_back (child);
+        }
+    return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TileGenerator::GenerateAndCollectTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
+    {
+    m_totalTiles = 1;
+
+
+    ElementTileNodePtr  elementRoot =  ElementTileNode::Create(GetTransformFromDgn());
+    root = elementRoot;
+
+    T_HOST.GetFontAdmin().EnsureInitialized();
+    GetDgnDb().Fonts().Update();
+
+    StopWatch timer(true);
+    return ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile);
+    }
 
 
 
@@ -1161,8 +1167,6 @@ bool ElementTileNode::ExceedsFacetCount(size_t maxFacetCount, TileGenerationCach
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementTileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache)
     {
-    static const double s_minToleranceRatio = 100.0;
-
     m_tolerance = GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
 
     if (m_tolerance < chordTolerance || !ExceedsFacetCount(maxPointsPerTile, cache))
@@ -1173,7 +1177,6 @@ void ElementTileNode::ComputeTiles(double chordTolerance, size_t maxPointsPerTil
 
     bvector<DRange3d>           subRanges;
     size_t                      siblingIndex = 0;
-    static const size_t         s_splitCount = 3;       // OctTree.
 
     ComputeChildTileRanges (subRanges, m_dgnRange, s_splitCount);
     for (auto& subRange : subRanges)
