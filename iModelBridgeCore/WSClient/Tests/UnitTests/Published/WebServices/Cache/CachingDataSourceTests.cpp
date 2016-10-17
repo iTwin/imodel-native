@@ -643,9 +643,9 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
 
     AsyncTestCheckpoint check1;
 
-    HttpRequest::ProgressCallback onProgress;
+    Http::Request::ProgressCallback onProgress;
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         filePath = path;
         onProgress = progress;
@@ -730,7 +730,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     bool downloadStarted = false;
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         filePath = path;
         downloadStarted = true;
@@ -803,7 +803,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
     bool downloadStarted = false;
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR path, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         filePath = path;
         downloadStarted = true;

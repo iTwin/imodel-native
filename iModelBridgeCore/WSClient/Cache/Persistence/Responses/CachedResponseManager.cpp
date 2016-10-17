@@ -305,7 +305,7 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceKey CachedResponseManager::SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial)
+CacheNodeKey CachedResponseManager::SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial)
     {
     CacheNodeKey pageKey = FindPage(info, page);
     if (!pageKey.IsValid())
@@ -385,7 +385,7 @@ bvector<ECInstanceKey> CachedResponseManager::FindPagesContainingInstance(Cached
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceKey CachedResponseManager::InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial)
+CacheNodeKey CachedResponseManager::InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag, bool isPartial)
     {
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::InsertPage", [&]
         {
@@ -1032,32 +1032,32 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
     // Common ECSql
     Utf8CP ecSql =
         "SELECT page.ECInstanceId "
-        "FROM ONLY " ECSql_CachedResponsePageInfoClass " page "
+        "FROM ONLY " ECSql_CachedResponsePageInfo " page "
         "JOIN %s rel ON page.ECInstanceId = rel.SourceECInstanceId "
         "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ? ";
 
     // Result relationship
-    auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Rel", [&]
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Rel", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultClass);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult);
         });
 
     statement->BindId(1, nodeKey.GetECClassId());
     statement->BindId(2, nodeKey.GetECInstanceId());
 
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
+    if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
     // Result weak relationship
-    statement = m_statementCache->GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Weak", [&]
+    statement = m_statementCache.GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Weak", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeakClass);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak);
         });
 
     statement->BindId(1, nodeKey.GetECClassId());
     statement->BindId(2, nodeKey.GetECInstanceId());
 
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
+    if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
     // Invalidate
@@ -1085,28 +1085,28 @@ BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstan
     // Common ECSql
     Utf8CP ecSql =
         "SELECT page.ECInstanceId "
-        "FROM ONLY " ECSql_CachedResponsePageInfoClass " page "
+        "FROM ONLY " ECSql_CachedResponsePageInfo " page "
         "JOIN %s rel ON page.ECInstanceId = rel.SourceECInstanceId "
         "WHERE NOT page.[" CLASS_CachedResponsePageInfo_PROPERTY_IsPartial "] AND InVirtualSet(?, rel.TargetECInstanceId) ";
 
     // Result relationship
-    auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Rel", [&]
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Rel", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultClass);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult);
         });
 
     statement->BindInt64(1, (int64_t) &idSet);
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
+    if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
     // Result weak relationship
-    statement = m_statementCache->GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Weak", [&]
+    statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Weak", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeakClass);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak);
         });
 
     statement->BindInt64(1, (int64_t) &idSet);
-    if (SUCCESS != m_dbAdapter->ExtractECIdsFromStatement(*statement, 0, pageIds))
+    if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
 
     for (auto& pageId : pageIds)

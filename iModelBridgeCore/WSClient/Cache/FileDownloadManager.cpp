@@ -26,7 +26,7 @@ AsyncTaskPtr<ICachingDataSource::Result> FileDownloadManager::DownloadAndCacheFi
 ObjectId objectId,
 Utf8StringCR fileName,
 FileCache cacheLocation,
-HttpRequest::ProgressCallbackCR onProgress,
+Http::Request::ProgressCallbackCR onProgress,
 ICancellationTokenPtr ct
 )
     {
@@ -134,7 +134,7 @@ void FileDownloadManager::EndFileDownload(ObjectId objectId, ICachingDataSource:
 std::shared_ptr<FileDownloadManager::FileDownloadListener> FileDownloadManager::FileDownloadListener::Create
 (
 ICancellationTokenPtr ct,
-HttpRequest::ProgressCallbackCR onProgress, 
+Http::Request::ProgressCallbackCR onProgress, 
 std::shared_ptr<FileDownload> fileDownload
 )
     {
@@ -152,7 +152,7 @@ std::shared_ptr<FileDownload> fileDownload
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileDownloadManager::FileDownloadListener::FileDownloadListener
 (
-HttpRequest::ProgressCallbackCR onProgress, 
+Http::Request::ProgressCallbackCR onProgress, 
 std::shared_ptr<FileDownload> fileDownload
 ) :
 m_onProgress(onProgress),

@@ -132,7 +132,7 @@ ICancellationTokenPtr ct
             if (PartialCachingState::Action::CachePartial == action)
                 {
                 if (info.IsFullyCached() && info.IsInCache())
-                    partialCachingState->RegisterOverriddenFullInstance(info.GetCachedInstanceKey());
+                    partialCachingState->RegisterOverriddenFullInstance(info.GetInstanceKey());
 
                 info.SetObjectState(CachedInstanceState::Partial);
                 }
@@ -276,7 +276,7 @@ CachedInstances& cachedInstancesInOut
     CachedInstanceKey relInfo = m_relationshipInfoManager
         .ReadOrInsertCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
 
-    cachedInstancesInOut.AddInstance(relationshipObjectId, relInfo);
+    cachedInstancesInOut.AddInstance(relationshipObjectId, relInfo, true);
 
     return SUCCESS;
     }

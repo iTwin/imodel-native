@@ -15,6 +15,7 @@
 #define RECORD_Url              "URL"
 #define RECORD_TimeCached       "TimeCached"
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 int64_t                     UrlProvider::DefaultTimeout = 24 * 3600 * 1000;
@@ -243,7 +244,7 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         Json::Value record;
         record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         record[RECORD_Url] = url;
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
         return url;
         });
     }

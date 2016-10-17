@@ -66,6 +66,7 @@
     <ClCompile Include="Cache\ChangesGraph.cpp" />
     <ClCompile Include="Cache\DownloadFilesTask.cpp" />
     <ClCompile Include="Cache\Examples\CachingExample.cpp" />
+    <ClCompile Include="Cache\FileDownloadManager.cpp" />
     <ClCompile Include="Cache\ICachingDataSource.cpp" />
     <ClCompile Include="Cache\IQueryProvider.cpp" />
     <ClCompile Include="Cache\NavigationCachingOptions.cpp" />
@@ -103,6 +104,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
@@ -220,6 +222,7 @@
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h" />
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h" />
     <ClInclude Include="Cache\Compatibility\Schemas.h" />
+    <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
     <ClInclude Include="Cache\ChangesGraph.h" />
@@ -257,6 +260,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
