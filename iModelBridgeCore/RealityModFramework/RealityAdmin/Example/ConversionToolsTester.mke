@@ -22,11 +22,9 @@ always:
 #----------------------------------------------------------------------
 #    Append compiler options
 #----------------------------------------------------------------------
-nameToDefine = UNICODE
-%include cdefapnd.mki
+#nameToDefine = UNICODE
+#%include cdefapnd.mki
 
-nameToDefine = _UNICODE
-%include cdefapnd.mki
 
 #----------------------------------------------------------------------
 #   Build source files
@@ -36,11 +34,11 @@ $(o)ConversionToolsTester$(oext) : $(baseDir)ConversionToolsTester.cpp
 #----------------------------------------------------------------------
 #   DLL/LIB creation
 #----------------------------------------------------------------------
-EXE_UNICODE  = 1
+#EXE_UNICODE  = 1
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
 EXE_OBJS     = $(o)ConversionToolsTester$(oext)
-EXE_UNICODE  = 1
+#EXE_UNICODE  = 1
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
