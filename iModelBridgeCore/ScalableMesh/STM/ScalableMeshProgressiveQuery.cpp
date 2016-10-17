@@ -1386,7 +1386,7 @@ void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& sca
     bvector<uint64_t> allShownIds;
     scalableMeshPtr->GetAllClipIds(allShownIds);
 
-    bset<uint64_t> activeClips;
+    bset<uint64_t> activeClips = m_activeClips;
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 
