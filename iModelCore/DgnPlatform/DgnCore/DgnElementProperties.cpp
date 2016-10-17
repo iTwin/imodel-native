@@ -980,7 +980,7 @@ DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArray
     DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3D();
+    return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3d();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
@@ -991,7 +991,7 @@ DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArray
     DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2D();
+    return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2d();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
