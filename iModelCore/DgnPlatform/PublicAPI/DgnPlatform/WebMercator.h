@@ -142,7 +142,7 @@ public:
         DEFINE_T_SUPER(WebMercatorModel::T_Super::CreateParams);
     public:
         Properties m_properties;
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, Properties const& props);
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props);
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
     };
 
@@ -175,6 +175,9 @@ struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 
 public:
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
+
+    static Utf8CP GetMapboxStreetsUrl() {return "http://api.mapbox.com/v4/mapbox.streets/";}
+    static Utf8CP GetMapboxSatelliteUrl() {return "http://api.mapbox.com/v4/mapbox.satellite/";}
 };
 
 //=======================================================================================

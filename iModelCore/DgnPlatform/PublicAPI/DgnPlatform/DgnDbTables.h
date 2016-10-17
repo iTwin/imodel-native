@@ -81,6 +81,7 @@
 #define BIS_CLASS_SpatialIndex              "SpatialIndex"
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
+#define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_Subject                   "Subject"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
