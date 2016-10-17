@@ -4313,6 +4313,22 @@ TEST_F(DataSourceCacheTests, CacheFile_ToExternalLocation_CachesFileToExternalFo
     EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path.GetDirectoryName());
     }
 
+TEST_F(DataSourceCacheTests, CacheFile_ToExternalButCacheEnvironmentExternalLocaitonWasEmpty_CachesFileToDefaultExternalLocationInPersistenceFolder)
+    {
+    auto env = GetTestCacheEnvironment();
+    env.externalFileCacheDir = BeFileName();
+
+    auto cache = GetTestCache(env);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
+
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+    EXPECT_EQ(env.persistentFileCacheDir, path.GetDirectoryName().PopDir().PopDir().AppendSeparator());
+    }
+
 TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalAndCachingToExternal_CachesFileToExternalFolderRoot)
     {
     auto cache = GetTestCache();
