@@ -48,7 +48,43 @@ struct ClassMapper final
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);
         static BentleyStatus CreateECClassIdPropertyMap(ClassMap& classMap);
         static BentleyStatus SetupNavigationPropertyMap(WipNavigationPropertyMap& propertyMap);
+        static bool IsNavigationPropertySupportedInECSql(WipNavigationPropertyMap const& navProperty, bool logIfNotSupported) 
+            {
+            ECDbCR ecdb = navProperty.GetClassMap().GetDbMap().GetECDb();
+            NavigationECPropertyCR navigationProperty = *navProperty.GetProperty().GetAsNavigationProperty();
+            if (navigationProperty.IsMultiple())
+                {
+                if (logIfNotSupported)
+                    ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                  "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
+                                                                  navigationProperty.GetClass().GetFullName(), navigationProperty.GetName().c_str(),
+                                                                  ClassMapper::GetConstraint(navigationProperty, WipNavigationPropertyMap::NavigationEnd::To).GetMultiplicity().ToString().c_str(),
+                                                                  RelationshipMultiplicity::ZeroOne().ToString().c_str(),
+                                                                  RelationshipMultiplicity::OneOne().ToString().c_str());
+                return false;
+                }
 
+
+            ClassMapCP relClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*navigationProperty.GetRelationshipClass());
+            if (relClassMap == nullptr)
+                {
+                if (logIfNotSupported)
+                    ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a virtual table.",
+                                                                   navigationProperty.GetClass().GetFullName(), navigationProperty.GetName().c_str());
+
+                return false;
+                }
+
+            if (relClassMap->GetType() != ClassMap::Type::RelationshipEndTable)
+                {
+                if (logIfNotSupported)
+                    ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a link table.",
+                                                                   navigationProperty.GetClass().GetFullName(), navigationProperty.GetName().c_str());
+                return false;
+                }
+
+            return true;
+            }
     };
 
 

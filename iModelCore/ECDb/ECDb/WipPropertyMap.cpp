@@ -676,6 +676,10 @@ BentleyStatus WipNavigationPropertyMap::Init(DbColumn const& relECClassIdColumn,
     FinishEditing();
     return SUCCESS;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+bool WipNavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported = false) const { return ClassMapper::IsNavigationPropertySupportedInECSql(*this, logIfNotSupported); }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16

@@ -1240,7 +1240,7 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, Navigatio
 ////---------------------------------------------------------------------------------------
 //// @bsimethod                                 Krischan.Eberle                      01/2016
 ////---------------------------------------------------------------------------------------
-bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ecdb) const
+//bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ecdb) const
 //    {
 //    BeAssert(!logIfNotSupported || ecdb != nullptr);
 //

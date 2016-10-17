@@ -208,45 +208,42 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Reset();
     std::vector<Utf8String> values;
-    baseClassMap.GetPropertyMaps().Traverse(
-        [&] (TraversalFeedback& fb, PropertyMapCP basePropertyMap) 
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapType::Business); //Only inlcude none-system properties
+    baseClassMap.GetPropertyMaps().Accept(typeDispatcher);
+    for (WipPropertyMapTypeDispatcher::Result const& result: typeDispatcher.ResultSet())
         {
-        fb = TraversalFeedback::Next;
-        if (basePropertyMap->IsSystemPropertyMap())
-            return;
-
-        PropertyMapPtr derivedPropertyMap;
-        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString(), true))
+ 
+        WipVerticalPropertyMap const* derivedPropertyMap = static_cast<WipVerticalPropertyMap const*> (derivedClassMap.GetPropertyMaps().Find(result.GetPropertyMap().GetAccessString().c_str()));
+        if (derivedPropertyMap == nullptr)
             {
             BeAssert(false);
             return;
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (basePropertyMap->GetType() == PropertyMap::Type::Navigation)
+        if (result.GetType() == PropertyMapType::NavigationPropertyMap)
             {
-            if (!static_cast<NavigationPropertyMap const*>(basePropertyMap)->IsSupportedInECSql())
+            if (!static_cast<WipNavigationPropertyMap const&>(result.GetPropertyMap()).IsSupportedInECSql())
                 return;
             }
 
-        derivedPropertyMap->GetColumns(derivedColumnList);
-        basePropertyMap->GetColumns(baseColumnList);
-
-        BeAssert(derivedColumnList.size() == baseColumnList.size());
-        if (derivedColumnList.size() != baseColumnList.size())
+        WipPropertyMapColumnDispatcher baseColumnDispatcher, derivedColumnDispatcher;
+        result.GetPropertyMap().Accept(baseColumnDispatcher);
+        derivedPropertyMap->Accept(derivedColumnDispatcher);
+        if (baseColumnDispatcher.GetColumns().size() != derivedColumnDispatcher.GetColumns().size())
             {
             BeAssert(false);
             return;
             }
 
-        for (auto deriveColumnItor = derivedColumnList.begin(), baseColumnItor = baseColumnList.begin(); deriveColumnItor != derivedColumnList.end() && baseColumnItor != baseColumnList.end(); ++deriveColumnItor, ++baseColumnItor)
+        for (auto deriveColumnItor = derivedColumnDispatcher.GetColumns().begin(), baseColumnItor = baseColumnDispatcher.GetColumns().begin(); deriveColumnItor != derivedColumnDispatcher.GetColumns().end() && baseColumnItor != baseColumnDispatcher.GetColumns().end(); ++deriveColumnItor, ++baseColumnItor)
             {
             Utf8String str;
             str.Sprintf("[%s] = NEW.[%s]", (*deriveColumnItor)->GetName().c_str(), (*baseColumnItor)->GetName().c_str());
             values.push_back(str);
             }
+        }
     
-        }, true);
 
     if (values.empty())
         return ERROR;
@@ -498,7 +495,7 @@ BentleyStatus ViewGenerator::CreateNullView(NativeSqlBuilder& viewSql, ClassMap 
     {
     viewSql.Append("SELECT ");
 
-    std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
+    std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> viewPropMaps;
     if (SUCCESS != GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, classMap, classMap, false))
         return ERROR;
 
@@ -599,11 +596,11 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
+BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
 
-    for (PropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
+    for (WipPropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
         {
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()))
             continue;
@@ -615,7 +612,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
             !static_cast<NavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 
-        PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
+        WipPropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
         if (childClassCounterpartPropMap == nullptr)
             return ERROR;
 
@@ -635,13 +632,13 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql, DbTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
+BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql, DbTable const& table, std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> const& viewPropMaps, bool forNullView)
     {
     bool second = false;
     for (auto const& propMapPair : viewPropMaps)
         {
-        PropertyMapCP basePropMap = propMapPair.first;
-        PropertyMapCP actualPropMap = propMapPair.second;
+        WipPropertyMap const* basePropMap = propMapPair.first;
+        WipPropertyMap const* actualPropMap = propMapPair.second;
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
@@ -755,7 +752,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     ClassMap const* firstChildClassMap = childClassMap.front();
     //Generate Select statement
     viewSql.Append("SELECT ");
-    std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
+    std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> viewPropMaps;
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, baseClassMap, *firstChildClassMap, false);
     if (status != BentleyStatus::SUCCESS)
         return status;
@@ -838,7 +835,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap(Nati
     AppendSystemPropMapsToNullView(viewSql, relationMap, false /*endWithComma*/);
 
     //! Only link table mapped relationship properties are persisted
-    std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
+    std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> viewPropMaps;
     if (SUCCESS != GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, baseClassMap, relationMap, true))
         return ERROR;
 
@@ -857,7 +854,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap(NativeSq
     AppendSystemPropMaps(viewSql, relationMap, relationMap.GetPrimaryTable());
 
     //! Only link table mapped relationship properties are persisted
-    std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
+    std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>> viewPropMaps;
     if (SUCCESS != GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, baseClassMap, relationMap, true))
         return ERROR;
 
@@ -1155,7 +1152,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     //There for we only need to render in term of context table that is chosen before this function is called. Resulting select are UNIONed.
 
     //ECInstanceId-----------------------------------------
-    PropertyMapCP ecId = relationMap.GetECInstanceIdPropertyMap();
+    WipPropertyMap const* ecId = relationMap.GetECInstanceIdPropertyMap();
     viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
 
     BeAssert(relationMap.GetECInstanceIdPropertyMap()->GetSingleColumn(contextTable, true) != nullptr);

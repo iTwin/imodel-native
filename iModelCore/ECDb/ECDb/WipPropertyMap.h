@@ -39,6 +39,7 @@ enum class DispatcherFeedback
 
 enum class PropertyMapType : int
     {
+    Nil = 0x0,
     PrimitivePropertyMap = 0x1,
     PrimitiveArrayPropertyMap = 0x2,
     StructPropertyMap = 0x4,
@@ -54,7 +55,7 @@ enum class PropertyMapType : int
     NavIdPropertyMap =0x1000,
 
     System = ECInstanceIdPropertyMap | ECClassIdPropertyMap | ConstraintECClassIdPropertyMap | ConstraintECInstanceIdIdPropertyMap,
-    All = PrimitivePropertyMap
+    Business = PrimitivePropertyMap
     | PrimitiveArrayPropertyMap
     | StructPropertyMap
     | StructArrayPropertyMap
@@ -62,9 +63,8 @@ enum class PropertyMapType : int
     | Point2dPropertyMap
     | NavigationPropertyMap
     | NavRelECClassIdPropertyMap
-    | NavIdPropertyMap
-    | System
-
+    | NavIdPropertyMap,
+    All = System | Business
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
@@ -441,6 +441,7 @@ struct WipNavigationPropertyMap final : WipCompoundPropertyMap
         BentleyStatus Setup(DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId, DbColumn const& idColumn);
         RelECClassIdPropertyMap const& GetRelECClassId() const { return static_cast<RelECClassIdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::RELECCLASSID_PROPNAME)); }
         IdPropertyMap const& GetId() const { return static_cast<IdPropertyMap const&>(*Find(ECDbSystemSchemaHelper::ID_PROPNAME)); };
+        bool IsSupportedInECSql(bool logIfNotSupported = false) const;
         static RefCountedPtr<WipNavigationPropertyMap> CreateInstance(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty);
     };
 //=======================================================================================
@@ -652,14 +653,28 @@ struct WipPropertyMapColumnDispatcher  final: IPropertyMapDispatcher
 //+===============+===============+===============+===============+===============+======
 struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
     {
+    struct Result
+        {
+        PropertyMapType m_type;
+        WipPropertyMap const* m_propertyMap;
+        public:
+            Result():m_propertyMap (nullptr),m_type(PropertyMapType::Nil) {}
+            Result(PropertyMapType type, WipPropertyMap const& map)
+                :m_type(type), m_propertyMap(&map)
+                {
+                }
+            PropertyMapType GetType() const { return m_type; }
+            WipPropertyMap const& GetPropertyMap() const { return *m_propertyMap; }
+        };
+
     private:
-        mutable std::vector<WipPropertyMap const*> m_propertyMaps;
+        mutable std::vector<Result> m_propertyMaps;
         PropertyMapType m_filter;
     private:
         DispatcherFeedback Record(PropertyMapType mapType, WipPropertyMap const& propertyMap) const
             {
             if (Enum::Contains(m_filter, mapType))
-                m_propertyMaps.push_back(&propertyMap);
+                m_propertyMaps.push_back(Result(mapType, propertyMap));
 
             return DispatcherFeedback::Next;
             }
@@ -682,7 +697,7 @@ struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
             {}
         ~WipPropertyMapTypeDispatcher() {}
         void Reset() { m_propertyMaps.clear(); }
-        std::vector<WipPropertyMap const*> const& ResultSet() const { return m_propertyMaps; }        
+        std::vector<Result> const& ResultSet() const { return m_propertyMaps; }
       
     };
 //=======================================================================================
