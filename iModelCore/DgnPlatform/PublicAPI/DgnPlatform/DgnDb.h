@@ -156,9 +156,10 @@ protected:
     BeSQLite::DbResult CreateAuthorities();
     BeSQLite::DbResult CreateRepositoryModel();
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateRepositoryLink(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateDefinitionPartition(DgnElementId, DgnCodeCR);
+    BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, DgnCodeCR);
     BeSQLite::DbResult CreateDictionaryModel();
+    BeSQLite::DbResult CreateSessionModel();
+    BeSQLite::DbResult CreateRealityDataSourcesModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
@@ -226,7 +227,10 @@ public:
     //! Determine whether this DgnDb is a stand-alone briefcase; that is, a transactable briefcase not associated with any master copy.
     bool IsStandaloneBriefcase() const {return GetBriefcaseId().IsStandaloneId();}
 
+    DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
+    DGNPLATFORM_EXPORT LinkModelPtr GetRealityDataSourcesModel(); //!< Return the LinkModel listing the reality data sources for this DgnDb.
+    DGNPLATFORM_EXPORT SessionModelPtr GetSessionModel(); //!< Return the SessionModel for this DgnDb.
 
 /** @name DgnPlatform Threads */
 /** @{ */

@@ -2687,8 +2687,10 @@ public:
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
-    //! Get the RepositoryLink for @b this DgnDb
-    DgnElementId GetRepositoryLinkId() const {return DgnElementId((uint64_t)15LL);}
+    //! Get the DgnElementId of the partition that lists the RealityData source for @b this DgnDb
+    DgnElementId GetRealityDataSourcesPartitionId() const {return DgnElementId((uint64_t)14LL);}
+    //! Get the DgnElementId of the Session partition for @b this DgnDb
+    DgnElementId GetSessionPartitionId() const {return DgnElementId((uint64_t)15LL);}
     //! Get the DgnElementId of the Dictionary partition for @b this DgnDb
     DgnElementId GetDictionaryPartitionId() const {return DgnElementId((uint64_t)16LL);}
 
