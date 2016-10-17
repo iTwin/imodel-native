@@ -340,6 +340,12 @@ CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath,
     fullEnvironment.temporaryFileCacheDir = CreateFileStoragePath(inputEnvironment.temporaryFileCacheDir, cacheName);
     fullEnvironment.externalFileCacheDir = inputEnvironment.externalFileCacheDir;
 
+    if (fullEnvironment.externalFileCacheDir.empty())
+        {
+        fullEnvironment.externalFileCacheDir = fullEnvironment.persistentFileCacheDir;
+        fullEnvironment.externalFileCacheDir.AppendToPath(L"ext");
+        }
+
     fullEnvironment.persistentFileCacheDir.AppendSeparator();
     fullEnvironment.temporaryFileCacheDir.AppendSeparator();
     fullEnvironment.externalFileCacheDir.AppendSeparator();
