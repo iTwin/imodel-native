@@ -225,7 +225,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::RepositoryLinkCR modeledElement, Utf8CP modelName, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
