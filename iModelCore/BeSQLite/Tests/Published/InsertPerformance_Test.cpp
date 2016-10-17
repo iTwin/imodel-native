@@ -7,13 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 
-#define TABLE_IntBlob               "test_IntBlob"
-#define TABLE_IntBlobShared16       "test_IntBlobShared16"
-#define TABLE_IntIntShared16        "test_IntIntShared16"
-#define TABLE_IntIntUniqueShared16  "test_IntIntUniqueShared16"
-#define TABLE_IntIntBlobShared16    "test_IntIntBlobShared16"
-#define TABLE_BlobShared16          "test_BlobShared16"
-#define TABLE_TextShared16          "test_TextShared16"
+#define TABLE_IntBlob                   "test_IntBlob"
+#define TABLE_IntBlobShared16           "test_IntBlobShared16"
+#define TABLE_IntBlobNoIndexShared16    "test_IntBlobShared16"
+#define TABLE_IntIntShared16            "test_IntIntShared16"
+#define TABLE_IntIntUniqueShared16      "test_IntIntUniqueShared16"
+#define TABLE_IntIntBlobShared16        "test_IntIntBlobShared16"
+#define TABLE_BlobShared16              "test_BlobShared16"
+#define TABLE_TextShared16              "test_TextShared16"
 
 #define DDL_SharedColumns16     ", [sc01], [sc02], [sc03], [sc04], [sc05], [sc06], [sc07], [sc08], [sc09], [sc10], [sc11], [sc12], [sc13], [sc14], [sc15], [sc16]"
 #define DDL_ExtraColumns        ", [X] DOUBLE, [Y] DOUBLE, [Z] DOUBLE, [A] TEXT COLLATE NOCASE, [B] TEXT COLLATE NOCASE, [C] TEXT COLLATE NOCASE, [I] INTEGER, [J] INTEGER, [K] INTEGER"
@@ -44,11 +45,13 @@ public:
 
     void CreateTableIntBlob();
     void CreateTableIntBlobShared16();
+    void CreateTableIntBlobNoIndexShared16();
     void CreateTableIntIntShared16();
     void CreateTableIntIntUniqueShared16();
     void CreateTableIntIntBlobShared16();
     void CreateTableBlobShared16();
     void CreateTableTextShared16();
+    void CreateUniqueIndex(Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause=nullptr);
 
     void InsertRow(int counter, int64_t id, BeGuidCR guid);
     void InsertRow(int counter, int64_t id, int64_t id2);
@@ -64,7 +67,7 @@ public:
 
     int64_t GenerateTimeBasedId(int);
     int64_t GenerateRandomId() {int64_t id; BeSQLiteLib::Randomness(sizeof(id), &id); return id;}
-    BeBriefcaseBasedId GenerateBriefcaseBasedId(int i) {return BeBriefcaseBasedId(BeBriefcaseId(i%10+2), i);}
+    BeBriefcaseBasedId GenerateBriefcaseBasedId(int i) {return BeBriefcaseBasedId(BeBriefcaseId((i/100)%10+2), i);}
     Utf8String GenerateLabel(int i) {return Utf8PrintfString("%d", i);}
 };
 
@@ -156,6 +159,16 @@ void InsertPerformanceTests::CreateTableIntBlobShared16()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateTableIntBlobNoIndexShared16()
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntBlobNoIndexShared16, "[Id] INTEGER PRIMARY KEY, [Guid] BLOB, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
+    ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_IntBlobNoIndexShared16 " ([Id],[Guid],[Label]" INTO_ExtraColumns ") VALUES (:Id,:Guid,:Label" VALUES_ExtraColumns ")"));
+    m_db.SaveChanges("CreateTableIntBlobNoIndexShared16");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
 void InsertPerformanceTests::CreateTableIntIntShared16()
     {
     ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_IntIntShared16, "[Id] INTEGER PRIMARY KEY, [Id2] INTEGER, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
@@ -201,6 +214,18 @@ void InsertPerformanceTests::CreateTableTextShared16()
     ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(TABLE_TextShared16, "[Guid] TEXT UNIQUE PRIMARY KEY, [Label] TEXT COLLATE NOCASE" DDL_ExtraColumns DDL_SharedColumns16));
     ASSERT_EQ(BE_SQLITE_OK, m_statement.Prepare(m_db, "INSERT INTO " TABLE_TextShared16 " ([Guid],[Label]" INTO_ExtraColumns ") VALUES (:Guid,:Label" VALUES_ExtraColumns ")"));
     m_db.SaveChanges("CreateTableTextShared16");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+void InsertPerformanceTests::CreateUniqueIndex(Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
+    {
+    Utf8PrintfString sql("CREATE UNIQUE INDEX ix_%s_%s ON %s (%s) ", tableName, columnName, tableName, columnName);
+    if (whereClause)
+        sql.append(whereClause);
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql(sql.c_str()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -514,6 +539,67 @@ TEST_F(InsertPerformanceTests, IntBlobShared16_TimeBasedId_AllGuids)
     for (int i=1; i<=GetNumInserts(); i++)
         InsertRow(i, GenerateTimeBasedId(i), BeGuid(true));
 
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobNoIndexShared16_TimeBasedId_NoGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobNoIndexShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid());
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobNoIndexShared16_TimeBasedId_QuarterGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobNoIndexShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid(0 == i%4 ? true : false));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobNoIndexShared16_TimeBasedId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobNoIndexShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid(true));
+
+    StopTest(TEST_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+TEST_F(InsertPerformanceTests, IntBlobPostIndexShared16_TimeBasedId_AllGuids)
+    {
+    SetUpDb(TEST_NAME);
+    CreateTableIntBlobNoIndexShared16();
+    StartTest();
+
+    for (int i=1; i<=GetNumInserts(); i++)
+        InsertRow(i, GenerateTimeBasedId(i), BeGuid(true));
+
+    CreateUniqueIndex(TABLE_IntBlobNoIndexShared16, "Guid");
     StopTest(TEST_NAME);
     }
 
