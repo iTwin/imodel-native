@@ -713,6 +713,19 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::ClearUpdaterCache()
+    {
+    for (auto& upd : m_updaterCache)
+        {
+        if (upd.second)
+            delete upd.second;
+        }
+    m_updaterCache.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
     {
     BeAssert(IsValid());

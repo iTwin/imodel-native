@@ -2699,7 +2699,7 @@ private:
 
 public:
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    void ClearUpdaterCache() {m_updaterCache.clear();}
+    DGNPLATFORM_EXPORT void ClearUpdaterCache();
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
