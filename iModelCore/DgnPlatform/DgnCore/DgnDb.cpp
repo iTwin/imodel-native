@@ -56,6 +56,7 @@ void DgnDb::Destroy()
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
+    Elements().ClearUpdaterCache();
     DELETE_AND_CLEAR(m_revisionManager)
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
@@ -84,7 +85,7 @@ DgnDb::~DgnDb()
 void DgnDb::_OnDbClose() 
     {
     Domains().OnDbClose();
-    Destroy(); 
+    Destroy();
     T_Super::_OnDbClose();
     }
 

@@ -6,7 +6,7 @@
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
-    <ECClass typeName="TestElement" isDomainClass="True">
+  <ECClass typeName="TestElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
@@ -41,8 +41,11 @@
         <ECProperty propertyName="s" typeName="string"/>
         <ECProperty propertyName="p2d" typeName="point2d"/>
         <ECProperty propertyName="p3d" typeName="point3d"/>
-		
-        <!-- The rest of the properties are custom-handled -->
+        <ECStructProperty propertyName="Location" typeName="LocationStruct" />
+        <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+
+    <!-- The rest of the properties are custom-handled -->
         <ECProperty propertyName="TestElementProperty" typeName="string">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
@@ -344,5 +347,17 @@
         <ECProperty propertyName="StringProperty" typeName="string" />
         <ECProperty propertyName="IntProperty" typeName="int" />
     </ECClass>
+
+  <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
+    <ECProperty propertyName="Street" typeName="string" />
+    <ECStructProperty propertyName="City" typeName="CityStruct" />
+  </ECClass>
+
+  <ECClass typeName="CityStruct" isStruct="True" isDomainClass="False">
+    <ECProperty propertyName="Name" typeName="string" />
+    <ECProperty propertyName="State" typeName="string" />
+    <ECProperty propertyName="Country" typeName="string" />
+    <ECProperty propertyName="Zip" typeName="int"/>
+  </ECClass>
 
 </ECSchema>

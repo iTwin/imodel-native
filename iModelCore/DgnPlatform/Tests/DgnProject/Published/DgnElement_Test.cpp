@@ -774,11 +774,16 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
 void DgnElementTests::TestAutoHandledPropertiesGetSet()
     {
     DgnElementCPtr persistentEl;
+    uint32_t iArrayOfString;
+    uint32_t iArrayOfInt;
     if (true)
         {
         DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
+
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfString, "ArrayOfString"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfInt, "ArrayOfInt"));
 
         //  No unhandled properties yet
         ECN::ECValue checkValue;
@@ -793,6 +798,26 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
         EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
+        // Set a struct valued property
+        BeTest::SetFailOnAssert(false);
+        EXPECT_NE(DgnDbStatus::Success, el.SetPropertyValue("Location", ECN::ECValue("<<you cannot set a struct directly>>")));
+        BeTest::SetFailOnAssert(true);
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.Street", ECN::ECValue("690 Pennsylvania Drive")));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.Name", ECN::ECValue("Exton")));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.State", ECN::ECValue("PA")));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("Location.City.Zip", ECN::ECValue(19341)));
+
+        // Set an array property
+        EXPECT_EQ(DgnDbStatus::Success, el.AddPropertyArrayItems(iArrayOfString, 3));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfString", ECN::ECValue("first"), DgnElement::PropertyArrayIndex(0)));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfString", ECN::ECValue("second"), DgnElement::PropertyArrayIndex(1)));
+
+        EXPECT_EQ(DgnDbStatus::Success, el.AddPropertyArrayItems(iArrayOfInt, 300));
+        for (auto i=0; i<300; ++i)
+            {
+            EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfInt", ECN::ECValue(i), DgnElement::PropertyArrayIndex(i)));
+            }
+
         //  Insert the element
         persistentEl = el.Insert();
         }
@@ -801,6 +826,35 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.Street"));
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Name"));
+    EXPECT_STREQ("Exton", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Country"));
+    EXPECT_TRUE(checkValue.IsNull()) << "I never set the Location.City.Country property, so it should be null";
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "Location.City.Zip"));
+    EXPECT_EQ(19341, checkValue.GetInteger());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", DgnElement::PropertyArrayIndex(0)));
+    EXPECT_STREQ("first", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", DgnElement::PropertyArrayIndex(1)));
+    EXPECT_STREQ("second", checkValue.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", DgnElement::PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    EXPECT_NE(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", DgnElement::PropertyArrayIndex(3)));
+
+    for (auto i=0; i<300; ++i)
+        {
+        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfInt", DgnElement::PropertyArrayIndex(i)));
+        EXPECT_EQ(i, checkValue.GetInteger());
+        }
+
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -1604,8 +1658,9 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
     bset<Utf8String> ignoreProps;
     ignoreProps.insert("ModelId");
-    ASSERT_TRUE(elementA->Equals(*elementB, ignoreProps));
+    DgnElement::ComparePropertyFilter filter(ignoreProps);
+    ASSERT_TRUE(elementA->Equals(*elementB, filter));
 
     elementB->SetUserLabel("label for b");
-    ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
+    ASSERT_FALSE(elementA->Equals(*elementB, filter)) << " UserLabels should differ";
     }
