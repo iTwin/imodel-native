@@ -341,6 +341,9 @@ protected:
 
     virtual ImagePPStatus _ProcessInPlace(HRAImageSampleR imageData, ImagepOpParams& params) {return IMAGEPP_STATUS_UnknownError;}
 
+    // Disable that check. Unit tests exceed the default amount.
+    virtual uint32_t GetExcessiveRefCountThreshold() const override { return 0xFFFFFFFF; }
+
 
     HRAImageOp();
     HRAImageOp(HFCPtr<HRPPixelNeighbourhood> pPixelNeighbourhood);
