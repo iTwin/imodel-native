@@ -23,39 +23,39 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
     static bmap<Utf8String, DgnDbServerError::Id> map;
     if (map.empty())
         {
-        map["DgnDbServer.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
-        map["DgnDbServer.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
-        map["DgnDbServer.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
-        map["DgnDbServer.InvalidBriefcase"]                          = Id::InvalidBriefcase;
-        map["DgnDbServer.AnotherUserPushing"]                        = Id::AnotherUserPushing;
-        map["DgnDbServer.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
-        map["DgnDbServer.RevisionDoesNotExist"]                      = Id::RevisionDoesNotExist;
-        map["DgnDbServer.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
-        map["DgnDbServer.RevisionExistsButNoBackingFile"]            = Id::RevisionExistsButNoBackingFile;
-        map["DgnDbServer.RepositoryIsNotInitialized"]                = Id::RepositoryIsNotInitialized;
-        map["DgnDbServer.RevisionPointsToBadDgnDb"]                  = Id::RevisionPointsToBadDgnDb;
-        map["DgnDbServer.DgnDbServerOperationFailed"]                = Id::DgnDbServerOperationFailed;
-        map["DgnDbServer.PullIsRequired"]                            = Id::PullIsRequired;
-        map["DgnDbServer.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
-        map["DgnDbServer.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
-        map["DgnDbServer.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
-        map["DgnDbServer.RepositoryAlreadyExists"]                   = Id::RepositoryAlreadyExists;
-        map["DgnDbServer.RepositoryDoesNotExist"]                    = Id::RepositoryDoesNotExist;
-        map["DgnDbServer.LockDoesNotExist"]                          = Id::LockDoesNotExist;
-        map["DgnDbServer.LocksExist"]                                = Id::LocksExist;
-        map["DgnDbServer.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
-        map["DgnDbServer.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
-        map["DgnDbServer.UserAlreadyExists"]                         = Id::UserAlreadyExists;
-        map["DgnDbServer.CodeStateInvalid"]                          = Id::CodeStateInvalid;
-        map["DgnDbServer.CodeStateRevisionDenied"]                   = Id::CodeStateRevisionDenied;
-        map["DgnDbServer.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
-        map["DgnDbServer.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
-        map["DgnDbServer.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
-        map["DgnDbServer.CodesExist"]                                = Id::CodesExist;
-        map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
-        map["DgnDbServer.FileDoesNotExist"]                          = Id::FileDoesNotExist;
-        map["DgnDbServer.FileAlreadyExists"]                         = Id::FileAlreadyExists;
-        map["DgnDbServer.RepositoryIsLocked"]                        = Id::RepositoryIsLocked;
+        map["BIMCS.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
+        map["BIMCS.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
+        map["BIMCS.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
+        map["BIMCS.InvalidBriefcase"]                          = Id::InvalidBriefcase;
+        map["BIMCS.AnotherUserPushing"]                        = Id::AnotherUserPushing;
+        map["BIMCS.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
+        map["BIMCS.RevisionDoesNotExist"]                      = Id::RevisionDoesNotExist;
+        map["BIMCS.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
+        map["BIMCS.RevisionExistsButNoBackingFile"]            = Id::RevisionExistsButNoBackingFile;
+        map["BIMCS.RepositoryIsNotInitialized"]                = Id::RepositoryIsNotInitialized;
+        map["BIMCS.RevisionPointsToBadDgnDb"]                  = Id::RevisionPointsToBadDgnDb;
+        map["BIMCS.OperationFailed"]                           = Id::DgnDbServerOperationFailed;
+        map["BIMCS.PullIsRequired"]                            = Id::PullIsRequired;
+        map["BIMCS.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
+        map["BIMCS.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
+        map["BIMCS.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
+        map["BIMCS.RepositoryAlreadyExists"]                   = Id::RepositoryAlreadyExists;
+        map["BIMCS.RepositoryDoesNotExist"]                    = Id::RepositoryDoesNotExist;
+        map["BIMCS.LockDoesNotExist"]                          = Id::LockDoesNotExist;
+        map["BIMCS.LocksExist"]                                = Id::LocksExist;
+        map["BIMCS.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
+        map["BIMCS.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
+        map["BIMCS.UserAlreadyExists"]                         = Id::UserAlreadyExists;
+        map["BIMCS.CodeStateInvalid"]                          = Id::CodeStateInvalid;
+        map["BIMCS.CodeStateRevisionDenied"]                   = Id::CodeStateRevisionDenied;
+        map["BIMCS.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
+        map["BIMCS.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
+        map["BIMCS.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
+        map["BIMCS.CodesExist"]                                = Id::CodesExist;
+        map["BIMCS.UserDoesNotExist"]                          = Id::UserDoesNotExist;
+        map["BIMCS.FileDoesNotExist"]                          = Id::FileDoesNotExist;
+        map["BIMCS.FileAlreadyExists"]                         = Id::FileAlreadyExists;
+        map["BIMCS.RepositoryIsLocked"]                        = Id::RepositoryIsLocked;
         }
 
     auto it = map.find(errorIdString);
@@ -120,7 +120,7 @@ DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
     m_message = error.GetMessage();
     m_description = error.GetDescription();
     Utf8StringCR customId = error.GetData()["errorId"].asString();
-    if (customId.StartsWith ("DgnDbServer."))
+    if (customId.StartsWith ("BIMCS."))
         {
         m_id = ErrorIdFromString(customId);
         if (RequiresExtendedData(m_id))
