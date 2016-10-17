@@ -25,20 +25,21 @@ struct  IRefCounted
 protected:
     virtual ~IRefCounted() {}         // force virtual destructor for subclasses
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
 public:
     virtual uint32_t AddRef() const = 0;
     virtual uint32_t Release() const = 0;
 };
 
-// define this macro to catch calls to Release without matching calls to AddRef
+// define this macro to catch calls to Release without matching calls to AddRef; and to catch suspiciously large reference counts
+#if !defined NDEBUG
 #define DEBUG_REF_COUNTING
+#endif
+
 #if defined DEBUG_REF_COUNTING
-    # define REFCOUNT_RELASE_CHECK(val) BeAssert(0!=val)
-    # define REFCOUNT_EXCESSIVE 500000
-    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < REFCOUNT_EXCESSIVE && "Unusually large number of referents to this object");
-    #else
-    # define REFCOUNT_RELASE_CHECK(val)
+    # define REFCOUNT_RELEASE_CHECK(val) BeAssert(0!=val)
+    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < GetExcessiveRefCountThreshold() && "Unusually large number of referents to this object")
+#else
+    # define REFCOUNT_RELEASE_CHECK(val)
     # define REFCOUNT_EXCESSIVE_CHECK(val)
 #endif
 
@@ -54,6 +55,7 @@ public:
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
 private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
+    virtual uint32_t GetExcessiveRefCountThreshold() const { return 1000; } \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
     uint32_t AddRef() const                             \
@@ -65,7 +67,7 @@ public:                                                 \
     uint32_t Release() const                            \
         {                                               \
         uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);  \
-        REFCOUNT_RELASE_CHECK(countWas);                \
+        REFCOUNT_RELEASE_CHECK(countWas);                \
         if (1 == countWas)                              \
             {                                           \
             std::atomic_thread_fence(std::memory_order_acquire);    \
