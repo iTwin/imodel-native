@@ -25,14 +25,16 @@ DgnDbRepositoryAdmin::DgnDbRepositoryAdmin(DgnDbClientP client) : m_client(clien
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRepositoryManagerP DgnDbRepositoryAdmin::_GetRepositoryManager(DgnDbR db) const
     {
-    RepositoryInfo repositoryInfo;
-    repositoryInfo.ReadRepositoryInfo(db);
+    DgnDbServerRepositoryResult readResult = RepositoryInfo::ReadRepositoryInfo(db);
+    if (!readResult.IsSuccess())
+        return nullptr;
+    RepositoryInfoPtr repositoryInfo = readResult.GetValue();
     DgnDbServerBriefcaseInfo briefcase(db.GetBriefcaseId());
-    Utf8String repositoryId = repositoryInfo.GetId();
+    Utf8String repositoryId = repositoryInfo->GetId();
     if (nullptr == (*m_managers)[repositoryId])
         {
         FileInfoPtr fileInfo = FileInfo::Create(db, "");
-        auto managerResult = m_client->CreateRepositoryManager(repositoryInfo, *fileInfo, briefcase)->GetResult();
+        auto managerResult = m_client->CreateRepositoryManager(*repositoryInfo, *fileInfo, briefcase)->GetResult();
         if (!managerResult.IsSuccess())
             return nullptr;
         (*m_managers)[repositoryId] = managerResult.GetValue();

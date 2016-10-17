@@ -145,7 +145,7 @@ struct DgnDbRepositoryConnection
 {
 //__PUBLISH_SECTION_END__
 private:
-    RepositoryInfo                          m_repositoryInfo;
+    RepositoryInfo             m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
     // TODO: Make non static
@@ -265,12 +265,11 @@ public:
     //! @param[in] repository Repository information used to connect to a specific repository on the server.
     //! @param[in] credentials Credentials used to authenticate on the repository.
     //! @param[in] clientInfo Application information sent to server.
-    //! @param[in] cancellationToken
     //! @param[in] customHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note DgnDbClient is the class that creates this connection. See DgnDbClient::OpenBriefcase.
-    static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
-                                                   ICancellationTokenPtr cancellationToken = nullptr, IHttpHandlerPtr customHandler = nullptr);
+    static DgnDbRepositoryConnectionResult Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
+                                                   IHttpHandlerPtr customHandler = nullptr);
 
     //! Checks whether master file with specified fileId is active.
     //! @param[in] fileId Db guid of the master file.
