@@ -31,7 +31,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BeHttpLibrary-Curl" ExcludePlatforms="WinRT*">
+    <Part Name="BeHttpLibrary-Curl">
         <SubPart PartName="BeCurl"          PartFile="BeCurl"       Repository="Libsrc-Curl"/>
     </Part>
     
