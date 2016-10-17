@@ -2082,7 +2082,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
-static bool s_doGroundExtract = false; 
+static bool s_doGroundExtract = true; 
 
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
     {
