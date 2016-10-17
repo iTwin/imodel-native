@@ -20,6 +20,12 @@
 #include <WebServices/Connect/ConnectSpaces.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
+//YII RealityData Services
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include    <DgnPlatform/HttpHandler.h>
+
 #include    <windows.h>
 
 
@@ -530,7 +536,7 @@ RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool syn
 
         MRMeshFileName meshFileName(tempFileName);
     
-        if (meshFileName.IsS3MXUrl())
+        if (meshFileName.IsS3MXUrl()) // || meshFileName.IsAzureBlobRedirectUrl())
             {
             MRMeshWSGHttpDataPtr meshData;
             result = m_cache->Get (meshData, path.GetNameUtf8().c_str(), *MRMeshHttpData::RequestOptions::Create(synchronous));
@@ -917,24 +923,91 @@ BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileN
     return (SUCCESS == BaseSceneNode::Read3MX (stream, sceneInfo, err)) ? SUCCESS : ERROR;
     }
 
+//YII RealityData Services
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus MRMeshUtil::GetAzureBlobRedirectionForWSGRequest(std::string child, std::string& finalChildName)
+    {
+    std::string redirect;
 
+    MRMeshFileName nodeName(child.c_str());
 
+    if (!nodeName.IsS3MXUrl())
+        return ERROR;
 
+    if (!nodeName.ConvertS3MXUrlToAzureRedirectionRequestURL())
+        return ERROR;
 
+    // Temporarily placed here ...
+    Utf8String          authToken;
 
+    Utf8String          cacheToken;
+    SamlTokenPtr cacheTokenPtr = ConnectAuthenticationPersistence::GetShared()->GetToken();
+    if (cacheTokenPtr != nullptr && !cacheTokenPtr->IsEmpty())
+        cacheToken = cacheTokenPtr->AsString();
 
+    Utf8String stsToken;
+    stsToken = "Token ";
 
+    authToken = stsToken.append(cacheToken).c_str();
 
+    Utf8String                      url;
+    bmap<Utf8String, Utf8String>    header;
 
+    // Add authorization token if provided ... it is the responsibility of the caller to determine if one is required.
+    if (!authToken.empty())
+        header["Authorization"] = authToken;
 
+    // We have two objects HttpRequests so we need to scope to get the right one.
+    Dgn::HttpRequest         request (nodeName.c_str(), header);
+    Dgn::HttpResponsePtr     response;
 
+    if (HttpRequestStatus::Success == HttpHandler::Instance().Request (response, request))
+        {
+        // We only continue if we have a valid response
+        BVectorStreamBuffer buff (response->GetBody());
+        std::istream        stream (&buff);
+        
+    
+        std::stringstream buffer;
+        char tmp[1024];
+        while (!stream.eof())
+            {
+            stream.read(tmp, 1024);
+            buffer.write(tmp, stream.gcount());
+            }
+        Json::Value  pt(Json::objectValue);
+        Json::Reader reader;
 
+        if (!reader.parse(Utf8String(buffer.str().c_str()), pt))
+        {
+            return (BentleyStatus)ERROR;
+        }
 
+        Json::Value entry = pt["instances"];
 
+        if (!entry.empty())
+            {
+            // We only care for first entry
+            Json::Value entry2 = entry[0];
+            const Json::Value& toto = entry2["properties"];
 
+            redirect = toto.get("Url", "").asCString();
+            }
 
+        if (redirect.size() != 0)
+            {
+            MRMeshFileName redirectionRoot(redirect.c_str());
+            MRMeshFileName S3MXOriginal(child.c_str());
+            redirectionRoot.AppendToPath(S3MXOriginal.GetS3MXPath());
+            finalChildName = std::string(redirectionRoot.c_str());
+            return (BentleyStatus)SUCCESS;
+            }
+        }
 
-
+    return (BentleyStatus)ERROR;
+    }
 
 
 
