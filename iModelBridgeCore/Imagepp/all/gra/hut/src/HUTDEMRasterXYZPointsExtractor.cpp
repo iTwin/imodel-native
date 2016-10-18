@@ -443,7 +443,7 @@ const HFCPtr<HGF2DCoordSys>& HUTDEMRasterXYZPointsExtractor::GetXYCoordSystP() c
 
 HFCPtr<HGFHMRStdWorldCluster>&  HUTDEMRasterXYZPointsExtractor::GetHMRWorldCluster()
     {
-    if (0 != m_spWorldCluster)
+    if (0 == m_spWorldCluster)
         m_spWorldCluster = new HGFHMRStdWorldCluster();
 
     return m_spWorldCluster;

@@ -111,6 +111,25 @@ HRFMapBoxTileEditor::~HRFMapBoxTileEditor()
     {
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+/*
+Utf8String BuildTileUri(uint64_t tileId)
+    {    
+    uint64_t tilePosX, tilePosY;
+    uint32_t level; 
+    m_TileIDDescriptor.GetPositionFromID(tileId, &tilePosX, &tilePosY);
+    level = m_TileIDDescriptor.GetPositionFromID(tileId);
+    
+    char tempBuffer[300];
+
+    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%ui/%uli/%uli.jpg80?access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg", level, tilePosX, tilePosY);
+    Utf8String tileUri(tempBuffer);
+    return tileUri;
+    }
+    */
 //-----------------------------------------------------------------------------
 // public
 // ReadBlock
@@ -148,10 +167,13 @@ HSTATUS HRFMapBoxTileEditor::ReadBlock(uint64_t pi_PosBlockX,
 
         
     // Tile was not in lookAHead create a request.    
+
     MapBoxTileQuery tileQuery(TileID, tileUri, rasterFile);    
 
     tileQuery._Run();
     
+    //assert(!tileQuery.m_tileData.empty());           
+
     if (!tileQuery.m_tileData.empty())
         {        
         BeAssert(tileQuery.m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
