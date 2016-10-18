@@ -227,7 +227,7 @@ void DgnViewport::AlignWithRootZ()
 void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
     {
     BSIRect viewRect = GetViewRect();
-    viewController.AdjustAspectRatio(viewRect.Aspect(), expandView);
+    viewController.GetViewDefinitionR().AdjustAspectRatio(viewRect.Aspect(), expandView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,9 +352,8 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraViewControllerR controller)
+static void validateCamera(CameraInfoR camera, CameraViewControllerR controller)
     {
-    CameraInfoR camera = controller.GetControllerCameraR();
     camera.ValidateLens();
     if (camera.IsFocusValid())
          return;
@@ -492,10 +491,10 @@ ViewportStatus DgnViewport::SetupFromViewController()
             if (cameraView)
                 {
                 m_isCameraOn = true;
-                m_camera = cameraView->GetControllerCamera();
+                m_camera = cameraView->GetCameraViewDefinitionR().GetCameraR();
 
                 if (m_isCameraOn)
-                    validateCamera(*cameraView);
+                    validateCamera(m_camera, *cameraView);
                 }
 
             _AdjustZPlanes(origin, delta);
@@ -627,13 +626,15 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         npcPts[0].z = npcPts[1].z = high;
         NpcToWorld(worldPts, npcPts, 2);
 
-        double lensAngle = cameraView->GetLensAngle();
+        auto& cameraDef = cameraView->GetCameraViewDefinition();
+
+        double lensAngle = cameraDef.GetLensAngle();
         double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
 
         DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
-        DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
+        DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraDef.GetZVector(), focusDist);
 
-        auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraView->GetYVector(), lensAngle);
+        auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraDef.GetYVector(), lensAngle);
         if (ViewportStatus::Success != stat)
             return stat;
         }
@@ -851,7 +852,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (ViewportStatus::Success != validSize)
         return  validSize;
 
-    DPoint3d center = (nullptr != newCenterRoot) ? *newCenterRoot : viewController->GetCenter();
+    DPoint3d center = (nullptr != newCenterRoot) ? *newCenterRoot : viewController->GetViewDefinition().GetCenter();
 
     if (!Allow3dManipulations())
         center.z = 0.0;
@@ -1070,7 +1071,6 @@ ViewportStatus DgnViewport::ValidateViewDelta(DPoint3dR delta, bool messageNeede
     return error;
     }
 
-
 #define QV_RESERVED_DISPLAYPRIORITY     (32)
 #define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
 #define RESERVED_DISPLAYPRIORITY        (1<<19)
@@ -1156,7 +1156,7 @@ void DgnViewport::SaveViewUndo()
         return;
         }
 
-    if (curr.Equals(m_currentBaseline))
+    if (curr->_EqualState(*m_currentBaseline))
         return; // nothing changed
 
     if (m_backStack.size() >= m_maxUndoSteps)
@@ -1183,7 +1183,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ClearUndo()
     {
-    m_currentBaseline = ViewController::State();
+    m_currentBaseline = nullptr;
     m_forwardStack.clear();
     m_backStack.clear();
     }
@@ -1210,7 +1210,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
                 newFlags.m_fill == oldFlags.m_fill)
                 {
                 // Both sub-category visibility and appearance gets baked into cached graphic...
-                if (!m_viewController->HasSubCategoryOverride() && !viewController.HasSubCategoryOverride())
+                if (!m_viewController->GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride() && !viewController.GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride())
                     dropGraphics = false;
                 }
             }

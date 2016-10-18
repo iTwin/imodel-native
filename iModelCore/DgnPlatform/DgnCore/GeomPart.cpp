@@ -73,6 +73,53 @@ DgnDbStatus DgnGeometryPart::_BindUpdateParams(ECSqlStatement& statement)
     return BindParams(statement);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnGeometryPart::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+
+    if (0 == strcmp(PARAM_BBoxLow, name))
+        {
+        m_bbox.low = value.GetPoint3d();
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_BBoxHigh, name))
+        {
+        m_bbox.high = value.GetPoint3d();
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_FacetCount, name))
+        {
+        m_facetCount = (size_t) value.GetInteger();
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (0 == strcmp(PARAM_BBoxLow, name))
+        {
+        value.SetPoint3d(m_bbox.low);
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_BBoxHigh, name))
+        {
+        value.SetPoint3d(m_bbox.high);
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_FacetCount, name))
+        {
+        value.SetInteger((int32_t) m_facetCount);
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/

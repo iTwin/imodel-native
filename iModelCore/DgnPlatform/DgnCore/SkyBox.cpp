@@ -12,8 +12,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
     {
+    auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
     AxisAlignedBox3d extents;
-    if (!IsGroundPlaneEnabled())
+    if (!displayStyle.IsGroundPlaneEnabled())
         return extents;
 
     double elevation = GetGroundElevation();
@@ -49,7 +50,8 @@ AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SpatialViewController::GetGroundElevation() const
     {
-    return m_environment.m_groundPlane.m_elevation + GetDgnDb().Units().GetGlobalOrigin().z; // adjust for global origin
+    auto& env = GetSpatialViewDefinition().GetDisplayStyle3d().GetEnvironmentDisplay();
+    return env.m_groundPlane.m_elevation + GetDgnDb().Units().GetGlobalOrigin().z; // adjust for global origin
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,9 +69,12 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     pts[2] = pts[3] = extents.high;
     pts[3].y = extents.low.y;
 
-    bool above = IsEyePointAbove(extents.low.z);
+    auto& viewDef= GetSpatialViewDefinition();
+    auto& environment = viewDef.GetDisplayStyle3d().GetEnvironmentDisplay();
+
+    bool above = viewDef.IsEyePointAbove(extents.low.z);
     double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
-    ColorDef color = above ? m_environment.m_groundPlane.m_aboveColor : m_environment.m_groundPlane.m_belowColor;
+    ColorDef color = above ? environment.m_groundPlane.m_aboveColor : environment.m_groundPlane.m_belowColor;
     ColorDef colors[] = {color, color, color};
 
     Byte alpha = above ? 0x80 : 0x85;
@@ -127,8 +132,9 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     {
     Render::TexturePtr texture;
 
-    if (!m_environment.m_skybox.m_jpegFile.empty())
-        texture = LoadTexture(m_environment.m_skybox.m_jpegFile.c_str(), system);
+    auto& env = GetSpatialViewDefinition().GetDisplayStyle3d().GetEnvironmentDisplay();
+    if (!env.m_skybox.m_jpegFile.empty())
+        texture = LoadTexture(env.m_skybox.m_jpegFile.c_str(), system);
 
     // we didn't get a jpeg sky, just create a gradient
     if (!texture.IsValid())
@@ -145,17 +151,17 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
 
             if (frac > 0.5)
                 {
-                color1 = m_environment.m_skybox.m_nadirColor;
-                color2 = m_environment.m_skybox.m_groundColor;
+                color1 = env.m_skybox.m_nadirColor;
+                color2 = env.m_skybox.m_groundColor;
                 frac = 1.0 -(2.0 * (frac - 0.5));
-                frac = pow(frac, m_environment.m_skybox.m_groundExponent);
+                frac = pow(frac, env.m_skybox.m_groundExponent);
                 }
             else
                 {
-                color1 = m_environment.m_skybox.m_zenithColor;
-                color2 = m_environment.m_skybox.m_skyColor;
+                color1 = env.m_skybox.m_zenithColor;
+                color2 = env.m_skybox.m_skyColor;
                 frac = 2.0*frac;
-                frac = pow(frac, m_environment.m_skybox.m_skyExponent);
+                frac = pow(frac, env.m_skybox.m_skyExponent);
                 }
             thisColor->SetRed(lerp(frac, color1.GetRed(), color2.GetRed()));
             thisColor->SetGreen(lerp(frac, color1.GetGreen(), color2.GetGreen()));
@@ -196,7 +202,7 @@ static DPoint2d getUVForDirection(DPoint3dCR direction, double rotation, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d SpatialViewController::_ComputeEyePoint(Frustum const& frustum) const
+DPoint3d SpatialViewDefinition::_ComputeEyePoint(Frustum const& frustum) const
     {
     DVec3d delta = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftBottomRear), frustum.GetCorner(NPC_LeftBottomFront));
 
@@ -219,7 +225,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
     bvector<DPoint3d> meshPoints;
     bvector<DPoint2d> meshParams; 
     bvector<int> indices;
-    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->ComputeEyePoint(viewport.GetFrustum());
+    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(viewport.GetFrustum());
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
@@ -286,7 +292,8 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::DrawSkyBox(TerrainContextR context)
     {
-    if (!IsSkyBoxEnabled())
+    auto& style3d = GetSpatialViewDefinition().GetDisplayStyle3d();
+    if (!style3d.IsSkyBoxEnabled())
         return;
 
     auto vp=context.GetViewport();
@@ -326,6 +333,7 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
 //=======================================================================================
 namespace EnvironmentJson
 {
+    static Utf8CP str_Environment() {return "environment";}
     static Utf8CP str_Display()     {return "display";}
     static Utf8CP str_Ground()      {return "ground";}
     static Utf8CP str_Sky()         {return "sky";}
@@ -353,14 +361,34 @@ namespace EnvironmentJson
 
 using namespace EnvironmentJson;
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DisplayStyle3d::_LoadFromDb() 
+    {
+    auto stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    LoadStyle3d();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::_CopyFrom(DgnElementCR el) 
+    {
+    T_Super::_CopyFrom(el);
+    auto other = static_cast<DisplayStyle3d const*>(&el);
+    m_environment = other->m_environment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::LoadEnvironment()
+void DisplayStyle3d::LoadStyle3d()
     {
-    Json::Value env(Json::objectValue);
-    Json::Reader::Parse(m_viewState.GetDisplayStyle()->GetEnvironment(), env);
-
-    m_environment.m_enabled = env[str_Display()].asBool();
+    JsonValueCR env = GetStyle(str_Environment());
     
     JsonValueCR ground = env[str_Ground()];
     JsonValueCR elevationJson = ground[GroundPlaneJson::str_Elevation()];
@@ -385,11 +413,9 @@ void SpatialViewController::LoadEnvironment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::SaveEnvironment()
+void DisplayStyle3d::SaveStyle3d() 
     {
     Json::Value env;
-    env[str_Display()] = m_environment.m_enabled;
-    
     Json::Value ground;
     ground[str_Display()] = m_environment.m_groundPlane.m_enabled;
     ground[GroundPlaneJson::str_Elevation()] = m_environment.m_groundPlane.m_elevation;
@@ -409,5 +435,24 @@ void SpatialViewController::SaveEnvironment()
     sky[SkyBoxJson::str_SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
     env[str_Sky()] = sky;
     
-    m_viewState.GetDisplayStyle()->SetEnvironment(Json::FastWriter::ToString(env).c_str());
+    SetStyle(str_Environment(), env);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::EnvironmentDisplay::Initialize()
+    {
+    m_groundPlane.m_enabled = false;
+    m_groundPlane.m_elevation = -DgnUnits::OneCentimeter();
+    m_groundPlane.m_aboveColor = ColorDef::DarkGreen();
+    m_groundPlane.m_belowColor = ColorDef::DarkBrown();
+
+    m_skybox.m_enabled = false;
+    m_skybox.m_groundExponent = 4.0;
+    m_skybox.m_skyExponent = 4.0;
+    m_skybox.m_groundColor = ColorDef(120,143,125);
+    m_skybox.m_zenithColor = ColorDef(54,117,255);
+    m_skybox.m_nadirColor  = ColorDef(40,15,0);
+    m_skybox.m_skyColor    = ColorDef(143,205,255);
     }

@@ -1497,14 +1497,16 @@ struct JsViewController : RefCountedBaseWithCreate
     ViewControllerPtr m_controller;
     JsViewController(ViewControllerR vc) : m_controller(&vc) {;}
 
+#if defined (NEEDS_WORK_VIEWS)
     JsDgnModelP GetTargetModel() const 
         {
-        return m_controller->GetTargetModel()? new JsDgnModel(*m_controller->GetTargetModel()): nullptr;
+        return m_controller->GetTargetModel() ? new JsDgnModel(*m_controller->GetTargetModel()) : nullptr;
         }
     void SetTargetModel(JsDgnModelP m) 
         {
         m_controller->SetTargetModel(m? m->m_model->ToGeometricModelP(): nullptr);
         }
+#endif
     };
 
 //=======================================================================================

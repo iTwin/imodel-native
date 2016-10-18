@@ -132,6 +132,48 @@ DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus AnnotationTextStyle::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    if (0 == strcmp(PROP_Data, name))
+        {
+        size_t dataSize = 0;
+        ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+        if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)))
+            return DgnDbStatus::BadArg;
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROP_Description, name))
+        {
+        m_description.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (0 == strcmp(PROP_Data, name))
+        {
+        bvector<Byte> data;
+        if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, *this, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
+            return DgnDbStatus::BadArg;
+        value.SetBinary(data.data(), data.size());
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROP_Description, name))
+        {
+        value.SetUtf8CP(m_description.c_str());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
 void AnnotationTextStyle::_CopyFrom(DgnElementCR src)

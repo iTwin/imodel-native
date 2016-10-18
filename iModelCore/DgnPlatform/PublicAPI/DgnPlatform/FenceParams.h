@@ -122,8 +122,10 @@ public:
     //! Return current fence viewport.
     DGNPLATFORM_EXPORT DgnViewportP GetViewport() const;
 
+#if defined (NEEDS_WORK_TARGET_MODEL)
     //! Return the target model for fence viewport. Used as destination for copy with clip.
     DGNPLATFORM_EXPORT DgnModelP GetDgnModel() const;
+#endif
 
     // Return true if the supplied point is inside the fence.
     DGNPLATFORM_EXPORT bool PointInside(DPoint3dCR);

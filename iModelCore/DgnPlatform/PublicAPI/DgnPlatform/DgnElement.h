@@ -1259,7 +1259,7 @@ protected:
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
     void ClearAllAppData(){m_appData.clear();}//< @private
-    
+
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
@@ -2671,7 +2671,6 @@ private:
     void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementCR) const;
-    void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
