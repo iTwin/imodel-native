@@ -51,6 +51,8 @@
     <ProductDirectoryList ListName="CollectionProduct">
         <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
         <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
+        <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
