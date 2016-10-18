@@ -3788,6 +3788,16 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
             }
 
+    bool shouldBuildSkirts = false;
+    for (const auto& diffSet : *diffsetPtr)
+        {
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && !diffSet.toggledForID)
+            {
+            shouldBuildSkirts = true;
+            }
+        }
+
+    if (!shouldBuildSkirts) return;
         //DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
          //                                   ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
 
