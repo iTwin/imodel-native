@@ -36,21 +36,22 @@ void ConnectTokenProvider::Configure(uint64_t tokenLifetime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr ConnectTokenProvider::UpdateToken()
+AsyncTaskPtr<SamlTokenPtr> ConnectTokenProvider::UpdateToken()
     {
     Credentials creds = m_persistence->GetCredentials();
     if (!creds.IsValid())
-        return nullptr;
+        return CreateCompletedAsyncTask(SamlTokenPtr());
 
     auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
-    auto result = m_client->RequestToken(creds, rpUri, m_tokenLifetime)->GetResult();
-    if (!result.IsSuccess())
-        return nullptr;
+    return  m_client->RequestToken(creds, rpUri, m_tokenLifetime)->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+        {
+        if (!result.IsSuccess())
+            return SamlTokenPtr();
 
-    SamlTokenPtr token = result.GetValue();
-
-    m_persistence->SetToken(token);
-    return token;
+        SamlTokenPtr token = result.GetValue();
+        m_persistence->SetToken(token);
+        return token;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+

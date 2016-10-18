@@ -65,29 +65,36 @@ bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(Http::ResponseCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHandler::_RetrieveAuthorization(AttemptCR previousAttempt)
     {
-    return m_thread->ExecuteAsync<AuthenticationHandler::AuthorizationResult >([=]
+    auto finalResult = std::make_shared<AuthenticationHandler::AuthorizationResult>();
+    return m_thread->ExecuteAsync([=]
         {
         if (ShouldStopSendingToken(previousAttempt))
             {
-            return AuthenticationHandler::AuthorizationResult::Error(AsyncError("Stopping authentication"));
+            finalResult->SetError(AsyncError("Stopping authentication"));
+            return;
             }
 
         SamlTokenPtr token = m_tokenProvider->GetToken();
-
         if (!IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
             nullptr != token)
             {
-            return AuthenticationHandler::AuthorizationResult::Success(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
+            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
+            return;
             }
 
-        token = m_tokenProvider->UpdateToken();
-        if (nullptr == token)
+        m_tokenProvider->UpdateToken()->Then(m_thread, [=]  (SamlTokenPtr token)
             {
-            return AuthenticationHandler::AuthorizationResult::Error(AsyncError("Failed to get new token"));
-            }
-
-        return AuthenticationHandler::AuthorizationResult::Success(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
-        });
+            if (nullptr == token)
+                {
+                finalResult->SetError(AsyncError("Failed to get new token"));
+                return;
+                }
+            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
+            });
+        })->Then<AuthenticationHandler::AuthorizationResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 /*--------------------------------------------------------------------------------------+

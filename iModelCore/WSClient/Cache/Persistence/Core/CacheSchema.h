@@ -15,7 +15,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    2
-#define SCHEMA_CacheSchema_Minor                                    0
+#define SCHEMA_CacheSchema_Minor                                    1
 
 #define SCHEMA_CacheSchema                                          "WSCache"
 
@@ -42,6 +42,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedResponsePageInfo_PROPERTY_CacheDate             "CacheDate"
 #define CLASS_CachedResponsePageInfo_PROPERTY_CacheTag              "CacheTag"
 #define CLASS_CachedResponsePageInfo_PROPERTY_Index                 "Index"
+#define CLASS_CachedResponsePageInfo_PROPERTY_IsPartial             "IsPartial"
 
 #define CLASS_CachedRelationshipInfo                                "CachedRelationshipInfo"
 #define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RelRemoteId"

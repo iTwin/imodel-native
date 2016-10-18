@@ -15,6 +15,7 @@
 #define RECORD_Url              "URL"
 #define RECORD_TimeCached       "TimeCached"
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 int64_t                     UrlProvider::DefaultTimeout = 24 * 3600 * 1000;
@@ -23,6 +24,8 @@ UrlProvider::Environment    UrlProvider::s_env = UrlProvider::Environment::Relea
 int64_t                     UrlProvider::s_cacheTimeoutMs = 0;
 IBuddiClientPtr             UrlProvider::s_buddi;
 IJsonLocalState*            UrlProvider::s_localState = nullptr;
+ITaskSchedulerPtr           UrlProvider::s_thread;
+
 IHttpHandlerPtr UrlProvider::s_customHandler;
 
 // Region IDs from the buddi.bentley.com
@@ -160,9 +163,11 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
+    s_thread = WorkerThread::Create("UrlProvider");
+
     s_localState = customLocalState ? customLocalState : &DgnClientFxCommon::LocalState();
     s_customHandler = customHandler;
-    s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler);
+    s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
     s_env = env;
     s_cacheTimeoutMs = cacheTimeoutMs;
     s_isInitialized = true;
@@ -188,69 +193,60 @@ void UrlProvider::Uninitialize()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                Julija.Semenenko   06/2015
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<Utf8String> UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls)
+Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls)
     {
+    Utf8String cachedUrl;
+
     if (!s_isInitialized)
         {
         BeAssert(false && "UrlProvider not initialized");
-        return CreateCompletedAsyncTask(Utf8String());
+        return cachedUrl;
         }
 
     Json::Value record = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str());
-
-    Utf8String cachedUrl;
-
     if (!record.isNull() && record.isObject())
         {
         cachedUrl = record[RECORD_Url].asString();
         int64_t timeCached = BeJsonUtilities::Int64FromValue(record[RECORD_TimeCached]);
         int64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        if (!cachedUrl.empty() && ((currentTime - timeCached) < s_cacheTimeoutMs))
+        if (!cachedUrl.empty() && ((currentTime - timeCached) >= s_cacheTimeoutMs))
             {
-            return CreateCompletedAsyncTask(cachedUrl);
+            // Refresh in background
+            AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+                {
+                CacheBuddiUrl(urlName);
+                });
             }
         }
-    else if (record.isString())
-        {
-        // Support old cached string
-        cachedUrl = record.asString();
-        }
 
-    return GetBuddiUrl(urlName)->Then<Utf8String>([=] (Utf8String buddiUrl) -> Utf8String
-        {
-        if (!buddiUrl.empty())
-            {
-            Json::Value record;
-            record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-            record[RECORD_Url] = buddiUrl;
-            s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
-            return buddiUrl;
-            }
+    if (cachedUrl.empty())
+        cachedUrl = CacheBuddiUrl(urlName)->GetResult();
 
-        if (!cachedUrl.empty())
-            {
-            return cachedUrl;
-            }
+    if (cachedUrl.empty())
+        cachedUrl = defaultUrls[s_env];
 
-        return defaultUrls[s_env];
-        });    
+    return cachedUrl;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                Julija.Semenenko   06/2015
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<Utf8String> UrlProvider::GetBuddiUrl(Utf8StringCR urlName)
+AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
     {
-    return s_buddi->GetUrl(urlName, s_regionsId[s_env])->Then<Utf8String>([=] (BuddiUrlResult result)
+    return s_buddi->GetUrl(urlName, s_regionsId[s_env])->Then<Utf8String>(s_thread, [=] (BuddiUrlResult result)
         {
-        if (result.IsSuccess())
-            {
-            return result.GetValue();
-            }
-        return Utf8String();
-        });    
+        Utf8String url = result.GetValue();
+        if (!result.IsSuccess() || url.empty())
+            return url;
+
+        Json::Value record;
+        record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        record[RECORD_Url] = url;
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
+        return url;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -320,7 +316,7 @@ Utf8StringCR UrlProvider::UrlDescriptor::GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::UrlDescriptor::Get() const
     {
-    return UrlProvider::GetUrl(m_name, m_defaultUrls)->GetResult();
+    return UrlProvider::GetUrl(m_name, m_defaultUrls);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -328,5 +324,5 @@ Utf8String UrlProvider::UrlDescriptor::Get() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Utf8String> UrlProvider::UrlDescriptor::GetAsync() const
     {
-    return UrlProvider::GetUrl(m_name, m_defaultUrls);
+    return CreateCompletedAsyncTask(UrlProvider::GetUrl(m_name, m_defaultUrls));
     }
