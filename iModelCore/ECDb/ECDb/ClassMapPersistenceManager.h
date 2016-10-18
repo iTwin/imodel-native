@@ -34,7 +34,7 @@ struct DbClassMapLoadContext : public NonCopyableClass
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }
         std::map<Utf8String, std::vector<DbColumn const*>> const& GetPropertyMaps() const { return m_columnByAccessString; }
-        std::vector<DbColumn const*> const* FindColumnByAccessString(Utf8CP accessString) const;
+        std::vector<DbColumn const*> const* FindColumnByAccessString(Utf8StringCR accessString) const;
     };
 
 

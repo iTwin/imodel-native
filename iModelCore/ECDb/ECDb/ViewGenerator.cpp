@@ -216,7 +216,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             return;
 
         PropertyMapPtr derivedPropertyMap;
-        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString(), true))
+        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString().c_str(), true))
             {
             BeAssert(false);
             return;
@@ -608,14 +608,14 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()))
             continue;
 
-        if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
+        if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString().c_str()))
             continue;
 
         if (baseClassPropertyMap->GetType() == PropertyMap::Type::Navigation &&
             !static_cast<NavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 
-        PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
+        PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString().c_str());
         if (childClassCounterpartPropMap == nullptr)
             return ERROR;
 
@@ -642,7 +642,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         {
         PropertyMapCP basePropMap = propMapPair.first;
         PropertyMapCP actualPropMap = propMapPair.second;
-        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString().c_str()))
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
@@ -768,7 +768,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     for (auto const& propMapPair : viewPropMaps)
         {
         auto actualPropMap = propMapPair.second;
-        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString().c_str()))
             continue;
 
         tableToJoinOn.insert(actualPropMap->GetTable());

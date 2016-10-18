@@ -206,7 +206,7 @@ protected:
 
     //!Gets the root property map of the parent-child node hierarchy
     PropertyMapCR GetRoot() const;
-    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, GetProperty(), GetPropertyAccessString()); }
+    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, GetProperty(), GetPropertyAccessString().c_str()); }
 
 public:
     virtual ~PropertyMap() {}
@@ -215,7 +215,7 @@ public:
     ECN::ECClassId GetOwnerClassMapId() const { return m_ownerClassMapId; }
     bool IsSystemPropertyMap() const { return m_type == Type::ECClassId || m_type == Type::ECInstanceId || m_type == Type::RelConstraintECClassId || m_type == Type::RelConstraintECInstanceId; }
     ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
-    Utf8CP GetPropertyAccessString() const { return m_propertyAccessString.c_str(); }
+    Utf8StringCR GetPropertyAccessString() const { return m_propertyAccessString; }
     PropertyMapCollection const& GetChildren() const { return m_children; }
     virtual BentleyStatus GetPropertyPathList(std::vector<Utf8String>& propertyPathList) const { return _GetPropertyPathList(propertyPathList); }
     //! Gets a value indicating whether this property map is a virtual mapping, i.e. maps
@@ -336,10 +336,10 @@ private:
     virtual BentleyStatus _Load(DbClassMapLoadContext const&) override;
     virtual BentleyStatus _GetPropertyPathList(std::vector<Utf8String>& propertyPathList)const override
         {
-        propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".X"));
-        propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".Y"));
+        propertyPathList.push_back(GetPropertyAccessString() + ".X");
+        propertyPathList.push_back(GetPropertyAccessString() + ".Y");
         if (m_is3d)
-            propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".X"));
+            propertyPathList.push_back(GetPropertyAccessString() + ".X");
 
         return SUCCESS;
         }

@@ -239,7 +239,7 @@ BentleyStatus PropertyMap::_Save(DbClassMapSaveContext& ctx) const
         return SUCCESS;
 
     const ECPropertyId rootPropertyId = GetRoot().GetProperty().GetId();
-    Utf8CP accessString = GetPropertyAccessString();
+    Utf8CP accessString = GetPropertyAccessString().c_str();
     for (DbColumn const* column : columns)
         {
         if (ctx.InsertPropertyMap(rootPropertyId, accessString, column->GetId()) != SUCCESS)
@@ -446,7 +446,7 @@ BentleyStatus PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& proper
     if (propertyMap.IsNull())
         return ERROR;
 
-    return AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap, position);
+    return AddPropertyMap(propertyMap->GetPropertyAccessString().c_str(), propertyMap, position);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -745,10 +745,7 @@ BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap con
 
     DbColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
     if (col == nullptr)
-        {
-        BeAssert(col != nullptr);
         return ERROR;
-        }
 
     SetColumn(*col);
     return SUCCESS;
@@ -874,10 +871,10 @@ void PointPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& 
     ColumnMappedToProperty x, y, z;
     if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
         {
-        x.SetAccessString(GetPropertyAccessString() + Utf8String(".X"));
-        y.SetAccessString(GetPropertyAccessString() + Utf8String(".Y"));
+        x.SetAccessString(GetPropertyAccessString() + ".X");
+        y.SetAccessString(GetPropertyAccessString() + ".Y");
         if (m_is3d)
-            z.SetAccessString(GetPropertyAccessString() + Utf8String(".Z"));
+            z.SetAccessString(GetPropertyAccessString() + ".Z");
         }
 
     if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
@@ -919,15 +916,15 @@ BentleyStatus PointPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoa
     BeAssert(m_zColumn == nullptr);
 
     /*const ECPropertyId rootPropertyId = */GetRoot().GetProperty().GetId();
-    Utf8String accessString(GetPropertyAccessString());
-    std::vector<DbColumn const*> const*  xPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".X").c_str());
+    Utf8StringCR accessString = GetPropertyAccessString();
+    std::vector<DbColumn const*> const* xPropMapping = dbClassMapLoadContext.FindColumnByAccessString(accessString + ".X");
     if (xPropMapping == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
-    std::vector<DbColumn const*> const*  yPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".Y").c_str());
+    std::vector<DbColumn const*> const* yPropMapping = dbClassMapLoadContext.FindColumnByAccessString(accessString + ".Y");
     if (yPropMapping == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
@@ -937,7 +934,7 @@ BentleyStatus PointPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoa
     std::vector<DbColumn const*> const* zPropMapping = nullptr;
     if (m_is3d)
         {
-        zPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".Z").c_str());
+        zPropMapping = dbClassMapLoadContext.FindColumnByAccessString(accessString + ".Z");
         if (zPropMapping == nullptr)
             {
             //WIP_ECSCHEMA_UPGRADE
