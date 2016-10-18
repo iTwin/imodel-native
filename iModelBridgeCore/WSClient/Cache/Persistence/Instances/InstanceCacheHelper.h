@@ -154,8 +154,7 @@ struct InstanceCacheHelper::PartialCachingState
         bset<ObjectId>& m_rejected;
         bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
         bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
-
-        ECInstanceKeyMultiMap m_dataLossInstances;
+        bset<CachedInstanceKey> m_dataLossInstances;
 
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
@@ -203,10 +202,10 @@ struct InstanceCacheHelper::PartialCachingState
         void AddRejected(ObjectIdCR objectId);
 
         //! Register full instance that got overriten with partial
-        void RegisterOverriddenFullInstance(ECInstanceKeyCR instanceKey);
+        void RegisterOverriddenFullInstance(CachedInstanceKeyCR instanceKey);
 
         //! Get registered instances
-        const ECInstanceKeyMultiMap& GetOverriddenFullInstances() const;
+        const bset<CachedInstanceKey>& GetOverriddenFullInstances() const;
     };
 
 /*--------------------------------------------------------------------------------------+

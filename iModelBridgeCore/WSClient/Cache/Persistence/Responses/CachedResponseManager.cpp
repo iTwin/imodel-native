@@ -567,7 +567,7 @@ const InstanceCacheHelper::CachedInstances& instances
     {
     const bset<CachedInstanceKey>& newCached = instances.GetCachedInstances();
     bset<CachedInstanceKey> oldCached;
-    
+
     if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultClass, oldCached) ||
         SUCCESS != m_relationshipInfoManager.ReadCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, oldCached))
         {
@@ -661,7 +661,8 @@ BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedObjectInfoKe
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
-        {}
+        {
+        }
 
     if (BE_SQLITE_DONE != status)
         return ERROR;
@@ -771,7 +772,7 @@ Utf8StringCR responseName
 
         keysOut.insert({parent, name, holder});
         }
-       
+
     return SUCCESS;
     }
 
@@ -788,7 +789,7 @@ BentleyStatus CachedResponseManager::ReadResponseObjectIds(CacheNodeKeyCR respon
             return ERROR;
             }
         }
-        
+
     if (SUCCESS != m_objectInfoManager.ReadCachedInstanceIds(responseKey, *m_responseToAdditionalInstanceClass, objectIdsOut))
         return ERROR;
 
@@ -1026,7 +1027,7 @@ const ECInstanceKeyMultiMap& fullyPersistedNodes
 BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(CachedInstanceKeyCR cachedKey)
     {
     ECInstanceKey nodeKey = cachedKey.GetInfoKey();
-    
+
     bvector<ECInstanceId> pageIds;
 
     // Common ECSql
@@ -1039,7 +1040,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
     // Result relationship
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Rel", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult, 0); // XXX: 0 is workaround to crash
         });
 
     statement->BindId(1, nodeKey.GetECClassId());
@@ -1051,7 +1052,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
     // Result weak relationship
     statement = m_statementCache.GetPreparedStatement("CachedResponseManager::InvalidateResponsePagesContainingInstance:Weak", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak, 0); // XXX: 0 is workaround to crash
         });
 
     statement->BindId(1, nodeKey.GetECClassId());
@@ -1071,14 +1072,14 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstances(const ECInstanceKeyMultiMap& instances)
+BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstances(const bset<CachedInstanceKey>& instances)
     {
     if (instances.empty())
         return SUCCESS;
 
     ECInstanceIdSet idSet;
-    for (auto pair : instances)
-        idSet.insert(pair.second);
+    for (auto instance : instances)
+        idSet.insert(instance.GetInfoKey().GetECInstanceId());
 
     bvector<ECInstanceId> pageIds;
 
@@ -1092,7 +1093,7 @@ BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstan
     // Result relationship
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Rel", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult, 0); // XXX: 0 is workaround to crash
         });
 
     statement->BindInt64(1, (int64_t) &idSet);
@@ -1102,7 +1103,7 @@ BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstan
     // Result weak relationship
     statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteFullResponsesContainingInstances:Weak", [&]
         {
-        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak);
+        return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak, 0); // XXX: 0 is workaround to crash
         });
 
     statement->BindInt64(1, (int64_t) &idSet);

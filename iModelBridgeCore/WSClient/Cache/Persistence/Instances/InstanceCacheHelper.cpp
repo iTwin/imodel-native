@@ -132,7 +132,7 @@ ICancellationTokenPtr ct
             if (PartialCachingState::Action::CachePartial == action)
                 {
                 if (info.IsFullyCached() && info.IsInCache())
-                    partialCachingState->RegisterOverriddenFullInstance(info.GetInstanceKey());
+                    partialCachingState->RegisterOverriddenFullInstance(info.GetCachedInstanceKey());
 
                 info.SetObjectState(CachedInstanceState::Partial);
                 }
@@ -742,15 +742,15 @@ void InstanceCacheHelper::PartialCachingState::AddRejected(ObjectIdCR objectId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::PartialCachingState::RegisterOverriddenFullInstance(ECInstanceKeyCR instanceKey)
+void InstanceCacheHelper::PartialCachingState::RegisterOverriddenFullInstance(CachedInstanceKeyCR instanceKey)
     {
-    m_dataLossInstances.Insert(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+    m_dataLossInstances.insert(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECInstanceKeyMultiMap& InstanceCacheHelper::PartialCachingState::GetOverriddenFullInstances() const
+const bset<CachedInstanceKey>& InstanceCacheHelper::PartialCachingState::GetOverriddenFullInstances() const
     {
     return m_dataLossInstances;
     }

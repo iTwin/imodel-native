@@ -22,6 +22,7 @@
 #include "UpgraderFromV10ToV11.h"
 #include "UpgraderFromV11ToV12.h"
 #include "UpgraderFromV12ToV13.h"
+#include "UpgraderFromV20ToV21.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -41,6 +42,7 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
     ECDbAdapter adapter (m_db);
     switch (oldVersion)
         {
+        // GraphiteXXXX generation
         case 3:
             if (SUCCESS != UpgraderFromV3ToV4(adapter, m_environment).Upgrade()) return ERROR;
         case 4:
@@ -61,6 +63,10 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
             if (SUCCESS != UpgraderFromV11ToV12(adapter).Upgrade()) return ERROR;
         case 12:
             if (SUCCESS != UpgraderFromV12ToV13(adapter).Upgrade()) return ERROR;
+
+        // DgnDb0601/BimXXXX generation
+        case 20:
+            if (SUCCESS != UpgraderFromV20ToV21(adapter).Upgrade()) return ERROR;
 
             // Current version, return
             return SUCCESS;

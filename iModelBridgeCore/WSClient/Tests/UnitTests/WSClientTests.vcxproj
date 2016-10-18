@@ -296,6 +296,7 @@
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\12.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\20.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
