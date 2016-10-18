@@ -396,16 +396,21 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
     {
     protected:
         virtual bool _ShouldLoadTexture() const = 0;
+        virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
 
         virtual void _SetLoadTexture(bool loadTexture) = 0;
+        virtual void _SetLoadIndices(bool loadIndices) = 0;        
         virtual void _SetLoadGraph(bool loadGraph) = 0;
 
     public:
+        
         BENTLEY_SM_EXPORT bool ShouldLoadTexture() const;
+        BENTLEY_SM_EXPORT bool ShouldLoadIndices() const;
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
 
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
+        BENTLEY_SM_EXPORT void SetLoadIndices(bool loadIndices);
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();

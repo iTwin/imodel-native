@@ -2257,10 +2257,14 @@ IScalableMeshNodePlaneQueryParamsPtr IScalableMeshNodePlaneQueryParams::CreatePa
     return IScalableMeshNodePlaneQueryParamsPtr(new ScalableMeshNodePlaneQueryParams());
     }
 
-
 bool IScalableMeshMeshFlags::ShouldLoadTexture() const
     {
     return _ShouldLoadTexture();
+    }
+
+bool IScalableMeshMeshFlags::ShouldLoadIndices() const
+    {
+    return _ShouldLoadIndices();
     }
 
 bool IScalableMeshMeshFlags::ShouldLoadGraph() const
@@ -2271,6 +2275,11 @@ bool IScalableMeshMeshFlags::ShouldLoadGraph() const
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
     _SetLoadTexture(loadTexture);
+    }
+
+void IScalableMeshMeshFlags::SetLoadIndices(bool loadIndices) 
+    {
+    _SetLoadIndices(loadIndices);
     }
 
 void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph) 
@@ -2296,9 +2305,19 @@ bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
     return m_loadTexture;
     }
 
+bool ScalableMeshMeshFlags::_ShouldLoadIndices() const
+    {
+    return m_loadIndices;
+    }
+
 bool ScalableMeshMeshFlags::_ShouldLoadGraph() const
     {
     return m_loadGraph;
+    }
+
+void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
+    {
+    m_loadIndices = loadIndices;
     }
 
 void ScalableMeshMeshFlags::_SetLoadTexture(bool loadTexture)

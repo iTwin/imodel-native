@@ -1047,11 +1047,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
-       // ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBlock(extentToCover.low, extentToCover.high, false, ClipMask::None, nullptr);
-        //ClipVectorPtr clipVector(ClipVector::CreateFromPrimitive(clipPrimitive));
 
-       // ClipVectorPtr clipVector(ClipVector::Create());
-      //  std::cout << "overview node " << meshNodePtr->GetNodeId() << " chosen " << std::endl;
         ConvexClipPlaneSet clipPlaneSet;
         DPlane3d planes[4] = { DPlane3d::From3Points(DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z)),
             DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z)),
@@ -1063,8 +1059,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             clipPlaneSet.push_back(ClipPlane(planes[i].normal.ValidatedNormalize(), planes[i].origin));
             }
 
-        //ClipVector::AppendPlanes(clipVector, clipPlaneSet);
-       // ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromClipPlanes(clipPlaneSet);
+
         CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
         ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
         clipPrimitive->SetIsMask(false);
@@ -1391,7 +1386,7 @@ void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& sca
     bvector<uint64_t> allShownIds;
     scalableMeshPtr->GetAllClipIds(allShownIds);
 
-    bset<uint64_t> activeClips;
+    bset<uint64_t> activeClips = m_activeClips;
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 

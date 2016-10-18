@@ -41,26 +41,26 @@ struct INormalCalculator : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         PCLWRAPPER_EXPORT static IStatusPtr ComputeNormals(DVec3d*         pNormals,
                                                            const DPoint3d* pPoints,
                                                            size_t          numberOfPoints);
-		PCLWRAPPER_EXPORT static IStatusPtr InitKdTree(void** pKdTree,
+        PCLWRAPPER_EXPORT static IStatusPtr InitKdTree(void** pKdTree,
                                             const DPoint3d* pPoints,
                                            size_t          numberOfPoints);
-		PCLWRAPPER_EXPORT static IStatusPtr InitOctree(void** pOctree,
+        PCLWRAPPER_EXPORT static IStatusPtr InitOctree(void** pOctree,
                                             const DPoint3d* pPoints,
                                            size_t          numberOfPoints,
                                            double resolution = 100.0);
-		PCLWRAPPER_EXPORT static IStatusPtr RadiusSearch(int* pIndices,
+        PCLWRAPPER_EXPORT static IStatusPtr RadiusSearch(int* pIndices,
                                            size_t* size,
                                            void* handle,
                                            const Eigen::Vector3f& point,
                                            float radius,
                                            int k_neighbors);
-		PCLWRAPPER_EXPORT static IStatusPtr NearestKSearch(int* pIndices,
+        PCLWRAPPER_EXPORT static IStatusPtr NearestKSearch(int* pIndices,
                                            size_t* size,
                                            void* handle,
                                            const Eigen::Vector3f& point,
                                            float radius,
                                            int k_neighbors);
-		PCLWRAPPER_EXPORT static IStatusPtr ReleaseKdTree(void* pKdTree);
+        PCLWRAPPER_EXPORT static IStatusPtr ReleaseKdTree(void* pKdTree);
         PCLWRAPPER_EXPORT static IStatusPtr ReleaseOctree(void* pOctree);
 
     };

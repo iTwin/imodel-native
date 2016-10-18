@@ -2806,6 +2806,42 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
         }
     GetMetadata();
     GetMeshParts();
+    bvector<int> newMeshParts;
+    bvector<Utf8String> newMeshMetadata;
+    int64_t currentTexId = -1;
+    int64_t currentElementId = -1;
+    if (m_meshParts.size() > 0)
+        {
+        for (size_t i = 0; i < m_meshParts.size(); i += 2)
+            {
+            auto metadataString = Utf8String(m_meshMetadata[i/2]);
+            Json::Value val;
+            Json::Reader reader;
+            reader.parse(metadataString, val);
+            bvector<int> parts;
+            bvector<int64_t> texId;
+            for (const Json::Value& id : val["texId"])
+                {
+                texId.push_back(id.asInt64());
+                }
+            if (!texId.empty())
+                {
+                if(currentTexId == texId[0] && val["elementId"].asInt64() == currentElementId)
+                    {
+                    newMeshParts.back() = m_meshParts[i+1];
+                    continue;
+                    }
+                }
+            currentTexId = texId[0];
+            currentElementId = val["elementId"].asInt64();
+            newMeshParts.push_back(m_meshParts[i]);
+            newMeshParts.push_back(m_meshParts[i+1]);
+            newMeshMetadata.push_back(m_meshMetadata[i/2]);
+
+            }
+        }
+    m_meshParts = newMeshParts;
+    m_meshMetadata = newMeshMetadata;
     if (m_meshParts.size() > 0)
         {
         for (size_t i = 0; i < m_meshParts.size(); i += 2)
@@ -2845,6 +2881,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
             parts.push_back(meshPtr);
             metadata.push_back(m_meshMetadata[i/2]);
             }
+        StoreMetadata();
+        StoreMeshParts();
         }
     else
         {
@@ -3449,7 +3487,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     delete[] pixelBuffer;
 #endif
     Byte *pPixel = pixelBufferP + 3 * sizeof(int);
-	for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
         {
         *pPixel++ = pixelBufferPRGBA[i * 4];
         *pPixel++ = pixelBufferPRGBA[i * 4 + 1];

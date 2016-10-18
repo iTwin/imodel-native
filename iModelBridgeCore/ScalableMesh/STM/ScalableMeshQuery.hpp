@@ -953,6 +953,9 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
         maxZ));
     if (nbQueryExtentPts == 0) queryExtent = contentExtent;
     int status = SUCCESS;
+
+    if (ExtentOp<Extent3dType>::GetWidth(queryExtent) == 0 || ExtentOp<Extent3dType>::GetHeight(queryExtent) == 0)
+        return status;    
     
     DRange3d range; 
     DPoint3d box[8];
@@ -1149,8 +1152,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
-    IScalableMeshMeshPtr meshP;
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
+    IScalableMeshMeshPtr meshP;    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
     if (flags->ShouldLoadGraph())
         {
@@ -1168,6 +1170,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", loadAttempts);
         IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", loadMisses);
 #endif
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
+
         ScalableMeshMeshWithGraphPtr meshPtr;
         if (graphPtr->GetSize() > 1)
            meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
@@ -1198,18 +1202,31 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             pointsPtr->get(&dataPoints[0], dataPoints.size());
 
             int status = meshPtr->AppendMesh(pointsPtr->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
-                                   
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes(m_meshNode->GetUVsIndicesPtr());
-            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
-            if (faceIndexes->size() > 0)
+                                               
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes;            
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes;
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords;
+
+            if (flags->ShouldLoadIndices())
                 {
-                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() && uvCoords.IsValid()? uvCoords->size() : 0,
-                                             flags->ShouldLoadTexture() && uvCoords.IsValid() && uvCoords->size() > 0 ? &(*uvCoords)[0] : 0,
-                                             flags->ShouldLoadTexture() && uvIndexes.IsValid() && uvIndexes->size() > 0 ? &(*uvIndexes)[0] : 0);
+                faceIndexes = m_meshNode->GetPtsIndicePtr();            
                 }
             
-            if (meshPtr->GetNbFaces() == 0)
+            if (flags->ShouldLoadTexture())
+                {
+                assert(flags->ShouldLoadIndices() == true);
+                uvIndexes = m_meshNode->GetUVsIndicesPtr();
+                uvCoords = m_meshNode->GetUVCoordsPtr();
+                }
+
+            if (faceIndexes.IsValid() && faceIndexes->size() > 0)
+                {
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, uvCoords.IsValid()? uvCoords->size() : 0,
+                                             uvCoords.IsValid() && uvCoords->size() > 0 ? &(*uvCoords)[0] : 0,
+                                             uvIndexes.IsValid() && uvIndexes->size() > 0 ? &(*uvIndexes)[0] : 0);
+                }
+            
+            if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
                 {                                              
                 return nullptr;
                 }
@@ -1220,7 +1237,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             }        
         }
     
-    if (meshP == nullptr || meshP->GetNbFaces() == 0) return nullptr;
+    if (meshP == nullptr || ((meshP->GetNbFaces() == 0) && flags->ShouldLoadIndices())) return nullptr;
+
     return meshP;    
     }
 

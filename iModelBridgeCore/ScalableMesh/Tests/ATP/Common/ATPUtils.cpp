@@ -50,6 +50,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_LOADING:
             return L"File Name, Time To Load (s), Max depth To Load (if 0 all nodes are loaded), Nb of loaded nodes\n";
             break;
+        case TEST_DC_GROUND_DETECTION:
+            return L"File Name, Time To Find Seed (s), Time To Do Ground\n";
+            break;            
         case TEST_DRAPE_BASELINE:
             return L"Test Case,  Pass/Fail, Baseline, Nb of Lines, Nb of Lines Draped (baseline), Nb of Lines Draped(test), Nb Of Different Lines, %% unmatched points, Time to drape (1st load) (baseline), Time to drape (1st load) (test), Time taken (1st load) variation, Time to drape (cached) (baseline), Time to drape (cached) (test), Time taken (cached) variation\n";
             break;
@@ -163,6 +166,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"dcGroundDetection"))
+            t = TEST_DC_GROUND_DETECTION;        
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
             t = ADD_TEXTURES_TO_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
@@ -331,6 +336,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_GROUP_NODE_HEADERS:
                 PerformGroupNodeHeaders(pTestNode, pResultFile);
                 break;
+            case TEST_DC_GROUND_DETECTION:
+                PerformDcGroundDetectionTest(pTestNode, pResultFile);
+                break;            
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
                 break;
