@@ -58,7 +58,7 @@ enum class DgnViewSource
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DefinitionElement);
     friend struct dgn_ElementHandler::DisplayStyleDef;
     friend struct ViewDefinition;
@@ -132,7 +132,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
 {
-    DEFINE_T_SUPER(DisplayStyle);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(DisplayStyle);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle3d, DisplayStyle);
     friend struct dgn_ElementHandler::DisplayStyle3dDef;
 
@@ -206,7 +206,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
     friend struct SpatialViewDefinition;
@@ -256,7 +256,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
     friend struct ViewDefinition;
@@ -561,7 +561,7 @@ public:
     bool ViewsModel(DgnModelId modelId) const {return _ViewsModel(modelId);}
     
     //! Query if the specified Category is displayed in this view
-    bool ViewsCategory(DgnCategoryId id) const {m_categorySelector->IsCategoryViewed(id);}
+    bool ViewsCategory(DgnCategoryId id) const {return m_categorySelector->IsCategoryViewed(id);}
 
     DPoint3d GetOrigin() const {return _GetOrigin();}
     DVec3d GetExtents() const {return _GetExtents();}
@@ -740,7 +740,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
 {
-    DEFINE_T_SUPER(SpatialViewDefinition);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(SpatialViewDefinition);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, SpatialViewDefinition);    
     friend struct dgn_ElementHandler::OrthographicViewDef;
 
@@ -859,7 +859,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 {
-    DEFINE_T_SUPER(SpatialViewDefinition);
+    // DGNELEMENT_DECLARE_MEMBERS defines T_SUPER - DEFINE_T_SUPER(SpatialViewDefinition);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, SpatialViewDefinition);
     friend struct dgn_ElementHandler::CameraViewDef;
     friend struct ViewController;
