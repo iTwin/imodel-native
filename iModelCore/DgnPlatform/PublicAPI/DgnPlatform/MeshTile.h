@@ -506,12 +506,14 @@ public:
 //=======================================================================================
 struct ElementTileNode : TileNode
 {
+private:
+    TileGeometryList        m_geometries;
+
 protected:
     ElementTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn) { }
     ElementTileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
 
-    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
 
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
     DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry::NormalMode, bool, bool) const override;
@@ -519,6 +521,9 @@ public:
     static ElementTileNodePtr Create(TransformCR transformFromDgn) { return new ElementTileNode(transformFromDgn); }
     static ElementTileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
         { return new ElementTileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
+
+    void SetTolerance(double tolerance) { m_tolerance = tolerance; }
+    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
 
     DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
@@ -594,6 +599,10 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
+    uint32_t                        m_totalTiles;
+    uint32_t                        m_completedTiles;
+
+    Status ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -606,6 +615,8 @@ public:
     TileGenerationCacheCR GetCache() const { return m_cache; }
 
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, double leafTolerance, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateAndCollectTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+
 };
 
 //=======================================================================================
