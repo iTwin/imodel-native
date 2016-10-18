@@ -131,11 +131,9 @@ public:
         Utf8String m_descr;
         Appearance m_appearance;
 
-        Data(Appearance const& appearance=Appearance(), Utf8StringCR descr="") { Init(appearance, descr); }
-
-        void Init(Appearance const& appearance, Utf8StringCR descr="") { m_appearance=appearance; m_descr=descr; }
-
-        uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_descr.length()); }
+        Data(Appearance const& appearance=Appearance(), Utf8StringCR descr="") {Init(appearance, descr);}
+        void Init(Appearance const& appearance, Utf8StringCR descr="") {m_appearance=appearance; m_descr=descr;}
+        uint32_t GetMemSize() const {return static_cast<uint32_t>(sizeof(*this) + m_descr.length());}
     };
 
     //! Parameters used to create a sub-category
@@ -147,7 +145,7 @@ public:
 
         //! Construction from base class. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Appearance const& appearance=Appearance(), Utf8StringCR descr="")
-            : T_Super(params), m_data(appearance, descr) { }
+            : T_Super(params), m_data(appearance, descr) {}
 
         //! Construct parameters for a sub-category
         //! @param[in]      db         The DgnDb in which the sub-category will reside
@@ -187,7 +185,7 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     //! Constructs a new DgnSubCategory with the specified parameters.
-    explicit DgnSubCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
+    explicit DgnSubCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) {}
 
     DgnSubCategoryId GetSubCategoryId() const { return DgnSubCategoryId(GetElementId().GetValue()); } //!< The ID of this sub-category
     Utf8String GetSubCategoryName() const { return GetCode().GetValue(); } //!< The name of this sub-category.
@@ -198,9 +196,9 @@ public:
     DgnSubCategoryCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnSubCategory>(*this, status); } //!< Updates this sub-category in the DgnDb and returns the updated persistent sub-category
 
     Utf8CP GetDescription() const { return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str(); } //!< The sub-category description, or nullptr if not defined
-    Appearance const& GetAppearance() const { return m_data.m_appearance; } //!< This sub-category's appearance
-    Appearance& GetAppearanceR() { return m_data.m_appearance; } //!< A writable reference to this sub-category's appearance
-    void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description
+    Appearance const& GetAppearance() const {return m_data.m_appearance;} //!< This sub-category's appearance
+    Appearance& GetAppearanceR() { return m_data.m_appearance;} //!< A writable reference to this sub-category's appearance
+    void SetDescription(Utf8StringCR descr) {m_data.m_descr = descr;} //!< Set the description
 
     //! Create a DgnCode for the name of a sub-category of the specified category
     static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }

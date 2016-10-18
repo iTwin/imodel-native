@@ -44,6 +44,7 @@ enum class ParamId
     Polylines,
     GeographicLocation,
     GlobeImagery,
+    GlobeTerrain,
     Standalone,
     Invalid,
 };
@@ -74,8 +75,9 @@ static CommandParam s_paramTable[] =
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
         { L"pl", L"polylines", L"Publish polylines", false, true },
-        { L"l",  L"geographicLocation", L"Geographic location (latitude, longitude)", false },
-        { L"ip", L"imageryProvider" L"Imagery Provider", false, false },
+        { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
+        { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
+        { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
     };
 
@@ -152,6 +154,7 @@ private:
     uint32_t        m_depth = 0xffffffff;
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
+    Utf8String      m_terrainProvider;
     bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
 
@@ -171,6 +174,7 @@ public:
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
+    Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -254,6 +258,9 @@ Json::Value  PublisherParams::GetViewerOptions () const
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
+    if (!m_terrainProvider.empty())
+        viewerOptions["terrainProvider"] = m_terrainProvider.c_str();
+
     return viewerOptions;
     }
 
@@ -312,7 +319,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 m_polylines = true;
                 break;
             case ParamId::GeographicLocation:
-                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.latitude, &m_geoLocation.longitude))
+                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
                     {
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
@@ -321,6 +328,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
+                break;
+            case ParamId::GlobeTerrain:
+                m_terrainProvider = Utf8String(arg.m_value.c_str());
                 break;
             case ParamId::Standalone:
                 m_standalone = true;

@@ -1243,13 +1243,19 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
-    Status                  status;
     static size_t           s_maxPointsPerTile = 200000;
+
+// #define GENERATE_AND_COLLECT
+#ifdef GENERATE_AND_COLLECT
+    return ConvertStatus (generator.GenerateAndCollectTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile));
+#else
+    Status                  status;
 
     if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, toleranceInMeters, s_maxPointsPerTile))))
         return status;
         
     return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

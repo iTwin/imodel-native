@@ -62,12 +62,11 @@ public:
 
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr, 
-                                      StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade)
-        {
-        auto viewDef = CameraViewDefinition::MakeViewOfModel(model, viewName, viewVolume, rot, renderMode);
-        viewDef->Insert();
-        return viewDef->GetViewId();
-        }
+                                      StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
+
+    //! Create a Drawing view
+    static DrawingViewDefinitionPtr InsertDrawingView(DrawingModelR model, Utf8CP viewDescr=nullptr);
+
     static void FitView(DgnDbR db, DgnViewId viewId);
 
     //! Create a new PERSISTENT modelselector
@@ -88,9 +87,7 @@ public:
     static void UpdateProjectExtents(DgnDbR);
 
     //! Look up a model by its name
-    template<typename T>
-    static
-    RefCountedPtr<T> GetModelByName(DgnDbR db, Utf8StringCR cmname)
+    template<typename T> static RefCountedPtr<T> GetModelByName(DgnDbR db, Utf8StringCR cmname)
         {
         return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
         }

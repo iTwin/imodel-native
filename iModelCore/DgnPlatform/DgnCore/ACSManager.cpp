@@ -1071,12 +1071,15 @@ void IAuxCoordSys::_AddXYAxis(GraphicBuilderR builder, ColorDef color, Utf8CP la
 GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const
     {
     double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * acsSizePixels;
-    double      exagg = context.GetViewport()->GetViewController().GetAspectRatioSkew();
     RotMatrix   rMatrix;
     Transform   transform;
 
     _GetRotation(rMatrix);
 
+#if defined (NEEDS_WORK_TARGET_MODEL)
+    double      exagg = context.GetViewport()->GetViewController().GetAspectRatioSkew();
+#endif
+    double      exagg = 1.0;
     rMatrix.InverseOf(rMatrix);
     rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
     transform.InitFrom(rMatrix, drawOrigin);
