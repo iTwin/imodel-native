@@ -172,7 +172,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
 
         //! Invalidates cache tag for responses that contain specified instance
         BentleyStatus InvalidateResponsePagesContainingInstance(CachedInstanceKeyCR cachedKey);
-        BentleyStatus InvalidateFullResponsePagesContainingInstances(const ECInstanceKeyMultiMap& instances);
+        BentleyStatus InvalidateFullResponsePagesContainingInstances(const bset<CachedInstanceKey>& instances);
     };
 
 typedef const CachedResponseManager& QueryManagerCR;

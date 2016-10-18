@@ -15,7 +15,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    2
-#define SCHEMA_CacheSchema_Minor                                    0
+#define SCHEMA_CacheSchema_Minor                                    1
 
 #define SCHEMA_CacheSchema                                          "WSCache"
 

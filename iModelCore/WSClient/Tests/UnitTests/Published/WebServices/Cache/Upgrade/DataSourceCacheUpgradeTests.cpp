@@ -15,7 +15,7 @@
 //      Named folders with cache.ecdb file and "persistent", "temporary" folders inside. See existing xx.zip files.
 // 3. Add new x.zip delivery/extraction into TestAssetsDeliver.mke
 //    You will need to update test assets in build output with this:
-//    bb -r WSClient -f WSClient -p WSClientUnitTests re WSClientUnitTests-Assets
+//    bb -r WSClient -f WSClient -p Tests re WSClientTestAssets
 // 4. Write Open_Vx... test case to test upgrade. 
 // 5. Use GetSeedPaths() to get paths to extracted files.
 //--------------------------------------------------------------------------------------+
@@ -828,6 +828,107 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
     {
     // Arrange
     auto paths = GetSeedPaths(12, "data");
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    // Check
+    CachedResponseKey partialResponseKey(cache.FindOrCreateRoot(nullptr), "Partial");
+    CachedResponseKey fullResponseKey(cache.FindOrCreateRoot(nullptr), "Full");
+    CachedResponseKey newResponseKey(cache.FindOrCreateRoot(nullptr), "New");
+
+    WSQuery partialQuery("TestSchema", "TestClass");
+    partialQuery.SetSelect("TestProperty");
+
+    WSQuery fullQuery("TestSchema", "TestClass");
+    fullQuery.SetSelect("*");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TagA"), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TagB"), &rejected, &fullQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+
+    ASSERT_TRUE(cache.IsResponseCached(fullResponseKey));
+    ASSERT_TRUE(cache.GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Partial"}});
+
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(newResponseKey, instances.ToWSObjectsResponse("TagC"), &rejected, &partialQuery));
+    ASSERT_THAT(rejected, IsEmpty());
+    ASSERT_EQ("Partial", ReadInstance(cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
+    ASSERT_FALSE(cache.GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+
+    // Assert
+    EXPECT_EQ("TagC", cache.ReadResponseCacheTag(newResponseKey));
+    EXPECT_EQ("TagA", cache.ReadResponseCacheTag(partialResponseKey));
+    EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
+    EXPECT_TRUE(cache.IsResponseCached(fullResponseKey));
+    }
+    
+// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, SetupV20)
+//    {
+//    DataSourceCache cache;
+//    auto paths = GetNewSeedPaths(20, "data");
+//    ASSERT_EQ(SUCCESS, cache.Create(paths.first, paths.second));
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    // Setup test data
+//    ASSERT_EQ(SUCCESS, cache.SetupRoot(nullptr, CacheRootPersistence::Temporary));
+//
+//    // Arrange
+//    CachedResponseKey partialResponseKey(cache.FindOrCreateRoot(nullptr), "Partial");
+//    CachedResponseKey fullResponseKey(cache.FindOrCreateRoot(nullptr), "Full");
+//
+//    WSQuery partialQuery("TestSchema", "TestClass");
+//    partialQuery.SetSelect("TestProperty");
+//
+//    WSQuery fullQuery("TestSchema", "TestClass");
+//    fullQuery.SetSelect("*");
+//
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Full"}});
+//
+//    bset<ObjectId> rejected;
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(partialResponseKey, instances.ToWSObjectsResponse("TestETag"), &rejected, &partialQuery));
+//    ASSERT_THAT(rejected, IsEmpty());
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(fullResponseKey, instances.ToWSObjectsResponse("TestETag"), &rejected, &fullQuery));
+//    ASSERT_THAT(rejected, IsEmpty());
+//
+//    ASSERT_TRUE(cache.IsResponseCached(fullResponseKey));
+//    ASSERT_TRUE(cache.GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+//
+//    // Save
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(20, "data");
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    // Check
+    CachedResponseKey partialResponseKey(cache.FindOrCreateRoot(nullptr), "Partial");
+    CachedResponseKey fullResponseKey(cache.FindOrCreateRoot(nullptr), "Full");
+
+    EXPECT_TRUE(cache.IsResponseCached(partialResponseKey));
+    EXPECT_TRUE(cache.IsResponseCached(fullResponseKey));
+
+    EXPECT_EQ("", cache.ReadResponseCacheTag(partialResponseKey));
+    EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
+    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(20, "data");
     DataSourceCache cache;
     ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
 

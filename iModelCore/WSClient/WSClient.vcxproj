@@ -105,6 +105,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
@@ -437,6 +439,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
@@ -459,7 +462,6 @@
     <None Include="CacheLib.mke" />
     <None Include="CachePrewire.mke" />
     <None Include="Cache\Cache.mki" />
-    <None Include="ClassDiagram.cd" />
     <None Include="ClientLib.mke" />
     <None Include="ClientLibCompileOptions.mki" />
     <None Include="Client\Client.mki" />
