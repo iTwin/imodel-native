@@ -318,6 +318,7 @@ struct PropertyArrayIndex
 //=======================================================================================
 struct ElementECPropertyAccessor
 {
+private:
     DgnElementR m_element;
     ECSqlClassInfo* m_classInfo;
     ECN::ECClassCP m_eclass;
@@ -329,6 +330,7 @@ struct ElementECPropertyAccessor
 
     DGNPLATFORM_EXPORT void Init(uint32_t propIdx, Utf8CP accessString);
 
+public:
     DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementCR, uint32_t);
     DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementCR, Utf8CP accessString);
     DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementR, uint32_t);
