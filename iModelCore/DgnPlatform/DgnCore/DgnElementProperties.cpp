@@ -59,24 +59,10 @@ ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ElementECInstanceAdapter::GetPropName(uint32_t index) const
-    {
-    PropertyLayoutCP propLayout;
-    if (ECObjectsStatus::Success != GetClassLayout().GetPropertyLayoutByIndex(propLayout, index))
-        {
-        BeAssert(false);
-        return "";
-        }
-    return propLayout->GetAccessString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECInstanceAdapter::_GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const 
     {
     PropertyArrayIndex ai(useArrayIndex, arrayIndex);
-    auto stat = m_element.GetPropertyValue(v, GetPropName(propertyIndex).c_str(), ai);
+    auto stat = m_element.GetPropertyValue(v, propertyIndex, ai);
     return toECObjectsStatus(stat);
     }
 
@@ -91,7 +77,7 @@ ECObjectsStatus ElementECInstanceAdapter::_SetValue (uint32_t propertyIndex, ECV
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
     PropertyArrayIndex ai(useArrayIndex, arrayIndex);
-    auto stat = m_element.SetPropertyValue(GetPropName(propertyIndex).c_str(), v, ai);
+    auto stat = m_element.SetPropertyValue(propertyIndex, v, ai);
     return toECObjectsStatus(stat);
     }
 
