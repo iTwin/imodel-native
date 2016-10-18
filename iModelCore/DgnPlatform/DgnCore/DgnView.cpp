@@ -674,7 +674,7 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 *@bsimethod                                    Sam.Wilson                      08 / 16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+bool ModelSelector::_Equals(DgnElementCR rhsElement, DgnElement::ComparePropertyFilter const& ignore) const
     {
     if (!T_Super::_Equals(rhsElement, ignore))
         return false;
@@ -686,7 +686,7 @@ bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+void ModelSelector::_Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const& ignore) const
     {
     T_Super::_Dump(str, ignore);
     str.append("{");

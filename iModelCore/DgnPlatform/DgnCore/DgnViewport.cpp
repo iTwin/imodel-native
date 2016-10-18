@@ -1210,7 +1210,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
                 newFlags.m_fill == oldFlags.m_fill)
                 {
                 // Both sub-category visibility and appearance gets baked into cached graphic...
-                if (!m_viewController->GetViewDefinition().HasSubCategoryOverride() && !viewController.GetViewDefinition().HasSubCategoryOverride())
+                if (!m_viewController->GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride() && !viewController.GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride())
                     dropGraphics = false;
                 }
             }

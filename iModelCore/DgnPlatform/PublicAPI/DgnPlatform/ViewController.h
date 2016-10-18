@@ -349,7 +349,7 @@ public:
     //! Get the Appearance of a DgnSubCategory for this view.
     //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
-    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetSubCategoryAppearance(id);}
+    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetDisplayStyle().GetSubCategoryAppearance(id);}
 
     //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();

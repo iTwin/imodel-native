@@ -49,12 +49,14 @@ enum class DgnViewSource
 
 //=======================================================================================
 //! The Display Style for a view. Display styles define the "styling" parameters for rendering the contents of a view.
-//! A DisplayStyle is a definition element with a name and id. It can be used by many ViewDefinitions. When a
-//! ViewDefinition is loaded into memory, it makes a copy of its DisplayStyle, so any in-memory changes do not affect the original.
+//! DisplayStyles determine how graphics are rendered, not which elements are rendered. Styles determine the rendering mode, 
+//! background color, many on/off choices for types of graphics, SubCategory overrides, etc.
+//! When a ViewDefinition is loaded into memory, it makes a copy of its DisplayStyle, so any in-memory changes do not affect the original.
 //! Changes are not saved unless someone calls Update on the modified copy.
-//! A DisplayStyle is composed of various named "Styles". A Style is defined in Json and is stored in the DisplayStyle element.
-// @bsiclass                                                      Sam.Wilson    08/16
+//! A DisplayStyle is composed of various named "Styles". Styles are defined in Json and is stored/loaded with this element.
+// @bsiclass                                                    Keith.Bentley   10/16
 //=======================================================================================
+
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
@@ -126,8 +128,8 @@ public:
 };
 
 //=======================================================================================
-//! The Display Style for a 3d view.
-// @bsiclass                                                      Sam.Wilson    08/16
+//! The DisplayStyle for a 3d view.
+// @bsiclass                                                    Keith.Bentley   10/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
 {
@@ -248,7 +250,7 @@ public:
 };
 
 //=======================================================================================
-//! A list of Categories to be displayed in a view. Additionally, 
+//! A list of Categories to be displayed in a view. 
 //! When a ViewDefinition is loaded into memory, it makes a copy of its CategorySelector, so any in-memory changes do not affect the original.
 //! Changes are not saved unless someone calls Update on the modified copy.
 // @bsiclass                                                      Sam.Wilson    08/16
@@ -300,9 +302,11 @@ public:
 };
 
 //=======================================================================================
-//! The definition element for a view.
+//! The definition element for a view. ViewDefinitions specify the area/volume that is viewed, and points to a DisplayStyle and a CategorySelector.
+//! Subclasses of ViewDefinition determine which model(s) are viewed.
+//! A ViewController holds an editable copy of a ViewDefinition, and a ViewDefinition holds an editable copy of its DisplayStyle and CategorySelector.
 //! @ingroup GROUP_DgnView
-// @bsiclass                                                      Paul.Connelly   10/15
+// @bsiclass                                                    Keith.Bentley   10/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
@@ -541,11 +545,6 @@ public:
     
     //! Query if the specified Category is displayed in this view
     bool ViewsCategory(DgnCategoryId id) const {m_categorySelector->IsCategoryViewed(id);}
-
-    bool HasSubCategoryOverride() const {return m_displayStyle->HasSubCategoryOverride();}
-    void OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr) {m_displayStyle->OverrideSubCategory(id, ovr);}
-    void DropSubCategoryOverride(DgnSubCategoryId id) {m_displayStyle->DropSubCategoryOverride(id);}
-    DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_displayStyle->GetSubCategoryAppearance(id);}
 
     DPoint3d GetOrigin() const {return _GetOrigin();}
     DVec3d GetExtents() const {return _GetExtents();}
