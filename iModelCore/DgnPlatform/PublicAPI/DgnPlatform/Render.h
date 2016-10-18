@@ -131,7 +131,7 @@ public:
     bool IsMonochrome() const {return m_monochrome;}
     void SetMonochrome(bool val) {m_monochrome = val;}
     int GetEdgeMask() const {return m_edgeMask;}
-    void SetEdgeMask(int val) {m_edgeMask;}
+    void SetEdgeMask(int val) {m_edgeMask = val;}
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 

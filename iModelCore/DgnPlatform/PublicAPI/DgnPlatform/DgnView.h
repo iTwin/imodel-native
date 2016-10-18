@@ -58,7 +58,6 @@ enum class DgnViewSource
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DefinitionElement);
     friend struct dgn_ElementHandler::DisplayStyleDef;
     friend struct ViewDefinition;
@@ -132,7 +131,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle3d : DisplayStyle
 {
-    DEFINE_T_SUPER(DisplayStyle);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle3d, DisplayStyle);
     friend struct dgn_ElementHandler::DisplayStyle3dDef;
 
@@ -206,7 +204,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
     friend struct SpatialViewDefinition;
@@ -256,7 +253,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
 {
-    DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
     friend struct ViewDefinition;
@@ -391,10 +387,10 @@ public:
     //! Updates in the database and returns the updated persistent copy.
     ViewDefinitionCPtr Update(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Update<ViewDefinition>(*this, status);}
 
-    //! Instantiate a ViewController for this ViewDefinition to render the view
+    //! Create a ViewController for this ViewDefinition 
     DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
-    //! Instantiate a ViewController for the ViewDefinition with the specified Id to render the view
+    //! Create a ViewController for the ViewDefinition with the specified Id
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
     //! Create a DgnCode for a view with the specified name
@@ -412,7 +408,25 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) {return QueryView(QueryViewId(name, db), db);}
 
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode modeOverride=Render::RenderMode::Wireframe, bool useOverride=false) const;
+    //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
+    //! @param[in] size Optional size (x,y) for the thumbnail. Thumnbnails are usually square. Default size is 768x768 pixels.
+    //! @param[in] modeOverride Optional override for the RenderMode for the thumbnail. If nullptr, use RenderMode from the DisplayStyle.
+    //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size=Point2d::From(768,768), Render::RenderMode const* modeOverride=nullptr) const;
+
+    //! Save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
+    //! @param[in] size the size (x,y) of the thumbnail. 
+    //! @param[in] thumbnail The ImageSource data of the thumbnail
+    //! @return BE_SQLITE_OK if the thumbnail was successfully saved.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveThumbnail(Point2d size, Render::ImageSourceCR thumbnail) const;
+
+    //! Read the thumbnail for this ViewDefinition.
+    //! @return the Render::ImageSource holding the compressed stream for the thumbnail. Will be invalid if no thumbnail available.
+    DGNPLATFORM_EXPORT Render::ImageSource ReadThumbnail() const;
+
+    //! Get the size (x,y) of the thumbnail for this ViewDefinition.
+    //! @return the size of the thumbnail. Will be {0,0} if no thumbnail is available.
+    DGNPLATFORM_EXPORT Point2d GetThumbnailSize() const;
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry
@@ -722,7 +736,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
 {
-    DEFINE_T_SUPER(SpatialViewDefinition);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, SpatialViewDefinition);    
     friend struct dgn_ElementHandler::OrthographicViewDef;
 
@@ -841,7 +854,6 @@ This is what the parameters to the camera methods, and the values stored by Came
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 {
-    DEFINE_T_SUPER(SpatialViewDefinition);
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, SpatialViewDefinition);
     friend struct dgn_ElementHandler::CameraViewDef;
     friend struct ViewController;

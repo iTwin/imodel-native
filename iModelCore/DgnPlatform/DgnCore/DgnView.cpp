@@ -48,6 +48,11 @@ namespace ViewProperties
     static Utf8CP str_Pitch() {return "Pitch";}           
     static Utf8CP str_Roll() {return "Roll";}           
     static Utf8CP str_AspectSkew() {return "AspectSkew";}           
+    static Utf8CP str_Width() {return "width";}           
+    static Utf8CP str_Height() {return "height";}           
+    static Utf8CP str_Format() {return "format";}           
+    static Utf8CP str_Jpeg() {return "jpeg";}           
+    static Utf8CP str_Png() {return "png";}           
 };
 
 using namespace ViewProperties;
@@ -68,7 +73,7 @@ template<class T> static RefCountedPtr<T> getAndCopy(DgnDbR db, DgnElementId id)
         return nullptr;
         }
 
-    return el->MakeCopy<T>();
+    return el->template MakeCopy<T>();
     }
 END_UNNAMED_NAMESPACE
 
@@ -172,6 +177,7 @@ DgnDbStatus ViewDefinition::_LoadFromDb()
 
     Json::Reader::Parse(GetPropertyValueString(str_Details()), m_details);
     m_dirty = false;
+
     return DgnDbStatus::Success;
     }
 
@@ -860,6 +866,67 @@ void ViewDefinition3d::_CopyFrom(DgnElementCR el)
     m_origin = other.m_origin;
     m_extents = other.m_extents;
     m_rotation = other.m_rotation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR source) const
+    {
+    Json::Value val;
+    val[str_Width()] = size.x;
+    val[str_Height()] = size.y;
+    val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
+
+    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), Json::FastWriter().ToString(val), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSource ViewDefinition::ReadThumbnail() const
+    {
+    ImageSource image;
+
+    DgnDbR db = GetDgnDb();
+    uint32_t bytes;
+    auto stat = db.QueryPropertySize(bytes, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
+    if (BE_SQLITE_ROW != stat)
+        return image;
+
+    Utf8String jsonStr;
+    stat = db.QueryProperty(jsonStr, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
+    if (BE_SQLITE_ROW != stat)
+        return image;
+
+    Json::Value value;
+    Json::Reader::Parse(jsonStr, value);
+    image.SetFormat(value[str_Format()] == str_Jpeg() ? ImageSource::Format::Jpeg : ImageSource::Format::Png);
+    image.GetByteStreamR().Resize(bytes);
+    stat = db.QueryProperty(image.GetByteStreamR().GetDataP(), bytes, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
+    BeAssert(BE_SQLITE_ROW == stat);
+    return image;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Point2d ViewDefinition::GetThumbnailSize() const
+    {
+    Point2d size = {0,0};
+
+    DgnDbR db = GetDgnDb();
+    Utf8String jsonStr;
+    auto stat = db.QueryProperty(jsonStr, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
+    if (BE_SQLITE_ROW != stat)
+        return size;
+
+    Json::Value value;
+    Json::Reader::Parse(jsonStr, value);
+    size.x = value[str_Width()].asInt();
+    size.y = value[str_Height()].asInt();
+    return size;
     }
 
 /*---------------------------------------------------------------------------------**//**
