@@ -947,7 +947,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_terrainOverviewNodes, terrainQueryId);
 
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
 
             status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
