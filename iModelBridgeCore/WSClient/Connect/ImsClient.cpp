@@ -129,6 +129,7 @@ uint64_t lifetime
     request.GetHeaders().SetAuthorization(authorization);
     request.GetHeaders().SetContentType("application/json");
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
+    request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
 
     return request.PerformAsync()->Then<SamlTokenResult>([] (Http::ResponseCR response)
         {

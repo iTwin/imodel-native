@@ -317,7 +317,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_NotSignedIn_TokenProviderDoes
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     EXPECT_EQ(nullptr, provider->GetToken());
-    EXPECT_EQ(nullptr, provider->UpdateToken());
+    EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     }
 
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInAndSecondCall_ReturnsSameProvider)
@@ -369,7 +369,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithToken_UpdateToken
     ASSERT_EQ(nullptr, provider->GetToken());
 
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
-    EXPECT_EQ(delegationToken, provider->UpdateToken());
+    EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
     }
 
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenCalledMultipleTimesAfterUpdateWithLongLivedToken_ReturnsSameToken)
@@ -387,7 +387,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenC
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
-    EXPECT_EQ(delegationToken, provider->UpdateToken());
+    EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
 
     auto token1 = provider->GetToken();
     auto token2 = provider->GetToken();
@@ -410,7 +410,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenC
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
-    EXPECT_EQ(delegationToken, provider->UpdateToken());
+    EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
 
     EXPECT_EQ(nullptr, provider->GetToken());
     EXPECT_EQ(nullptr, provider->GetToken());
@@ -435,7 +435,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenReq
 
     HttpError error(ConnectionStatus::OK, HttpStatus::Unauthorized);
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(2).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
-    EXPECT_EQ(nullptr, provider->UpdateToken());
+    EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     EXPECT_EQ(1, count);
     }
 
@@ -458,7 +458,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenRequestFailsDueToConnect
 
     HttpError error(ConnectionStatus::CouldNotConnect, HttpStatus::None);
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
-    EXPECT_EQ(nullptr, provider->UpdateToken());
+    EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     EXPECT_EQ(0, count);
     }
 
@@ -486,7 +486,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdenti
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, Utf8String(), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newIdentityToken))));
     EXPECT_CALL(*imsClient, RequestToken(*newIdentityToken, Not(Utf8String()), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
 
-    EXPECT_EQ(delegationToken, provider->UpdateToken());
+    EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
     EXPECT_EQ(0, count);
     }
 
@@ -691,6 +691,44 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
     count = 0;
     manager1->SetUserChangeHandler([&] { count++; });
     EXPECT_EQ(0, count);
+    }
+
+TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerAfterFinalize)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    int count = 0;
+    manager->SetUserSignInHandler([&] { count++; });
+
+    InSequence seq;
+    EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    EXPECT_EQ(0, count);
+    manager->FinalizeSignIn();
+    EXPECT_EQ(1, count);
+    }
+
+TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    int count = 0;
+    manager->SetUserSignOutHandler([&] { count++; });
+
+    InSequence seq;
+    EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    manager->FinalizeSignIn();
+
+    EXPECT_EQ(0, count);
+    manager->SignOut();
+    EXPECT_EQ(1, count);
     }
 
 #endif

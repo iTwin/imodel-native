@@ -108,9 +108,10 @@ struct InstanceCacheHelper::CachedInstances
         bset<CachedInstanceKey> m_cachedInstances;
         bmap<ObjectId, ECInstanceKey> m_cachedInstancesByObjectId;
         bset<ECInstanceKey> m_deletedInstances;
+        bool m_hasPartialInstances = false;
 
     public:
-        void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key);
+        void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key, bool isFullyCached);
 
         bool HasCachedInstance(ObjectIdCR objectId) const;
         ECInstanceKey GetCachedInstance(ObjectIdCR objectId) const;
@@ -121,6 +122,8 @@ struct InstanceCacheHelper::CachedInstances
 
         void MarkDeleted(ECInstanceKeyCR instanceKey);
         bool IsDeleted(ECInstanceKeyCR instanceKey) const;
+        
+        bool HasPartialInstances() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -151,6 +154,7 @@ struct InstanceCacheHelper::PartialCachingState
         bset<ObjectId>& m_rejected;
         bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
         bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
+        bset<CachedInstanceKey> m_dataLossInstances;
 
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
@@ -196,6 +200,12 @@ struct InstanceCacheHelper::PartialCachingState
 
         //! Add Object to rejected list.
         void AddRejected(ObjectIdCR objectId);
+
+        //! Register full instance that got overriten with partial
+        void RegisterOverriddenFullInstance(CachedInstanceKeyCR instanceKey);
+
+        //! Get registered instances
+        const bset<CachedInstanceKey>& GetOverriddenFullInstances() const;
     };
 
 /*--------------------------------------------------------------------------------------+

@@ -18,7 +18,6 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"

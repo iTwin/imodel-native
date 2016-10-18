@@ -130,6 +130,54 @@ TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetr
     client->RequestToken(parentToken, "http://applies.to.url", 0)->GetResult();
     }
 
+TEST_F(ImsClientTests, GetToken_ByCredentialsToAnyEnvironment_ValidatesCertificate)
+    {
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
+        {
+        EXPECT_TRUE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"))->Wait();
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"))->Wait();
+    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
+
+    UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"))->Wait();
+    EXPECT_EQ(3, GetHandler().GetRequestsPerformed());
+    }
+
+TEST_F(ImsClientTests, GetToken_ByTokenToAnyEnvironment_ValidatesCertificate)
+    {
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
+        {
+        EXPECT_TRUE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(*StubSamlToken())->Wait();
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(*StubSamlToken())->Wait();
+    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
+
+    UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+    client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(*StubSamlToken())->Wait();
+    EXPECT_EQ(3, GetHandler().GetRequestsPerformed());
+    }
+
 TEST_F(ImsClientTests, IsLoginRedirect_NonLoginUrl_False)
     {
     EXPECT_FALSE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com/other")));
