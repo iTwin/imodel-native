@@ -1720,7 +1720,7 @@ DbResult Db::DetachDb(Utf8CP alias)
     if (rc != BE_SQLITE_OK)
         {
         BeAssert(false);
-        Utf8String lastError = GetLastError(nullptr); // keep on separate line for debuggging
+        Utf8String lastError = GetLastError(nullptr); // keep on separate line for debugging
         LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", lastError.c_str(), alias);
         }
 
@@ -1735,6 +1735,8 @@ DbResult Db::DetachDb(Utf8CP alias)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     {
+    BeMutexHolder lock(m_mutex);
+
     size_t existingIndex = 0;
     if (TryGetIndex(existingIndex, name))
         return BE_SQLITE_ERROR;
@@ -1749,6 +1751,8 @@ DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BriefcaseLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
     {
+    BeMutexHolder lock(m_mutex);
+
     const size_t size = m_cache.size();
     for (size_t i = 0; i < size; i++)
         {
@@ -1767,6 +1771,8 @@ bool BriefcaseLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseLocalValueCache::Clear()
     {
+    BeMutexHolder lock(m_mutex);
+
     for (CachedBLV& val : m_cache)
         val.Reset();
     }
@@ -1776,6 +1782,8 @@ void BriefcaseLocalValueCache::Clear()
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult BriefcaseLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
@@ -1788,6 +1796,8 @@ DbResult BriefcaseLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
@@ -1804,6 +1814,8 @@ DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
+    BeMutexHolder lock(m_mutex);
+
     CachedBLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
@@ -1817,6 +1829,8 @@ DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlv
 //+---------------+---------------+---------------+---------------+---------------+------
 bool BriefcaseLocalValueCache::TryQuery(CachedBLV*& value, size_t rlvIndex)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (rlvIndex >= m_cache.size())
         return false;
 
@@ -1839,6 +1853,37 @@ bool BriefcaseLocalValueCache::TryQuery(CachedBLV*& value, size_t rlvIndex)
     value = &cachedRlv;
     return true;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Keith.Bentley   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+CachedBLV::CachedBLV(Utf8CP name) : m_name(name) { BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Keith.Bentley   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void CachedBLV::ChangeValue(uint64_t value, bool initializing)
+    {
+    m_isUnset = false; m_dirty = !initializing; m_value = value; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Keith.Bentley   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+uint64_t CachedBLV::Increment()
+    {
+    BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Keith.Bentley   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void CachedBLV::SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Keith.Bentley   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void CachedBLV::Reset() {m_isUnset = true; m_dirty = false; m_value = 0; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12

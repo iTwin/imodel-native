@@ -1827,6 +1827,7 @@ struct BusyRetry : RefCountedBase
     virtual int _OnBusy(int count) const {if (count>4) return 0; BeThreadUtilities::BeSleep(1000); return 1;}
 };
 
+#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 // Cached "briefcase local values"
 // @bsiclass                                                    Keith.Bentley   12/12
@@ -1840,16 +1841,17 @@ private:
     uint64_t     m_value;
 
 public:
-    explicit CachedBLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
+    explicit CachedBLV(Utf8CP name);
     Utf8CP GetName() const {return m_name.c_str();}
     uint64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
-    void ChangeValue(uint64_t value, bool initializing = false) {m_isUnset=false; m_dirty=!initializing; m_value=value;}
-    uint64_t Increment() {BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value;}
+    void ChangeValue(uint64_t value, bool initializing = false);
+    uint64_t Increment();
     bool IsUnset() const { return m_isUnset; }
     bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
-    void SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
-    void Reset() {m_isUnset=true; m_dirty=false; m_value=0;}
+    void SetIsNotDirty() const;
+    void Reset();
     };
+#endif
 
 //=======================================================================================
 // Cache for uint64_t BriefcaseLocalValues. This is for BLV's that are of type uint64_t and are frequently
@@ -1864,6 +1866,7 @@ private:
     friend struct Db;
     bvector<CachedBLV> m_cache;
     DbFile& m_dbFile;
+    mutable BeMutex m_mutex;
 
     void Clear();
     bool TryQuery(CachedBLV*&, size_t rlvIndex);
