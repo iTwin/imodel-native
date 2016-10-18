@@ -22,7 +22,16 @@
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include "IDTMFeatureArray.h"
 
+#ifdef VANCOUVER_API
+typedef IDTMFile::FeatureHeader headerType;
+#else
+#include "Stores/SMStoreUtils.h"
+typedef ISMStore::FeatureHeader headerType;
+#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -52,7 +61,7 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
     protected:
     Memory::ConstPacketProxy<PtType>        m_pointPacket;
 
-    typedef SMPointIndex<PtType, YProtPtExtentType>
+    typedef SMPointIndex<PtType, Extent3dType>
                                             MeshIndexType;    
     MeshIndexType&                         m_rIndex;
 
@@ -144,7 +153,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
     friend class                            GenericStorage<PtType>;
 
     Memory::ConstPacketProxy<PtType>      m_pointPacket;
-    Memory::ConstPacketProxy<IDTMFile::FeatureHeader> 
+    Memory::ConstPacketProxy<ISMStore::FeatureHeader> 
                                           m_headerPacket;
 
     typedef IDTMFeatureArray<PtType> ArrayType;
@@ -165,7 +174,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
     virtual void                            _Write                     () override
         {
-        m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
         
         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; myFeature++)
@@ -190,14 +199,14 @@ class GenericLinearStorageEditor : public Import::BackInserter
      friend class                            ScalableMeshStorage < PtType > ;
      protected:
      Memory::ConstPacketProxy<PtType>      m_pointPacket;
-     Memory::ConstPacketProxy < IDTMFile::FeatureHeader >
+     Memory::ConstPacketProxy < ISMStore::FeatureHeader >
          m_headerPacket;
 
      typedef IDTMFeatureArray<PtType> ArrayType;
      ArrayType                               m_Features;
 
 
-     typedef SMMeshIndex<PtType, YProtPtExtentType>
+     typedef SMMeshIndex<PtType, Extent3dType>
          MeshIndexType;
 
      MeshIndexType&                              m_rIndex;
@@ -216,7 +225,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -241,6 +250,95 @@ class GenericLinearStorageEditor : public Import::BackInserter
          }
      };
 
+ /*---------------------------------------------------------------------------------**//**
+ * @description
+*
+* @bsiclass                                                  Raymond.Gauthier   03/2011
+-+---------------+---------------+---------------+---------------+---------------+------*/
+ template<typename PtType>
+ class ScalableMeshMeshStorageEditor : public Import::BackInserter
+
+     {
+     friend class                            ScalableMeshStorage < PtType > ;
+     protected:
+     Memory::ConstPacketProxy<PtType>      m_pointPacket;
+     Memory::ConstPacketProxy <int32_t>
+         m_indexPacket;
+     Memory::ConstPacketProxy <uint8_t>
+         m_metadataPacket;
+     Memory::ConstPacketProxy <uint8_t>
+         m_texPacket;
+     Memory::ConstPacketProxy <DPoint2d>
+         m_uvPacket;
+
+
+     typedef SMMeshIndex<PtType, Extent3dType>
+         MeshIndexType;
+
+     MeshIndexType&                              m_rIndex;
+
+     explicit                                ScalableMeshMeshStorageEditor
+         (MeshIndexType&                  pi_rFeatureIndex)
+         : m_rIndex(pi_rFeatureIndex)
+         {}
+
+     virtual void                            _Assign(const Memory::PacketGroup&  pi_rSrc) override
+         {
+         m_pointPacket.AssignTo(pi_rSrc[0]);
+         m_indexPacket.AssignTo(pi_rSrc[1]);
+         m_metadataPacket.AssignTo(pi_rSrc[2]);
+         m_texPacket.AssignTo(pi_rSrc[3]);
+         m_uvPacket.AssignTo(pi_rSrc[4]);
+         }
+
+     virtual void                            _Write() override
+         {
+         if ((int)m_pointPacket.GetSize() == 0) return;
+#ifdef WIP_MESH_IMPORT
+         Utf8String str;
+         str.Sprintf("%s", m_metadataPacket.Get());
+         
+         DRange3d meshExtent = DRange3d::From(m_pointPacket.Get(), (int)m_pointPacket.GetSize());
+
+         size_t remainingTexBytes = 0;
+         bvector<uint8_t> tex;
+         for(size_t i =0; i < m_texPacket.GetSize();)
+             {
+             if (remainingTexBytes == 0)
+                 {
+                 memcpy(&remainingTexBytes,m_texPacket.Get()+i, sizeof(size_t));
+                 i+=sizeof(size_t);
+                 if(!tex.empty())
+                     {
+                     int width, height, nChannels;
+                     memcpy(&width, &tex[0],sizeof(int));
+                     memcpy(&height, &tex[0]+sizeof(int),sizeof(int));
+                     memcpy(&nChannels, &tex[0]+2*sizeof(int),sizeof(int));
+                     m_rIndex.AddTexture(width, height, nChannels, &tex[0]+3*sizeof(int), tex.size()-3*sizeof(int));
+                     }
+                 tex.clear();
+                 }
+             else{
+                 tex.push_back(m_texPacket.Get()[i]);
+                 remainingTexBytes--;
+                 i++;
+                 }
+             }
+         if(!tex.empty())
+             {
+             int width, height, nChannels;
+             memcpy(&width, &tex[0], sizeof(int));
+             memcpy(&height, &tex[0] + sizeof(int), sizeof(int));
+             memcpy(&nChannels, &tex[0] + 2 * sizeof(int), sizeof(int));
+             m_rIndex.AddTexture(width, height, nChannels, &tex[0] + 3 * sizeof(int), tex.size() - 3 * sizeof(int));
+             }
+             // Append to index
+         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), 0,0, m_uvPacket.Get());
+#endif
+         // TDORAY: Throw on failures?
+         }
+     };
+
 
  /*---------------------------------------------------------------------------------**//**
  * @description
@@ -261,7 +359,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -307,9 +405,11 @@ class ScalableMeshStorage : public IStorage
     typedef typename TINAsLinearTypeCreatorTrait<DPoint3d>::type
                                             TINTypeFactory;
     typedef typename MeshAsLinearTypeCreatorTrait<DPoint3d>::type
-                                            MeshTypeFactory;
+                                            MeshAsLinearTypeFactory;
+    typedef typename MeshTypeCreatorTrait<DPoint3d>::type
+        MeshTypeFactory;
 
-    typedef SMMeshIndex<PtType, YProtPtExtentType>
+    typedef SMMeshIndex<PtType, Extent3dType>
                                             MeshIndexType;    
 
     MeshIndexType*                         m_pPointIndex;
@@ -329,7 +429,8 @@ class ScalableMeshStorage : public IStorage
                             Import::DataTypeSet
                                 (
                                 PointTypeFactory().Create(), 
-                                LinearTypeFactory().Create()
+                                LinearTypeFactory().Create(),
+                                MeshTypeFactory().Create()
                                 ),
                             m_geoCoordSys,
                             0,
@@ -349,7 +450,8 @@ class ScalableMeshStorage : public IStorage
             return (0 != m_pPointIndex) ? new ScalableMeshPointStorageEditor<PtType>(*m_pPointIndex) : 0;
         if (LinearTypeFactory().Create() == type)
             return (0 != m_pPointIndex) ? new ScalableMeshLinearStorageEditor<PtType>(*m_pPointIndex) : 0;
-
+        if (MeshTypeFactory().Create() == type)
+            return (0 != m_pPointIndex) ? new ScalableMeshMeshStorageEditor<PtType>(*m_pPointIndex) : 0;
         return 0;
         }
 
@@ -479,7 +581,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
     friend class ClipShapeStorage;
 
     Import::ConstPacketProxy<DPoint3d>                m_pointPacket;
-    Import::ConstPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    Import::ConstPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
 
     typedef IDTMFeatureArray<DPoint3d>  ArrayType;
 
@@ -515,7 +617,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
   
     HFCPtr<HVEShape> CreateClipShape()
         {
-        m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
      
         const HFCPtr<HGF2DCoordSys> coordSysP = m_resultingClipShapePtr->GetCoordSys();

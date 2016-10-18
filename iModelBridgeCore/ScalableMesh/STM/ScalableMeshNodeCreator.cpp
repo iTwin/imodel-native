@@ -26,11 +26,6 @@ IScalableMeshNodeCreatorPtr IScalableMeshNodeCreator::GetFor(const WChar*  fileP
 StatusInt&      status)
     {
 
-    /*if (!fileExist(filePath))
-        {
-        status = BSISUCCESS;
-        return new IScalableMeshNodeCreator(new Impl(filePath)); // Return early. File does not exist.
-        }*/
 
     IScalableMeshNodeCreatorPtr pCreator = new IScalableMeshNodeCreator(new Impl(filePath));
 
@@ -84,24 +79,34 @@ IScalableMeshNodeCreator::Impl::~Impl()
 
 IScalableMeshNodeEditPtr IScalableMeshNodeCreator::AddNode(const IScalableMeshNodePtr& parentNode,
                                                        DRange3d& extent,
-                                                       StatusInt&                  status)
+                                                       StatusInt&                  status,
+                                                       bool computeNodeID,
+                                                       uint64_t nodeId)
     {
     status = BSISUCCESS;
-    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddChildNode(parentNode,extent, status);
+    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddChildNode(parentNode,extent, status, computeNodeID, nodeId);
     }
 
-IScalableMeshNodeEditPtr IScalableMeshNodeCreator::AddNode(StatusInt&                  status)
+IScalableMeshNodeEditPtr IScalableMeshNodeCreator::AddNode(StatusInt&                  status,
+                                                           bool computeNodeID,
+                                                           uint64_t nodeId)
     {
     status = BSISUCCESS;
-    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddNode(status);
+    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddNode(status, computeNodeID, nodeId);
     }
 
+
+int64_t  IScalableMeshNodeCreator::AddTexture(int width, int height, int nOfChannels, const byte* texData)
+    {
+    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddTexture(width,height,nOfChannels, texData);
+    }
 
 void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
-                                                      StatusInt&                  status)
+                                                      StatusInt&                  status,
+                                                      bool computeNeighbors)
     {
     status = BSISUCCESS;
-    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status);
+    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status, computeNeighbors);
     }
 
 int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
@@ -141,7 +146,8 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
     }
 
 void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
-                                                            StatusInt&                  status)
+                                                            StatusInt&                  status,
+                                                            bool computeNeighbors)
     {
     if (m_pDataIndex == 0 || parentNode == 0)
         {
@@ -158,14 +164,16 @@ void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshN
         return;
         }
     nodeP->SortSubNodes();
-    nodeP->SetupNeighborNodesAfterSplit();
+    if (computeNeighbors) nodeP->SetupNeighborNodesAfterSplit();
     status = BSISUCCESS;
     return;
     }
 
 IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const IScalableMeshNodePtr& parentNode,
                                                                       DRange3d&                   childExtent,
-                                                                      StatusInt&                  status)
+                                                                      StatusInt&                  status,
+                                                                      bool computeNodeID,
+                                                                      uint64_t nodeId)
     {
 
     if (m_pDataIndex == 0)
@@ -193,7 +201,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const ISca
             }
 
         PointIndexExtentType newExtent = ExtentOp<PointIndexExtentType>::Create(childExtent.low.x, childExtent.low.y, childExtent.low.z, childExtent.high.x, childExtent.high.y, childExtent.high.z);
-        auto childNodeP = nodeP->AddChild(newExtent);
+        auto childNodeP = nodeP->AddChild(newExtent, computeNodeID, nodeId);
         status = m_pDataIndex->FindNode(newExtent, childNodeP->GetLevel()) != nullptr ? BSISUCCESS : BSIERROR;
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(childNodeP));
         }
@@ -201,7 +209,9 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const ISca
     return IScalableMeshNodeEditPtr();
     }
 
-IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   status)
+IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   status,
+                                                                 bool computeNodeID,
+                                                                 uint64_t nodeId)
     {
     if (m_pDataIndex == 0)
         {
@@ -217,7 +227,44 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
         auto rootNodeP = m_pDataIndex->GetRootNode();
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
         }
-    auto rootNodeP = m_pDataIndex->CreateRootNode();
+    auto rootNodeP = computeNodeID ? m_pDataIndex->CreateRootNode() : m_pDataIndex->CreateRootNode(nodeId);
     return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
     }
+
+
+int64_t  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int nOfChannels, const byte* texData)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return -1;
+            }
+        }
+
+    ISMTextureDataStorePtr nodeDataStore;
+    SMIndexNodeHeader<PointIndexExtentType> nodeHeader;
+    bool result = m_pDataIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &nodeHeader);
+    assert(result == true);
+
+    size_t texID = m_pDataIndex->GetNextTextureId();
+
+    size_t size = width*height*nOfChannels + 3 * sizeof(int);
+    bvector<uint8_t> texture(size);
+    memcpy(texture.data(), &width, sizeof(int));
+    memcpy(texture.data()+sizeof(int), &height, sizeof(int));
+    memcpy(texture.data() + 2 * sizeof(int), &nOfChannels, sizeof(int));
+    memcpy(texture.data() + 3 * sizeof(int), texData, width*height*nOfChannels);
+    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+        new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, texture.data(), size, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()))
+#else
+        SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, texture.data(), size,SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()))
+#endif
+        );
+    SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+    m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    return (int64_t) texID;
+    }
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,14 +53,6 @@ typedef SharedPtrTypeTrait<const Source>::type
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourceFactory : private Unassignable
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_ERROR_NOT_SUPPORTED,
-        S_ERROR_NOT_FOUND,
-        S_QTY,
-        };
 
 private:
     struct                                  Impl;
@@ -80,10 +72,10 @@ public:
     IMPORT_DLLE SourcePtr                   Create                         (const SourceRef&        sourceRef) const;
 
     IMPORT_DLLE SourcePtr                   Create                         (const SourceRef&        sourceRef,
-                                                                            Status&                 status) const;
+                                                                            SMStatus&                 status) const;
 
     IMPORT_DLLE SourcePtr                   Create                         (const SourceRef&        sourceRef,
-                                                                            Status&                 status,
+                                                                            SMStatus&                 status,
                                                                             StatusInt&              statusEx) const;
 
     // TDORAY:  Add a FindCreatorFor interface once Creator interface specified just below becomes available. Will
@@ -129,12 +121,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Source : private Uncopyable, public ShareableObjectTypeTrait<Source>::type
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
 
 private:
     friend struct                           InternalSourceHandler;
@@ -157,7 +143,7 @@ public:
 
     IMPORT_DLLE const WChar*             GetTypeCStr                    () const;
 
-    IMPORT_DLLE Status                      Close                          ();
+    IMPORT_DLLE SMStatus                      Close                          ();
 
     IMPORT_DLLE SourceImportConfig*         GetSourceImportConfig()                {return m_sourceImportConf;}
 

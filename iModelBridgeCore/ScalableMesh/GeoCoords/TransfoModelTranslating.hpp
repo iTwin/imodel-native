@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,20 +56,20 @@ private:
                              0.0, 0.0, 1.0, m_translateFn.m_z);
         }
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
         targetPt = m_translateFn(sourcePt);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus       _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
         std::transform(sourcePtP, sourcePtP + sourcePtQty, targetPtP, m_translateFn);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override

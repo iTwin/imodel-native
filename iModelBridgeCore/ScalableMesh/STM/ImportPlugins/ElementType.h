@@ -6,7 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+#ifdef VANCOUVER_API
+#include <ImagePP/all/h/IDTMFeatureArray.h>
+#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFile.h>
+#endif
         
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

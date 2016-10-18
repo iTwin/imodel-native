@@ -20,7 +20,7 @@
 #include <Geom/GeomApi.h>
 
 #ifdef GEOCOORDS_DLLE
-    #error "Export name conflict with another definition of the same name"
+//    #error "Export name conflict with another definition of the same name"
 #endif
 
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_GEOCOODINATES_EXPORTS

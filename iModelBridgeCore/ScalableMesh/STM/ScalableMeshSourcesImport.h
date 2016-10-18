@@ -49,12 +49,7 @@ private:
     std::auto_ptr<Impl>                 m_implP;
 
 public:
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
+
 
 
     explicit                            SourcesImporter                    (const Import::LocalFileSourceRef&       sinkSourceRef,
@@ -79,7 +74,7 @@ public:
     bool                                IsEmpty                            () const;
 
 
-    Status                              Import                             () const;
+    SMStatus                              Import() const;
 
     };
 

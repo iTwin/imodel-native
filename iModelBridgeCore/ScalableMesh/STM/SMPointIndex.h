@@ -13,7 +13,7 @@
 
 #include <ImagePP/all/h/HGF3DExtent.h>
 //#include <ImagePP/all/h/IDTMTypes.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 
 //#include <ImagePP/all/h/HPMPooledVector.h>
 
@@ -21,11 +21,15 @@
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
 //#include "HGFSpatialIndex.h"
-#include "SMPointTileStore.h"
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
 #include <ScalableMesh\IScalableMeshQuery.h>
+
+#include "Stores\SMSQLiteStore.h"
+#include "SMNodeGroup.h"
+
+class DataSourceAccount;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -37,12 +41,11 @@ namespace BENTLEY_NAMESPACE_NAME
     namespace ScalableMesh
         {
         class ScalableMeshMesh;
-#ifdef SM_BESQL_FORMAT
+
         extern std::atomic<uint64_t> s_nextNodeID;
-#endif
+
         }
     }
-
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing; 
 extern bool s_useThreadsInFiltering;
@@ -50,7 +53,6 @@ extern bool s_useThreadsInFiltering;
 // Predeclaration of the Point Index Filter interface. This interface is defined lower in this same file.
 template<class POINT, class EXTENT> class ISMPointIndexFilter; 
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
-//template <class POINT, class EXTENT> class SMPointTileStore;
 template<class POINT, class EXTENT> class SMPointIndex;
 
 
@@ -108,16 +110,6 @@ struct IDisplayCacheNodeManager
 
 template <class POINT, class EXTENT> class ProducedNodeContainer;
 
-
-enum class DisplayMovementType
-    {
-    ZOOM_IN, 
-    ZOOM_OUT, 
-    PAN, 
-    ROTATE, 
-    UNKNOWN
-    };
-
 template <class POINT, class EXTENT> class SMMeshIndex;    
 template <class POINT, class EXTENT> class SMMeshIndexNode;    
 
@@ -153,7 +145,8 @@ public:
     typedef std::map<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
    
-    SMPointIndexNode(size_t pi_SplitTreshold,
+    SMPointIndexNode(uint64_t nodeInd, 
+                      size_t pi_SplitTreshold,
                       const EXTENT& pi_rExtent,                                            
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
@@ -163,7 +156,14 @@ public:
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMPointIndexNode<POINT, EXTENT>(uint64_t nodeId,
+                                    size_t pi_SplitTreshold,
+                                    const EXTENT& pi_rExtent,
+                                    const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
     
+
+
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode,
@@ -192,7 +192,8 @@ public:
         {
         return false;
         }
-        
+       
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -211,33 +212,15 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SetParentNode(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
 
-#ifdef SCALABLE_MESH_ATP
     /**----------------------------------------------------------------------------
     Returns the next available node ID
 
     @return next available node ID
     -----------------------------------------------------------------------------*/
     uint64_t GetNextID() const;
-#endif
 
-
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true)
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
-                        
-        if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex) && loadPts)
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, m_SMIndex->GetPointsStore().GetPtr(), SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemVectorItemPtr;
-        }        
-
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true);
+            
     /**----------------------------------------------------------------------------
     Returns the parent node
 
@@ -417,13 +400,13 @@ public:
     @return true if node and sub-nodes are empty
     -----------------------------------------------------------------------------*/
     bool IsEmpty() const;
-    
+        
     /**----------------------------------------------------------------------------
-     Get the point store
+     Get the data store
     -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > GetPointsStore()
+    ISMDataStoreTypePtr<EXTENT> GetDataStore()
         {
-        return m_SMIndex->GetPointsStore();
+        return m_SMIndex->GetDataStore();
         }
 
     /**----------------------------------------------------------------------------
@@ -564,7 +547,7 @@ public:
     virtual bool Destroy();
 
 
-    void LoadTreeNode(size_t& nLoaded, int level);
+    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly);
 
     uint32_t       GetNbObjects() const;
 
@@ -591,9 +574,8 @@ public:
 
     virtual void         SaveAllOpenGroups() const;
 
-    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -682,7 +664,7 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SplitNode(POINT splitPosition, bool propagateSplit = true);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
     
     void SortSubNodes();
 
@@ -780,8 +762,8 @@ public:
     //Neighbor node at the same level as this node
     vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >> m_apNeighborNodes[MAX_NUM_NEIGHBORNODE_POSITIONS];
 
-    bool                    m_isGenerating;
-    mutable SMPointNodeHeader<EXTENT> m_nodeHeader;         // The node header. Contains permanent control data.
+    bool                              m_isGenerating;
+    mutable SMIndexNodeHeader<EXTENT> m_nodeHeader;         // The node header. Contains permanent control data.
     mutable bool m_wasBalanced;
     bool m_needsBalancing;
     bool m_isGrid;
@@ -1010,8 +992,7 @@ protected:
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);        
 
     bool              QueryVisibleNode (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);   
-    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);   
-    bool              QueryNodesAround (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevelDistance, size_t maxNeighborDistance, DisplayMovementType displayMovementType, bmap<__int64, __int64>& searchedNodes, ProducedNodeContainer<POINT, EXTENT>& previewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP, IDisplayCacheNodeManager* displayCacheNodeManagerP);
+    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);       
 
 
     /**----------------------------------------------------------------------------
@@ -1076,7 +1057,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1119,19 +1100,19 @@ protected:
 
     private:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
+        static ISMStore::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
+            return static_cast<ISMStore::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
+        static ISMStore::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
+            return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
         //Should be accessed using GetParentNode.        
@@ -1188,7 +1169,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     };
 
 
-    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>//public HGFSpatialIndex <POINT, POINT, EXTENT, SMPointIndexNode<POINT, EXTENT>, SMPointIndexHeader<EXTENT> >
+    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>
     {
 
 public:
@@ -1211,7 +1192,7 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.
@@ -1226,10 +1207,14 @@ public:
     GetPool() const;
 #endif
     /**----------------------------------------------------------------------------
-     Returns the store
+     Returns the data store
     -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> >
-    GetPointsStore() const;
+    ISMDataStoreTypePtr<EXTENT> GetDataStore();
+
+    /**----------------------------------------------------------------------------
+     Returns the next node id available
+    -----------------------------------------------------------------------------*/
+    uint64_t GetNextNodeId();
 
     /**----------------------------------------------------------------------------
      Forces an immmediate store (to minimize the chances of corruption
@@ -1309,6 +1294,7 @@ public:
     /*
     This method is used as a factory to create the right type of node.
     */
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
@@ -1316,10 +1302,9 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SaveMasterHeaderToCloud(const WString& pi_pOutputDirectoryName) const;
-    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
+    StatusInt           SavePointsToCloud(DataSourceManager *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
+    StatusInt           SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
 
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
@@ -1331,10 +1316,11 @@ public:
 
 #ifdef SCALABLE_MESH_ATP
     unsigned __int64    m_nbInputPoints;
+#endif    
 
     void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
-#endif    
+
 
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
@@ -1428,6 +1414,8 @@ public:
 
    -----------------------------------------------------------------------------*/        
     HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();       
+
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
       
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent. This extent is the node extent
@@ -1468,7 +1456,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-    void LoadTree (size_t& nLoaded, int level);
+    void LoadTree (size_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;
@@ -1495,8 +1483,10 @@ protected:
         // Notice that even if we have strong aggregation we do not check invariants of root node
 #endif
         };
-   
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > m_store;
+       
+    ISMDataStoreTypePtr<EXTENT> m_dataStore;
+    std::atomic<uint64_t>       m_nextNodeID;
+
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
 
@@ -1508,7 +1498,7 @@ protected:
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>>                    m_pRootNode;
 
-    SMPointIndexHeader<EXTENT>             m_indexHeader;
+    SMIndexMasterHeader<EXTENT> m_indexHeader;
 
     bool                    m_indexHeaderDirty;
 

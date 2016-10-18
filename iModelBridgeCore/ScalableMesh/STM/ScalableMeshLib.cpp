@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
 #include "ScalableMeshFileMoniker.h"
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include "SMMemoryPool.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -29,6 +31,22 @@ ScalableMeshAdmin& ScalableMeshLib::Host::_SupplyScalableMeshAdmin()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WsgTokenAdmin& ScalableMeshLib::Host::_SupplyWsgTokenAdmin()
+    {
+    return *new WsgTokenAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
+    {
+    return *new SSLCertificateAdmin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RegisterPODImportPlugin();
@@ -36,11 +54,18 @@ void RegisterPODImportPlugin();
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
+    SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
+    m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
+    m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
+    m_smPaths = new bmap<WString, IScalableMeshPtr>();
     InitializeProgressiveQueries();
+    RegisterPODImportPlugin();
+    BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+    GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -60,8 +85,27 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     m_hostVar.clear();
                                 
    // TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
+    delete m_smPaths;
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
+    }
+
+
+
+IScalableMeshPtr ScalableMeshLib::Host::GetRegisteredScalableMesh(const WString& path)
+    {
+    if (m_smPaths->count(path) > 0) return (*m_smPaths)[path];
+    return nullptr;
+    }
+
+void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WString& path)
+    {
+    m_smPaths->erase(path);
+    }
+
+void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
+    {
+    m_smPaths->insert(make_bpair(path, ref));
     }
 
 /*======================================================================+
@@ -111,17 +155,23 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     // Register TIN to linear converters
     static const RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
 
+    static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
+
     
     // Register Moniker
 
-    //InitScalableMeshMonikerFactories();
+    
 
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
+#ifdef VANCOUVER_API
+    BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
+#else
     BeSQLiteLib::Initialize(tempDir);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

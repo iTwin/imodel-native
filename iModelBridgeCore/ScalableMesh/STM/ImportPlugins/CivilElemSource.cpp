@@ -60,7 +60,7 @@ class CivilElementSourceDecorator : public SourceBase
     {
     friend class                    CivilElementSourceCreator;
 
-    auto_ptr<SourceBase>            m_decoratedP;
+    std::auto_ptr<SourceBase>            m_decoratedP;
     ElementHandle                      m_elHandle;
 
     explicit                        CivilElementSourceDecorator            (SourceBase*                 decoratedP,
@@ -87,9 +87,9 @@ class CivilElementSourceDecorator : public SourceBase
 
 
         ContentConfig contentConfig;
-        contentConfig.push_back(storageGCSConfig);
+        contentConfig.SetGCSConfig(storageGCSConfig);
 
-        if (ContentDescriptor::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
+        if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
             throw CustomError(L"Error configuring descriptor!");
 
         return descriptor;
@@ -113,7 +113,7 @@ class CivilElementSourceDecorator : public SourceBase
 
         TransfoModel storageToUorTransfoModel(TransfoModel::CreateFrom(FromBSITransform(storageToUorTransform)));
 
-        if (GCS::S_SUCCESS != storageToRoot.AppendLocalTransform(LocalTransform::CreateFromToGlobal(storageToUorTransfoModel)))
+        if (SMStatus::S_SUCCESS != storageToRoot.AppendLocalTransform(LocalTransform::CreateFromToGlobal(storageToUorTransfoModel)))
             throw CustomError(L"Error appending storage to uor transform!");
 
         return storageToRoot;

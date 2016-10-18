@@ -25,17 +25,56 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         {
         return false;
         }
-
-    /*virtual DgnModelRefP _GetActiveModelRef() const
+#ifdef VANCOUVER_API
+    virtual DgnModelRefP _GetActiveModelRef() const
         {
         return 0;
-        }*/
+        }
 
-   /* virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
+    virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
         {
         return ERROR;
-        }    */      
+        }       
+#endif
 };
+
+struct WsgTokenAdmin
+    {
+    private:
+        std::function<Utf8String(void)> m_getToken;
+
+    public:
+    WsgTokenAdmin()
+        {
+        }
+    WsgTokenAdmin(std::function<Utf8String(void)> tokenGetter)
+        : m_getToken(tokenGetter)
+        {
+        }
+    Utf8String GetToken()
+        {
+        return m_getToken();
+        }
+    };
+
+struct SSLCertificateAdmin
+    {
+    private:
+        std::function<Utf8String(void)> m_getSSLCertificatePath;
+
+    public:
+        SSLCertificateAdmin()
+            {
+            }
+        SSLCertificateAdmin(std::function<Utf8String(void)> SSLCertificatePathGetter)
+            : m_getSSLCertificatePath(SSLCertificatePathGetter)
+            {
+            }
+        Utf8String GetSSLCertificatePath()
+            {
+            return m_getSSLCertificatePath();
+            }
+    };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 

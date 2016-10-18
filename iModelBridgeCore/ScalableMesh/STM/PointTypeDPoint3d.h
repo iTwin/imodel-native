@@ -1,14 +1,14 @@
 #pragma once
 /*#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
 #include <Geom/GeomApi.h>
-namespace IDTMFile
+namespace ISMStore
     {
 
     /*---------------------------------------------------------------------------------**//**
     * @description  Native MS 3D point class.
     * @bsiclass                                                  Raymond.Gauthier   4/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
-/*    template <> struct IDTMFile::PointTrait<DPoint3d> : public IDTMFile::Point3dTraitMixin < DPoint3d >
+/*    template <> struct ISMStore::PointTrait<DPoint3d> : public ISMStore::Point3dTraitMixin < DPoint3d >
         {
         static point_type                       Create(coordinate_type         x,
         coordinate_type         y,

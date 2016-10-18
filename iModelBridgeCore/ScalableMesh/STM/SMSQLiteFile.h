@@ -15,7 +15,6 @@ class SMSQLiteFile;
 
 typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
 
-
 struct SQLiteNodeHeader
     {
     static const int NO_NODEID = -1;
@@ -40,7 +39,7 @@ struct SQLiteNodeHeader
     size_t        m_nbUvIndexes;
     size_t        m_nbTextures;
     int  m_graphID;
-    std::vector<int>  m_textureID;
+    int  m_textureID;
     int  m_uvID;
     std::vector<int>  m_ptsIndiceID;
     std::vector<int>  m_uvsIndicesID;
@@ -90,16 +89,16 @@ public:
     SMSQLiteFile();
     ~SMSQLiteFile();
 
-    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true);
-    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true);
-    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename);
-    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename);
+    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 
     void CommitAll();
 
-    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status);
+    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
     bool HasWkt();
@@ -126,50 +125,101 @@ public:
 
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
+    void GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices);    
     void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
     bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);
     void GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t& uncompressedSize);
-    void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize);
-    void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize);
-    void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
-    void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
-    void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
+
+#ifdef WIP_MESH_IMPORT
+    void GetMeshParts(int64_t nodeID, bvector<uint8_t>& data, size_t& uncompressedSize);
+    void GetMetadata(int64_t nodeID, bvector<uint8_t>& metadata, size_t& uncompressedSize);
+#endif
+
 
     void StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize);
     void StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices, size_t uncompressedSize);
     void StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, size_t uncompressedSize);
     void StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvIndices, size_t uncompressedSize);
     void StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture, size_t uncompressedSize);
-    void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);
-    void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize);
-    void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
-    void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions);
-    void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
-    void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
-    void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
+
+#ifdef WIP_MESH_IMPORT
+    void StoreMeshParts(int64_t& nodeID, const bvector<uint8_t>& data, size_t uncompressedSize);
+    void StoreMetadata(int64_t& nodeID, const bvector<uint8_t>& metadata, size_t uncompressedSize);
+#endif
+
 
     size_t GetNumberOfPoints(int64_t nodeID);
     size_t GetNumberOfIndices(int64_t nodeID);
     size_t GetNumberOfUVs(int64_t nodeID);
     size_t GetNumberOfUVIndices(int64_t nodeID);
     size_t GetTextureByteCount(int64_t nodeID);
-    size_t GetNumberOfFeaturePoints(int64_t featureID);
-    size_t GetClipPolygonByteCount(int64_t clipID);
-    size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
+#ifdef WIP_MESH_IMPORT
+    size_t CountTextures();
+    size_t GetNumberOfMeshParts(int64_t nodeId);
+    size_t GetNumberOfMetadataChars(int64_t nodeId);
+#endif
 
-    void GetAllClipIDs(bvector<uint64_t>& allIds);
+    void GetAllClipIDs(bvector<uint64_t>& allIds); 
 
+    bool GetFileName(Utf8String& fileName) const; 
+
+    virtual void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize) { assert(false); }
+    virtual void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize) { assert(false); }
+
+    virtual void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize) { assert(false); }
+    virtual void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize) { assert(false); }
+
+    virtual size_t GetNumberOfFeaturePoints(int64_t featureID) { assert(false); return 0; }
+
+    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
+    virtual void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions) { assert(false); }
+    virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions) { assert(false); }
+    virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
+
+    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+    virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+
+    virtual size_t GetClipPolygonByteCount(int64_t clipID) { assert(false); return 0; }
+    virtual size_t GetSkirtPolygonByteCount(int64_t skirtID) { assert(false); return 0; }
+
+    virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
+    virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
+    virtual size_t GetCoveragePolygonByteCount(int64_t coverageID) { assert(false); return 0; }
+
+    virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes) { assert(false); }
+
+    virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize) { assert(false); }
+    virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize) { assert(false); }
+    
     bool m_autocommit = true;
-private:
+    static const SchemaVersion CURRENT_VERSION;
+protected:
     ScalableMeshDb* m_database;
+    std::mutex dbLock;
+
+    virtual SchemaVersion GetCurrentVersion()
+        {
+        return SMSQLiteFile::CURRENT_VERSION;
+        }
+
+    virtual DbResult CreateTables();
+
+    virtual size_t GetNumberOfReleasedSchemas();
+    virtual const SchemaVersion* GetListOfReleasedVersions();
+    virtual double* GetExpectedTimesForUpdateFunctions();
+    virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate();
+
+private:
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";
     const std::string m_sNodeHeaderTable = "SMNodeHeader";
     const std::string m_sGraphTable = "SMGraph";
     const std::string m_sSourceTable = "SMSources";
-    std::mutex dbLock;
+
+
+    bool UpdateDatabase();
 
 };

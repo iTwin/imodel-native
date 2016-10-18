@@ -11,6 +11,7 @@
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshAdmin.h"
+#include <ScalableMesh/IScalableMesh.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -28,9 +29,17 @@ public:
         protected:
 
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
+            WsgTokenAdmin*                m_wsgTokenAdmin;
+            SSLCertificateAdmin*          m_sslCertificateAdmin;
+
+            bmap<WString, IScalableMeshPtr>* m_smPaths;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
+
+            BENTLEY_SM_EXPORT virtual WsgTokenAdmin& _SupplyWsgTokenAdmin();
+
+            BENTLEY_SM_EXPORT virtual SSLCertificateAdmin& _SupplySSLCertificateAdmin();
 
         public:
             Host()
@@ -38,17 +47,23 @@ public:
                 m_scalableTerrainModelAdmin = 0;                              
                 }
 
-            ScalableMeshAdmin&  GetScalableMeshAdmin()             { return *m_scalableTerrainModelAdmin; }
-         
+            ScalableMeshAdmin&      GetScalableMeshAdmin()              { return *m_scalableTerrainModelAdmin; }
+            WsgTokenAdmin&          GetWsgTokenAdmin()                  { return *m_wsgTokenAdmin; }
+            SSLCertificateAdmin&    GetSSLCertificateAdmin()            { return *m_sslCertificateAdmin; }
+            
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized () {return 0 != m_scalableTerrainModelAdmin;}
 
-        void Initialize ();        
-
+        void Initialize ();
+        
         //! Terminate this Host. After this method is called, no further ScalableTerrainModel methods can ever be called on this thread again (including Initialize).
         //! This method should be called on thread termination.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
         BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
+
+        IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
+        void             RemoveRegisteredScalableMesh(const WString& path);
+        void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 
     //! Must be called once per Host before calling any method in ScalableTerrainModel. Applications can have more than one Host. 

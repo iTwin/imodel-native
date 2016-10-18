@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,36 +19,6 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 
 /* Status */
-namespace LocalFileError
-    {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_ERROR_COULD_NOT_OPEN,
-        S_QTY,
-        };
-    }
-
-namespace DGNLevelError
-    {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
-    }
-
-namespace DGNElementError
-    {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
-    }
 
 
 /* Exceptions */

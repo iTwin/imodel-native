@@ -14,6 +14,9 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
 
+#include "../Stores/SMStoreUtils.h"
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
 
@@ -91,7 +94,7 @@ TINType3d64fCreator::TINType3d64fCreator ()
 
 namespace {
 const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
-BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
 
 const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
 BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));

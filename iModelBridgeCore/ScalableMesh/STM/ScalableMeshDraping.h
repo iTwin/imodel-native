@@ -28,15 +28,22 @@ struct ScalableMeshDraping : IDTMDraping
         size_t m_levelForDrapeLinear;
 
         bvector<IScalableMeshNodePtr> m_nodeSelection;
-
+#ifdef VANCOUVER_API
+        DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+#else
         DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+#endif
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
 
-        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params);
+        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params, const IScalableMeshPtr& targetedMeshPtr);
 
     protected:
+#ifdef VANCOUVER_API
+        virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override;
+#else
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
+#endif
 
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
         //virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
@@ -52,7 +59,7 @@ struct ScalableMeshDraping : IDTMDraping
         void SetTransform(TransformR transform)
             {
             m_transform = transform;
-            m_UorsToStorage = m_transform.ValidatedInverse();
+            m_UorsToStorage.InverseOf(m_transform);
             }
 
         void SetAnalysisType(DTMAnalysisType type)
@@ -97,9 +104,14 @@ struct MeshTraversalQueue
         unsigned char m_intersectionWithNextNode = 255;
         DPoint3d    m_endOfLineInNode; //intersection between polyline and the first of the node's boundaries it hits
 
+
+
         void ComputeDirectionOfNextNode(MeshTraversalStep& start);
 
     public:
+
+        map<int64_t, std::future<DTMStatusInt>> m_nodesToLoad;
+
         MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {};
         void UseScalableMesh(IScalableMesh* ptr)
@@ -143,5 +155,6 @@ struct MeshTraversalQueue
             bool CollectAlongDirection(MeshTraversalStep& start, NodeCallback c);
 
     };
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

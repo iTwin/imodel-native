@@ -10,6 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/Warnings.h>
@@ -110,7 +111,7 @@ Source::~Source ()
     {
     try
         {
-        const Status errorCode = Close();
+        const SMStatus errorCode = Close();
         assert(S_SUCCESS == errorCode);
         }
     catch (...)
@@ -124,7 +125,7 @@ Source::~Source ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Source::Status Source::Close ()
+SMStatus Source::Close()
     {
     if (0 == m_baseP.get())
         return S_SUCCESS; // Source already closed
@@ -275,9 +276,9 @@ SourcePtr Configure    (const SourcePtr&                sourcePtr,
         return sourcePtr; // Nothing to configure. Return original.
 
     ContentDescriptor newContentDesc(sourcePtr->GetDescriptor());
-    ContentDescriptor::Status status = newContentDesc.Configure(config, policy, log);
+    SMStatus status = newContentDesc.Configure(config, policy, log);
 
-    if (ContentDescriptor::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         return 0;
 
     return InternalSourceHandler::CreateFromBase(new ConfiguredSourceDecorator(sourcePtr, newContentDesc));
@@ -302,10 +303,10 @@ struct SourceFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 
     template <typename SourceRefT>
     SourcePtr                                       CreateSourceFor                        (const SourceRefT&       sourceRef,
-                                                                                            Status&                 status) const;
+                                                                                            SMStatus&                 status) const;
     template <typename SourceRefT>
     SourcePtr                                       CreateSourceFor                        (const SourceRefT&       sourceRef,
-                                                                                            Status&                 status,
+                                                                                            SMStatus&                 status,
                                                                                             StatusInt&              statusEx) const;
 
     template <typename CreatorT, typename SourceRefT>
@@ -358,7 +359,7 @@ SourceFactory::~SourceFactory ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcePtr SourceFactory::Create   (const SourceRef&    sourceRef) const
     {
-    Status status(S_SUCCESS);
+    SMStatus status(S_SUCCESS);
     StatusInt statusEx(0);
     return Create(sourceRef, status, statusEx);
     }
@@ -368,7 +369,7 @@ SourcePtr SourceFactory::Create   (const SourceRef&    sourceRef) const
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcePtr SourceFactory::Create    (const SourceRef&    sourceRef,
-                                    Status&             status) const
+                                    SMStatus&             status) const
     {
     StatusInt statusEx(0);
     return Create(sourceRef, status, statusEx);
@@ -379,7 +380,7 @@ SourcePtr SourceFactory::Create    (const SourceRef&    sourceRef,
 * @bsimethod                                                Jean-Francois.Cote   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcePtr SourceFactory::Create    (const SourceRef&        sourceRef,
-                                    Status&                 status,
+                                    SMStatus&                 status,
                                     StatusInt&              statusEx) const
     {
     if (sourceRef.m_basePtr.get() != nullptr)
@@ -420,7 +421,7 @@ SourcePtr SourceFactory::Impl::CreateSourceFromCreator      (const CreatorT*    
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename SourceRefT>
 SourcePtr SourceFactory::Impl::CreateSourceFor     (const SourceRefT&       sourceRef,
-                                                    Status&                 status) const
+                                                    SMStatus&                 status) const
     {
     StatusInt statusEx(0);
     return CreateSourceFor(sourceRef, status, statusEx);
@@ -432,7 +433,7 @@ SourcePtr SourceFactory::Impl::CreateSourceFor     (const SourceRefT&       sour
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename SourceRefT>
 SourcePtr SourceFactory::Impl::CreateSourceFor     (const SourceRefT&       sourceRef,
-                                                    Status&                 status,
+                                                    SMStatus&                 status,
                                                     StatusInt&              statusEx) const
     {
     try

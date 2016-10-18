@@ -37,12 +37,19 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
         ~Impl();
         IScalableMeshNodeEditPtr AddChildNode(const IScalableMeshNodePtr& parentNode,
                                           DRange3d& childExtent,
-                                                       StatusInt&   status);
+                                                       StatusInt&   status,
+                                                       bool computeNodeID = true,
+                                                       uint64_t nodeId = 0);
 
-        IScalableMeshNodeEditPtr AddNode(StatusInt&   status);
+        IScalableMeshNodeEditPtr AddNode(StatusInt&   status,
+                                         bool computeNodeID = true,
+                                         uint64_t nodeId = 0);
 
         void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
-                                    StatusInt&                  status);
+                                    StatusInt&                  status,
+                                    bool computeNeighbors);
+
+        int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
 
         virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true) override;
 

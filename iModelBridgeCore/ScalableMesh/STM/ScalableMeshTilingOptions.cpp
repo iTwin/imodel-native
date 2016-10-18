@@ -6,7 +6,7 @@
 |       $Date: 2009/11/30 09:59:18 $
 |     $Author: Rob.Cormack $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,11 +21,6 @@
 | Include of the current class header                               |
 +------------------------------------------------------------------*/
 #include "ScalableMeshTilingOptions.h"
-
-
-/*------------------------------------------------------------------+
-| Include COGO definitions                                          |
-+------------------------------------------------------------------*/
 
 /*----------------------------------------------+
 | Constant definitions                          |

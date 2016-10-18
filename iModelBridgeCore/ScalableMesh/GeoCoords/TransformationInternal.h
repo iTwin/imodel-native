@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:47 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,13 +36,13 @@ struct TransfoModelBaseHandler
     static TransfoMatrix                ConvertToMatrix                (const TransfoModelBase&         tranform)
         { return tranform._ConvertToMatrix(); }
 
-    static TransfoModel::Status         Transform                      (const TransfoModelBase&         tranform,
+    static SMStatus         Transform(const TransfoModelBase&         tranform,
                                                                         const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt)
         { return tranform._Transform(sourcePt, targetPt); }
 
 
-    static TransfoModel::Status         Transform                      (const TransfoModelBase&         tranform,
+    static SMStatus         Transform(const TransfoModelBase&         tranform,
                                                                         const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP)
@@ -94,13 +94,13 @@ struct TransfoModelHandler
     static TransfoMatrix                ConvertToMatrix                (const TransfoModel&             tranform)
         { return tranform.m_implP->_ConvertToMatrix(); }
 
-    static TransfoModel::Status         Transform                      (const TransfoModel&             tranform,
+    static SMStatus         Transform(const TransfoModel&             tranform,
                                                                         const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt)
         { return tranform.m_implP->_Transform(sourcePt, targetPt); }
 
 
-    static TransfoModel::Status         Transform                      (const TransfoModel&             tranform,
+    static SMStatus        Transform(const TransfoModel&             tranform,
                                                                         const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP)

@@ -2,7 +2,7 @@
 *
 * !!!Describe Class Here!!!
 *
-* @bsiclass                                     		Thomas.Butzbach 11/2013
+* @bsiclass                                             Thomas.Butzbach 11/2013
 +===============+===============+===============+===============+===============+======*/
 #pragma  once
 

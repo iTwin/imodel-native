@@ -11,25 +11,24 @@ struct ScalableMeshData::Impl : public ShareableObjectTypeTrait<Impl>::type
     time_t                      m_time;
     SMis3D                      m_isRepresenting3dData;
     bool                        m_isGroundDetection;
+    bvector<uint32_t>           m_classesToImport;
     bool                        m_isGISData;
     WString                     m_elevationProperty;
     DTMFeatureType              m_linearFeatureType;
     DTMFeatureType              m_polygonFeatureType;
     bool                        m_isGridData;
-    // not persisted information
-    //NEEDS_WORK_SM Temp variable for YII
-    __int64                     m_maximumNbPoints;
+    // not persisted information    
     std::vector<DRange3d>       m_vectorRangeAdd;
 
-    explicit                    Impl(const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, UpToDateState state = UpToDateState::UP_TO_DATE, __int64 maximumNbPoints = numeric_limits<__int64>::max(), std::vector<DRange3d> vecRangeAdd = {})
+    explicit                    Impl            (const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, const bvector<uint32_t>& classesToImport = bvector<uint32_t>(), UpToDateState state=UpToDateState::UP_TO_DATE, std::vector<DRange3d> vecRangeAdd = {})
         : m_extent(extent),
           m_upToDateState(state),
           m_time(time), 
           m_vectorRangeAdd(vecRangeAdd),
           m_isRepresenting3dData(isRepresenting3dData),
           m_isGroundDetection(isGroundDetection),
+          m_classesToImport(classesToImport),
           m_isGISData(false),
-          m_maximumNbPoints(maximumNbPoints),
           m_elevationProperty(L""),
           m_linearFeatureType(DTMFeatureType::Breakline),
           m_polygonFeatureType(DTMFeatureType::Breakline),
@@ -62,7 +61,7 @@ ScalableMeshData::ScalableMeshData(Impl* implP)
 
 ScalableMeshData::ScalableMeshData(const ScalableMeshData& rhs)
     {        
-    m_implP = new Impl(rhs.m_implP->m_extent, rhs.m_implP->m_time, rhs.m_implP->m_isRepresenting3dData, rhs.m_implP->m_isGroundDetection, rhs.m_implP->m_upToDateState, rhs.m_implP->m_maximumNbPoints, rhs.m_implP->m_vectorRangeAdd);
+    m_implP = new Impl(rhs.m_implP->m_extent, rhs.m_implP->m_time, rhs.m_implP->m_isRepresenting3dData, rhs.m_implP->m_isGroundDetection, rhs.m_implP->m_classesToImport, rhs.m_implP->m_upToDateState, rhs.m_implP->m_vectorRangeAdd);
     m_implP->m_isGISData = rhs.m_implP->m_isGISData;
     m_implP->m_elevationProperty = rhs.m_implP->m_elevationProperty;
     m_implP->m_linearFeatureType = rhs.m_implP->m_linearFeatureType;
@@ -149,16 +148,6 @@ void ScalableMeshData::SetRepresenting3dData(bool isRepresenting3dData)
     m_implP->m_isRepresenting3dData = isRepresenting3dData ? SMis3D::is3D : SMis3D::is25D;
     }
 
-__int64 ScalableMeshData::GetMaximumNbPoints() const
-    {
-    return m_implP->m_maximumNbPoints;
-    }
-
-void ScalableMeshData::SetMaximumNbPoints(__int64 maximumNbPoints)
-    {
-    m_implP->m_maximumNbPoints = maximumNbPoints;
-    }
-
 std::vector<DRange3d> ScalableMeshData::GetVectorRangeAdd() 
     {
     return m_implP->m_vectorRangeAdd;
@@ -182,6 +171,16 @@ bool ScalableMeshData::IsGroundDetection() const
 void ScalableMeshData::SetIsGroundDetection(bool isGroundDetection)
     {
     m_implP->m_isGroundDetection = isGroundDetection;
+    }
+
+void ScalableMeshData::GetClassificationToImport(bvector<uint32_t>& classesToImport)
+    {
+    classesToImport.insert(classesToImport.end(), m_implP->m_classesToImport.begin(), m_implP->m_classesToImport.end());
+    }
+
+void ScalableMeshData::SetClassificationToImport(const bvector<uint32_t>& classesToImport)
+    {
+    m_implP->m_classesToImport = classesToImport;
     }
 
 bool ScalableMeshData::IsGISDataType() const

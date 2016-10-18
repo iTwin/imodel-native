@@ -40,6 +40,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\SDKSample.mke" />
+    <None Include="..\ScalableMeshSDKexe.mke" />
   </ItemGroup>
 </Project>

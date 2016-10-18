@@ -50,12 +50,7 @@ struct ContentConfigPolicy;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentDescriptor
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR, 
-        S_QTY,
-        };
+
 
 private:
     SharedPtrTypeTrait<ContentDescriptorImpl>::type 
@@ -81,10 +76,10 @@ public:
     IMPORT_DLLE                                 ContentDescriptor                  (const ContentDescriptor&            rhs);
     IMPORT_DLLE ContentDescriptor&              operator=                          (const ContentDescriptor&            rhs);
 
-    IMPORT_DLLE Status                          Configure                          (const ContentConfig&                config,
+    IMPORT_DLLE SMStatus                          Configure(const ContentConfig&                config,
                                                                                     Log&                                log = GetDefaultLog());
 
-    IMPORT_DLLE Status                          Configure                          (const ContentConfig&                config,
+    IMPORT_DLLE SMStatus                          Configure                          (const ContentConfig&                config,
                                                                                     const ContentConfigPolicy&          policy,
                                                                                     Log&                                log = GetDefaultLog());
 
@@ -284,7 +279,7 @@ public:
             // of the existing transform
             GCS newGCS(config.GetGCSConfig().GetGCS());
 
-            if (GCS::S_SUCCESS != newGCS.AppendLocalTransform(GetGCS().GetLocalTransform()))
+            if (SMStatus::S_SUCCESS != newGCS.AppendLocalTransform(GetGCS().GetLocalTransform()))
                 //throw CustomException(L"Error creating GCS!");
                 return;
 

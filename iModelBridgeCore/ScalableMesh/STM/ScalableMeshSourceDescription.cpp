@@ -295,23 +295,11 @@ SourceDescriptor::~SourceDescriptor ()
 namespace {
 const SourceFactory         SOURCE_FACTORY (GetSourceFactory());
 
-inline SourceDescriptor::Status MapStatus(const SourceFactory::Status factoryStatus)
+inline SourceDescriptor::Status MapStatus(const SMStatus factoryStatus)
     {
     assert(SourceDescriptor::S_QTY > factoryStatus);
 
-    switch(factoryStatus)
-        {
-        case SourceFactory::S_SUCCESS:
-            return SourceDescriptor::S_SUCCESS;
-        case SourceFactory::S_ERROR:
-            return SourceDescriptor::S_ERROR;
-        case SourceFactory::S_ERROR_NOT_SUPPORTED:
-            return SourceDescriptor::S_ERROR_NOT_SUPPORTED;
-        case SourceFactory::S_ERROR_NOT_FOUND:
-            return SourceDescriptor::S_ERROR_NOT_FOUND;
-        default:
-            return SourceDescriptor::S_ERROR;
-        }
+    return (SourceDescriptor::Status)factoryStatus;
     }
 }
 
@@ -357,7 +345,7 @@ SourceDescriptorCPtr SourceDescriptor::CreateOriginalFor (const IDTMSource&     
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx));
@@ -412,7 +400,7 @@ SourceDescriptorCPtr SourceDescriptor::CreateFor (const IDTMSource& source,
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(Configure(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx), 
@@ -470,7 +458,7 @@ SourcePtr SourceDescriptor::CreateOriginalSourceFor (const IDTMSource&      sour
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx));

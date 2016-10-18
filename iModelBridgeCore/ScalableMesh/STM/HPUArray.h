@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
-
+#ifndef VANCOUVER_API
 #include <ImagePP/all/h/HFCPtr.h>
 #include "HPUPacket.h"
 
@@ -130,5 +130,5 @@ void                            swap                               (Array<T>&   
                                                                     Array<T>&               pio_rRight);
 
 #include "HPUArray.hpp"
-
+#endif
 } // End namespace HPU

@@ -61,9 +61,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 void Load()
                     {
                     assert(m_ID != -1);
-                    wchar_t buffer[10000];
-                    swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
-                    std::wstring filename(buffer);
+                    wstringstream ss;
+                    ss << m_DataSource + L"t_" << m_ID << L".bin";
+                    auto filename = ss.str();
 
                     if (s_stream_from_disk)
                         {
@@ -162,7 +162,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     assert(fileOpenStatus == BeFileStatus::Success);
 
                     bvector<uint8_t> entire_file;
-                    BeFileStatus read_result = file.ReadEntireFile(entire_file);
+                    assert(false && "No ReadEntireFile on Vancouver");
+                    BeFileStatus read_result = BeFileStatus::UnknownError;//file.ReadEntireFile(entire_file);
                     assert(BeFileStatus::Success == read_result);
 
                     // Read texture header
@@ -238,9 +239,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
             {
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%st_%llu.bin", path.c_str(), blockID.m_integerID);
-            std::wstring filename(buffer);
+            wstringstream ss;
+            ss << path + L"t_" << blockID.m_integerID << L".bin";
+            auto filename = ss.str();
             auto fileOpenedOrCreated = BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write)
                 || BeFileStatus::Success == file.Create(filename.c_str());
             assert(fileOpenedOrCreated);

@@ -4,13 +4,13 @@
 #include "SMPointIndex.h"
 #include "Edits/DifferenceSet.h"
 //#include "Edits/ClipUtilities.h"
-//#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+
 #include "Threading/ScalableMeshScheduler.h"
 #include "Edits\ClipRegistry.h"
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-
+#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>
@@ -20,8 +20,18 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 #include "SMMemoryPool.h"
+#include "Stores\SMSQLiteStore.h"
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include "SharedTextureManager.h"
+
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace ScalableMesh
+        {
+        class ScalableMeshTexture;
+        }
+    }
 
 
 extern bool s_useThreadsInStitching;
@@ -62,79 +72,20 @@ enum ClipAction
     ACTION_MODIFY
     };
 
-struct SmCachedDisplayData 
-    {
-    private : 
-
-        SmCachedDisplayMesh*                m_cachedDisplayMesh;
-        SmCachedDisplayTexture*             m_cachedDisplayTexture;
-        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-        size_t                              m_memorySize;
-        bvector<uint64_t>                   m_appliedClips; 
-
-    public : 
-    
-        SmCachedDisplayData(SmCachedDisplayMesh*                 cachedDisplayMesh,
-                            SmCachedDisplayTexture*              cachedDisplayTexture,
-                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
-                            size_t                               memorySize, 
-                            const bvector<uint64_t>&             appliedClips)
-            {
-            m_cachedDisplayMesh = cachedDisplayMesh;
-            m_cachedDisplayTexture = cachedDisplayTexture; 
-            m_displayCacheManagerPtr = displayCacheManagerPtr;
-            m_memorySize = memorySize;
-            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
-            }
-
-        virtual ~SmCachedDisplayData()
-            {
-            if (m_cachedDisplayMesh != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
-                assert(status == SUCCESS);                    
-                }
-
-            if (m_cachedDisplayTexture != 0)
-                {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
-                assert(status == SUCCESS);                    
-                }
-            }
-
-        size_t GetMemorySize() const
-            {
-            return m_memorySize;
-            }                
-
-        SmCachedDisplayMesh* GetCachedDisplayMesh() const
-            {
-            return m_cachedDisplayMesh; 
-            }
-
-        SmCachedDisplayTexture* GetCachedDisplayTexture() const
-            {
-            return m_cachedDisplayTexture;
-            }
-
-        const bvector<uint64_t>& GetAppliedClips()
-            {
-            return m_appliedClips;
-            }
-    };
-
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#include "SmCachedDisplayData.h"
 
 //extern size_t nGraphPins;
 //extern size_t nGraphReleases;
 
-inline bool IsLinearFeature(IDTMFile::FeatureType type)
+inline bool IsLinearFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Breakline || dtmType == DTMFeatureType::SoftBreakline || dtmType == DTMFeatureType::ContourLine || dtmType == DTMFeatureType::GraphicBreak;
     }
 
-inline bool IsClosedFeature(IDTMFile::FeatureType type)
+inline bool IsClosedFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
@@ -149,7 +100,37 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     friend class ISMPointIndexMesher<POINT, EXTENT>;
     friend class SMMeshIndex < POINT, EXTENT > ;
     public:
-        SMMeshIndexNode(size_t pi_SplitTreshold,
+
+           
+    SMMeshIndexNode(size_t pi_SplitTreshold,
+                                     const EXTENT& pi_rExtent,
+                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+    
+    SMMeshIndexNode(size_t pi_SplitTreshold,
+                                     const EXTENT& pi_rExtent,
+                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
+                                     bool IsUnsplitSubLevel);
+
+    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+
+    SMMeshIndexNode(uint64_t nodeID,
+                    size_t pi_SplitTreshold,
+                    const EXTENT& pi_rExtent,
+                    SMMeshIndex<POINT, EXTENT>* meshIndex,
+                    ISMPointIndexFilter<POINT, EXTENT>* filter,
+                    bool balanced,
+                    bool textured,
+                    bool propagateDataDown,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
+                    CreatedNodeMap*                      createdNodeMap);
+
+    SMMeshIndexNode(size_t pi_SplitTreshold,
                         const EXTENT& pi_rExtent,                                                
                         SMMeshIndex<POINT, EXTENT>* meshIndex,
                         ISMPointIndexFilter<POINT, EXTENT>* filter,
@@ -159,23 +140,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                         ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                         ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                         CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                                     const EXTENT& pi_rExtent,
-                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                                     const EXTENT& pi_rExtent,
-                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
-                                     bool IsUnsplitSubLevel);
-
-    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);
-
-    SMMeshIndexNode(const SMPointIndexNode<POINT, EXTENT>& pi_rNode);
-
-    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode,
-                     const HFCPtr<SMMeshIndexNode>& pi_rpParentNode);
-
+    
     SMMeshIndexNode(HPMBlockID blockID,
                      HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                            
                       SMMeshIndex<POINT, EXTENT>* meshIndex,
@@ -186,48 +151,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                       ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                       CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,                                            
-                      SMMeshIndex<POINT, EXTENT>* meshIndex,
-                      ISMPointIndexFilter<POINT, EXTENT>* filter,
-                      bool balanced,
-                      bool textured,
-                      bool propagateDataDown,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                      CreatedNodeMap* createdNodeMap);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                      const EXTENT& pi_rExtent,                                            
-                      SMMeshIndex<POINT, EXTENT>* meshIndex,
-                      ISMPointIndexFilter<POINT, EXTENT>* filter,
-                      bool balanced,
-                      bool propagateDataDown,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                      CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,                                          
-                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                     bool balanced,
-                     bool propagateDataDown,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                     CreatedNodeMap* createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,
-                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                          
-                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                     bool balanced,
-                     bool propagateDataDown,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                     CreatedNodeMap*                      createdNodeMap);
-
-    virtual ~SMMeshIndexNode<POINT, EXTENT>();
     
+    virtual ~SMMeshIndexNode<POINT, EXTENT>();
+
+    void Init();
+    
+    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -244,90 +173,52 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual bool IsGraphLoaded() const;
 
-    void CreateGraph(bool shouldPinGraph = false) const;
-
-    virtual void LoadGraph(bool shouldPinGraph=false) const;
-
-
-    void ReleaseGraph()
-        {
- //       nGraphReleases++;
- //       m_graphVec.UnPin();
-        }
-
     void LockGraph()
         {
         m_graphMutex.lock();
         }
+
     void UnlockGraph()
         {
         m_graphMutex.unlock();
         }
 
-    void StoreGraph() const;
+    ISMMTGGraphDataStorePtr GetGraphStore() const;
+        
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true);       
 
-    void StoreAllGraphs();
-
-   /* virtual MTGGraph* GetGraphPtr()
-        {
-        if (m_graphVec.size() == 0 || m_graphVec.Discarded()) return NULL;
-        else return const_cast<MTGGraph*>(&*m_graphVec.begin());
-        }*/
-
-    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true)
-        {
-        std::lock_guard<std::mutex> lock(m_graphMutex); //don't want to add item twice
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> poolMemItemPtr;
-
-
-        if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex) && loadGraph)
-            {          
-            RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
-            m_graphPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_graphPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemItemPtr = storedMemoryPoolItem.get();
-            }
-
-        return poolMemItemPtr;
-        }
-
-
-    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const
-        {
-        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
-
-
-        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex))
-            {      
-            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
-            m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemItemPtr = storedMemoryPoolItem.get();
-            const_cast<atomic<size_t>&>(m_nbClips) = poolMemItemPtr->size();
-            }
-        return poolMemItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const;
+        
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM()
         {
         std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
         RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> poolMemItemPtr;
 
 
-        if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex))
+        if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex))
             {
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex));
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API   
+                new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<BcDTMPtr>::CreateItem(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#endif
+);
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
             poolMemItemPtr = storedMemoryPoolItem.get();
-            bvector<bool> clips;
+
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
-            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-            auto meshP = nodeP->GetMesh(flags, clips);
+            IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+                new ScalableMeshNode<POINT>(nodePtr)
+#else
+                ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+                );
+            auto meshP = nodeP->GetMesh(flags);
             if (meshP != nullptr)
                 {
                 auto ptrP = storedMemoryPoolItem->EditData();
@@ -376,17 +267,34 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void UpdateNodeFromBcDTM();
 
+    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode);
+
+#ifdef WIP_MESH_IMPORT
+    void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
+
+    void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
+
+    size_t             AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+    size_t             AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+
+    void GetMetadata();
+    void StoreMetadata();
+
+    void GetMeshParts();
+    void StoreMeshParts();
+#endif
+
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
-    void                TextureFromRaster(HIMMosaic* sourceRasterP);
-    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP);
+    void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
-    size_t                AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
+    size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
     //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
 
@@ -449,58 +357,27 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void PropagateFeaturesToChildren();
 
+#ifdef WIP_MESH_IMPORT
+    void PropagateMeshToChildren();
+#endif
+
     size_t CountAllFeatures();
 
     /**----------------------------------------------------------------------------
     Initiates the mesh stitching of the node.
     -----------------------------------------------------------------------------*/
     virtual void Stitch(int pi_levelToStitch, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitch);
-
-    HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> GetGraphStore() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore();
-        };
-
-        
+            
     void PushPtsIndices(const int32_t* indices, size_t size);
 
     void ReplacePtsIndices(const int32_t* indices, size_t size);
 
     void ClearPtsIndices();                
     
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetPtsIndiceStore().GetPtr(), SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemVectorItemPtr;
-        }
-
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetLinearFeaturesPtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex))
-            {
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore().GetPtr(), SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_featurePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_featurePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();
-            }
-
-        return poolMemVectorItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr();
+        
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetLinearFeaturesPtr();
+        
     void GetFeatureDefinitions(bvector < bvector<int32_t>>& featureDefs, const int32_t* serializedFeatureDefs, size_t size)
         {
         size_t i = 0;
@@ -549,136 +426,205 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {                        
         assert(smCachedDisplayData != 0);        
 
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex));
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(
+#ifndef VANCOUVER_API            
+            new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
+#else
+        SMMemoryPoolGenericBlobItem<SmCachedDisplayData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
+#endif
+            );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         m_displayDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
         assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
         return customGenericBlobItemPtr;
         }    
+
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> AddDisplayMesh(SmCachedDisplayMeshData* smCachedDisplayData, size_t sizeToReserve)
+        {
+        assert(smCachedDisplayData != 0);
+
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> customGenericBlobItemPtr(
+#ifndef VANCOUVER_API            
+            new SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>(0, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex)
+#else
+            SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>::CreateItem(0, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex)
+#endif
+            );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
+        m_displayMeshPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        customGenericBlobItemPtr->reserve(sizeToReserve);
+        customGenericBlobItemPtr->push_back(*smCachedDisplayData);
+        assert(m_displayMeshPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        return customGenericBlobItemPtr;
+        }
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SmCachedDisplayTextureData* smCachedDisplayData, uint64_t texID)
+        {
+        assert(smCachedDisplayData != 0);
+
+       /* SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            GetMemoryPool()->RemoveItem(displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);*/
+
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> customGenericBlobItemPtr(
+#ifndef VANCOUVER_API            
+            new SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<SmCachedDisplayMeshData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+#endif
+            );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
+        auto displayTexDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
+        assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        return customGenericBlobItemPtr;
+        }
     
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
         {        
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
                 
-        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
+        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
             
         return cachedDisplayDataItemPtr;
         }    
 
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> GetDisplayMeshes()
+        {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> cachedDisplayMeshItemPtr;
+
+        GetMemoryPool()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+
+        return cachedDisplayMeshItemPtr;
+        }
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> GetDisplayTexture(uint64_t texID)
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
+        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+        return cachedDisplayDataItemPtr;
+        }
+
+     RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> GetSingleDisplayTexture()
+        {
+        uint64_t texID = GetSingleTextureID();
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
+        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+        GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+        return cachedDisplayDataItemPtr;
+        }
+
+     uint64_t GetSingleTextureID()
+         {
+         return m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+         }
+
+     bool GetAllDisplayTextures(bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>>& textures)
+         {
+#ifdef WIP_MESH_IMPORT
+         GetMetadata();
+         GetMeshParts();
+         if (!m_meshMetadata.empty())
+             {
+             bvector<uint64_t> textureIDs;
+             for(auto& data: m_meshMetadata)
+                 {
+                 Json::Value val;
+                 Json::Reader reader;
+                 reader.parse(data, val);
+                 if (val["texId"].size() > 0)
+                     textureIDs.push_back( (*val["texId"].begin()).asUInt64());
+                 }
+             for (auto& id : textureIDs)
+                 {
+                 textures.push_back(GetDisplayTexture(id));
+                 }
+             }
+         else
+             {
+#endif
+             if (IsTextured())
+                textures.push_back(GetSingleDisplayTexture());
+             else return false;
+#ifdef WIP_MESH_IMPORT
+             }
+#endif
+         return true;
+         }
+
+    virtual void RemoveDisplayMesh()
+        {
+        GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        }
+
+
     virtual void RemoveDisplayData()
         {                                
-        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
         }    
         
     SMMemoryPoolPtr GetMemoryPool() const
         {
         return SMMemoryPool::GetInstance();
-        //NEEDS_WORK_SM : No one should have a pointer to the memory pool.
-        //return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetMemoryPool();
-        }
+        }               
 
-    HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetPtsIndiceStore() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore();
-        }
+    void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
-    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
-    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
-    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    void         SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
-                                 HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
-                                 HFCPtr<StreamingUVStoreType> pi_pUVStore,
-                                 HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                 HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
+    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                                          bool pi_OnlyLoadedNode) const override;
 #endif       
    
+
+
+
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(const Byte* texture, size_t size);              
 
-    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr()
-        {
-        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr();
 
-        if (!IsTextured())
-            return poolMemBlobItemPtr;
-                  
-        //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-        if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex))
-            {                              
-            RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemBlobItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemBlobItemPtr;
-        }
-
-    HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTextureStore() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetTexturesStore();
-        }
-                    
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr(uint64_t texID);
+                             
     void PushUV(const DPoint2d* points, size_t size);
-       
+            
     virtual RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> GetUVCoordsPtr()
         {
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> poolMemVectorItemPtr;
 
         if (!IsTextured())
             return poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, GetUVStore().GetPtr(), SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex));
+                            
+        if (!SMMemoryPool::GetInstance()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex))
+            {                              
+            ISMUVCoordsDataStorePtr nodeDataStore;
+            bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+            assert(result == true);        
+
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+                new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
+#else
+            SMStoredMemoryPoolVectorItem<DPoint2d>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
+#endif
+                );
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_uvCoordsPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+            m_uvCoordsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_uvCoordsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
             poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
+            }    
 
         return poolMemVectorItemPtr;
         }           
-
-    HFCPtr<SMPointTileStore<DPoint2d, EXTENT>> GetUVStore() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore();
-        }
-            
+                
     void PushUVsIndices(size_t texture_id, const int32_t* uvsIndices, size_t size);
      
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetUVsIndicesPtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-
-        if (!IsTextured())
-            return poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetUVsIndicesStore().GetPtr(), SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_triUvIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemVectorItemPtr;
-        }    
-        
-    HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetUVsIndicesStore() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVsIndicesStore();
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetUVsIndicesPtr();
+                  
     /**----------------------------------------------------------------------------
     Indicates if the node need meshing. The fact it is meshed is not
     sufficient not to need meshing, if any sub-node need meshing then
@@ -732,16 +678,15 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 #endif
 
-  //  mutable vector<HPMStoredPooledVector<int32_t>> m_featureDefinitions;
+
     atomic<size_t> m_nbClips;
-    //BcDTMPtr m_tileBcDTM;
+
     std::mutex m_dtmLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
 
-        //mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
         mutable SMMemoryPoolItemId m_triIndicesPoolItemId;        
@@ -752,11 +697,21 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
         mutable SMMemoryPoolItemId m_featurePoolItemId;
         mutable SMMemoryPoolItemId m_dtmPoolItemId;
+        mutable SMMemoryPoolItemId m_displayMeshPoolItemId;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
-       // mutable bool m_isGraphLoaded;                
+
+
+             
         HFCPtr<ClipRegistry> m_clipRegistry;
         mutable std::mutex m_headerMutex;
+
+#ifdef WIP_MESH_IMPORT
+        public: //NEEDS_WORK: make private
+        bvector<int> m_meshParts;
+        bvector<Utf8String> m_meshMetadata;
+        bool m_existingMesh;
+#endif 
     };
 
 
@@ -764,21 +719,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     {
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
-        SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,                         
-                     HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
-                     HFCPtr<SMPointTileStore<int32_t, EXTENT>> ptsIndiceStore,
-                    // HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
-                     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,                     
-                     HFCPtr<IScalableMeshDataStore<Byte, float, float> > textureStore,                     
-                     HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > uvStore,                     
-                     HFCPtr<SMPointTileStore<int32_t, EXTENT> > uvsIndicesStore,
-                     size_t SplitTreshold, 
-                     ISMPointIndexFilter<POINT, EXTENT>* filter, 
-                     bool balanced, 
-                     bool textured,
-                     bool propagatesDataDown, 
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
+        SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
+                    SMMemoryPoolPtr& smMemoryPool,
+                    size_t SplitTreshold, 
+                    ISMPointIndexFilter<POINT, EXTENT>* filter, 
+                    bool balanced, 
+                    bool textured,
+                    bool propagatesDataDown, 
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
+
         virtual             ~SMMeshIndex<POINT, EXTENT>();
 
 
@@ -790,68 +740,39 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         virtual void        Mesh();
-
-        typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
-        typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
-        typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-        virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
-                                                 const bool& pi_pCompress,
-                                                 HFCPtr<StreamingPointStoreType>& po_pPointStore,
-                                                 HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
-                                                 HFCPtr<StreamingUVStoreType>& po_pUVStore,
-                                                 HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
-                                                 HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const;
-
-        StatusInt           SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress);
+                        
+        StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 
-        void                SetFeatureStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& featureStore);
-       // void                SetFeaturePool(HFCPtr<HPMCountLimitedPool<int32_t>>& featurePool);
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);
 
-        void                SetPtsIndicesStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& ptsIndicesStore);
-        void                SetGraphStore(HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>>& graphStore);
-      //  void                SetGraphPool(HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>& graphPool);
-        void                SetTexturesStore(HFCPtr<IScalableMeshDataStore<Byte, float, float>>& texturesStore);
-       // void                SetTexturesPool(HFCPtr<HPMCountLimitedPool<Byte>>& texturesPool);
-        void                SetUVStore(HFCPtr<SMPointTileStore<DPoint2d, EXTENT>>& uvStore);        
-        void                SetUVsIndicesStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& uvsIndicesStore);        
-
-        SMMemoryPoolPtr GetMemoryPool() const { return m_smMemoryPool; }        
-
-        HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetPtsIndicesStore() const { return m_ptsIndicesStore; }
-        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> GetGraphStore() const { return m_graphStore; }
-//        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool() const { return m_graphPool; }
-        HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTexturesStore() const { return m_texturesStore; }
-        HFCPtr<SMPointTileStore<DPoint2d, EXTENT>> GetUVStore() const { return m_uvStore; }        
-        HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetUVsIndicesStore() const { return m_uvsIndicesStore; }
-        
-        HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetFeatureStore() { return m_featureStore; }
-        //HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool() { return m_featurePool; }
+        SMMemoryPoolPtr GetMemoryPool() const { return m_smMemoryPool; }                                
 
         ClipRegistry* GetClipRegistry()
             {
             return m_clipRegistry.GetPtr();
             }
+        
 
-        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& GetClipStore()
-            {
-            return m_clipStore;
-            }
-//        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetClipPool() const { return m_clipPool; }
-       // void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
+        //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
+        void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+#ifdef WIP_MESH_IMPORT
+        void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
 
-        //IDTMFile::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
-        void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+        void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+#endif
+
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
         void                RefreshMergedClips();
 
+        size_t GetNextTextureId();
 
-        void                TextureFromRaster(HIMMosaic* sourceRasterP);
+
+        void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 #ifdef ACTIVATE_TEXTURE_DUMP
         void                DumpAllNodeTextures()
             {
@@ -859,35 +780,29 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
 #endif
 
-        /**----------------------------------------------------------------------------
-        Initiates the filtering of the point index, This filtering process includes
-        recursively calling global pre-filtering, pre=filtering of nodes, filtering,
-        node post-filtering then global post-filtering.
-
-        -----------------------------------------------------------------------------*/
-       // virtual void        Filter(int pi_levelToFilter);
+        SharedTextureManager* TextureManager() { return &m_texMgr; }
 
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
+        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
+        int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
+
+        bool m_isInsertingClips;
     private:
         
-        SMMemoryPoolPtr m_smMemoryPool;
-        
-        HFCPtr<SMPointTileStore<int32_t, EXTENT> > m_ptsIndicesStore;
-       // HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;
-        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> m_graphStore;        
-        HFCPtr<IScalableMeshDataStore<Byte, float, float> > m_texturesStore;       
-        HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > m_uvStore;        
-        HFCPtr<SMPointTileStore<int32_t, EXTENT> > m_uvsIndicesStore;
+        SMMemoryPoolPtr             m_smMemoryPool;
+        ISMDataStoreTypePtr<EXTENT> m_smDataStore;
+                
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
-        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
-        HFCPtr<SMPointTileStore<int32_t, EXTENT>> m_featureStore;
-      //  HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
-        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
+        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
-       // HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;
+
+
+        size_t m_texId = 0;
+
+        SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
 
@@ -907,15 +822,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             m_nodeHeader.m_IsUnSplitSubLevel = true;
             m_nodeHeader.m_contentExtentDefined = true;
             }
-        virtual bool IsGraphLoaded() const override
-            {
-            return (dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr()))->IsGraphLoaded();
-            };
 
-        virtual void LoadGraph(bool shouldPinGraph = false) const override
-            {
-            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->LoadGraph();
-            };
         virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true) override
             {
             return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);
@@ -956,17 +863,15 @@ template<class POINT, class EXTENT> class ISMPointIndexMesher
         ISMPointIndexMesher() {};
         virtual ~ISMPointIndexMesher() {};
 
-        /*
-        virtual bool        Mesh (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-        HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-        size_t numSubNodes) const = 0;
-        */
+
 
         virtual bool        Init(const SMMeshIndex<POINT, EXTENT>& pointIndex) { return true; }
 
         virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const = 0;
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const = 0;
+
+        virtual void        AddClip(bvector<DPoint3d>& clip) {};
 
     };
 
@@ -1027,11 +932,16 @@ template<class POINT, class EXTENT> class ISMMeshIndexFilter : public ISMPointIn
 
     };
 
-inline bool IsVoidFeature(IDTMFile::FeatureType type)
+inline bool IsVoidFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
         dtmType == DTMFeatureType::DrapeVoid;
     }
 
-//#include "SMMeshIndex.hpp"
+
+void MergeTextures(bvector<uint8_t>& outTex, DPoint2d& uvBotLeft, DPoint2d&  uvTopRight, const ScalableMeshTexture* textureP, const uint8_t* texData, size_t texSize);
+
+void RemapAllUVs(bvector<DPoint2d>& inoutUvs, DPoint2d uvBotLeft, DPoint2d uvTopRight);
+
+void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bvector<uint8_t>& texDataUnified);

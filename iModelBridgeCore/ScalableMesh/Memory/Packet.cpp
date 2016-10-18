@@ -6,7 +6,7 @@
 |       $Date: 2011/08/19 13:50:31 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -888,6 +888,20 @@ RawCapacities::RawCapacities (size_t s0, size_t s1, size_t s2,size_t s3)
     m_implP->m_Sizes.push_back(s1);
     m_implP->m_Sizes.push_back(s2);
     m_implP->m_Sizes.push_back(s3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsimethod                                                  Raymond.Gauthier   01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+RawCapacities::RawCapacities (size_t s0, size_t s1, size_t s2,size_t s3, size_t s4)
+    :   m_implP(new Impl)
+    {
+    m_implP->m_Sizes.push_back(s0);
+    m_implP->m_Sizes.push_back(s1);
+    m_implP->m_Sizes.push_back(s2);
+    m_implP->m_Sizes.push_back(s3); 
+    m_implP->m_Sizes.push_back(s4);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -74,8 +74,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                           bool                                                                     loadTexture, 
                                           const bvector<bool>&                                                     clipVisibilities,
-                                          const DMatrix4d*                                                         prevLocalToView,
-                                          const DMatrix4d*                                                         newLocalToView) = 0; 
+                                          IScalableMeshPtr&                                                        smPtr) = 0;
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const = 0;
@@ -88,6 +87,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
 
         virtual bool          _IsQueryComplete(int queryId) = 0; 
+
+        virtual void _InitScalableMesh(IScalableMeshPtr& scalableMeshPtr) = 0;
         
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -101,8 +102,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                                    const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                                    bool                                                                     loadTexture, 
                                                    const bvector<bool>&                                                     clipVisibilities,
-                                                   const DMatrix4d*                                                         prevLocalToView,
-                                                   const DMatrix4d*                                                         newLocalToView); 
+                                                   IScalableMeshPtr&                                                        smPtr);
 
         BENTLEY_SM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                          int                                                   queryId);
@@ -117,10 +117,12 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEY_SM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
         BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+
+        BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
     };
 
 
-void InitializeProgressiveQueries();
+void BENTLEY_SM_EXPORT InitializeProgressiveQueries();
 void BENTLEY_SM_EXPORT ClearProgressiveQueriesInfo();
 
 void TerminateProgressiveQueries();

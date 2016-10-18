@@ -152,6 +152,11 @@ void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
                             dataType = DTM_SOURCE_DATA_CLIP;
                             }
                         else
+                            if (dataTypeStr.CompareTo(L"MESH") == 0)
+                                {
+                                dataType = DTM_SOURCE_DATA_MESH;
+                                }
+                        else
                             {
                             printf("Unsupporter/unknown data type");
                             }
@@ -196,63 +201,63 @@ IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
     }
 
 bool ParseExportToUnityOptions(WString& outputDir, int& maxLevel, bool& exportTexture, BeXmlNodeP pTestNode)
-	{
-	bool isSuccess = true;
+    {
+    bool isSuccess = true;
 
-	BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
-	while ((0 != pTestChildNode) && (isSuccess == true))
-		{
-		if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "Options"))
-			{
-			//Output Directory
-			WString outputDirAttr;
-			StatusInt status = pTestChildNode->GetAttributeStringValue(outputDirAttr, "outputDir");
-			if ( (status == BEXML_Success) && (!outputDirAttr.empty()) )
-				{
-				outputDir = outputDirAttr;
-				}
-			else
-				{
-				printf("ERROR : invalid outputDir attribute for Options node\r\n");
-				isSuccess = false;
-				}
+    while ((0 != pTestChildNode) && (isSuccess == true))
+        {
+        if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "Options"))
+            {
+            //Output Directory
+            WString outputDirAttr;
+            StatusInt status = pTestChildNode->GetAttributeStringValue(outputDirAttr, "outputDir");
+            if ( (status == BEXML_Success) && (!outputDirAttr.empty()) )
+                {
+                outputDir = outputDirAttr;
+                }
+            else
+                {
+                printf("ERROR : invalid outputDir attribute for Options node\r\n");
+                isSuccess = false;
+                }
 
-			//Max Level
-			int32_t maxLevelAttr;
-			status = pTestChildNode->GetAttributeInt32Value(maxLevelAttr, "maxLevel");
-			if ( (status == BEXML_Success) && (maxLevelAttr >= 0) && (maxLevelAttr < 10) )
-				{
-				maxLevel = maxLevelAttr;
-				}
-			else
-				{
-				printf("ERROR : invalid maxLevel attribute for Options node\r\n");
-				isSuccess = false;
-				}
+            //Max Level
+            int32_t maxLevelAttr;
+            status = pTestChildNode->GetAttributeInt32Value(maxLevelAttr, "maxLevel");
+            if ( (status == BEXML_Success) && (maxLevelAttr >= 0) && (maxLevelAttr < 10) )
+                {
+                maxLevel = maxLevelAttr;
+                }
+            else
+                {
+                printf("ERROR : invalid maxLevel attribute for Options node\r\n");
+                isSuccess = false;
+                }
 
-			//Export Texture
-			int32_t exportTextureAttr;
-			status = pTestChildNode->GetAttributeInt32Value(exportTextureAttr, "exportTexture");
-			if ((status == BEXML_Success) && (exportTextureAttr >= 0) )
-				{
-				if (exportTextureAttr == 0)
-					exportTexture = false;
-				else
-					exportTexture = true;
-				}
-			else
-				{
-				printf("ERROR : invalid exportTexture attribute for Options node\r\n");
-				isSuccess = false;
-				}
-			}
+            //Export Texture
+            int32_t exportTextureAttr;
+            status = pTestChildNode->GetAttributeInt32Value(exportTextureAttr, "exportTexture");
+            if ((status == BEXML_Success) && (exportTextureAttr >= 0) )
+                {
+                if (exportTextureAttr == 0)
+                    exportTexture = false;
+                else
+                    exportTexture = true;
+                }
+            else
+                {
+                printf("ERROR : invalid exportTexture attribute for Options node\r\n");
+                isSuccess = false;
+                }
+            }
 
-		pTestChildNode = pTestChildNode->GetNextSibling();
-		}
+        pTestChildNode = pTestChildNode->GetNextSibling();
+        }
 
-	return isSuccess;
-	}
+    return isSuccess;
+    }
 
 bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilterType* filterType, int* trimmingMethod, ScalableMeshSaveType* saveType, BeXmlNodeP pTestNode)
     {
@@ -466,10 +471,10 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
 BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix)
     {
     // Testfile.stm will become TestFileSuffix.stm.
-    // Could be used to create a file like "TestFile_Add.stm"
+    // Could be used to create a file like "TestFile_Add.3sm"
     // to specify that the file is the result of a partial update of type "Add".
 
-    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".stm");
+    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".3sm");
     BENTLEY_NAMESPACE_NAME::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
 
     bvector<Utf8CP> newPathStrings;

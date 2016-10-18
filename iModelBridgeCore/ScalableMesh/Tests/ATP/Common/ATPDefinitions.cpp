@@ -8,6 +8,7 @@
 #include <wtypes.h>
 #include <random>
 #include <queue>
+#include <thread>
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -25,6 +26,7 @@
 using namespace std;
 
 #include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
 #include <ScalableMesh/IScalableMeshATP.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshSources.h>
@@ -32,6 +34,7 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+
 #include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
@@ -60,8 +63,9 @@ using namespace std;
 
 #include <GeoCoord/BaseGeoCoord.h>
 
-#include <BeJpeg\BeJpeg.h>
-
+#include <CloudDataSource/DataSourceManager.h>
+#include <CloudDataSource/DataSourceAccount.h>
+#include <CloudDataSource/DataSourceBuffered.h>
 
 //#define ABORT(ERROR + 1)
 
@@ -80,209 +84,300 @@ enum
     };
 
 void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
-	{	
-	BeXmlStatus status;
-	WString stmFileName;
-	status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+    {
+    BeXmlStatus status;
+    WString stmFileName;
+    status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
-	if (status != BEXML_Success)
-		{
-		printf("ERROR : stmFileName attribute not found\r\n");
-		}
-	else
-		{
-		WString outputDir;
-		int maxLevel;
-		bool exportTexture;
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        }
+    else
+        {
+        WString outputDir;
+        int maxLevel = 10000;
+        bool exportTexture;
+        bool parseResult = ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode);
+        assert(parseResult == true);
 
-		assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
+        if (status == SUCCESS)
+            {
+            StatusInt status;
+            IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-		if (status == SUCCESS)
-			{
-			StatusInt status;
-			IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+            //Initialize the origin
+            DRange3d range;
+            stmFile->GetRange(range);
+            DPoint3d translateToOrigin;
+            translateToOrigin.x = (range.high.x + range.low.x) / 2;
+            translateToOrigin.y = (range.high.y + range.low.y) / 2;
+            translateToOrigin.z = (range.high.z + range.low.z) / 2;
+            translateToOrigin.Negate();
 
-			//Initialize the origin
-			DRange3d range;
-			stmFile->GetRange(range);
-			DPoint3d translateToOrigin;
-			translateToOrigin.x = (range.high.x + range.low.x) / 2;
-			translateToOrigin.y = (range.high.y + range.low.y) / 2;
-			translateToOrigin.z = (range.high.z + range.low.z) / 2;
-			translateToOrigin.Negate();
+            //the root node
+            IScalableMeshNodePtr root = stmFile->GetRootNode();
 
-			if (stmFile != 0)
-				{				
-				IScalableMeshMeshQueryPtr meshQueryInterface = stmFile->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+            queue<IScalableMeshNodePtr> nodes;
+            nodes.push(root);
 
-				//the root node
-				IScalableMeshNodePtr root;
+            //Folder name
+            WString folderName = outputDir + L"\\";
 
-				//find the root node
-				for (int level = 0; level <= maxLevel; level++)
-					{
-					bvector<IScalableMeshNodePtr> returnedNodes;
-					IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
-					params->SetLevel(level);
-					meshQueryInterface->Query(returnedNodes, 0, 0, params);
+            //NodeTree file
+            WString NodeTreeFileName = folderName + L"NodeTree.bin";
+            FILE* outTree;
+            outTree = _wfopen(NodeTreeFileName.c_str(), L"wb");
+            //nb of nodes
+            int64_t nbNodes = 0;
+            fwrite(&nbNodes, sizeof(int64_t), 1, outTree);
 
-					if (returnedNodes.size() == 1)
-						{
-						root = returnedNodes[0];
-						break;
-						}
-					}
+            while (!nodes.empty())
+                {
+                IScalableMeshNodePtr currentNode = nodes.front();
 
-				queue<IScalableMeshNodePtr> nodes;
-				nodes.push(root);
-				
-				//Folder name
-				WString folderName = outputDir + L"\\";
+                //Infos for 1 tile
+                clock_t nodeClock = clock();
+                int64_t pointCount = 0;
+                int64_t paramCount = 0;
+                int64_t pointIndexCount = 0;
+                int64_t nodeId = currentNode->GetNodeId();
 
-				size_t level = root->GetLevel();
-				while(level <= maxLevel)
-					{
-					IScalableMeshNodePtr currentNode = nodes.front();
-					
-					//Infos for 1 tile
-					clock_t nodeClock = clock();
-					int64_t pointCount = 0;
-					int64_t paramCount = 0;
-					int64_t pointIndexCount = 0;
-					int64_t nodeId = currentNode->GetNodeId();
+                //The node we're at
+                WChar numberChar[10];
+                swprintf(numberChar, L"%I64d", nodeId);
+                WString number(numberChar);
 
-					//The node we're at
-					WChar numberChar[10];
-					swprintf(numberChar, L"%I64d", nodeId);
-					WString number(numberChar);
+                //File name
+                WString materialName = number;
+                WString binFileName = folderName + materialName + L".bin";
+                
+                //Get mesh                
+                IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+                if (currentNode->IsTextured())
+                    flags->SetLoadTexture(true);
+                IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags);
+                
+                //Bin file
+                FILE* outBin;
+                outBin = _wfopen(binFileName.c_str(), L"wb");
 
-					//File name
-					WString materialName = number;
-					WString binFileName = folderName + materialName + L".bin";
+                const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
-					//Get mesh
-					bvector<bool> clips;
-					IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-					if (currentNode->IsTextured())
-						flags->SetLoadTexture(true);
-					IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags, clips);
-					
-					if (mesh != NULL)
-						{
-						//Bin file
-						FILE* outBin;
-						outBin = _wfopen(binFileName.c_str(), L"wb");
+                //Get infos
+                pointCount = polyface->GetPointCount();
+                paramCount = polyface->GetParamCount();
+                pointIndexCount = polyface->GetPointIndexCount();
 
-						const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
+                IScalableMeshTexturePtr texture = currentNode->GetTexture();
+                bool isTextured = currentNode->IsTextured();
 
-						//Get infos
-						pointCount = polyface->GetPointCount();
-						paramCount = polyface->GetParamCount();
-						pointIndexCount = polyface->GetPointIndexCount();
+                //write node id
+                fwrite(&nodeId, sizeof(int64_t), 1, outBin);
 
-						IScalableMeshTexturePtr texture = currentNode->GetTexture();
-						bool isTextured = currentNode->IsTextured();
+                //write if textured
+                fwrite(&isTextured, sizeof(bool), 1, outBin);
 
-						//write node id
-						fwrite(&nodeId, sizeof(int64_t), 1, outBin);
+                //write v
+                fwrite(&pointCount, sizeof(int64_t), 1, outBin);
+                DPoint3dCP p = polyface->GetPointCP();
+                float* points = new float[pointCount * 3];
+                int j = 0;
+                for (int64_t i = 0; i < pointCount; i++)
+                    {
+                    DPoint3d point = p[i];
 
-						//write if textured
-						fwrite(&isTextured, sizeof(bool), 1, outBin);
+                    point.Add(translateToOrigin);
 
-						//write v
-						fwrite(&pointCount, sizeof(int64_t), 1, outBin);
-						DPoint3dCP p = polyface->GetPointCP();
-						double* points = new double[pointCount * 3];
-						int j = 0;
-						for (int64_t i = 0; i < pointCount; i++)
-							{
-							DPoint3d point = p[i];
+                    points[j] = (float)point.x;
+                    points[j + 1] = (float)point.z;
+                    points[j + 2] = -(float)point.y;
+                    j += 3;
+                    }
+                fwrite(points, sizeof(float), pointCount * 3, outBin);
 
-							point.Add(translateToOrigin);
+                //write uv
+                if (isTextured)
+                    {
+                    fwrite(&paramCount, sizeof(int64_t), 1, outBin);
+                    DPoint2dCP param = polyface->GetParamCP();
+                    float* params = new float[paramCount * 2];
+                    j = 0;
+                    for (int64_t i = 0; i < paramCount; i++)
+                        {
+                        DPoint2d uv = param[i];
 
-							points[j] = point.x;
-							points[j + 1] = point.z;
-							points[j + 2] = -point.y;
-							j += 3;
-							}
-						fwrite(points, sizeof(double), pointCount * 3, outBin);
+                        params[j] = (float)uv.x;
+                        params[j + 1] = (float)uv.y;
+                        j += 2;
+                        }
+                    fwrite(params, sizeof(float), paramCount * 2, outBin);
+                    }
 
-						//write uv
-						if (isTextured)
-							{
-							fwrite(&paramCount, sizeof(int64_t), 1, outBin);
-							DPoint2dCP param = polyface->GetParamCP();
-							double* params = new double[paramCount * 2];
-							j = 0;
-							for (int64_t i = 0; i < paramCount; i++)
-								{
-								DPoint2d uv = param[i];
+                //write faces
+                fwrite(&pointIndexCount, sizeof(int64_t), 1, outBin);
+                //vertices indice
+                int32_t* facesV = new int32_t[pointIndexCount];
+                for (int64_t i = 0; i < pointIndexCount; i += 3)
+                    {
+                    //zero-based index
+                    facesV[i] = polyface->GetPointIndexCP()[i] - 1;
+                    facesV[i + 1] = polyface->GetPointIndexCP()[i + 1] - 1;
+                    facesV[i + 2] = polyface->GetPointIndexCP()[i + 2] - 1;
+                    }
+                fwrite(facesV, sizeof(int32_t), pointIndexCount, outBin);
+                //uv indice
+                if (isTextured)
+                    {
+                    int32_t* facesUV = new int32_t[pointIndexCount];
+                    for (int64_t i = 0; i < pointIndexCount; i += 3)
+                        {
+                        //zero-based index
+                        facesUV[i] = polyface->GetParamIndexCP()[i] - 1;
+                        facesUV[i + 1] = polyface->GetParamIndexCP()[i + 1] - 1;
+                        facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
+                        }
+                    fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
+                    }
 
-								params[j] = uv.x;
-								params[j + 1] = uv.y;
-								j += 2;
-								}
-							fwrite(params, sizeof(double), paramCount * 2, outBin);
-							}
+                //write texture
+                if (isTextured)
+                    {
+                    int32_t x = texture->GetDimension().x;
+                    int32_t y = texture->GetDimension().y;
+                    fwrite(&x, sizeof(int32_t), 1, outBin);
+                    fwrite(&y, sizeof(int32_t), 1, outBin);
 
-						//write faces
-						fwrite(&pointIndexCount, sizeof(int64_t), 1, outBin);
-						//vertices indice
-						int32_t* facesV = new int32_t[pointIndexCount];
-						for (int64_t i = 0; i < pointIndexCount; i += 3)
-							{
-							//zero-based index
-							facesV[i] = polyface->GetPointIndexCP()[i] - 1;
-							facesV[i + 1] = polyface->GetPointIndexCP()[i + 1] - 1;
-							facesV[i + 2] = polyface->GetPointIndexCP()[i + 2] - 1;
-							}
-						fwrite(facesV, sizeof(int32_t), pointIndexCount, outBin);
-						//uv indice
-						if (isTextured)
-							{
-							int32_t* facesUV = new int32_t[pointIndexCount];
-							for (int64_t i = 0; i < pointIndexCount; i += 3)
-								{
-								//zero-based index
-								facesUV[i] = polyface->GetParamIndexCP()[i] - 1;
-								facesUV[i + 1] = polyface->GetParamIndexCP()[i + 1] - 1;
-								facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
-								}
-							fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
-							}
+                    const uint8_t* data = texture->GetData();
+                    fwrite(data, sizeof(byte), texture->GetSize(), outBin);
+                    }
 
-						//write texture
-						if (isTextured)
-							{
-							const uint8_t* data = texture->GetData();
-							fwrite(data, sizeof(byte), texture->GetSize(), outBin);
-							}
+                //Close file for this tile
+                fclose(outBin);
 
-						nodeClock = clock() - nodeClock;
-						double delay = (double)nodeClock / CLOCKS_PER_SEC;
+                nodeClock = clock() - nodeClock;
+                double delay = (double)nodeClock / CLOCKS_PER_SEC;
 
-						fwprintf(pResultFile, L"%s,%I64d,%I64d,%zu,%.5f\n", materialName.c_str(), pointCount, paramCount, level, delay);
+                fwprintf(pResultFile, L"%s,%I64d,%I64d,%zu,%.5f\n", materialName.c_str(), pointCount, paramCount, currentNode->GetLevel(), delay);
 
-						//Close file for this tile
-						fclose(outBin);
-						}
+                //get children nodes
+                bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
+                bvector<IScalableMeshNodePtr> trueChildrenNodes;
+                for (auto child : childrenNodes)
+                    {
+                    flags = IScalableMeshMeshFlags::Create();
+                    if (child->IsTextured())
+                        flags->SetLoadTexture(true);
+                    mesh = child->GetMesh(flags);
 
-					//get children nodes
-					bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
-					for (auto child : childrenNodes)
-						nodes.push(child);
-					nodes.pop();
-					
-					level = currentNode->GetLevel();
-					}//end while
-				}
-			else
-				printf("Error loading stm file");
-			}
-		}
-	}
+                    if (mesh != NULL && child->GetLevel() <= maxLevel)
+                        {
+                        nodes.push(child);
+                        trueChildrenNodes.push_back(child);
+                        }
+                    }
+                if (trueChildrenNodes.size() > 0)
+                    {
+                    nbNodes++;
+                    
+                    //node id
+                    fwrite(&nodeId, sizeof(int64_t), 1, outTree);
+                    //nb of children
+                    int nbChildren = (int)trueChildrenNodes.size();
+                    fwrite(&nbChildren, sizeof(int), 1, outTree);
+                    for (auto child : trueChildrenNodes)
+                        {
+                        int64_t childId = child->GetNodeId();
+                        fwrite(&childId, sizeof(int64_t), 1, outTree);
+                        }
+                    }
+                
+                nodes.pop();
 
-void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+                }//end while
+
+                //write nb of nodes;
+                fseek(outTree, 0, SEEK_SET);
+                fwrite(&nbNodes, sizeof(int64_t), 1, outTree);
+
+                fclose(outTree);
+            }
+            else
+                printf("Error loading stm file");
+        }
+    }
+
+void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    BeXmlStatus status;
+    WString smFileName;
+    status = pTestNode->GetAttributeStringValue(smFileName, "smFileName");
+
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : smFileName attribute not found\r\n");
+        return;
+        }
+    
+    StatusInt openStatus;
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr scalableMeshPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), false, false, openStatus));
+    
+    if (scalableMeshPtr == 0)
+        {
+        printf("ERROR : cannot open 3SM file\r\n");
+        return;
+        }
+                                
+    clock_t t = clock();            
+    IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(scalableMeshPtr));        
+    
+    StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed();                    
+
+    if (statusGround != SUCCESS)
+        return;
+    
+    
+    t = clock() - t;
+    /*
+    double delay = (double)t / CLOCKS_PER_SEC;
+    double minutes = delay / 60.0;
+    double hours = minutes / 60.0;    
+    */
+    /*
+            fwprintf(pResultFile,
+                     L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                     stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
+                     (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
+                     acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
+                     nTimeToCreateSeeds,
+                     nTimeToEstimateParams,
+                     nTimeToFilterGround,
+                     GetGroundDetectionDuration(),                             
+                     GetGroundDetectionDuration() / minutes * 100,
+                     (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
+                     IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
+                     IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
+                     minutes, hours,
+                     GetGroundDetectionDuration(),
+                     IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
+                     IScalableMeshSourceCreator::GetLastBalancingDuration(),
+                     IScalableMeshSourceCreator::GetLastMeshingDuration(),
+                     IScalableMeshSourceCreator::GetLastFilteringDuration(),
+                     IScalableMeshSourceCreator::GetLastStitchingDuration(),
+                     result.c_str());
+                     
+            }
+        else
+            {
+            fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0.0, L"ERROR");
+            }
+            */
+        fflush(pResultFile);            
+    }
+
+    void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString stmFileName;
@@ -436,7 +531,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     if (saveType == SCM_SAVE_DGNDB_BLOB)
                         {
                         WString dgndbFileName(stmFileName);
-                        dgndbFileName.ReplaceAll(L".stm", L".bim");
+                        dgndbFileName.ReplaceAll(L".3sm", L".bim");
 
                         FILE* f = _wfopen(dgndbFileName.c_str(), L"r");
                         assert(f != 0);
@@ -452,19 +547,17 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     IScalableMeshATP::GetDouble(WString(L"nTimeToCreateSeeds"), nTimeToCreateSeeds);
                     IScalableMeshATP::GetDouble(WString(L"nTimeToEstimateParams"), nTimeToEstimateParams);
                     IScalableMeshATP::GetDouble(WString(L"nTimeToFilterGround"), nTimeToFilterGround);
-                    IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);
-                    // L"File Name,Mesher,Filter,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),Accelerator Used,GroundDetection: Time for seeds(s),GroundDetection: Time for Params Estimation (s), GroundDetection: Time for TIN growing (s),GroundDetection (s),GroundDetection(%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GroundDetection(minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
+                    IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);                                        
 
                     fwprintf(pResultFile,
-                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f(%.5f s),%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
                              stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
                              (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
                              acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
                              nTimeToCreateSeeds,
                              nTimeToEstimateParams,
                              nTimeToFilterGround,
-                             GetGroundDetectionDuration(),
-                             GetGroundDetectionDuration() * 60,
+                             GetGroundDetectionDuration(),                             
                              GetGroundDetectionDuration() / minutes * 100,
                              (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
                              IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
@@ -489,6 +582,24 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         }
     }
+
+
+void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString stmFileName;
+
+    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        return;
+        }
+
+
+    IScalableMeshPtr sm = IScalableMesh::GetFor(stmFileName.c_str(), true, true);
+    
+
+    }
+
 
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -1487,7 +1598,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, result;
+    WString scmFileName, outputDir, mode(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1499,8 +1610,27 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
+    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+        {
+        printf("mode attribute not found : default \"normal\" mode will be used\r\n");
+        }
 
     double t = clock();
+
+    short groupMode = -1;
+    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
+        {
+        groupMode = 0;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+        {
+        groupMode = 1;
+        }
+    else
+        {
+        printf("ERROR : unknown group mode (should be normal or virtual)");
+        return;
+        }
 
     // Check existence of scm file
     StatusInt status;
@@ -1508,7 +1638,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (scmFile != 0 && status == SUCCESS)
         {
-        status = scmFile->SaveGroupedNodeHeaders(outputDir);
+        status = scmFile->SaveGroupedNodeHeaders(outputDir, groupMode);
         if (SUCCESS != status) result = L"FAILURE -> could not group node headers";
         }
     else
@@ -1552,14 +1682,7 @@ void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
         ss.close();
         ds.close();
         };
-
-    // setup data for adding textures (cleanup, save original, etc)
-    //auto position = scmFileName.find_last_of(L".stm");
-    //auto filenameWithoutExtension = scmFileName.substr(0, position - 3);
-    //WString texturedFileName = filenameWithoutExtension + L"_textured.stm";
-
-    //copy_file(scmFileName, texturedFileName);
-
+       
     // Check existence of scm file
     StatusInt status;
     IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
@@ -2360,7 +2483,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             bvector<bool> clips;
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             flags->SetLoadGraph(false);
-            IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
+            IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags);
             const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
             builder->AddPolyface(*polyface);
             allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
@@ -3683,19 +3806,33 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("Using default maxLevel value, all nodes will be loaded\r\n");
         }
 
-    double t = clock();
+    bool headersOnly = 0;
+    if (pTestNode->GetAttributeBooleanValue(headersOnly, "headersOnly") != BEXML_Success)
+    {
+        printf("Using default maxLevel value, all nodes will be loaded\r\n");
+    }
+
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
     size_t nbLoadedNodes = 0;
 
-    status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    double t = clock();
+    if (headersOnly)
+    {
+        status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    }
+    else
+    {
+        status = stmFile->LoadAllNodeData(nbLoadedNodes, level);
+    }
     assert(status == SUCCESS);
 
     t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%.5f,%I64d\n",
+    fwprintf(pResultFile, L"%s,%.5f,%d,%I64d\n",
              stmFileName.c_str(),
              (double)t / CLOCKS_PER_SEC,
+             level,
              nbLoadedNodes);
 
     fflush(pResultFile);
@@ -4129,11 +4266,10 @@ bool ValidateFeatureDefinition(size_t& nErrors, IScalableMesh* scMeshP, DTMFeatu
     meshQueryInterface->Query(returnedNodes, box, 4, params);
 
     for (auto& node : returnedNodes)
-        {
-        bvector<bool> clips;
+        {        
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(false);
-        auto mesh = node->GetMesh(flags, clips);
+        auto mesh = node->GetMesh(flags);
         auto polyfaceP = mesh->GetPolyfaceQuery();
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyfaceP, true);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
@@ -4393,15 +4529,14 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     assert(returnedNodes.size() == returnedNodesStreaming.size());
     int j = 0;
     for (auto& node : returnedNodes)
-        {
-        bvector<bool> clips;
+        {        
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(false);
-        IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+        IScalableMeshMeshPtr mesh = node->GetMesh(flags);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
         bvector<bool> clipsStreaming;
-        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(flags, clips);
+        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(flags);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
 
         DPoint3d point;
@@ -4439,34 +4574,58 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, cloudOutDirPath, result;
+    WString smFileName, cloudContainer, cloudName, result;
+    bool uploadToAzure = false;
     // Parses the test(s) definition:
-    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
-        printf("ERROR : scmFileName attribute not found\r\n");
+        printf("ERROR : smFileName attribute not found\r\n");
         return;
         }
 
-    if (pTestNode->GetAttributeStringValue(cloudOutDirPath, "cloudOutDirPath") != BEXML_Success || cloudOutDirPath.compare(L"") == 0 || cloudOutDirPath.compare(L"default") == 0)
+    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+        {
+        printf("Saving cloud format to local directory ");
+        }
+    if (uploadToAzure)
+        {
+        if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
+            {
+            printf("ERROR : container attribute not found\r\n");
+            return;
+            }
+        if (pTestNode->GetAttributeStringValue(cloudName, "name") != BEXML_Success)
+            {
+            printf("ERROR : name attribute not found\r\n");
+            return;
+            }
+        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
+        }
+    else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
         // Use default path to output files
-        auto position = scmFileName.find_last_of(L".stm");
-        cloudOutDirPath = scmFileName.substr(0, position - 3) + L"_stream\\";
+        auto position = smFileName.find_last_of(L".3sm");
+        cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
+        printf("%ls\n", cloudContainer.c_str());
         }
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
+    if ((position = cloudContainer.find_last_of(L"/")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
 
     bool allTestPass = true;
     double t = 0;
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
 
-    if (scmFile != 0 && status == SUCCESS)
+    if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = scmFile->ConvertToCloud(cloudOutDirPath);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, SMCloudServerType::Azure);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
@@ -4477,10 +4636,231 @@ void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
-             scmFileName.c_str(),
-             cloudOutDirPath.c_str(),
+             smFileName.c_str(),
+             cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
              (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
+
+void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString azureId, azureKey, azureContainer, directory, result;
+
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(azureId, "id") != BEXML_Success)
+        {
+        printf("ERROR : id attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureKey, "key") != BEXML_Success)
+        {
+        printf("ERROR : key attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureContainer, "container") != BEXML_Success)
+        {
+        printf("ERROR : container attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(directory, "directory") != BEXML_Success)
+        {
+        printf("ERROR : directory attribute not found\r\n");
+        return;
+        }
+    printf("Saving to Azure... container: %ls  directory: %ls", azureContainer.c_str(), directory.c_str());
+
+    StatusInt status = SUCCESS;
+    bool allTestPass = true;
+    double t = 0, t_up = 0, t_down = 0;
+
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = azureContainer.find_last_of(L"\\")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+    if ((position = azureContainer.find_last_of(L"/")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+
+    DataSourceManager dataSourceManager;
+
+    DataSourceAccount::AccountIdentifier        accountIdentifier(azureId.c_str());
+    DataSourceAccount::AccountKey               accountKey(azureKey.c_str());
+    DataSourceService                       *   serviceAzure = nullptr;
+    DataSourceAccount                       *   accountAzure = nullptr;
+
+    // Get the Azure service
+    if (status == SUCCESS)
+        {
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Create an account on Azure
+    if (status == SUCCESS)
+        {
+        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (accountAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Set up default container
+    if (status == SUCCESS)
+        {
+        accountAzure->setPrefixPath(DataSourceURL((azureContainer + L"/" + directory).c_str()));
+        }
+
+    const size_t buffer_size = 152 * 1024;
+
+    // create buffer of data to upload
+    DataSource::Buffer* buffer = nullptr;
+
+    if (status == SUCCESS)
+        {
+        buffer = new DataSource::Buffer[buffer_size]; // should be split into 4 segments of 32 KB + 1 segment of 24 KB
+
+                                                      // fill buffer with data
+        int32_t counter = 0;
+        for (size_t offset = 0; offset < buffer_size; offset += sizeof(counter), counter++)
+            {
+            memcpy(buffer + offset, &counter, sizeof(counter));
+            }
+        }
+
+    auto uploadToAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // upload data to azure
+
+        if (status == SUCCESS)
+            {
+            t = clock();
+
+            DataSource *dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            DataSourceMode writeMode = segmented ? DataSourceMode_Write_Segmented : DataSourceMode_Write;
+            wchar_t name_buffer[10000];
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            
+            DataSourceURL    dataSourceURL(name_buffer);
+
+            if (status == SUCCESS && dataSource->open(dataSourceURL, writeMode).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->write(buffer, buffer_size).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_up = clock() - t;
+            }
+        };
+    const int numThreads = 1;
+    thread* threads = new thread[numThreads];
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    auto downloadFromAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // download data from azure
+        std::unique_ptr<DataSource::Buffer[]>   dest = nullptr;
+        DataSource::DataSize                    readSize = 0;
+        if (status == SUCCESS)
+            {
+            DataSourceBuffer::BufferSize        destSize = 20 * 1024 * 1024;
+
+            t = clock();
+
+            DataSource* dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            wchar_t name_buffer[10000];
+
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            DataSourceURL    dataSourceURL(name_buffer);
+            if (status == SUCCESS && dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                status = ERROR;
+                }
+
+            // reserve enough space to receive data
+            dest.reset(new unsigned char[destSize]);
+
+            // Use segmented download (provide exact buffer size)
+            if (status == SUCCESS && dataSource->read(dest.get(), destSize, readSize, segmented ? buffer_size : 0).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_down = clock() - t;
+
+            // compare result
+            if (status == SUCCESS)
+                {
+                status = (dest != nullptr && buffer_size == readSize && 0 == memcmp(buffer, dest.get(), readSize)) ? SUCCESS : ERROR;
+                }
+            }
+        };
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    delete[] threads;
+    result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> Azure tests not completed";
+
+    fwprintf(pResultFile, L"%s,%s,%s,%0.5f,%0.5f\n",
+             azureContainer.c_str(),
+             directory.c_str(),
+             allTestPass ? L"true" : L"false",
+             (double)t_up / CLOCKS_PER_SEC,
+             (double)t_down / CLOCKS_PER_SEC
              );
 
     fflush(pResultFile);
@@ -4608,7 +4988,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         DTMPtr tmPtr;
         GetMeshAsSingleTileDTM(stmFile.get(), tmPtr);
-        WString stmFileName2 = stmFileName + L"2.stm";
+        WString stmFileName2 = stmFileName + L"2.3sm";
         DRange3d range;
         stmFile->GetRange(range);
         range.ScaleAboutCenter(range, 0.80);
@@ -4625,7 +5005,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
         double timeToDrapeSM2 = (double)(clock() - start) / CLOCKS_PER_SEC;
         size_t nDiffLines = 0;
         WString name = stmFileName;
-        name.ReplaceAll(L".stm", L"");
+        name.ReplaceAll(L".3sm", L"");
         size_t pos = name.find_last_of(L"\\");
         if (pos != std::string::npos) name = name.substr(pos + 1);
         WString testcaseNameTM = name + L"_tm";

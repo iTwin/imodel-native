@@ -60,7 +60,7 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
         double            distance;
         DTMDrapedLineCode code;
 
-        DTMStatusInt status = drapedLinePtr->GetPointByIndex(&pt, &distance, &code, (int)sampleInd);
+        DTMStatusInt status = GET_POINT_AT_INDEX(drapedLinePtr,pt,&distance,&code, (int)sampleInd);
         assert(status == DTM_SUCCESS);
 
         switch (code)
@@ -74,7 +74,7 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
                     if (sampleInd - 1 >= 0)
                         {
                         DPoint3d lastValidDrapedPt;
-                        DTMStatusInt status = drapedLinePtr->GetPointByIndex(&lastValidDrapedPt, 0, 0, (int)sampleInd - 1);
+                        DTMStatusInt status = GET_POINT_AT_INDEX(drapedLinePtr,lastValidDrapedPt, 0, 0, (int)(sampleInd - 1));
                         assert(status == DTM_SUCCESS);
 
                         DPoint3d reprojectedPt;
@@ -137,7 +137,7 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
         double            distance;
         DTMDrapedLineCode code;
 
-        DTMStatusInt status = drapedSegments[0]->GetPointByIndex(&pt, &distance, &code, 0);
+        DTMStatusInt status = GET_POINT_AT_INDEX(drapedSegments[0], pt, &distance, &code, 0);
         assert(status == DTM_SUCCESS);
 
         wasInExternalHole = (code == DTMDrapedLineCode::External || code == DTMDrapedLineCode::InVoid) ? true : false;
@@ -177,7 +177,7 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
             double            distance;
             DTMDrapedLineCode code;
 
-            DTMStatusInt status = drapedLineP->GetPointByIndex(&pt, &distance, &code, (int)sampleInd);
+            DTMStatusInt status = GET_POINT_AT_INDEX(drapedLineP,pt, &distance, &code, (int)sampleInd);
             assert(status == DTM_SUCCESS);
 
             switch (code)

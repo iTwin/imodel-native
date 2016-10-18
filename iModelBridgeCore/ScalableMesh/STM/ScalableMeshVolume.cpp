@@ -145,7 +145,13 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
 
-    IScalableMeshMeshQueryPtr meshQueryInterface = (m_scmPtr)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+
+    bvector<bvector<DPoint3d>> coverages;
+    IScalableMeshPtr targetedMesh = m_scmPtr;
+    m_scmPtr->GetAllCoverages(coverages);
+    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+
+    IScalableMeshMeshQueryPtr meshQueryInterface = (targetedMesh)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
@@ -157,7 +163,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         transPtr->Transform(m_UorsToStorage);
         transformedMesh = transPtr.get();
         }
-    m_scmPtr->GetDTMInterface()->GetRange(fileRange);
+    targetedMesh->GetDTMInterface()->GetRange(fileRange);
     DRange3d meshRange = transformedMesh->PointRange();
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
@@ -166,15 +172,15 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
         };
     if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
-    params->SetLevel(m_scmPtr->GetTerrainDepth());
+    params->SetLevel(targetedMesh->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
         if (hasRestrictions) if (!node->HasClip(m_restrictedId)) continue;
-        bvector<bool> clips;
+
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(); 
         if (hasRestrictions) node->RefreshMergedClip();
-        IScalableMeshMeshPtr scalableMesh = hasRestrictions? node->GetMeshUnderClip(flags, m_restrictedId): node->GetMesh(flags,clips);
+        IScalableMeshMeshPtr scalableMesh = hasRestrictions? node->GetMeshUnderClip(flags, m_restrictedId): node->GetMesh(flags);
         if (scalableMesh.get() == nullptr) continue;
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
@@ -1414,9 +1420,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
-        bvector<bool> clips;
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags,clips);
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);

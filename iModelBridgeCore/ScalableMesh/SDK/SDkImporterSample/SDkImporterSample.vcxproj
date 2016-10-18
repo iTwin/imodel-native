@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5F842613-CEDF-4A6E-9C97-1B37F3EFBF54}</ProjectGuid>
+    <ProjectGuid>{622B1134-6A73-4AF7-B831-2B16C1A75E79}</ProjectGuid>
     <RootNamespace>
     </RootNamespace>
   </PropertyGroup>
@@ -87,13 +87,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax86 re ScalableMesh</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshSDKexe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshSDKexe </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax86 re ScalableMesh -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax86 re ScalableMesh</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax86 re ScalableMesh -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshSDKexe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshSDKexe -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshSDKexe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshSDKexe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshSDKexe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshSDKexe</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies>
@@ -103,7 +103,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshImporterSample -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshImporterSample</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshSDK-f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshSDK</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -222,7 +222,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="..\SDKSampleImporter.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\SDKSample.mke" />
+    <None Include="..\ScalableMeshSDKexe.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

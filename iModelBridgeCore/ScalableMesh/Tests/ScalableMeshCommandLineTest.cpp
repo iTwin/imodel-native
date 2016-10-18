@@ -23,6 +23,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <random>
 #include <queue>
 #include "..\STM\ScalableMesh\ScalableMeshGraph.h"
+#include "..\STM\Edits\ClipUtilities.h"
+#include <json/json.h>
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -409,6 +411,24 @@ void RunPrecisionTest(WString& stmFileName)
 
     }
 
+void RunIntersectRay()
+    {
+    DPoint3d testPt = DPoint3d::From(303665.63996983197,256052.27654610365,11299.552886447620);
+    DPoint3d endPt = DPoint3d::From(303665.65128480532,256052.54358510373,11298.589267153598);
+
+    TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromTinFile(L"E:\\makeTM\\ptPick.tin");
+    DPoint3d ptOut;
+    dtm->IntersectVector(ptOut, testPt, endPt);
+
+    DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(303780.30394857755, 259172.41251152655, 52.999999999999993),
+                                           DPoint3d::From(303810.29302139767, 259171.62779438784, 49.999999999999993),
+                                           DPoint3d::From(303809.50776461099, 259141.63913370154, 53.999999999999993));
+    DRay3d ray = DRay3d::FromOriginAndVector(testPt, DVec3d::FromStartEnd(testPt, endPt));
+    double param;
+    DPoint3d rayOut;
+    ray.Intersect(rayOut, param, plane);
+    }
+
 void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
     {
  /*   LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
@@ -445,30 +465,55 @@ void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
 
 void RunDTMTriangulateTest()
     {
-    WString pathMeshes = L"E:\\output\\scmesh\\2016-04-13\\mesh_tile_2875_13_-183.424623_-50.422123";
-    WString path = pathMeshes + WString(L".pts");
-    FILE* mesh = _wfopen(path.c_str(), L"rb");
-    size_t nVerts = 0;
-    fread(&nVerts, sizeof(size_t), 1, mesh);
-    bvector<DPoint3d> allVerts(nVerts);
-    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
-    fclose(mesh);
+    //while (true)
+      //  {
+        WString pathMeshes = L"E:\\makeTM\\mesh";
+       // bvector<DPoint3d> allPts;
+       // for (size_t i = 0; i < 4; ++i)
+       //     {
+            WString path = pathMeshes +  WString(L".pts");
+            FILE* mesh = _wfopen(path.c_str(), L"rb");
+            size_t nVerts = 0;
+            fread(&nVerts, sizeof(size_t), 1, mesh);
+            bvector<DPoint3d> allVerts(nVerts);
+            fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+            fclose(mesh);
+            
+          //  size_t offset = allPts.size();
+            //allPts.resize(allPts.size() + nVerts);
+//
+            for (auto&pt : allVerts) pt.z = 0;
+            bvector<double> distances;
+            for (size_t i = 1; i < allVerts.size(); ++i)
+                distances.push_back(allVerts[i].Distance(allVerts[i - 1]));
 
-    for (auto&pt : allVerts) pt.z = 0;
-    TerrainModel::DTMPtr dtmPtr;
-    BC_DTM_OBJ* bcDtmP = 0;
-    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
-    if (dtmCreateStatus == 0)
-        {
-        TerrainModel::BcDTMPtr bcDtmObjPtr;
-        bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
-        dtmPtr = bcDtmObjPtr.get();
-        }
-    bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)nVerts);
-    bcdtmObject_triangulateDtmObject(bcDtmP);
-    WString str(L"e:\\test");
-    str.append(L".dtm");
-    bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
+            std::sort(allVerts.begin(), allVerts.end(), [] (const DPoint3d& a, const DPoint3d&b) { return a.x < b.x; });
+
+      /*      std::random_shuffle(allVerts.begin(), allVerts.end());
+
+            size_t count = (allVerts.size() / 4) + 1;
+
+            memcpy(&allPts[offset], &allVerts[0], sizeof(DPoint3d)*std::min(count, allVerts.size()));
+            }*/
+        TerrainModel::DTMPtr dtmPtr;
+        BC_DTM_OBJ* bcDtmP = 0;
+        int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+        if (dtmCreateStatus == 0)
+            {
+            TerrainModel::BcDTMPtr bcDtmObjPtr;
+            bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+            dtmPtr = bcDtmObjPtr.get();
+            }
+        bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)allVerts.size());
+        int status = bcdtmObject_triangulateDtmObject(bcDtmP);
+        if (status != SUCCESS)
+            {
+            std::cout << "ERROR!" << std::endl;
+            WString str(L"e:\\test");
+            str.append(L".dtm");
+            bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
+            }
+       // }
     }
 
 void RunDTMSTMTriangulateTest()
@@ -692,8 +737,224 @@ void RunSelectPointsTest()
     SelectPointsToStitch(stitchedPts,&g, range2, allVerts1);
     }
 
+void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& ptsAtLevel, bvector<size_t>& nodesAtLevel)
+    {
+
+
+    ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+    flags->SetLoadGraph(false);
+    ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags);
+    size_t ptCount = 0;
+    if (mesh.get() == nullptr)
+        {
+        //std::cout << " NO MESH FOR NODE " << node->GetNodeId() << std::endl;
+        }
+    else
+        {
+       // std::cout << " NODE " << node->GetNodeId() << " HAS " << mesh->GetNbFaces() << " FACES " << std::endl;
+        ptCount = mesh->GetNbPoints();
+        }
+    nodesAtLevel[node->GetLevel()]++;
+    ptsAtLevel[node->GetLevel()] += ptCount;
+
+
+    if (ptCount > 65000)
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+
+    bvector<ScalableMesh::IScalableMeshNodePtr> childrenNodes = node->GetChildrenNodes();
+    if (mesh.get() == nullptr && childrenNodes.size() > 0 && childrenNodes.front()->GetPointCount() > 0)
+        {
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+        std::cout << " NODE " << childrenNodes.front()->GetNodeId() << " HAS " << childrenNodes.front()->GetPointCount() << " POINTS AT LEVEL " << childrenNodes.front()->GetLevel() << std::endl;
+        }
+    //std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+    for (auto child : childrenNodes)
+        {
+        ParseNodeInfo(child, ptsAtLevel, nodesAtLevel);
+        }
+    }
+
+void RunParseTree(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+    bvector<size_t> nPointsAtLevel((size_t)meshP->GetNbResolutions());
+    bvector<size_t> nNodesAtLevel((size_t)meshP->GetNbResolutions());
+    ScalableMesh::IScalableMeshNodePtr root = meshP->GetRootNode();
+
+
+    ParseNodeInfo(root, nPointsAtLevel, nNodesAtLevel);
+
+    for (size_t i = 0; i < (size_t)meshP->GetNbResolutions(); ++i)
+        {
+        std::cout << " AT LEVEL " << i << " WE HAVE " << nPointsAtLevel[i] << " POINTS AND " << nNodesAtLevel[i] << " NODES " << std::endl;
+        }
+
+
+    }
+
+void RunIntersectRayMetadata(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+
+    DPoint3d tmpPoint = DPoint3d::From(19068292.12, 7531835.83, 3000000);
+
+    DVec3d direction = DVec3d::From(0,0,-1);
+    DRay3d ray = DRay3d::FromOriginAndVector(tmpPoint, direction);
+    DPoint3d intersectPoint_l;
+
+    //ScalableMesh::IScalableMeshNodeQueryParamsPtr params = ScalableMesh::IScalableMeshNodeQueryParams::CreateParams();
+    //ScalableMesh::IScalableMeshNodeRayQueryPtr query = meshP->GetNodeQueryInterface();
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+   // params->SetDirection(direction);
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    Json::Value val;
+    double minParam = DBL_MAX;
+    int64_t elementId;
+    for (auto& node : nodes)
+        {
+        DSegment3d clipped;
+        DRange1d fraction;
+        if (!ray.ClipToRange(node->GetContentExtent(), clipped, fraction)) continue;
+        if (node->IntersectRay(intersectPoint_l, ray, val))
+            {
+            double param;
+            DPoint3d pPt;
+            if (ray.ProjectPointUnbounded(pPt, param, intersectPoint_l) && param < minParam)
+                {
+                minParam = param;
+                elementId = val["elementId"].asInt64();
+                }
+            }
+        }
+    //std::cout << elementId << std::endl;
+    }
+
+void RunGetMeshParts(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+  
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    for (auto& node : nodes)
+        {
+       /* bvector<bvector<uint8_t>> tex;
+        bvector<Utf8String> metadata;
+        bvector<ScalableMesh::IScalableMeshMeshPtr> meshes;
+        node->GetMeshParts(meshes, metadata, tex);*/
+        node->IsMeshLoaded();
+        }
+    //std::cout << elementId << std::endl;
+    }
+
+void RunClipPlaneTest()
+    {
+    DPoint3d testPt = DPoint3d::From(401357.37026739196, 3978759.3097642004, 971.63836336049553);
+
+    DPoint3d myPolygon[15] =
+        {
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0),
+        DPoint3d::From(401367.07224009151, 3978776.4430046352, /*970.72344083023313*/0),
+        DPoint3d::From(401382.04878398468, 3978775.4459871412, /*963.48191443208316*/0),
+        DPoint3d::From(401397.09393071051, 3978776.6951946248, /*961.80136028673155*/0),
+        DPoint3d::From(401412.08347109711, 3978776.1237141979, /*957.90659148364830*/0),
+        DPoint3d::From(401425.65381660056, 3978779.9811449745, /*959.84740683554378*/0),
+        DPoint3d::From(401439.13497333368, 3978780.9183166870, /*959.64631968194533*/0),
+        DPoint3d::From(401438.26734308718, 3978752.5099747493, /*943.79473151595050*/0),
+        DPoint3d::From(401424.82198353310, 3978752.7448904603, /*945.16845261366780*/0),
+        DPoint3d::From(401411.36129374051, 3978752.4778565667, /*946.81970827335090*/0),
+        DPoint3d::From(401396.45092918904, 3978755.6417479948, /*953.30809686616419*/0),
+        DPoint3d::From(401381.52978812746, 3978758.4527900596, /*960.59357494588266*/0),
+        DPoint3d::From(401366.60116284026, 3978761.0187802203, /*967.86202441546243*/0),
+        DPoint3d::From(401351.61073459924, 3978761.5611901158, /*973.10595006502376*/0),
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0)
+        };
+    bvector<DPoint3d> clip;
+    clip.insert(clip.end(), myPolygon, myPolygon + 15);
+    ClipVectorPtr cp;
+
+    CurveVectorPtr curvePtr = CurveVector::CreateLinear(clip, CurveVector::BOUNDARY_TYPE_Outer);
+    cp = ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8);
+
+    std::cout << "POINT INSIDE " << std::string(cp->PointInside(testPt, 1e-8) ? "TRUE" : "FALSE") << std::endl;
+    }
+
+void RunClipMeshTest()
+    {
+    WString path = WString(L"E:\\output\\scmesh\\2016-09-07\\clippoly.p");
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    bvector<DPoint3d> poly;
+    poly.resize(nVerts);
+    fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+    fclose(mesh);
+    for (auto& pt : poly) pt.z = 0;
+
+    FILE* mesh2 = _wfopen(L"E:\\output\\scmesh\\2016-09-07\\clipmesh.m", L"rb");
+
+    size_t nIndices = 0;
+
+    fread(&nVerts, sizeof(size_t), 1, mesh2);
+    std::vector<DPoint3d> allVerts(nVerts);
+    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh2);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    std::vector<int32_t> allIndices(nIndices);
+    fread(&allIndices[0], sizeof(int32_t), nIndices, mesh2);
+    fclose(mesh);
+
+    bvector<bvector<PolyfaceHeaderPtr>> outMeshes;
+    bvector<bvector<DPoint3d>> inPolys;
+    inPolys.push_back(poly);
+
+    PolyfaceQueryCarrier* meshP = new PolyfaceQueryCarrier(3, false, nIndices, nVerts, &allVerts[0], &allIndices[0]);
+    ScalableMesh::GetRegionsFromClipPolys3D(outMeshes, inPolys, meshP);
+
+    for (auto& vec: outMeshes)
+    for (auto& meshPtr : vec)
+        {
+        if (meshPtr.IsValid())
+            {
+            WString name = WString(L"E:\\makeTM\\outmeshclip_") + WString(std::to_wstring(&vec - &outMeshes[0]).c_str()) + WString(L".m");
+            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+            size_t ptCount = meshPtr->GetPointCount();
+            size_t faceCount = meshPtr->GetPointIndexCount();
+            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
+            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
+            fclose(meshAfterClip);
+            }
+        }
+    }
+
+void RunUpdateTest(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
+_set_error_mode(_OUT_TO_MSGBOX);
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
 
@@ -893,6 +1154,10 @@ Dgn::DgnPlatformLib::Initialize(host, false);
     //RunDTMTriangulateTest();
     //RunDTMSTMTriangulateTest();
   //  RunSelectPointsTest();
+    //RunIntersectRay();
+    //WString stmFileName(argv[1]);
+   // RunParseTree(stmFileName);
+   // RunIntersectRayMetadata(stmFileName);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
 

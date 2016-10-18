@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -95,12 +95,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Importer : private Uncopyable, public ShareableObjectTypeTrait<Importer>::type
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
 
 private:
     friend struct                           ImporterFactory;
@@ -116,15 +110,15 @@ public:
     IMPORT_DLLE                             ~Importer                  ();
 
 
-    IMPORT_DLLE Status                      Import                     (const ImportSequence&           sequence,
+    IMPORT_DLLE SMStatus                      Import(const ImportSequence&           sequence,
                                                                         const ImportConfig&             config);
 
-    IMPORT_DLLE Status                      Import                     (const ImportSequence&           sequence);
+    IMPORT_DLLE SMStatus                      Import(const ImportSequence&           sequence);
 
-    IMPORT_DLLE Status                      Import                     (const ImportCommand&            command,
+    IMPORT_DLLE SMStatus                      Import(const ImportCommand&            command,
                                                                         const ImportConfig&             config);
 
-    IMPORT_DLLE Status                      Import                     (const ImportCommand&            command);
+    IMPORT_DLLE SMStatus                      Import(const ImportCommand&            command);
     };
 
 

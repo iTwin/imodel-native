@@ -19,6 +19,7 @@
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh/Import/ImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
 #include <ScalableMesh/Import/CustomFilterFactory.h>
 
@@ -39,6 +40,7 @@ namespace Internal {
 +---------------+---------------+---------------+---------------+---------------+------*/
     class Config : public ImportConfig
     {
+    friend struct BENTLEY_NAMESPACE_NAME::ScalableMesh::SourceImportConfig::Impl;
     CustomFilteringSequence         m_sourceFilters;
     CustomFilteringSequence         m_targetFilters;
 

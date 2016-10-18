@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
-
+#ifndef VANCOUVER_API
 #include <ImagePP/h/HTraits.h>
 #include <ImagePP/h/HIterators.h>
 
@@ -404,5 +404,5 @@ public:
     };
 
 #include "HPUCompositeArray.hpp"
-
+#endif
 } // End namespace HPU

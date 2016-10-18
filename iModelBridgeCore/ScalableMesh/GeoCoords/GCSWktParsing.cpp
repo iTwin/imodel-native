@@ -13,7 +13,7 @@
 #include "../STM/ImagePPHeaders.h"
 #include "GCSWktParsing.h"
 #include "WktUtils.h"
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Transformation.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>

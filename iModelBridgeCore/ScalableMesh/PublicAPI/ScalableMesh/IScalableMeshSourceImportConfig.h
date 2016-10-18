@@ -25,6 +25,11 @@ struct ImportConfig;
 
 struct DataType;
 struct ScalableMeshData;
+
+namespace Internal
+    {
+    class Config;
+    }
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
@@ -43,6 +48,7 @@ struct EditListener;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourceImportConfig : private Import::Unassignable
     {
+    friend class Import::Internal::Config;
 private:
     struct                                      Impl;
     std::auto_ptr<Impl>                         m_implP;

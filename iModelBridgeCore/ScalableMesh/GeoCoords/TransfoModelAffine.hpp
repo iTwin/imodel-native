@@ -53,20 +53,20 @@ private:
         return m_transFn.m;
         }
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
         targetPt = m_transFn(sourcePt);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus        _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
         std::transform(sourcePtP, sourcePtP + sourcePtQty, targetPtP, m_transFn);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override
