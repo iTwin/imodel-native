@@ -68,7 +68,7 @@ template<class T> static RefCountedPtr<T> getAndCopy(DgnDbR db, DgnElementId id)
         return nullptr;
         }
 
-    return el->MakeCopy<T>();
+    return el->template MakeCopy<T>();
     }
 END_UNNAMED_NAMESPACE
 
