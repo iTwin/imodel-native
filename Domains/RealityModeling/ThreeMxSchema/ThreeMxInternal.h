@@ -13,6 +13,7 @@
 #include <DgnPlatform/Render.h>
 #include <folly/BeFolly.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include "MrMesh/MRMesh.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE

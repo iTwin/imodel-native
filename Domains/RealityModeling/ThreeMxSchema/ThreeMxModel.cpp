@@ -7,7 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
 #include <DgnPlatform/JsonUtils.h>
+#include <WebServices/Client/WSClient.h>
+#include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Connect/Authentication.h>
+#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectSetup.h>
+#include <WebServices/Connect/ConnectSpaces.h>
 
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Licensing/UsageTracking.h>
+
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 HANDLER_DEFINE_MEMBERS(ModelHandler)
 
