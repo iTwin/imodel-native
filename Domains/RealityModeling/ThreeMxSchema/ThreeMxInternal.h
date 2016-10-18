@@ -13,7 +13,9 @@
 #include <DgnPlatform/Render.h>
 #include <folly/BeFolly.h>
 #include <ThreeMx/ThreeMxApi.h>
+#ifdef WIP_MERGE
 #include "MrMesh/MRMesh.h"
+#endif
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
