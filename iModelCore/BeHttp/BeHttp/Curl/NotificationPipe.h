@@ -8,7 +8,7 @@
 
 #pragma once
 
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
 #include <WinSock2.h>
 #include <fcntl.h>
@@ -40,7 +40,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 struct NotificationPipe
     {
 private:
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     // Pipes do not work with select() on Windows. We use two sockets to fake pipe.
     SOCKET m_pipe[2];
 #else
@@ -52,7 +52,7 @@ private:
 #endif
 
 private:
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     BentleyStatus MakeSocketPair (SOCKET fds[2]);
 #endif
     BentleyStatus Send ();

@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GetLastNativeSocketErrorForLog ()
     {
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     return Utf8PrintfString ("WSAGetLastError %d", WSAGetLastError ()); // WIP: linker
 #else
     return Utf8PrintfString ("errno %d", errno);
@@ -38,7 +38,7 @@ void AssertLastError ()
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 NotificationPipe::NotificationPipe ()
-#if !defined (BENTLEY_WIN32)
+#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
 : m_writeStream (nullptr), m_readStream (nullptr)
 #endif
     {
@@ -59,7 +59,7 @@ NotificationPipe& NotificationPipe::GetDefault ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 BentleyStatus NotificationPipe::MakeSocketPair (SOCKET fds[2])
     {
     struct sockaddr_in inaddr;
@@ -99,7 +99,7 @@ BentleyStatus NotificationPipe::MakeSocketPair (SOCKET fds[2])
 BentleyStatus NotificationPipe::Open ()
     {
     // m_pipe[0] - read, m_pipe[1] - write
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     if (SUCCESS != MakeSocketPair (m_pipe))
         {
         AssertLastError ();
@@ -123,7 +123,7 @@ BentleyStatus NotificationPipe::Open ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus NotificationPipe::Close ()
     {
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     closesocket (m_pipe[0]);
     closesocket (m_pipe[1]);
 #else
@@ -142,7 +142,7 @@ BentleyStatus NotificationPipe::Send ()
         {
         return ERROR;
         }
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     int bytesSent = send (m_pipe[1], "n", 1, 0);
     if (bytesSent < 1)
         {
@@ -165,7 +165,7 @@ BentleyStatus NotificationPipe::Read ()
         {
         return ERROR;
         }
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     char buffer[1];
     int bytesReceived = recv (m_pipe[0], buffer, 1, 0);
     if (bytesReceived < 1)
