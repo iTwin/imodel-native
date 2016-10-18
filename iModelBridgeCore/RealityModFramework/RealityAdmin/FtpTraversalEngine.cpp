@@ -197,7 +197,8 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     // Url.
     pExtractedData->SetUrl(fileList[0].GetNameUtf8().c_str());
 
-    // Compound type.Fw
+    // Compound type.
+
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
     pExtractedData->SetCompoundType(compoundType.c_str());

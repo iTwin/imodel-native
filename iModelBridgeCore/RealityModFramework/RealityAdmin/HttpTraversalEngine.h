@@ -67,7 +67,7 @@ struct HttpDataHandler : public SpatialEntityDataHandler
     {
     public:
         //! Http data extraction.
-        REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath);
+        REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnails);
 
     };
 

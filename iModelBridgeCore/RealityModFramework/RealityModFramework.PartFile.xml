@@ -34,11 +34,11 @@
         </Bindings>
     </Part>
     
-    <Part Name="FtpTraverser" BentleyBuildMakeFile="RealityAdmin\FtpTraverser\FtpTraverser.mke">
+    <Part Name="WebTraverser" BentleyBuildMakeFile="RealityAdmin\WebTraverser\WebTraverser.mke">
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
-            <Assemblies>Delivery/FtpTraverser.exe</Assemblies>
+            <Assemblies>Delivery/WebTraverser.exe</Assemblies>
         </Bindings>
     </Part>
     
@@ -136,7 +136,7 @@
     
     <Part Name="RealityAdmin-Applications">
         <SubPart PartName="ConversionToolsTester"/>
-        <SubPart PartName="FtpTraverser"/>
+        <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
     </Part>
 

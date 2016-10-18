@@ -15,6 +15,9 @@
 #include "RealityDataHandler.h"
 #include "RealityPlatformUtil.h"
 
+#define THUMBNAIL_WIDTH     512
+#define THUMBNAIL_HEIGHT    512
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
@@ -38,7 +41,7 @@ HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP 
 
 SpatialEntityDataPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
-    return HttpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath);
+    return HttpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
     }
 
 //-------------------------------------------------------------------------------------
@@ -57,7 +60,7 @@ HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, 
     exeDir = exeDir.substr(0, pos + 1);
 
     BeFileName caBundlePath(exeDir);
-    caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+    caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
 
     // Make sure directory exist.
     if (caBundlePath.DoesPathExist())
@@ -189,7 +192,7 @@ HttpRequest::HttpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
+SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -223,7 +226,7 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
         if (fileList.empty())
             return NULL;
         }
-    else if (inputName.GetExtension() == L"tif")
+    else if (inputName.GetExtension() == L"tif" || inputName.GetExtension() == L"hgt") //&&AR Use file pattern instead
         {
         fileList.push_back(inputName);
         if (fileList.empty())
@@ -237,6 +240,7 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     SpatialEntityDataPtr pExtractedData = SpatialEntityData::Create();    
 
     // Data extraction.
+    // &&AR Not all traversed files are raster ... we must try out other types or introduce a generic creater.
     RealityDataPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
 
     // Name.
@@ -262,6 +266,10 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     // Type.
     Utf8String fileType(fileList[0].GetExtension().c_str());
     pExtractedData->SetDataType(fileType.c_str());
+
+    // Classification
+    // &&AR Since we currently only process rasters the file is bound to be imagery
+    pExtractedData->SetClassification("Imagery");
 
     // Location. 
     //&&JFC TODO: Construct path from compound.
@@ -296,7 +304,25 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     }
     pExtractedData->SetFootprint(shape);
     pExtractedData->SetFootprintExtents(extents);
-    
+
+    // Thumbnail.
+    if (extractThumbnail)
+        {
+        SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
+        pThumbnail->SetProvenance("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetFormat("png");
+        pThumbnail->SetGenerationDetails("Created by SpatialEntityDataHandler tool");
+        bvector<Byte> data;
+        uint32_t width = THUMBNAIL_WIDTH;
+        uint32_t height = THUMBNAIL_HEIGHT;
+        pData->GetThumbnail(data, width, height);
+        pThumbnail->SetData(data);
+        pThumbnail->SetWidth(width);
+        pThumbnail->SetHeight(height);
+        if (pThumbnail != NULL)
+            pExtractedData->SetThumbnail(*pThumbnail);
+        }
+
     // Server.
     SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
     if (pServer != NULL)

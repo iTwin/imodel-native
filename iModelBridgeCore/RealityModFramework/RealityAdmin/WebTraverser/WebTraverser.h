@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/FtpTraverser/FtpTraverser.h $
+|     $Source: RealityAdmin/WebTraverser/WebTraverser.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,7 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include "../FtpTraversalEngine.h"
+#include <RealityPlatform/SpatialEntityData.h>
 
 #include <curl/curl.h>
 #include <string>
@@ -22,13 +22,13 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 // Observer handling downloaded data
 //=======================================================================================
 
-struct FtpTraversalObserver: public ISpatialEntityTraversalObserver
+struct WebTraversalObserver: public ISpatialEntityTraversalObserver
     {
     bool m_dualMode = false;
     bool m_updateMode = false;
 public:
 
-    FtpTraversalObserver(bool dualMode, bool updateMode, const char* dbName, const char* pwszConnStr);
+    WebTraversalObserver(bool dualMode, bool updateMode, const char* dbName, const char* pwszConnStr);
 
     virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
     virtual void OnFileDownloaded(Utf8CP file);

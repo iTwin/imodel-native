@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/FtpTraverser/FtpTraverser.cpp $
+|     $Source: RealityAdmin/WebTraverser/WebTraverser.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,10 @@
 
 #include <iostream>
 #include <vector>
-#include "FtpTraverser.h"
+#include "WebTraverser.h"
+#include "../FtpTraversalEngine.h"
+#include "../HttpTraversalEngine.h"
+
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -98,7 +101,7 @@ void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
     {
     RETCODE rc = x;
     if (rc != SQL_SUCCESS)
-        { \
+        {
         HandleDiagnosticRecord(h, ht, rc);
         }
     if (rc == SQL_ERROR)
@@ -163,7 +166,7 @@ void ServerConnection::ReleaseStmt()
 //-------------------------------------------------------------------------------------
 void ShowUsage()
     {
-    std::cout << "Usage: ftptraverser.exe FtpUrl [DualFtpUrl] [options]" << std::endl <<std::endl;
+    std::cout << "Usage: webtraverser.exe StartUrl [DualStartUrl] [options]" << std::endl <<std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -h, --help                      Show this help message and exit" << std::endl;
     std::cout << "  -u, --update                    Enables update mode" << std::endl;
@@ -226,38 +229,40 @@ Utf8CP EnumString(SpatialEntityStatus status)
 //-------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
     {
-    SetConsoleTitle((LPCTSTR)"FTP Traversal Engine");
+    SetConsoleTitle((LPCTSTR)"Web Traversal Engine");
 
     auto argIt = argv;
-    int ftpUrlCount = 0;
+    int UrlCount = 0;
     char* ftp = "ftp://";
+    char* http = "http://";
+    char* https = "https://";
     for (int i = 0; i < argc - 1; ++i)
         {
         char* input = *++argIt;
-        if (strstr(input, ftp) != nullptr)
-            ftpUrlCount++;
+        if (strstr(input, ftp) != nullptr || strstr(input, http) != nullptr || strstr(input, https) != nullptr )
+            UrlCount++;
         }
 
-    if (1 > ftpUrlCount || 2 < ftpUrlCount)
+    if (1 > UrlCount || 2 < UrlCount)
         {
         ShowUsage();
 
         return 0;
         }
 
-    bool dualMode = (2 == ftpUrlCount);
+    bool dualMode = (2 == UrlCount);
     bool updateMode = false;
     std::string provider;
     std::string dataset;
     std::string filePattern = "*";
     std::string classification;
     bool extractThumbnails = false;
-    std::vector<std::string> ftpUrls = std::vector<std::string>(ftpUrlCount);
+    std::vector<std::string> Urls = std::vector<std::string>(UrlCount);
     char* substringPosition;
     std::string dbName;
     std::string pwszConnStr;
     bool hasCString = false;
-    ftpUrls.clear();
+    Urls.clear();
     for (int i = 0; i < argc; ++i)
         {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -296,7 +301,11 @@ int main(int argc, char *argv[])
             classification = std::string(substringPosition);
             }
         else if (strstr(argv[i], "ftp://"))
-            ftpUrls.push_back(std::string(argv[i]));
+            Urls.push_back(std::string(argv[i]));        
+        else if (strstr(argv[i], "http://"))
+            Urls.push_back(std::string(argv[i]));
+        else if (strstr(argv[i], "https://"))
+            Urls.push_back(std::string(argv[i]));
         else if (strstr(argv[i], "--connectionString:") || strstr(argv[i], "-cs:"))
             {
             std::string argument = std::string(argv[i]);
@@ -321,28 +330,32 @@ int main(int argc, char *argv[])
         }
 
     SpatialEntityStatus status = SpatialEntityStatus::UnknownError;
-    FtpClientPtr client = nullptr;
-    for (int i = 0; i < ftpUrlCount; ++i)
+    SpatialEntityClientPtr client = nullptr;
+    for (int i = 0; i < UrlCount; ++i)
         {
         try
             {
             std::cout << std::endl << "*****************" << std::endl;
-            std::cout << "Connecting to FTP" << std::endl;
+            std::cout << "Connecting to Web" << std::endl;
             std::cout << "*****************" << std::endl << std::endl;
 
-            client = FtpClientPtr(FtpClient::ConnectTo((Utf8CP)ftpUrls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str()));
+            if (strstr(Urls[i].c_str(), ftp) != nullptr)
+                client = FtpClientPtr(FtpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str()));
+            else
+                client = HttpClientPtr(HttpClient::ConnectTo((Utf8CP)Urls[i].c_str(), (Utf8CP)provider.c_str(), (Utf8CP)dataset.c_str(), (Utf8CP)filePattern.c_str(), extractThumbnails, (Utf8CP)classification.c_str()));
+
             if (client == nullptr)
                 {
-                std::cout << "Status: Could not connect to " << ftpUrls[i].c_str() << std::endl;
+                std::cout << "Status: Could not connect to " << Urls[i].c_str() << std::endl;
                 continue;
                 }
-            std::cout << "Status: Connected to " << ftpUrls[i].c_str();
+            std::cout << "Status: Connected to " << Urls[i].c_str();
 
             std::cout << std::endl << "*****************" << std::endl;
             std::cout << "Retrieving data" << std::endl;
             std::cout << "*****************" << std::endl << std::endl;
 
-            client->SetObserver(new FtpTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str()));
+            client->SetObserver(new WebTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str()));
             status = client->GetData();
             if (status != SpatialEntityStatus::Success)
                 {
@@ -365,7 +378,7 @@ int main(int argc, char *argv[])
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : ISpatialEntityTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
+WebTraversalObserver::WebTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : ISpatialEntityTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
     {
     ServerConnection::GetInstance().SetStrings(dbName, pwszConnStr);
     }
@@ -373,7 +386,7 @@ FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void FtpTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
+void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
     {
     if (nullptr == file)
         {
@@ -405,7 +418,7 @@ void FtpTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP fi
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void FtpTraversalObserver::OnFileDownloaded(Utf8CP file)
+void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
     {
     if (nullptr == file)
         return;
@@ -416,7 +429,7 @@ void FtpTraversalObserver::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void FtpTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
+void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
     {
     if (m_updateMode)
         ServerConnection::GetInstance().Update(data);
@@ -558,7 +571,7 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
     CHAR entityBaseQuery[3000];
     if (thumbnailPresent)
-        sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d)",
+        sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d, '%s')",
             m_dbName,
             data.GetName().c_str(),
             data.GetResolution().c_str(),
@@ -571,9 +584,10 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
             xMax,
             yMax,
             metadataId,
-            thumbnailId);
+            thumbnailId,
+            data.GetDataType().c_str());
     else
-        sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d)",
+        sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [DataSourceTypesAvailable]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, '%s')",
             m_dbName,
             data.GetName().c_str(),
             data.GetResolution().c_str(),
@@ -585,7 +599,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
             yMin,
             xMax,
             yMax,
-            metadataId);
+            metadataId,
+            data.GetDataType().c_str());
 
     SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
 
@@ -729,7 +744,7 @@ void ServerConnection::Update(SpatialEntityDataCR data)
             data.GetLocationInCompound().c_str(),
             url);
     else
-        sprintf(sourceQuery, "UPDATE [%s].[dbo].[SpatialDataSources] SET [MainURL] = '%s', [CompoundType] = '%s', [FileSize] = %d, [CoordinateSystem] = %s, [DataSourceType] = '%s', [LocationInCompound] = '%s' WHERE [MainUrl] = '%s'",
+        sprintf(sourceQuery, "UPDATE [%s].[dbo].[SpatialDataSources] SET [MainURL] = '%s', [CompoundType] = '%s', [FileSize] = %d, [CoordinateSystem] = '%s', [DataSourceType] = '%s', [LocationInCompound] = '%s' WHERE [MainUrl] = '%s'",
             m_dbName,
             url,
             data.GetCompoundType().c_str(),
@@ -793,7 +808,7 @@ void ServerConnection::Update(SpatialEntityDataCR data)
 
     DateTimeCR date = data.GetDate();
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Dataset] = '%s', [Classification] = '%s', [Footprint] = geometry::STPolyFromText(?, 4326), [MinX] = %f, [MinY] = %f, [MaxX] = %f, [MaxY] = %f, [Date] = '%d-%d-%d' WHERE [Id] = %d",
+    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Dataset] = '%s', [Classification] = '%s', [Footprint] = geometry::STPolyFromText(?, 4326), [MinX] = %f, [MinY] = %f, [MaxX] = %f, [MaxY] = %f, [Date] = '%d-%d-%d' , [DataSourceTypesAvailable] = '%s' WHERE [Id] = %d",
         m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
@@ -808,6 +823,7 @@ void ServerConnection::Update(SpatialEntityDataCR data)
         date.GetYear(), 
         date.GetMonth(), 
         date.GetDay(),
+        data.GetDataType().c_str(),
         entityId);
     SQLPrepare(hStmt, (SQLCHAR*) entityBaseQuery, SQL_NTS);
     
