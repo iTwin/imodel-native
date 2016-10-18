@@ -185,6 +185,7 @@ struct WipVerticalPropertyMap : WipPropertyMap
 //+===============+===============+===============+===============+===============+======
 struct WipHorizontalPropertyMap : WipPropertyMap
     {
+    private:
     protected:
         WipHorizontalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : WipPropertyMap(classMap, ecProperty)
@@ -193,6 +194,10 @@ struct WipHorizontalPropertyMap : WipPropertyMap
             : WipPropertyMap(ecProperty, parentPropertyMap)
             {}
         virtual  ~WipHorizontalPropertyMap() {}
+        virtual std::vector<DbTable const*> const& _GetTables() const = 0;
+
+    public:
+        std::vector<DbTable const*> const& GetTables() const { return _GetTables(); }
     };
 
 //=======================================================================================
@@ -279,9 +284,11 @@ struct WipColumnHorizontalPropertyMap : WipHorizontalPropertyMap
         std::map<Utf8CP, RefCountedPtr<WipColumnVerticalPropertyMap>, CompareIUtf8Ascii> m_vmapsPerTable;
         std::vector<WipColumnVerticalPropertyMap const*> m_vmaps;
         virtual BentleyStatus _Validate() const override;
+        std::vector<DbTable const*> m_tables;
     protected:
         WipColumnHorizontalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty, std::vector<RefCountedPtr<WipColumnVerticalPropertyMap>> const& maps);
         virtual ~WipColumnHorizontalPropertyMap() {}
+        virtual std::vector<DbTable const*> const& _GetTables() const override { return m_tables; }
     public:
         WipColumnVerticalPropertyMap const* FindVerticalPropertyMap(Utf8CP tableName) const;
         WipColumnVerticalPropertyMap const* FindVerticalPropertyMap(DbTable const& table) const;
@@ -623,7 +630,7 @@ struct WipPropertyMapFactory final
 // @bsiclass                                                   Affan.Khan          07/16
 // Allow to collect columns from property maps
 //+===============+===============+===============+===============+===============+======
-struct WipPropertyMapColumnDispatcher  final: IPropertyMapDispatcher
+struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
     {
     private:
         mutable std::vector<DbColumn const*> m_columns;
@@ -651,7 +658,7 @@ struct WipPropertyMapColumnDispatcher  final: IPropertyMapDispatcher
 // @bsiclass                                                   Affan.Khan          07/16
 // Search PropertyMap with a given type
 //+===============+===============+===============+===============+===============+======
-struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
+struct WipPropertyMapTypeDispatcher final : IPropertyMapDispatcher
     {
     struct Result
         {
@@ -670,6 +677,7 @@ struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
     private:
         mutable std::vector<Result> m_propertyMaps;
         PropertyMapType m_filter;
+        bool m_recordCompondProperties;
     private:
         DispatcherFeedback Record(PropertyMapType mapType, WipPropertyMap const& propertyMap) const
             {
@@ -680,7 +688,10 @@ struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
             }
         virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override
             {
-            return Record(mapType, propertyMap);
+            if (m_recordCompondProperties)
+                return Record(mapType, propertyMap);
+
+            return DispatcherFeedback::Next;
             }
         virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override
             {
@@ -692,8 +703,8 @@ struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
             }
 
     public:
-        WipPropertyMapTypeDispatcher(PropertyMapType filter = PropertyMapType::All)
-            :m_filter(filter)
+        WipPropertyMapTypeDispatcher(PropertyMapType filter = PropertyMapType::All, bool recordCompoundProperties = false)
+            :m_filter(filter), m_recordCompondProperties(recordCompoundProperties)
             {}
         ~WipPropertyMapTypeDispatcher() {}
         void Reset() { m_propertyMaps.clear(); }
@@ -704,7 +715,7 @@ struct WipPropertyMapTypeDispatcher  final : IPropertyMapDispatcher
 // @bsiclass                                                   Affan.Khan          07/16
 // Allow to collect columns from property maps
 //+===============+===============+===============+===============+===============+======
-struct WipPropertyMapSaveDispatcher  final : IPropertyMapDispatcher
+struct WipPropertyMapSaveDispatcher final : IPropertyMapDispatcher
     {
     private:
         DbClassMapSaveContext& m_context;
@@ -723,4 +734,87 @@ struct WipPropertyMapSaveDispatcher  final : IPropertyMapDispatcher
         WipPropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
         void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
     };
+//=======================================================================================
+// @bsiclass                                                   Affan.Khan          07/16
+// Allow to collect columns from property maps
+//+===============+===============+===============+===============+===============+======
+struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
+    {
+    enum SqlTarget
+        {
+        View, //!Inline view is in from. Normally it happen only in SELECT statement where view has a contract.
+        Table //!Direct query against a table
+        };
+
+    struct Result
+        {
+        private:
+            WipColumnVerticalPropertyMap const* m_propertyMap;
+            NativeSqlBuilder m_sql;
+        public:
+            Result(WipColumnVerticalPropertyMap const& propertyMap)
+                :m_propertyMap(&propertyMap)
+                {}
+            Result(WipColumnVerticalPropertyMap const& propertyMap)
+                :m_propertyMap(nullptr)
+                {}
+            ~Result(){}
+            Utf8CP GetAccessString() const { return GetPropertyMap().GetAccessString().c_str(); }
+            WipColumnVerticalPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
+            NativeSqlBuilder& GetSqlBuilder() { return m_sql; }
+            Utf8CP GetSql() const { return m_sql.ToString(); }
+            DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
+            DbTable const& GetTable() const { return GetColumn().GetTable(); }
+            bool  IsColumnPersisted() const { return GetColumn().GetPersistenceType() == PersistenceType::Persisted; }
+            bool  IsTablePersisted() const { return GetTable().GetPersistenceType() == PersistenceType::Persisted; }
+
+
+
+        };
+
+    private:
+        mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
+        mutable std::vector<Result> m_resultSet;
+        mutable BentleyStatus m_status;
+        SqlTarget m_target;
+        Utf8CP m_classIdentifier;
+        DbTable const& m_tableFilter;
+
+    private:
+        Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
+        bool IsAlienTable(DbTable const& table) const
+            {
+            if (&table != &m_tableFilter)
+                {
+                BeAssert(false && "PropertyMap table does not match the table filter specified.");
+                m_status = ERROR;
+                return true;
+                }
+
+            return false;
+            }
+        WipColumnVerticalPropertyMap const* FindSystemPropertyMapForTable(WipSystemPropertyMap const& systemPropertyMap) const;
+        DispatcherFeedback ToNativeSql(WipColumnVerticalPropertyMap const& propertyMap) const;
+        DispatcherFeedback ToNativeSql(WipConstraintECInstanceIdIdPropertyMap const& propertyMap) const;
+        DispatcherFeedback ToNativeSql(WipConstraintECClassIdPropertyMap const& propertyMap) const;
+        DispatcherFeedback ToNativeSql(WipECClassIdPropertyMap const& propertyMap) const;
+        DispatcherFeedback ToNativeSql(WipECInstanceIdPropertyMap const& propertyMap) const;
+
+    private:
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override;
+
+    public:
+        WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier)
+            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier)
+            {}
+        ~WipPropertyMapSqlDispatcher() {}
+
+        BentleyStatus GetStatus() const { return m_status; }
+        std::vector<Result> const& GetResultSet() const { return m_resultSet; }
+        const Result* Find(Utf8CP accessString) const;
+        void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); m_status = SUCCESS; }
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

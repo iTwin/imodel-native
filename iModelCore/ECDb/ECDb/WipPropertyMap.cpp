@@ -361,6 +361,7 @@ WipColumnHorizontalPropertyMap::WipColumnHorizontalPropertyMap(ClassMap const& c
             }
 
         m_vmapsPerTable[map->GetTable().GetName().c_str()] = map;
+        m_tables.push_back(&map->GetTable());
         m_vmaps.push_back(map.get());
         }
     }
@@ -1356,4 +1357,210 @@ DispatcherFeedback WipPropertyMapSaveDispatcher::_Dispatch(PropertyMapType mapTy
 
     return DispatcherFeedback::Next;
     }
+
+//************************************WipPropertyMapSqlDispatcher********************
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+bool WipPropertyMapSqlDispatcher::IsAlienTable(DbTable const& table) const
+    {
+    if (&table != &m_tableFilter)
+        {
+        BeAssert(false && "PropertyMap table does not match the table filter specified.");
+        m_status = ERROR;
+        return true;
+        }
+
+    return false;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+WipColumnVerticalPropertyMap const* WipPropertyMapSqlDispatcher::FindSystemPropertyMapForTable(WipSystemPropertyMap const& systemPropertyMap) const
+    {
+    WipColumnVerticalPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(m_tableFilter);
+    if (vmap == nullptr)
+        {
+        BeAssert(false && "Failed to find propertymap for filter table");
+        m_status = ERROR;
+        }
+
+    return vmap;
+    }
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+WipPropertyMapSqlDispatcher::Result& WipPropertyMapSqlDispatcher::Record(WipColumnVerticalPropertyMap const& propertyMap) const
+    {
+    m_resultSetByAccessString[propertyMap.GetAccessString().c_str()] = m_resultSet.size();
+    m_resultSet.push_back(Result(propertyMap));
+    return m_resultSet.back();
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipColumnVerticalPropertyMap const& propertyMap) const
+    {
+    if (IsAlienTable(propertyMap.GetTable()))
+        DispatcherFeedback::Cancel;
+
+    Result& result = Record(propertyMap);
+    result.GetSqlBuilder().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECInstanceIdIdPropertyMap const& propertyMap) const
+    {
+    WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
+    if (vmap == nullptr)
+        {
+        return DispatcherFeedback::Cancel;
+        }
+
+    Result& result = Record(*vmap);
+    auto columnExp = m_target == SqlTarget::View ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    result.GetSqlBuilder().Append(m_classIdentifier, columnExp);
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdPropertyMap const& propertyMap) const
+    {
+    WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
+    if (vmap == nullptr)
+        {
+        return DispatcherFeedback::Cancel;
+        }
+
+    Result& result = Record(*vmap);
+    if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+        {
+        result.GetSqlBuilder().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+        }
+    else
+        {
+        if (m_target == SqlTarget::View)
+            {
+            result.GetSqlBuilder().Append(m_classIdentifier, ECDB_COL_ECClassId);
+            }
+        else
+            {
+            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
+            propertyMap.GetDefaultECClassId().ToString(classIdStr);
+            result.GetSqlBuilder().Append(classIdStr);
+            }
+        }
+
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECClassIdPropertyMap const& propertyMap) const
+    {
+    WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
+    if (vmap == nullptr)
+        {
+        return DispatcherFeedback::Cancel;
+        }
+
+    Result& result = Record(*vmap);
+    if (m_target == SqlTarget::View)
+        {
+        result.GetSqlBuilder().Append(m_classIdentifier, propertyMap.GetAccessString().c_str());
+        }
+    else
+        {
+
+        if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+            {
+            Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
+            propertyMap.GetDefaultECClassId().ToString(classIdStr);
+            result.GetSqlBuilder().Append(classIdStr);
+            }
+        else
+            result.GetSqlBuilder().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+        }
+
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECInstanceIdPropertyMap const& propertyMap) const
+    {
+    WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
+    if (vmap == nullptr)
+        {
+        return DispatcherFeedback::Cancel;
+        }
+
+    Result& result = Record(*vmap);
+    auto columnExp = m_target == SqlTarget::View ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    result.GetSqlBuilder().Append(m_classIdentifier, columnExp);
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::_Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const
+    {
+    return ToNativeSql(propertyMap);
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::_Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const
+    {
+    return DispatcherFeedback::Next;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+DispatcherFeedback WipPropertyMapSqlDispatcher::_Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const
+    {
+    switch (mapType)
+        {
+            case PropertyMapType::ConstraintECInstanceIdIdPropertyMap:
+                return ToNativeSql(static_cast<WipConstraintECInstanceIdIdPropertyMap const&>(propertyMap));
+            case PropertyMapType::ConstraintECClassIdPropertyMap:
+                return ToNativeSql(static_cast<WipConstraintECClassIdPropertyMap const&>(propertyMap));
+            case PropertyMapType::ECClassIdPropertyMap:
+                return ToNativeSql(static_cast<WipECClassIdPropertyMap const&>(propertyMap));
+            case PropertyMapType::ECInstanceIdPropertyMap:
+                return ToNativeSql(static_cast<WipECInstanceIdPropertyMap const&>(propertyMap));
+        }
+
+    return DispatcherFeedback::Cancel;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+const WipPropertyMapSqlDispatcher::Result* WipPropertyMapSqlDispatcher::Find(Utf8CP accessString) const
+    {
+    auto itor = m_resultSetByAccessString.find(accessString);
+    if (itor == m_resultSetByAccessString.end())
+        return nullptr;
+
+    return &m_resultSet.at(itor->second);
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+NativeSqlBuilder::List const& WipPropertyMapSqlDispatcher::Front() const { return m_sql.begin()->second; }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
