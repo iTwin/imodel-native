@@ -29,6 +29,16 @@ USING_NAMESPACE_GROUND_DETECTION
 +----------------------------------------------*/
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+BeFileName GetTempXyzFilePath()
+    {
+    BeFileName tempPath;
+    BeFileNameStatus status = BeFileName::BeGetTempPath(tempPath);
+    assert(status == BeFileNameStatus::Success);
+    tempPath.AppendToPath(L"detectGround.xyz");
+
+    return tempPath;
+    }
+
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundExtractor - Begin
 +----------------------------------------------------------------------------*/
@@ -80,8 +90,9 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
     public :
 
         ScalableMeshPointsAccumulator()
-            {
-            m_xyzFile = fopen("D:\\MyDoc\\RM - SM - Sprint 15\\AutoGroundDetect\\ATP\\detectGround.xyz", "w+");
+            {            
+            BeFileName xyzFile(GetTempXyzFilePath());
+            m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
             }
 
         ~ScalableMeshPointsAccumulator()
@@ -126,7 +137,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
 
     assert(status == SUCCESS);
 
-    IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, L"D:\\MyDoc\\RM - SM - Sprint 15\\AutoGroundDetect\\ATP\\detectGround.xyz"));
+    BeFileName xyzFile(GetTempXyzFilePath());
+
+    IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzFile.c_str()));
     terrainCreator->EditSources().Add(groundPtsSource);
 
     status = terrainCreator->Create();
