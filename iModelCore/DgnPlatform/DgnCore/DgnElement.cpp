@@ -2318,64 +2318,155 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
     {
-    if (PropState::NotFound != m_flags.m_propState) // Unless we know that this class does NOT have auto-handled properties
-        {
-        // Common case: check auto-handled properties first
-        ElementECPropertyAccessor ecPropAccess(*this, name);
-        if (ecPropAccess.IsValid())
-            return ecPropAccess.GetPropertyValue(value, arrayIdx);
-        }
+    // *** WIP_PROPERTIES -- propIdx should be the input
 
-    // Rare: custom-handled properties
-    if (0 == strcmp(BIS_ELEMENT_PROP_FederationGuid, name))
-        {
-        value.SetBinary((Byte*)&m_federationGuid, sizeof(m_federationGuid));
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name))
-        {
-        value.SetUtf8CP(GetCode().GetValue().c_str());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name))
-        {
-        value.SetUtf8CP(GetCode().GetNamespace().c_str());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeAuthorityId, name))
-        {
-        value.SetLong(GetCode().GetAuthority().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp("Id", name) || 0 == strcmp(BIS_ELEMENT_PROP_ECInstanceId, name))
-        {
-        value.SetLong(GetElementId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ModelId, name))
-        {
-        value.SetLong(GetModelId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ParentId, name))
-        {
-        value.SetLong(GetParentId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_UserLabel, name))
-        {
-        value.SetUtf8CP(GetUserLabel());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_LastMode, name))
-        {
-        value.SetDateTime(QueryTimeStamp());
-        return DgnDbStatus::Success;
-        }
-
-    return DgnDbStatus::NotFound;
-    }
+    ElementECPropertyAccessor ecPropAccess(*this, name);
     
+    if (!ecPropAccess.m_isCustomHandled)
+        return ecPropAccess.GetAutoHandledPropertyValue(value, arrayIdx);
+
+    auto propGetSet = ecPropAccess.m_classInfo->GetPropertyAccessors(ecPropAccess.m_propIdx);
+    if (nullptr == propGetSet)
+        return DgnDbStatus::NotFound;
+
+    return propGetSet->first(value, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ElementCustomHandledPropertyAccessors
+    {
+    struct {
+        ECSqlClassInfo::T_ElementPropGet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
+            modelId, parentId, userLabel, lastMod;
+        } get;
+    struct {
+        ECSqlClassInfo::T_ElementPropSet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
+            modelId, parentId, userLabel, lastMod;
+        } set;
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    static std::once_flag s_accessorsFlag;
+    static ElementCustomHandledPropertyAccessors s_accessors;
+    std::call_once(s_accessorsFlag, []()
+        {
+        s_accessors.get.federationGuid = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetBinary((Byte*)&el.m_federationGuid, sizeof(el.m_federationGuid));
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.federationGuid = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            size_t sz;
+            Byte const* p = value.GetBinary(sz);
+            if (sz != sizeof(BeGuid))
+                return DgnDbStatus::BadArg;
+            BeGuid guid;
+            memcpy(&guid, p, sz);
+            el.SetFederationGuid(guid);
+            return DgnDbStatus::Success;
+            };
+        s_accessors.get.codeValue = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetCode().GetValue().c_str());
+            return DgnDbStatus::Success;
+            };
+         s_accessors.set.codeValue = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(existingCode.GetAuthority(), value.ToString(), existingCode.GetNamespace());
+            return el.SetCode(newCode);
+            };
+        s_accessors.get.codeNamespace = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetCode().GetNamespace().c_str());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.codeNamespace = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(existingCode.GetAuthority(), existingCode.GetValue(), value.ToString());
+            return el.SetCode(newCode);
+            };
+        s_accessors.get.codeAuthorityId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetCode().GetAuthority().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.codeAuthorityId = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(DgnAuthorityId((uint64_t)value.GetLong()), existingCode.GetValue(), existingCode.GetNamespace());
+            return el.SetCode(newCode);
+            };
+        s_accessors.get.modelId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetModelId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.modelId = [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            };
+        s_accessors.get.parentId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetParentId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.parentId = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+            return el.SetParentId(DgnElementId((uint64_t)value.GetLong()));
+            };
+        s_accessors.get.userLabel = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetUserLabel());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.set.userLabel = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            el.SetUserLabel(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            };
+        s_accessors.get.lastMod = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetDateTime(el.QueryTimeStamp());
+            return DgnDbStatus::Success;
+            },
+        s_accessors.set.lastMod = [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            };
+        });
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, s_accessors.get.federationGuid, s_accessors.set.federationGuid);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue, s_accessors.get.codeValue, s_accessors.set.codeValue);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeNamespace, s_accessors.get.codeNamespace, s_accessors.set.codeNamespace);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthorityId, s_accessors.get.codeAuthorityId, s_accessors.set.codeAuthorityId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ModelId, s_accessors.get.modelId, s_accessors.set.modelId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ParentId, s_accessors.get.parentId, s_accessors.set.parentId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, s_accessors.get.userLabel, s_accessors.set.userLabel);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, s_accessors.get.lastMod, s_accessors.set.lastMod);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2386,7 +2477,7 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, Pro
         // Common case: check auto-handled properties first
         ElementECPropertyAccessor ecPropAccess(*this, name);
         if (ecPropAccess.IsValid())
-            return ecPropAccess.SetPropertyValue(value, arrayIdx);
+            return ecPropAccess.SetAutoHandledPropertyValue(value, arrayIdx);
         }
 
     if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name)

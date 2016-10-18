@@ -185,6 +185,34 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
     info.m_insert = insert;
     info.m_update = update;
 
+    auto ehandler = dgn_ElementHandler::Element::FindHandler(dgndb, classId);
+    if (nullptr != ehandler)
+        {
+        // Elements:
+        auto ecclass = dgndb.Schemas().GetECClass(ECClassId(classId.GetValue()));
+        auto& layout = ecclass->GetDefaultStandaloneEnabler()->GetClassLayout();
+
+        // Tell handler to register its custom-handled property accessors
+        ehandler->_RegisterPropertyAccessors(info, layout);
+
+        // Record which properties are custom-handled in a way that is quick to look up when we are getting and setting properties
+        AutoHandledPropertiesCollection props(*ecclass, const_cast<DgnDbR>(dgndb), ECSqlClassParams::StatementType::All, true);
+        for (auto i = props.begin(); i != props.end(); ++i)
+            {
+            uint32_t propIdx;
+            auto status = layout.GetPropertyIndex(propIdx, (*i)->GetName().c_str());
+            BeAssert(ECObjectsStatus::Success == status);
+            info.m_customProps.insert(propIdx);
+
+            if (nullptr == info.GetPropertyAccessors(propIdx))
+                {
+                LOG.errorv("%s.%s - missing accessors for custom-handled property",
+                            ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
+                }
+            }
+
+        }
+
     return true;
     }
 

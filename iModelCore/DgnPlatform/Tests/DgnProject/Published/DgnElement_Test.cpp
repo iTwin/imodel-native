@@ -773,7 +773,7 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementTests::TestAutoHandledPropertiesGetSet()
     {
-    DgnElementCPtr persistentEl;
+    RefCountedCPtr<TestElement> persistentEl;
     uint32_t iArrayOfString;
     uint32_t iArrayOfInt;
     if (true)
@@ -819,7 +819,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
             }
 
         //  Insert the element
-        persistentEl = el.Insert();
+        persistentEl = m_db->Elements().Insert(el);
         }
     
     ASSERT_TRUE(persistentEl.IsValid());
@@ -858,6 +858,20 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
+    // Get some non-auto-handled properties using the same dynamic property API
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ModelId"));
+    EXPECT_EQ(persistentEl->GetModelId().GetValue(), checkValue.GetLong());
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "CategoryId"));
+    EXPECT_EQ(persistentEl->GetCategoryId().GetValue(), checkValue.GetLong());
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "UserLabel"));
+    EXPECT_STREQ(persistentEl->GetUserLabel(), checkValue.ToString().c_str());
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "CodeAuthorityId"));
+    EXPECT_EQ(persistentEl->GetCode().GetAuthority().GetValueUnchecked(), (uint64_t)checkValue.GetLong());
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "CodeNamespace"));
+    EXPECT_STREQ(persistentEl->GetCode().GetNamespace().c_str(), checkValue.ToString().c_str());
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "CodeValue"));
+    EXPECT_STREQ(persistentEl->GetCode().GetValueCP(), checkValue.ToString().c_str());
+
     if (true)
         {
         //  Get ready to modify the element
@@ -882,7 +896,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Update the element
-        persistentEl = editEl->Update();
+        persistentEl = m_db->Elements().Update(*editEl);
         }
 
     // Check that the stored value was changed
@@ -898,7 +912,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
     m_db->CloseDb();
     m_db = nullptr;
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
-    persistentEl = m_db->Elements().GetElement(elid);
+    persistentEl = m_db->Elements().Get<TestElement>(elid);
     ASSERT_TRUE(persistentEl.IsValid());
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnPlatform/ECSqlClassParams.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -25,12 +26,15 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
 {
     DgnElement& m_element;
     ECClassCP m_eclass;
+    ECN::ClassLayoutCP m_layout;
 
     ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el);
     
     bool IsValid() const {return nullptr != m_eclass;}
 
+#ifdef WIP_PROPERTIES // *** ECObjects should be doing this
     bool IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value);
+#endif
     bool IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded);
     uint32_t GetBytesUsed() const;
 
@@ -63,7 +67,7 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     void _FreeAllocation() override;
     void _ClearValues() override;
     ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
-    ECN::ClassLayoutCR _GetClassLayout() const override {return m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();}
+    ECN::ClassLayoutCR _GetClassLayout() const override {return *m_layout;}
 
     // IECInstance 
     ECDBuffer*      _GetECDBuffer() const override {return const_cast<ElementAutoHandledPropertiesECInstanceAdapter*>(this);}
@@ -95,15 +99,17 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
 //=======================================================================================
 struct ElementECPropertyAccessor : ElementAutoHandledPropertiesECInstanceAdapter
 {
-    Utf8String m_accessString;
-    ECPropertyCP m_ecprop;
+    ECSqlClassInfo* m_classInfo;
+    uint32_t m_propIdx;
+    bool m_isCustomHandled;
 
+    void Init(uint32_t propIdx);
+
+    ElementECPropertyAccessor(DgnElement const& el, uint32_t);
     ElementECPropertyAccessor(DgnElement const& el, Utf8CP accessString);
 
-    bool IsValid() const { return ElementAutoHandledPropertiesECInstanceAdapter::IsValid() && (nullptr != m_ecprop); }
-
-    DgnDbStatus SetPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx);
-    DgnDbStatus GetPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx);
+    DgnDbStatus SetAutoHandledPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx);
+    DgnDbStatus GetAutoHandledPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx);
 };
 
 //=======================================================================================

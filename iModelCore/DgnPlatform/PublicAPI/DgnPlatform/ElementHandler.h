@@ -86,6 +86,9 @@ namespace dgn_ElementHandler
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
     public:
+        //! Register get and set functions for each custom-handled property
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
         DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}

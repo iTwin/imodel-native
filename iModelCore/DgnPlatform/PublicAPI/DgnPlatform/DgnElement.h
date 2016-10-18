@@ -2684,7 +2684,6 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
-    ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
@@ -2698,6 +2697,7 @@ private:
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
+    ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
 
