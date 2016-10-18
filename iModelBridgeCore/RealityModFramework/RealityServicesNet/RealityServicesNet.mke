@@ -20,8 +20,6 @@ PublicApiDir = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityServicesN
 #----------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-    @CreateSymLinks.py -m"$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/=$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/TransKitTools/LanguagePackSpecs"
-
 
 #--------------------------------------------------------------------------------------
 #        Now build the managed DLL
@@ -81,10 +79,7 @@ DLM_DEST                = $(o)
 DLM_OBJECT_FILES        = $(objList)
 LINKER_LIBRARIES_DELAYLOADED = $(BuildContextSubPartsLibraries)
 
-DLM_NO_DEF              = 1
 DLM_NO_IMPLIB           = 1
-DLM_NO_DLS              = 1
-DLM_NOMSBUILTINS        = 1
 
 %include $(SharedMki)stdversion.mki
 ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
