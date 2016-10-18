@@ -207,21 +207,4 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
 
 
-#if !defined (DOCUMENTATION_GENERATOR)
-//=======================================================================================
-//! Helper that provides information about ECClass Mappings
-//=======================================================================================
-struct ClassMappingInfoHelper
-    {
-private:
-    ClassMappingInfoHelper();
-    ~ClassMappingInfoHelper();
-
-public:
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDb const&, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDb const&, Utf8StringCR schemaName, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDb const&, Utf8StringCR schemaName, Utf8StringCR className);
-    };
-
-#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE

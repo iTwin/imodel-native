@@ -335,8 +335,6 @@ $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpr
 
 $(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassMappingInfoHelper$(oext):                            $(baseDir)ClassMappingInfoHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)WipPropertyMap$(oext):                            $(baseDir)WipPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapper$(oext):                            $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}

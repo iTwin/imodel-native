@@ -24,7 +24,6 @@
     <ClCompile Include="ClassMapper.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
-    <ClCompile Include="ClassMappingInfoHelper.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
