@@ -468,11 +468,13 @@ RealityPackageStatus RealityDataSerializerV1::WritePackageInfo(BeXmlNodeR node, 
     node.AddNamespace(NULL, PACKAGE_V1_NAMESPACE);       // Set as default namespace.
     node.AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
-    // Root children
-    node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
-    node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
-
     // Optional fields, if empty don't add them to the package.
+    if (!package.GetName().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
+
+    if (!package.GetCreationDate().ToString().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
+    
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_PackageOrigin, package.GetOrigin().c_str());
 
@@ -498,7 +500,7 @@ RealityPackageStatus RealityDataSerializerV1::WriteImageryGroup(BeXmlNodeR node,
     {
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    if (package.GetImageryGroup()[0]->GetNumSources() <= 0)
+    if (package.GetImageryGroup().empty())
         return RealityPackageStatus::Success; // No imagery data.
     
     // Group node.
@@ -549,7 +551,7 @@ RealityPackageStatus RealityDataSerializerV1::WriteImageryGroup(BeXmlNodeR node,
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV1::WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetModelGroup()[0]->GetNumSources() <= 0)
+    if (package.GetModelGroup().empty())
         return RealityPackageStatus::Success; // No model data.
 
     // Group node.
@@ -585,7 +587,7 @@ RealityPackageStatus RealityDataSerializerV1::WriteModelGroup(BeXmlNodeR node, R
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV1::WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetPinnedGroup()[0]->GetNumSources() <= 0)
+    if (package.GetPinnedGroup().empty())
         return RealityPackageStatus::Success; // No pinned data.
 
     // Group node.
@@ -626,7 +628,7 @@ RealityPackageStatus RealityDataSerializerV1::WritePinnedGroup(BeXmlNodeR node, 
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV1::WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetTerrainGroup()[0]->GetNumSources() <= 0)
+    if (package.GetTerrainGroup().empty())
         return RealityPackageStatus::Success; // No terrain data.
 
     // Group node.

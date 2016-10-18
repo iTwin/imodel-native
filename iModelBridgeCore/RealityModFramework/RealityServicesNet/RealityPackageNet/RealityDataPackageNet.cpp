@@ -64,6 +64,11 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ man
     BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
     nativeSource->SetCopyright(nativeCopyright.c_str());
 
+    // Term of use.
+    Utf8String nativeTermOfUse;
+    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
+    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+
     // Provider.
     Utf8String nativeProvider;
     BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
@@ -107,10 +112,94 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ man
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
+MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSource)
+    {
+    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
+
+    Utf8String nativeType;
+    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
+
+    // Create source with required parameters.
+    MultiBandSourcePtr nativeSource = MultiBandSource::Create(*nativeUri, nativeType.c_str());
+
+    // Id.
+    Utf8String nativeId;
+    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
+    nativeSource->SetId(nativeId.c_str());
+
+    // Copyright.
+    Utf8String nativeCopyright;
+    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
+    nativeSource->SetCopyright(nativeCopyright.c_str());
+
+    // Term of use.
+    Utf8String nativeTermOfUse;
+    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
+    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+
+    // Provider.
+    Utf8String nativeProvider;
+    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
+    nativeSource->SetProvider(nativeProvider.c_str());
+
+    // Size.
+    nativeSource->SetSize(managedSource->GetSize());
+
+    // Metadata.
+    Utf8String nativeMetadata;
+    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
+    nativeSource->SetMetadata(nativeMetadata.c_str());
+
+    // Metadata type.
+    Utf8String nativeMetadataType;
+    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
+    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+
+    // GeoCS.
+    Utf8String nativeGeoCS;
+    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
+    nativeSource->SetGeoCS(nativeGeoCS.c_str());
+
+    // No data value.
+    Utf8String nativeNoDataValue;
+    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
+    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
+
+    // Sister files.
+    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
+    bvector<UriPtr> nativeSisterFiles;
+    for each (UriNet^ managedSisterFile in managedSisterFiles)
+        {
+        nativeSisterFiles.push_back(ManagedToNativeUri2(managedSisterFile));
+        }
+    nativeSource->SetSisterFiles(nativeSisterFiles);
+
+    // Multiband source specific info.
+    nativeSource->SetRedBand(*ManagedToNativeRealityDataSource2(managedSource->GetRedBand()));
+    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource2(managedSource->GetGreenBand()));
+    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource2(managedSource->GetBlueBand()));
+    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource2(managedSource->GetPanchromaticBand()));
+
+    return nativeSource;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2016
+//-------------------------------------------------------------------------------------
 ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     {
+    ImageryDataPtr pData;
+
     // Create with main source.
-    ImageryDataPtr pData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
+    MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
+    if (nullptr != pMultiBandSource)
+        {
+        pData = ImageryData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource), NULL);
+        }
+    else
+        {
+        pData = ImageryData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), NULL);
+        }
 
     // Set basic members.
     Utf8String id;
@@ -144,7 +233,15 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
-        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
+        if (nullptr != pMultiBandSource)
+            {
+            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            }
+        else
+            {
+            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            }        
         }    
 
     return pData;
@@ -155,8 +252,18 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
     {
+    ModelDataPtr pData;
+
     // Create with main source.
-    ModelDataPtr pData = ModelData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+    MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
+    if (nullptr != pMultiBandSource)
+        {
+        pData = ModelData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        }
+    else
+        {
+        pData = ModelData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+        }
 
     // Set basic members.
     Utf8String id;
@@ -174,7 +281,15 @@ ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
-        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
+        if (nullptr != pMultiBandSource)
+            {
+            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            }
+        else
+            {
+            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            }
         }
 
     return pData;
@@ -185,8 +300,18 @@ ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
     {
+    PinnedDataPtr pData;
+
     // Create with main source.
-    PinnedDataPtr pData = PinnedData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), 0, 0);
+    MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
+    if (nullptr != pMultiBandSource)
+        {
+        pData = PinnedData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource), 0, 0);
+        }
+    else
+        {
+        pData = PinnedData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)), 0, 0);
+        }
 
     // Set basic members.
     Utf8String id;
@@ -221,8 +346,16 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
 
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
-        {
-        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+     {
+        MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
+        if (nullptr != pMultiBandSource)
+            {
+            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            }
+        else
+            {
+            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            }
         }
 
     return pData;
@@ -233,8 +366,18 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
     {
+    TerrainDataPtr pData;
+
     // Create with main source.
-    TerrainDataPtr pData = TerrainData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+    MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
+    if (nullptr != pMultiBandSource)
+        {
+        pData = TerrainData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        }
+    else
+        {
+        pData = TerrainData::Create(*ManagedToNativeRealityDataSource2(managedData->GetSource(0)));
+        }
 
     // Set basic members.
     Utf8String id;
@@ -252,7 +395,15 @@ TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
-        pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+        MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
+        if (nullptr != pMultiBandSource)
+            {
+            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            }
+        else
+            {
+            pData->AddSource(*ManagedToNativeRealityDataSource2(managedData->GetSource(i)));
+            }
         }
 
     return pData;
@@ -277,7 +428,7 @@ bool RealityDataPackageNet::Write(String^ filename)
     {
     Utf8String filenameUtf8;
     BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(filename).ToPointer()));
-    BeFileName nativeFilename(filenameUtf8);
+    BeFileName nativeFilename(filenameUtf8.c_str());
 
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
     status = (*m_pPackage)->Write(nativeFilename);

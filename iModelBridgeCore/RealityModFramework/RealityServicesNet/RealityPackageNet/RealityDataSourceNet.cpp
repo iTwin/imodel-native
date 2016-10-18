@@ -67,6 +67,10 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     String^ managedCopyright = ctx.marshal_as<String^>(nativeSource.GetCopyright().c_str());
     managedSource->SetCopyright(managedCopyright);
 
+    // Term of use.
+    String^ managedTermOfUse = ctx.marshal_as<String^>(nativeSource.GetTermOfUse().c_str());
+    managedSource->SetTermOfUse(managedTermOfUse);
+
     // Provider.
     String^ managedProvider = ctx.marshal_as<String^>(nativeSource.GetProvider().c_str());
     managedSource->SetProvider(managedProvider);
@@ -125,6 +129,11 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     Utf8String nativeCopyright;
     BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
     nativeSource->SetCopyright(nativeCopyright.c_str());
+
+    // Term of use.
+    Utf8String nativeTermOfUse;
+    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
+    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
 
     // Provider.
     Utf8String nativeProvider;
@@ -788,6 +797,7 @@ void MultiBandSourceNet::SetPanchromaticBand(RealityDataSourceNet^ band)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 MultiBandSourceNet::MultiBandSourceNet(UriNet^ uri, System::String^ type)
+    : RealityDataSourceNet(uri, type)
     {
     // Managed to native reality data source.
     Utf8String typeUtf8;

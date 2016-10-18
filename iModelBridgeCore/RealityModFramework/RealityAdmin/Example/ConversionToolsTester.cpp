@@ -71,7 +71,7 @@ static void callback_status_func(int index, void *pClient, int ErrorCode, const 
 
 void ShowUsage()
 {
-    std::cout << "Usage: awstraverser.exe -f:[file] -cs:[connectionString] [options]" << std::endl << std::endl;
+    std::cout << "Usage: ConversionToolsTester.exe -f:[file] -cs:[connectionString] [options]" << std::endl << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -f, --file              The AWS file to parse (Required)" << std::endl;
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
@@ -81,7 +81,7 @@ void ShowUsage()
 }
 
 
-int wmain(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     RealityDataDownload::Link_File_wMirrors_wSisters urlList;
 

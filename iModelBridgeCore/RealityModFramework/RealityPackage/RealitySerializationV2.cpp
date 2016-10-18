@@ -836,11 +836,13 @@ RealityPackageStatus RealityDataSerializerV2::WritePackageInfo(BeXmlNodeR node, 
     node.AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);       // Set as default namespace.
     node.AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
-    // Root children
-    node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
-    node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
-
     // Optional fields, if empty don't add them to the package.
+    if (!package.GetName().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
+
+    if (!package.GetCreationDate().ToString().empty())
+        node.AddElementStringValue(PACKAGE_ELEMENT_CreationDate, package.GetCreationDate().ToString().c_str());
+
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
 
@@ -869,7 +871,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
     {
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    if (package.GetImageryGroup()[0]->GetNumSources() <= 0)
+    if (package.GetImageryGroup().empty())
         return RealityPackageStatus::Success; // No imagery data.
 
     // Group node.
@@ -901,50 +903,39 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
 
         // Dataset.
         if (!pImgData->GetDataset().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());
-
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());      
 
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
-            {
-            // Split sources by type (source, multibandsource, etc.).
-            RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
-            Utf8String sourceName = source.GetElementName();
-            if (sourceName.Equals(PACKAGE_ELEMENT_Source))
+        if (0 != pImgData->GetNumSources())
+            { 
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pImgData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_WmsSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_OsmSource))
-                {
-                //&&JFC TODO
-                //if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
-                //    {
-                //    pGroupNode->RemoveChildNode(pDataNode);
-                //    continue;
-                //    }
-                }
-            else if (sourceName.Equals(PACKAGE_ELEMENT_MultiBandSource))
-                {
-                if (RealityPackageStatus::Success != WriteSource(*pDataNode, source))
+                else
                     {
-                    pGroupNode->RemoveChildNode(pDataNode);
-                    continue;
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
                     }
-                }         
-            }    
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
+                }  
+            }
 
         // Write ImageryData specific.
         DPoint2dCP pCorners = pImgData->GetCornersCP();
@@ -970,7 +961,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteImageryGroup(BeXmlNodeR node,
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetModelGroup()[0]->GetNumSources() <= 0)
+    if (package.GetModelGroup().empty())
         return RealityPackageStatus::Success; // No model data.
 
     // Group node.
@@ -1005,12 +996,34 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pModelData->GetDataset().c_str());
 
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
+        if (0 != pModelData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pModelData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pModelData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
+                    {
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
         }
@@ -1023,7 +1036,7 @@ RealityPackageStatus RealityDataSerializerV2::WriteModelGroup(BeXmlNodeR node, R
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetPinnedGroup()[0]->GetNumSources() <= 0)
+    if (package.GetPinnedGroup().empty())
         return RealityPackageStatus::Success; // No pinned data.
 
     // Group node.
@@ -1057,14 +1070,35 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
         if (!pPinnedData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pPinnedData->GetDataset().c_str());
 
-
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
+        if (0 != pPinnedData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pPinnedData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pPinnedData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
+                    {
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
 
@@ -1082,7 +1116,7 @@ RealityPackageStatus RealityDataSerializerV2::WritePinnedGroup(BeXmlNodeR node, 
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const
     {
-    if (package.GetTerrainGroup()[0]->GetNumSources() <= 0)
+    if (package.GetTerrainGroup().empty())
         return RealityPackageStatus::Success; // No terrain data.
 
     // Group node.
@@ -1116,14 +1150,35 @@ RealityPackageStatus RealityDataSerializerV2::WriteTerrainGroup(BeXmlNodeR node,
         if (!pTerrainData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pTerrainData->GetDataset().c_str());
 
-
         // Sources.
-        for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
+        if (0 != pTerrainData->GetNumSources())
             {
-            if (RealityPackageStatus::Success != WriteSource(*pDataNode, pTerrainData->GetSource(sourceIndex)))
+            BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
+
+            for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
                 {
-                pGroupNode->RemoveChildNode(pDataNode);
-                continue;
+                // Split sources by type (source, multibandsource, etc.).
+                RealityDataSourceCR source = pTerrainData->GetSource(sourceIndex);
+
+                MultiBandSourceCP pMultiBandSource = dynamic_cast<MultiBandSourceCP>(&source);
+                if (NULL != pMultiBandSource)
+                    {
+                    if (RealityPackageStatus::Success != WriteMultiBandSource(*pSourcesNode, *pMultiBandSource))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                else
+                    {
+                    if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, source))
+                        {
+                        pGroupNode->RemoveChildNode(pDataNode);
+                        continue;
+                        }
+                    }
+                //&&JFC TODO WmsSource
+                //&&JFC TODO OsmSource
                 }
             }
         }
@@ -1150,6 +1205,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
 
+    if (!source.GetTermOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
+
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
 
@@ -1162,11 +1220,15 @@ RealityPackageStatus RealityDataSerializerV2::WriteSource(BeXmlNodeR node, Reali
     if (!source.GetMetadata().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
 
+    //&&JFC TODO MetadataType
+
     if (!source.GetGeoCS().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
 
     if (!source.GetNoDataValue().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
+
+    //&&JFC TODO SisterFiles
 
     return RealityPackageStatus::Success;
     }
@@ -1190,6 +1252,9 @@ RealityPackageStatus RealityDataSerializerV2::WriteMultiBandSource(BeXmlNodeR no
     if (!source.GetCopyright().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
 
+    if (!source.GetTermOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
+
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
 
@@ -1202,11 +1267,15 @@ RealityPackageStatus RealityDataSerializerV2::WriteMultiBandSource(BeXmlNodeR no
     if (!source.GetMetadata().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
 
+    //&&JFC TODO MetadataType
+
     if (!source.GetGeoCS().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_GeoCS, source.GetGeoCS().c_str());
 
     if (!source.GetNoDataValue().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_NoDataValue, source.GetNoDataValue().c_str());
+
+    //&&JFC TODO SisterFiles
 
     // Write specific multiband source data.
     if (source.GetRedBand() != NULL)
