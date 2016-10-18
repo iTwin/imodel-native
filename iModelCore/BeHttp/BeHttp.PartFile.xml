@@ -4,12 +4,26 @@
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
+        <SubPart PartName="BeOpenSSLPublicAPI-UWP"/>
+        <SubPart PartName="BeOpenSSLPublicAPI-NonUWP"/>
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <Bindings>
             <PublicAPI Domain="BeHttp" />
         </Bindings>
+    </Part>
+
+    <Part Name="BeOpenSSLPublicAPI-UWP" OnlyPlatforms="WinRT*">
+        <SubPart PartName="PublicAPI" PartFile="BeOpenSSLUWP" Repository="Libsrc-OpenSSL-UWP"/>
+    </Part>
+
+    <Part Name="BeOpenSSLPublicAPI-NonUWP" ExcludePlatforms="WinRT*">
+        <SubPart PartName="PublicAPI" PartFile="BeOpenSSL" Repository="Libsrc-OpenSSL"/>
+    </Part>
+
+    <!-- We need this shim part because there is no LKG for Android, and thus Android builds cannot get a partfile from the LKG to see that the part excludes Android. -->
+    <Part Name="BeCasablancaPublicAPIShim" OnlyPlatforms="WinRT*,x86,x64">
+        <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
     </Part>
          
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
@@ -56,7 +70,7 @@
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
     <Part Name="L10N-BeHttpXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
-        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/BeHttp/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BeHttp/en/">
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/BeHttp/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BeHttp/ -dL10N_XLIFF_LANG_DIRECTORY=en">
         <SubPart PartName="BeHttp-Xliffs" />
     </Part>
 
