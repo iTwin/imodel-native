@@ -2388,6 +2388,9 @@ public:
     //! @name Db Properties
     //! @{
 
+    //! @private
+    DbResult SaveProperty(PropertySpecCR spec, Utf8StringCR strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, strData.c_str(), value, propsize, majorId, subId);}
+
     //! Save a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
     //! @param[in] value A pointer to a buffer that holds the new value of the property to be saved. May be nullptr
