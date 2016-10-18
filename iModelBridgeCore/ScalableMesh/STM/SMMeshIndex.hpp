@@ -57,6 +57,33 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     }
 
+template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeID,
+                                                                                     size_t pi_SplitTreshold,
+                                                                                     const EXTENT& pi_rExtent,
+                                                                                     SMMeshIndex<POINT, EXTENT>* meshIndex,
+                                                                                     ISMPointIndexFilter<POINT, EXTENT>* filter,
+                                                                                     bool balanced,
+                                                                                     bool textured,
+                                                                                     bool propagateDataDown,
+                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
+                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
+                                                                                     CreatedNodeMap*                      createdNodeMap)
+                                                                                     : SMPointIndexNode<POINT, EXTENT>(nodeID, pi_SplitTreshold, pi_rExtent, filter, balanced, propagateDataDown, createdNodeMap)
+    {
+    m_SMIndex = meshIndex;
+    m_mesher2_5d = mesher2_5d;
+    m_mesher3d = mesher3d;
+
+#ifdef WIP_MESH_IMPORT        
+    m_existingMesh = false;
+#endif
+
+    Init();
+
+    m_nbClips = 0;
+
+    }
+
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
                  const EXTENT& pi_rExtent,                                  
                  SMMeshIndex<POINT, EXTENT>* meshIndex,
@@ -82,6 +109,27 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nbClips = 0;
 
     }
+
+template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeId,
+                                                                                     size_t pi_SplitTreshold,
+                                                                                     const EXTENT& pi_rExtent,
+                                                                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
+                                                                                     : SMPointIndexNode<POINT, EXTENT>(nodeId,pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()))
+    {
+    m_SMIndex = pi_rpParentNode->m_SMIndex;
+    m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
+    m_mesher3d = pi_rpParentNode->GetMesher3d();
+
+#ifdef WIP_MESH_IMPORT         
+    m_existingMesh = false;
+#endif
+
+    m_nbClips = 0;
+
+    Init();
+
+    }
+
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
                 const EXTENT& pi_rExtent,
@@ -233,6 +281,13 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
     HINVARIANTS;
 
     return true;
+    }
+
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const
+    {
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMMeshIndexNode<POINT, EXTENT>(nodeId, GetSplitTreshold(), newNodeExtent, const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    pNewNode->SetDirty(true);
+    return pNewNode;
     }
 
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CloneChild(const EXTENT& newNodeExtent) const
@@ -4171,6 +4226,22 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
     SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
+    pNewNode->m_isGenerating = m_isGenerating;
+
+    if (isRootNode)
+        {
+        HFCPtr<SMPointIndexNode<POINT, EXTENT>> parentNodePtr;
+        pNewNode->SetParentNodePtr(parentNodePtr);
+        }
+
+    return pNewNode;
+    }
+
+
+template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode)
+    {
+    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(nodeId, m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 

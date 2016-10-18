@@ -162,6 +162,81 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     }
 
 
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeId,
+                                                                                      size_t pi_SplitTreshold,
+                                                                                      const EXTENT& pi_rExtent,
+                                                                                      const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode)
+                                                                                      : m_pParentNode(pi_rpParentNode)
+    {
+    m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    m_loaded = true;
+    m_destroyed = false;
+    m_DelayedSplitRequested = false;
+    m_nodeHeader.m_numberOfSubNodesOnSplit = 8;
+    m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
+    m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
+    m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
+    m_isParentNodeSet = true;
+    m_isGenerating = pi_rpParentNode->m_isGenerating;
+
+    m_nodeHeader.m_IsBranched = false;
+
+    m_nodeHeader.m_IsUnSplitSubLevel = false;
+
+
+    m_nodeHeader.m_level = pi_rpParentNode->GetLevel() + 1;
+    m_needsBalancing = pi_rpParentNode->m_needsBalancing;
+    m_wasBalanced = false;
+    m_nodeHeader.m_balanced = false;
+    m_nodeHeader.m_SplitTreshold = pi_SplitTreshold;
+    m_nodeHeader.m_IsLeaf = true;
+    m_nodeHeader.m_nodeExtent = pi_rExtent;
+    m_nodeHeader.m_contentExtentDefined = false;
+    m_nodeHeader.m_totalCountDefined = true;
+    m_nodeHeader.m_totalCount = 0;
+    m_nodeHeader.m_nodeCount = 0;
+    m_nodeHeader.m_arePoints3d = false;
+
+    for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
+        {
+        m_nodeHeader.m_apAreNeighborNodesStitched[nodeInd] = false;
+        }
+
+    HDEBUGCODE(m_unspliteable = false;)
+        HDEBUGCODE(m_parentOfAnUnspliteableNode = false;)
+
+        // Call soft invariant as the parent is most probably reconfiguring
+        this->ValidateInvariantsSoft();
+
+    m_filter = pi_rpParentNode->GetFilter();
+    m_nodeHeader.m_filtered = false;
+    m_nodeHeader.m_nbFaceIndexes = 0;
+    m_nodeHeader.m_isTextured = false;
+    m_nodeHeader.m_nbTextures = 0;
+    m_nodeHeader.m_nbUvIndexes = 0;
+    m_nodeHeader.m_numberOfMeshComponents = 0;
+    m_nodeHeader.m_meshComponents = nullptr;
+    m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;
+    if (!m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(4);
+    else SetNumberOfSubNodesOnSplit(8);
+
+    for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+        {
+        m_nodeHeader.m_apSubNodeID[indexNode] = HPMBlockID();
+        }
+    m_isGrid = pi_rpParentNode->m_isGrid;
+
+
+    m_nodeId = nodeId;
+    m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
+
+    m_isDirty = false;
+
+    this->ValidateInvariantsSoft();
+    }
+
+
+
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
@@ -382,6 +457,12 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::~SMPointInd
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
+
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const
+    {
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(nodeId, GetSplitTreshold(), newNodeExtent, const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
+    return pNewNode;
+    }
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::CloneChild (const EXTENT& newNodeExtent) const
     {
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
@@ -739,9 +820,9 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
 
 
 template<class POINT, class EXTENT>
-HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChild(EXTENT newExtent)
+HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChild(EXTENT newExtent, bool computeNodeId, uint64_t nodeId)
     {
-    auto childNodeP = this->CloneChild(newExtent);    
+    auto childNodeP = computeNodeId ? this->CloneChild(newExtent) : this->CloneChild(nodeId, newExtent);
     if (m_apSubNodes[0] == nullptr) m_apSubNodes.clear();
     m_pSubNodeNoSplit = nullptr;
     m_apSubNodes.push_back(childNodeP);
@@ -7817,6 +7898,20 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
     return pNewNode;
     }
 
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode)
+    {
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(nodeId, GetSplitTreshold(), extent, m_filter, m_needsBalancing, PropagatesDataDown(), &m_createdNodeMap);
+    pNewNode->m_isGenerating = m_isGenerating;
+
+    if (isRootNode)
+        {
+        HFCPtr<SMPointIndexNode<POINT, EXTENT>> parentNodePtr;
+        pNewNode->SetParentNodePtr(parentNodePtr);
+        }
+
+    return pNewNode;
+    }
+
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
     {    
     assert(!"Should not be called. Not yet implemented. Implementation should be similar to SMMeshIndex::CreateNewNode");
@@ -8648,6 +8743,25 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateR
         m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true); 
         }    
     
+    return m_pRootNode;
+    }
+
+template<class POINT, class EXTENT>
+HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateRootNode(uint64_t nodeId)
+    {
+    assert(m_pRootNode == 0);
+
+    // Check if initial node allocated
+
+    // There is no root node at the moment
+    // Allocate root node the size of the object extent
+    if (m_indexHeader.m_HasMaxExtent)
+        m_pRootNode = CreateNewNode(nodeId,m_indexHeader.m_MaxExtent, true);
+    else
+        {
+        m_pRootNode = CreateNewNode(nodeId, ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true);
+        }
+
     return m_pRootNode;
     }
 
