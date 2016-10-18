@@ -2582,7 +2582,7 @@ static void sqlite3Fts5Parser(
         fts5yy_destructor(fts5yypParser, (fts5YYCODETYPE)fts5yymajor, &fts5yyminorunion);
         fts5yymajor = fts5YYNOCODE;
       }else{
-        while( fts5yypParser->fts5yytos >= &fts5yypParser->fts5yystack
+        while( fts5yypParser->fts5yytos >= fts5yypParser->fts5yystack
             && fts5yymx != fts5YYERRORSYMBOL
             && (fts5yyact = fts5yy_find_reduce_action(
                         fts5yypParser->fts5yytos->stateno,
@@ -2846,7 +2846,7 @@ static int fts5HighlightCb(
   if( p->iRangeEnd>0 && iPos==p->iRangeEnd ){
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
     p->iOff = iEndOff;
-    if( iPos<p->iter.iEnd ){
+    if( iPos>=p->iter.iStart && iPos<p->iter.iEnd ){
       fts5HighlightAppend(&rc, p, p->zClose, -1);
     }
   }
@@ -2904,6 +2904,118 @@ static void fts5HighlightFunction(
 **************************************************************************/
 
 /*
+** Context object passed to the fts5SentenceFinderCb() function.
+*/
+typedef struct Fts5SFinder Fts5SFinder;
+struct Fts5SFinder {
+  int iPos;                       /* Current token position */
+  int nFirstAlloc;                /* Allocated size of aFirst[] */
+  int nFirst;                     /* Number of entries in aFirst[] */
+  int *aFirst;                    /* Array of first token in each sentence */
+  const char *zDoc;               /* Document being tokenized */
+};
+
+/*
+** Add an entry to the Fts5SFinder.aFirst[] array. Grow the array if
+** necessary. Return SQLITE_OK if successful, or SQLITE_NOMEM if an
+** error occurs.
+*/
+static int fts5SentenceFinderAdd(Fts5SFinder *p, int iAdd){
+  if( p->nFirstAlloc==p->nFirst ){
+    int nNew = p->nFirstAlloc ? p->nFirstAlloc*2 : 64;
+    int *aNew;
+
+    aNew = (int*)sqlite3_realloc(p->aFirst, nNew*sizeof(int));
+    if( aNew==0 ) return SQLITE_NOMEM;
+    p->aFirst = aNew;
+    p->nFirstAlloc = nNew;
+  }
+  p->aFirst[p->nFirst++] = iAdd;
+  return SQLITE_OK;
+}
+
+/*
+** This function is an xTokenize() callback used by the auxiliary snippet()
+** function. Its job is to identify tokens that are the first in a sentence.
+** For each such token, an entry is added to the SFinder.aFirst[] array.
+*/
+static int fts5SentenceFinderCb(
+  void *pContext,                 /* Pointer to HighlightContext object */
+  int tflags,                     /* Mask of FTS5_TOKEN_* flags */
+  const char *pToken,             /* Buffer containing token */
+  int nToken,                     /* Size of token in bytes */
+  int iStartOff,                  /* Start offset of token */
+  int iEndOff                     /* End offset of token */
+){
+  int rc = SQLITE_OK;
+
+  UNUSED_PARAM2(pToken, nToken);
+  UNUSED_PARAM(iEndOff);
+
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+    Fts5SFinder *p = (Fts5SFinder*)pContext;
+    if( p->iPos>0 ){
+      int i;
+      char c = 0;
+      for(i=iStartOff-1; i>=0; i--){
+        c = p->zDoc[i];
+        if( c!=' ' && c!='\t' && c!='\n' && c!='\r' ) break;
+      }
+      if( i!=iStartOff-1 && (c=='.' || c==':') ){
+        rc = fts5SentenceFinderAdd(p, p->iPos);
+      }
+    }else{
+      rc = fts5SentenceFinderAdd(p, 0);
+    }
+    p->iPos++;
+  }
+  return rc;
+}
+
+static int fts5SnippetScore(
+  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
+  Fts5Context *pFts,              /* First arg to pass to pApi functions */
+  int nDocsize,                   /* Size of column in tokens */
+  unsigned char *aSeen,           /* Array with one element per query phrase */
+  int iCol,                       /* Column to score */
+  int iPos,                       /* Starting offset to score */
+  int nToken,                     /* Max tokens per snippet */
+  int *pnScore,                   /* OUT: Score */
+  int *piPos                      /* OUT: Adjusted offset */
+){
+  int rc;
+  int i;
+  int ip = 0;
+  int ic = 0;
+  int iOff = 0;
+  int iFirst = -1;
+  int nInst;
+  int nScore = 0;
+  int iLast = 0;
+
+  rc = pApi->xInstCount(pFts, &nInst);
+  for(i=0; i<nInst && rc==SQLITE_OK; i++){
+    rc = pApi->xInst(pFts, i, &ip, &ic, &iOff);
+    if( rc==SQLITE_OK && ic==iCol && iOff>=iPos && iOff<(iPos+nToken) ){
+      nScore += (aSeen[ip] ? 1 : 1000);
+      aSeen[ip] = 1;
+      if( iFirst<0 ) iFirst = iOff;
+      iLast = iOff + pApi->xPhraseSize(pFts, ip);
+    }
+  }
+
+  *pnScore = nScore;
+  if( piPos ){
+    int iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
+    if( (iAdj+nToken)>nDocsize ) iAdj = nDocsize - nToken;
+    if( iAdj<0 ) iAdj = 0;
+    *piPos = iAdj;
+  }
+
+  return rc;
+}
+
+/*
 ** Implementation of snippet() function.
 */
 static void fts5SnippetFunction(
@@ -2924,9 +3036,10 @@ static void fts5SnippetFunction(
   unsigned char *aSeen;           /* Array of "seen instance" flags */
   int iBestCol;                   /* Column containing best snippet */
   int iBestStart = 0;             /* First token of best snippet */
-  int iBestLast;                  /* Last token of best snippet */
   int nBestScore = 0;             /* Score of best snippet */
   int nColSize = 0;               /* Total size of iBestCol in tokens */
+  Fts5SFinder sFinder;            /* Used to find the beginnings of sentences */
+  int nCol;
 
   if( nVal!=5 ){
     const char *zErr = "wrong number of arguments to function snippet()";
@@ -2934,13 +3047,13 @@ static void fts5SnippetFunction(
     return;
   }
 
+  nCol = pApi->xColumnCount(pFts);
   memset(&ctx, 0, sizeof(HighlightContext));
   iCol = sqlite3_value_int(apVal[0]);
   ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
   zEllips = (const char*)sqlite3_value_text(apVal[3]);
   nToken = sqlite3_value_int(apVal[4]);
-  iBestLast = nToken-1;
 
   iBestCol = (iCol>=0 ? iCol : 0);
   nPhrase = pApi->xPhraseCount(pFts);
@@ -2948,58 +3061,80 @@ static void fts5SnippetFunction(
   if( aSeen==0 ){
     rc = SQLITE_NOMEM;
   }
-
   if( rc==SQLITE_OK ){
     rc = pApi->xInstCount(pFts, &nInst);
   }
-  for(i=0; rc==SQLITE_OK && i<nInst; i++){
-    int ip, iSnippetCol, iStart;
-    memset(aSeen, 0, nPhrase);
-    rc = pApi->xInst(pFts, i, &ip, &iSnippetCol, &iStart);
-    if( rc==SQLITE_OK && (iCol<0 || iSnippetCol==iCol) ){
-      int nScore = 1000;
-      int iLast = iStart - 1 + pApi->xPhraseSize(pFts, ip);
-      int j;
-      aSeen[ip] = 1;
 
-      for(j=i+1; rc==SQLITE_OK && j<nInst; j++){
-        int ic; int io; int iFinal;
-        rc = pApi->xInst(pFts, j, &ip, &ic, &io);
-        iFinal = io + pApi->xPhraseSize(pFts, ip) - 1;
-        if( rc==SQLITE_OK && ic==iSnippetCol && iLast<iStart+nToken ){
-          nScore += aSeen[ip] ? 1000 : 1;
-          aSeen[ip] = 1;
-          if( iFinal>iLast ) iLast = iFinal;
+  memset(&sFinder, 0, sizeof(Fts5SFinder));
+  for(i=0; i<nCol; i++){
+    if( iCol<0 || iCol==i ){
+      int nDoc;
+      int nDocsize;
+      int ii;
+      sFinder.iPos = 0;
+      sFinder.nFirst = 0;
+      rc = pApi->xColumnText(pFts, i, &sFinder.zDoc, &nDoc);
+      if( rc!=SQLITE_OK ) break;
+      rc = pApi->xTokenize(pFts, 
+          sFinder.zDoc, nDoc, (void*)&sFinder,fts5SentenceFinderCb
+      );
+      if( rc!=SQLITE_OK ) break;
+      rc = pApi->xColumnSize(pFts, i, &nDocsize);
+      if( rc!=SQLITE_OK ) break;
+
+      for(ii=0; rc==SQLITE_OK && ii<nInst; ii++){
+        int ip, ic, io;
+        int iAdj;
+        int nScore;
+        int jj;
+
+        rc = pApi->xInst(pFts, ii, &ip, &ic, &io);
+        if( ic!=i || rc!=SQLITE_OK ) continue;
+        memset(aSeen, 0, nPhrase);
+        rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i,
+            io, nToken, &nScore, &iAdj
+        );
+        if( rc==SQLITE_OK && nScore>nBestScore ){
+          nBestScore = nScore;
+          iBestCol = i;
+          iBestStart = iAdj;
+          nColSize = nDocsize;
         }
-      }
 
-      if( rc==SQLITE_OK && nScore>nBestScore ){
-        iBestCol = iSnippetCol;
-        iBestStart = iStart;
-        iBestLast = iLast;
-        nBestScore = nScore;
+        if( rc==SQLITE_OK && sFinder.nFirst && nDocsize>nToken ){
+          for(jj=0; jj<(sFinder.nFirst-1); jj++){
+            if( sFinder.aFirst[jj+1]>io ) break;
+          }
+
+          if( sFinder.aFirst[jj]<io ){
+            memset(aSeen, 0, nPhrase);
+            rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i, 
+              sFinder.aFirst[jj], nToken, &nScore, 0
+            );
+
+            nScore += (sFinder.aFirst[jj]==0 ? 120 : 100);
+            if( rc==SQLITE_OK && nScore>nBestScore ){
+              nBestScore = nScore;
+              iBestCol = i;
+              iBestStart = sFinder.aFirst[jj];
+              nColSize = nDocsize;
+            }
+          }
+        }
       }
     }
   }
 
   if( rc==SQLITE_OK ){
-    rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
-  }
-  if( rc==SQLITE_OK ){
     rc = pApi->xColumnText(pFts, iBestCol, &ctx.zIn, &ctx.nIn);
+  }
+  if( rc==SQLITE_OK && nColSize==0 ){
+    rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
   }
   if( ctx.zIn ){
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iBestCol, &ctx.iter);
     }
-
-    if( (iBestStart+nToken-1)>iBestLast ){
-      iBestStart -= (iBestStart+nToken-1-iBestLast) / 2;
-    }
-    if( iBestStart+nToken>nColSize ){
-      iBestStart = nColSize - nToken;
-    }
-    if( iBestStart<0 ) iBestStart = 0;
 
     ctx.iRangeStart = iBestStart;
     ctx.iRangeEnd = iBestStart + nToken - 1;
@@ -3007,6 +3142,13 @@ static void fts5SnippetFunction(
     if( iBestStart>0 ){
       fts5HighlightAppend(&rc, &ctx, zEllips, -1);
     }
+
+    /* Advance iterator ctx.iter so that it points to the first coalesced
+    ** phrase instance at or following position iBestStart. */
+    while( ctx.iter.iStart>=0 && ctx.iter.iStart<iBestStart && rc==SQLITE_OK ){
+      rc = fts5CInstIterNext(&ctx.iter);
+    }
+
     if( rc==SQLITE_OK ){
       rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
     }
@@ -3015,15 +3157,15 @@ static void fts5SnippetFunction(
     }else{
       fts5HighlightAppend(&rc, &ctx, zEllips, -1);
     }
-
-    if( rc==SQLITE_OK ){
-      sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
-    }else{
-      sqlite3_result_error_code(pCtx, rc);
-    }
-    sqlite3_free(ctx.zOut);
   }
+  if( rc==SQLITE_OK ){
+    sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
+  }else{
+    sqlite3_result_error_code(pCtx, rc);
+  }
+  sqlite3_free(ctx.zOut);
   sqlite3_free(aSeen);
+  sqlite3_free(sFinder.aFirst);
 }
 
 /************************************************************************/
@@ -5329,6 +5471,7 @@ static int fts5ExprNearInitAll(
   Fts5ExprNearset *pNear = pNode->pNear;
   int i, j;
   int rc = SQLITE_OK;
+  int bEof = 1;
 
   assert( pNode->bNomatch==0 );
   for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
@@ -5336,7 +5479,6 @@ static int fts5ExprNearInitAll(
     for(j=0; j<pPhrase->nTerm; j++){
       Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
       Fts5ExprTerm *p;
-      int bEof = 1;
 
       for(p=pTerm; p && rc==SQLITE_OK; p=p->pSynonym){
         if( p->pIter ){
@@ -5356,13 +5498,12 @@ static int fts5ExprNearInitAll(
         }
       }
 
-      if( bEof ){
-        pNode->bEof = 1;
-        return rc;
-      }
+      if( bEof ) break;
     }
+    if( bEof ) break;
   }
 
+  pNode->bEof = bEof;
   return rc;
 }
 
@@ -6213,7 +6354,6 @@ static int sqlite3Fts5ExprClonePhrase(
 ){
   int rc = SQLITE_OK;             /* Return code */
   Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
-  int i;                          /* Used to iterate through phrase terms */
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
   TokenCtx sCtx = {0,0};          /* Context object for fts5ParseTokenize */
 
@@ -6234,7 +6374,7 @@ static int sqlite3Fts5ExprClonePhrase(
   if( rc==SQLITE_OK ){
     Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
     if( pColsetOrig ){
-      int nByte = sizeof(Fts5Colset) + pColsetOrig->nCol * sizeof(int);
+      int nByte = sizeof(Fts5Colset) + (pColsetOrig->nCol-1) * sizeof(int);
       Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
       if( pColset ){ 
         memcpy(pColset, pColsetOrig, nByte);
@@ -6243,18 +6383,25 @@ static int sqlite3Fts5ExprClonePhrase(
     }
   }
 
-  for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
-    int tflags = 0;
-    Fts5ExprTerm *p;
-    for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
-      const char *zTerm = p->zTerm;
-      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
-          0, 0);
-      tflags = FTS5_TOKEN_COLOCATED;
+  if( pOrig->nTerm ){
+    int i;                          /* Used to iterate through phrase terms */
+    for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
+      int tflags = 0;
+      Fts5ExprTerm *p;
+      for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
+        const char *zTerm = p->zTerm;
+        rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
+            0, 0);
+        tflags = FTS5_TOKEN_COLOCATED;
+      }
+      if( rc==SQLITE_OK ){
+        sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+      }
     }
-    if( rc==SQLITE_OK ){
-      sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
-    }
+  }else{
+    /* This happens when parsing a token or quoted phrase that contains
+    ** no token characters at all. (e.g ... MATCH '""'). */
+    sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
   }
 
   if( rc==SQLITE_OK ){
@@ -8492,13 +8639,24 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   return pRet;
 }
 
-
 /*
 ** Release a reference to data record returned by an earlier call to
 ** fts5DataRead().
 */
 static void fts5DataRelease(Fts5Data *pData){
   sqlite3_free(pData);
+}
+
+static Fts5Data *fts5LeafRead(Fts5Index *p, i64 iRowid){
+  Fts5Data *pRet = fts5DataRead(p, iRowid);
+  if( pRet ){
+    if( pRet->szLeaf>pRet->nn ){
+      p->rc = FTS5_CORRUPT;
+      fts5DataRelease(pRet);
+      pRet = 0;
+    }
+  }
+  return pRet;
 }
 
 static int fts5IndexPrepareStmt(
@@ -9309,7 +9467,7 @@ static void fts5SegIterNextPage(
     pIter->pLeaf = pIter->pNextLeaf;
     pIter->pNextLeaf = 0;
   }else if( pIter->iLeafPgno<=pSeg->pgnoLast ){
-    pIter->pLeaf = fts5DataRead(p, 
+    pIter->pLeaf = fts5LeafRead(p, 
         FTS5_SEGMENT_ROWID(pSeg->iSegid, pIter->iLeafPgno)
     );
   }else{
@@ -9812,9 +9970,8 @@ static void fts5SegIterNext(
         if( pLeaf->nn>pLeaf->szLeaf ){
           pIter->iPgidxOff = pLeaf->szLeaf + fts5GetVarint32(
               &pLeaf->p[pLeaf->szLeaf], pIter->iEndofDoclist
-              );
+          );
         }
-
       }
       else if( pLeaf->nn>pLeaf->szLeaf ){
         pIter->iPgidxOff = pLeaf->szLeaf + fts5GetVarint32(
@@ -10058,6 +10215,11 @@ static void fts5LeafSeek(
     iPgidx += fts5GetVarint32(&a[iPgidx], nKeep);
     iTermOff += nKeep;
     iOff = iTermOff;
+
+    if( iOff>=n ){
+      p->rc = FTS5_CORRUPT;
+      return;
+    }
 
     /* Read the nKeep field of the next term. */
     fts5FastGetVarint32(a, iOff, nKeep);
@@ -16879,7 +17041,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-08-11 18:05:47 ed406d31ff54ee3de8db91690a966e5c561f8f94", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-10-17 18:44:11 5ec02ecf3d20ce7e3f5249e9a3684f9b67a7d703", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
@@ -16967,7 +17129,7 @@ static int fts5Init(sqlite3 *db){
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-SQLITE_API int SQLITE_STDCALL sqlite3_fts_init(
+SQLITE_API int sqlite3_fts_init(
   sqlite3 *db,
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
@@ -16980,7 +17142,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_fts_init(
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-SQLITE_API int SQLITE_STDCALL sqlite3_fts5_init(
+SQLITE_API int sqlite3_fts5_init(
   sqlite3 *db,
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
@@ -20361,8 +20523,19 @@ static int fts5VocabBestIndexMethod(
     }
   }
 
-  pInfo->idxNum = idxNum;
+  /* This virtual table always delivers results in ascending order of
+  ** the "term" column (column 0). So if the user has requested this
+  ** specifically - "ORDER BY term" or "ORDER BY term ASC" - set the
+  ** sqlite3_index_info.orderByConsumed flag to tell the core the results
+  ** are already in sorted order.  */
+  if( pInfo->nOrderBy==1 
+   && pInfo->aOrderBy[0].iColumn==0 
+   && pInfo->aOrderBy[0].desc==0
+  ){
+    pInfo->orderByConsumed = 1;
+  }
 
+  pInfo->idxNum = idxNum;
   return SQLITE_OK;
 }
 

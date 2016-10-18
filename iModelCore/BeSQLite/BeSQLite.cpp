@@ -14,6 +14,8 @@
 #undef min
 #undef max
 
+#define SQLITE_AMALGAMATION 1
+
 #include <BeSQLite/ChangeSet.h>
 #include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>

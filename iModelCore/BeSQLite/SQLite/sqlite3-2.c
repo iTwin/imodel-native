@@ -7706,7 +7706,7 @@ static int proxyClose(sqlite3_file *id) {
 ** necessarily been initialized when this routine is called, and so they
 ** should not be used.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){ 
+SQLITE_API int sqlite3_os_init(void){ 
   /* 
   ** The following macro defines an initializer for an sqlite3_vfs object.
   ** The name of the VFS is NAME.  The pAppData is a pointer to a pointer
@@ -7805,7 +7805,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){
 ** to release dynamically allocated objects.  But not on unix.
 ** This routine is a no-op for unix.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){ 
+SQLITE_API int sqlite3_os_end(void){ 
   return SQLITE_OK; 
 }
  
@@ -9240,7 +9240,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 ** "pnLargest" argument, if non-zero, will be used to return the size of the
 ** largest committed free block in the heap, in bytes.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_win32_compact_heap(LPUINT pnLargest){
+SQLITE_API int sqlite3_win32_compact_heap(LPUINT pnLargest){
   int rc = SQLITE_OK;
   UINT nLargest = 0;
   HANDLE hHeap;
@@ -9280,7 +9280,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_win32_compact_heap(LPUINT pnLargest){
 ** the sqlite3_memory_used() function does not return zero, SQLITE_BUSY will
 ** be returned and no changes will be made to the Win32 native heap.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_win32_reset_heap(){
+SQLITE_API int sqlite3_win32_reset_heap(){
   int rc;
   MUTEX_LOGIC( sqlite3_mutex *pMaster; ) /* The main static mutex */
   MUTEX_LOGIC( sqlite3_mutex *pMem; )    /* The memsys static mutex */
@@ -9325,7 +9325,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_win32_reset_heap(){
 ** (if available).
 */
 
-SQLITE_API void SQLITE_STDCALL sqlite3_win32_write_debug(const char *zBuf, int nBuf){
+SQLITE_API void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
   char zDbgBuf[SQLITE_WIN32_DBG_BUF_SIZE];
   int nMin = MIN(nBuf, (SQLITE_WIN32_DBG_BUF_SIZE - 1)); /* may be negative. */
   if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
@@ -9371,7 +9371,7 @@ SQLITE_API void SQLITE_STDCALL sqlite3_win32_write_debug(const char *zBuf, int n
 static HANDLE sleepObj = NULL;
 #endif
 
-SQLITE_API void SQLITE_STDCALL sqlite3_win32_sleep(DWORD milliseconds){
+SQLITE_API void sqlite3_win32_sleep(DWORD milliseconds){
 #if SQLITE_OS_WINRT
   if ( sleepObj==NULL ){
     sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET,
@@ -9420,7 +9420,7 @@ SQLITE_PRIVATE DWORD sqlite3Win32Wait(HANDLE hObject){
 ** This function determines if the machine is running a version of Windows
 ** based on the NT kernel.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_win32_is_nt(void){
+SQLITE_API int sqlite3_win32_is_nt(void){
 #if SQLITE_OS_WINRT
   /*
   ** NOTE: The WinRT sub-platform is always assumed to be based on the NT
@@ -9808,7 +9808,7 @@ static char *winUtf8ToMbcs(const char *zText, int useAnsi){
 /*
 ** This is a public wrapper for the winUtf8ToUnicode() function.
 */
-SQLITE_API LPWSTR SQLITE_STDCALL sqlite3_win32_utf8_to_unicode(const char *zText){
+SQLITE_API LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9824,7 +9824,7 @@ SQLITE_API LPWSTR SQLITE_STDCALL sqlite3_win32_utf8_to_unicode(const char *zText
 /*
 ** This is a public wrapper for the winUnicodeToUtf8() function.
 */
-SQLITE_API char *SQLITE_STDCALL sqlite3_win32_unicode_to_utf8(LPCWSTR zWideText){
+SQLITE_API char *sqlite3_win32_unicode_to_utf8(LPCWSTR zWideText){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zWideText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9840,7 +9840,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_win32_unicode_to_utf8(LPCWSTR zWideText)
 /*
 ** This is a public wrapper for the winMbcsToUtf8() function.
 */
-SQLITE_API char *SQLITE_STDCALL sqlite3_win32_mbcs_to_utf8(const char *zText){
+SQLITE_API char *sqlite3_win32_mbcs_to_utf8(const char *zText){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9856,7 +9856,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_win32_mbcs_to_utf8(const char *zText){
 /*
 ** This is a public wrapper for the winMbcsToUtf8() function.
 */
-SQLITE_API char *SQLITE_STDCALL sqlite3_win32_mbcs_to_utf8_v2(const char *zText, int useAnsi){
+SQLITE_API char *sqlite3_win32_mbcs_to_utf8_v2(const char *zText, int useAnsi){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9872,7 +9872,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_win32_mbcs_to_utf8_v2(const char *zText,
 /*
 ** This is a public wrapper for the winUtf8ToMbcs() function.
 */
-SQLITE_API char *SQLITE_STDCALL sqlite3_win32_utf8_to_mbcs(const char *zText){
+SQLITE_API char *sqlite3_win32_utf8_to_mbcs(const char *zText){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9888,7 +9888,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_win32_utf8_to_mbcs(const char *zText){
 /*
 ** This is a public wrapper for the winUtf8ToMbcs() function.
 */
-SQLITE_API char *SQLITE_STDCALL sqlite3_win32_utf8_to_mbcs_v2(const char *zText, int useAnsi){
+SQLITE_API char *sqlite3_win32_utf8_to_mbcs_v2(const char *zText, int useAnsi){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !zText ){
     (void)SQLITE_MISUSE_BKPT;
@@ -9908,7 +9908,7 @@ SQLITE_API char *SQLITE_STDCALL sqlite3_win32_utf8_to_mbcs_v2(const char *zText,
 ** argument is the name of the directory to use.  The return value will be
 ** SQLITE_OK if successful.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
+SQLITE_API int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
   char **ppDirectory = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   int rc = sqlite3_initialize();
@@ -11498,6 +11498,12 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       }else{
         a[1] = winIoerrRetryDelay;
       }
+      OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_WIN32_GET_HANDLE: {
+      LPHANDLE phFile = (LPHANDLE)pArg;
+      *phFile = pFile->h;
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
@@ -13826,7 +13832,7 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 /*
 ** Initialize and deinitialize the operating system interface.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){
+SQLITE_API int sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
     3,                     /* iVersion */
     sizeof(winFile),       /* szOsFile */
@@ -13957,7 +13963,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){
   return SQLITE_OK;
 }
 
-SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){
+SQLITE_API int sqlite3_os_end(void){
 #if SQLITE_OS_WINRT
   if( sleepObj!=NULL ){
     osCloseHandle(sleepObj);
@@ -14848,7 +14854,7 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   assert( pPage!=0 );
   pPgHdr = (PgHdr*)pPage->pExtra;
   assert( pPgHdr->pPage==0 );
-  memset(pPgHdr, 0, sizeof(PgHdr));
+  memset(&pPgHdr->pDirty, 0, sizeof(PgHdr) - offsetof(PgHdr,pDirty));
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
@@ -15542,7 +15548,7 @@ static int pcache1InitBulk(PCache1 *pCache){
     szBulk = -1024 * (i64)pcache1.nInitPage;
   }
   if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
-    szBulk = pCache->szAlloc*pCache->nMax;
+    szBulk = pCache->szAlloc*(i64)pCache->nMax;
   }
   zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
   sqlite3EndBenignMalloc();
@@ -17076,7 +17082,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 #ifdef SQLITE_OMIT_WAL
 # define sqlite3WalOpen(x,y,z)                   0
 # define sqlite3WalLimit(x,y)
-# define sqlite3WalClose(w,x,y,z)                0
+# define sqlite3WalClose(v,w,x,y,z)              0
 # define sqlite3WalBeginReadTransaction(y,z)     0
 # define sqlite3WalEndReadTransaction(z)
 # define sqlite3WalDbsize(y)                     0
@@ -17086,7 +17092,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 # define sqlite3WalSavepoint(y,z)
 # define sqlite3WalSavepointUndo(y,z)            0
 # define sqlite3WalFrames(u,v,w,x,y,z)           0
-# define sqlite3WalCheckpoint(r,s,t,u,v,w,x,y,z) 0
+# define sqlite3WalCheckpoint(q,r,s,t,u,v,w,x,y,z) 0
 # define sqlite3WalCallback(z)                   0
 # define sqlite3WalExclusiveMode(y,z)            0
 # define sqlite3WalHeapMemory(z)                 0
@@ -17104,7 +17110,7 @@ typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
 SQLITE_PRIVATE int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *, int, i64, Wal**);
-SQLITE_PRIVATE int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
+SQLITE_PRIVATE int sqlite3WalClose(Wal *pWal, sqlite3*, int sync_flags, int, u8 *);
 
 /* Set the limiting size of a WAL file. */
 SQLITE_PRIVATE void sqlite3WalLimit(Wal*, i64);
@@ -17147,6 +17153,7 @@ SQLITE_PRIVATE int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 /* Copy pages from the log to the database file */ 
 SQLITE_PRIVATE int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
+  sqlite3 *db,                    /* Check this handle's interrupt flag */
   int eMode,                      /* One of PASSIVE, FULL and RESTART */
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
@@ -21195,9 +21202,10 @@ static void pagerFreeMapHdrs(Pager *pPager){
 ** a hot journal may be left in the filesystem but no error is returned
 ** to the caller.
 */
-SQLITE_PRIVATE int sqlite3PagerClose(Pager *pPager){
+SQLITE_PRIVATE int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   u8 *pTmp = (u8 *)pPager->pTmpSpace;
 
+  assert( db || pagerUseWal(pPager)==0 );
   assert( assert_pager_state(pPager) );
   disable_simulated_io_errors();
   sqlite3BeginBenignMalloc();
@@ -21205,7 +21213,7 @@ SQLITE_PRIVATE int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, pTmp);
+  sqlite3WalClose(pPager->pWal,db,pPager->ckptSyncFlags,pPager->pageSize,pTmp);
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -23830,7 +23838,11 @@ SQLITE_PRIVATE int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 ** savepoint. If no errors occur, SQLITE_OK is returned.
 */ 
 SQLITE_PRIVATE int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
-  int rc = pPager->errCode;       /* Return code */
+  int rc = pPager->errCode;
+  
+#ifdef SQLITE_ENABLE_ZIPVFS
+  if( op==SAVEPOINT_RELEASE ) rc = SQLITE_OK;
+#endif
 
   assert( op==SAVEPOINT_RELEASE || op==SAVEPOINT_ROLLBACK );
   assert( iSavepoint>=0 || op==SAVEPOINT_ROLLBACK );
@@ -23871,6 +23883,20 @@ SQLITE_PRIVATE int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
       rc = pagerPlaybackSavepoint(pPager, pSavepoint);
       assert(rc!=SQLITE_DONE);
     }
+    
+#ifdef SQLITE_ENABLE_ZIPVFS
+    /* If the cache has been modified but the savepoint cannot be rolled 
+    ** back journal_mode=off, put the pager in the error state. This way,
+    ** if the VFS used by this pager includes ZipVFS, the entire transaction
+    ** can be rolled back at the ZipVFS level.  */
+    else if( 
+        pPager->journalMode==PAGER_JOURNALMODE_OFF 
+     && pPager->eState>=PAGER_WRITER_CACHEMOD
+    ){
+      pPager->errCode = SQLITE_ABORT;
+      pPager->eState = PAGER_ERROR;
+    }
+#endif
   }
 
   return rc;
@@ -24350,10 +24376,16 @@ SQLITE_PRIVATE void sqlite3PagerClearCache(Pager *pPager){
 **
 ** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-SQLITE_PRIVATE int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
+SQLITE_PRIVATE int sqlite3PagerCheckpoint(
+  Pager *pPager,                  /* Checkpoint on this pager */
+  sqlite3 *db,                    /* Db handle used to check for interrupts */
+  int eMode,                      /* Type of checkpoint */
+  int *pnLog,                     /* OUT: Final number of frames in log */
+  int *pnCkpt                     /* OUT: Final number of checkpointed frames */
+){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
+    rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->ckptSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
@@ -24485,7 +24517,7 @@ SQLITE_PRIVATE int sqlite3PagerOpenWal(
 ** error (SQLITE_BUSY) is returned and the log connection is not closed.
 ** If successful, the EXCLUSIVE lock is not released before returning.
 */
-SQLITE_PRIVATE int sqlite3PagerCloseWal(Pager *pPager){
+SQLITE_PRIVATE int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   int rc = SQLITE_OK;
 
   assert( pPager->journalMode==PAGER_JOURNALMODE_WAL );
@@ -24513,7 +24545,7 @@ SQLITE_PRIVATE int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags,
+      rc = sqlite3WalClose(pPager->pWal, db, pPager->ckptSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
       pPager->pWal = 0;
       pagerFixMaplimit(pPager);
@@ -26296,6 +26328,7 @@ static void walRestartHdr(Wal *pWal, u32 salt1){
 */
 static int walCheckpoint(
   Wal *pWal,                      /* Wal connection */
+  sqlite3 *db,                    /* Check for interrupts on this handle */
   int eMode,                      /* One of PASSIVE, FULL or RESTART */
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
@@ -26390,6 +26423,10 @@ static int walCheckpoint(
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
         i64 iOffset;
         assert( walFramePgno(pWal, iFrame)==iDbpage );
+        if( db->u1.isInterrupted ){
+          rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
+          break;
+        }
         if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
           continue;
         }
@@ -26494,6 +26531,7 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 */
 SQLITE_PRIVATE int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
+  sqlite3 *db,                    /* For interrupt flag */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
   int nBuf,
   u8 *zBuf                        /* Buffer of at least nBuf bytes */
@@ -26515,8 +26553,8 @@ SQLITE_PRIVATE int sqlite3WalClose(
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = sqlite3WalCheckpoint(
-          pWal, SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
+      rc = sqlite3WalCheckpoint(pWal, db, 
+          SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
       if( rc==SQLITE_OK ){
         int bPersist = -1;
@@ -27764,6 +27802,7 @@ SQLITE_PRIVATE int sqlite3WalFrames(
 */
 SQLITE_PRIVATE int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Wal connection */
+  sqlite3 *db,                    /* Check this handle's interrupt flag */
   int eMode,                      /* PASSIVE, FULL, RESTART, or TRUNCATE */
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
@@ -27838,7 +27877,7 @@ SQLITE_PRIVATE int sqlite3WalCheckpoint(
     if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
-      rc = walCheckpoint(pWal, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
+      rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
     }
 
     /* If no error occurred, set the output variables. */
@@ -27982,7 +28021,7 @@ SQLITE_PRIVATE void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapsho
 ** Return a +ve value if snapshot p1 is newer than p2. A -ve value if
 ** p1 is older than p2 and zero if p1 and p2 are the same snapshot.
 */
-SQLITE_API int SQLITE_STDCALL sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
+SQLITE_API int sqlite3_snapshot_cmp(sqlite3_snapshot *p1, sqlite3_snapshot *p2){
   WalIndexHdr *pHdr1 = (WalIndexHdr*)p1;
   WalIndexHdr *pHdr2 = (WalIndexHdr*)p2;
 
