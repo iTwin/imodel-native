@@ -1293,54 +1293,53 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
 //static
 BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, bool endWithComma)
     {
-    //ECInstanceId and ECClassId
-    auto sqlSnippets = relationMap.GetECInstanceIdPropertyMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size() != 1)
+    WipPropertyMapSqlDispatcher sqlDispatcher(relationMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationMap.GetJoinedTable().GetName().c_str());
+
+    relationMap.GetECInstanceIdPropertyMap()->Accept(sqlDispatcher);
+    relationMap.GetECClassIdPropertyMap()->Accept(sqlDispatcher);
+    relationMap.GetSourceECInstanceIdPropMap()->Accept(sqlDispatcher);
+    relationMap.GetSourceECClassIdPropMap()->Accept(sqlDispatcher);
+    relationMap.GetTargetECInstanceIdPropMap()->Accept(sqlDispatcher);
+    relationMap.GetTargetECClassIdPropMap()->Accept(sqlDispatcher);
+
+    if (sqlDispatcher.GetResultSet().size() != 6LL)
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
+    WipPropertyMapSqlDispatcher::Result const& rECInstanceId = sqlDispatcher.GetResultSet().at(0);
+    WipPropertyMapSqlDispatcher::Result const& rECClassId = sqlDispatcher.GetResultSet().at(1);
+    WipPropertyMapSqlDispatcher::Result const& rSourceECInstanceId = sqlDispatcher.GetResultSet().at(2);
+    WipPropertyMapSqlDispatcher::Result const& rSourceECClassId = sqlDispatcher.GetResultSet().at(3);
+    WipPropertyMapSqlDispatcher::Result const& rTargetECInstanceId = sqlDispatcher.GetResultSet().at(4);
+    WipPropertyMapSqlDispatcher::Result const& rTargetECClassId = sqlDispatcher.GetResultSet().at(5);
+
+
+    viewSql.Append("SELECT NULL ").Append(rECInstanceId.GetColumn().GetName().c_str()).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        relationMap.GetECInstanceIdPropertyMap()->GetPropertyPathList(*m_viewAccessStringList);
+        m_viewAccessStringList->push_back(rECInstanceId.GetAccessString());
 
-    viewSql.Append("SELECT NULL ").Append(sqlSnippets).AppendComma();
-    viewSql.Append("NULL ").Append(ECDB_COL_ECClassId).AppendComma();
-
+    viewSql.Append("NULL ").Append(rECClassId.GetColumn().GetName().c_str()).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
+        m_viewAccessStringList->push_back(rECClassId.GetAccessString());
 
-    //Source constraint
-    sqlSnippets = relationMap.GetSourceECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size() != 1)
-        return ERROR;
-
-    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
+    viewSql.Append("NULL ").Append(rSourceECInstanceId.GetColumn().GetName().c_str()).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        relationMap.GetSourceECInstanceIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
+        m_viewAccessStringList->push_back(rSourceECInstanceId.GetAccessString());
 
-    sqlSnippets = relationMap.GetSourceECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size() != 1)
-        return ERROR;
-
-    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
+    viewSql.Append("NULL ").Append(rSourceECClassId.GetColumn().GetName().c_str()).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        relationMap.GetSourceECClassIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
-
-    //Target constraint
-    sqlSnippets = relationMap.GetTargetECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size() != 1)
-        return ERROR;
-
-    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
+        m_viewAccessStringList->push_back(rSourceECClassId.GetAccessString());
+    
+    viewSql.Append("NULL ").Append(rTargetECInstanceId.GetColumn().GetName().c_str()).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        relationMap.GetTargetECInstanceIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
-
-    sqlSnippets = relationMap.GetTargetECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size() != 1)
-        return ERROR;
-
-    viewSql.Append("NULL ").Append(sqlSnippets);
+        m_viewAccessStringList->push_back(rTargetECInstanceId.GetAccessString());
+    
+    viewSql.Append("NULL ").Append(rTargetECClassId.GetColumn().GetName().c_str());
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        relationMap.GetTargetECClassIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
-
+        m_viewAccessStringList->push_back(rTargetECClassId.GetAccessString());
+    
     if (endWithComma)
         viewSql.AppendComma();
 
@@ -1353,9 +1352,15 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 //static
 BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, WipConstraintECClassIdPropertyMap const& propMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, DbTable const& contextTable)
     {
-    DbColumn const* column = propMap.GetSingleColumn(contextTable, false);
-    BeAssert(column != nullptr);
-    if (column->GetPersistenceType() == PersistenceType::Virtual)
+    WipPropertyMapSqlDispatcher sqlDispatherTable(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+    if (sqlDispatherTable.GetStatus() == ERROR || sqlDispatherTable.GetResultSet().empty())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    WipPropertyMapSqlDispatcher::Result const& r = sqlDispatherTable.GetResultSet().front();
+    if (!r.IsColumnPersisted())
         {
         bool hasAnyClass = false;
         std::set<ClassMap const*> classMaps = m_ecdb.Schemas().GetDbMap().GetClassMapsFromRelationshipEnd(constraint, &hasAnyClass);
@@ -1384,10 +1389,13 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
         Utf8Char endClassIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         endClassId.ToString(endClassIdStr);
         viewSql.Append(endClassIdStr).AppendSpace();
-        viewSql.Append(propMap.ToNativeSql(nullptr, ECSqlType::Select, false, &contextTable));
+        viewSql.Append(r.GetSql());
         }
     else
-        propMap.AppendSelectClauseSqlSnippetForView(viewSql, contextTable);
+        {
+        WipPropertyMapSqlDispatcher sqlDispatherView(contextTable, WipPropertyMapSqlDispatcher::SqlTarget::View, nullptr);
+        viewSql.Append(sqlDispatherView.GetResultSet().front().GetSql());
+        }
 
     return SUCCESS;
     }

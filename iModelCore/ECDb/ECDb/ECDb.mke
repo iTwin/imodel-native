@@ -42,8 +42,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
-                $(baseDir)PropertyMap.h \
-                $(baseDir)SystemPropertyMap.h \
                 $(baseDir)ClassMapPersistenceManager.h \
                 $(baseDir)ECDbSchemaPersistenceHelper.h \
                 $(baseDir)ECDbSchemaReader.h \
@@ -168,10 +166,6 @@ $(o)ClassMappingInfo$(oext):                                  $(baseDir)ClassMap
 $(o)ClassMap$(oext):                                          $(baseDir)ClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)RelationshipClassMap$(oext):                              $(baseDir)RelationshipClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)PropertyMap$(oext):                                       $(baseDir)PropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SystemPropertyMap$(oext):                                 $(baseDir)SystemPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMapPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  

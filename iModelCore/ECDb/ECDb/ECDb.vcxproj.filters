@@ -339,13 +339,7 @@
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="PropertyMap.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="RelationshipClassMap.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
-    <ClInclude Include="SystemPropertyMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="ViewGenerator.h">
@@ -674,13 +668,7 @@
     <ClCompile Include="MapStrategy.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="PropertyMap.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="RelationshipClassMap.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="SystemPropertyMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ViewGenerator.cpp">

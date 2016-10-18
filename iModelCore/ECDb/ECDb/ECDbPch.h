@@ -19,8 +19,6 @@
 #include "IssueReporter.h"
 #include "ECSchemaComparers.h"
 #include "ECDbImpl.h"
-#include "PropertyMap.h"
-#include "SystemPropertyMap.h"
 #include "MapStrategy.h"
 #include "ECDbMap.h"
 #include "ClassMap.h"

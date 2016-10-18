@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlTypeInfo.h"
-#include "../PropertyMap.h"
+#include "../WipPropertyMap.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
