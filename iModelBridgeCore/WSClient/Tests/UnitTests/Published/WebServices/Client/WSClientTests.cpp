@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSClientTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSClient.h>
@@ -213,6 +213,18 @@ TEST_F(WSClientTests, GetServerInfo_ThirdResponseIsUnauthorized_StopsAndReturnsL
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
+    }
+
+TEST_F(WSClientTests, GetServerInfo_AllResponsesWithServerError_ReturnsServerNotSupportedError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ForAnyRequest(StubHttpResponse(HttpStatus::InternalServerError));
+
+    auto result = client->GetServerInfo()->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, result.GetError().GetStatus());
     }
 
 #ifdef USE_GTEST
