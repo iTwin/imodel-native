@@ -57,8 +57,11 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
     PropertyPathId propertyPathId;
     if (m_classMapContext.TryGetPropertyPathId(propertyPathId, rootPropertyId, accessString, true) != SUCCESS)
         return ERROR;
-    ECDbCR ecdb = GetMapSaveContext().GetECDb();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_PropertyMap(ClassId, PropertyPathId, ColumnId) VALUES (?,?,?)");
+
+    BeAssert(propertyPathId.IsValid());
+    BeAssert(columnId.IsValid());
+
+    CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetCachedStatement("INSERT INTO ec_PropertyMap(ClassId, PropertyPathId, ColumnId) VALUES (?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -122,7 +125,7 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
