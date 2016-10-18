@@ -95,6 +95,15 @@ public:
     //! Get server name.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const;
 
+    //! Get file pattern.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataset() const;
+	
+    //! Get file pattern.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFilePattern() const;
+
+    //! Get classification.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassification() const;
+
     //! Get repository mapping (remote and local repository).
     REALITYDATAPLATFORM_EXPORT const RepositoryMapping& GetRepositoryMapping() const;
 
@@ -104,7 +113,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetObserver(ISpatialEntityTraversalObserver* pObserver);
 
 protected:
-    REALITYDATAPLATFORM_EXPORT SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classsification);
     REALITYDATAPLATFORM_EXPORT ~SpatialEntityClient();
 
     //! Recurse into sub directories and create a list of all files.
@@ -122,9 +131,13 @@ protected:
 
     BeFileName m_certificatePath;
     SpatialEntityServerPtr m_pServer;
+    Utf8String m_datasetName;
     static ISpatialEntityTraversalObserver* m_pObserver;
     static RepositoryMapping m_dataRepositories;
     static int m_retryCount;
+    Utf8String m_filePattern;
+    bool m_extractThumbnails;
+    Utf8String m_classification;
 };
 
 //=====================================================================================
@@ -384,6 +397,10 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetUrl(Utf8CP url);
 
     //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGeoCS() const;
+    REALITYDATAPLATFORM_EXPORT void SetGeoCS(Utf8CP geoCS);
+
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCompoundType() const;
     REALITYDATAPLATFORM_EXPORT void SetCompoundType(Utf8CP type);
 
@@ -404,8 +421,16 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetDataType(Utf8CP type);
 
     //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassification() const;
+    REALITYDATAPLATFORM_EXPORT void SetClassification(Utf8CP classification);
+
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocationInCompound() const;
     REALITYDATAPLATFORM_EXPORT void SetLocationInCompound(Utf8CP location);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataset() const;
+    REALITYDATAPLATFORM_EXPORT void SetDataset(Utf8CP dataset);
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT DateTimeCR GetDate() const;
@@ -435,13 +460,16 @@ protected:
 
     Utf8String m_name;
     Utf8String m_url;
+    Utf8String m_geoCS;
     Utf8String m_compoundType;
     uint64_t m_size;
     Utf8String m_resolution;
     Utf8String m_provider;
     Utf8String m_dataType;
+    Utf8String m_classification;
     Utf8String m_locationInCompound;
     DateTime m_date;
+    Utf8String m_dataset;
     bvector<DPoint2d> m_footprint;
     DRange2d m_footprintExtents;
     SpatialEntityThumbnailPtr m_pThumbnail;

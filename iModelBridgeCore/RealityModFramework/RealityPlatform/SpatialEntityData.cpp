@@ -155,6 +155,13 @@ SpatialEntityStatus SpatialEntityClient::GetData() const
         // Set provider.
         pExtractedData->SetProvider(GetServerName().c_str());
 
+        // Set dataset
+        pExtractedData->SetDataset(GetDataset().c_str());
+
+        // Set classification (overide if specified)
+        if (GetClassification().size() > 0)
+            pExtractedData->SetClassification(GetClassification().c_str());
+
         // Process created data.
         if (m_pObserver != NULL && pExtractedData != NULL)
             m_pObserver->OnDataExtracted(*pExtractedData);
@@ -183,6 +190,30 @@ Utf8StringCR SpatialEntityClient::GetServerName() const
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    10/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntityClient::GetDataset() const
+    {
+    return m_datasetName;
+    }
+	
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    10/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntityClient::GetFilePattern() const
+    {
+    return m_filePattern;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    10/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntityClient::GetClassification() const
+    {
+    return m_classification;
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 const SpatialEntityClient::RepositoryMapping& SpatialEntityClient::GetRepositoryMapping() const
@@ -201,12 +232,16 @@ void SpatialEntityClient::SetObserver(ISpatialEntityTraversalObserver* pObserver
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityClient::SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName)
+SpatialEntityClient::SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
     {
     m_certificatePath = BeFileName();
     m_pServer = SpatialEntityServer::Create(serverUrl, serverName);
     m_pObserver = NULL;
     m_dataRepositories = RepositoryMapping();
+    m_datasetName = Utf8String(datasetName);
+    m_filePattern = Utf8String(filePattern);
+    m_extractThumbnails = extractThumbnails;
+    m_classification = Utf8String(classification);
     }
 
 //-------------------------------------------------------------------------------------
@@ -387,6 +422,9 @@ void SpatialEntityData::SetName(Utf8CP name) { m_name = name; }
 Utf8StringCR SpatialEntityData::GetUrl() const { return m_url; }
 void SpatialEntityData::SetUrl(Utf8CP url) { m_url = url; }
 
+Utf8StringCR SpatialEntityData::GetGeoCS() const { return m_geoCS; }
+void SpatialEntityData::SetGeoCS(Utf8CP geoCS) { m_geoCS = geoCS; }
+
 Utf8StringCR SpatialEntityData::GetCompoundType() const { return m_compoundType; }
 void SpatialEntityData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
 
@@ -398,6 +436,12 @@ void SpatialEntityData::SetResolution(Utf8CP res) { m_resolution = res; }
 
 Utf8StringCR SpatialEntityData::GetProvider() const { return m_provider; }
 void SpatialEntityData::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR SpatialEntityData::GetDataset() const { return m_dataset; }
+void SpatialEntityData::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
+
+Utf8StringCR SpatialEntityData::GetClassification() const { return m_classification; }
+void SpatialEntityData::SetClassification(Utf8CP classification) { m_classification = classification; }
 
 Utf8StringCR SpatialEntityData::GetDataType() const { return m_dataType; }
 void SpatialEntityData::SetDataType(Utf8CP type) { m_dataType = type; }

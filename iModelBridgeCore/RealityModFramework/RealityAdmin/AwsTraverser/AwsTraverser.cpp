@@ -425,7 +425,18 @@ int main(int argc, char *argv[])
 
         do {
             comma = line.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
+
             id = line.substr(0, comma);
+            if(0 == id.size())
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             comma ++;
             rest = line.substr(comma);
 
@@ -436,50 +447,106 @@ int main(int argc, char *argv[])
                 }
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
+
             comma++;
             rest = rest.substr(comma); //acquisitionDate
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             cloudCover = std::stof(rest.substr(0, comma), &idx); //convert
             comma++;
             rest = rest.substr(comma); 
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             comma++;
             rest = rest.substr(comma); //processingLevel
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             comma++;
             rest = rest.substr(comma); //path
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             comma++;
             rest = rest.substr(comma); //row
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             min_lat = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             min_lon = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             max_lat = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             max_lon = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(0 == comma)
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
             downloadUrl = rest.substr(0, comma);
             comma++;
             rest = rest.substr(comma);
+            if(0 == downloadUrl.size())
+                {   
+                log << "invalid line: " << line << std::endl;
+                continue;
+                }
 
             Utf8CP url = downloadUrl.c_str();
 
@@ -618,28 +685,51 @@ void ServerConnection::Save(AwsData awsdata)
     sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
     FetchTableIdentity(thumbnailId, tableName, len);
     
-    SQLINTEGER entityId;
-
-    CHAR entityBaseQuery[2000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 4326), ?, %d, %d, 'TIF')",
-        m_dbName,
-        awsdata.GetId().c_str(),
-        metadataId,
-        thumbnailId);
-
-    SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
-
     DRange2dCR Fpt = awsdata.GetFootprint();
     double xMin = std::min(Fpt.low.x, Fpt.high.x);
     double xMax = std::max(Fpt.low.x, Fpt.high.x);
     double yMin = std::min(Fpt.low.y, Fpt.high.y);
     double yMax = std::max(Fpt.low.y, Fpt.high.y);
+
+    SQLINTEGER entityId;
+
+    CHAR entityBaseQuery[2000];
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Dataset], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable], [ResolutionInMeters], [Classification]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', 'Landat 8', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d, 'tif', '15.00x15.00', 'Imagery')",
+        m_dbName,
+        awsdata.GetId().c_str(),
+        xMin,
+        yMin,
+        xMax,
+        yMax,
+        metadataId,
+        thumbnailId);
+
+
+        //sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [DataSourceTypesAvailable]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, '%s')",
+        //    m_dbName,
+        //    data.GetName().c_str(),
+        //    data.GetResolution().c_str(),
+        //    data.GetProvider().c_str(),
+        //    data.GetProvider().c_str(),
+        //    data.GetDataset().c_str(),
+        //    data.GetClassification().c_str(),
+        //    xMin,
+        //    yMin,
+        //    xMax,
+        //    yMax,
+        //    metadataId,
+        //    data.GetDataType().c_str());
+
+
+    SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
+
+
     char polygon[2000];
     sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
     retCode = SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
 
     DateTimeCR date = DateTime::GetCurrentTimeUtc();
-    CHAR baseDate[10];
+    CHAR baseDate[20];
     sprintf(baseDate, "%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay());
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, strlen(baseDate), 0, (SQLPOINTER)baseDate, strlen(baseDate), NULL));
 
@@ -650,7 +740,7 @@ void ServerConnection::Save(AwsData awsdata)
     FetchTableIdentity(entityId, tableName, len);
 
     CHAR spatialDataSourceQuery[512];
-    sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [DataSourceType], [NoDataValue], [FileSize], [Server_Id]) VALUES ('%s', 'TIF', 0, %f, %d)",
+    sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [DataSourceType], [NoDataValue], [FileSize], [Server_Id]) VALUES ('%s', 'tif', 0, %f, %d)",
         m_dbName,
         awsdata.GetUrl().c_str(),
         awsdata.GetRedSize() + awsdata.GetGreenSize() + awsdata.GetBlueSize() + awsdata.GetPanchromaticSize(),

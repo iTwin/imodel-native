@@ -33,9 +33,9 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
+FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification)
     {
-    return new FtpClient(serverUrl, serverName);
+    return new FtpClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification);
     }
 
 //-------------------------------------------------------------------------------------
@@ -43,13 +43,13 @@ FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
 //-------------------------------------------------------------------------------------
 SpatialEntityDataPtr FtpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
-    return FtpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath);
+    return FtpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName) : SpatialEntityClient(serverUrl, serverName)
+FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification) : SpatialEntityClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification)
     {}
 
 //-------------------------------------------------------------------------------------
@@ -88,6 +88,7 @@ SpatialEntityStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fil
             fileFullPath = url;
             fileFullPath.append(content);
 
+            // &&AR ... Apply filePattern yet keep on adding ZIP files.
             // Process listed data.
             if (GetObserver() != NULL)
                 GetObserver()->OnFileListed(fileList, fileFullPath.c_str());
@@ -152,10 +153,10 @@ FtpRequest::FtpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
+SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
     { 
     BeFileName inputName(inputDirPath);
-    bvector<BeFileName> tifFileList;
+    bvector<BeFileName> fileList;
 
     // Look up for data type.    
     if (inputName.GetExtension() == L"zip")
@@ -167,14 +168,14 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
 
         // Search in zip folder for the tif file to process.        
         BeFileName rootDir(outputDirPath);
-        BeDirectoryIterator::WalkDirsAndMatch(tifFileList, rootDir, L"*.tif", true);
-        if (tifFileList.empty())
+        BeDirectoryIterator::WalkDirsAndMatch(fileList, rootDir, L"*.tif", true);
+        if (fileList.empty())
             return NULL;
         }
-    else if (inputName.GetExtension() == L"tif")
+    else if (inputName.GetExtension() == L"tif") //&&AR Use file pattern instead
         {
-        tifFileList.push_back(inputName);
-        if (tifFileList.empty())
+        fileList.push_back(inputName);
+        if (fileList.empty())
             return NULL;
         }
     else
@@ -185,17 +186,19 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     SpatialEntityDataPtr pExtractedData = SpatialEntityData::Create();    
 
     // Data extraction.
-    RealityDataPtr pData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
+    // &&AR Not all traversed files are raster ... we must try out other types or introduce a generic creater.
+    RealityDataPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
 
     // Name.
-    Utf8String name = tifFileList[0].GetNameUtf8();
-    name.erase(0, tifFileList[0].GetNameUtf8().find_last_of("\\") + 1);
+    Utf8String name = fileList[0].GetNameUtf8();
+    name.erase(0, fileList[0].GetNameUtf8().find_last_of("\\") + 1);
     pExtractedData->SetName(name.erase(name.find_last_of('.')).c_str());
 
     // Url.
-    pExtractedData->SetUrl(tifFileList[0].GetNameUtf8().c_str());
+    pExtractedData->SetUrl(fileList[0].GetNameUtf8().c_str());
 
-    // Compound type.Fw
+    // Compound type.
+
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
     pExtractedData->SetCompoundType(compoundType.c_str());
@@ -207,18 +210,22 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     pExtractedData->SetSize(size);
 
     // Type.
-    Utf8String fileType(tifFileList[0].GetExtension().c_str());
+    Utf8String fileType(fileList[0].GetExtension().c_str());
     pExtractedData->SetDataType(fileType.c_str());
+
+    // Classification
+    // &&AR Since we currently only process rasters the file is bound to be imagery
+    pExtractedData->SetClassification("Imagery");
 
     // Location. 
     //&&JFC TODO: Construct path from compound.
-    WString locationW = tifFileList[0].GetFileNameAndExtension();
+    WString locationW = fileList[0].GetFileNameAndExtension();
     Utf8String location(locationW);
     pExtractedData->SetLocationInCompound(location.c_str());
 
     // Date.
     time_t lastModifiedTime;
-    tifFileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
+    fileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
     DateTime date = DateTime();
     if (NULL != lastModifiedTime)
         DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
@@ -226,12 +233,12 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     pExtractedData->SetDate(date);
 
     // Metadata.    
-    BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
+    BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
     SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
     if (pMetadata != NULL)
         pExtractedData->SetMetadata(*pMetadata);
 
-    // Resolution.
+    // Resolution and geocoding.
     RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
     if (pRasterData != NULL)
         {
@@ -244,8 +251,11 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
                 {
                 // Make sure geocoding is well formatted.
                 geocoding.ReplaceAll("::", ":");
-                RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+                RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
                 resolution = pRasterData->ComputeResolutionInMeters();
+
+                // Save geocoding
+                pExtractedData->SetGeoCS(geocoding.c_str());
                 }
             }
         pExtractedData->SetResolution(resolution.c_str());
@@ -262,8 +272,11 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
         {
             // Make sure geocoding is well formatted.
             geocoding.ReplaceAll("::", ":");
-            RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+            RasterFacility::CreateSisterFile(fileList[0].GetNameUtf8().c_str(), geocoding.c_str());
             pData->GetFootprint(&shape, &extents);
+			
+            // Save geocoding
+            pExtractedData->SetGeoCS(geocoding.c_str());
         }
 
     }
@@ -271,19 +284,22 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     pExtractedData->SetFootprintExtents(extents);
 
     // Thumbnail.
-    SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
-    pThumbnail->SetProvenance("Created by SpatialEntityDataHandler tool");
-    pThumbnail->SetFormat("png");
-    pThumbnail->SetGenerationDetails("Created by SpatialEntityDataHandler tool");
-    bvector<Byte> data;
-    uint32_t width = THUMBNAIL_WIDTH;
-    uint32_t height = THUMBNAIL_HEIGHT;
-    pData->GetThumbnail(data, width, height);
-    pThumbnail->SetData(data);
-    pThumbnail->SetWidth(width);
-    pThumbnail->SetHeight(height);
-    if (pThumbnail != NULL)
-        pExtractedData->SetThumbnail(*pThumbnail);
+    if (extractThumbnail)
+        {
+        SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
+        pThumbnail->SetProvenance("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetFormat("png");
+        pThumbnail->SetGenerationDetails("Created by SpatialEntityDataHandler tool");
+        bvector<Byte> data;
+        uint32_t width = THUMBNAIL_WIDTH;
+        uint32_t height = THUMBNAIL_HEIGHT;
+        pData->GetThumbnail(data, width, height);
+        pThumbnail->SetData(data);
+        pThumbnail->SetWidth(width);
+        pThumbnail->SetHeight(height);
+        if (pThumbnail != NULL)
+            pExtractedData->SetThumbnail(*pThumbnail);
+        }
 
     // Server.
     SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
