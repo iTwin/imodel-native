@@ -99,6 +99,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindBinary(int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) { return GetBinder(parameterIndex).BindBinary(value, binarySize, makeCopy); }
 
+        //! Binds a guid value to the parameter
+        ECDB_EXPORT ECSqlStatus BindGuid(int parameterIndex, BeSQLite::BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy=IECSqlBinder::MakeCopy::No);
+
         //! Binds a DateTime value to the parameter
         //! @param[in] parameterIndex Parameter index
         //! @param[in] value Value to bind
@@ -263,6 +266,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! - column data type is not binary
         //! - @p columnIndex is out of bounds
         void const* GetValueBinary(int columnIndex, int* binarySize = nullptr) const { return GetValue(columnIndex).GetBinary(binarySize); }
+
+        //! Gets the guid value of the specified column
+        ECDB_EXPORT BeSQLite::BeGuid GetValueGuid(int columnIndex) const;
 
         //! Gets the value of the specific column as a boolean value.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

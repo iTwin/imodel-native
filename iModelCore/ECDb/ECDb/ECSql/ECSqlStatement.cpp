@@ -105,7 +105,6 @@ ECSqlStatus ECSqlStatement::Reset() { return m_pimpl->Reset(); }
 //---------------------------------------------------------------------------------------
 int ECSqlStatement::GetColumnCount() const { return m_pimpl->GetColumnCount(); }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
@@ -113,6 +112,35 @@ IECSqlValue const& ECSqlStatement::GetValue(int columnIndex) const
     {
     //Reports errors (not prepared yet, index out of bounds) and uses no-op field in case of error
     return m_pimpl->GetValue(columnIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Shaun.Sewall        10/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::BindGuid(int parameterIndex, BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy)
+    {
+    if (guid.IsValid())
+        return BindBinary(parameterIndex, &guid, sizeof(guid), makeCopy);
+
+    return BindNull(parameterIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Shaun.Sewall        10/2016
+//---------------------------------------------------------------------------------------
+BeGuid ECSqlStatement::GetValueGuid(int columnIndex) const
+    {
+    if (IsValueNull(columnIndex)) 
+        return BeGuid();
+
+    int binarySize = 0;
+    void const* binaryValue = GetValueBinary(columnIndex, &binarySize);
+    if (binarySize != sizeof(BeGuid))
+        return BeGuid();
+
+    BeGuid guid; 
+    memcpy(&guid, binaryValue, sizeof(guid));
+    return guid;
     }
 
 //---------------------------------------------------------------------------------------
