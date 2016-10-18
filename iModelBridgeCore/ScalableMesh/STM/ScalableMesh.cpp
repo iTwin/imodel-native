@@ -2086,7 +2086,7 @@ static bool s_doGroundExtract = true;
 
 template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    if (s_doGroundExtract)
+    if (s_doGroundExtract && m_scmTerrainIndexPtr == nullptr)
         {        
         IScalableMeshPtr scalableMeshPtr(this);
 

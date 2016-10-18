@@ -105,6 +105,7 @@ struct ScalableMeshPointsProviderCreator : public IPointsProviderCreator
 
     public :
 
+
         void SetExtractionArea(const bvector<DPoint3d>& area);
 
         ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh);        

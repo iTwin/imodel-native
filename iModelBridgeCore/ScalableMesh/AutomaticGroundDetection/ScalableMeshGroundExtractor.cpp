@@ -124,6 +124,92 @@ ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
     {
     }
 
+static bool s_createTexture = true; 
+static double s_pixelSize = 1;
+static DRange3d s_availableRange;
+/*
+
+void ScalableMeshGroundExtractor::GetColor(uint8_t* currentColor, const DRay3d& ray, IScalableMeshMeshQueryPtr& meshQueryInterface)
+    {
+    bvector<IScalableMeshNodePtr> nodes;
+    
+    bvector<DPoint3d> points(5); 
+    points[0].x = origin.x - s_pixelSize;
+    points[0].y = origin.y - s_pixelSize;
+    points[0].z = origin.z;
+
+    points[1].x = origin.x - s_pixelSize;
+    points[1].y = origin.y + s_pixelSize;
+    points[1].z = origin.z;
+
+    points[2].x = origin.x + s_pixelSize;
+    points[2].y = origin.y + s_pixelSize;
+    points[2].z = origin.z;
+
+    points[3].x = origin.x + s_pixelSize;
+    points[3].y = origin.y - s_pixelSize;
+    points[3].z = origin.z;
+
+    points[4].x = origin.x - s_pixelSize;
+    points[4].y = origin.y - s_pixelSize;
+    points[4].z = origin.z;
+
+    meshQueryInterface->Query(nodes, points, 5, params);
+
+    for (auto& node : nodes)
+        {        
+        if (node->IntersectRay(intersectPointTemp, ray, valTemp))
+            {
+            double param;
+            DPoint3d pPt;
+            if (ray.ProjectPointUnbounded(pPt, param, intersectPointTemp) && param < minParam)
+                {
+                minParam = param;
+                val = valTemp;
+                intersectPoint = intersectPointTemp;
+                }
+            }
+        }
+        
+
+    }    
+
+StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection& terrainSources)
+    {
+    uint32_t nbPixelsX = ceil(s_availableRange.XLength() / s_pixelSize);
+    uint32_t nbPixelsY = ceil(s_availableRange.YLength() / s_pixelSize);
+
+    double stepX = s_availableRange.XLength() / nbPixelsX;
+    double stepY = s_availableRange.YLength() / nbPixelsY;
+
+    uint8_t* imagesBuffer = new uint8_t[nbPixelsX * nbPixelsY];
+
+    double currentX = s_availableRange.low.x;
+    uint8_t currentColor[3];
+    DVec3d direction(DVec3d::From(0, 0, -1));
+
+    IScalableMeshMeshQueryPtr meshQueryInterface = smDesign->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(smDesign->GetTerrainDepth());
+
+            
+    for (size_t xInd = 0; xInd < nbPixelsX; xInd++)
+        {
+        double currentY = s_availableRange.low.y;
+
+        for (size_t yInd = 0; yInd < nbPixelsX; yInd++)
+            {
+            DPoint3d origin(DPoint3d::From(currentX, currentY, s_availableRange.high.z * 2));
+            DRay3d ray = DRay3d::FromOriginAndVector(origin, direction);
+            GetColor(currentColor, ray);
+            currentY += stepY;
+            }
+
+        currentX += stepX;
+        }
+    }
+    */
+
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     {
     StatusInt status;
@@ -142,10 +228,20 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain()
     IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzFile.c_str()));
     terrainCreator->EditSources().Add(groundPtsSource);
 
+    /*
+    if (s_createTexture)
+        {        
+        CreateAndAddTexture(IDTMSourceCollection&);
+        }
+        */
+
     status = terrainCreator->Create();
     assert(status == SUCCESS);
     terrainCreator->SaveToFile();
     terrainCreator = nullptr;
+
+    int result = _wremove(xyzFile.c_str());
+    assert(result == 0);
 
     return status;
     }
@@ -169,6 +265,8 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed()
 
     DRange3d availableRange;
     smPtsProviderCreator->GetAvailableRange(availableRange);
+
+    s_availableRange = availableRange;
 
     double maxLength = std::max(availableRange.XLength(), availableRange.YLength());
 
