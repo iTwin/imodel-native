@@ -20,6 +20,7 @@ PublicApiDir = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityServicesN
 #----------------------------------------------------------------------
 always:
     !~@mkdir $(o)
+    @CreateSymLinks.py -m"$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/=$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/TransKitTools/LanguagePackSpecs"
 
 
 #--------------------------------------------------------------------------------------
