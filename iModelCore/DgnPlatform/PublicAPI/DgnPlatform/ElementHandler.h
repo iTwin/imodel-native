@@ -86,7 +86,8 @@ namespace dgn_ElementHandler
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
     public:
-        //! Register get and set functions for each custom-handled property
+        //! Register get and set functions for each custom-handled property.
+        //! @note You must also invoke T_Super::_RegisterPropertyAccessors!
         DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
         //! Create a new instance of a DgnElement from a CreateParams. 
@@ -101,6 +102,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for PhysicalElement
@@ -119,6 +121,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for AnnotationElement2d

@@ -134,8 +134,10 @@ DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus AnnotationTextStyle::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus AnnotationTextStyle::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(PROP_Data, name))
         {
         size_t dataSize = 0;
@@ -149,14 +151,16 @@ DgnDbStatus AnnotationTextStyle::_SetPropertyValue(Utf8CP name, ECN::ECValueCR v
         m_description.AssignOrClear(value.GetUtf8CP());
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(PROP_Data, name))
         {
         bvector<Byte> data;
@@ -170,7 +174,7 @@ DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, Utf8CP n
         value.SetUtf8CP(m_description.c_str());
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------

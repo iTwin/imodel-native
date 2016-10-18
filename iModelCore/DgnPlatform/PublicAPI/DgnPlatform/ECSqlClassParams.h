@@ -21,21 +21,6 @@ struct IECSqlClassParamsProvider
 };
 
 //=======================================================================================
-//! Simple utility class to help with the details of looking up the index of a property
-//! in the ClassLayout of a specified ECClass. Should be used only for properties that
-//! you KNOW are defined in the schema.
-// @bsiclass                                                     Sam.Wilson 10/16
-//=======================================================================================
-struct ClassLayoutHelper
-    {
-    ECN::ClassLayoutP m_layout;
-
-    DGNPLATFORM_EXPORT ClassLayoutHelper(DgnDbCR db, Utf8CP schemaName, Utf8CP className);
-    DGNPLATFORM_EXPORT ClassLayoutHelper(ECN::ECClassCR);
-    DGNPLATFORM_EXPORT uint32_t GetPropertyIndex(Utf8CP propName);
-    };
-
-//=======================================================================================
 //! Encapsulates ECSql statement strings specific to an ECClass.
 // @bsiclass                                                     Paul.Connelly   09/15
 //=======================================================================================
@@ -43,6 +28,7 @@ struct ECSqlClassInfo
 {
     typedef std::function<DgnDbStatus(ECN::ECValueR, DgnElement const&)> T_ElementPropGet;
     typedef std::function<DgnDbStatus(DgnElement&, ECN::ECValueCR)> T_ElementPropSet;
+    typedef std::function<DgnDbStatus(DgnElement&, ECN::ECValueCR)> T_ElementPropValidator;
 
 private:
     friend struct ECSqlClassParams;
@@ -53,7 +39,9 @@ private:
     Utf8String  m_update;
     uint16_t    m_updateParameterIndex;
     bset<uint32_t> m_customProps;
+    bmap<uint32_t, uint32_t> m_autoPropertyStatementType; // non-default statement types found for auto-handled properties
     bmap<uint32_t, bpair<T_ElementPropGet, T_ElementPropSet>> m_propertyAccessors; // custom-handled property get and set functions
+    bmap<uint32_t, T_ElementPropValidator> m_autoPropertyValidators; // auto-handled property custom validation functions
 public:
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
 
@@ -72,7 +60,12 @@ public:
 
     void RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc);
     bpair<T_ElementPropGet,T_ElementPropSet> const* GetPropertyAccessors(uint32_t propIdx) const;
-};
+
+    void RegisterPropertyValidator(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropValidator);
+    T_ElementPropValidator const* GetPropertyValidator(uint32_t propIdx) const;
+
+    uint32_t GetAutoPropertyStatementType(uint32_t propIdx);
+    };
 
 //=======================================================================================
 //! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a

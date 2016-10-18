@@ -24,18 +24,17 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECInstance
 {
+    friend struct ElementECPropertyAccessor;
+
     DgnElement& m_element;
     ECClassCP m_eclass;
     ECN::ClassLayoutCP m_layout;
 
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR);
     
-    bool IsValid() const {return nullptr != m_eclass;}
+    bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
 
-#ifdef WIP_PROPERTIES // *** ECObjects should be doing this
-    bool IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value);
-#endif
-    bool IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded);
     uint32_t GetBytesUsed() const;
 
     BentleyStatus LoadProperties();
@@ -90,26 +89,6 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     bool            _IsReadOnly() const override {return false;}
     Utf8String      _ToString (Utf8CP indent) const override {return "";}
     size_t          _GetOffsetToIECInstance () const override {return 0;} // WIP_AUTO_HANDLED_PROPERTIES -- what is this??
-};
-
-//=======================================================================================
-//    *** ONLY FOR FOR AUTO-HANDLED PROPERTY I/O AND SOME INTERNAL OPERATIONS ***
-//  Helps with access to an individual AUTO-HANDLED property
-// @bsiclass                                                     Sam.Wilson        10/16
-//=======================================================================================
-struct ElementECPropertyAccessor : ElementAutoHandledPropertiesECInstanceAdapter
-{
-    ECSqlClassInfo* m_classInfo;
-    uint32_t m_propIdx;
-    bool m_isCustomHandled;
-
-    void Init(uint32_t propIdx);
-
-    ElementECPropertyAccessor(DgnElement const& el, uint32_t);
-    ElementECPropertyAccessor(DgnElement const& el, Utf8CP accessString);
-
-    DgnDbStatus SetAutoHandledPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx);
-    DgnDbStatus GetAutoHandledPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx);
 };
 
 //=======================================================================================

@@ -211,6 +211,18 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
                 }
             }
 
+        // Record info about auto-handled properties
+        AutoHandledPropertiesCollection autoprops(*ecclass, const_cast<DgnDbR>(dgndb), ECSqlClassParams::StatementType::All, false);
+        for (auto i = autoprops.begin(); i != autoprops.end(); ++i)
+            {
+            if (ECSqlClassParams::StatementType::All != i.GetStatementType())
+                {
+                uint32_t propIdx;
+                auto status = layout.GetPropertyIndex(propIdx, (*i)->GetName().c_str());
+                BeAssert(ECObjectsStatus::Success == status);
+                info.m_autoPropertyStatementType[propIdx] = (int32_t)i.GetStatementType();
+                }
+            }
         }
 
     return true;
