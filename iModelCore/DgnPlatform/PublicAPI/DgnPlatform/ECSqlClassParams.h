@@ -114,7 +114,7 @@ public:
     //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
-    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8StringCR parameterName) const;
+    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
 
 };
 
