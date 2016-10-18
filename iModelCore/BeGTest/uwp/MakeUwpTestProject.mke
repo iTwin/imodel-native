@@ -35,17 +35,17 @@ collectionTestObjectsDir = $(collectionProduct)Objects/
 # PRG machines use Windows Server 2008 R2, which as-documented, is not supported by the Windows 10 SDK.
 # We are seeing weird msbuild / Visual Studio errors trying to build unit tests in PRG that we suspect is a general incompatibility.
 # So as a short-term hack, skip UWP unit tests completely on PRG.
-%if defined(SUBNET_PRG)
-    # Link a fake directory to satisfy BB's bindings.
-
-    always:
-        ~mkdir $(o)FakeProjectDir
-
-    $(BuildContext)Delivery/$(TEST_NAME)UwpTest : $(o)FakeProjectDir
-        $(LinkFirstDepToFirstTargetAsDirectory)
-
-    %return
-%endif
+# %if defined(SUBNET_PRG)
+#     # Link a fake directory to satisfy BB's bindings.
+# 
+#     always:
+#         ~mkdir $(o)FakeProjectDir
+# 
+#     $(BuildContext)Delivery/$(TEST_NAME)UwpTest : $(o)FakeProjectDir
+#         $(LinkFirstDepToFirstTargetAsDirectory)
+# 
+#     %return
+# %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     always:
