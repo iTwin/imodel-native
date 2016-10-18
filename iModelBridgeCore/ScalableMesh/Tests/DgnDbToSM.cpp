@@ -370,8 +370,11 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
 
     if (distance > info->GetPartialHorizontalAlignmentCP()->Length() / 2.0) distance = info->GetPartialHorizontalAlignmentCP()->Length() / 2.0;
    // bridgeGenPtr->SetDropInterval(distance);
+
+    Transform idenTransform(Transform::FromIdentity());
+
     if (SUCCESS == bridgeGenPtr->Generate(const_cast<BridgeSegmentP>(bridgeSegment), const_cast<BridgeSuperstructureDimensions&>(*pSuperstructure), startAbutment, endAbutment, piers, *draperPtr,
-        *info, roadSegmentHorizAlignmentInElementCoords,
+        *info, roadSegmentHorizAlignmentInElementCoords, idenTransform,
         superstructureGeometryParts, startAbutmentGeometryParts, endAbutmentGeometryParts, pierGeometryParts, nullptr, nullptr, nullptr))
         {
         for (auto& part : superstructureGeometryParts)
@@ -418,7 +421,7 @@ void BuildSubResolutionPier(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 void OpenProject()
     {
     DbResult openStatus;
-    BeFileName fileName = BeFileName(L"E:\\NewTestSet.dgndb");
+    BeFileName fileName = BeFileName(L"D:\\MyDoc\\CC - Iteration 21\\HololensYII\\SaltLakeHololens.dgndb");
     mainProject = DgnDb::OpenDgnDb(&openStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     DPoint3d scale = DPoint3d::From(1, 1, 1);
     mainProject->Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
@@ -815,7 +818,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //create a scalable mesh
     StatusInt createStatus;
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::SetUserFilterCallback(&FilterElement);
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\hololens_small2.3sm", createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"D:\\MyDoc\\CC - Iteration 21\\HololensYII\\SaltLakeHololens.dgndb.3sm", createStatus));
 
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(L"e:\\output\\coloradoDesign.stm", true, true, createStatus));
     if (!mainProject.IsValid()) OpenProject();
@@ -823,7 +826,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         {
         printf("ERROR : cannot create STM file\r\n");
         }
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\NewTestSet.dgndb");
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"D:\\MyDoc\\CC - Iteration 21\\HololensYII\\SaltLakeHololens.dgndb");
     creatorPtr->EditSources().Add(srcPtr);
     creatorPtr->SetUserFilterCallback(&FilterElement);
     //creatorPtr->ReFilter();
