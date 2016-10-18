@@ -137,14 +137,14 @@ TEST_F(DgnViewElemTest, SetViewName)
     ASSERT_TRUE(view.IsValid());
     
     EXPECT_STRNE("TestView", view->GetName().c_str());
-    EXPECT_EQ(DgnDbStatus::Success, view->SetName("TestView"));
-    EXPECT_STREQ("TestView", view->GetName().c_str());
+    EXPECT_EQ(DgnDbStatus::Success, view->SetName("TestView2"));
+    EXPECT_STREQ("TestView2", view->GetName().c_str());
     
     EXPECT_TRUE(view->Update().IsValid());
     
     cpView = ViewDefinition::QueryView(viewId, *m_db);
     ASSERT_TRUE(view.IsValid());
-    EXPECT_STREQ("TestView", view->GetName().c_str());
+    EXPECT_STREQ("TestView2", view->GetName().c_str());
     }
 
 #if defined (NEEDS_WORK_TARGET_MODEL)

@@ -224,16 +224,13 @@ public:
 struct ResourceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     ResourceAuthority(CreateParams const& params) : T_Super(params) {}
-    static Utf8CP str_DisplayStyleNamespace() {return "dstyle";}
-    static Utf8CP str_ModelsNamespace() {return "models";}
-    static Utf8CP str_CategoriesNamespace() {return "catgs";}
-    static Utf8CP str_ViewNamespace() {return "view";}
-
-    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR resourceECClassName);
+    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR namespaceName);
+    static DgnCode CreateDisplayStyleCode(Utf8StringCR name) {return CreateResourceCode(name,"dstyle");}
+    static DgnCode CreateModelSelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"models");}
+    static DgnCode CreateCategorySelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"catgs");}
+    static DgnCode CreateViewDefinitionCode(Utf8StringCR name) {return CreateResourceCode(name,"view");}
     DGNPLATFORM_EXPORT static DgnAuthorityId GetResourceAuthorityId();
     static bool IsResourceAuthority(DgnAuthorityCR auth) {return auth.GetAuthorityId() == GetResourceAuthorityId();}
 };
