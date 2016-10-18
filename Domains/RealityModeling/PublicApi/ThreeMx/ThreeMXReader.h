@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ThreeMxSchema/ThreeMXReader.h $
+|     $Source: PublicApi/ThreeMx/ThreeMXReader.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
