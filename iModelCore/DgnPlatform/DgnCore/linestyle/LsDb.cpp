@@ -661,6 +661,42 @@ DgnDbStatus LineStyleElement::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&stm
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus LineStyleElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    if (0 == strcmp(PROPNAME_Descr, name))
+        {
+        m_description.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROPNAME_Data, name))
+        {
+        m_data.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus LineStyleElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (0 == strcmp(PROPNAME_Descr, name))
+        {
+        value.SetUtf8CP(m_description.c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(PROPNAME_Data, name))
+        {
+        value.SetUtf8CP(m_data.c_str());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
 size_t LineStyleElement::QueryCount(DgnDbR db)
