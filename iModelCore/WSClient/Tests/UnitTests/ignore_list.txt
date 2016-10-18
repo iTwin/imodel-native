@@ -7,25 +7,6 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
-CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
-    # DgnDb61-16Q2-Dev, WinX64, DEBUG
-    # [ RUN      ] CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
-    # <Crash, no output or stack printed>
-
-ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
-    # DgnDb61-16Q2-Dev, WinX64, DEBUG
-    # [ RUN      ] ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
-    # <Crash, no output or stack printed>
-
-ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
-    # DgnDb61-16Q3, WinX64, DEBUG
-    # [ RUN      ] ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
-    # <Crash, no output or stack printed>
-
-CachingDataSourceTests.SyncCachedData_AlreadyCachedInstanceReturnedFromQuery_QueryProviderIsNotCalledAgainWithSameInstance
-    # DgnDb61-16Q2-Dev, WinX86, DEBUG
-    # <Hung, no output printed>
-
 # Following fail due ECDb bug TFS#558189
 ECInstanceKeyFilterTests.AddLabelFilter_EmptyLabelPassed_FindsNoInstances
 ECInstanceKeyFilterTests.AddLabelFilter_MultipleClasses_FiltersByLabel
@@ -39,10 +20,10 @@ DataSourceCacheTests.CacheResponse_NewResponseDoesNotContainHoldingRelationshipC
 DataSourceCacheTests.CacheResponse_NewResponseNoLongerContainsParent_RemovesCachedInstancesExceptParent
 DataSourceCacheTests.CacheResponse_NewResponseIsEmpty_RemovesCachedInstances
 
-CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
-    # DgnDb61-16Q2-Dev, WinX64, DEBUG
-    # <Crash, no output or stack printed>
-
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
+
+CachingDataSourceTests.SyncCachedData_*
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Any one of these tests seems to randomly crash with no output or stack printed>
