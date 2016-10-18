@@ -109,16 +109,15 @@ bool PointCloudViewSettings::AreSetToDefault() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::_LoadFromUserProperties(ViewDefinitionCR view)
+void PointCloudViewSettings::_Load(ViewDefinitionCR view)
     {
-    if (!view.ContainsUserProperty(VIEW_SETTING_PointCloud))
+    JsonValueCR val = view.GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
+
+    if (val.isNull())
         {
         InitDefaults();
         return;
         }
-
-    Json::Value val(Json::objectValue);
-    Json::Reader::Parse(view.GetUserProperty(VIEW_SETTING_PointCloud).GetValueText(), val);
 
     m_flags                 = val[SETTINGPOINTCLOUD_flags].asUInt();
     m_contrast              = val[SETTINGPOINTCLOUD_contrast].asDouble();
@@ -142,12 +141,12 @@ void PointCloudViewSettings::_LoadFromUserProperties(ViewDefinitionCR view)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::_SaveToUserProperties(ViewDefinitionR view) const
+void PointCloudViewSettings::_Save(ViewDefinitionR view) const
     {
     // Only save point cloud view settings if they're not set to default values
     if (AreSetToDefault())
         {
-        view.RemoveUserProperty(VIEW_SETTING_PointCloud);
+        view.GetDisplayStyleR().RemoveStyle(VIEW_SETTING_PointCloud);
         return;
         }
 
@@ -171,7 +170,7 @@ void PointCloudViewSettings::_SaveToUserProperties(ViewDefinitionR view) const
     val[SETTINGPOINTCLOUD_displayStyleName]     = m_displayStyleName.c_str();
     val[SETTINGPOINTCLOUD_displayStyleIndex]    = m_displayStyleIndex;
 
-    view.GetUserProperty(VIEW_SETTING_PointCloud).SetValueText(Json::FastWriter::ToString(val).c_str());
+    view.GetDisplayStyleR().SetStyle(VIEW_SETTING_PointCloud, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,16 +269,15 @@ bool PointCloudClassificationSettings::operator==(PointCloudClassificationSettin
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         7/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudClassificationSettings::_LoadFromUserProperties(ViewDefinitionCR view)
+void PointCloudClassificationSettings::_Load(ViewDefinitionCR view)
     {
-    if (!view.ContainsUserProperty(VIEW_SETTING_PointCloudClassif))
+    JsonValueCR inValue = view.GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloudClassif);
+
+    if (inValue.isNull())
         {
         InitDefaults();
         return;
         }
-
-    Json::Value inValue(Json::objectValue);
-    Json::Reader::Parse(view.GetUserProperty(VIEW_SETTING_PointCloudClassif).GetValueText(), inValue);
 
     for (int i = 0; i < CLASSIFICATION_COUNT; ++i)
         m_classificationColor[i] = ColorDef(inValue[SETTINGCLASSIF_classifColor][i].asUInt());
@@ -298,11 +296,11 @@ void PointCloudClassificationSettings::_LoadFromUserProperties(ViewDefinitionCR 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         7/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudClassificationSettings::_SaveToUserProperties(ViewDefinitionR view) const
+void PointCloudClassificationSettings::_Save(ViewDefinitionR view) const
     {
     if (AreSetToDefault())
         {
-        view.RemoveUserProperty(VIEW_SETTING_PointCloudClassif);
+        view.GetDisplayStyleR().RemoveStyle(VIEW_SETTING_PointCloudClassif);
         return;
         }
 
@@ -322,5 +320,5 @@ void PointCloudClassificationSettings::_SaveToUserProperties(ViewDefinitionR vie
     outValue[SETTINGCLASSIF_unclassColor] = m_unclassColor.GetValue();
     outValue[SETTINGCLASSIF_unclassVisible] = m_unclassVisible;
 
-    view.GetUserProperty(VIEW_SETTING_PointCloudClassif).SetValueText(Json::FastWriter::ToString(outValue).c_str());
+    view.GetDisplayStyleR().SetStyle(VIEW_SETTING_PointCloudClassif, outValue);
     }

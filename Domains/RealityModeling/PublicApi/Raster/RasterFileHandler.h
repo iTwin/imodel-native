@@ -58,11 +58,12 @@ public:
 
             //! Parameters to create a new instance of a RasterFileModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
+            //! @param[in] modeledElementId The new DgnModel will model this element
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileUri File URI of the raster file.
             //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileUri, DMatrix4dCP sourceToWorld) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileUri(fileUri), m_sourceToWorldP(sourceToWorld)
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId, Dgn::DgnCode code, Utf8StringCR fileUri, DMatrix4dCP sourceToWorld) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), modeledElementId, code), m_fileUri(fileUri), m_sourceToWorldP(sourceToWorld)
                 {}
         };
 
