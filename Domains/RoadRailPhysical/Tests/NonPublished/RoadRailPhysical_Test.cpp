@@ -143,19 +143,28 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_TRUE(bridgeCPtr.IsValid());
     ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
 
-    auto physicalElementsOnBridge = bridgeCPtr->QueryIPhysicalElementsOnBridge();
-    ASSERT_EQ(1, physicalElementsOnBridge.size());
-    ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), physicalElementsOnBridge.front().GetILinearlyLocatedId());
+    auto elevatedPhysicalElements = bridgeCPtr->QueryIElevatedPhysicalElements();
+    ASSERT_EQ(1, elevatedPhysicalElements.size());
+    ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), elevatedPhysicalElements.front().GetILinearlyLocatedId());
 
     // Create Abutment - Pier - Abutment
-    auto abutment1Ptr = BridgeAbutment::Create(*bridgeCPtr, 0);
+    auto abutment1Ptr = BridgeSupport::Create(*bridgeCPtr, 0);
     ASSERT_TRUE(abutment1Ptr->Insert().IsValid());
 
-    auto pierPtr = BridgePier::Create(*bridgeCPtr, 50);
+    auto stemWall1Ptr = StemWallAbutment::Create(*abutment1Ptr);
+    ASSERT_TRUE(stemWall1Ptr->Insert().IsValid());
+
+    auto pierPtr = BridgeSupport::Create(*bridgeCPtr, 50);
     ASSERT_TRUE(pierPtr->Insert().IsValid());
 
-    auto abutment2Ptr = BridgeAbutment::Create(*bridgeCPtr, 100);
+    auto wallPierPtr = WallPier::Create(*pierPtr);
+    ASSERT_TRUE(wallPierPtr->Insert().IsValid());
+
+    auto abutment2Ptr = BridgeSupport::Create(*bridgeCPtr, 100);
     ASSERT_TRUE(abutment2Ptr->Insert().IsValid());
+
+    auto stemWall2Ptr = StemWallAbutment::Create(*abutment2Ptr);
+    ASSERT_TRUE(stemWall1Ptr->Insert().IsValid());
 
     // Create TransitionSegment #2
     auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 120, 140);
@@ -181,7 +190,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
     ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
 
-    auto abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
+    auto abutment2CPtr = BridgeSupport::Get(*projectPtr, abutment2Ptr->GetElementId());
     ASSERT_DOUBLE_EQ(85, abutment2CPtr->GetDistanceAlongBridge());
 #pragma endregion
 
@@ -198,7 +207,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
     ASSERT_DOUBLE_EQ(95, bridgeCPtr->GetLength());
 
-    abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
+    abutment2CPtr = BridgeSupport::Get(*projectPtr, abutment2Ptr->GetElementId());
     ASSERT_DOUBLE_EQ(95, abutment2CPtr->GetDistanceAlongBridge());
 #pragma endregion
     }

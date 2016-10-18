@@ -83,7 +83,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding">
-        <BaseClass>bis:PhysicalElementAssemblesPhysicalElements</BaseClass>
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true">
             <Class class="SegmentRangeElement"/>
         </Source>
@@ -134,7 +134,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="RoadSegmentOnBridge" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
         <BaseClass>RoadSegmentElement</BaseClass>
-        <BaseClass>bphys:IPhysicalElementOnBridge</BaseClass>
+        <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -244,7 +244,7 @@
         <BaseClass>FurnitureAssemblyElement</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding">
-        <BaseClass>bis:PhysicalElementAssemblesPhysicalElements</BaseClass>
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true">
             <Class class="FurnitureAssemblyElement"/>
         </Source>

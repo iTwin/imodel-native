@@ -103,7 +103,7 @@ public:
 //! Physical segment of a road supported by a bridge.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadSegmentOnBridge : RoadSegmentElement, BridgePhysical::IPhysicalElementOnBridge
+struct EXPORT_VTABLE_ATTRIBUTE RoadSegmentOnBridge : RoadSegmentElement, BridgePhysical::IElevatedPhysicalElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadSegmentOnBridge, RoadSegmentElement);
     friend struct RoadSegmentOnBridgeHandler;
@@ -114,8 +114,8 @@ protected:
 
     explicit RoadSegmentOnBridge(CreateParams const& params, double fromDistanceAlong, double toDistanceAlong);
 
-    virtual Dgn::PhysicalElementCR _IPhysicalElementOnBridgeToPhysicalElement() const override { return *this; }
-    virtual LinearReferencing::ILinearlyLocatedElementCR _IPhysicalElementOnBridgeToLinearlyLocated() const override { return *this; }
+    virtual Dgn::PhysicalElementCR _IElevatedPhysicalElementToPhysicalElement() const override { return *this; }
+    virtual LinearReferencing::ILinearlyLocatedElementCR _IElevatedPhysicalElementToLinearlyLocated() const override { return *this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadSegmentOnBridge)
