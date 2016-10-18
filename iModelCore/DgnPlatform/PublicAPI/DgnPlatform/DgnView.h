@@ -412,7 +412,25 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) {return QueryView(QueryViewId(name, db), db);}
 
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode modeOverride=Render::RenderMode::Wireframe, bool useOverride=false) const;
+    //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
+    //! @param[in] size Optional size (x,y) for the thumbnail. Thumnbnails are usually square. Default size is 768x768 pixels.
+    //! @param[in] modeOverride Optional override for the RenderMode for the thumbnail. If nullptr, use RenderMode from the DisplayStyle.
+    //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size=Point2d::From(768,768), Render::RenderMode const* modeOverride=nullptr) const;
+
+    //! Save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
+    //! @param[in] size the dimensions (x,y) of the thumbnail. 
+    //! @param[in] thumbnail The ImageSource data of the thumbnail
+    //! @return BE_SQLITE_OK if the thumbnail was successfully saved.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveThumbnail(Point2d size, Render::ImageSourceCR thumbnail) const;
+
+    //! Read the thumbnail for this ViewDefinition.
+    //! @return the Render::ImageSource holding the compressed stream for the thumbnail. Will be invalid if no thumbnail available.
+    DGNPLATFORM_EXPORT Render::ImageSource ReadThumbnail() const;
+
+    //! Get the size (x,y) of the thumbnail for this ViewDefinition.
+    //! @return the size of the thumbnail. Will be {0,0} if no thumbnail is available.
+    DGNPLATFORM_EXPORT Point2d GetThumbnailSize() const;
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry
