@@ -1539,7 +1539,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    Utf8CP accessString = propertyMap.GetPropertyAccessString();
+    Utf8CP accessString = propertyMap.GetPropertyAccessString().c_str();
     std::vector<DbColumn const*> columns;
     propertyMap.GetColumns(columns);
 

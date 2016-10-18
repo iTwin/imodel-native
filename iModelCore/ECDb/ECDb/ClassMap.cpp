@@ -899,6 +899,18 @@ DbTable const* ClassMap::ExpectingSingleTable() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   10/2016
+//---------------------------------------------------------------------------------------
+//static
+ClassMap::PropertyMapInheritanceMode ClassMap::GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
+    {
+    if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+        return PropertyMapInheritanceMode::NotInherited;
+
+    return PropertyMapInheritanceMode::Clone;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
 //static

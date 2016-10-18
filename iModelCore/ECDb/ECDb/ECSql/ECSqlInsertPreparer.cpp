@@ -406,13 +406,13 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
     //        If check succeeded, return class id
     auto const& constraintMap = relationshipClassMap.GetConstraintMap(constraintEnd);
     auto constraintClassIdPropMap = constraintMap.GetECClassIdPropMap();
-    Utf8String constraintClassIdPropName(constraintClassIdPropMap->GetPropertyAccessString());
+    Utf8CP constraintClassIdPropName = constraintClassIdPropMap->GetPropertyAccessString().c_str();
     int constraintClassIdExpIndex = GetConstraintClassIdExpIndex(exp, constraintEnd);
     if (constraintClassIdExpIndex >= 0)
         //user specified constraint class id in ECSQL
         {
         bool isParameter = false;
-        auto stat = GetConstraintClassIdExpValue(isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp(), (size_t) constraintClassIdExpIndex, constraintClassIdPropName.c_str());
+        ECSqlStatus stat = GetConstraintClassIdExpValue(isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp(), (size_t) constraintClassIdExpIndex, constraintClassIdPropName);
         if (!stat.IsSuccess())
             return stat;
 
@@ -420,7 +420,7 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
         if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %s for property %s. None of the respective constraint's ECClasses match that ECClassId.",
-                                                     retrievedConstraintClassId.ToString().c_str(), constraintClassIdPropName.c_str());
+                                                     retrievedConstraintClassId.ToString().c_str(), constraintClassIdPropName);
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -444,7 +444,7 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
     if (!constraintMap.TryGetSingleClassIdFromConstraint(retrievedConstraintClassId))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.",
-                                                 constraintClassIdPropName.c_str());
+                                                 constraintClassIdPropName);
         return ECSqlStatus::InvalidECSql;
         }
  

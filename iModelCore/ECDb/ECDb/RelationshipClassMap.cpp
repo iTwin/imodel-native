@@ -1248,7 +1248,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
         return ERROR;
 
     ClassMap const* classMap = GetDbMap().GetClassMap(singleNavProperty->GetClass());
-    if (classMap->GetColumnFactory().UsesSharedColumnStrategy())
+    TablePerHierarchyInfo const& tphInfo = classMap->GetMapStrategy().GetTphInfo();
+    if (tphInfo.IsValid() && tphInfo.UseSharedColumns())
         {
         //table uses shared columns, so FK col position cannot depend on NavigationProperty position
         fkColInfo.Assign(columnName.c_str(), true, nullptr, nullptr);
