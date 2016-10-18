@@ -81,26 +81,26 @@ struct DataCaptureProjectHostImpl : DgnPlatformLib::Host
 
 END_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureProjectHost::DataCaptureProjectHost()
     {
     m_pimpl = new DataCaptureProjectHostImpl;
     CleanOutputDirectory();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureProjectHost::~DataCaptureProjectHost()
     {
     delete m_pimpl;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void DataCaptureProjectHost::CleanOutputDirectory()
     {
     static bool wasOutputDirectoryCleaned = false;
@@ -114,9 +114,9 @@ void DataCaptureProjectHost::CleanOutputDirectory()
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DataCaptureProjectHost::GetOutputDirectory()
     {
     BeFileName outputDir;
@@ -125,9 +125,9 @@ BeFileName DataCaptureProjectHost::GetOutputDirectory()
     return outputDir;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DataCaptureProjectHost::GetDgnPlatformAssetsDirectory()
     {
     BeFileName assetsRootDirectory;
@@ -135,9 +135,9 @@ BeFileName DataCaptureProjectHost::GetDgnPlatformAssetsDirectory()
     return assetsRootDirectory;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DataCaptureProjectHost::BuildProjectFileName(WCharCP baseName)
     {
     BeFileName projectFileName = GetOutputDirectory();
@@ -145,9 +145,9 @@ BeFileName DataCaptureProjectHost::BuildProjectFileName(WCharCP baseName)
     return projectFileName;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
@@ -170,27 +170,7 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     BeFileName schemaRootDir = assetsRootDir;
     schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
 
-     DgnDbStatus status;
-//     BeFileName lrSchemaFileName = schemaRootDir;
-//     lrSchemaFileName.AppendToPath(BLR_SCHEMA_FILE);    
-//     if (DgnDbStatus::Success != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr, lrSchemaFileName)))
-//         return nullptr;
-
-//     BeFileName alignSchemaFileName = schemaRootDir;
-//     alignSchemaFileName.AppendToPath(BRRA_SCHEMA_FILE);
-//     if (DgnDbStatus::Success != (status = DataCaptureAlignment::DataCaptureAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
-//         return nullptr;
-
-//     BeFileName costSchemaFileName = schemaRootDir;
-//     costSchemaFileName.AppendToPath(BCST_SCHEMA_FILE);
-//     if (DgnDbStatus::Success != (status = Costing::CostingDomain::GetDomain().ImportSchema(*projectPtr, costSchemaFileName)))
-//         return nullptr;
-
-//     BeFileName bridgeSchemaFileName = schemaRootDir;
-//     bridgeSchemaFileName.AppendToPath(BBP_SCHEMA_FILE);
-//     if (DgnDbStatus::Success != (status = BridgePhysical::BridgePhysicalDomain::GetDomain().ImportSchema(*projectPtr, bridgeSchemaFileName)))
-//         return nullptr;
-
+    DgnDbStatus status;
     BeFileName DataCaptureSchemaFileName = schemaRootDir;
     DataCaptureSchemaFileName.AppendToPath(BDCP_SCHEMA_FILE);
     if (DgnDbStatus::Success != (status = DataCapture::DataCaptureDomain::GetDomain().ImportSchema(*projectPtr, DataCaptureSchemaFileName)))
@@ -215,9 +195,9 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     return projectPtr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        04/2015
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DataCaptureProjectHost::OpenProject(WCharCP baseName)
     {
     DbResult openStatus;
@@ -231,24 +211,21 @@ DgnDbPtr DataCaptureProjectHost::OpenProject(WCharCP baseName)
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureProjectHostImpl::DataCaptureProjectHostImpl() : m_isInitialized(false)
     {
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-//     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain());
-//     DgnDomains::RegisterDomain(DataCaptureAlignmentDomain::GetDomain());
-//     DgnDomains::RegisterDomain(BridgePhysicalDomain::GetDomain());
     DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain());
     m_isInitialized = true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    11/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureProjectHostImpl::~DataCaptureProjectHostImpl()
     {
     if (m_isInitialized)
@@ -301,14 +278,14 @@ DgnModelId DataCaptureTestsFixture::QueryFirstPhysicalModelId(DgnDbR db)
     return DgnModelId();
     }
 #endif
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetBriefcase)
     {
     BeAssert(nullptr != m_host);
 
-    const WCharCP testSeedName = L"TestSeed.bim";
+    const WCharCP testSeedName = L"TestSeed.dgndb";
     const BeFileName testSeedPath = m_host->BuildProjectFileName(testSeedName);
     const BeFileName projectName = m_host->BuildProjectFileName(baseName);
 
@@ -347,9 +324,9 @@ DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetB
 
     return s_currentProject;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbPtr DataCaptureTestsFixture::OpenProject(WCharCP baseName, bool needsSetBriefcase)
     {
     BeAssert(nullptr != m_host);

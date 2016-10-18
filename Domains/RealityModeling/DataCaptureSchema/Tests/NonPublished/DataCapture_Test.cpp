@@ -8,14 +8,14 @@
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
+* @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, BasicRoadRangeTest)
+TEST_F(DataCaptureTests, DataCaptureRangeTest)
     {
 #pragma region SetUp
-//     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeTest.bim");
-//     ASSERT_TRUE(projectPtr.IsValid());
-// 
+    DgnDbPtr projectPtr = CreateProject(L"DataCaptureRangeTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid())<< "Could not create test project";
+
 //     DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
 //     auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
 // 

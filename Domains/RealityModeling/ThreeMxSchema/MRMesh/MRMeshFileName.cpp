@@ -249,6 +249,49 @@ bool MRMeshFileName::IsS3MXUrl() const
 
     return true;
     }
+	
+//YII RealityData Services	
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                   06/2016
+//---------------------------------------------------------------------------------------
+bool MRMeshFileName::IsAzureBlobRedirectUrl() const
+    {
+    // Check if the URL is an Azure blob redirection
+    // The format is relatively general being formed of a plain URL path followed by parameters after the '?' marker except the path separators
+    // are encoded contrary to plain URLs
+
+    // Here is an example of AzureBlob redirection originating from S3MX
+    // https://realitydeveussa01.blob.core.windows.net/e82a584b-9fae-409f-9581-fd154f7b9ef9?sv=2015-04-05&sr=c&sig=Di4G6NFyN69F5J75bvJSLdlIs7waJ%2Fb0ags5ThcIx9A%3D&se=2016-09-26T18%3A53%3A36Z&sp=r
+    // Where the https://realitydeveussa01.blob.core.windows.net/e82a584b-9fae-409f-9581-fd154f7b9ef9 portion is the root of the container
+    // In order to access the file /Marseille3mx/data/root.3mxb
+    // The portion %2FMarseille3mx%2Fdata%2Froot.3mxb must be added to the path part yielding a full URL of
+    // https://realitydeveussa01.blob.core.windows.net/e82a584b-9fae-409f-9581-fd154f7b9ef9%2FMarseille3mx%2Fdata%2Froot.3mxb?sv=2015-04-05&sr=c&sig=mBzBbPhNXFJYhwU0cF%2F%2BaQPW4zzAEJ%2Fr7SpLTB0G%2BR4%3D&se=2016-09-26T19%3A32%3A48Z&sp=r 
+
+    if (!IsUrl())
+        return false;
+    
+    Utf8String remainder;
+    Utf8String protocol;
+    Utf8String server;
+
+    if (!ParseUrl(&protocol, &server, &remainder))
+        return false;
+
+    // Temporary check ... at the moment Azure blob servers contain the 'blob' string
+    size_t blobLocation = server.find ("blob");
+
+    if (std::string::npos == blobLocation) 
+        return false;
+    
+    // An Azure access URL contains the '?' marker
+    size_t doublePointLocation = remainder.find_first_of ('?');
+
+    if ((std::string::npos == doublePointLocation) || (0 == doublePointLocation))
+        return false;
+
+    // We assume that it is an Azure blob redirection tough this is not certain.
+    return true;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                   06/2016
@@ -290,7 +333,8 @@ bool MRMeshFileName::AppendToS3MXFileName(Utf8StringCR additionalPath)
     // Now we replace all ~2F by directory slashes
     objectId.ReplaceAll("~2F", "/");
 
-    AppendSeparator(objectId, true);
+    if (additionalPath[0] != '/')			//YII RealityData Services
+        AppendSeparator(objectId, true);
     objectId.append(additionalPath);
 
     // Recode back
@@ -298,6 +342,118 @@ bool MRMeshFileName::AppendToS3MXFileName(Utf8StringCR additionalPath)
 
     // Even if the /$file content flag was not present we add it ... it would not make sense not to have it.
     BuildWSGUrl(protocol, server, WSGversion, repository, schemaName, className, objectId, true);
+
+    return true;
+    }
+
+//YII RealityData Services
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                   06/2016
+//---------------------------------------------------------------------------------------
+Utf8String MRMeshFileName::GetS3MXPath() const
+    {
+    Utf8String protocol;
+    Utf8String server;
+    Utf8String WSGversion;
+    Utf8String repository;
+    Utf8String schemaName;
+    Utf8String className;
+    Utf8String objectId;
+    bool contentFlag;
+
+    ParseWSGUrl(&protocol, &server, &WSGversion, &repository, &schemaName, &className, &objectId, &contentFlag);
+  
+    BeAssert(("http" == protocol) || ("https" == protocol));  
+    BeAssert("S3MX" == schemaName);
+    BeAssert("Document" == className);
+
+
+    // Although the object ID is Url encoded we only care for slashes at the moment and we will only decode the ~2F sequence
+    // Now we replace all ~2F by directory slashes
+    objectId.ReplaceAll("~2F", "/");
+
+    // Remove terminal slash if any
+    if (objectId[objectId.size() - 1] == '/')
+        objectId = objectId.substr(0, objectId.size() - 1);
+
+    // find first slash ... this slash is the separator between the container ID and the path in container.
+    size_t slashLocation = objectId.find_first_of ('/');
+
+    if ((std::string::npos != slashLocation) && (0 != slashLocation))
+        {
+        objectId = objectId.substr(slashLocation);
+        return objectId;
+        }
+
+    return Utf8String("");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                   06/2016
+//---------------------------------------------------------------------------------------
+bool MRMeshFileName::AppendToAzureBlobRedirectFileName(Utf8StringCR additionalPath)
+
+    {
+    Utf8String Url (*this);
+
+    Utf8String remainder;
+    Utf8String protocol;
+    Utf8String server;
+
+    if (!ParseUrl(&protocol, &server, &remainder))
+        return false;
+   
+    // An Azure access URL contains the '?' marker
+    size_t questionMarkLocation = remainder.find_first_of ('?');
+
+    if ((std::string::npos == questionMarkLocation) || (0 == questionMarkLocation))
+        return false;
+
+    // Obtain URL part ...
+    Utf8String Path = remainder.substr(0, questionMarkLocation);
+
+    // Append the additionalPath
+    Path.ReplaceAll("%2F", "/");
+
+    if (additionalPath[0] != '/')
+        AppendSeparator(Path, true);
+    Path.append(additionalPath);
+
+    // Recode back
+    Path.ReplaceAll("/", "%2F");
+
+    // Rebuild full URL
+    clear();
+    *this = protocol + "://" + server + "/" + Path + remainder.substr(questionMarkLocation);
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                   09/2016
+//---------------------------------------------------------------------------------------
+bool MRMeshFileName::ConvertS3MXUrlToAzureRedirectionRequestURL()
+    {
+    Utf8String protocol;
+    Utf8String server;
+    Utf8String WSGversion;
+    Utf8String repository;
+    Utf8String schemaName;
+    Utf8String className;
+    Utf8String objectId;
+    bool contentFlag;
+
+    ParseWSGUrl(&protocol, &server, &WSGversion, &repository, &schemaName, &className, &objectId, &contentFlag);
+  
+    BeAssert(("http" == protocol) || ("https" == protocol));  
+    BeAssert("S3MX" == schemaName);
+    BeAssert("Document" == className);
+
+
+    objectId.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+\'Read\'&api.singleurlperinstance=true");
+
+    // Even if the /$file content flag was not present we add it ... it would not make sense not to have it.
+    BuildWSGUrl(protocol, server, WSGversion, repository, schemaName, className, objectId, false);
 
     return true;
     }
@@ -310,6 +466,8 @@ void MRMeshFileName::AppendToPath (Utf8StringCR val)
     // Stream-X URL require different processing
     if (IsS3MXUrl())
         AppendToS3MXFileName(val);
+    else if (IsAzureBlobRedirectUrl())					//YII RealityData Services
+        AppendToAzureBlobRedirectFileName(val);
     else
         {
         // General case applicable to local file name or plain http names.
@@ -362,7 +520,43 @@ void MRMeshFileName::StripOutFileName()
     
         // Even if the /$file content flag was not present we add it ... it would not make sense not to have it.
         BuildWSGUrl(protocol, server, WSGversion, repository, schemaName, className, objectId, true);
-    }
+        }    
+//YII RealityData Services		
+    else if (IsAzureBlobRedirectUrl())
+        {
+        Utf8String Url (*this);
+      
+        Utf8String remainder;
+        Utf8String protocol;
+        Utf8String server;
+      
+        ParseUrl(&protocol, &server, &remainder);
+        
+        // An Azure access URL contains the '?' marker
+        size_t questionMarkLocation = remainder.find_first_of ('?');
+      
+        // Obtain URL part ...
+        Utf8String Path = remainder.substr(0, questionMarkLocation);
+      
+        // Append the additionalPath
+        Path.ReplaceAll("%2F", "/");
+      
+        // remove trailing slash is any
+        if (Path[Path.size() - 1] == '/')
+            Path = Path.substr(0, Path.size() - 1);
+
+        // Find the last '/'
+        size_t lastPosition = Path.find_last_of ('/');
+        if (std::string::npos != lastPosition) 
+            Path = Path.substr(0, lastPosition);
+      
+        // Recode back
+        Path.ReplaceAll("/", "%2F");
+      
+        // Rebuild full URL
+        clear();
+        *this = protocol + "://" + server + "/" + Path + remainder.substr(questionMarkLocation);        
+        }
     else if (IsUrl())
         {
         // remove trailing slash is any

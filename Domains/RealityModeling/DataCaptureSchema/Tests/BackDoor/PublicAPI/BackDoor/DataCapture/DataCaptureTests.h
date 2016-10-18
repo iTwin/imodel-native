@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <DataCapturev/DataCaptureSchemaApi.h>
+#include <DataCaptureSchema/DataCaptureSchemaApi.h>
 #include <Bentley/BeTest.h>
 
 #define BEGIN_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE  BEGIN_BENTLEY_DATACAPTURE_NAMESPACE namespace Tests {
