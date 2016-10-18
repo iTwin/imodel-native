@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -102,12 +102,12 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             finalResult->SetSuccess(result.GetValue());
             return;
             }
-        else if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
+        if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
             {
             finalResult->SetError(result.GetError());
             return;
             }
-        else if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+        if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
             {
             finalResult->SetError(result.GetError());
             return;
@@ -121,23 +121,13 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
                 finalResult->SetSuccess(result.GetValue());
                 return;
                 }
-            else if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
-                {
-                finalResult->SetError(result.GetError());
-                return;
-                }
-            else if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+            if (result.GetError().GetHttpStatus() != HttpStatus::NotFound)
                 {
                 finalResult->SetError(result.GetError());
                 return;
                 }
 
             // WSG R1
-            if (result.GetError().GetHttpStatus() != HttpStatus::NotFound)
-                {
-                return;
-                }
-
             GetInfoFromPage("/Pages/About.aspx", ct)->Then([=] (WSInfoHttpResult& result)
                 {
                 if (result.IsSuccess())
