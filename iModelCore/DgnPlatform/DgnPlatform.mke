@@ -646,7 +646,8 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
+                            $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
 
 %if defined (BENTLEYCONFIG_FOLLY)
     LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
