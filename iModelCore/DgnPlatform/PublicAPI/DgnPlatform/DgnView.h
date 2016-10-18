@@ -56,7 +56,6 @@ enum class DgnViewSource
 //! A DisplayStyle is composed of various named "Styles". Styles are defined in Json and is stored/loaded with this element.
 // @bsiclass                                                    Keith.Bentley   10/16
 //=======================================================================================
-
 struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
@@ -123,7 +122,7 @@ public:
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, ResourceAuthority::str_DisplayStyleNamespace());}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
@@ -245,7 +244,7 @@ public:
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector);}//!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return (0==name.size())? DgnCode(): ResourceAuthority::CreateResourceCode(name, ResourceAuthority::str_ModelsNamespace());}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
@@ -298,7 +297,7 @@ public:
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector);} //!< @private
+    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, ResourceAuthority::str_CategoriesNamespace());} //!< @private
 };
 
 //=======================================================================================
@@ -399,7 +398,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition);}
+    static DgnCode CreateCode(Utf8StringCR name) {return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, ResourceAuthority::str_ViewNamespace());}
 
     //! Look up the Id of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
