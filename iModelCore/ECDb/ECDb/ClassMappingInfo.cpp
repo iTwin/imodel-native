@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <stack>
+#include "SqlNames.h"
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -75,7 +77,7 @@ MappingStatus ClassMappingInfo::EvaluateMapStrategy()
 
     //_EvaluateMapStrategy can set the column name. So only set it to a default, if it hasn't been set so far.
     if (m_ecInstanceIdColumnName.empty())
-        m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
+        m_ecInstanceIdColumnName = COL_ECInstanceId;
 
     //! We override m_mapsToVirtualTable if TablePerHierarchy was used.
     if (m_mapsToVirtualTable && m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)

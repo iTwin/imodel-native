@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -21,7 +22,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHierarchy))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
         return ERROR;
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(
@@ -33,7 +34,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
                      "  SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
                      "  FROM BaseClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
                      "  )"
-                     "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " "
+                     "INSERT INTO " TABLE_ClassHierarchyCache " "
                      "SELECT DISTINCT NULL Id, ClassId, BaseClassId FROM BaseClassList ORDER BY Ordinal DESC, Level DESC;"))
         {
         return ERROR;
@@ -52,7 +53,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
     "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))*/
 
     timer.Stop();
-    LOG.debugv("Re-populated table '" ECDB_CACHETABLE_ClassHierarchy "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated table '" TABLE_ClassHierarchyCache "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 
@@ -63,28 +64,22 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHasTables))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
         return ERROR;
 
-    Utf8String sql;
-    sql.Sprintf("INSERT INTO " ECDB_CACHETABLE_ClassHasTables " "
-                "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
-                "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-                "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
-                "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                "    WHERE ec_ClassMap.MapStrategy <> %d "
-                "          AND ec_ClassMap.MapStrategy <> %d "
-                "          AND ec_Column.ColumnKind & %d = 0 "
-                "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id;",
-                Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable),
-                Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable),
-                Enum::ToInt(DbColumn::Kind::ECClassId));
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO " TABLE_ClassHasTablesCache " "
+                                        "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
+                                        "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+                                        "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
+                                        "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                                        "    WHERE ec_ClassMap.MapStrategy <>  " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable
+                                        "          AND ec_ClassMap.MapStrategy <>  " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable
+                                        "          AND ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECClassId " = 0 "
+                                        "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
     timer.Stop();
-    LOG.debugv("Re-populated " ECDB_CACHETABLE_ClassHasTables " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated " TABLE_ClassHasTablesCache " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 

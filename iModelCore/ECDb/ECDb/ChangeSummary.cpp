@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "SqlNames.h"
 
 #define CHANGED_TABLES_TEMP_PREFIX "temp."
 #define CHANGED_INSTANCES_TABLE_BASE_NAME "ec_ChangedInstances"
@@ -515,25 +516,19 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMapCR propertyMap)
 //---------------------------------------------------------------------------------------
 ECClassId TableMapDetail::QueryClassId() const
     {
-    Utf8String sql;
-    sql.Sprintf("SELECT DISTINCT ec_Class.Id"
-                " FROM ec_Class"
-                " JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId"
-                " JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId"
-                " JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id"
-                " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-                " WHERE ec_Table.Name = :tableName"
-                " AND (ec_ClassMap.MapStrategy != :sourceTableStrategy AND ec_ClassMap.MapStrategy != :targetTableStrategy)"
-                " AND ec_Column.IsVirtual = 0"
-                " AND (ec_Column.ColumnKind & %d = %d)",
-                Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT DISTINCT ec_Class.Id FROM ec_Class "
+                "JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
+                "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
+                "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                "WHERE ec_Table.Name = :tableName AND "
+                " (ec_ClassMap.MapStrategy <> " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable " AND ec_ClassMap.MapStrategy <> " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND "
+                " ec_Column.IsVirtual = " SQLVAL_INT_False " AND "
+                " (ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECInstanceId "=" SQLVAL_INT_DbColumn_Kind_ECInstanceId ")");
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName.c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable));
-    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable));
 
     DbResult result = stmt->Step();
     if (result != BE_SQLITE_ROW)
@@ -553,32 +548,24 @@ ECClassId TableMapDetail::QueryClassId() const
 //---------------------------------------------------------------------------------------
 void TableMapDetail::InitForeignKeyRelClassMaps()
     {
-    Utf8String sql;
-    sql.Sprintf("SELECT DISTINCT ec_Class.Id"
-                " FROM ec_Class"
-                " JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId"
-                " JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId"
-                " JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id"
-                " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-                " WHERE ec_Table.Name = :tableName AND"
-                "       ec_Class.Type=%d AND"
-                "       (ec_ClassMap.MapStrategy = :targetTableStrategy OR ec_ClassMap.MapStrategy = :sourceTableStrategy) AND"
-                "       ec_Column.IsVirtual = 0 AND"
-                "       (ec_Column.ColumnKind & %d = %d )",
-                Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT DISTINCT ec_Class.Id FROM ec_Class "
+        "JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
+        "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
+        "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_Table.Name = :tableName AND ec_Class.Type=" SQLVAL_INT_ECClassType_Relationship " AND"
+        "     (ec_ClassMap.MapStrategy = " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable " OR ec_ClassMap.MapStrategy = " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND"
+        "     ec_Column.IsVirtual = " SQLVAL_INT_False " AND"
+        "     (ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECInstanceId "=" SQLVAL_INT_DbColumn_Kind_ECInstanceId ")");
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName, Statement::MakeCopy::No);
-    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable));
-    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable));
 
     DbResult result;
     while ((result = stmt->Step()) == BE_SQLITE_ROW)
         {
-        m_fkeyRelClassIds.push_back((ECClassId) stmt->GetValueUInt64(0));
+        m_fkeyRelClassIds.push_back(stmt->GetValueId<ECClassId>(0));
         }
     BeAssert(result == BE_SQLITE_DONE);
     }

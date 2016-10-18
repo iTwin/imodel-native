@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -14,25 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceFinder::FindOptions::FindOptions
-(
-    int relatedDirections /* = RelatedDirection_None */,
-    uint8_t relationshipDepth /* = 0 */,
-    ECClassCP ecClass /* = nullptr */
-) : m_relatedDirections(relatedDirections), m_relationshipDepth(relationshipDepth), m_ecClass(ecClass)
+ECInstanceFinder::FindOptions::FindOptions(int relatedDirections /* = RelatedDirection_None */, uint8_t relationshipDepth /* = 0 */, ECClassCP ecClass /* = nullptr */) 
+    : m_relatedDirections(relatedDirections), m_relationshipDepth(relationshipDepth), m_ecClass(ecClass)
     {}
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceFinder::QueryableRelationship::QueryableRelationship
-(
-    ECN::ECRelationshipClassCR relationshipClass,
-    ECN::ECClassCR thisClass,
-    ECN::ECRelationshipEnd thisRelationshipEnd
-) : m_relationshipClass(&relationshipClass), m_thisClass(&thisClass),
-m_thisRelationshipEnd(thisRelationshipEnd)
+ECInstanceFinder::QueryableRelationship::QueryableRelationship(ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR thisClass, ECN::ECRelationshipEnd thisRelationshipEnd) 
+    : m_relationshipClass(&relationshipClass), m_thisClass(&thisClass), m_thisRelationshipEnd(thisRelationshipEnd)
     {
     InitializeRelatedDirection();
     }
@@ -190,7 +182,8 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
     {
     queryableRelationships.clear();
 
-    Utf8CP sql =
+    CachedStatementPtr stmt = nullptr;
+    DbResult result = ecDb.GetCachedStatement(stmt,
         " WITH RECURSIVE"
         "    BaseClassesOfEndClass(ClassId) AS  ("
         "    VALUES (:endClassId)"
@@ -203,10 +196,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         " JOIN ec_RelationshipConstraintClass ForeignEndConstraintClass ON ForeignEndConstraintClass.ConstraintId=ForeignEndConstraint.Id "
         " JOIN BaseClassesOfEndClass"
         " WHERE ForeignEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
-        "   OR (ForeignEndConstraint.IsPolymorphic = 1 AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)";
-
-    CachedStatementPtr stmt;
-    DbResult result = ecDb.GetCachedStatement(stmt, sql);
+                                              "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_INT_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false);

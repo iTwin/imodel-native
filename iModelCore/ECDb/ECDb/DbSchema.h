@@ -504,8 +504,6 @@ private:
     BentleyStatus InsertIndex(DbIndex const& index) const;
     BentleyStatus UpdateTable(DbTable const& table) const;
     BentleyStatus UpdateColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdina) const;
-    static bool IsTrue(int sqlInt) { return sqlInt != 0; }
-    static int BoolToSqlInt(bool val) { return val ? 1 : 0; }
 
     std::map<Utf8String, DbTableId, CompareIUtf8Ascii> GetPersistedTableMap() const;
     std::map<Utf8String, DbTableId, CompareIUtf8Ascii> GetExistingTableMap() const;

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "SqlNames.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -297,7 +298,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
-                           "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),"
+                           "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "EnumValues TEXT NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -333,7 +334,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
+                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "Kind INTEGER NOT NULL,"
                            "Ordinal INTEGER NOT NULL,"
                            "PrimitiveType INTEGER,"
@@ -379,7 +380,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "MultiplicityLowerLimit INTEGER,"
                            "MultiplicityUpperLimit INTEGER,"
                            "RoleLabel TEXT,"
-                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (0,1)))");
+                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -422,7 +423,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "ClassId INTEGER PRIMARY KEY REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
-                           "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (0,1)),"
+                           "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "SharedColumnCount INTEGER,"
                            "ExcessColumnName TEXT,"
                            "JoinedTableInfo INTEGER)");
@@ -450,7 +451,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "PrimaryTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
 
     );
@@ -468,10 +469,10 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "Ordinal INTEGER NOT NULL,"
-                           "NotNullConstraint BOOLEAN NOT NULL CHECK (NotNullConstraint IN (0,1)),"
-                           "UniqueConstraint BOOLEAN NOT NULL CHECK (UniqueConstraint IN (0,1)),"
+                           "NotNullConstraint BOOLEAN NOT NULL CHECK (NotNullConstraint IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "UniqueConstraint BOOLEAN NOT NULL CHECK (UniqueConstraint IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "CheckConstraint TEXT COLLATE NOCASE,"
                            "DefaultConstraint TEXT COLLATE NOCASE,"
                            "CollationConstraint INTEGER NOT NULL,"
@@ -486,62 +487,62 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
         return stat;
 
     //ec_Index
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Index("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ECIndex  "("
                            "Id INTEGER PRIMARY KEY,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
-                           "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (0,1)),"
-                           "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (0,1)), "
-                           "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (0,1)),"
+                           "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")), "
+                           "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
                            "ClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (0,1)))");
+                           "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON ec_Index(TableId);"
-                           "CREATE INDEX ix_ec_Index_ClassId ON ec_Index(ClassId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON " TABLE_ECIndex "(TableId);"
+                           "CREATE INDEX ix_ec_Index_ClassId ON " TABLE_ECIndex "(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_IndexColumn
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_IndexColumn("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ECIndexColumn "("
                            "Id INTEGER PRIMARY KEY,"
-                           "IndexId INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
+                           "IndexId INTEGER NOT NULL REFERENCES " TABLE_ECIndex " (Id) ON DELETE CASCADE,"
                            "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
                            "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON ec_IndexColumn(IndexId,ColumnId,Ordinal);"
-                           "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"
-                           "CREATE INDEX ix_ec_IndexColumn_ColumnId ON ec_IndexColumn(ColumnId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON " TABLE_ECIndexColumn "(IndexId,ColumnId,Ordinal);"
+                           "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON " TABLE_ECIndexColumn "(IndexId,Ordinal);"
+                           "CREATE INDEX ix_ec_IndexColumn_ColumnId ON " TABLE_ECIndexColumn "(ColumnId)");
 
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_cache_ClassHasTables
-    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHasTables "("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ClassHasTablesCache "("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON " ECDB_CACHETABLE_ClassHasTables "(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " ECDB_CACHETABLE_ClassHasTables "(TableId);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON " TABLE_ClassHasTablesCache "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " TABLE_ClassHasTablesCache "(TableId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_cache_ClassHierarchy
-    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHierarchy "("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ClassHierarchyCache "("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " ECDB_CACHETABLE_ClassHierarchy "(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " ECDB_CACHETABLE_ClassHierarchy "(BaseClassId);");
+    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " TABLE_ClassHierarchyCache "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " TABLE_ClassHierarchyCache "(BaseClassId);");
     }
 
 
