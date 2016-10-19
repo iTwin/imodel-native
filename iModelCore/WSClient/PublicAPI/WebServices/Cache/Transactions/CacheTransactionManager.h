@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Transactions/CacheTransactionManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,10 +22,14 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct CacheTransactionManager : public ICacheTransactionManager
     {
     private:
-        static bool s_allowUnsafeAccess;
+        static bool s_safeAccessOnly;
+        static intptr_t s_unsafeAccessThreadId;
         std::unique_ptr<IDataSourceCache> m_cache;
         WorkerThreadPtr m_accessThread;
         BeSQLiteDbTransactionHandler m_transactionHandler;
+
+    private:
+        bool IsThreadValid();
 
     public:
         WSCACHE_EXPORT CacheTransactionManager
@@ -34,9 +38,11 @@ struct CacheTransactionManager : public ICacheTransactionManager
             WorkerThreadPtr accessThread
             );
 
-        //! Enable or disable correct thread checking when starting transactions.
-        //! Only useful for testing purposes and should never be used in production.
-        WSCACHE_EXPORT static void SetAllowUnsafeAccess(bool allow);
+        //! Enable or disable correct thread checking when starting transactions for specified thread.
+        //! WARNING: Only useful for testing purposes and should never be used in production.
+        //! @param allow
+        //! @param threadId - defaults to enabling unsafe access to caller thread (usually main testing thread)
+        WSCACHE_EXPORT static void SetAllowUnsafeAccess(bool allow, intptr_t threadId = BeThreadUtilities::GetCurrentThreadId());
 
         //! Start active transaction. Can be called only in cache access thread. Will assert and return inactive transaction if an error occurs.
         WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
