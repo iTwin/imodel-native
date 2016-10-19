@@ -330,6 +330,13 @@
         <ECProperty propertyName='IntProperty' typeName='int' />
     </ECClass>
 
+    <ECClass typeName="TestPhysicalTemplate" isDomainClass="True">
+        <BaseClass>bis:PhysicalTemplate</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
     <ECClass typeName="TestPhysicalType" isDomainClass="True">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
@@ -348,16 +355,16 @@
         <ECProperty propertyName="IntProperty" typeName="int" />
     </ECClass>
 
-  <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
-    <ECProperty propertyName="Street" typeName="string" />
-    <ECStructProperty propertyName="City" typeName="CityStruct" />
-  </ECClass>
+    <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Street" typeName="string" />
+        <ECStructProperty propertyName="City" typeName="CityStruct" />
+    </ECClass>
 
-  <ECClass typeName="CityStruct" isStruct="True" isDomainClass="False">
-    <ECProperty propertyName="Name" typeName="string" />
-    <ECProperty propertyName="State" typeName="string" />
-    <ECProperty propertyName="Country" typeName="string" />
-    <ECProperty propertyName="Zip" typeName="int"/>
-  </ECClass>
+    <ECClass typeName="CityStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="State" typeName="string" />
+        <ECProperty propertyName="Country" typeName="string" />
+        <ECProperty propertyName="Zip" typeName="int"/>
+    </ECClass>
 
 </ECSchema>

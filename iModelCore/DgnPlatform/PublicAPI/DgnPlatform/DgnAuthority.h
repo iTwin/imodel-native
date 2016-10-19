@@ -14,7 +14,7 @@ DGNPLATFORM_TYPEDEFS(ICodedEntity);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_AuthorityHandler {struct Model; struct Partition;};
+namespace dgn_AuthorityHandler {struct Model; struct Partition; struct Session;};
 
 //=======================================================================================
 //! Interface adopted by an object which possesses an authority-issued DgnCode, such as a DgnModel or DgnElement.
@@ -265,10 +265,33 @@ public:
     DGNPLATFORM_EXPORT static DgnAuthorityId GetGeometryPartAuthorityId();
 };
 
+//=======================================================================================
+//! The default code-issuing authority for Session elements.
+// @bsistruct                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct SessionAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Session;
+
+protected:
+    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    SessionAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateSessionCode(Utf8StringCR codeValue);
+};
+
+//=======================================================================================
+// Macro used for declaring the members of a DgnAuthority handler
+//=======================================================================================
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
     private: virtual Dgn::DgnAuthorityP _CreateInstance(Dgn::DgnAuthority::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
+//=======================================================================================
+//! DgnAuthority handlers
+//=======================================================================================
 namespace dgn_AuthorityHandler
 {
     struct EXPORT_VTABLE_ATTRIBUTE Authority : DgnDomain::Handler
@@ -328,6 +351,11 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Category : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Session : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SessionAuthority, SessionAuthority, Session, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

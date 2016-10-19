@@ -269,6 +269,17 @@ DgnDbStatus DefinitionElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SessionPtr Session::Create(DgnDbR db, Utf8CP name)
+    {
+    DgnModelId modelId = db.GetSessionModel()->GetModelId();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Session::GetHandler());
+    DgnCode code = SessionAuthority::CreateSessionCode(name);
+    return new Session(CreateParams(db, modelId, classId, code));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Subject::_OnInsert()

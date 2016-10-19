@@ -348,6 +348,7 @@ struct SystemAuthority
         TrueColor = 5LL,
         Model = 6LL,
         Partition = 7LL,
+        Session = 8LL,
 
         // ............     Introduce new BuiltinIds here
         
@@ -410,6 +411,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
             { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
+            { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -540,6 +542,14 @@ DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId mod
 DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
     {
     return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SessionAuthority::CreateSessionCode(Utf8StringCR codeValue)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Session, codeValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -708,6 +718,17 @@ DgnDbStatus PartitionAuthority::_ValidateCode(ICodedEntityCR entity) const
 
     // Partitions use the same name validation function as Models
     return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SessionAuthority::_ValidateCode(ICodedEntityCR entity) const
+    {
+    if (nullptr == entity.ToDgnElement())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return T_Super::_ValidateCode(entity);
     }
 
 /*---------------------------------------------------------------------------------**//**
