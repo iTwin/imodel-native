@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/IECDbAdapter.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,6 +112,15 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ECClassId classId,
             ECInstanceKeyMultiMap& keysOut,
             ICancellationTokenPtr ct = nullptr
+            ) = 0;
+
+        virtual BentleyStatus ExtractECInstanceKeys
+            (
+            ECSqlStatement& statement,
+            ECInstanceKeyMultiMap& keysOut,
+            ICancellationTokenPtr ct = nullptr,
+            int ecClassIdColumn = 0,
+            int ecInstanceIdcolumn = 1
             ) = 0;
 
         virtual int  CountClassInstances(ECClassCP ecClass) = 0;
