@@ -157,6 +157,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         ECSqlStatus BindId(int parameterIndex, BeInt64Id value) { return GetBinder(parameterIndex).BindId(value); }
 
         //! Binds a BeGuid to the parameter. If the GUID is invalid, NULL is bound to the parameter.
+        //! @param[in] parameterIndex Parameter index
         //! @param[in] guid BeGuid to bind
         //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p guid or not.
         //!             Only pass IECSqlBinder::MakeCopy::No if @p guid will remain valid until the statement's bindings are cleared.
