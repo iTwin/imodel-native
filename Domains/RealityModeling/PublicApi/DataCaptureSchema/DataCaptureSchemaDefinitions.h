@@ -129,6 +129,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Define typedefs and Ptrs in the DataCapture namespace
 //-----------------------------------------------------------------------------------------
 DATACAPTURE_TYPEDEFS(Camera)
+DATACAPTURE_TYPEDEFS(ImageDimensionType)
+DATACAPTURE_TYPEDEFS(CameraDistortionType)
 
 
 DATACAPTURE_REFCOUNTED_PTR(Camera)
