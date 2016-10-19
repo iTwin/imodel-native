@@ -367,7 +367,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
 
         GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
         m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
-        
+
+        if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+        m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
