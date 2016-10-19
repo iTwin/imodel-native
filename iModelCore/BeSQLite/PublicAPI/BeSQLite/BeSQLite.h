@@ -657,7 +657,7 @@ public:
     //! Bind a Boolean value to a parameter of this (previously prepared) Statement
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    DbResult BindBoolean(int paramNum, bool value) { return BindInt(paramNum, value ? 1 : 0); }
+    DbResult BindBoolean(int paramNum, bool value) {return BindInt(paramNum, value ? 1 : 0);}
 
     //! Bind a BeBriefcaseBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -777,7 +777,7 @@ public:
     //! method returns true if the value is not 0 and false if it is 0.
     //! This is consistent with Statement::BindBoolean.
     //! @param[in] col The column of interest
-    bool GetValueBoolean(int col) { return GetValueInt(col) != 0; }
+    bool GetValueBoolean(int col) {return GetValueInt(col) != 0;}
 
     //! Get a double value from a column returned from Step
     //! @param[in] col The column of interest
