@@ -1357,10 +1357,12 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
             {
             if (currentTexId != -1)
                 {
+                assert(currentTexId < 10000);
                 newTexIds.push_back(currentTexId);
                 newParts.push_back((int)indicesClipped.size());
                 }
             currentTexId = faceIds[(&idx - &newIndices[0]) / 3];
+            assert(currentTexId < 10000);
             }
         assert(idx - 1 < ptMap.size());
         if (ptMap[idx - 1] == -1)
@@ -1372,6 +1374,7 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
             }
         indicesClipped.push_back(ptMap[idx - 1] + 1);
         }
+    assert(currentTexId < 10000);
     newTexIds.push_back(currentTexId);
     newParts.push_back((int)indicesClipped.size());
     inOutUvs = tempUvs;
@@ -1452,6 +1455,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     for (const Json::Value& id : val["texId"])
         {
         texId.push_back(id.asInt64());
+        assert(texId.back() < 10000);
         }
 
     for (const Json::Value& id : val["parts"])
@@ -1463,8 +1467,15 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     val["texId"] = Json::arrayValue;
     val["parts"] = Json::arrayValue;
 
-    for(auto& id: texId) val["texId"].append(id);
-    for(auto& id: parts) val["parts"].append(id);
+    for(auto& id: texId){
+        val["texId"].append(id);
+        assert(id< 10000);
+        
+        }
+    for(auto& id: parts)
+        {
+        val["parts"].append(id);
+        }
     Utf8String metadataStr(Json::FastWriter().write(val));
     if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
@@ -1522,6 +1533,8 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
                 subMetadata["texId"] = Json::arrayValue;
                 subMetadata["parts"] = Json::arrayValue;
                 subMetadata["parts"].append((int)indicesPtr->size());
+                int newId = texId[currentPart];
+                assert(newId < 10000);
                 subMetadata["texId"].append(texId[currentPart]);
                 Utf8String subMetadataStr(Json::FastWriter().write(subMetadata));
                 m_meshMetadata.push_back(subMetadataStr);
@@ -2806,7 +2819,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
         }
     GetMetadata();
     GetMeshParts();
-    bvector<int> newMeshParts;
+    /*bvector<int> newMeshParts;
     bvector<Utf8String> newMeshMetadata;
     int64_t currentTexId = -1;
     int64_t currentElementId = -1;
@@ -2841,7 +2854,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMes
             }
         }
     m_meshParts = newMeshParts;
-    m_meshMetadata = newMeshMetadata;
+    m_meshMetadata = newMeshMetadata;*/
     if (m_meshParts.size() > 0)
         {
         for (size_t i = 0; i < m_meshParts.size(); i += 2)
@@ -2920,6 +2933,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
         for (const Json::Value& id : val["texId"])
             {
             texId.push_back(id.asInt64());
+            int newId = texId.back();
+            newId = newId;
             }
         ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, outUvs, &points[i][0], points[i].size(), &indices[i][0], indices[i].size(), extent);
         if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) continue;

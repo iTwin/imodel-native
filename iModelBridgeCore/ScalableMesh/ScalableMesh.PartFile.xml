@@ -321,8 +321,12 @@
   <ProductDirectoryList ListName="DgnDbToSM">
     <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
     <ProductDirectory Name="DgnDbToSMTest" Path="Dlls"/>
+    <ProductDirectory Name="AutomaticGroundDetection"  Path="Dlls" />
+    <ProductDirectory Name="CGALAssemblies"  Path="Dlls" />
+    <!--<ProductDirectory Name="ScalableMeshV8SDK"  Path="Dlls" />-->
+    <ProductDirectory Name="ScalableMeshLibs"  Deliver="false" />    
     <ProductDirectory Name="Assemblies" Path="Dlls"/>
-    <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>        
     <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
@@ -346,8 +350,29 @@
     <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
-    <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>    
+    <ProductDirectory Name="BePortableUiAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
+    <ProductDirectory Name="SmartSolidAssemblies" Path="Dlls"/>
+    <!--<ProductDirectory Name="StdThemes" Path="Dlls"/>-->
+    <ProductDirectory Name="WSClientAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="DataCaptureAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="ConceptMaterials" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Winx86" Path="Dlls/winx86"/>
+    <ProductDirectory Name="BentleyEulaDelivery" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Win7" Path="Dlls/Win7"/>
+
+    <ProductDirectory Name="GeoUserLibraries" Path="Dlls/geolib"/>
+
+    <ProductDirectory Name="MobileUtilsXliffs" Path="Dlls/xliffs"/>
+
+    <ProductDirectory Name="MobileUtilsAssemblies" Path="Dlls"/>
+
+    <ProductDirectory Name="MobileUtilsAssets" Path="Dlls/assets"/>
+    
   </ProductDirectoryList>
+      
+                              
 
   <Product Name="DgnDbSM">
     <SubPart PartName="DgnDbToSM" />
