@@ -188,16 +188,24 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
+    auto alignmentPartitionPtr = PhysicalPartition::Create(*projectPtr->Elements().GetRootSubject(), "Alignments");
+    if (alignmentPartitionPtr->Insert(&status).IsNull())
+        return nullptr;
+
     auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
     auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr),
-        projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
+        alignmentPartitionPtr->GetElementId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
 
     if (DgnDbStatus::Success != alignmentModelPtr->Insert())
         return nullptr;
 
+    auto physicalPartitionPtr = PhysicalPartition::Create(*projectPtr->Elements().GetRootSubject(), "Physical");
+    if (physicalPartitionPtr->Insert(&status).IsNull())
+        return nullptr;
+
     auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
     auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(physicalModelHandlerR),
-        projectPtr->Elements().GetRootSubjectId(), PhysicalModel::CreateModelCode("Test Physical Model")));
+        physicalPartitionPtr->GetElementId(), PhysicalModel::CreateModelCode("Test Physical Model")));
 
     if (DgnDbStatus::Success != physicalModelPtr->Insert())
         return nullptr;

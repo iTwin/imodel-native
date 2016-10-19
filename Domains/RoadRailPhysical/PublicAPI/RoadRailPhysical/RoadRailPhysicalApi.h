@@ -65,11 +65,17 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Elements
+#define BRRP_CLASS_Intersection                                     "Intersection"
+#define BRRP_CLASS_IntersectionElement                              "IntersectionElement"
+#define BRRP_CLASS_ElevatedIntersection                             "ElevatedIntersection"
+#define BRRP_CLASS_ElevatedIntersectionSegment                      "ElevatedIntersectionSegment"
+#define BRRP_CLASS_ElevatedRoadSegment                              "ElevatedRoadSegment"
+#define BRRP_CLASS_IntersectionSegment                              "IntersectionSegment"
+#define BRRP_CLASS_IntersectionSegmentElement                       "IntersectionSegmentElement"
 #define BRRP_CLASS_RailRange                                        "RailRange"
 #define BRRP_CLASS_RoadDesignSpeed                                  "RoadDesignSpeed"
 #define BRRP_CLASS_RoadRange                                        "RoadRange"
 #define BRRP_CLASS_RoadSegment                                      "RoadSegment"
-#define BRRP_CLASS_RoadSegmentOnBridge                              "RoadSegmentOnBridge"
 #define BRRP_CLASS_RoadSegmentElement                               "RoadSegmentElement"
 #define BRRP_CLASS_SegmentElement                                   "SegmentElement"
 #define BRRP_CLASS_SegmentRangeElement                              "SegmentRangeElement"
@@ -135,26 +141,36 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the RoadRailPhysical namespace
 //-----------------------------------------------------------------------------------------
+ROADRAILPHYSICAL_TYPEDEFS(ElevatedIntersection)
+ROADRAILPHYSICAL_TYPEDEFS(ElevatedIntersectionSegment)
+ROADRAILPHYSICAL_TYPEDEFS(ElevatedRoadSegment)
+ROADRAILPHYSICAL_TYPEDEFS(Intersection)
+ROADRAILPHYSICAL_TYPEDEFS(IntersectionElement)
+ROADRAILPHYSICAL_TYPEDEFS(IntersectionSegment)
+ROADRAILPHYSICAL_TYPEDEFS(IntersectionSegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(RailRange)
 ROADRAILPHYSICAL_TYPEDEFS(RailSegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(RoadDesignSpeed)
 ROADRAILPHYSICAL_TYPEDEFS(RoadRange)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegment)
 ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentElement)
-ROADRAILPHYSICAL_TYPEDEFS(RoadSegmentOnBridge)
 ROADRAILPHYSICAL_TYPEDEFS(SegmentElement)
 ROADRAILPHYSICAL_TYPEDEFS(SegmentRangeElement)
 ROADRAILPHYSICAL_TYPEDEFS(StatusAspect)
 ROADRAILPHYSICAL_TYPEDEFS(TransitionSegment)
 
 
+ROADRAILPHYSICAL_REFCOUNTED_PTR(ElevatedIntersection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(ElevatedIntersectionSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(ElevatedRoadSegment)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(Intersection)
+ROADRAILPHYSICAL_REFCOUNTED_PTR(IntersectionSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RailRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RailSegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadDesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR(RoadSegmentOnBridge)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(SegmentElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(StatusAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR(TransitionSegment)

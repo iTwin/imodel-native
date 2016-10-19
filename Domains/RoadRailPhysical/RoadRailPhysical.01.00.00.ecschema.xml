@@ -132,7 +132,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RoadSegmentOnBridge" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
+    <ECEntityClass typeName="ElevatedRoadSegment" modifier="Sealed" description="Physical segment of a road, with a constant cross-section, supported by a bridge">
         <BaseClass>RoadSegmentElement</BaseClass>
         <BaseClass>bphys:IElevatedPhysicalElement</BaseClass>
         <ECCustomAttributes>
@@ -142,8 +142,39 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="RoadSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
         <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
-            <Class class="RoadSegmentOnBridge"/>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="ElevatedRoadSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="bphys:Bridge"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="IntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection." >
+        <BaseClass>IntersectionSegmentElement</BaseClass>
+        <!--ECNavigationProperty propertyName="RoadIntersectionLegDefinitionId" relationshipName="RoadIntersectionLegReferencesDefinition" direction="forward"/-->
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedIntersectionSegment" modifier="Sealed" description="Physical segment of a road connected to an intersection, supported by a bridge.">
+        <BaseClass>IntersectionSegmentElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="IntersectionSegmentAssemblesBridge" strength="embedding" modifier="Sealed">
+        <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="ElevatedIntersectionSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="bphys:Bridge"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Intersection" modifier="Sealed" description="Physical road intersection.">
+        <BaseClass>IntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedIntersection" modifier="Sealed" description="Physical road intersection supported on a bridge.">
+        <BaseClass>IntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="IntersectionAssemblesBridge" strength="embedding" modifier="Sealed">
+        <BaseClass>bphys:PhysicalElementAssemblesBridge</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="ElevatedIntersection"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false">
             <Class class="bphys:Bridge"/>

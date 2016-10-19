@@ -21,7 +21,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(SegmentElementHandler::GetHandler());
     RegisterHandler(RoadSegmentElementHandler::GetHandler());
     RegisterHandler(RoadSegmentHandler::GetHandler());
-    RegisterHandler(RoadSegmentOnBridgeHandler::GetHandler());
+    RegisterHandler(ElevatedRoadSegmentHandler::GetHandler());
     RegisterHandler(TransitionSegmentHandler::GetHandler());
 
     RegisterHandler(StatusAspectHandler::GetHandler());
