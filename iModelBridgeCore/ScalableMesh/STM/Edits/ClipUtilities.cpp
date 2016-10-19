@@ -1127,8 +1127,8 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
     for (vis->Reset(); vis->AdvanceToNextFace();)
         {
         for (auto& clip : clipPolys)
-            {
-            if (clip->PointInside(centroids[idxFace], 1e-8))
+            {            
+            if (clip.IsValid() && clip->PointInside(centroids[idxFace], 1e-8))
                 {
                 idxOfFaces[&clip - &clipPolys.front()].push_back((int)idxFace);
                 nCrossingPolys[idxFace]++;
