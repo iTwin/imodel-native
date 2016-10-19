@@ -777,10 +777,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
     WipECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
     //!WIP_CLASSID need work ToNativeSql() is used in viewgenerator and ECSql this does not allow us but to add an addition parameter to it tell from where it is called.
     //For this reason i am leaving following cases as is
-    if (classIdPropertyMap->IsPersisted())
+    if (!classIdPropertyMap->IsMappedToSingleTable())
+        {
+        BeAssert(false && "WIP Expecting single column");
+        return ECSqlStatus::Error;
+        }
+
+    WipColumnVerticalPropertyMap const* vmap = classIdPropertyMap->FindVerticalPropertyMap(classMap.GetJoinedTable());
+    if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
         {
         auto classRefId = classRefExp->GetId().c_str();
-        nativeSqlSnippet.Append(classIdPropertyMap->ToNativeSql(classRefId, ECSqlType::Select, false).front());
+        WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, classRefId);
+        BeAssert(sqlDispatcher.GetStatus() == SUCCESS);
+        nativeSqlSnippet.Append(sqlDispatcher.GetResultSet().front().GetSql());
         }
     else
         {
@@ -1250,7 +1259,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     auto const& relationshipClassNameExp = exp.GetRelationshipClass();
-    auto ecInstanceIdKey = ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME;
 
     //Render previous sql part as is
     r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
@@ -1278,29 +1286,32 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.AppendEscaped(relationshipClassNameExp.GetId().c_str());
 
     sql.Append(" ON ");
-    PropertyMapCP fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetPropertyMap(ecInstanceIdKey);
+    {
+    WipECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
     PRECONDITION(fromECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
-    auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql(fromEP.GetClassNameRef()->GetId().c_str(), ecsqlType, false);
-    if (fromECInstanceIdNativeSqlSnippets.size() > 1)
+    if (!fromECInstanceIdPropMap->IsMappedToSingleTable())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
-    sql.Append(fromECInstanceIdNativeSqlSnippets);
-
+    WipPropertyMapSqlDispatcher fromECInstanceIdSqlDispatcher(*fromECInstanceIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, fromEP.GetClassNameRef()->GetId().c_str());
+    fromECInstanceIdPropMap->Accept(fromECInstanceIdSqlDispatcher);
+    sql.Append(fromECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
     sql.Append(" = ");
+    }
 
-    auto fromRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMap(fromRelatedKey);
+    {
+    WipConstraintECInstanceIdIdPropertyMap const* fromRelatedIdPropMap = static_cast<WipConstraintECInstanceIdIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
     PRECONDITION(fromRelatedIdPropMap != nullptr, ECSqlStatus::Error);
-    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql(relationshipClassNameExp.GetId().c_str(), ecsqlType, false);
-    if (fromRelatedIdNativeSqlSnippets.size() > 1)
+    if (!fromRelatedIdPropMap->IsMappedToSingleTable())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
-    sql.Append(fromRelatedIdNativeSqlSnippets);
+    WipPropertyMapSqlDispatcher fromRelatedIdSqlDispatcher(*fromRelatedIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    sql.Append(fromRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
 
     //RelationView To ToECClass
     sql.Append(" INNER JOIN ");
@@ -1309,28 +1320,34 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return r;
 
     sql.Append(" ON ");
-    auto toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetPropertyMap(ecInstanceIdKey);
+    }
+
+    {
+    WipECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
     PRECONDITION(toECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
-    auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql(toEP.GetClassNameRef()->GetId().c_str(), ecsqlType, false);
-    if (toECInstanceIdSqlSnippets.size() > 1)
+    if (!toECInstanceIdPropMap->IsMappedToSingleTable())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
-    sql.Append(toECInstanceIdSqlSnippets);
-
+    WipPropertyMapSqlDispatcher toECInstanceIdSqlDispatcher(*toECInstanceIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, toEP.GetClassNameRef()->GetId().c_str());
+    sql.Append(toECInstanceIdSqlDispatcher.GetResultSet().front().GetSql());
     sql.Append(" = ");
-    auto toRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMap(toRelatedKey);
+    }
+
+    {
+    WipConstraintECInstanceIdIdPropertyMap const* toRelatedIdPropMap = static_cast<WipConstraintECInstanceIdIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
     PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::Error);
-    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql(relationshipClassNameExp.GetId().c_str(), ecsqlType, false);
-    if (toRelatedIdSqlSnippets.size() > 1)
+    if (!toRelatedIdPropMap->IsMappedToSingleTable())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
-    sql.Append(toRelatedIdSqlSnippets);
+    WipPropertyMapSqlDispatcher toRelatedIdSqlDispatcher(*toRelatedIdPropMap->GetTables().front(), WipPropertyMapSqlDispatcher::SqlTarget::View, relationshipClassNameExp.GetId().c_str());
+    sql.Append(toRelatedIdSqlDispatcher.GetResultSet().front().GetSql());
+    }
 
     return ECSqlStatus::Success;
     }

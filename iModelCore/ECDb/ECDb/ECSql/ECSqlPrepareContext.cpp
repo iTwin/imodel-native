@@ -223,7 +223,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             }
 
         
-        if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::System))
+        if (property->GetPropertyMap().IsSystem())
             {
             WipSystemPropertyMap const& systemPropertyMap = static_cast<WipSystemPropertyMap const&>(property->GetPropertyMap());
             bool isPropertyMappedToSingleTable = systemPropertyMap.IsMappedToSingleTable();
@@ -357,12 +357,12 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
-        if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::System))
+        if (property->GetPropertyMap().IsSystem())
             {
             BeAssert(false && "Updating system properties are not supported");
             return nullptr;
             }
-        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Business))
+        else if (property->GetPropertyMap().IsBusiness())
             {
             WipVerticalPropertyMap const& businessPropertyMap = static_cast<WipVerticalPropertyMap const&>(property->GetPropertyMap());
             if (&businessPropertyMap.GetTable() == &joinedTable)

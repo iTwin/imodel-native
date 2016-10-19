@@ -118,6 +118,19 @@ WipPropertyMap const& WipPropertyMap::GetRoot() const
     return *root;
     }
 
+//=======================================================================================
+// @bsimethod                                                   Affan.Khan          07/16
+//+===============+===============+===============+===============+===============+======
+bool WipPropertyMap::IsMappedToClassMapTables() const
+    {
+    for (DbTable const* table : GetClassMap().GetTables())
+        {
+        if (IsMappedToTable(*table))
+            return true;
+        }
+
+    return false;
+    }
 //************************************WipCompoundPropertyMap::Collection********
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16

@@ -78,7 +78,7 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
     classMap.GetPropertyMaps().Accept(typeDispatcher);
     for (WipPropertyMap const* propMap : typeDispatcher.ResultSet())
         {
-        bool isSystem = Enum::Contains(propMap->GetKind(), PropertyMapKind::System);
+        bool isSystem = propMap->IsSystem();
         if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
             {
             propMap->Accept(sqlDispatcher);           

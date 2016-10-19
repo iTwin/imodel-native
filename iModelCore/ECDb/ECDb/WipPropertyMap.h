@@ -137,8 +137,10 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         WipPropertyMap const* m_parentPropertMap;    
         ClassMap const& m_classMap;
         virtual BentleyStatus _Validate() const = 0;
+        virtual bool _IsMappedToTable(DbTable const& table) const = 0;
         bool m_isInEditMode;
         PropertyMapKind m_kind;
+       
     protected:
         WipPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty);
         WipPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap);
@@ -154,6 +156,10 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         ClassMap const& GetClassMap() const { return m_classMap; }
         WipPropertyMap const& GetRoot() const;
         PropertyMapKind GetKind() const { return m_kind; }
+        bool IsSystem() const { return Enum::Contains(PropertyMapKind::System, GetKind()); }
+        bool IsBusiness () const { return Enum::Contains(PropertyMapKind::Business, GetKind()); }
+        bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); }
+        bool IsMappedToClassMapTables() const;
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
     };
 
@@ -166,6 +172,7 @@ struct WipVerticalPropertyMap : WipPropertyMap
     {
     private:
         virtual DbTable const& _GetTable() const = 0;
+        virtual bool _IsMappedToTable(DbTable const& table) const override { return &GetTable() == &table; }
     public:
         WipVerticalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : WipPropertyMap(kind, classMap, ecProperty)
@@ -175,6 +182,7 @@ struct WipVerticalPropertyMap : WipPropertyMap
             {}
         ~WipVerticalPropertyMap() {}
         DbTable const& GetTable() const { return _GetTable(); }
+       
         RefCountedPtr<WipVerticalPropertyMap> CreateCopy(ClassMap const& newClassMapContext) const;
     };
 
@@ -186,6 +194,15 @@ struct WipVerticalPropertyMap : WipPropertyMap
 struct WipHorizontalPropertyMap : WipPropertyMap
     {
     private:
+        virtual bool _IsMappedToTable(DbTable const& table) const override 
+            { 
+            for (DbTable const* t : GetTables())
+                if (t == &table)
+                    return true;
+
+            return false;
+            }
+
     protected:
         WipHorizontalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : WipPropertyMap(kind, classMap, ecProperty)

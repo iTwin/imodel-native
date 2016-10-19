@@ -210,10 +210,10 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     std::vector<Utf8String> values;
     WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::Business); //Only inlcude none-system properties
     baseClassMap.GetPropertyMaps().Accept(typeDispatcher);
-    for (WipPropertyMapTypeDispatcher::Result const& result: typeDispatcher.ResultSet())
+    for (WipPropertyMap const* result: typeDispatcher.ResultSet())
         {
  
-        WipVerticalPropertyMap const* derivedPropertyMap = static_cast<WipVerticalPropertyMap const*> (derivedClassMap.GetPropertyMaps().Find(result.GetPropertyMap().GetAccessString().c_str()));
+        WipVerticalPropertyMap const* derivedPropertyMap = static_cast<WipVerticalPropertyMap const*> (derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str()));
         if (derivedPropertyMap == nullptr)
             {
             BeAssert(false);
@@ -221,14 +221,14 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (result.GetPropertyMap().GetKind() == PropertyMapKind::NavigationPropertyMap)
+        if (result->GetKind() == PropertyMapKind::NavigationPropertyMap)
             {
-            if (!static_cast<WipNavigationPropertyMap const&>(result.GetPropertyMap()).IsSupportedInECSql())
+            if (!static_cast<WipNavigationPropertyMap const&>(*result).IsSupportedInECSql())
                 return;
             }
 
         WipPropertyMapColumnDispatcher baseColumnDispatcher, derivedColumnDispatcher;
-        result.GetPropertyMap().Accept(baseColumnDispatcher);
+        result->Accept(baseColumnDispatcher);
         derivedPropertyMap->Accept(derivedColumnDispatcher);
         if (baseColumnDispatcher.GetColumns().size() != derivedColumnDispatcher.GetColumns().size())
             {
@@ -604,7 +604,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         {
         typeDispatcher.Reset();
         baseClassPropertyMap->Accept(typeDispatcher);
-        PropertyMapKind basePropertyMapType = typeDispatcher.ResultSet().front().GetPropertyMap().GetKind();
+        PropertyMapKind basePropertyMapType = typeDispatcher.ResultSet().front()->GetKind();
 
         if (skipSystemProperties && Enum::Contains(PropertyMapKind::System, basePropertyMapType))
             continue;
