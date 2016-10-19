@@ -104,6 +104,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         DMatrix4d                               m_storageToUorsTransfo; 
         bool m_forceRedraw;
         bset<uint64_t>                          m_activeClips;
+
+        BeFileName m_path;
                        
     protected:
 
@@ -147,6 +149,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
+
+        SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

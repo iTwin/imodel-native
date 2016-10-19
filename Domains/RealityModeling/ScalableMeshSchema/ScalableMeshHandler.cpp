@@ -44,6 +44,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
     {
+    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
     return m_range;
     }
 
@@ -947,7 +948,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_terrainOverviewNodes, terrainQueryId);
 
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
+            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
 
             status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
@@ -1103,7 +1104,7 @@ ScalableMeshModel::~ScalableMeshModel()
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {    
     assert(m_smPtr == nullptr);
-
+    m_path = smFilename;
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
@@ -1160,6 +1161,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+
         }
 
     const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
@@ -1252,6 +1254,11 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
     }
 
+
+BeFileName ScalableMeshModel::GetPath()
+    {
+    return m_path;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
