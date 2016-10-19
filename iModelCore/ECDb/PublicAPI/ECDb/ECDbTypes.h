@@ -43,5 +43,3 @@
 
 #endif
 
-#define ECINSTANCE_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname,BeSQLite::EC::ECInstanceId)
-
