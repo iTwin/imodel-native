@@ -280,7 +280,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
 
     public:
         //! Construct a new RedlineViewDefinition prior to inserting it
-        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) { ; }
+        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorCR categories, DisplayStyleCR displayStyle) : 
+                T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
         //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
         static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
@@ -311,9 +312,6 @@ private:
 
 protected:
     virtual void _DrawView(ViewContextR) override;
-    virtual void _SetOrigin(DPoint3dCR viewOrg) override;
-    virtual void _SetDelta(DVec3dCR viewDelta) override;
-    virtual void _SetRotation(RotMatrixCR viewRot) override;
 
 public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinition& rdlViewDef);
@@ -371,25 +369,12 @@ struct SpatialRedlineViewController : OrthographicViewController
 protected:
     SpatialViewController& m_subjectView;
     bvector<SpatialRedlineModelP> m_otherRdlsInView;
+    bool m_targetModelIsInSubjectView;
 
-    bool                    m_targetModelIsInSubjectView;
-
-    void _StoreState() const override;
-    void _LoadState() override;
     void _DrawView(ViewContextR) override;
-    DPoint3d _GetOrigin() const override;
-    DVec3d _GetDelta() const override;
-    RotMatrix _GetRotation() const override;
-    void _SetOrigin(DPoint3dCR org) override;
-    void _SetDelta(DVec3dCR delta) override;
-    void _SetRotation(RotMatrixCR rot) override;
-    GeometricModelP _GetTargetModel() const override;
-    void _AdjustAspectRatio(double , bool expandView) override;
-    DPoint3d _GetTargetPoint() const override;
     bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
     AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    ColorDef _GetBackgroundColor() const override;
     bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
     void _OnViewOpened(DgnViewportR vp) override;

@@ -632,8 +632,8 @@ DgnDbStatus ICodedEntity::ValidateCode() const
     DgnAuthorityCPtr auth = GetCodeAuthority();
     if (auth.IsNull() || !SupportsCodeAuthority(*auth))
         return DgnDbStatus::InvalidCodeAuthority;
-    else
-        return auth->ValidateCode(*this);
+
+    return auth->ValidateCode(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -648,31 +648,6 @@ DgnDbStatus DgnAuthority::_ValidateCode(ICodedEntityCR entity) const
     BeAssert(code.GetAuthority() == GetAuthorityId());
     if (code.GetAuthority() != GetAuthorityId())
         return DgnDbStatus::InvalidCodeAuthority;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ResourceAuthority::_ValidateCode(ICodedEntityCR entity) const
-    {
-    auto status = T_Super::_ValidateCode(entity);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    // Only elements are supported...
-    auto el = entity.ToDgnElement();
-    if (nullptr == el)
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    // Namespace must match ECClass name (or subclass thereof)
-    ECClassCP ecClass = el->GetElementClass();
-    BeAssert(nullptr != ecClass);
-    if (nullptr == ecClass)
-        return DgnDbStatus::BadElement;
-    else if (!ecClass->Is(entity.GetCode().GetNamespace().c_str()))
-        return DgnDbStatus::InvalidName;
 
     return DgnDbStatus::Success;
     }

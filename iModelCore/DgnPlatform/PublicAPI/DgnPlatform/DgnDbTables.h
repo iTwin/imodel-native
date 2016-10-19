@@ -104,7 +104,6 @@
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 #define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 
@@ -292,8 +291,9 @@ private:
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
-    T_DgnModelMap   m_models;
-    T_ClassInfoMap  m_classInfos;
+    mutable BeSQLite::BeDbMutex m_mutex;
+    T_DgnModelMap  m_models;
+    T_ClassInfoMap m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
     void Empty();
@@ -931,9 +931,8 @@ public:
     //! @param[in] key The key identifying the record to drop.
     //! @return Success if the record was dropped, or an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
-//__PUBLISH_SECTION_END__
+
     static bool IsUntrackedFts5Table(Utf8CP tableName);
-//__PUBLISH_SECTION_START__
 };
 
 ENUM_IS_FLAGS(DgnSearchableText::Query::Column);

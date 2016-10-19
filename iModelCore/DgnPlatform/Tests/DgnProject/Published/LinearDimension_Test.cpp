@@ -81,7 +81,7 @@ void SetUp () override
 
     DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
 
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+    ViewDefinition::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
     DrawingViewController viewController(GetDgnDb(), view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);
@@ -261,7 +261,7 @@ void SetUp () override
 
     DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
 
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+    ViewDefinition::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
     OrthographicViewController viewController(GetDgnDb(), view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);

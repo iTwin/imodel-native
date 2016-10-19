@@ -1486,37 +1486,22 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
 // @bsiclass                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct InstanceUpdater : DgnElement::AppData
-    {
-    private:
-        static Key s_key;
-        DgnImportContext& m_importer;
-        DgnElementId m_sourceElementId;
-        DropMe _OnInserted(DgnElementCR el) override;
-        void Update(DgnElementCR el);
+{
+private:
+    DgnImportContext& m_importer;
+    DgnElementId m_sourceElementId;
+    DropMe _OnInserted(DgnElementCR el) override {if (m_sourceElementId.IsValid()) Update(el); return DropMe::Yes;}
+    void Update(DgnElementCR el);
 
-    public:
-        explicit InstanceUpdater(DgnImportContext& importer, DgnElementId sourceId) : m_importer(importer), m_sourceElementId(sourceId) {}
-        static Key& GetKey() { return s_key; }
-    };
-
-//static
-InstanceUpdater::Key InstanceUpdater::s_key;
+public:
+    explicit InstanceUpdater(DgnImportContext& importer, DgnElementId sourceId) : m_importer(importer), m_sourceElementId(sourceId) {}
+    static Key& GetKey() {static Key s_key; return s_key;}
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-InstanceUpdater::DropMe InstanceUpdater::_OnInserted(DgnElementCR el)
-    {
-    if (m_sourceElementId.IsValid())
-        Update(el);
-
-    return DropMe::Yes;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass) const
+EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass) const
     {
     auto it = m_updaterCache.find(&ecClass);
     if (it != m_updaterCache.end())
@@ -1531,20 +1516,12 @@ BeSQLite::EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClass
         propertiesToBind.push_back(ecProperty);
         }
 
-    auto updater = new BeSQLite::EC::ECInstanceUpdater(GetDestinationDb(), ecClass, propertiesToBind);
-
-    //just log error, we will still return the invalid inserter, and the caller will check for validity again
-    if (!updater->IsValid())
-        {
-        Utf8String error;
-        error.Sprintf("Could not create ECInstanceUpdater for ECClass '%s'. No instances of that class will be updated in the DgnDb file. Please see ECDb entries in log file for details.",
-                        Utf8String(ecClass.GetFullName()).c_str());
-        //LOG(error.c_str());
-        }
-
+    auto updater = new EC::ECInstanceUpdater(GetDestinationDb(), ecClass, propertiesToBind);
     m_updaterCache[&ecClass] = updater;
+
     return *updater;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1609,7 +1586,7 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (!cc.IsValid())
         return DgnElementCPtr();
 
-    InstanceUpdater* instanceUpdater = new InstanceUpdater(importer, this->GetElementId());
+    InstanceUpdater* instanceUpdater = new InstanceUpdater(importer, GetElementId());
     cc->AddAppData(InstanceUpdater::GetKey(), instanceUpdater);
     DgnElementCPtr ccp = cc->Insert(stat);
     if (!ccp.IsValid())

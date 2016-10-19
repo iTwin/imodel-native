@@ -34,16 +34,16 @@ void ECSqlClassParams::Add(Utf8StringCR name, StatementType type)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ECSqlClassParams::GetSelectIndex(Utf8StringCR name) const
+int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
     {
-    if (name.empty())
+    if (Utf8String::IsNullOrEmpty(name))
         {
         BeAssert(false);
         return -1;
         }
 
     // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
-    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name.Equals(name); });
+    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name.c_str(), name);; });
 
     if (m_entries.end() == found)
         {

@@ -66,7 +66,7 @@ public:
         Utf8String      m_name;
 
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnAuthorityId id=DgnAuthorityId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) { }
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) {}
     };
 protected:
     friend struct DgnAuthorities;
@@ -131,7 +131,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LocalAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
 
-    LocalAuthority(CreateParams const& params) : T_Super(params) { }
+    LocalAuthority(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -143,7 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
 
-    NamespaceAuthority(CreateParams const& params) : T_Super(params) { }
+    NamespaceAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
 
@@ -162,7 +162,7 @@ struct ModelAuthority : DgnAuthority
 
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
-    ModelAuthority(CreateParams const& params) : T_Super(params) { }
+    ModelAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
@@ -194,7 +194,7 @@ struct MaterialAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 public:
-    MaterialAuthority(CreateParams const& params) : T_Super(params) { }
+    MaterialAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetMaterialAuthorityId();
@@ -210,7 +210,7 @@ struct CategoryAuthority : DgnAuthority
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    CategoryAuthority(CreateParams const& params) : T_Super(params) { }
+    CategoryAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
@@ -224,14 +224,15 @@ public:
 struct ResourceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    ResourceAuthority(CreateParams const& params) : T_Super(params) { }
-
-    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR resourceECClassName);
+    ResourceAuthority(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR namespaceName);
+    static DgnCode CreateDisplayStyleCode(Utf8StringCR name) {return CreateResourceCode(name,"dstyle");}
+    static DgnCode CreateModelSelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"models");}
+    static DgnCode CreateCategorySelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"catgs");}
+    static DgnCode CreateViewDefinitionCode(Utf8StringCR name) {return CreateResourceCode(name,"view");}
     DGNPLATFORM_EXPORT static DgnAuthorityId GetResourceAuthorityId();
-    static bool IsResourceAuthority(DgnAuthorityCR auth) { return auth.GetAuthorityId() == GetResourceAuthorityId(); }
+    static bool IsResourceAuthority(DgnAuthorityCR auth) {return auth.GetAuthorityId() == GetResourceAuthorityId();}
 };
 
 //=======================================================================================
@@ -242,7 +243,7 @@ struct TrueColorAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 public:
-    TrueColorAuthority(CreateParams const& params) : T_Super(params) { }
+    TrueColorAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateTrueColorCode(Utf8StringCR colorName, Utf8StringCR colorBookName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetTrueColorAuthorityId();
@@ -258,7 +259,7 @@ struct GeometryPartAuthority : DgnAuthority
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    GeometryPartAuthority(CreateParams const& params) : T_Super(params) { }
+    GeometryPartAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR nameSpace);
     static DgnCode CreateEmptyCode() { return CreateGeometryPartCode("", ""); }

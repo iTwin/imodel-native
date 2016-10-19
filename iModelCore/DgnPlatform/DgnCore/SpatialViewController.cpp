@@ -50,12 +50,8 @@ Frustum::Frustum(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::SpatialViewController(SpatialViewDefinition const& def) : T_Super(def)
+SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Super(def)
     {
-    auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(GetSpatialViewDefinition().GetModelSelectorId());
-    if (modelSelector.IsValid())
-        m_viewState.m_modelSelector = modelSelector->MakeCopy<ModelSelector>();
-
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
     m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
 
@@ -247,22 +243,15 @@ void SpatialViewController::ClearNeverDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
-    if (onOff == m_viewedModels.Contains(modelId))
+    auto& models = GetSpatialViewDefinitionR().GetModelSelectorR().GetModelsR();
+    if (onOff == models.Contains(modelId))
         return;
 
     RequestAbort(true);
     if (onOff)
-        {
-        m_viewedModels.insert(modelId);
-        //  Ensure the model is in the m_loadedModels list.  QueryModel
-        //  must not do this in the query thread.
-        GetDgnDb().Models().GetModel(modelId);
-        }
+        models.insert(modelId);
     else
-        {
-        m_viewedModels.erase(modelId);
-        }
-    
+        models.erase(modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,7 +286,7 @@ bool SpatialViewController::_IsInSet(int nVals, DbValue const* vals) const
     BeAssert(nVals == 2);   // we need ModelId and Category
 
     // check that both the model is on and the category is on.
-    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
+    return GetViewedModels().Contains(DgnModelId(vals[0].GetValueUInt64())) && GetViewedCategories().Contains(DgnCategoryId(vals[1].GetValueUInt64()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1364,4 +1353,15 @@ DgnElementId SpatialViewController::SpatialQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricModelP SpatialViewController::_GetTargetModel() const 
+    {
+#if defined (NEEDS_WORK_TARGET_MODEL)
+#endif
+    DgnModelId model = *GetViewedModels().begin();
+    return GetDgnDb().Models().Get<GeometricModel>(model).get();
     }

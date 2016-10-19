@@ -393,7 +393,7 @@ public:
 struct TileViewControllerFilter : TileModelCategoryFilter
 {
 public:
-    TileViewControllerFilter(ViewControllerCR view) : TileModelCategoryFilter(view.GetDgnDb(), &view.GetViewedModels(), &view.GetViewedCategories()) { }
+    TileViewControllerFilter(SpatialViewControllerCR view) : TileModelCategoryFilter(view.GetDgnDb(), &view.GetViewedModels(), &view.GetViewedCategories()) { }
 };
 
 //=======================================================================================

@@ -193,7 +193,7 @@ public:
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
-    DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
+    DGNPLATFORM_EXPORT DgnModelP GetDgnModel() const;
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
     DgnViewportR GetViewport() const {return m_viewport;}
     HitSource GetLocateSource() const {return m_locateSource;}
