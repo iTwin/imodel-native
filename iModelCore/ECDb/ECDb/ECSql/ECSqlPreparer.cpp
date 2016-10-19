@@ -13,13 +13,12 @@
 #include "ECSqlDeletePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 #include "ECSqlPreparedStatement.h"
+#include "../SqlNames.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-#define DEFAULT_POLYMORPHIC_QUERY true
 
 //************** ECSqlPreparer *******************************
 //-----------------------------------------------------------------------------------------
@@ -786,7 +785,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
     WipColumnVerticalPropertyMap const* vmap = classIdPropertyMap->FindVerticalPropertyMap(classMap.GetJoinedTable());
     if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
         {
-        auto classRefId = classRefExp->GetId().c_str();
+        Utf8CP classRefId = classRefExp->GetId().c_str();
         WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, classRefId);
         BeAssert(sqlDispatcher.GetStatus() == SUCCESS);
         nativeSqlSnippet.Append(sqlDispatcher.GetResultSet().front().GetSql());
@@ -797,8 +796,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
             {
             //for select statements we need to use the view's ecclass id column to avoid
             //that a constant class id number shows up in order by etc
-            auto classRefId = classRefExp->GetId().c_str();
-            nativeSqlSnippet.Append(classRefId, ECDB_COL_ECClassId);
+            Utf8CP classRefId = classRefExp->GetId().c_str();
+            nativeSqlSnippet.Append(classRefId, COL_ECClassId);
             }
         else
             {
@@ -1275,7 +1274,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
 
-    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectViewSql(relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectViewSql(relationshipView, true, ctx) != SUCCESS)
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;

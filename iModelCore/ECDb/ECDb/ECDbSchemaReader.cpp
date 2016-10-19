@@ -435,7 +435,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
     const PrimitiveType underlyingType = (PrimitiveType) stmt->GetValueInt(typeColIx);
-    const bool isStrict = DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(isStrictColIx));
+    const bool isStrict = stmt->GetValueBoolean(isStrictColIx);
     Utf8CP enumValuesJsonStr = stmt->GetValueText(valuesColIx);
 
     ecEnum = nullptr;
@@ -834,7 +834,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     rowInfo.m_description.assign(stmt->GetValueText(descrIx));
 
                 if (!stmt->IsColumnNull(isReadonlyIx))
-                    rowInfo.m_isReadonly = DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(isReadonlyIx));
+                    rowInfo.m_isReadonly = stmt->GetValueBoolean(isReadonlyIx);
 
                 bool primTypeIsNull = false;
                 if (stmt->IsColumnNull(primTypeIx))
@@ -1190,7 +1190,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
     constraint.SetMultiplicity(RelationshipMultiplicity(stmt->GetValueInt(1), stmt->GetValueInt(2)));
-    constraint.SetIsPolymorphic(DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(3)));
+    constraint.SetIsPolymorphic(stmt->GetValueBoolean(3));
 
     if (!stmt->IsColumnNull(4))
         constraint.SetRoleLabel(stmt->GetValueText(4));

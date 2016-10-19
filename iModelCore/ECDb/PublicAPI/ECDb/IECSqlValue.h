@@ -151,6 +151,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         template <class TBeInt64Id>
         TBeInt64Id GetId() const { return TBeInt64Id(GetUInt64()); }
 
+        //! Gets the value as a BeGuid
+        //! @return BeGuid value
+        //! @note Possible errors:
+        //! - column data does not hold a BeGuid
+        ECDB_EXPORT BeGuid GetGuid() const;
+
         //! Used to access the value if it is a struct value
         //! @return Struct value
         //! @note Possible errors:

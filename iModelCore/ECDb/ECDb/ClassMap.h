@@ -209,13 +209,7 @@ struct ClassMap : RefCountedBase
         //! Rules:
         //! If MapStrategy != TPH: NotInherited
         //! Else: Clone
-        static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
-            {
-            if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
-                return PropertyMapInheritanceMode::NotInherited;
-
-            return PropertyMapInheritanceMode::Clone;
-            }
+        static PropertyMapInheritanceMode GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const&);
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }

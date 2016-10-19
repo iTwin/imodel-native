@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <vector>
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -42,23 +43,19 @@ bool ECDbMap::IsImportingSchema() const
 BentleyStatus ECDbMap::PurgeOrphanColumns() const
     {
     Statement stmt;
-    if (stmt.Prepare(m_ecdb,
-                     SqlPrintfString(
-                         "SELECT ec_Column.Id, ec_Column.IsVirtual, ec_Column.Name, ec_Table.Name"
-                         "   FROM ec_Column"
-                         "        INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.TableId"
-                         "   WHERE ec_Column.ColumnKind & %" PRId32 " = 0 AND" //Skip SharedColumns
-                         "         ec_Column.ColumnKind & %" PRId32 " = 0 AND" //Skip ECClassId
-                         "         ec_Table.[Type] != %" PRId32 " AND"         //Skip Existing Tables
-                         "         ec_Column.Id NOT IN ("                       //Skip Column that are Mapped
-                         "          SELECT ec_Column.Id"
-                         "                 FROM ec_PropertyMap"
-                         "                      INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
-                         "                      INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-                         "                      INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id)",
-                         Enum::ToInt(DbColumn::Kind::SharedDataColumn),
-                         Enum::ToInt(DbColumn::Kind::ECClassId),
-                         Enum::ToInt(DbTable::Type::Existing)).GetUtf8CP()) != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
+                                     "SELECT ec_Column.Id, ec_Column.IsVirtual, ec_Column.Name, ec_Table.Name"
+                                     "   FROM ec_Column"
+                                     "        INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.TableId"
+                                     "   WHERE ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " = 0 AND" //Skip SharedColumns
+                                     "         ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 AND" //Skip ECClassId
+                                     "         ec_Table.[Type] != " SQLVAL_DbTable_Type_Existing " AND"         //Skip Existing Tables
+                                     "         ec_Column.Id NOT IN ("                       //Skip columns that are mapped
+                                     "          SELECT ec_Column.Id"
+                                     "                 FROM ec_PropertyMap"
+                                     "                      INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
+                                     "                      INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
+                                     "                      INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id)"))
         {
         BeAssert(false && "system sql schema changed");
         return ERROR;
@@ -79,20 +76,16 @@ BentleyStatus ECDbMap::PurgeOrphanColumns() const
 BentleyStatus ECDbMap::PurgeOrphanTables() const
     {
     //skip ExistingTable and NotMapped
-    Utf8String sql;
-    sql.Sprintf("SELECT t.Name, t.IsVirtual FROM ec_Table t "
-                "WHERE t.Type<>%d AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
-                "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
-                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-                "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
-                "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)",
-                Enum::ToInt(DbTable::Type::Existing));
-
     Statement stmt;
-    if (stmt.Prepare(m_ecdb, sql.c_str()) != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
+                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                     "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
+                     "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                     "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                     "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                     "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
         {
-        BeAssert(false && "system sql schema changed");
+        BeAssert(false && "ECDb profile changed");
         return ERROR;
         }
     
@@ -100,7 +93,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
     std::vector<Utf8String> virtualTables;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        if (DbSchemaPersistenceManager::IsTrue(stmt.GetValueInt(1)))
+        if (stmt.GetValueBoolean(1))
             virtualTables.push_back(stmt.GetValueText(0));
         else
             nonVirtualTables.push_back(stmt.GetValueText(0));
@@ -112,7 +105,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
     stmt.Finalize();
     if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
         {
-        BeAssert(false && "system sql schema changed");
+        BeAssert(false && "ECDb profile changed");
         return ERROR;
         }
 
@@ -152,7 +145,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
             stmt.BindText(1, name, Statement::MakeCopy::No);
             if (stmt.Step() != BE_SQLITE_DONE)
                 {
-                BeAssert(false && "constraint voilation");
+                BeAssert(false && "constraint violation");
                 return ERROR;
                 }
             }
@@ -564,6 +557,9 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
     if (AssertIfIsNotImportingSchema())
         return nullptr;
 
+    if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
+        primaryKeyColumnName = "ECInstanceId"; //default name for PK column
+
     DbTable* table = m_dbSchema.FindTableP(tableName);
     if (table != nullptr)
         {
@@ -601,9 +597,6 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
     if (tableType != DbTable::Type::Existing)
         {
         table = m_dbSchema.CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
-        if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
-            primaryKeyColumnName = ECDB_COL_ECInstanceId;
-
         DbColumn* column = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType() == PersistenceType::Persisted)
             {
@@ -900,10 +893,10 @@ DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> con
         return existingClassIdCol;
         }
 
-    DbColumn* ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, addClassIdCol ? PersistenceType::Persisted : PersistenceType::Virtual);
+    DbColumn* ecClassIdColumn = table.CreateColumn(COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, addClassIdCol ? PersistenceType::Persisted : PersistenceType::Virtual);
     if (ecClassIdColumn == nullptr)
         {
-        BeAssert(false && "Faield to create ECClassId column");
+        BeAssert(false && "Failed to create ECClassId column");
         return nullptr;
         }
 

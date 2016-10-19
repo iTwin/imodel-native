@@ -222,6 +222,7 @@
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SqlNames.h" />
     <ClInclude Include="ViewGenerator.h" />
     <ClInclude Include="WipPropertyMap.h" />
   </ItemGroup>

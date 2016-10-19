@@ -113,6 +113,7 @@ ECDbAllHeaders = \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)WipPropertyMap.h \
                 $(baseDir)ClassMapper.h \
+                $(baseDir)SqlNames.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
 

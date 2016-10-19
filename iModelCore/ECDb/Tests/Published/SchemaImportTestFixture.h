@@ -61,8 +61,8 @@ protected:
             TablePerHierarchy,
             ExistingTable,
             SharedTable,
-            ForeignKeyRelationshipInSourceTable = 100,
-            ForeignKeyRelationshipInTargetTable = 101
+            ForeignKeyRelationshipInSourceTable,
+            ForeignKeyRelationshipInTargetTable
             };
 
         enum class JoinedTableInfo

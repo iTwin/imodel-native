@@ -23,9 +23,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!
 //! See @ref ECSqlStatementOverview for details on how to use ECSqlStatement.
 //!
-//! While it is safe to use multiple ECSqlStatements in multiple threads, a given ECSqlStatement
+//! It is safe to use multiple ECSqlStatements in multiple threads. A given ECSqlStatement
 //! can only be used in a single thread.
-//!
+//! 
 //! @see @ref ECSqlStatementOverview, @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
 //! @nosubgrouping
@@ -155,6 +155,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @param[in] value Value to bind.
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindId(int parameterIndex, BeInt64Id value) { return GetBinder(parameterIndex).BindId(value); }
+
+        //! Binds a BeGuid to the parameter. If the GUID is invalid, NULL is bound to the parameter.
+        //! @param[in] parameterIndex Parameter index
+        //! @param[in] guid BeGuid to bind
+        //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p guid or not.
+        //!             Only pass IECSqlBinder::MakeCopy::No if @p guid will remain valid until the statement's bindings are cleared.
+        //! @return ECSqlStatus::Success or error codes
+        ECSqlStatus BindGuid(int parameterIndex, BeSQLite::BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy = IECSqlBinder::MakeCopy::No) { return GetBinder(parameterIndex).BindGuid(guid, makeCopy); }
 
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.
@@ -351,7 +359,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! - @p columnIndex is out of bounds
         Utf8CP GetValueText(int columnIndex) const { return GetValue(columnIndex).GetText(); }
 
-        //! Gets the value as a subclass of BeInt64Id
+        //! Gets the value of the specific column as a subclass of BeInt64Id
         //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Ids, you can use
         //! this method to get ECInstanceId values.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -359,6 +367,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @note Possible errors:
         //! - column data does not hold a BeInt64Id
         template <class TBeInt64Id> TBeInt64Id GetValueId(int columnIndex) const { return TBeInt64Id(GetValueUInt64(columnIndex)); }
+
+        //! Gets the value of the specific column as a BeGuid
+        //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
+        //! @return BeGuid value
+        //! @note Possible errors:
+        //! - column data does not hold a BeGuid
+        BeGuid GetValueGuid(int columnIndex) const { return GetValue(columnIndex).GetGuid(); }
 
         //! Gets the array value of the specified column.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

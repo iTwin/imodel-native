@@ -295,7 +295,7 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
     if (exp->GetType() == Exp::Type::PropertyName && !static_cast<PropertyNameExp const*>(exp)->IsPropertyRef())
         {
         PropertyNameExp const* propertyName = static_cast<PropertyNameExp const*>(exp);
-        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap().GetPropertyAccessString());
+        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap().GetPropertyAccessString().c_str());
         }
 
     for (Exp const* child : exp->GetChildren())

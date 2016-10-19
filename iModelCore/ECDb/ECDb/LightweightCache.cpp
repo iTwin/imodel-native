@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <vector>
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -30,7 +31,7 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE TableId = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId = ?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -62,7 +63,7 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         return itor->second;
 
     bset<DbTable const*>& subset = m_tablesPerClassId[classId];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT TableId FROM " ECDB_CACHETABLE_ClassHasTables " WHERE ClassId = ? ORDER BY TableId");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT TableId FROM " TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -106,7 +107,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=1 AND CH.ClassId=? "
+                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True " AND CH.ClassId=? "
                                                                  "WHERE RCC.ClassId=?");
 
     if (stmt == nullptr)
@@ -150,8 +151,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic = 1 "
-                                                                 "WHERE RC.RelationshipClassId=?");
+                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True
+                                                                 " WHERE RC.RelationshipClassId=?");
 
     if (stmt == nullptr)
         {
@@ -191,13 +192,14 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         return itor->second;
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
-    Utf8String sql;
-    sql.Sprintf("SELECT CH.ClassId, CT.TableId FROM " ECDB_CACHETABLE_ClassHasTables " CT"
-                "       INNER JOIN " ECDB_CACHETABLE_ClassHierarchy " CH ON CH.ClassId = CT.ClassId"
-                "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
-                "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> %d AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <> %d)", Enum::ToInt(MapStrategy::TablePerHierarchy), Enum::ToInt(DbTable::Type::Joined));
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT CH.ClassId, CT.TableId FROM " TABLE_ClassHasTablesCache " CT"
+        "       INNER JOIN " TABLE_ClassHierarchyCache " CH ON CH.ClassId = CT.ClassId"
+        "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
+        "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> " SQLVAL_MapStrategy_TablePerHierarchy
+        " AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <>" SQLVAL_DbTable_Type_Joined ")");
+    BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
 
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -358,7 +360,7 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlE
 
     if ( partition->NeedsECClassIdFilter())
         {
-        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " ECDB_CACHETABLE_ClassHierarchy " WHERE BaseClassId=").append(classIdStr).append(")");
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
         }
    
     return SUCCESS;

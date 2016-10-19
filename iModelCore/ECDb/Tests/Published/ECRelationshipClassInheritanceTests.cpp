@@ -892,7 +892,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull)
         {
-        const int relClassIdColumnKind = 2048;
+        const int relClassIdColumnKind = 256;
         CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? AND type='table'");
         ASSERT_TRUE(stmt != nullptr);
         ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));

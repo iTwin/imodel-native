@@ -12,9 +12,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ECDB_CACHETABLE_ClassHierarchy "ec_cache_ClassHierarchy"
-#define ECDB_CACHETABLE_ClassHasTables "ec_cache_ClassHasTables"
-
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
 //+===============+===============+===============+===============+===============+======
@@ -35,9 +32,9 @@ private:
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 9, 0, 0); }
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 10, 0, 0); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 9, 0, 0); }
+    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 10, 0, 0); }
 
     static DbResult RunUpgraders(ECDbCR, SchemaVersion const& currentProfileVersion);
 
