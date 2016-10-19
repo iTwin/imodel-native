@@ -35,13 +35,13 @@ struct ClassMapper final
         Utf8String ComputeAccessString(ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const* parent);
         DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR ecProperty, Utf8CP accessString, DbColumn::Type colType);
         WipPropertyMap* ProcessProperty(ECN::ECPropertyCR ecProperty);
-        static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR navProp, WipNavigationPropertyMap::NavigationEnd end);
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR prop, WipNavigationPropertyMap::NavigationEnd end);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR navProp, RelationshipClassMapCR relClassMap, WipNavigationPropertyMap::NavigationEnd end);
 
     public:
         //Navigation property map is not finished. It require a second pass and Nav->Setup() method must be called on it.
         //This method does not create system property maps
+        static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR navProp, WipNavigationPropertyMap::NavigationEnd end);
         static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8CP propAccessString);
         static WipPropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
         static WipPropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);

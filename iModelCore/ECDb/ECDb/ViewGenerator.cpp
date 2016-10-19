@@ -208,7 +208,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Reset();
     std::vector<Utf8String> values;
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapType::Business); //Only inlcude none-system properties
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::Business); //Only inlcude none-system properties
     baseClassMap.GetPropertyMaps().Accept(typeDispatcher);
     for (WipPropertyMapTypeDispatcher::Result const& result: typeDispatcher.ResultSet())
         {
@@ -221,7 +221,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (result.GetType() == PropertyMapType::NavigationPropertyMap)
+        if (result.GetPropertyMap().GetKind() == PropertyMapKind::NavigationPropertyMap)
             {
             if (!static_cast<WipNavigationPropertyMap const&>(result.GetPropertyMap()).IsSupportedInECSql())
                 return;
@@ -599,20 +599,20 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<WipPropertyMap const*, WipPropertyMap const*>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties)
     {
     propMaps.clear();
-    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapType::All);
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All);
     for (WipPropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
         {
         typeDispatcher.Reset();
         baseClassPropertyMap->Accept(typeDispatcher);
-        PropertyMapType basePropertyMapType = typeDispatcher.ResultSet().front().GetType();
+        PropertyMapKind basePropertyMapType = typeDispatcher.ResultSet().front().GetPropertyMap().GetKind();
 
-        if (skipSystemProperties && Enum::Contains(PropertyMapType::System, basePropertyMapType))
+        if (skipSystemProperties && Enum::Contains(PropertyMapKind::System, basePropertyMapType))
             continue;
 
         if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetAccessString().c_str()))
             continue;
 
-        if (basePropertyMapType == PropertyMapType::NavigationPropertyMap &&
+        if (basePropertyMapType == PropertyMapKind::NavigationPropertyMap &&
             !static_cast<WipNavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 

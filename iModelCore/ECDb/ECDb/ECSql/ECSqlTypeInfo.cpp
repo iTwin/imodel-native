@@ -50,7 +50,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(PropertyMapCR propertyMap)
+ECSqlTypeInfo::ECSqlTypeInfo(WipPropertyMap const& propertyMap)
     : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
     {
     DetermineTypeInfo(propertyMap.GetProperty());
@@ -297,7 +297,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         else
             {
             isArray = true;
-            RelationshipMultiplicityCR multiplicity = NavigationPropertyMap::GetConstraint(*navProp, NavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
+            RelationshipMultiplicityCR multiplicity = ClassMapper::GetConstraint(*navProp, WipNavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
             minOccurs = multiplicity.GetLowerLimit();
             maxOccurs = multiplicity.GetUpperLimit();
             }

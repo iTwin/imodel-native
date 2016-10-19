@@ -272,13 +272,13 @@ Utf8CP PropertyNameExp::GetPropertyName() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapCR PropertyNameExp::GetPropertyMap() const
+WipPropertyMap const& PropertyNameExp::GetPropertyMap() const
     {
     BeAssert(GetClassRefExp() != nullptr);
     if (GetClassRefExp()->GetType() == Exp::Type::ClassName)
         {
         auto classNameExp = static_cast<ClassNameExp const*>(GetClassRefExp());
-        auto propertyMap = classNameExp->GetInfo().GetMap().GetPropertyMap(GetPropertyPath().ToString(false).c_str());
+        auto propertyMap = classNameExp->GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
         if (propertyMap == nullptr)
             {
             BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
@@ -298,7 +298,7 @@ PropertyMapCR PropertyNameExp::GetPropertyMap() const
         }
 
     BeAssert(false && "Case not handled");
-    return *((PropertyMapCP) (nullptr));
+    return *((WipPropertyMap const*) (nullptr));
     }
 
 

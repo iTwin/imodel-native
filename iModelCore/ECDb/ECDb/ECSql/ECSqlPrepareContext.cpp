@@ -222,8 +222,12 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
-        if (property->GetPropertyMap().IsSystemPropertyMap())
+        
+        if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::System))
             {
+            WipSystemPropertyMap const& systemPropertyMap = static_cast<WipSystemPropertyMap const&>(property->GetPropertyMap());
+            bool isPropertyMappedToSingleTable = systemPropertyMap.IsMappedToSingleTable();
+
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -232,9 +236,17 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
             info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
 
-            if (!info->m_ecinstanceIdIsUserProvided  && property->GetPropertyMap().GetSingleColumn())
+            if (!info->m_ecinstanceIdIsUserProvided  && systemPropertyMap.IsMappedToSingleTable())
                 {
-                info->m_ecinstanceIdIsUserProvided = Enum::Contains(property->GetPropertyMap().GetSingleColumn()->GetKind(), DbColumn::Kind::ECInstanceId);
+                DbTable const* contextTable = systemPropertyMap.GetTables().front();
+                WipColumnVerticalPropertyMap const* vmap = systemPropertyMap.FindVerticalPropertyMap(*contextTable);
+                if (vmap == nullptr)
+                    {
+                    BeAssert(vmap != nullptr);
+                    return nullptr;
+                    }
+
+                info->m_ecinstanceIdIsUserProvided = Enum::Contains(vmap->GetColumn().GetKind(), DbColumn::Kind::ECInstanceId);
                 BeAssert(thisValueParams.size() <= 1);
                 if (thisValueParams.size() == 1)
                     info->m_primaryECInstanceIdParameterIndex = info->m_parameterMap.GetPrimaryR().Last();
@@ -244,19 +256,28 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                     return nullptr;
                     }
                 }
-            }
-        else if (property->GetPropertyMap().MapsToTable(joinedTable))
+            }        
+        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Business))
             {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            WipVerticalPropertyMap const& businessPropertyMap = static_cast<WipVerticalPropertyMap const&>(property->GetPropertyMap());
+            if (&businessPropertyMap.GetTable() == &joinedTable)
+                {
+                joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+                joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+                }
+            else
+                {
+                BeAssert(&businessPropertyMap.GetTable() == &primaryTable);
+                parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+                parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+                }
             }
         else
             {
-            BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
-            parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            BeAssert(false && "Case not handled. This should never happen");
+            return nullptr;
             }
         }
 
@@ -336,23 +357,27 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
-        if (property->GetPropertyMap().IsSystemPropertyMap())
+        if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::System))
             {
             BeAssert(false && "Updating system properties are not supported");
             return nullptr;
             }
-        else if (property->GetPropertyMap().MapsToTable(joinedTable))
+        else if (Enum::Contains(property->GetPropertyMap().GetKind(), PropertyMapKind::Business))
             {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-            }
-        else
-            {
-            BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
-            parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            WipVerticalPropertyMap const& businessPropertyMap = static_cast<WipVerticalPropertyMap const&>(property->GetPropertyMap());
+            if (&businessPropertyMap.GetTable() == &joinedTable)
+                {
+                joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+                joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+                }
+            else
+                {
+                BeAssert(&businessPropertyMap.GetTable() == &primaryTable);
+                parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+                parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+                }
             }
         }
 

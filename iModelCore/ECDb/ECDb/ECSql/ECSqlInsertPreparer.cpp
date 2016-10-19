@@ -331,14 +331,17 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             {
             //if not user provided ecinstanceid snippet will be appended to column names
             ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size();
-            PropertyMapCP ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
+            WipECInstanceIdPropertyMap const* ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
             if (ecInstanceIdPropMap == nullptr)
                 {
                 BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
                 }
 
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(ecInstanceIdPropMap->ToNativeSql(nullptr, ECSqlType::Insert, false));
+            WipPropertyMapSqlDispatcher sqlDispatcher(classMap.GetJoinedTable(), WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+            ecInstanceIdPropMap->Accept(sqlDispatcher);
+            
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlDispatcher.GetResultSet().front().GetSqlBuilder()});
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder()});
             }
         else if (ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull)
@@ -367,22 +370,26 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter(nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
         }
 
-    //if table has a class id column, handle this here
-    if (classMap.GetECClassIdPropertyMap()->IsPersisted())
+    if (WipColumnVerticalPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable()))
         {
-        NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classMap.GetECClassIdPropertyMap()->GetSingleColumn()->GetName().c_str())};
-        nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
+        if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+            {
+            NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdMap->GetColumn().GetName().c_str())};
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
-        NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-        if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
-            joinedTableStatement->GetClassId().ToString(classIdStr);
-        else
-            classMap.GetClass().GetId().ToString(classIdStr);
+            NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+            Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+            if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+                joinedTableStatement->GetClassId().ToString(classIdStr);
+            else
+                classMap.GetClass().GetId().ToString(classIdStr);
 
-        classIdSqliteSnippets[0].Append(classIdStr);
-        nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
+            classIdSqliteSnippets[0].Append(classIdStr);
+            nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
+            }
         }
+    //if table has a class id column, handle this here
+
     }
 
 //-----------------------------------------------------------------------------------------
@@ -406,7 +413,7 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
     //        If check succeeded, return class id
     auto const& constraintMap = relationshipClassMap.GetConstraintMap(constraintEnd);
     auto constraintClassIdPropMap = constraintMap.GetECClassIdPropMap();
-    Utf8String constraintClassIdPropName(constraintClassIdPropMap->GetPropertyAccessString());
+    Utf8String constraintClassIdPropName(constraintClassIdPropMap->GetAccessString());
     int constraintClassIdExpIndex = GetConstraintClassIdExpIndex(exp, constraintEnd);
     if (constraintClassIdExpIndex >= 0)
         //user specified constraint class id in ECSQL
@@ -428,8 +435,8 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-#ifndef WIP_ECCLASSID    
-    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || constraintClassIdPropMap->IsMappedToECClassId())
+#ifndef WIP_ECCLASSID        
+   if (!constraintClassIdPropMap->IsMappedToClassMapTables() || constraintClassIdPropMap->IsMappedToECClassId())
         {
         return ECSqlStatus::Success;
         }
@@ -502,7 +509,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, RelConstraintECClassIdPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
+ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, WipConstraintECClassIdPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
     {
     BeAssert(constraintClassId.IsValid());
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
@@ -599,10 +606,17 @@ RelationshipClassEndTableMap const& classMap
     updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    auto referencedEndECInstanceIdColumnSqlSnippets = classMap.GetReferencedEndECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Update, false);
-    for (auto const& referencedEndECInstanceIdColSnippet : referencedEndECInstanceIdColumnSqlSnippets)
+    if (classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().size() != 1)
         {
-        updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet).Append(" IS NULL");
+        BeAssert(false && "For some reason expecting one table");
+        return;
+        }
+
+    DbTable const* contextTable = classMap.GetReferencedEndECInstanceIdPropMap()->GetTables().front();
+    WipPropertyMapSqlDispatcher sqlDispatcher(*contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);    
+    for (auto const& referencedEndECInstanceIdColSnippet : sqlDispatcher.GetResultSet())
+        {
+        updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet.GetSql()).Append(" IS NULL");
         }
     }
 

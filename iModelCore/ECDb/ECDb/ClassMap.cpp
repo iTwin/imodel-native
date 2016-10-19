@@ -1168,7 +1168,7 @@ bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
 void ColumnFactory::Update(bool includeDerivedClasses) const
     {
     m_idsOfColumnsInUseByClassMap.clear();
-    WipPropertyMapColumnDispatcher navigationProperytMapColumns(PropertyMapType::NavigationPropertyMap);
+    WipPropertyMapColumnDispatcher navigationProperytMapColumns(PropertyMapKind::NavigationPropertyMap);
     m_classMap.GetPropertyMaps().Accept(navigationProperytMapColumns);
 
     for (DbColumn const* columnInUse : navigationProperytMapColumns.GetColumns())

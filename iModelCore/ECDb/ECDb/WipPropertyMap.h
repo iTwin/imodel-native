@@ -37,7 +37,7 @@ enum class DispatcherFeedback
     Next //! if there is children of current node process them first and then go to next sibling
     };
 
-enum class PropertyMapType : int
+enum class PropertyMapKind : int
     {
     Nil = 0x0,
     PrimitivePropertyMap = 0x1,
@@ -73,14 +73,14 @@ struct IPropertyMapDispatcher
     {
 
     private:
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const { return DispatcherFeedback::Next; }
 
     public:
-        DispatcherFeedback Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const { return _Dispatch(mapType, propertyMap); }
-        DispatcherFeedback Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const { return _Dispatch(mapType, propertyMap); }
-        DispatcherFeedback Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const { return _Dispatch(mapType, propertyMap); }
+        DispatcherFeedback Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const { return _Dispatch(propertyMap); }
+        DispatcherFeedback Dispatch(WipCompoundPropertyMap const& propertyMap) const { return _Dispatch(propertyMap); }
+        DispatcherFeedback Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const { return _Dispatch(propertyMap); }
     };
 
 //=======================================================================================
@@ -138,12 +138,11 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         ClassMap const& m_classMap;
         virtual BentleyStatus _Validate() const = 0;
         bool m_isInEditMode;
-
+        PropertyMapKind m_kind;
     protected:
-        WipPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty);
-        WipPropertyMap(ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap);
+        WipPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty);
+        WipPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap);
         virtual ~WipPropertyMap() {}
-
     public:
         //! A property is injected if it does not ECClass but added by ECDb
         bool InEditMode() const { return m_isInEditMode; }
@@ -154,6 +153,7 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         WipPropertyMap const* GetParent() const { return m_parentPropertMap; }
         ClassMap const& GetClassMap() const { return m_classMap; }
         WipPropertyMap const& GetRoot() const;
+        PropertyMapKind GetKind() const { return m_kind; }
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
     };
 
@@ -167,11 +167,11 @@ struct WipVerticalPropertyMap : WipPropertyMap
     private:
         virtual DbTable const& _GetTable() const = 0;
     public:
-        WipVerticalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : WipPropertyMap(classMap, ecProperty)
+        WipVerticalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+            : WipPropertyMap(kind, classMap, ecProperty)
             {}
-        WipVerticalPropertyMap(ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap)
-            : WipPropertyMap(ecProperty, parentPropertyMap)
+        WipVerticalPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap)
+            : WipPropertyMap(kind, ecProperty, parentPropertyMap)
             {}
         ~WipVerticalPropertyMap() {}
         DbTable const& GetTable() const { return _GetTable(); }
@@ -187,11 +187,11 @@ struct WipHorizontalPropertyMap : WipPropertyMap
     {
     private:
     protected:
-        WipHorizontalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : WipPropertyMap(classMap, ecProperty)
+        WipHorizontalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+            : WipPropertyMap(kind, classMap, ecProperty)
             {}
-        WipHorizontalPropertyMap(ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap)
-            : WipPropertyMap(ecProperty, parentPropertyMap)
+        WipHorizontalPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipPropertyMap const& parentPropertyMap)
+            : WipPropertyMap(kind, ecProperty, parentPropertyMap)
             {}
         virtual  ~WipHorizontalPropertyMap() {}
         virtual std::vector<DbTable const*> const& _GetTables() const = 0;
@@ -228,11 +228,11 @@ struct WipCompoundPropertyMap : WipVerticalPropertyMap
     protected:
         void MakeWritable() { m_readonly = false; }
         void Clear();
-        WipCompoundPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : WipVerticalPropertyMap(classMap, ecProperty), m_readonly(false)
+        WipCompoundPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+            : WipVerticalPropertyMap(kind, classMap, ecProperty), m_readonly(false)
             {}
-        WipCompoundPropertyMap(ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
-            : WipVerticalPropertyMap(ecProperty, parentPropertyMap), m_readonly(false)
+        WipCompoundPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
+            : WipVerticalPropertyMap(kind, ecProperty, parentPropertyMap), m_readonly(false)
             {}
         virtual ~WipCompoundPropertyMap() {}
         virtual BentleyStatus _Validate() const override;
@@ -262,11 +262,11 @@ struct WipColumnVerticalPropertyMap: WipVerticalPropertyMap
             return m_column.GetTable();
             }
     protected:
-        WipColumnVerticalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
-            : WipVerticalPropertyMap(classMap, ecProperty), m_column(column)
+        WipColumnVerticalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
+            : WipVerticalPropertyMap(kind, classMap, ecProperty), m_column(column)
             {}
-        WipColumnVerticalPropertyMap(ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
-            : WipVerticalPropertyMap(ecProperty, parentPropertyMap), m_column(column)
+        WipColumnVerticalPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
+            : WipVerticalPropertyMap(kind, ecProperty, parentPropertyMap), m_column(column)
             {}
         virtual ~WipColumnVerticalPropertyMap() {}
     public:
@@ -286,7 +286,7 @@ struct WipColumnHorizontalPropertyMap : WipHorizontalPropertyMap
         virtual BentleyStatus _Validate() const override;
         std::vector<DbTable const*> m_tables;
     protected:
-        WipColumnHorizontalPropertyMap(ClassMap const& classMap, ECN::ECPropertyCR ecProperty, std::vector<RefCountedPtr<WipColumnVerticalPropertyMap>> const& maps);
+        WipColumnHorizontalPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, std::vector<RefCountedPtr<WipColumnVerticalPropertyMap>> const& maps);
         virtual ~WipColumnHorizontalPropertyMap() {}
         virtual std::vector<DbTable const*> const& _GetTables() const override { return m_tables; }
     public:
@@ -301,8 +301,8 @@ struct WipColumnHorizontalPropertyMap : WipHorizontalPropertyMap
 struct WipSystemPropertyMap : WipColumnHorizontalPropertyMap
     {
     protected:
-        WipSystemPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps)
-            : WipColumnHorizontalPropertyMap(classMap, ecProperty, std::vector<RefCountedPtr<WipColumnVerticalPropertyMap>>(maps.begin(), maps.end()))
+        WipSystemPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps)
+            : WipColumnHorizontalPropertyMap(kind, classMap, ecProperty, std::vector<RefCountedPtr<WipColumnVerticalPropertyMap>>(maps.begin(), maps.end()))
             {
             BeAssert(ecProperty.GetType() == ECN::PrimitiveType::PRIMITIVETYPE_Long);
             }
@@ -320,13 +320,13 @@ struct WipPrimitivePropertyMap final : WipColumnVerticalPropertyMap
     {
     private:
         virtual BentleyStatus _Validate() const override;
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::PrimitivePropertyMap, *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
     protected:
-        WipPrimitivePropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(classMap, ecProperty, column)
+        WipPrimitivePropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, classMap, ecProperty, column)
             {}
-        WipPrimitivePropertyMap(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(ecProperty, parentPropertyMap, column)
+        WipPrimitivePropertyMap(PropertyMapKind kind, ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, ecProperty, parentPropertyMap, column)
             {}
         virtual ~WipPrimitivePropertyMap() {}
     public:
@@ -340,13 +340,13 @@ struct WipPrimitiveArrayPropertyMap final : WipColumnVerticalPropertyMap
     {
     private:
         virtual BentleyStatus _Validate() const override { return SUCCESS; }
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::PrimitiveArrayPropertyMap, *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
     protected:
-        WipPrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(classMap, ecProperty, column)
+        WipPrimitiveArrayPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::ArrayECPropertyCR ecProperty, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, classMap, ecProperty, column)
             {}
-        WipPrimitiveArrayPropertyMap(ECN::ArrayECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(ecProperty, parentPropertyMap, column)
+        WipPrimitiveArrayPropertyMap(PropertyMapKind kind, ECN::ArrayECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, ecProperty, parentPropertyMap, column)
             {}
         virtual ~WipPrimitiveArrayPropertyMap() {}
     public:
@@ -362,11 +362,11 @@ struct WipStructPropertyMap final : WipCompoundPropertyMap
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override;
 
     protected:
-        WipStructPropertyMap(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty)
-            : WipCompoundPropertyMap(classMap, ecProperty)
+        WipStructPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::StructECPropertyCR ecProperty)
+            : WipCompoundPropertyMap(kind, classMap, ecProperty)
             {}
-        WipStructPropertyMap(ECN::StructECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
-            : WipCompoundPropertyMap(ecProperty, parentPropertyMap)
+        WipStructPropertyMap(PropertyMapKind kind, ECN::StructECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
+            : WipCompoundPropertyMap(kind, ecProperty, parentPropertyMap)
             {}
         virtual ~WipStructPropertyMap() {}
     public:
@@ -380,14 +380,14 @@ struct WipStructArrayPropertyMap final : WipColumnVerticalPropertyMap
     {
     private:
         virtual BentleyStatus _Validate() const override { return SUCCESS; }
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::StructArrayPropertyMap, *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipStructArrayPropertyMap(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(classMap, ecProperty, column)
+        WipStructArrayPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, classMap, ecProperty, column)
             {}
-        WipStructArrayPropertyMap(ECN::StructArrayECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
-            : WipColumnVerticalPropertyMap(ecProperty, parentPropertyMap, column)
+        WipStructArrayPropertyMap(PropertyMapKind kind, ECN::StructArrayECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap, DbColumn const& column)
+            : WipColumnVerticalPropertyMap(kind, ecProperty, parentPropertyMap, column)
             {}
         virtual ~WipStructArrayPropertyMap() {}
     public:
@@ -410,11 +410,11 @@ struct WipNavigationPropertyMap final : WipCompoundPropertyMap
         private:
             ECN::ECClassId m_defaultClassId;
             virtual BentleyStatus _Validate() const override { return SUCCESS; }
-            virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return  dispatcher.Dispatch(PropertyMapType::NavRelECClassIdPropertyMap, *this); }
+            virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return  dispatcher.Dispatch(*this); }
 
         protected:
-            RelECClassIdPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultClassId)
-                : WipColumnVerticalPropertyMap(ecProperty, parentPropertyMap, column), m_defaultClassId(defaultClassId)
+            RelECClassIdPropertyMap(PropertyMapKind kind, ECN::PrimitiveECPropertyCR ecProperty, WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultClassId)
+                : WipColumnVerticalPropertyMap(kind, ecProperty, parentPropertyMap, column), m_defaultClassId(defaultClassId)
                 {}
             virtual ~RelECClassIdPropertyMap() {}
         public:
@@ -425,11 +425,11 @@ struct WipNavigationPropertyMap final : WipCompoundPropertyMap
         {
         private:
             virtual BentleyStatus _Validate() const override { return SUCCESS; }
-            virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return  dispatcher.Dispatch(PropertyMapType::NavIdPropertyMap, *this); }
+            virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return  dispatcher.Dispatch(*this); }
 
         protected:
-            IdPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
-                : WipColumnVerticalPropertyMap(ecProperty, parentPropertyMap, column)
+            IdPropertyMap(PropertyMapKind kind, ECN::PrimitiveECPropertyCR ecProperty, WipNavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
+                : WipColumnVerticalPropertyMap(kind, ecProperty, parentPropertyMap, column)
                 {}
             virtual ~IdPropertyMap() {}
         public:
@@ -440,8 +440,8 @@ struct WipNavigationPropertyMap final : WipCompoundPropertyMap
         virtual BentleyStatus _Validate() const override;
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override;
     protected:
-        WipNavigationPropertyMap(ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
-            : WipCompoundPropertyMap(classMap, ecProperty)
+        WipNavigationPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::NavigationECPropertyCR ecProperty)
+            : WipCompoundPropertyMap(kind, classMap, ecProperty)
             {}
         virtual ~WipNavigationPropertyMap() {}
     public:
@@ -461,12 +461,12 @@ struct WipPoint2dPropertyMap final: WipCompoundPropertyMap
         virtual BentleyStatus _Validate() const override;
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override;
     protected:
-        WipPoint2dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : WipCompoundPropertyMap(classMap, ecProperty)
+        WipPoint2dPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : WipCompoundPropertyMap(kind, classMap, ecProperty)
             {
             }
-        WipPoint2dPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
-            : WipCompoundPropertyMap(ecProperty, parentPropertyMap)
+        WipPoint2dPropertyMap(PropertyMapKind kind, ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
+            : WipCompoundPropertyMap(kind, ecProperty, parentPropertyMap)
             {
             }
         virtual ~WipPoint2dPropertyMap() {}
@@ -487,12 +487,12 @@ struct WipPoint3dPropertyMap final : WipCompoundPropertyMap
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override;
 
     protected:
-        WipPoint3dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : WipCompoundPropertyMap(classMap, ecProperty)
+        WipPoint3dPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : WipCompoundPropertyMap(kind, classMap, ecProperty)
             {
             }
-        WipPoint3dPropertyMap(ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
-            : WipCompoundPropertyMap(ecProperty, parentPropertyMap)
+        WipPoint3dPropertyMap(PropertyMapKind kind, ECN::PrimitiveECPropertyCR ecProperty, WipVerticalPropertyMap const& parentPropertyMap)
+            : WipCompoundPropertyMap(kind, ecProperty, parentPropertyMap)
             {
             }
         virtual ~WipPoint3dPropertyMap() {}
@@ -510,11 +510,11 @@ struct WipPoint3dPropertyMap final : WipCompoundPropertyMap
 struct WipECInstanceIdPropertyMap final : WipSystemPropertyMap
     {
     private:
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::ECInstanceIdPropertyMap, *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps)
-            : WipSystemPropertyMap(classMap, ecProperty, maps)
+        WipECInstanceIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps)
+            : WipSystemPropertyMap(kind, classMap, ecProperty, maps)
             {}
         virtual ~WipECInstanceIdPropertyMap() {}
     public:
@@ -528,11 +528,11 @@ struct WipECClassIdPropertyMap final : WipSystemPropertyMap
     {
     private:
         ECN::ECClassId m_defaultECClassId;
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::ECClassIdPropertyMap,  *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId)
-            : WipSystemPropertyMap(classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId)
+        WipECClassIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId)
+            : WipSystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId)
             {}
         virtual ~WipECClassIdPropertyMap() {}
     public:
@@ -552,11 +552,11 @@ struct WipConstraintECClassIdPropertyMap final : WipSystemPropertyMap
     private:
         ECN::ECClassId m_defaultECClassId;
         ConstraintType m_constraintType;
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::ConstraintECClassIdPropertyMap,  *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipConstraintECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId, ConstraintType constraintType)
-            : WipSystemPropertyMap(classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId), m_constraintType(constraintType)
+        WipConstraintECClassIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ECN::ECClassId defaultECClassId, ConstraintType constraintType)
+            : WipSystemPropertyMap(kind, classMap, ecProperty, maps), m_defaultECClassId(defaultECClassId), m_constraintType(constraintType)
             {}
         virtual ~WipConstraintECClassIdPropertyMap() {}
     public:
@@ -577,11 +577,11 @@ struct WipConstraintECInstanceIdIdPropertyMap final : WipSystemPropertyMap
         };
     private:
         ConstraintType m_constraintType;
-        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(PropertyMapType::ConstraintECInstanceIdIdPropertyMap, *this); }
+        virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipConstraintECInstanceIdIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ConstraintType constraintType)
-            : WipSystemPropertyMap(classMap, ecProperty, maps)
+        WipConstraintECInstanceIdIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ConstraintType constraintType)
+            : WipSystemPropertyMap(kind, classMap, ecProperty, maps)
             {}
         virtual ~WipConstraintECInstanceIdIdPropertyMap() {}
     public:
@@ -635,18 +635,18 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
     private:
         mutable std::vector<DbColumn const*> m_columns;
         DbTable const* m_table;
-        PropertyMapType m_filter;
+        PropertyMapKind m_filter;
     private:
 
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
-        WipPropertyMapColumnDispatcher(DbTable const& table, PropertyMapType filter = PropertyMapType::All)
+        WipPropertyMapColumnDispatcher(DbTable const& table, PropertyMapKind filter = PropertyMapKind::All)
             :m_table(&table), m_filter(filter)
             {}
-        WipPropertyMapColumnDispatcher(PropertyMapType filter = PropertyMapType::All)
+        WipPropertyMapColumnDispatcher(PropertyMapKind filter = PropertyMapKind::All)
             :m_table(nullptr), m_filter(filter)
             {}
         ~WipPropertyMapColumnDispatcher(){}
@@ -660,55 +660,42 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
 //+===============+===============+===============+===============+===============+======
 struct WipPropertyMapTypeDispatcher final : IPropertyMapDispatcher
     {
-    struct Result
-        {
-        PropertyMapType m_type;
-        WipPropertyMap const* m_propertyMap;
-        public:
-            Result():m_propertyMap (nullptr),m_type(PropertyMapType::Nil) {}
-            Result(PropertyMapType type, WipPropertyMap const& map)
-                :m_type(type), m_propertyMap(&map)
-                {
-                }
-            PropertyMapType GetType() const { return m_type; }
-            WipPropertyMap const& GetPropertyMap() const { return *m_propertyMap; }
-        };
 
     private:
-        mutable std::vector<Result> m_propertyMaps;
-        PropertyMapType m_filter;
+        mutable std::vector<WipPropertyMap const*> m_propertyMaps;
+        PropertyMapKind m_filter;
         bool m_recordCompondProperties;
     private:
-        DispatcherFeedback Record(PropertyMapType mapType, WipPropertyMap const& propertyMap) const
+        DispatcherFeedback Record(WipPropertyMap const& propertyMap) const
             {
-            if (Enum::Contains(m_filter, mapType))
-                m_propertyMaps.push_back(Result(mapType, propertyMap));
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                m_propertyMaps.push_back(&propertyMap);
 
             return DispatcherFeedback::Next;
             }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override
             {
             if (m_recordCompondProperties)
-                return Record(mapType, propertyMap);
+                return Record(propertyMap);
 
             return DispatcherFeedback::Next;
             }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
             {
-            return Record(mapType, propertyMap);
+            return Record(propertyMap);
             }
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override
             {
-            return Record(mapType, propertyMap);
+            return Record(propertyMap);
             }
 
     public:
-        WipPropertyMapTypeDispatcher(PropertyMapType filter = PropertyMapType::All, bool recordCompoundProperties = false)
+        WipPropertyMapTypeDispatcher(PropertyMapKind filter = PropertyMapKind::All, bool recordCompoundProperties = false)
             :m_filter(filter), m_recordCompondProperties(recordCompoundProperties)
             {}
         ~WipPropertyMapTypeDispatcher() {}
         void Reset() { m_propertyMaps.clear(); }
-        std::vector<Result> const& ResultSet() const { return m_propertyMaps; }
+        std::vector<WipPropertyMap const*> const& ResultSet() const { return m_propertyMaps; }
       
     };
 //=======================================================================================
@@ -723,9 +710,9 @@ struct WipPropertyMapSaveDispatcher final : IPropertyMapDispatcher
         mutable WipPropertyMap const* m_failedMap;
 
     private:
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
         WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx): m_context(ctx), m_status(SUCCESS), m_failedMap(nullptr) {}
@@ -761,7 +748,9 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
             ~Result(){}
             Utf8CP GetAccessString() const { return GetPropertyMap().GetAccessString().c_str(); }
             WipColumnVerticalPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
-            NativeSqlBuilder& GetSqlBuilder() { return m_sql; }
+            NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
+            NativeSqlBuilder const& GetSqlBuilder() const{ return m_sql; }
+
             Utf8CP GetSql() const { return m_sql.ToString(); }
             DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
             DbTable const& GetTable() const { return GetColumn().GetTable(); }
@@ -801,9 +790,9 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
         DispatcherFeedback ToNativeSql(WipECInstanceIdPropertyMap const& propertyMap) const;
 
     private:
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipCompoundPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(PropertyMapType mapType, WipColumnHorizontalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override;
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
         WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier)

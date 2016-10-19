@@ -66,7 +66,7 @@ struct PropertyNameExp : ValueExp
         Utf8CP GetPropertyName() const;
 
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
-        PropertyMapCR GetPropertyMap() const;
+        WipPropertyMap const& GetPropertyMap() const;
 
         bool IsSystemProperty() const { return m_isSystemProperty; }
         bool TryGetSystemProperty(ECSqlSystemProperty&) const;

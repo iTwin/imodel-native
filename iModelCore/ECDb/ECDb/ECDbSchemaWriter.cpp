@@ -1856,15 +1856,18 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             return ERROR;
             }
 
-        PropertyMapCP propertyMap = partitionRootClassMap->GetPropertyMap(deletedProperty.GetName().c_str());
+        WipPropertyMap const* propertyMap = partitionRootClassMap->GetPropertyMaps().Find(deletedProperty.GetName().c_str());
         if (propertyMap == nullptr)
             {
             BeAssert(false && "Failed to find propertymap");
             return ERROR;
             }
 
-        if (propertyMap->GetType() == PropertyMap::Type::Navigation && !static_cast<NavigationPropertyMap const&> (*propertyMap).IsSupportedInECSql())
-            continue;
+        if (WipNavigationPropertyMap const* nav = dynamic_cast<WipNavigationPropertyMap const*>(propertyMap))
+            {
+            if (nav->IsSupportedInECSql())
+                continue;
+            }
 
         //Reject overriden property
         if (propertyMap->GetProperty().GetBaseProperty() != nullptr)
@@ -1876,9 +1879,10 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             }
 
         //Delete DbTable entries
-        std::vector<DbColumn const*> columns;
-        propertyMap->GetColumns(columns);
-        for (DbColumn const* column : columns)
+
+        WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::Business);
+        propertyMap->Accept(columnDispatcher);
+        for (DbColumn const* column : columnDispatcher.GetColumns())
             {
             //For shared column do not delete column itself.
             if (column->IsShared())

@@ -64,20 +64,38 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
     {
     auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
     auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
+    if (referencedEndECClassIdPropMap->GetTables().size() > 1)
+        {
+        BeAssert(false && "Older code presume this is always a single table");
+        return ECSqlStatus::Error;
+        }
+    DbTable const* contextTable = referencedEndECClassIdPropMap->GetTables().front();
+    WipPropertyMapSqlDispatcher sqlDispatcher(*contextTable, WipPropertyMapSqlDispatcher::SqlTarget::Table, nullptr);
+
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
-    classMap.GetPropertyMaps().Traverse(
-        [&propertyNamesToUnsetSqlSnippets, &referencedEndECInstanceIdPropMap, &referencedEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
+    WipPropertyMapTypeDispatcher typeDispatcher(PropertyMapKind::All);
+    classMap.GetPropertyMaps().Accept(typeDispatcher);
+    for (WipPropertyMap const* propMap : typeDispatcher.ResultSet())
         {
-        //virtual prop maps map to non-existing columns. So they don't need to be considered in the list of columns to be nulled out
-        if (!propMap->IsVirtual() && (!propMap->IsSystemPropertyMap() || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap))
+        bool isSystem = Enum::Contains(propMap->GetKind(), PropertyMapKind::System);
+        if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
             {
-            auto sqlSnippets = propMap->ToNativeSql(nullptr, ECSqlType::Delete, false);
-            propertyNamesToUnsetSqlSnippets.insert(propertyNamesToUnsetSqlSnippets.end(), sqlSnippets.begin(), sqlSnippets.end());
-            }
-        },
-        false); //don't recurse, i.e. only top-level prop maps are interesting here
+            propMap->Accept(sqlDispatcher);           
+            WipPropertyMapSqlDispatcher::Result const* r = sqlDispatcher.Find(propMap->GetAccessString().c_str());;
+            if (r == nullptr)
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
 
+            if (!r->IsColumnPersisted())
+                continue;
+
+            propertyNamesToUnsetSqlSnippets.push_back(r->GetSqlBuilder());
+            }
+
+        }
 
     BuildNativeSqlUpdateStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, propertyNamesToUnsetSqlSnippets);
     return ECSqlStatus::Success;

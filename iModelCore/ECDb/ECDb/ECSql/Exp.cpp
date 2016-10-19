@@ -442,7 +442,7 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
 
         if (property == nullptr && i == 0)
             {
-            PropertyMapCP propertyMap = classMap.GetPropertyMap(propertyName);
+            WipPropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyName);
             if (propertyMap != nullptr)
                 property = &propertyMap->GetProperty();
             }

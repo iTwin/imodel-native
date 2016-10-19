@@ -34,7 +34,7 @@ struct ECSqlTypeInfo
         ECN::ECStructClassCP m_structType;
         uint32_t m_minOccurs;
         uint32_t m_maxOccurs;
-        PropertyMapCP m_propertyMap;
+        WipPropertyMap const* m_propertyMap;
 
         void DetermineTypeInfo(ECN::ECPropertyCR ecProperty);
 
@@ -48,7 +48,7 @@ struct ECSqlTypeInfo
         ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, ECN::DateTimeInfo const* dateTimeInfo);
         explicit ECSqlTypeInfo(ECN::ECStructClassCR structType) : ECSqlTypeInfo(structType, false) {}
         ECSqlTypeInfo(ECN::ECStructClassCR, bool isArray);
-        explicit ECSqlTypeInfo(PropertyMapCR propertyMap);
+        explicit ECSqlTypeInfo(WipPropertyMap const& propertyMap);
         explicit ECSqlTypeInfo(ECN::ECPropertyCR ecProperty);
 
         ~ECSqlTypeInfo() {}
@@ -103,7 +103,7 @@ struct ECSqlTypeInfo
         uint32_t GetArrayMinOccurs() const { return m_minOccurs; }
         uint32_t GetArrayMaxOccurs() const { return m_maxOccurs; }
 
-        PropertyMapCP GetPropertyMap() const { return m_propertyMap; }
+        WipPropertyMap const* GetPropertyMap() const { return m_propertyMap; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

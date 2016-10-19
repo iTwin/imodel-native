@@ -774,7 +774,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         nativeSqlSnippet.AppendParenLeft();
 
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    ECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    WipECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
     //!WIP_CLASSID need work ToNativeSql() is used in viewgenerator and ECSql this does not allow us but to add an addition parameter to it tell from where it is called.
     //For this reason i am leaving following cases as is
     if (classIdPropertyMap->IsPersisted())
