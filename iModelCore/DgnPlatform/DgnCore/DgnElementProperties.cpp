@@ -59,24 +59,10 @@ ElementECInstanceAdapter::ElementECInstanceAdapter(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ElementECInstanceAdapter::GetPropName(uint32_t index) const
-    {
-    PropertyLayoutCP propLayout;
-    if (ECObjectsStatus::Success != GetClassLayout().GetPropertyLayoutByIndex(propLayout, index))
-        {
-        BeAssert(false);
-        return "";
-        }
-    return propLayout->GetAccessString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementECInstanceAdapter::_GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const 
     {
-    DgnElement::PropertyArrayIndex ai(useArrayIndex, arrayIndex);
-    auto stat = m_element.GetPropertyValue(v, GetPropName(propertyIndex).c_str(), ai);
+    PropertyArrayIndex ai(useArrayIndex, arrayIndex);
+    auto stat = m_element.GetPropertyValue(v, propertyIndex, ai);
     return toECObjectsStatus(stat);
     }
 
@@ -90,8 +76,8 @@ ECObjectsStatus ElementECInstanceAdapter::_SetValue (uint32_t propertyIndex, ECV
         BeAssert(false);
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
-    DgnElement::PropertyArrayIndex ai(useArrayIndex, arrayIndex);
-    auto stat = m_element.SetPropertyValue(GetPropName(propertyIndex).c_str(), v, ai);
+    PropertyArrayIndex ai(useArrayIndex, arrayIndex);
+    auto stat = m_element.SetPropertyValue(propertyIndex, v, ai);
     return toECObjectsStatus(stat);
     }
 
@@ -570,19 +556,22 @@ ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECIns
     AddRef(); // protect against somebody else doing AddRef + Release and deleting this
 
     m_eclass = m_element.GetElementClass();
+    m_layout = &m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();
 
     if (DgnElement::PropState::Unknown == m_element.m_flags.m_propState)
         LoadProperties();
+    }
 
-    if (DgnElement::PropState::NotFound == m_element.m_flags.m_propState)
-        {
-        m_eclass = nullptr; // This object cannot be used to access properties on this element
-        BeAssert(!IsValid());
-        BeAssert(nullptr == m_element.m_ecPropertyData);
-        return; // This element has no auto-handled properties
-        }
-
-    BeAssert(IsValid());
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el, ECClassCR ecls, ECN::ClassLayoutCR layout) 
+    : m_element(const_cast<DgnElement&>(el)),
+    m_eclass(&ecls), m_layout(&layout)
+    {
+    AddRef(); // protect against somebody else doing AddRef + Release and deleting this
+    if (DgnElement::PropState::Unknown == m_element.m_flags.m_propState)
+        LoadProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,7 +635,8 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementAutoHandledPropertiesECInstanceAdapter::IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
+#ifdef WIP_PROPERTIES // *** ECObjects should be doing this
+static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
     {
     BeAssert(IsValid());
     if (value.IsNull())
@@ -664,25 +654,7 @@ bool ElementAutoHandledPropertiesECInstanceAdapter::IsValidValue(ECN::ECProperty
     // *** TBD: do range validation
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementAutoHandledPropertiesECInstanceAdapter::IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
-    {
-    BeAssert(IsValid());
-    // *** WIP_AUTO_HANDLED_PROPERTIES -- must somehow cache this kind of metadata
-
-    auto propertyStatementType = m_element.GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
-    auto stypeCA = prop.GetCustomAttribute(*propertyStatementType);
-    if (!stypeCA.IsValid())
-        return true;
-
-    ECN::ECValue stypeValue;
-    stypeCA->GetValue(stypeValue, "StatementTypes");
-
-    return 0 != ((uint32_t)stypeNeeded & stypeValue.GetInteger());
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
@@ -914,45 +886,103 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ClearArray (uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElement const& el, Utf8CP accessString) :
-    ElementAutoHandledPropertiesECInstanceAdapter(el),
-    m_accessString(accessString)
+ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElementCR el, Utf8CP accessString)
+    : m_element(const_cast<DgnElementR>(el)), m_readOnly(true)
     {
-    if (!ElementAutoHandledPropertiesECInstanceAdapter::IsValid())
-        return;
-
-    m_ecprop = m_eclass->GetPropertyP(m_accessString);
-    if (nullptr == m_ecprop)
-        {
-        auto dot = m_accessString.find('.');
-        if (Utf8String::npos != dot)
-            m_ecprop = m_eclass->GetPropertyP(m_accessString.substr(0, dot));
-        }
-
-    if ((nullptr == m_ecprop) || m_element.IsCustomHandledProperty(*m_ecprop))
-        {
-        // This is not an auto-handled property
-        m_ecprop = nullptr;     // This object cannot be used to access this property
-        BeAssert(!IsValid());
-        return;
-        }
-
-    BeAssert(IsValid());
+    Init(0, accessString);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElementCR el, uint32_t propIdx)
+    : m_element(const_cast<DgnElementR>(el)), m_readOnly(true)
+    {
+    Init(propIdx, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElementR el, Utf8CP accessString)
+    : m_element(el), m_readOnly(false)
+    {
+    Init(0, accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementECPropertyAccessor::ElementECPropertyAccessor(DgnElementR el, uint32_t propIdx)
+    : m_element(el), m_readOnly(false)
+    {
+    Init(propIdx, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
+    {
+    m_eclass = m_element.GetElementClass();
+    m_layout = &m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();
+
+    if (nullptr == accessString)
+        m_propIdx = propIdx;
+    else
+        {
+        if (ECObjectsStatus::Success != m_layout->GetPropertyIndex(m_propIdx, accessString))
+            {
+            m_propIdx = 0;
+            m_isPropertyIndexValid = false;
+            BeAssert(!IsValid());
+            return;
+            }
+        }
+
+    m_isPropertyIndexValid = true;
+
+    // Additional information about the custom and auto-handled properties on this class
+    // *** WIP_PROPERTIES - I wish I could cache this data on the ECClass object itself, instead of having to do this extra lookup
+    m_classInfo = &m_element.GetDgnDb().Elements().FindClassInfo(m_element);
+    m_accessors = m_classInfo->GetPropertyAccessors(m_propIdx);
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx)
+DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
-    if (!IsValidValue(*m_ecprop, value))
+    if (!IsValid() || (nullptr != m_accessors))
+        {
+        BeAssert(false);
         return DgnDbStatus::BadArg;
+        }
+    auto validator = m_classInfo->GetPropertyValidator(m_propIdx);
+    if (nullptr != validator)
+        {
+        auto status = (*validator)(m_element, value);
+        if (DgnDbStatus::Success != status)
+            return status;
+        }
 
-    if (!IsValidForStatementType(*m_ecprop, m_element.GetElementId().IsValid() ? 
-                                 ECSqlClassParams::StatementType::Update : ECSqlClassParams::StatementType::Insert))
+#ifdef WIP_PROPERTIES // *** ECObjects should be doing this
+    if (!isValidValue(*m_ecprop, value))
+        return DgnDbStatus::BadArg;
+#endif
+
+    auto stypeNeeded = m_element.GetElementId().IsValid()? ECSqlClassParams::StatementType::Update : ECSqlClassParams::StatementType::Insert;
+    if (0 == ((uint32_t)stypeNeeded & m_classInfo->GetAutoPropertyStatementType(m_propIdx)))
         return DgnDbStatus::ReadOnly;
 
-    auto status = SetValueToMemory(m_accessString.c_str(), value, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout);
+    if (!ecdbuffer.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::NotFound;
+        }
+
+    auto status = ecdbuffer.SetValueToMemory(m_propIdx, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
         
     if ((ECObjectsStatus::Success != status) && (ECObjectsStatus::PropertyValueMatchesNoChange != status))
         return DgnDbStatus::BadArg; // probably a type mismatch
@@ -965,9 +995,21 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECValueCR value, DgnElem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx)
+DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
     {
-    if (ECN::ECObjectsStatus::Success != GetValueFromMemory(value, m_accessString.c_str(), arrayIdx.m_hasIndex, arrayIdx.m_index))
+    if (!IsValid() || (nullptr != m_accessors))
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadArg;
+        }
+    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout);
+    if (!ecdbuffer.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::NotFound;
+        }
+
+    if (ECN::ECObjectsStatus::Success != ecdbuffer.GetValueFromMemory(value, m_propIdx, arrayIdx.m_hasIndex, arrayIdx.m_index))
         return DgnDbStatus::BadRequest;
     
     return DgnDbStatus::Success;
@@ -1234,23 +1276,127 @@ DgnDbStatus DgnElement::GetPropertyIndex(uint32_t& index, Utf8CP accessString)
     return toDgnDbWriteStatus(classLayout.GetPropertyIndex(index, accessString));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValues(ECN::IECInstanceCR instance, SetPropertyFilter const& filter) 
     {return _SetPropertyValues(instance, filter);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::InsertPropertyArrayItems(uint32_t propertyIndex, uint32_t index, uint32_t size)
     {return _InsertPropertyArrayItems(propertyIndex, index, size);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index)
     {return _RemovePropertyArrayItem(propertyIndex, index);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size)
     {return _AddPropertyArrayItems(propertyIndex, size);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ClearPropertyArray(uint32_t propertyIndex)
     {return _ClearPropertyArray(propertyIndex);}
 
-DgnDbStatus DgnElement::GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx) const 
-    {return _GetPropertyValue(value, name, aidx);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlClassInfo::RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc)
+    {
+    uint32_t propIdx;
+    auto status = layout.GetPropertyIndex(propIdx, propName);
+    if (ECN::ECObjectsStatus::Success != status)
+        {
+        BeAssert(false);
+        return;
+        }
+    m_propertyAccessors[propIdx] = make_bpair(getFunc, setFunc);
+    }
 
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx)
-    {return _SetPropertyValue(name, value, aidx);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bpair<ECSqlClassInfo::T_ElementPropGet,ECSqlClassInfo::T_ElementPropSet> const* ECSqlClassInfo::GetPropertyAccessors(uint32_t propIdx) const 
+    {
+    auto i = m_propertyAccessors.find(propIdx);
+    return (i != m_propertyAccessors.end())? &i->second: nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlClassInfo::RegisterPropertyValidator(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropValidator func)
+    {
+    uint32_t propIdx;
+    auto status = layout.GetPropertyIndex(propIdx, propName);
+    if (ECN::ECObjectsStatus::Success != status)
+        {
+        BeAssert(false);
+        return;
+        }
+    m_autoPropertyValidators[propIdx] = func;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassInfo::T_ElementPropValidator const* ECSqlClassInfo::GetPropertyValidator(uint32_t propIdx) const 
+    {
+    auto i = m_autoPropertyValidators.find(propIdx);
+    return (i != m_autoPropertyValidators.end())? &i->second: nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSqlClassInfo::GetAutoPropertyStatementType(uint32_t propIdx)
+    {
+    auto i = m_autoPropertyStatementType.find(propIdx);
+    return (m_autoPropertyStatementType.end() == i)? (uint32_t)ECSqlClassParams::StatementType::All: i->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ElementECPropertyAccessor::GetAccessString() const 
+    {
+    PropertyLayoutCP layout;
+    return ECObjectsStatus::Success == m_layout->GetPropertyLayoutByIndex(layout, m_propIdx)? layout->GetAccessString(): "";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
+    {
+    if (nullptr == m_accessors)
+        return GetAutoHandledPropertyValue(value, arrayIdx);
+
+    return m_accessors->first(value, m_element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    if (m_readOnly)
+        {
+        BeAssert(false);
+        return DgnDbStatus::ReadOnly;
+        }
+
+    if (nullptr == m_accessors)
+        return SetAutoHandledPropertyValue(value, arrayIdx);
+
+    return m_accessors->second(m_element, value);
+    }
+

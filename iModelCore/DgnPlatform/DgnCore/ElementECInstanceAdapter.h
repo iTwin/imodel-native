@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnPlatform/ECSqlClassParams.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -23,15 +24,17 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECInstance
 {
+    friend struct ElementECPropertyAccessor;
+
     DgnElement& m_element;
     ECClassCP m_eclass;
+    ECN::ClassLayoutCP m_layout;
 
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR);
     
-    bool IsValid() const {return nullptr != m_eclass;}
+    bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
 
-    bool IsValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value);
-    bool IsValidForStatementType(ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded);
     uint32_t GetBytesUsed() const;
 
     BentleyStatus LoadProperties();
@@ -63,7 +66,7 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     void _FreeAllocation() override;
     void _ClearValues() override;
     ECN::ECObjectsStatus _CopyFromBuffer(ECN::ECDBufferCR source) override;
-    ECN::ClassLayoutCR _GetClassLayout() const override {return m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();}
+    ECN::ClassLayoutCR _GetClassLayout() const override {return *m_layout;}
 
     // IECInstance 
     ECDBuffer*      _GetECDBuffer() const override {return const_cast<ElementAutoHandledPropertiesECInstanceAdapter*>(this);}
@@ -89,24 +92,6 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
 };
 
 //=======================================================================================
-//    *** ONLY FOR FOR AUTO-HANDLED PROPERTY I/O AND SOME INTERNAL OPERATIONS ***
-//  Helps with access to an individual AUTO-HANDLED property
-// @bsiclass                                                     Sam.Wilson        10/16
-//=======================================================================================
-struct ElementECPropertyAccessor : ElementAutoHandledPropertiesECInstanceAdapter
-{
-    Utf8String m_accessString;
-    ECPropertyCP m_ecprop;
-
-    ElementECPropertyAccessor(DgnElement const& el, Utf8CP accessString);
-
-    bool IsValid() const { return ElementAutoHandledPropertiesECInstanceAdapter::IsValid() && (nullptr != m_ecprop); }
-
-    DgnDbStatus SetPropertyValue(ECValueCR value, DgnElement::PropertyArrayIndex const& arrayIdx);
-    DgnDbStatus GetPropertyValue(ECN::ECValueR value, DgnElement::PropertyArrayIndex const& arrayIdx);
-};
-
-//=======================================================================================
 //! Makes an element look and act like an ECInstance. Provides access to all of an element's
 //! properties, including both auto- and custom-handled properties. Calls _GetProperyValue
 //! and _SetPropertyValue, so that the element class can impose validation rules and other
@@ -124,7 +109,6 @@ public:
     ElementECInstanceAdapter(DgnElementR);
     ElementECInstanceAdapter(DgnElementCR el);
 
-    Utf8String GetPropName(uint32_t index) const;
     ECN::ClassLayoutCR GetClassLayout() const {return m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();}
     bool ArePropertiesEqualTo(ECValuesCollectionCR expected);
     DgnDbStatus CopyPropertiesFrom(ECValuesCollectionCR source, DgnElement::SetPropertyFilter const& filter);

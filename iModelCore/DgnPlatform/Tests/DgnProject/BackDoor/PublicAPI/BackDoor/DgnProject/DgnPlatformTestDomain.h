@@ -90,8 +90,8 @@ protected:
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const& arrayIdx) override;
-    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const& arrayIdx) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;

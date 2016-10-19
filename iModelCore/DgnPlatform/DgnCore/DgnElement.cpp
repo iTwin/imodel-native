@@ -2301,262 +2301,410 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     return ECInstanceKey(classId, stmt->GetValueId<ECInstanceId>(0));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct ElementCustomHandledPropertyAccessors
     {
-    if (PropState::NotFound != m_flags.m_propState) // Unless we know that this class does NOT have auto-handled properties
-        {
-        // Common case: check auto-handled properties first
-        ElementECPropertyAccessor ecPropAccess(*this, name);
-        if (ecPropAccess.IsValid())
-            return ecPropAccess.GetPropertyValue(value, arrayIdx);
-        }
+    struct {
+        ECSqlClassInfo::T_ElementPropGet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
+            modelId, parentId, userLabel, lastMod;
+        } get;
+    struct {
+        ECSqlClassInfo::T_ElementPropSet federationGuid, codeValue, codeNamespace, codeAuthorityId, 
+            modelId, parentId, userLabel, lastMod;
+        } set;
 
-    // Rare: custom-handled properties
-    if (0 == strcmp(BIS_ELEMENT_PROP_FederationGuid, name))
-        {
-        value.SetBinary((Byte*)&m_federationGuid, sizeof(m_federationGuid));
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name))
-        {
-        value.SetUtf8CP(GetCode().GetValue().c_str());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name))
-        {
-        value.SetUtf8CP(GetCode().GetNamespace().c_str());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeAuthorityId, name))
-        {
-        value.SetLong(GetCode().GetAuthority().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp("Id", name) || 0 == strcmp(BIS_ELEMENT_PROP_ECInstanceId, name))
-        {
-        value.SetLong(GetElementId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ModelId, name))
-        {
-        value.SetLong(GetModelId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ParentId, name))
-        {
-        value.SetLong(GetParentId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_UserLabel, name))
-        {
-        value.SetUtf8CP(GetUserLabel());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_LastMode, name))
-        {
-        value.SetDateTime(QueryTimeStamp());
-        return DgnDbStatus::Success;
-        }
-
-    return DgnDbStatus::NotFound;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    if (PropState::NotFound != m_flags.m_propState) // Unless we know that this class does NOT have auto-handled properties
-        {
-        // Common case: check auto-handled properties first
-        ElementECPropertyAccessor ecPropAccess(*this, name);
-        if (ecPropAccess.IsValid())
-            return ecPropAccess.SetPropertyValue(value, arrayIdx);
-        }
-
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name)
-     || 0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name)
-     || 0 == strcmp(BIS_ELEMENT_PROP_CodeAuthorityId, name))
-        {
-        // *** NEEDS WORK: I don't think we should change the parts of a code individually.
-        return DgnDbStatus::ReadOnly;
-        }
-    if (0 == strcmp("Id", name) || 0 == strcmp(BIS_ELEMENT_PROP_ECInstanceId, name))
-        {
-        return DgnDbStatus::ReadOnly;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ModelId, name))
-        {
-        return DgnDbStatus::ReadOnly;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_ParentId, name))
-        {
-        if (value.IsNull())
-            return SetParentId(DgnElementId());
-        return SetParentId(DgnElementId((uint64_t)value.GetLong()));
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_UserLabel, name))
-        {
-        if (value.IsNull())
-            SetUserLabel("");
-        else
-            SetUserLabel(value.ToString().c_str());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(BIS_ELEMENT_PROP_LastMode, name))
-        {
-        return DgnDbStatus::ReadOnly;
-        }
-
-    return DgnDbStatus::NotFound;
-    }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const
+void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    if (0 == strcmp(name, "GeometryStream"))
+    static std::once_flag s_accessorsFlag;
+    static ElementCustomHandledPropertyAccessors s_accessors;
+    std::call_once(s_accessorsFlag, []()
         {
-        return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
-        }
-    if (0 == strcmp(name, GEOM_FacetCount))
-        {
-        value.SetLong(m_facetCount);
-        return DgnDbStatus::Success;
-        }
-    return DgnDbStatus::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
-    {
-    if (0 == strcmp(name, "CategoryId"))
-        {
-        value.SetLong(GetCategoryId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-
-    if (0 == strcmp(name, "InSpatialIndex"))
-        {
-        value.SetBoolean(!GetModel()->IsTemplate());
-        return DgnDbStatus::Success;
-        }
-    
-    DgnDbStatus status;
-    if (DgnDbStatus::NotFound != (status = GetPlacementProperty(value, name)))
-        return status;
-
-    if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
-        return status;
-
-    return T_Super::_GetPropertyValue(value, name, arrayIdx);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value)
-    {
-    if (0 == strcmp(name, "GeometryStream"))
-        return DgnDbStatus::BadRequest;//  => Use ElementGeometryBuilder
-
-    return DgnDbStatus::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    if (0 == strcmp(name, GEOM_FacetCount))
-        {
-        if (value.IsNull())
-            _RecordFacetCount(0);
-        else
-            _RecordFacetCount((size_t)value.GetLong());
-        return DgnDbStatus::Success;
-        }
-    
-    if (0 == strcmp(name, "CategoryId"))
-        {
-        if (value.IsNull())
+        s_accessors.get.federationGuid = [](ECValueR value, DgnElementCR el)
             {
-            BeAssert(false);
-            return DgnDbStatus::BadArg;
+            value.SetBinary((Byte*)&el.m_federationGuid, sizeof(el.m_federationGuid));
+            return DgnDbStatus::Success;
+            };
+
+        s_accessors.set.federationGuid = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            size_t sz;
+            Byte const* p = value.GetBinary(sz);
+            if (sz != sizeof(BeGuid))
+                return DgnDbStatus::BadArg;
+            BeGuid guid;
+            memcpy(&guid, p, sz);
+            el.SetFederationGuid(guid);
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.get.codeValue = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetCode().GetValue().c_str());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.codeValue = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(existingCode.GetAuthority(), value.ToString(), existingCode.GetNamespace());
+            return el.SetCode(newCode);
+            };
+        
+        s_accessors.get.codeNamespace = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetCode().GetNamespace().c_str());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.codeNamespace = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(existingCode.GetAuthority(), existingCode.GetValue(), value.ToString());
+            return el.SetCode(newCode);
+            };
+        
+        s_accessors.get.codeAuthorityId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetCode().GetAuthority().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.codeAuthorityId = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+            DgnCode existingCode = el.GetCode();
+            DgnCode newCode(DgnAuthorityId((uint64_t)value.GetLong()), existingCode.GetValue(), existingCode.GetNamespace());
+            return el.SetCode(newCode);
+            };
+        
+        s_accessors.get.modelId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetModelId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.modelId = [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            };
+        
+        s_accessors.get.parentId = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetLong(el.GetParentId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.parentId = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsLong())
+                return DgnDbStatus::BadArg;
+            return el.SetParentId(DgnElementId((uint64_t)value.GetLong()));
+            };
+        
+        s_accessors.get.userLabel = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetUtf8CP(el.GetUserLabel());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.userLabel = [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            el.SetUserLabel(value.ToString().c_str());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.get.lastMod = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetDateTime(el.QueryTimeStamp());
+            return DgnDbStatus::Success;
+            };
+        
+        s_accessors.set.lastMod = [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            };
+        });
+
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_FederationGuid, s_accessors.get.federationGuid, s_accessors.set.federationGuid);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue, s_accessors.get.codeValue, s_accessors.set.codeValue);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeNamespace, s_accessors.get.codeNamespace, s_accessors.set.codeNamespace);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthorityId, s_accessors.get.codeAuthorityId, s_accessors.set.codeAuthorityId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ModelId, s_accessors.get.modelId, s_accessors.set.modelId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_ParentId, s_accessors.get.parentId, s_accessors.set.parentId);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, s_accessors.get.userLabel, s_accessors.set.userLabel);
+    params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_LastMode, s_accessors.get.lastMod, s_accessors.set.lastMod);
+    }
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct GeometricElementPropertyAccessors
+    {
+    struct {
+        ECSqlClassInfo::T_ElementPropGet  geomStream, facetCount;
+        } get;
+    struct {
+        ECSqlClassInfo::T_ElementPropSet  geomStream;
+        } set;
+    };
+
+static std::once_flag s_geomaccessorsFlag;
+static GeometricElementPropertyAccessors s_geomaccessors;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    std::call_once(s_geomaccessorsFlag, []() {
+      
+        s_geomaccessors.get.geomStream = [](ECValueR, DgnElementCR)
+            {
+            return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
+            };
+
+        s_geomaccessors.set.geomStream = [](DgnElementR, ECValueCR)
+            {
+            return DgnDbStatus::BadRequest;//  => Use GeometryBuilder
+            };
+
+        s_geomaccessors.get.facetCount = [](ECValueR value, DgnElementCR elIn)
+            {
+            GeometricElement& el = (GeometricElement&)elIn;
+            value.SetLong(el.m_facetCount);
+            return DgnDbStatus::Success;
+            };
+
+
+        });
+
+    params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, s_geomaccessors.get.geomStream, s_geomaccessors.set.geomStream);
+    }
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct GeometricElement3dPropertyAccessors
+    {
+    struct {
+        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropGet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
+        } get;
+    struct {
+        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropSet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
+        } set;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    static std::once_flag s_accessorsFlag;
+    static GeometricElement3dPropertyAccessors s_accessors;
+    std::call_once(s_accessorsFlag, []()
+        {
+#define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+            {                                                                            \
+            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            Placement3dCR plc = el.GetPlacement();                                       \
+            value.SetDouble(EXPR);                                                      \
+            return DgnDbStatus::Success;                                                 \
             }
-        return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
-        }
+#define GETGEOMPLCPROPPT3(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+            {                                                                            \
+            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            Placement3dCR plc = el.GetPlacement();                                       \
+            value.SetPoint3d(EXPR);                                                      \
+            return DgnDbStatus::Success;                                                 \
+            }
+#define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
+            {                                                                            \
+            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            Placement3d plc = el.GetPlacement();                                         \
+            EXPR;                                                                        \
+            return el.SetPlacement(plc);                                                 \
+            }
 
-    if (0 == strcmp(name, "InSpatialIndex"))
-        return DgnDbStatus::ReadOnly;
-    
-    DgnDbStatus status;
-    if (DgnDbStatus::NotFound != (status = SetPlacementProperty(name, value)))
-        return status;
+        GETGEOMPLCPROPDBL(yaw,      plc.GetAngles().GetYaw().Degrees());
+        GETGEOMPLCPROPDBL(pitch,    plc.GetAngles().GetPitch().Degrees());
+        GETGEOMPLCPROPDBL(roll,     plc.GetAngles().GetRoll().Degrees());
+        GETGEOMPLCPROPPT3(origin,   plc.GetOrigin());
+        GETGEOMPLCPROPPT3(bboxLow,  plc.GetElementBox().low);
+        GETGEOMPLCPROPPT3(bboxHigh, plc.GetElementBox().high);
+        SETGEOMPLCPROP(yaw,         plc.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(pitch,       plc.GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(roll,        plc.GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(origin,      plc.GetOriginR() = value.GetPoint3d());
+        SETGEOMPLCPROP(bboxLow,     plc.GetElementBoxR().low = value.GetPoint3d());
+        SETGEOMPLCPROP(bboxHigh,    plc.GetElementBoxR().high = value.GetPoint3d());
 
-    if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
-        return status;
+#undef GETGEOMPLCPROPDBL
+#undef GETGEOMPLCPROPPT3
+#undef SETGEOMPLCPROP
 
-    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+        s_accessors.get.categoryId = [](ECValueR value, DgnElementCR elIn)
+            {
+            GeometricElement3d& el = (GeometricElement3d&)elIn;
+            value.SetLong(el.GetCategoryId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+
+        s_accessors.set.categoryId = [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            GeometricElement3d& el = (GeometricElement3d&)elIn;
+            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            };
+
+        s_accessors.get.inSpatialIndex = [](ECValueR value, DgnElementCR el)
+            {
+            value.SetBoolean(!el.GetModel()->IsTemplate());
+            return DgnDbStatus::Success;
+            };
+
+        s_accessors.set.inSpatialIndex = [](DgnElementR, ECValueCR)
+            {
+            return DgnDbStatus::ReadOnly;
+            };
+
+        s_accessors.set.facetCount = [](DgnElementR elIn, ECValueCR value)
+            {
+            GeometricElement3d& el = (GeometricElement3d&)elIn;
+            if (value.IsNull())
+                el._RecordFacetCount(0);
+            else
+                el._RecordFacetCount((size_t)value.GetLong());
+            return DgnDbStatus::Success;
+            };
+
+        });
+
+    params.RegisterPropertyAccessors(layout, GEOM_FacetCount, s_geomaccessors.get.facetCount, s_accessors.set.facetCount);
+    params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
+    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, s_accessors.get.inSpatialIndex, s_accessors.set.inSpatialIndex);
+    params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
+    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, s_accessors.get.bboxLow, s_accessors.set.bboxLow);
+    params.RegisterPropertyAccessors(layout, GEOM_Box_High, s_accessors.get.bboxHigh, s_accessors.set.bboxHigh);
+    params.RegisterPropertyAccessors(layout, GEOM3_Yaw, s_accessors.get.yaw, s_accessors.set.yaw);
+    params.RegisterPropertyAccessors(layout, GEOM3_Pitch, s_accessors.get.pitch, s_accessors.set.pitch);
+    params.RegisterPropertyAccessors(layout, GEOM3_Roll, s_accessors.get.roll, s_accessors.set.roll);
+
+    GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct GeometricElement2dPropertyAccessors
+    {
+    struct {
+        ECSqlClassInfo::T_ElementPropGet  categoryId;
+        ECSqlClassInfo::T_ElementPropGet  origin, rotation, bboxLow, bboxHigh;
+        } get;
+    struct {
+        ECSqlClassInfo::T_ElementPropSet  categoryId;
+        ECSqlClassInfo::T_ElementPropSet  origin, rotation, bboxLow, bboxHigh;
+        } set;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const
+void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    bool isplcprop;
-    if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint3d(GetPlacement().GetOrigin());
-    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
-        value.SetDouble(GetPlacement().GetAngles().GetYaw().Degrees());
-    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
-        value.SetDouble(GetPlacement().GetAngles().GetPitch().Degrees());
-    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
-        value.SetDouble(GetPlacement().GetAngles().GetRoll().Degrees());
-    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint3d(GetPlacement().GetElementBox().low);
-    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint3d(GetPlacement().GetElementBox().high);
-        
-    return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    static std::once_flag s_accessorsFlag;
+    static GeometricElement2dPropertyAccessors s_accessors;
+    std::call_once(s_accessorsFlag, []()
+        {
+#define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+            {                                                                            \
+            GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            Placement2dCR plc = el.GetPlacement();                                       \
+            value.SetDouble(EXPR);                                                      \
+            return DgnDbStatus::Success;                                                 \
+            }
+#define GETGEOMPLCPROPPT2(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
+            {                                                                            \
+            GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            Placement2dCR plc = el.GetPlacement();                                       \
+            value.SetPoint2d(EXPR);                                                      \
+            return DgnDbStatus::Success;                                                 \
+            }
+#define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
+            {                                                                            \
+            GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
+            Placement2d plc = el.GetPlacement();                                         \
+            EXPR;                                                                        \
+            return el.SetPlacement(plc);                                                 \
+            }
+
+        GETGEOMPLCPROPDBL(rotation, plc.GetAngle().Degrees());
+        GETGEOMPLCPROPPT2(origin,   plc.GetOrigin());
+        GETGEOMPLCPROPPT2(bboxLow,  plc.GetElementBox().low);
+        GETGEOMPLCPROPPT2(bboxHigh, plc.GetElementBox().high);
+        SETGEOMPLCPROP(rotation,    plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble()));
+        SETGEOMPLCPROP(origin,      plc.GetOriginR() = value.GetPoint2d());
+        SETGEOMPLCPROP(bboxLow,     plc.GetElementBoxR().low = value.GetPoint2d());
+        SETGEOMPLCPROP(bboxHigh,    plc.GetElementBoxR().high = value.GetPoint2d());
+
+#undef GETGEOMPLCPROPDBL
+#undef GETGEOMPLCPROPPT2
+#undef SETGEOMPLCPROP
+
+        s_accessors.get.categoryId = [](ECValueR value, DgnElementCR elIn)
+            {
+            GeometricElement2d& el = (GeometricElement2d&)elIn;
+            value.SetLong(el.GetCategoryId().GetValueUnchecked());
+            return DgnDbStatus::Success;
+            };
+
+        s_accessors.set.categoryId = [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            GeometricElement2d& el = (GeometricElement2d&)elIn;
+            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            };
+
+        });
+
+    params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
+    params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
+    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, s_accessors.get.bboxLow, s_accessors.set.bboxLow);
+    params.RegisterPropertyAccessors(layout, GEOM_Box_High, s_accessors.get.bboxHigh, s_accessors.set.bboxHigh);
+    params.RegisterPropertyAccessors(layout, GEOM2_Rotation, s_accessors.get.rotation, s_accessors.set.rotation);
+
+    GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR value)
-    {
-    Placement3d plc;
-    bool isplcprop;
-
-    if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint3d();
-    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
-        (plc = GetPlacement()).GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()));
-    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
-        (plc = GetPlacement()).GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble()));
-    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
-        (plc = GetPlacement()).GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()));
-    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3d();
-    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3d();
-        
-   if (!isplcprop)
-       return DgnDbStatus::NotFound;
-   
-   SetPlacement(plc);
-   return DgnDbStatus::Success;
-   }
-
-/*---------------------------------------------------------------------------------**//**
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2778,93 +2926,6 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
 
     m_placement = placement;
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const
-    {
-    bool isplcprop;
-    if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        value.SetPoint2d(GetPlacement().GetOrigin());
-    else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
-        value.SetDouble(GetPlacement().GetAngle().Degrees());
-    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        value.SetPoint2d(GetPlacement().GetElementBox().low);
-    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        value.SetPoint2d(GetPlacement().GetElementBox().high);
-        
-    return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR value)
-    {
-    Placement2d plc;
-    bool isplcprop;
-
-    if ((isplcprop = (0 == strcmp(name, "Origin"))))
-        (plc = GetPlacement()).GetOriginR() = value.GetPoint2d();
-    else if ((isplcprop = (0 == strcmp(name, "Rotation"))))
-        (plc = GetPlacement()).GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble());
-    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
-        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint2d();
-    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
-        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint2d();
-        
-   if (!isplcprop)
-       return DgnDbStatus::NotFound;
-   
-   SetPlacement(plc);
-   return DgnDbStatus::Success;
-   }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
-    {
-    if (0 == strcmp(name, "CategoryId"))
-        {
-        value.SetLong(GetCategoryId().GetValueUnchecked());
-        return DgnDbStatus::Success;
-        }
-
-    DgnDbStatus status;
-    if (DgnDbStatus::NotFound != (status = GetPlacementProperty(value, name)))
-        return status;
-
-    if (DgnDbStatus::NotFound != (status = GetGeometricElementPropertyValue(value, name)))
-        return status;
-
-    return T_Super::_GetPropertyValue(value, name, arrayIdx);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement2d::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    if (0 == strcmp(name, GEOM_FacetCount))
-        {
-        _RecordFacetCount((size_t)value.GetLong());
-        return DgnDbStatus::Success;
-        }
-
-    if (0 == strcmp(name, "CategoryId"))
-        return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
-
-    DgnDbStatus status;
-    if (DgnDbStatus::NotFound != (status = SetPlacementProperty(name, value)))
-        return status;
-
-    if (DgnDbStatus::NotFound != (status = SetGeometricElementPropertyValue(name, value)))
-        return status;
-
-    return T_Super::_SetPropertyValue(name, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
