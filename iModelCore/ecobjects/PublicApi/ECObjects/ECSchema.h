@@ -2140,9 +2140,12 @@ private:
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipClassP        m_relClass;
     bool                        m_isSource;
+    ECEntityClassCP             m_abstractConstraint;
 
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
     ECObjectsStatus             _SetMultiplicity(Utf8CP multiplicity, bool validate = false);
+
+    ECObjectsStatus             _SetAbstractConstraint(Utf8StringCR value, bool validate = false);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
@@ -2154,13 +2157,15 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
-    bool                        IsValid() const;
+    bool                        IsValid(bool resolveIssues) ;
     ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
+    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
+    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
     ECObjectsStatus             ValidateRoleLabel() const;
     ECObjectsStatus             ValidateClassConstraint() const;
     ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint() const;
-    ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
+    ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
+    ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2209,6 +2214,20 @@ public:
 
     //! Gets the multiplicity of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipMultiplicityCR GetMultiplicity() const;
+
+    //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
+    //! @param[in]  abstractConstraint String representation of an the full name of an ECEntityClass
+    //! @return     Success if the abstract constraint is parsed into a valid ECEntityClass
+    ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(Utf8StringCR abstractConstraint);
+    //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
+    //! @param[in] abstractConstraint representation of an the full name of an ECEntityClass
+    ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(ECEntityClassCR abstractConstraint);
+    //! Gets the abstract constraint class for this ECRelationshipConstraint. 
+    ECOBJECTS_EXPORT ECEntityClassCP const      GetAbstractConstraint() const;
+    //! Returns whether the AbstractConstraint Class has been set explicitly or inherited from a base constraint
+    ECOBJECTS_EXPORT bool                       IsAbstractConstraintDefined() const;
+    //! Returns whether the AbstractConstraint Class has been set explicitly and not inherited from a base constraint.
+    ECOBJECTS_EXPORT bool                       IsAbstractConstraintDefinedLocally() const;
 
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
@@ -2281,10 +2300,7 @@ private:
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
     
-    bool                                IsValid() const;
-    bool                                ValidateMultiplicityConstraint() const;
-    bool                                ValidateClassConstraint() const;
-    bool                                ValidateRoleLabels() const;
+    bool                                IsValid(bool resolveIssues) const;
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
@@ -3130,6 +3146,8 @@ private:
     ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
+    bool                                Validate(bool resolveIssues);
+
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::Schema; }
@@ -3175,7 +3193,6 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
     //! Sets the display label for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
-    //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.

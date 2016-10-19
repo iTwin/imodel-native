@@ -703,12 +703,18 @@ uint32_t ECSchema::GetECVersionMinor
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::Validate()
     {
+    return Validate(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::Validate(bool resolveIssues)
+    {
     if (GetClassCount() == 0)
         return true;
 
     bool isValid = true;
-
-    // Iterates through all classes and checks them against the most up-to-date 
     for (ECClassP ecClass : GetClasses())
         {
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
@@ -716,7 +722,7 @@ bool ECSchema::Validate()
             continue;
 
         // Will validate against the EC3.1 rules.
-        if (!relClass->IsValid())
+        if (!relClass->IsValid(resolveIssues))
             isValid = false;
         }
 

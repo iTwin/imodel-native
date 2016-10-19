@@ -328,7 +328,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-    if (!schemaOut->Validate())
+    if (!schemaOut->Validate(true))
         return SchemaReadStatus::InvalidECSchemaXml;
 
     return status;

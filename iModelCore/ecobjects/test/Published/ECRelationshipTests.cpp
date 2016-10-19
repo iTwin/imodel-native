@@ -597,7 +597,7 @@ TEST_F (ECRelationshipTests, TestRelationshipMultiplicityConstraint)
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
-    ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass2->AddBaseClass(*relationClassBase));
+    ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, relationClass2->AddBaseClass(*relationClassBase));
 
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
@@ -702,6 +702,132 @@ TEST_F(ECRelationshipTests, TestBaseClassRules)
     baseRelationClass->GetTarget().AddClass(*entityClassE);
 
     EXPECT_NE(ECObjectsStatus::Success, relationClass2->AddBaseClass(*baseRelationClass)) << "An ECRelationshipClass can only have one base class";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipTests, TestAbstractConstraint)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    ecSchema->CreateEntityClass(entityClassC, "C");
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "ARelB");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass->SetClassModifier(ECClassModifier::Abstract);
+    relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetTarget().AddClass(*entityClassC);
+
+    EXPECT_FALSE(relationClass->GetSource().IsAbstractConstraintDefinedLocally()) << "The Source Constraint's Abstract Constraint should not be locally defined since there is only one .";
+    EXPECT_TRUE(relationClass->GetSource().IsAbstractConstraintDefined()) << "The Source Constraint's Abstract Constraint is implicity set therefore should return true.";
+    EXPECT_STREQ("A", relationClass->GetSource().GetAbstractConstraint()->GetName().c_str());
+    EXPECT_FALSE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint should be implicity set therefore not locally defined.";
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint should be implicity set since therefore should return true.";
+    EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+
+    // WIP: Commnent out until ECDb implements abstractConstraint because we avoid this check.
+    //EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
+    entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
+
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint has now been explicity set therefore is locally defined.";
+    EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
+    EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipTests, TestInheritedAbstractConstraint)
+    {
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP entityClassA;
+    ECEntityClassP entityClassB;
+    ECEntityClassP entityClassC;
+    ECEntityClassP entityClassD;
+    ECEntityClassP commonBaseClass;
+    ECEntityClassP unrelatedClass;
+    ecSchema->CreateEntityClass(unrelatedClass, "UnrelatedClass");
+    ecSchema->CreateEntityClass(commonBaseClass, "BaseClass");
+    ecSchema->CreateEntityClass(entityClassA, "A");
+    
+    ecSchema->CreateEntityClass(entityClassB, "B");
+    entityClassB->AddBaseClass(*commonBaseClass);
+
+    ecSchema->CreateEntityClass(entityClassC, "C");
+    entityClassC->AddBaseClass(*commonBaseClass);
+    entityClassC->AddBaseClass(*entityClassB);
+    
+    ecSchema->CreateEntityClass(entityClassD, "D");
+    entityClassD->AddBaseClass(*commonBaseClass);
+    entityClassD->AddBaseClass(*entityClassC);
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "BaseRelationship");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass->SetClassModifier(ECClassModifier::Abstract);
+    relationClass->GetSource().AddClass(*entityClassA);
+    relationClass->GetTarget().SetAbstractConstraint(*commonBaseClass);
+    relationClass->GetTarget().AddClass(*entityClassB);
+
+    ECRelationshipClassP relationClass2;
+    ecSchema->CreateRelationshipClass(relationClass2, "DerivedRelationship");
+    relationClass2->SetStrength(StrengthType::Referencing);
+    relationClass2->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass2->SetClassModifier(ECClassModifier::Abstract);
+
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClass)) << "Adding a base class should succeed since there are no constraint classes on the derived class.";
+    
+    EXPECT_TRUE(relationClass2->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
+    EXPECT_FALSE(relationClass2->GetSource().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
+    EXPECT_STREQ("A", relationClass2->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
+    
+    EXPECT_TRUE(relationClass2->GetTarget().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
+    EXPECT_FALSE(relationClass2->GetTarget().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
+    EXPECT_STREQ("BaseClass", relationClass2->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
+
+    ECRelationshipClassP relationClass3;
+    ecSchema->CreateRelationshipClass(relationClass3, "DerivedRelationship2");
+    relationClass3->SetStrength(StrengthType::Referencing);
+    relationClass3->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationClass3->SetClassModifier(ECClassModifier::Abstract);
+    
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass3->AddBaseClass(*relationClass2)) << "Adding a base class should succeed since there are no constraint classes on the derived class.";
+    EXPECT_TRUE(relationClass3->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
+    EXPECT_FALSE(relationClass3->GetSource().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
+    EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
+    EXPECT_TRUE(relationClass3->GetTarget().IsAbstractConstraintDefined()) << "The abstract constraint should be inherited from the base relationship.";
+    EXPECT_FALSE(relationClass3->GetTarget().IsAbstractConstraintDefinedLocally()) << "The abstract constraint should be inherited from the base relationship, therefore not defined locally.";
+    EXPECT_STREQ("BaseClass", relationClass3->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
+
+    relationClass3->GetSource().AddClass(*entityClassC);
+    EXPECT_TRUE(relationClass3->GetSource().IsAbstractConstraintDefined()) << "The abstract constraint should still be defined.";
+    EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
+
+    relationClass3->GetTarget().AddClass(*entityClassC);
+    EXPECT_EQ(1, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";;
+    relationClass3->GetTarget().AddClass(*entityClassD);
+    EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 2 when EntityClassD.";
+
+    relationClass3->GetTarget().AddClass(*unrelatedClass);
+    EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The UnrelatedClass should not be added to the constraint since it violates the abstract constraint.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1072,6 +1072,8 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 
     EXPECT_TRUE(structClass->IsStructClass());
 
+    relatedClass->AddBaseClass(*baseClass);
+
     PrimitiveECPropertyP stringProp;
     StructECPropertyP structProp;
     StructArrayECPropertyP nestedArrayProp;
@@ -1207,6 +1209,10 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
     relationshipClass->GetTarget().AddClass(*relatedClass);
     EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
+
+    relationshipClass->GetTarget().SetAbstractConstraint(*baseClass);
+    EXPECT_EQ(baseClass->GetName().c_str(), relationshipClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+
     relationshipClass->GetTarget().AddClass(*class2);
     EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
 
