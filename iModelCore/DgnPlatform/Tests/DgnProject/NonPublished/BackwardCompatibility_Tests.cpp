@@ -164,12 +164,13 @@ Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilitySt
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     {
-    BeFileName srcFilesPath;
-    BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
-    srcFilesPath.AppendToPath(L"DgnDb");
-    srcFilesPath.AppendToPath(L"CompatibilityRoot");
-    srcFilesPath.AppendToPath(L"DgnDb61-16Q2");
-    srcFilesPath.AppendToPath(L"*.idgndb");
+    Utf8String activeStream = "DgnDb61-16Q4";
+
+    BeFileName compatibilityRoot;
+    BeTest::GetHost().GetDocumentsRoot(compatibilityRoot);
+    compatibilityRoot.AppendToPath(L"DgnDb");
+    compatibilityRoot.AppendToPath(L"CompatibilityRoot");
+    compatibilityRoot.AppendToPath(L"DgnDb*");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
@@ -179,7 +180,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::CreateNewDirectory(outputRoot.c_str()));
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_DgnDb61-16Q4.csv");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_").AppendA(activeStream.c_str()).AppendA(".csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
@@ -190,49 +191,63 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     else
         ASSERT_TRUE(false) << "Error opening csv file";
 
-    BeFileListIterator filesIterator(srcFilesPath, false);
-    BeFileName dbName;
-
-    while (filesIterator.GetNextFileName(dbName) != ERROR)
+    BeFileListIterator dirIterator(compatibilityRoot, false);
+    BeFileName dirName;
+    while (dirIterator.GetNextFileName(dirName) != ERROR)
         {
-        //printf ("dgndb Name: %s", fileName.GetNameUtf8 ().c_str ());
-        BeFileName outputFilePath = outputRoot;
-        outputFilePath.AppendToPath(dbName.GetFileNameAndExtension().c_str());
-        //printf("dgndb Name: %s", outputFilePath.GetNameUtf8().c_str());
-
-        BeFileNameStatus copyFileStatus = BeFileName::BeCopyFile(dbName, outputFilePath);
-        CompatibilityStatus stat = CompatibilityStatus::Success;
-        bool writeStatus;
-        if (BeFileNameStatus::Success == copyFileStatus)
+        printf("DirectoryName: %ls\n", dirName.GetFileNameAndExtension().c_str());
+        if (BeFileName(dirName.GetFileNameWithoutExtension()) == BeFileName(activeStream))
             {
-            DbResult status;
-            m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-            if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
-                {
-                stat = VerifyElementsAndModels();
-                if (stat == CompatibilityStatus::Success)
-                    writeStatus = true;
-                else
-                    writeStatus = false;
-                }
-            else
-                {
-                stat = CompatibilityStatus::ERROR_FileOpeningFailed;
-                writeStatus = false;
-                }
-
-            if (writeStatus)
-                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
-            else
-                {
-                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
-                EXPECT_TRUE(false) << getCompatibilityStatusString(stat);
-                }
+            continue;
             }
-        else
+
+        BeFileName sourceFilesPath = dirName;
+        sourceFilesPath.AppendToPath(L"*.idgndb");
+
+        BeFileListIterator filesIterator(sourceFilesPath, false);
+        BeFileName dbName;
+
+        while (filesIterator.GetNextFileName(dbName) != ERROR)
             {
-            fprintf(f, "%ls, DgnDb61-16Q2, DgnDb61-16Q4, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
-            EXPECT_TRUE(false) << "copying file failed for:" << dbName.GetFileNameAndExtension().c_str();
+            //printf ("dgndb Name: %s", dbName.GetNameUtf8 ().c_str ());
+            BeFileName outputFilePath = outputRoot;
+            outputFilePath.AppendToPath(dbName.GetFileNameAndExtension().c_str());
+            //printf("dgndb Name: %s", outputFilePath.GetNameUtf8().c_str());
+
+            BeFileNameStatus copyFileStatus = BeFileName::BeCopyFile(dbName, outputFilePath);
+            CompatibilityStatus stat = CompatibilityStatus::Success;
+            bool writeStatus;
+            if (BeFileNameStatus::Success == copyFileStatus)
+                {
+                DbResult status;
+                m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+                if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
+                    {
+                    stat = VerifyElementsAndModels();
+                    if (stat == CompatibilityStatus::Success)
+                        writeStatus = true;
+                    else
+                        writeStatus = false;
+                    }
+                else
+                    {
+                    stat = CompatibilityStatus::ERROR_FileOpeningFailed;
+                    writeStatus = false;
+                    }
+
+                if (writeStatus)
+                    fprintf(f, "%ls, %ls, %s, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), dirName.GetFileNameWithoutExtension().c_str(), activeStream.c_str(), getCompatibilityStatusString(stat));
+                else
+                    {
+                    fprintf(f, "%ls, %ls, %s, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), dirName.GetFileNameWithoutExtension().c_str(), activeStream.c_str(), getCompatibilityStatusString(stat));
+                    EXPECT_TRUE(false) << getCompatibilityStatusString(stat);
+                    }
+                }
+            else
+                {
+                fprintf(f, "%ls, %ls, %s %s\n", dbName.GetFileNameAndExtension().c_str(), dirName.GetFileNameWithoutExtension().c_str(), activeStream.c_str(), "Error Copying File");
+                EXPECT_TRUE(false) << "copying file failed for:" << dbName.GetFileNameAndExtension().c_str();
+                }
             }
         }
     fclose(f);
