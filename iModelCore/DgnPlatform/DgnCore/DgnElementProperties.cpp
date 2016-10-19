@@ -182,8 +182,12 @@ bool DgnElement::SetPropertyFilter::IsBootStrappingProperty(Utf8StringCR propNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::SetPropertyFilter::_ExcludeProperty(ECPropertyValueCR propValue) const
     {
-    if ((0 != (m_ignore & Null)) && propValue.GetValue().IsNull())
-        return true;
+    if ((0 != (m_ignore & Null)))
+        {
+        auto const& value = propValue.GetValue();
+        if (value.IsNull() && !value.IsStruct() && !value.IsArray())
+            return true;
+        }
 
     ECValueAccessorCR accessor = propValue.GetValueAccessor();
 
@@ -263,14 +267,7 @@ DgnDbStatus ElementECInstanceAdapter::CopyPropertiesFrom(ECValuesCollectionCR so
             }
         else 
             {
-            ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
             ECObjectsStatus ecStatus;
-            if (NULL == ecProp)
-                {
-                BeAssert(false);
-                continue;
-                }
-            BeAssert(ecProp->GetIsPrimitive() || ecProp->GetIsNavigation());
             if (ECObjectsStatus::Success != (ecStatus = SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 {
                 if (!filter._IgnoreErrors() && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)

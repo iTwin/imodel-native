@@ -774,6 +774,7 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
 void DgnElementTests::TestAutoHandledPropertiesGetSet()
     {
     RefCountedCPtr<TestElement> persistentEl;
+    uint32_t iArrayOfPoint3d;
     uint32_t iArrayOfString;
     uint32_t iArrayOfInt;
     if (true)
@@ -782,6 +783,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfPoint3d, "ArrayOfPoint3d"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfString, "ArrayOfString"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfInt, "ArrayOfInt"));
 
@@ -811,6 +813,10 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
         EXPECT_EQ(DgnDbStatus::Success, el.AddPropertyArrayItems(iArrayOfString, 3));
         EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfString", ECN::ECValue("first"), PropertyArrayIndex(0)));
         EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfString", ECN::ECValue("second"), PropertyArrayIndex(1)));
+
+        EXPECT_EQ(DgnDbStatus::Success, el.AddPropertyArrayItems(iArrayOfPoint3d, 2));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfPoint3d", ECN::ECValue(DPoint3d::From(1,1,1)), PropertyArrayIndex(0)));
+        EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfPoint3d", ECN::ECValue(DPoint3d::From(2,2,2)), PropertyArrayIndex(1)));
 
         EXPECT_EQ(DgnDbStatus::Success, el.AddPropertyArrayItems(iArrayOfInt, 300));
         for (auto i=0; i<300; ++i)
@@ -848,6 +854,14 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
     EXPECT_TRUE(checkValue.IsNull());
 
     EXPECT_NE(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", PropertyArrayIndex(3)));
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfPoint3d", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.GetPoint3d().IsEqual(DPoint3d::From(1,1,1)));
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfPoint3d", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.GetPoint3d().IsEqual(DPoint3d::From(2,2,2)));
+
+    EXPECT_NE(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfPoint3d", PropertyArrayIndex(2)));
 
     for (auto i=0; i<300; ++i)
         {
@@ -952,8 +966,24 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_PointProperty1, ECN::ECValue(DPoint3d::From(99, 99, 99))));
+        
         // auto-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Location.Street", ECN::ECValue("690 Pennsylvania Drive")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Location.City.Name", ECN::ECValue("Exton")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Location.City.State", ECN::ECValue("PA")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Location.City.Zip", ECN::ECValue(19341)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->AddArrayElements("ArrayOfString", 3));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ArrayOfString", ECN::ECValue("first"), 0));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ArrayOfString", ECN::ECValue("second"), 1));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->AddArrayElements("ArrayOfPoint3d", 2));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ArrayOfPoint3d", ECN::ECValue(DPoint3d::From(1,1,1)), 0));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ArrayOfPoint3d", ECN::ECValue(DPoint3d::From(2,2,2)), 1));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->AddArrayElements("ArrayOfInt", 300));
+        for (auto i=0; i<300; ++i)
+            {
+            ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ArrayOfInt", ECN::ECValue(i), i));
+            }
 
         DgnDbStatus status;
         auto ele = m_db->Elements().CreateElement(&status, *testClassInstance);
@@ -975,6 +1005,8 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
         ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
+        EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfPoint3d", PropertyArrayIndex(1)));
+        EXPECT_TRUE(v.GetPoint3d().IsEqual(DPoint3d::From(2,2,2)));
 
         // Now, make sure that we can actually insert the element
         auto persistentEl = ele->Insert();
@@ -1006,6 +1038,39 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
     ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3d()));
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Location.Street"));
+    EXPECT_STREQ("690 Pennsylvania Drive", v.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Location.City.Name"));
+    EXPECT_STREQ("Exton", v.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Location.City.Country"));
+    EXPECT_TRUE(v.IsNull()) << "I never set the Location.City.Country property, so it should be null";
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Location.City.Zip"));
+    EXPECT_EQ(19341, v.GetInteger());
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfString", PropertyArrayIndex(0)));
+    EXPECT_STREQ("first", v.ToString().c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfString", PropertyArrayIndex(1)));
+    EXPECT_STREQ("second", v.ToString().c_str());
+
+    EXPECT_NE(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfString", PropertyArrayIndex(2))); // I only set two items
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfPoint3d", PropertyArrayIndex(0)));
+    EXPECT_TRUE(v.GetPoint3d().IsEqual(DPoint3d::From(1,1,1)));
+
+    EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfPoint3d", PropertyArrayIndex(1)));
+    EXPECT_TRUE(v.GetPoint3d().IsEqual(DPoint3d::From(2,2,2)));
+
+    EXPECT_NE(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfPoint3d", PropertyArrayIndex(2)));
+
+    for (auto i=0; i<300; ++i)
+        {
+        EXPECT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ArrayOfInt", PropertyArrayIndex(i)));
+        EXPECT_EQ(i, v.GetInteger());
+        }
     }
 
 //---------------------------------------------------------------------------------------
