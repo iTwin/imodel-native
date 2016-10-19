@@ -58,7 +58,6 @@ public:
 
             //! Parameters to create a new instance of a RasterFileModel.
             //! @param[in] dgndb The DgnDb for the new DgnModel
-            //! @param[in] modeledElementId The DgnElementId of the element this DgnModel is describing/modeling
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileUri File URI of the raster file.
             //! @param[in] sourceToWorld Transformation from source(lower-left origin) to BIM coordinate. This parameter can be null.
