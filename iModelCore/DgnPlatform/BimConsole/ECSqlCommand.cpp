@@ -176,13 +176,13 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             out.Sprintf("%" PRId64, value.GetInt64());
             break;
             }
-            case ECN::PRIMITIVETYPE_Point2D:
+            case ECN::PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d = value.GetPoint2d();
             out.Sprintf("(%2.1f, %2.1f)", point2d.x, point2d.y);
             break;
             }
-            case ECN::PRIMITIVETYPE_Point3D:
+            case ECN::PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d = value.GetPoint3d();
             out.Sprintf("(%2.1f, %2.1f, %2.1f)", point3d.x, point3d.y, point3d.z);

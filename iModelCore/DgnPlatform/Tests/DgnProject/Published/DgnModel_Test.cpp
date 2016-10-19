@@ -93,15 +93,10 @@ TEST_F(DgnModelTests, GetName)
     EXPECT_TRUE(name.CompareTo("Splines")==0);
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
-    DgnDbStatus status;
-    DgnModels& modelTable =  m_db->Models();
-    DgnModelPtr seedModel = modelTable.GetModel(m_model->GetModelId());
-    DgnModelPtr newModel = seedModel->Clone(DgnModel::CreateModelCode(newName));
-    status = newModel->Insert();
-    EXPECT_TRUE(status == DgnDbStatus::Success);
-    DgnModelId id = modelTable.QueryModelId(DgnModel::CreateModelCode(newName));
+    PhysicalModelPtr newModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(newName));
+    DgnModelId id = m_db->Models().QueryModelId(DgnModel::CreateModelCode(newName));
     ASSERT_TRUE(id.IsValid());
-    m_model =  modelTable.GetModel (id);
+    m_model = m_db->Models().GetModel (id);
     Utf8String nameToVerify = m_model->GetCode().GetValue();
     EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str())==0);
     }
@@ -314,12 +309,16 @@ TEST_F(DgnModelTests, DictionaryModel)
 
     DisableAssertions _V_V_V;
     DgnImportContext cc(db, db);
-    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc).IsNull());
+    DefinitionPartitionCPtr partitionForCopy = DefinitionPartition::CreateAndInsert(*db.Elements().GetRootSubject(), "PartitionForCopy");
+    EXPECT_TRUE(partitionForCopy.IsValid());
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc, *partitionForCopy).IsNull());
 
     // The dictionary model cannot be imported
     DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
     DgnImportContext importer(db, *db2);
-    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
+    DefinitionPartitionCPtr partitionForImport = DefinitionPartition::CreateAndInsert(*db2->Elements().GetRootSubject(), "PartitionForImport");
+    EXPECT_TRUE(partitionForImport.IsValid());
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer, *partitionForImport).IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

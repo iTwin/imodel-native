@@ -121,6 +121,12 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="PartitionAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="ModelAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -146,6 +152,12 @@
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="GeometryPartAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SessionAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -323,8 +335,14 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
+    <ECEntityClass typeName="InformationModel" displayLabel="Information Model" modifier="Abstract">
         <BaseClass>Model</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationModel" displayLabel="Group Information Model" modifier="Abstract">
+        <BaseClass>InformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -335,7 +353,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RepositoryModel" modifier="Sealed" displayLabel="Repository Model">
+    <ECEntityClass typeName="RepositoryModel" displayLabel="Repository Model" modifier="Sealed">
         <BaseClass>DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -353,7 +371,13 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model">
+    <ECEntityClass typeName="DictionaryModel" displayLabel="Dictionary Model" modifier="Sealed">
+        <BaseClass>DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="SessionModel" displayLabel="Session Model" modifier="Sealed">
         <BaseClass>DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -392,21 +416,11 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
-            <!-- WIP: cardinality should be (1,1) -->
             <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="DictionaryModelIsForRootSubject" strength="embedding" strengthDirection="Backward">
-        <BaseClass>ModelModelsElement</BaseClass>
-        <Source cardinality="(0,1)" polymorphic="false">
-            <Class class="DictionaryModel"/>
-        </Source>
-        <Target cardinality="(1,1)" polymorphic="false">
-            <Class class="Subject" />
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward">
@@ -600,6 +614,13 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="PhysicalTemplate" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="PhysicalType" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
@@ -610,7 +631,7 @@
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PhysicalElement" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="PhysicalType"/>
         </Target>
     </ECRelationshipClass>
@@ -625,10 +646,52 @@
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="GraphicalElement2d" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="GraphicalType2d"/>
         </Target>
     </ECRelationshipClass>
+
+    <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DefinitionPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="DocumentPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinkPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalPartition" modifier="Sealed">
+        <BaseClass>InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
 
     <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
@@ -638,6 +701,12 @@
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
+        <BaseClass>InformationReferenceElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -1253,6 +1322,13 @@
     </ECEntityClass>
     -->
 
+    <ECEntityClass typeName="Session" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
@@ -1310,7 +1386,7 @@
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalElementAssemblesPhysicalElements" strength="embedding">
+    <ECRelationshipClass typeName="PhysicalElementAssemblesElements" strength="embedding">
         <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source cardinality="(0,1)" polymorphic="true">
@@ -1777,19 +1853,6 @@
             <Class class="ViewDefinition2d"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TargetModelForView3d" strength="embedding">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is target model for 3D view" polymorphic="true">
-            <Class class="GeometricModel3d"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="is used by N 3D views" polymorphic="true">
-            <Class class="ViewDefinition3d"/>
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition3d"/>
@@ -1852,16 +1915,19 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
-        <ECProperty propertyName="SubCategoryOverrides" typeName="string" displayLabel="JSON string consisting of array of SubCategoryOverrides"/>
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="ViewFlags" typeName="string" displayLabel="JSON string consisting of view flags, render mode, lighting settings, etc."/>
-        <ECProperty propertyName="BackgroundColor" typeName="int" displayLable="Background color (RGB)"/>
-        <ECProperty propertyName="Environment" typeName="string" displayLabel="JSON string consisting of environment settings such as skybox."/>
+        <ECProperty propertyName="Styles" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DisplayStyle3d">
+        <BaseClass>DisplayStyle</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ClipVolumeDefinition">
         <BaseClass>DefinitionElement</BaseClass>
@@ -1875,19 +1941,19 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
+        <ECProperty propertyName="Details" typeName="string"/>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward"/>
         <ECNavigationProperty propertyName="DisplayStyle" relationshipName="ViewDefinitionUsesDisplayStyle" direction="Forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
-        <ECNavigationProperty propertyName="TargetModel" relationshipName="TargetModelForView3d" direction="Backward"/>
         <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
         <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
         <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
         <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
-        <ECProperty propertyName="DirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
-        <ECProperty propertyName="DirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="Yaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="Pitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="Roll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
     </ECEntityClass>
     <!-- A view of an area defined in the bim's coordinate system. -->
     <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract">

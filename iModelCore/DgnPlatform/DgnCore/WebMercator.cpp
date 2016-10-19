@@ -447,9 +447,7 @@ ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String StreetMapModel::_GetRootUrl() const
     {
-    Utf8String url("http://api.mapbox.com/v4/");
-    url +=  m_properties.m_mapType == Properties::MapType::Map ? "mapbox.streets/" : "mapbox.satellite/";
-    return url;
+    return m_properties.m_mapType == Properties::MapType::Map ? GetMapboxStreetsUrl() : GetMapboxSatelliteUrl();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -498,9 +496,9 @@ DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, Properties const& props) : T_Super::CreateParams(dgndb,
-    DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "StreetMapModel")), 
-    DgnElementId() /* WIP: which element? */,
+WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props) : T_Super::CreateParams(dgndb,
+    DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), 
+    modeledElementId,
     DgnModel::CreateModelCode(getStreetMapServerDescription(props.m_mapType))),
     m_properties(props)
     {

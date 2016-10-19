@@ -35,7 +35,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GroupModel">
-        <BaseClass>bis:InformationModel</BaseClass>
+        <BaseClass>bis:GroupInformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -43,7 +43,7 @@
 
     <ECEntityClass typeName="Group">
         <!-- Groups elements using the ElementGroupsMembers relationship -->
-        <BaseClass>bis:InformationReferenceElement</BaseClass>
+        <BaseClass>bis:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

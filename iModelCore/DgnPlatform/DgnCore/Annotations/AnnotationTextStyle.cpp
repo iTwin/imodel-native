@@ -132,6 +132,52 @@ DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus AnnotationTextStyle::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PROP_Data, name))
+        {
+        size_t dataSize = 0;
+        ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+        if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)))
+            return DgnDbStatus::BadArg;
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROP_Description, name))
+        {
+        m_description.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PROP_Data, name))
+        {
+        bvector<Byte> data;
+        if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, *this, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
+            return DgnDbStatus::BadArg;
+        value.SetBinary(data.data(), data.size());
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROP_Description, name))
+        {
+        value.SetUtf8CP(m_description.c_str());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
 void AnnotationTextStyle::_CopyFrom(DgnElementCR src)

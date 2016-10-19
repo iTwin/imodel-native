@@ -73,6 +73,56 @@ DgnDbStatus DgnGeometryPart::_BindUpdateParams(ECSqlStatement& statement)
     return BindParams(statement);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnGeometryPart::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PARAM_BBoxLow, name))
+        {
+        m_bbox.low = value.GetPoint3d();
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_BBoxHigh, name))
+        {
+        m_bbox.high = value.GetPoint3d();
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_FacetCount, name))
+        {
+        m_facetCount = (size_t) value.GetInteger();
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PARAM_BBoxLow, name))
+        {
+        value.SetPoint3d(m_bbox.low);
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_BBoxHigh, name))
+        {
+        value.SetPoint3d(m_bbox.high);
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PARAM_FacetCount, name))
+        {
+        value.SetInteger((int32_t) m_facetCount);
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/

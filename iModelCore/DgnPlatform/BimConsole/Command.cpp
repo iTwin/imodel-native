@@ -14,7 +14,6 @@ using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DGN;
 
 //******************************* Command ******************
 
@@ -26,7 +25,6 @@ void Command::Run(Session& session, std::vector<Utf8String> const& args) const
     session.GetIssues().Reset();
     return _Run(session, args);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -150,8 +148,8 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
     Utf8CP openModeStr = openMode == ECDb::OpenMode::Readonly ? "read-only" : "read-write";
 
     DbResult bimStat;
-    DgnDb::OpenParams params(openMode);
-    DgnDbPtr bim = DgnDb::OpenDgnDb(&bimStat, filePath, params);
+    Dgn::DgnDb::OpenParams params(openMode);
+    Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
     if (BE_SQLITE_OK == bimStat)
         {
         session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
@@ -179,7 +177,6 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-
     if (session.IsFileLoaded(true))
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
@@ -274,11 +271,11 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (fileType == SessionFile::Type::Bim)
         {
-        CreateDgnDbParams createParams(rootSubjectLabel);
+        Dgn::CreateDgnDbParams createParams(rootSubjectLabel);
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;
-        DgnDbPtr bim = DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+        Dgn::DgnDbPtr bim = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
         if (BE_SQLITE_OK != fileStatus)
             {
             Console::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
@@ -320,7 +317,7 @@ void FileInfoCommand::_Run(Session& session, vector<Utf8String> const& args) con
 
     if (session.GetFile().GetType() == SessionFile::Type::Bim)
         {
-        DgnDbCR bimFile = static_cast<BimFile const&>(session.GetFile()).GetDgnDbHandle();
+        Dgn::DgnDbCR bimFile = static_cast<BimFile const&>(session.GetFile()).GetDgnDbHandle();
         Console::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
         }
 
@@ -1152,6 +1149,9 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
         return;
         }
 
+    if (!session.IsFileLoaded(true))
+        return;
+
     Utf8StringCR switchArg = args[1];
 
     if (switchArg.EqualsI("search"))
@@ -1284,6 +1284,9 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
+
+    if (!session.IsFileLoaded(true))
+        return;
 
     Json::Value json;
 

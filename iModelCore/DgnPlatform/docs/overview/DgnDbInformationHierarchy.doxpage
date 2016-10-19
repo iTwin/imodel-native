@@ -1,0 +1,144 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/DgnDbInformationHierarchy.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_DgnDbInformationHierarchy DgnDb Information Hierarchy
+
+@tableofcontents
+
+The information in a DgnDb file is arranged in a strict hierarchy.
+This page describes how the hierarchy is composed.
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_RepositoryModel The RepositoryModel
+
+Every DgnDb file has exactly 1 RepositoryModel that defines the top of the hiearchy.
+The RepositoryModel is auto-created when the DgnDb file itself is created.
+Elements can be inserted into to or updated within the RepositoryModel, but the RepositoryModel itself cannot be deleted.
+
+@see RepositoryModel
+@see DgnModel::RepositoryModelId
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_RootSubject The root Subject
+
+Every DgnDb file has exactly 1 root Subject that describes what the DgnDb file is about.
+The root Subject is contained by the RepositoryModel.
+The root Subject has no parent.
+
+@see Subject
+@see DgnElements::GetRootSubject
+@see DgnElements::GetRootSubjectId
+
+The root Subject is specified via the CreateDgnDbParams parameter of the DgnDb::CreateDgnDb method.
+It is auto-inserted when the DgnDb file is created.
+
+@see CreateDgnDbParams::SetRootSubjectLabel
+@see CreateDgnDbParams::SetRootSubjectDescription
+@see DgnDb::CreateDgnDb
+
+The root Subject can be updated, but it cannot be deleted.
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ChildSubjects Child Subjects
+
+Child Subjects (optional) can be introduced to further organize the contents of the DgnDb file.
+All child Subjects are contained by the RepositoryModel.
+All child Subjects will have another Subject as its parent.
+
+@see Subject::Create
+@see Subject::CreateAndInsert
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_InformationPartitionElements Information Partitions
+
+Once the top level of the information hierarchy is defined (using Subjects), the next step is to determine how to model each Subject.
+A single Subject could be modeled from multiple perspectives (physical, functional, informational, etc.).  
+Each perspective for each Subject requires a child InformationPartitionElement that describes the modeling perspective and how the information is partitioned.
+
+@see InformationPartitionElement
+@see DefinitionPartition
+@see DocumentPartition
+@see PhysicalPartition
+
+All InformationPartitionElements are contained by the RepositoryModel.
+An InformationPartitionElement indicates that there will be another DgnModel (a <i>SubModel</i> from the perspective of the InformationPartitionElement) that contains the details of that modeling perspective.
+
+@see DgnElement::GetSubModel
+@see DgnElement::GetSubModelId
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_SubModels DgnModels and the SubModel term
+
+The <i>SubModel</i> term is just a way to refer to a relative position in the information hierarchy.
+There is no special class for a <i>SubModel</i>, just the standard DgnModel subclasses.
+
+@see DgnModel
+@see DgnModels
+
+A DgnModel is a container that models an element from a higher level of the information hierarchy.
+A DgnModel always models exactly 1 DgnElement.
+In general, a DgnElement may have 0 or 1 <i>SubModels</i>.  
+However, certain elements are restricted from ever having <i>SubModels</i>.
+This can be enforced using the virtual method callbacks on DgnElement.
+
+@see DgnElement::_OnSubModelInsert
+
+Other <i>SubModel</i> related callbacks are:
+
+@see DgnElement::_OnSubModelInserted
+@see DgnElement::_OnSubModelDelete
+@see DgnElement::_OnSubModelDeleted
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_PhysicalHierarchy Physical Hierarchy
+
+The top of a physical hierarchy starts with a PhysicalModel that models a PhysicalPartition.
+It continues when another PhysicalModel breaks down a PhysicalElement.  
+For example, a plant physical layout model can break down a PhysicalElement that represents the overall plant.
+
+@see PhysicalModel::Create
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_DefinitionHierarchy Definition Hierarchy
+
+The top of a definition hierarchy starts with a DefinitionModel that models a DefinitionPartition.
+This allows DefinitionElements to be organized by how they relate to the parent Subject of the DefinitionPartition.
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_DocumentHierarchy Document Hierarchy
+
+The top of a document hierarchy starts with a DocumentListModel that models a DocumentPartition.
+This allows Document elements to be organized by how they relate to the parent Subject of the DocumentPartition.
+
+@see DocumentListModel::Create
+
+Examples of Document subclasses include:
+
+@see Drawing
+@see Sheet
+
+Documents and Sheets are further broken down by DrawingModels and SheetModels which graphically break down the content of the drawing or sheet.
+
+@see DrawingModel::Create
+@see SheetModel::Create
+
+<!-- ---------------------------------------------------------------------------------- -->
+*/
+
+END_BENTLEY_DGN_NAMESPACE

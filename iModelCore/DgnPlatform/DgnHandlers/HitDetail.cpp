@@ -424,11 +424,10 @@ DgnDbR HitDetail::GetDgnDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelR HitDetail::GetDgnModel() const
+DgnModelP HitDetail::GetDgnModel() const
     {
     DgnElementCPtr element = GetElement();
-
-    return (element.IsValid() ? *element->GetModel() : *m_viewport.GetViewController().GetTargetModel());
+    return element.IsValid() ? element->GetModel().get() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1192,7 +1191,7 @@ bool HitList::RemoveHitsFrom(DgnElementCR element)
 * search through hitlist and remove any hits from the specified model
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool     HitList::RemoveHitsFrom(DgnModelR model)
+bool HitList::RemoveHitsFrom(DgnModelR model)
     {
     HitDetailP  thisHit;
     bool        removedOne = false;
@@ -1200,7 +1199,7 @@ bool     HitList::RemoveHitsFrom(DgnModelR model)
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisHit = GetHit(i))) && &model == &thisHit->GetDgnModel())
+        if ((NULL != (thisHit = GetHit(i))) && &model == thisHit->GetDgnModel())
             {
             removedOne = true;
             RemoveHit(i);

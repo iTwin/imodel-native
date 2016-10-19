@@ -34,16 +34,16 @@ void ECSqlClassParams::Add(Utf8StringCR name, StatementType type)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ECSqlClassParams::GetSelectIndex(Utf8StringCR name) const
+int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
     {
-    if (name.empty())
+    if (Utf8String::IsNullOrEmpty(name))
         {
         BeAssert(false);
         return -1;
         }
 
     // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
-    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name.Equals(name); });
+    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name.c_str(), name);; });
 
     if (m_entries.end() == found)
         {
@@ -184,6 +184,54 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
     info.m_select = select;
     info.m_insert = insert;
     info.m_update = update;
+
+    auto ehandler = dgn_ElementHandler::Element::FindHandler(dgndb, classId);
+    if (nullptr != ehandler)
+        {
+        // Elements:
+        auto ecclass = dgndb.Schemas().GetECClass(ECClassId(classId.GetValue()));
+        auto& layout = ecclass->GetDefaultStandaloneEnabler()->GetClassLayout();
+
+        // Tell handler to register its custom-handled property accessors
+        ehandler->_RegisterPropertyAccessors(info, layout);
+
+        // Make sure that each custom-handled property has accessors. (That's how we detect which properties are custom-handled.)
+        AutoHandledPropertiesCollection props(*ecclass, const_cast<DgnDbR>(dgndb), ECSqlClassParams::StatementType::All, true);
+        for (auto i = props.begin(); i != props.end(); ++i)
+            {
+            uint32_t propIdx;
+            auto status = layout.GetPropertyIndex(propIdx, (*i)->GetName().c_str());
+            BeAssert(ECObjectsStatus::Success == status);
+
+            if (nullptr == info.GetPropertyAccessors(propIdx))
+                {
+                LOG.errorv("%s.%s - missing accessors for custom-handled property",
+                            ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
+
+                static std::once_flag s_nullAccessorsFlag;
+                static ECSqlClassInfo::T_ElementPropGet s_nullGetter;
+                static ECSqlClassInfo::T_ElementPropSet s_nullSetter;
+                std::call_once(s_nullAccessorsFlag, []() {
+                    s_nullGetter = [](ECN::ECValueR, DgnElement const&) {BeAssert("Missing accessor"); return DgnDbStatus::MissingHandler;};
+                    s_nullSetter = [](DgnElement&, ECN::ECValueCR) {BeAssert("Missing accessor"); return DgnDbStatus::MissingHandler;};
+                    });
+                info.RegisterPropertyAccessors(layout, (*i)->GetName().c_str(), s_nullGetter, s_nullSetter);
+                }
+            }
+
+        // Record info about auto-handled properties
+        AutoHandledPropertiesCollection autoprops(*ecclass, const_cast<DgnDbR>(dgndb), ECSqlClassParams::StatementType::All, false);
+        for (auto i = autoprops.begin(); i != autoprops.end(); ++i)
+            {
+            if (ECSqlClassParams::StatementType::All != i.GetStatementType())
+                {
+                uint32_t propIdx;
+                auto status = layout.GetPropertyIndex(propIdx, (*i)->GetName().c_str());
+                BeAssert(ECObjectsStatus::Success == status);
+                info.m_autoPropertyStatementType[propIdx] = (int32_t)i.GetStatementType();
+                }
+            }
+        }
 
     return true;
     }

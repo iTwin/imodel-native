@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestPhysicalTemplateHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
@@ -133,12 +134,15 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus TestElement::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto propName = accessor.GetAccessString();
+
 #define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
 #define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
 #define SETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetDouble(); return DgnDbStatus::Success;}
-#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3D(); return DgnDbStatus::Success;}
+#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3d(); return DgnDbStatus::Success;}
 
     SETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
     SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
@@ -154,14 +158,17 @@ DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_SetPropertyValue(propName, value, arrayIdx);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName, PropertyArrayIndex const& arrayIdx) const
+DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto propName = accessor.GetAccessString();
+
 #define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
 #define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
 #define GETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
@@ -181,7 +188,7 @@ DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName,
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_GetPropertyValue(value, propName, arrayIdx);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,6 +357,16 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestPhysicalTemplatePtr TestPhysicalTemplate::Create(DefinitionModelR model)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTemplateHandler::GetHandler());
+    return new TestPhysicalTemplate(CreateParams(db, model.GetModelId(), classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
@@ -498,6 +515,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestPhysicalTemplateHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());

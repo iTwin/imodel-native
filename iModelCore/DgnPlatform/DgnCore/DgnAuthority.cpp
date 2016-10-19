@@ -347,6 +347,8 @@ struct SystemAuthority
         Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
         TrueColor = 5LL,
         Model = 6LL,
+        Partition = 7LL,
+        Session = 8LL,
 
         // ............     Introduce new BuiltinIds here
         
@@ -407,7 +409,9 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
+            { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
             { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
+            { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -505,6 +509,14 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Partition, codeValue, scopeId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace)
@@ -530,6 +542,14 @@ DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId mod
 DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
     {
     return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SessionAuthority::CreateSessionCode(Utf8StringCR codeValue)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Session, codeValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -612,8 +632,8 @@ DgnDbStatus ICodedEntity::ValidateCode() const
     DgnAuthorityCPtr auth = GetCodeAuthority();
     if (auth.IsNull() || !SupportsCodeAuthority(*auth))
         return DgnDbStatus::InvalidCodeAuthority;
-    else
-        return auth->ValidateCode(*this);
+
+    return auth->ValidateCode(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -628,31 +648,6 @@ DgnDbStatus DgnAuthority::_ValidateCode(ICodedEntityCR entity) const
     BeAssert(code.GetAuthority() == GetAuthorityId());
     if (code.GetAuthority() != GetAuthorityId())
         return DgnDbStatus::InvalidCodeAuthority;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ResourceAuthority::_ValidateCode(ICodedEntityCR entity) const
-    {
-    auto status = T_Super::_ValidateCode(entity);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    // Only elements are supported...
-    auto el = entity.ToDgnElement();
-    if (nullptr == el)
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    // Namespace must match ECClass name (or subclass thereof)
-    ECClassCP ecClass = el->GetElementClass();
-    BeAssert(nullptr != ecClass);
-    if (nullptr == ecClass)
-        return DgnDbStatus::BadElement;
-    else if (!ecClass->Is(entity.GetCode().GetNamespace().c_str()))
-        return DgnDbStatus::InvalidName;
 
     return DgnDbStatus::Success;
     }
@@ -682,6 +677,33 @@ DgnDbStatus ModelAuthority::_ValidateCode(ICodedEntityCR entity) const
         return DgnDbStatus::InvalidCodeAuthority;
 
     return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PartitionAuthority::_ValidateCode(ICodedEntityCR entity) const
+    {
+    DgnDbStatus status = T_Super::_ValidateCode(entity);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    if (nullptr == entity.ToDgnElement())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    // Partitions use the same name validation function as Models
+    return DgnModels::IsValidName(entity.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SessionAuthority::_ValidateCode(ICodedEntityCR entity) const
+    {
+    if (nullptr == entity.ToDgnElement())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return T_Super::_ValidateCode(entity);
     }
 
 /*---------------------------------------------------------------------------------**//**

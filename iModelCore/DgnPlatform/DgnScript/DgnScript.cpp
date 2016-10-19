@@ -571,40 +571,67 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      08/16
-//---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScriptDefinitionElementPropertyValidators
     {
-    if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
-        {
-        if (!isNonEmptyString(value))
-            return DgnDbStatus::BadArg;
-        // *** TBD: Is there any way to check that this is valid script (without evaluating it)?
-        }
-    else if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, name))
-        {
-        if (!isNonEmptyString(value))
-            return DgnDbStatus::BadArg;
+    ECSqlClassInfo::T_ElementPropValidator text, ecmaVersion, entryPoint;
+    };
 
-        auto const& str = value.ToString();
-        if (!str.StartsWithI("ES"))
-            return DgnDbStatus::BadArg;
-        }
-    else if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, name))
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScriptDefinitionElementHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    static std::once_flag s_accessorsFlag;
+    static ScriptDefinitionElementPropertyValidators s_accessors;
+    std::call_once(s_accessorsFlag, []()
         {
-        if (!isNonEmptyString(value))
-            return DgnDbStatus::BadArg;
+        s_accessors.text = [](DgnElementR el, ECValueCR value)
+            {
+            if (!isNonEmptyString(value))
+                return DgnDbStatus::BadArg;
+            // *** TBD: Is there any way to check that this is valid script (without evaluating it)?
+            return DgnDbStatus::Success;
+            };
 
-        ECN::ECValue text;
-        GetPropertyValue(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
-        Utf8String rt, args;
-        GetSignature(rt, args);
-        if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt, args))
-            return DgnDbStatus::BadArg;
-        }
+        s_accessors.ecmaVersion = [](DgnElementR el, ECValueCR value)
+            {
+            if (!isNonEmptyString(value))
+                return DgnDbStatus::BadArg;
 
-    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+            auto const& str = value.ToString();
+            if (!str.StartsWithI("ES"))
+                return DgnDbStatus::BadArg;
+
+            return DgnDbStatus::Success;
+            };
+
+        s_accessors.entryPoint = [](DgnElementR elIn, ECValueCR value)
+            {
+            ScriptDefinitionElement& el = (ScriptDefinitionElement&)elIn; // I KNOW that el is-a ScriptDefinitionElement.
+
+            if (!isNonEmptyString(value))
+                return DgnDbStatus::BadArg;
+
+            ECN::ECValue text;
+            el.GetPropertyValue(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+            
+            Utf8String rt, args;
+            el.GetSignature(rt, args);
+            if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt, args))
+                return DgnDbStatus::BadArg;
+
+            return DgnDbStatus::Success;
+            };
+        });
+
+    params.RegisterPropertyValidator(layout, SCRIPT_DOMAIN_PROPERTY_Script_Text, s_accessors.text);
+    params.RegisterPropertyValidator(layout, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, s_accessors.ecmaVersion);
+    params.RegisterPropertyValidator(layout, SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, s_accessors.entryPoint);
     }
 
 //---------------------------------------------------------------------------------------
@@ -974,10 +1001,11 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initialize
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-ScriptLibraryModelPtr ScriptLibraryModel::Create(DgnDbR db, DgnCode code, Utf8CP sourceUrl)
+ScriptLibraryModelPtr ScriptLibraryModel::Create(DefinitionPartitionCR partition, DgnCodeCR code, Utf8CP sourceUrl)
     {
+    DgnDbR db = partition.GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
-    CreateParams mcparams(db, classId, DgnElementId() /* WIP: Repository element? */, code);
+    CreateParams mcparams(db, classId, partition.GetElementId(), code);
     auto model = new ScriptLibraryModel(mcparams);
     if (nullptr == model)
         return nullptr;
