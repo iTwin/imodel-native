@@ -9,7 +9,6 @@
 #include "../imagepptestpch.h"
 #include "ImagePPTestConfig.h"
 #include <ImagePP/all/h/HRFFileFormats.h>
-#include <Bentley/BeDirectoryIterator.h>
 
 
 //----------------------------------------------------------------------------------------
@@ -97,10 +96,7 @@ ImagePPTestConfig::ImagePPTestConfig()
         bool enable = false;
         pSourceDirNode->GetAttributeBooleanValue(enable, "Enable");
         if (enable)
-            {
             pSourceDirNode->GetAttributeStringValue(m_sourceDir, "Dir");
-            m_sourceFileList = BuildFileList(m_sourceDir);
-            }
         }
 
     // -- Baseline and validation.
@@ -165,31 +161,4 @@ ImagePPTestConfig::~ImagePPTestConfig()
     // Never called. 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Return a vector with all the paths to the rasters or directories.
-* @bsimethod                                             Laurent.Robert-Veillette 04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::wstring> ImagePPTestConfig::BuildFileList(BeFileNameCR directory)
-    {
-    std::list<std::wstring> directoryList;
-    bvector<BeFileName> fileList;
 
-    const WString glob = L"*";
-
-    BeDirectoryIterator::WalkDirsAndMatch(fileList, directory, glob.c_str(), true);
-
-    // Scan the fileList and skip not supported rasters and folders
-    for (auto& actualName : fileList)
-        {
-        if (actualName.IsDirectory() ||
-            actualName.ContainsI(L"thumb.db") ||                // Ignore windows thumbnail.
-            actualName.ContainsI(L"NITF\\ISO Profile 1 Test Code Streams\\J2K") ||  // Tested as part of NITF.
-            actualName.ContainsI(L"\\PSS\\")                   // Skip PSS for now.
-            )
-            continue;
-
-        directoryList.push_back(actualName.GetName());
-        }
-
-    return directoryList;
-    }

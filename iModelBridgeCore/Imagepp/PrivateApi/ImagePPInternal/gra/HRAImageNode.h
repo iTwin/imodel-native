@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageNode.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -49,8 +49,12 @@ public:
 
     ImagePPStatus LinkTo(ImageNodeR child);
 
+    //! The physical coordinate system, aka pixels.
     HFCPtr<HGF2DCoordSys>& GetPhysicalCoordSys();
+
+    //! Physical extent in pixels.  Cannot have negative values.
     HGF2DExtent const& GetPhysicalExtent() const;
+
     HFCPtr<HRPPixelType> GetPixelType();
     ImageTransformNodeP AsImageTransformNodeP();
     ImageSourceNodeP    AsImageSourceNodeP();

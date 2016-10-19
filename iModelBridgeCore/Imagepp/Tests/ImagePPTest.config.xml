@@ -16,7 +16,7 @@
             Command: $(YourOutputDir)Product\ImagePP-GTest\ImagePPTests.exe 
             Arguments: --gtest_break_on_failure 
                        or some filter --gtest_filter=FormatTests/ExportAllTester.ToAllFormats/15 --gtest_break_on_failure
-            
+                       
         Options: 
         
             --help -> List all available options.
@@ -26,6 +26,9 @@
             --gtest_filter=  ->  filter test to run. ex: "--gtest_filter=FormatTests/ExportAllTester.ToAllFormats/15"
         
             --gtest_break_on_failure -> break in debugger on failure.
+            
+        IgnoreList:
+            - You can ignore tests by adding them to: ".\Imagepp\Tests\ignore_list.txt"
         
          ]]>
         

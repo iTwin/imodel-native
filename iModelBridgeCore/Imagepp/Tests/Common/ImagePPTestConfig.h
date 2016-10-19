@@ -28,8 +28,6 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
 
     void SetUp() { /*occurs once during construction*/}
 
-    std::list<std::wstring> const & GetSourceList() const { return m_sourceFileList; }
-
     BeFileNameCR GetSourceDir() const { return m_sourceDir; }   
 
     BeFileNameCR GetFileFormatOutputDir() const {return m_fileFormatOutputDir;}
@@ -46,12 +44,9 @@ struct ImagePPTestConfig : ImagePP::ImageppLib::Host
 
     double GetToleranceRatio() const { return m_toleranceRatio; }
 
-   private:
-        std::list<std::wstring> BuildFileList(BeFileNameCR directory);
-            
+   private:          
         BeFileName              m_baselineDir;
         BeFileName              m_sourceDir;
-        std::list<std::wstring> m_sourceFileList;
         BeFileName              m_fileFormatOutputDir;
 
         bool                    m_md5Validation = false;

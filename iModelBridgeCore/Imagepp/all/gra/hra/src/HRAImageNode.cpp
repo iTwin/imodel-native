@@ -384,8 +384,19 @@ ImagePPStatus ImageOutputMerger::CopyScanlines(HGFScanLines& scl)
 ImageTransformNodeP    ImageNode::AsImageTransformNodeP()        { return _AsImageTransformNodeP(); }
 ImageSourceNodeP       ImageNode::AsImageSourceNodeP()           { return _AsImageSourceNodeP(); }
 HFCPtr<HGF2DCoordSys>& ImageNode::GetPhysicalCoordSys()          { return _GetPhysicalCoordSys(); }
-HGF2DExtent const&     ImageNode::GetPhysicalExtent() const      { return _GetPhysicalExtent(); }
 HFCPtr<HRPPixelType>   ImageNode::GetPixelType()                 { return _GetPixelType(); }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+HGF2DExtent const&     ImageNode::GetPhysicalExtent() const
+    {     
+    // A physical extent cannot be in negative territory.
+    BeAssert(HDOUBLE_GREATER_OR_EQUAL_EPSILON(_GetPhysicalExtent().GetXMin(), 0) && HDOUBLE_GREATER_OR_EQUAL_EPSILON(_GetPhysicalExtent().GetYMin(), 0));
+
+    return _GetPhysicalExtent();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  06/2014
@@ -707,6 +718,8 @@ bool ImageTransformNode::ComputeSourceGridFromDestination(HFCInclusiveGrid* sour
     // Never return return a grid outside the physical extent. There is at least output merger that cannot handle negative values when generating scanlines.
     HFCInclusiveGrid physicalGrid(sourcePhysical.GetXMin(), sourcePhysical.GetYMin(), sourcePhysical.GetXMax(), sourcePhysical.GetYMax());
     sourceGrid->InitFromIntersectionOf(srcSampleGrid, physicalGrid);
+
+    BeAssert(sourceGrid->GetWidth() != 0 && sourceGrid->GetHeight() != 0 ? sourceGrid->GetXMin() >= 0 && sourceGrid->GetYMin() >= 0 : true);
 
     return sourceGrid->GetWidth() != 0 && sourceGrid->GetHeight() != 0;
     }

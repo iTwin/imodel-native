@@ -1929,6 +1929,7 @@ MosaicNode::MosaicNode(HRARaster& mosaic, HFCPtr<HGF2DCoordSys> pPhysicalCS, HGF
  m_physicalExtent(physExtent), m_pPhysicalCS(pPhysicalCS)
     {
     BeAssert(physExtent.GetCoordSys() == GetPhysicalCoordSys());
+    BeAssert(HDOUBLE_GREATER_OR_EQUAL_EPSILON(m_physicalExtent.GetXMin(), 0) && HDOUBLE_GREATER_OR_EQUAL_EPSILON(m_physicalExtent.GetYMin(), 0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2019,7 +2020,7 @@ ImagePPStatus HIMMosaic::_BuildCopyToContext(ImageTransformNodeR imageNode, HRAC
 
     // Compute the extent enclosing the images that are visible in the region to draw.
     // This shape is the union of the extent of the rasters that overlaps the region to draw.
-    HGF2DExtent enclosingShape(GetCoordSys());
+    HGF2DExtent enclosingExtent(GetCoordSys());
     std::vector< pair< HFCPtr<HRARaster>, HFCPtr<HVEShape> > > enclosedRasters;
     for (IndexType::IndexableList::const_iterator Itr(pObjects->begin()); Itr != pObjects->end(); ++Itr)
         {
@@ -2029,27 +2030,32 @@ ImagePPStatus HIMMosaic::_BuildCopyToContext(ImageTransformNodeR imageNode, HRAC
         if (RegionToDrawInCs.HasIntersect(*pVisibleSurface))
             {
             enclosedRasters.push_back(make_pair(pSrcRaster, pVisibleSurface));
-            enclosingShape.Add(pVisibleSurface->GetExtent());
+            enclosingExtent.Add(pVisibleSurface->GetExtent());
             }
         }
 
     // Finally the global shape of all rasters contained herein is clipped to raster shape
-    enclosingShape.Intersect(HRARaster::GetShape().GetExtent());
+    enclosingExtent.Intersect(HRARaster::GetShape().GetExtent());
         
     // Intersect with the region to draw
-    enclosingShape.Intersect(RegionToDrawInCs.GetExtent());
+    // Note1: Some reasons that intersection won't lead to the expected result when use in the replacing CS. 
+    //        We decided to move it at the end when the enclosing has been transfered back to destination CS. -MM -SP
+    //enclosingExtent.Intersect(RegionToDrawInCs.GetExtent());
 
     // If a replacing CS is provided, move the shape of visible rasters.
     if (options.GetReplacingCoordSys())
         {
-        enclosingShape.ChangeCoordSys(GetCoordSys());
-        enclosingShape.SetCoordSys(options.GetReplacingCoordSys());
+        enclosingExtent.ChangeCoordSys(GetCoordSys());
+        enclosingExtent.SetCoordSys(options.GetReplacingCoordSys());
         }
 
     // Express the shape in the destination node physical CS.
-    enclosingShape.ChangeCoordSys(imageNode.GetPhysicalCoordSys());
+    enclosingExtent.ChangeCoordSys(imageNode.GetPhysicalCoordSys());
 
-    if (!enclosingShape.IsDefined())
+    // Intersect with the region to draw. See Note1 above.
+    enclosingExtent.Intersect(options.GetShape()->GetExtent());
+
+    if (!enclosingExtent.IsDefined())
         return IMAGEPP_STATUS_Success;
 
     // Take replacing pixeltype into account.
@@ -2069,7 +2075,7 @@ ImagePPStatus HIMMosaic::_BuildCopyToContext(ImageTransformNodeR imageNode, HRAC
         pEffectivePixelType = pRlePixelType;
         }
     
-    RefCountedPtr<MosaicNode> pMosaicNode = MosaicNode::Create(*this, imageNode.GetPhysicalCoordSys(), enclosingShape, pEffectivePixelType);
+    RefCountedPtr<MosaicNode> pMosaicNode = MosaicNode::Create(*this, imageNode.GetPhysicalCoordSys(), enclosingExtent, pEffectivePixelType);
     ImagePPStatus buildMosaicStatus = IMAGEPP_STATUS_Success;
 
     // Process one image at a time, bottom up

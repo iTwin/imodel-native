@@ -51,6 +51,7 @@ TEST_F(HRFTester, UniqueShortName)
         {
         auto insertResult = shortNameSet.insert(entry.second->GetShortName());
         ASSERT_TRUE(insertResult.second) << "not unique: " << entry.second->GetShortName();
+        ASSERT_FALSE(entry.second->GetLabel().empty());  // maybe the sqlang file it not present?
         }
     }
 

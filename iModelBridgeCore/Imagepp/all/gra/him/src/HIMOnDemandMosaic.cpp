@@ -2661,9 +2661,7 @@ ImagePPStatus HIMOnDemandMosaic::_BuildCopyToContext(ImageTransformNodeR imageNo
         enclosingShape.Add(GetEffectiveShape()->GetExtent());
         }
 
-    // Intersect with the region to draw
-    enclosingShape.Intersect(RegionToDrawInCs.GetExtent());
-
+    
     // If a replacing CS is provided, move the shape of visible rasters.
     if (options.GetReplacingCoordSys())
         {
@@ -2673,6 +2671,9 @@ ImagePPStatus HIMOnDemandMosaic::_BuildCopyToContext(ImageTransformNodeR imageNo
 
     // Express the shape in the destination node physical CS.
     enclosingShape.ChangeCoordSys(imageNode.GetPhysicalCoordSys());
+
+    // Intersect with the region to draw
+    enclosingShape.Intersect(RegionToDrawInCs.GetExtent());
 
     if (!enclosingShape.IsDefined())
         return IMAGEPP_STATUS_Success;

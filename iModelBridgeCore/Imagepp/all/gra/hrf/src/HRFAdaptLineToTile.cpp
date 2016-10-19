@@ -223,12 +223,11 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
 
     // allocate working buffer
     m_LineBuffer = new Byte[m_ExactBytesPerBlockWidth * m_BlocksPerWidth];
+    memset(m_LineBuffer.get(), 0, m_ExactBytesPerBlockWidth * m_BlocksPerWidth);   // Clear padding that m_pAdaptedResolutionEditor won't fill.
     Alloc_m_ppBlocks();
 
     // Load the client block and beside blocks into the intern blocks cache
-    for (uint32_t NoLine = 0; (NoLine < NumberOfLines) &&
-         (pi_PosBlockY+NoLine < m_Height) &&
-         (m_LoadTilesStatus == H_SUCCESS); NoLine++)
+    for (uint32_t NoLine = 0; (NoLine < NumberOfLines) && (pi_PosBlockY+NoLine < m_Height) && (m_LoadTilesStatus == H_SUCCESS); NoLine++)
         {
         m_LoadTilesStatus = m_pAdaptedResolutionEditor->ReadBlock(0, pi_PosBlockY+NoLine, m_LineBuffer);
 
@@ -239,9 +238,8 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
             Byte* pInLineBuffer = m_LineBuffer;
             for (uint32_t NoTile=0; NoTile < m_BlocksPerWidth; NoTile++)
                 {
-                memcpy(m_ppBlocks[NoTile]+LinePosInTile,
-                       pInLineBuffer,
-                       m_ExactBytesPerBlockWidth);
+                memcpy(m_ppBlocks[NoTile]+LinePosInTile, pInLineBuffer, m_ExactBytesPerBlockWidth);
+
                 pInLineBuffer += m_ExactBytesPerBlockWidth;
                 }
             }
@@ -255,9 +253,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
                 uint32_t LinePosInTile = (NoLine*m_ExactBytesPerBlockWidth);
                 for (uint32_t NoTile=0; NoTile < m_BlocksPerWidth; NoTile++)
                     {
-                    memset(m_ppBlocks[NoTile]+LinePosInTile,
-                           0,
-                           m_ExactBytesPerBlockWidth * (NumberOfLines - NoLine));
+                    memset(m_ppBlocks[NoTile]+LinePosInTile, 0, m_ExactBytesPerBlockWidth * (NumberOfLines - NoLine));
                     }
                 m_LoadTilesStatus = H_SUCCESS;
                 }
