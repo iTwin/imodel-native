@@ -174,7 +174,7 @@ NativeSqlBuilder& NativeSqlBuilder::AppendFormatted(Utf8CP format, ...)
     {
     va_list ap;
     va_start(ap, format);
-    Append(Utf8PrintfString(format, ap).c_str());
+    Append(Utf8PrintfString::CreateFromVaList(format, ap).c_str());
     va_end(ap);
     return *this;
     }
