@@ -38,15 +38,11 @@ private:
     Utf8String  m_insert;
     Utf8String  m_update;
     uint16_t    m_updateParameterIndex;
-    bset<uint32_t> m_customProps;
     bmap<uint32_t, uint32_t> m_autoPropertyStatementType; // non-default statement types found for auto-handled properties
     bmap<uint32_t, bpair<T_ElementPropGet, T_ElementPropSet>> m_propertyAccessors; // custom-handled property get and set functions
     bmap<uint32_t, T_ElementPropValidator> m_autoPropertyValidators; // auto-handled property custom validation functions
 public:
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
-
-    void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
-    Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
 
     Utf8StringCR GetSelectECSql() const { return m_select; }
     Utf8StringCR GetInsertECSql() const { return m_insert; }
@@ -56,7 +52,8 @@ public:
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
 
-    bool IsCustomHandledProperty(uint32_t propIdx) const {return m_customProps.find(propIdx) != m_customProps.end();}
+    void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
+    Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
 
     void RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc);
     bpair<T_ElementPropGet,T_ElementPropSet> const* GetPropertyAccessors(uint32_t propIdx) const;

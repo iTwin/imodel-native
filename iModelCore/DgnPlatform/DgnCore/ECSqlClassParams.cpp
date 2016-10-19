@@ -195,19 +195,27 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
         // Tell handler to register its custom-handled property accessors
         ehandler->_RegisterPropertyAccessors(info, layout);
 
-        // Record which properties are custom-handled in a way that is quick to look up when we are getting and setting properties
+        // Make sure that each custom-handled property has accessors. (That's how we detect which properties are custom-handled.)
         AutoHandledPropertiesCollection props(*ecclass, const_cast<DgnDbR>(dgndb), ECSqlClassParams::StatementType::All, true);
         for (auto i = props.begin(); i != props.end(); ++i)
             {
             uint32_t propIdx;
             auto status = layout.GetPropertyIndex(propIdx, (*i)->GetName().c_str());
             BeAssert(ECObjectsStatus::Success == status);
-            info.m_customProps.insert(propIdx);
 
             if (nullptr == info.GetPropertyAccessors(propIdx))
                 {
                 LOG.errorv("%s.%s - missing accessors for custom-handled property",
                             ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
+
+                static std::once_flag s_nullAccessorsFlag;
+                static ECSqlClassInfo::T_ElementPropGet s_nullGetter;
+                static ECSqlClassInfo::T_ElementPropSet s_nullSetter;
+                std::call_once(s_nullAccessorsFlag, []() {
+                    s_nullGetter = [](ECN::ECValueR, DgnElement const&) {BeAssert("Missing accessor"); return DgnDbStatus::MissingHandler;};
+                    s_nullSetter = [](DgnElement&, ECN::ECValueCR) {BeAssert("Missing accessor"); return DgnDbStatus::MissingHandler;};
+                    });
+                info.RegisterPropertyAccessors(layout, (*i)->GetName().c_str(), s_nullGetter, s_nullSetter);
                 }
             }
 

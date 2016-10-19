@@ -323,9 +323,9 @@ private:
     ECSqlClassInfo* m_classInfo;
     ECN::ECClassCP m_eclass;
     ECN::ClassLayoutCP m_layout;
+    bpair<ECSqlClassInfo::T_ElementPropGet,ECSqlClassInfo::T_ElementPropSet> const* m_accessors;
     uint32_t m_propIdx;
     bool m_isPropertyIndexValid;
-    bool m_isCustomHandled;
     bool m_readOnly;
 
     DGNPLATFORM_EXPORT void Init(uint32_t propIdx, Utf8CP accessString);

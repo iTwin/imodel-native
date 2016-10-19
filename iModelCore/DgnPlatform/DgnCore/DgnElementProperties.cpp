@@ -945,20 +945,19 @@ void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
     // Additional information about the custom and auto-handled properties on this class
     // *** WIP_PROPERTIES - I wish I could cache this data on the ECClass object itself, instead of having to do this extra lookup
     m_classInfo = &m_element.GetDgnDb().Elements().FindClassInfo(m_element);
-    m_isCustomHandled = m_classInfo->IsCustomHandledProperty(m_propIdx);
-    }
+    m_accessors = m_classInfo->GetPropertyAccessors(m_propIdx);
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
-    if (!IsValid() || m_isCustomHandled)
+    if (!IsValid() || (nullptr != m_accessors))
         {
         BeAssert(false);
         return DgnDbStatus::BadArg;
         }
-
     auto validator = m_classInfo->GetPropertyValidator(m_propIdx);
     if (nullptr != validator)
         {
@@ -998,12 +997,11 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
     {
-    if (!IsValid() || m_isCustomHandled)
+    if (!IsValid() || (nullptr != m_accessors))
         {
         BeAssert(false);
         return DgnDbStatus::BadArg;
         }
-
     ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout);
     if (!ecdbuffer.IsValid())
         {
@@ -1379,14 +1377,10 @@ Utf8CP ElementECPropertyAccessor::GetAccessString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
     {
-    if (!m_isCustomHandled)
+    if (nullptr == m_accessors)
         return GetAutoHandledPropertyValue(value, arrayIdx);
 
-    auto propGetSet = m_classInfo->GetPropertyAccessors(m_propIdx);
-    if (nullptr == propGetSet)
-        return DgnDbStatus::NotFound;
-
-    return propGetSet->first(value, m_element);
+    return m_accessors->first(value, m_element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1400,13 +1394,9 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, Pr
         return DgnDbStatus::ReadOnly;
         }
 
-    if (!m_isCustomHandled)
+    if (nullptr == m_accessors)
         return SetAutoHandledPropertyValue(value, arrayIdx);
 
-    auto propGetSet = m_classInfo->GetPropertyAccessors(m_propIdx);
-    if (nullptr == propGetSet)
-        return DgnDbStatus::NotFound;
-
-    return propGetSet->second(m_element, value);
+    return m_accessors->second(m_element, value);
     }
 
