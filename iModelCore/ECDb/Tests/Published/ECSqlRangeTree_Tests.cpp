@@ -35,9 +35,8 @@ BentleyStatus AddRowToRtree(ECDbR ecdb, ECInstanceId id, DRange2dCR boundingBox)
 BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
     {
     Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"RangeTreeTest\" nameSpacePrefix=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference version='01.12' prefix='bsca' name ='Bentley_Standard_CustomAttributes' />"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "<ECSchema schemaName=\"RangeTreeTest\" alias=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName=\"DemoRTree\" >"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"

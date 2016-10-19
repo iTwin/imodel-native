@@ -70,14 +70,9 @@ MappingStatus ClassMappingInfo::EvaluateMapStrategy()
             return MappingStatus::Error;
         }
 
-
     MappingStatus stat = _EvaluateMapStrategy();
     if (stat != MappingStatus::Success)
         return stat;
-
-    //_EvaluateMapStrategy can set the column name. So only set it to a default, if it hasn't been set so far.
-    if (m_ecInstanceIdColumnName.empty())
-        m_ecInstanceIdColumnName = COL_ECInstanceId;
 
     //! We override m_mapsToVirtualTable if TablePerHierarchy was used.
     if (m_mapsToVirtualTable && m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)

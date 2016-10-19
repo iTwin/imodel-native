@@ -557,6 +557,9 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
     if (AssertIfIsNotImportingSchema())
         return nullptr;
 
+    if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
+        primaryKeyColumnName = "ECInstanceId"; //default name for PK column
+
     DbTable* table = m_dbSchema.FindTableP(tableName);
     if (table != nullptr)
         {
@@ -594,9 +597,6 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
     if (tableType != DbTable::Type::Existing)
         {
         table = m_dbSchema.CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
-        if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
-            primaryKeyColumnName = COL_ECInstanceId;
-
         DbColumn* column = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType() == PersistenceType::Persisted)
             {
