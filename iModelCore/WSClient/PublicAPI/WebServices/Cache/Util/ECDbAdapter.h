@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbAdapter.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,6 +100,14 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             ECClassId classId,
             ECInstanceKeyMultiMap& keysOut,
             ICancellationTokenPtr ct = nullptr
+            ) override;
+        WSCACHE_EXPORT BentleyStatus ExtractECInstanceKeys
+            (
+            ECSqlStatement& statement,
+            ECInstanceKeyMultiMap& keysOut,
+            ICancellationTokenPtr ct = nullptr,
+            int ecClassIdColumn = 0,
+            int ecInstanceIdcolumn = 1
             ) override;
 
         WSCACHE_EXPORT int  CountClassInstances(ECClassCP ecClass) override;

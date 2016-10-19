@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/MockECDbAdapter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,19 +65,21 @@ struct MockECDbAdapter : public IECDbAdapter
         MOCK_METHOD1 (GetInstanceKeyFromJsonInstance,
             ECInstanceKey (JsonValueCR ecInstanceJson));
         MOCK_METHOD2 (PrepareStatement,
-            BentleyStatus (ECSqlStatement& statement, ECSqlBuilderCR builder));
+            BentleyStatus (ECSqlStatement&, ECSqlBuilderCR builder));
         MOCK_METHOD2 (PrepareStatement,
-            BentleyStatus (ECSqlStatement& statement, Utf8StringCR ecsql));
+            BentleyStatus (ECSqlStatement&, Utf8StringCR ecsql));
         MOCK_METHOD3 (BindParameters,
-            BentleyStatus (ECSqlStatement& statement, const bvector<Utf8String>& parameters, IECSqlBinder::MakeCopy makeCopy));
+            BentleyStatus (ECSqlStatement&, const bvector<Utf8String>& parameters, IECSqlBinder::MakeCopy makeCopy));
         MOCK_METHOD4 (ExtractJsonInstanceArrayFromStatement,
             BentleyStatus (ECSqlStatement&, ECClassCP, JsonValueR, ICancellationTokenPtr));
         MOCK_METHOD3 (ExtractJsonInstanceFromStatement,
-            BentleyStatus (ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut));
+            BentleyStatus (ECSqlStatement&, ECClassCP ecClass, JsonValueR jsonInstanceOut));
         MOCK_METHOD4 (ExtractECIdsFromStatement,
-            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, bvector<ECInstanceId>& ecIdsOut, ICancellationTokenPtr ct));
+            BentleyStatus (ECSqlStatement&, int ecInstanceIdcolumn, bvector<ECInstanceId>& ecIdsOut, ICancellationTokenPtr ct));
         MOCK_METHOD5 (ExtractECInstanceKeyMultiMapFromStatement,
-            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, ECClassId classId, ECInstanceKeyMultiMap& keysOut, ICancellationTokenPtr ct));
+            BentleyStatus (ECSqlStatement&, int ecInstanceIdcolumn, ECClassId classId, ECInstanceKeyMultiMap& keysOut, ICancellationTokenPtr ct));
+        MOCK_METHOD5(ExtractECInstanceKeys,
+            BentleyStatus (ECSqlStatement&, ECInstanceKeyMultiMap& keysOut, ICancellationTokenPtr, int ecClassIdColumn, int ecInstanceIdcolumn));
         MOCK_METHOD1 (CountClassInstances,
             int (ECClassCP ecClass));
         MOCK_METHOD2 (FindInstance,
