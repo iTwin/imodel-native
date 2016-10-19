@@ -654,6 +654,11 @@ public:
     //! @see sqlite3_bind_int64
     DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
 
+    //! Bind a Boolean value to a parameter of this (previously prepared) Statement
+    //! @param[in] paramNum the SQL parameter number to bind.
+    //! @param[in] value the value to bind.
+    DbResult BindBoolean(int paramNum, bool value) { return BindInt(paramNum, value ? 1 : 0); }
+
     //! Bind a BeBriefcaseBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
@@ -766,6 +771,13 @@ public:
     //! @param[in] col The column of interest
     //! @see sqlite3_column_int64
     uint64_t GetValueUInt64(int col) {return (uint64_t) GetValueInt64(col);}
+
+    //! Get a Boolean value from a column returned from Step
+    //! @remark As SQLite per-se doesn't have a Boolean type, this
+    //! method returns true if the value is not 0 and false if it is 0.
+    //! This is consistent with Statement::BindBoolean.
+    //! @param[in] col The column of interest
+    bool GetValueBoolean(int col) { return GetValueInt(col) != 0; }
 
     //! Get a double value from a column returned from Step
     //! @param[in] col The column of interest
