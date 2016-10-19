@@ -579,6 +579,7 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
     BeAssert(IsValid());
     BeAssert(DgnElement::PropState::Unknown == m_element.m_flags.m_propState);
     BeAssert(nullptr == m_element.m_ecPropertyData);
+    BeAssert(0 == m_element.m_ecPropertyDataSize);
     
     ECSqlClassInfo& classInfo = m_element.GetDgnDb().Elements().FindClassInfo(m_element); // Note: This "Find" method will create a ClassInfo if necessary
     if (classInfo.GetSelectEcPropsECSql().empty())
@@ -616,6 +617,9 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
     m_element.m_ecPropertyDataSize = CalculateInitialAllocation(classLayout);
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
     InitializeMemory(classLayout, m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
+
+    if (m_element.IsPersistent())
+        m_element.GetDgnDb().Elements().ChangeMemoryUsed(m_element.m_ecPropertyDataSize);
 
     stmt->BindId(1, m_element.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
@@ -803,6 +807,9 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation
             return ECObjectsStatus::UnableToAllocateMemory;
             }
 
+        if (m_element.IsPersistent())
+            m_element.GetDgnDb().Elements().ChangeMemoryUsed(newAllocation - m_element.m_ecPropertyDataSize);
+
         m_element.m_ecPropertyData = reallocedData;
         m_element.m_ecPropertyDataSize = newAllocation;
         }
@@ -828,7 +835,11 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
         //    }
     //    }
 
+    if (m_element.IsPersistent())
+        m_element.GetDgnDb().Elements().ChangeMemoryUsed(-m_element.m_ecPropertyDataSize);
+
     m_element.m_ecPropertyData = NULL;
+    m_element.m_ecPropertyDataSize = 0;
 
     //if (m_structInstances)
     //    {
@@ -854,6 +865,9 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (
     if (NULL == reallocedData)
         return ECObjectsStatus::UnableToAllocateMemory;
     
+    if (m_element.IsPersistent())
+        m_element.GetDgnDb().Elements().ChangeMemoryUsed(newSize - m_element.m_ecPropertyDataSize);
+
     m_element.m_ecPropertyData = reallocedData;
     m_element.m_ecPropertyDataSize = newSize;
 

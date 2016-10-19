@@ -1208,7 +1208,7 @@ protected:
     //! @note Subclasses of DgnElement that add any member variables should override this method using this template:
     //! uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + myAllocedSize;}
     //! where "myAllocedSize" is the number of bytes allocated for this element, held through member variable pointers.
-    virtual uint32_t _GetMemSize() const {return sizeof(*this);}
+    virtual uint32_t _GetMemSize() const {return sizeof(*this) + m_ecPropertyDataSize;}
 
     //! Virtual writeable deep copy method.
     //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
