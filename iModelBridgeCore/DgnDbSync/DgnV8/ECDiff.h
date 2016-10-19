@@ -136,7 +136,8 @@ enum class DiffNodeId
     IsAbstract = 44,
     IsSealed = 45,
     MinimumValue = 46,
-    MaximumValue = 47
+    MaximumValue = 47,
+    AbstractConstraint = 48
     };
 
 //======================================================================================

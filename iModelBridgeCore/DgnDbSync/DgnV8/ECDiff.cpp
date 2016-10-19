@@ -48,6 +48,7 @@ using namespace std;
 #define ID_ALIAS "Alias"
 #define ID_IS_ABSTRACT "IsAbstract"
 #define ID_IS_SEALED "IsSealed"
+#define ID_ABSTRACT_CONSTRAINT "AbstractConstraint"
     
 
 /*---------------------------------------------------------------------------------**//**
@@ -826,6 +827,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::Alias: return ID_ALIAS;
         case DiffNodeId::IsAbstract: return ID_IS_ABSTRACT;
         case DiffNodeId::IsSealed: return ID_IS_SEALED;
+        case DiffNodeId::AbstractConstraint: return ID_ABSTRACT_CONSTRAINT;
         }
     return NULL;
     }
@@ -1137,6 +1139,9 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
+    if (left.GetAbstractConstraint()->GetFullName() != right.GetAbstractConstraint()->GetFullName())
+        diff->Add(DiffNodeId::AbstractConstraint)->SetValue(left.GetAbstractConstraint()->GetFullName(), right.GetAbstractConstraint()->GetFullName());
+
     DiffCustomAttributes (*diff, left, right);
     bvector<ECRelationshipConstraintCP> constraints;
     constraints.push_back (&left);
@@ -1217,6 +1222,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
     diff->Add (DiffNodeId::Multiplicity)->GetValue(direction).SetValue (relationshipConstraint.GetMultiplicity().ToString());
     diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
     diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
+    diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
     if (!relationshipConstraint.GetClasses().empty())
@@ -2211,6 +2217,12 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         if (defaultContraint)
             mergedConstraint.SetIsPolymorphic (defaultContraint->GetIsPolymorphic());
 
+    if ((v = GetMergeValue(diff, DiffNodeId::AbstractConstraint)) != NULL)
+        mergedConstraint.SetAbstractConstraint(v->GetValueString());
+    else
+        if (defaultContraint)
+            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
+
     set<Utf8String> constraintClasses;
     if (defaultContraint)
         for(const auto constraintClass: defaultContraint->GetConstraintClasses())
@@ -2793,6 +2805,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
     mergedRelationshipClassConstraint.SetMultiplicity (defaultRelationshipClassConstraint.GetMultiplicity());
     mergedRelationshipClassConstraint.SetIsPolymorphic (defaultRelationshipClassConstraint.GetIsPolymorphic());
     mergedRelationshipClassConstraint.SetRoleLabel (defaultRelationshipClassConstraint.GetRoleLabel());
+    mergedRelationshipClassConstraint.SetAbstractConstraint(*defaultRelationshipClassConstraint.GetAbstractConstraint());
     status = AppendCustomAttributesToMerge (mergedRelationshipClassConstraint, defaultRelationshipClassConstraint);
     if (status != MergeStatus::Success)
         return status;
