@@ -92,7 +92,7 @@ ECObjectsStatus ElementECInstanceAdapter::_InsertArrayElements (uint32_t propert
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element);
+    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element, true);
     return autoHandledProps._InsertArrayElements(propertyIndex, index, size);
     }
 
@@ -107,7 +107,7 @@ ECObjectsStatus ElementECInstanceAdapter::_AddArrayElements (uint32_t propertyIn
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element);
+    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element, true);
     return autoHandledProps.AddArrayElements(propertyIndex, size);
     }
 
@@ -122,7 +122,7 @@ ECObjectsStatus ElementECInstanceAdapter::_RemoveArrayElement (uint32_t property
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element);
+    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element, true);
     return autoHandledProps._RemoveArrayElement(propertyIndex, index);
     }
 
@@ -137,7 +137,7 @@ ECObjectsStatus ElementECInstanceAdapter::_ClearArray (uint32_t propIdx)
         return ECObjectsStatus::UnableToSetReadOnlyInstance;
         }
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element);
+    ElementAutoHandledPropertiesECInstanceAdapter autoHandledProps(m_element, true);
     return autoHandledProps._ClearArray(propIdx);
     }
 
@@ -547,7 +547,7 @@ DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el) 
+ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el, bool loadProperties) 
     : m_element(const_cast<DgnElement&>(el))
     {
     AddRef(); // protect against somebody else doing AddRef + Release and deleting this
@@ -555,19 +555,19 @@ ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECIns
     m_eclass = m_element.GetElementClass();
     m_layout = &m_eclass->GetDefaultStandaloneEnabler()->GetClassLayout();
 
-    if (DgnElement::PropState::Unknown == m_element.m_flags.m_propState)
+    if ((DgnElement::PropState::Unknown == m_element.m_flags.m_propState) && loadProperties)
         LoadProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el, ECClassCR ecls, ECN::ClassLayoutCR layout) 
+ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const& el, ECClassCR ecls, ECN::ClassLayoutCR layout, bool loadProperties) 
     : m_element(const_cast<DgnElement&>(el)),
     m_eclass(&ecls), m_layout(&layout)
     {
     AddRef(); // protect against somebody else doing AddRef + Release and deleting this
-    if (DgnElement::PropState::Unknown == m_element.m_flags.m_propState)
+    if ((DgnElement::PropState::Unknown == m_element.m_flags.m_propState) && loadProperties)
         LoadProperties();
     }
 
@@ -855,9 +855,6 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (uint32_t bytesNeeded)
     {
-    DEBUG_EXPECT (m_element.m_ecPropertyDataSize > 0);
-    DEBUG_EXPECT (NULL != m_element.m_ecPropertyData);
-        
     uint32_t newSize = 2 * (m_element.m_ecPropertyDataSize + bytesNeeded); // Assume the growing trend will continue.
 
     Byte * reallocedData = (Byte*)bentleyAllocator_realloc(m_element.m_ecPropertyData, newSize);
@@ -986,7 +983,7 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
     if (0 == ((uint32_t)stypeNeeded & m_classInfo->GetAutoPropertyStatementType(m_propIdx)))
         return DgnDbStatus::ReadOnly;
 
-    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout);
+    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout, true);
     if (!ecdbuffer.IsValid())
         {
         BeAssert(false);
@@ -1013,7 +1010,7 @@ DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR
         BeAssert(false);
         return DgnDbStatus::BadArg;
         }
-    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout);
+    ElementAutoHandledPropertiesECInstanceAdapter ecdbuffer(m_element, *m_eclass, *m_layout, true);
     if (!ecdbuffer.IsValid())
         {
         BeAssert(false);
@@ -1236,7 +1233,7 @@ DgnDbStatus DgnElement::SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP 
 DgnDbStatus DgnElement::_InsertPropertyArrayItems (uint32_t propertyIndex, uint32_t index, uint32_t size)
     {
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
     if (!ecPropAccess.IsValid())
         return DgnDbStatus::BadArg;
     return toDgnDbWriteStatus(ecPropAccess._InsertArrayElements(propertyIndex, index, size));
@@ -1248,7 +1245,7 @@ DgnDbStatus DgnElement::_InsertPropertyArrayItems (uint32_t propertyIndex, uint3
 DgnDbStatus DgnElement::_AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size)
     {
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
     if (!ecPropAccess.IsValid())
         return DgnDbStatus::BadArg;
     return toDgnDbWriteStatus(ecPropAccess._AddArrayElements(propertyIndex, size));
@@ -1260,7 +1257,7 @@ DgnDbStatus DgnElement::_AddPropertyArrayItems (uint32_t propertyIndex, uint32_t
 DgnDbStatus DgnElement::_RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index)
     {
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
     if (!ecPropAccess.IsValid())
         return DgnDbStatus::BadArg;
     return toDgnDbWriteStatus(ecPropAccess._RemoveArrayElement(propertyIndex, index));
@@ -1272,7 +1269,7 @@ DgnDbStatus DgnElement::_RemovePropertyArrayItem (uint32_t propertyIndex, uint32
 DgnDbStatus DgnElement::_ClearPropertyArray (uint32_t propertyIndex)
     {
     // Only auto-handled properties can be arrays
-    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this);
+    ElementAutoHandledPropertiesECInstanceAdapter ecPropAccess(*this, true);
     if (!ecPropAccess.IsValid())
         return DgnDbStatus::BadArg;
     return toDgnDbWriteStatus(ecPropAccess._ClearArray(propertyIndex));

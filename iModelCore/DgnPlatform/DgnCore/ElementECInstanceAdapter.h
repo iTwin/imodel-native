@@ -30,8 +30,8 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     ECClassCP m_eclass;
     ECN::ClassLayoutCP m_layout;
 
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&);
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, bool loadProperties);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR, bool loadProperties);
     
     bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
 

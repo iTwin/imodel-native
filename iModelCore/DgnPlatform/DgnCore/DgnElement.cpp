@@ -890,7 +890,7 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementAutoHandledPropertiesECInstanceAdapter ec(*this);
+        ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -939,7 +939,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementAutoHandledPropertiesECInstanceAdapter ec(*this);
+        ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -1217,19 +1217,25 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     // don't copy FederationGuid
 
     // Copy the auto-handled EC properties
-    ElementAutoHandledPropertiesECInstanceAdapter ecOther(other);
+    ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
     if (ecOther.IsValid())
         {
         // Note that we are NOT necessarily going to call _SetPropertyValue on each property. 
         // If the subclass needs to validate specific auto-handled properties even during copying, then it
         // must override _CopyFrom and validate after the copy is done.
-        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this);
+        // TRICKY: Don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
+        //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
+        //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
+        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, false);
         if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
             {
             if (GetElementClassId() != other.GetElementClassId())
                 ecThis.CopyDataBuffer(ecOther, true);
             else
                 ecThis.CopyFromBuffer(ecOther);
+
+            if (nullptr != m_ecPropertyData)
+                m_flags.m_propState = DgnElement::PropState::Dirty;
             }
         }
 
