@@ -358,17 +358,17 @@
     <ProductDirectory Name="WSClientAssemblies" Path="Dlls"/>
     <ProductDirectory Name="DataCaptureAssemblies" Path="Dlls"/>
     <ProductDirectory Name="ConceptMaterials" Path="Dlls"/>
-    <ProductDirectory Name="DgnClientSdkTools-Winx86" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Winx86" Path="Dlls/winx86"/>
     <ProductDirectory Name="BentleyEulaDelivery" Path="Dlls"/>
-    <ProductDirectory Name="DgnClientSdkTools-Win7" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Win7" Path="Dlls/Win7"/>
 
-    <ProductDirectory Name="GeoUserLibraries" Path="Dlls"/>
+    <ProductDirectory Name="GeoUserLibraries" Path="Dlls/geolib"/>
 
-    <ProductDirectory Name="MobileUtilsXliffs" Path="Dlls"/>
+    <ProductDirectory Name="MobileUtilsXliffs" Path="Dlls/xliffs"/>
 
     <ProductDirectory Name="MobileUtilsAssemblies" Path="Dlls"/>
 
-    <ProductDirectory Name="MobileUtilsAssets" Path="Dlls"/>
+    <ProductDirectory Name="MobileUtilsAssets" Path="Dlls/assets"/>
     
   </ProductDirectoryList>
       

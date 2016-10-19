@@ -946,6 +946,7 @@ ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     {    
     //NEEDS_WORK_SM : Need to cancel only for particular ScalableMesh
     s_queryProcessor.CancelAllQueries();    
+    m_overviewNodes.clear();
     }
 
 template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
