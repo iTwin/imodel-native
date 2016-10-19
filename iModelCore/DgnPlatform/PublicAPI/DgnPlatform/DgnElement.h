@@ -42,7 +42,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
-    struct Definition; struct PhysicalType; struct GraphicalType2d; 
+    struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -51,7 +51,6 @@ namespace dgn_ElementHandler
 
 namespace dgn_TxnTable {struct Element; struct Model;};
 
-struct ElementECPropertyAccessor;
 struct ElementAutoHandledPropertiesECInstanceAdapter;
 
 //=======================================================================================
@@ -299,6 +298,55 @@ struct AutoHandledPropertiesCollection
     };
 
 //__PUBLISH_SECTION_START__
+
+//=======================================================================================
+//! Specifies either an invalid value or the index of an item in an array.
+// @bsiclass                                                     Sam.Wilson        10/16
+//=======================================================================================
+struct PropertyArrayIndex
+    {
+    bool m_hasIndex;
+    uint32_t m_index;
+    PropertyArrayIndex() : m_hasIndex(0) {}
+    PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
+    PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
+    };
+
+//=======================================================================================
+//! Helps with access to an individual element property
+// @bsiclass                                                     Sam.Wilson        10/16
+//=======================================================================================
+struct ElementECPropertyAccessor
+{
+private:
+    DgnElementR m_element;
+    ECSqlClassInfo* m_classInfo;
+    ECN::ECClassCP m_eclass;
+    ECN::ClassLayoutCP m_layout;
+    bpair<ECSqlClassInfo::T_ElementPropGet,ECSqlClassInfo::T_ElementPropSet> const* m_accessors;
+    uint32_t m_propIdx;
+    bool m_isPropertyIndexValid;
+    bool m_readOnly;
+
+    DGNPLATFORM_EXPORT void Init(uint32_t propIdx, Utf8CP accessString);
+
+public:
+    DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementCR, uint32_t);
+    DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementCR, Utf8CP accessString);
+    DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementR, uint32_t);
+    DGNPLATFORM_EXPORT ElementECPropertyAccessor(DgnElementR, Utf8CP accessString);
+
+    bool IsValid() const {return m_isPropertyIndexValid;}
+
+    DGNPLATFORM_EXPORT Utf8CP GetAccessString() const;
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetAutoHandledPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
+    DGNPLATFORM_EXPORT DgnDbStatus GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const;
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
+    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const;
+};
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -497,16 +545,6 @@ public:
         void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnElement created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
-
-    //! Specifies either an invalid value or the index of an item in an array.
-    struct PropertyArrayIndex
-        {
-        bool m_hasIndex;
-        uint32_t m_index;
-        PropertyArrayIndex() : m_hasIndex(0) {}
-        PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
-        PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
-        };
 
     //! Property filter to be use when comparing elements
     struct ComparePropertyFilter
@@ -1244,8 +1282,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ClearPropertyArray (uint32_t propertyIndex);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const;
+    virtual DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) {return accessor.SetPropertyValue(value, arrayIdx);}
+    virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const {return accessor.GetPropertyValue(value, arrayIdx);}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR, SetPropertyFilter const& filter);
     DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, ComparePropertyFilter const&) const;
     //! Test if the value of the specified property on this element is equivalent to the value of the same property on the other element
@@ -1417,6 +1455,9 @@ public:
     //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
     //! @return Invalid if model does not exist
     DGNPLATFORM_EXPORT DgnModelPtr GetSubModel() const;
+    //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
+    //! @return Invalid if model does not exist
+    template<class T> RefCountedPtr<T> GetSub() const {return dynamic_cast<T*>(GetSubModel().get());}
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
@@ -1504,19 +1545,52 @@ public:
 
     //! Get the value of a property. Also see @ref ElementProperties.
     //! @param value The returned value
-    //! @param name The name of the property
+    //! @param accessString The access string that identifies the property. @see GetPropertyIndex
     //! @param aidx Optional. If the property is an array, you must specify the index of the item to get.
     //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
-    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex aidx = PropertyArrayIndex()) const;
+    DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP accessString, PropertyArrayIndex aidx = PropertyArrayIndex()) const
+        {
+        ElementECPropertyAccessor access(*this, accessString);
+        return _GetPropertyValue(value, access, aidx);
+        }
+
+    //! Get the value of a property. Also see @ref ElementProperties.
+    //! @param value The returned value
+    //! @param propIndex The index of the property. @see GetPropertyIndex
+    //! @param aidx Optional. If the property is an array, you must specify the index of the item to get.
+    //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
+    DgnDbStatus GetPropertyValue(ECN::ECValueR value, uint32_t propIndex, PropertyArrayIndex aidx = PropertyArrayIndex()) const
+        {
+        ElementECPropertyAccessor access(*this, propIndex);
+        return _GetPropertyValue(value, access, aidx);
+        }
 
     //! Set the value of a property. 
     //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
     //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
-    //! @param name The name of the property
+    //! @param accessString The access string that identifies the property. @see GetPropertyIndex
     //! @param aidx Optional. If the property is an array, you must specify the index of the item to set.
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP accessString, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
+        {
+        ElementECPropertyAccessor access(*this, accessString);
+        return _SetPropertyValue(access, value, aidx);
+        }
+
+
+    //! Set the value of a property. 
+    //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
+    //! its modified property to the DgnDb. Also see @ref ElementProperties.
+    //! @param value The returned value
+    //! @param propIndex The index of the property. @see GetPropertyIndex
+    //! @param aidx Optional. If the property is an array, you must specify the index of the item to set.
+    //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(uint32_t propIndex, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
+        {
+        ElementECPropertyAccessor access(*this, propIndex);
+        return _SetPropertyValue(access, value, aidx);
+        }
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
     //! @param instance The source of the properties that are to be copied to this element
@@ -1850,8 +1924,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const; // Handles GeometryStream
-    DGNPLATFORM_EXPORT DgnDbStatus GetGeometricElementPropertyValue(ECN::ECValueR value, Utf8CP name) const;
-    DGNPLATFORM_EXPORT DgnDbStatus SetGeometricElementPropertyValue(Utf8CP name, ECN::ECValueCR value);
+    static void RegisterGeometricPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -1926,11 +1999,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
-
-    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
     };
@@ -1998,11 +2066,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
-
-    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 };
@@ -2363,6 +2426,37 @@ protected:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Session : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Session, DefinitionElement)
+    friend struct dgn_ElementHandler::Session;
+
+protected:
+    explicit Session(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
+};
+
+//=======================================================================================
+//! A PhysicalTemplate identifies a set of template elements that have been gathered together for modeling reuse purposes.
+//! A PhysicalTemplate has a PhysicalModel as its <i>SubModel</i>.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, DefinitionElement)
+    friend struct dgn_ElementHandler::PhysicalTemplate;
+
+protected:
+    explicit PhysicalTemplate(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A PhysicalType typically corresponds to a @em type of physical object that can be ordered from a catalog.
 //! The PhysicalType system is also a database normalization strategy because properties that are the same
 //! across all instances are stored with the PhysicalType versus being repeated per PhysicalElement instance.
@@ -2683,7 +2777,6 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
-    ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
@@ -2697,6 +2790,7 @@ private:
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
+    ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
 

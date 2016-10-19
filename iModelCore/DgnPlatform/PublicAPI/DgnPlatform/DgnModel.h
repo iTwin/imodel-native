@@ -22,10 +22,8 @@ DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
-DGNPLATFORM_TYPEDEFS(SessionModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(SessionModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
@@ -950,6 +948,9 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement, DgnCodeCR code);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement, DgnCodeCR code);
+
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalTemplateCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalTemplateCR modeledElement, DgnCodeCR code);
 };
 
 //=======================================================================================

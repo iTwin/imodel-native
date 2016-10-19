@@ -38,6 +38,7 @@
 #define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
+#define DPTEST_CLASS_TestPhysicalTemplate "TestPhysicalTemplate"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 
@@ -89,8 +90,8 @@ protected:
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const& arrayIdx) override;
-    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const& arrayIdx) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Dgn::ElementECPropertyAccessor&, ECN::ECValueCR, Dgn::PropertyArrayIndex const& arrayIdx) override;
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Dgn::ElementECPropertyAccessor&, Dgn::PropertyArrayIndex const& arrayIdx) const override;
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
@@ -199,6 +200,32 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    10/16
+//=======================================================================================
+struct TestPhysicalTemplate : Dgn::PhysicalTemplate
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTemplate, Dgn::PhysicalTemplate)
+    friend struct TestPhysicalTemplateHandler;
+
+protected:
+    explicit TestPhysicalTemplate(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestPhysicalTemplate> Create(Dgn::DefinitionModelR);
+};
+
+typedef RefCountedPtr<TestPhysicalTemplate> TestPhysicalTemplatePtr;
+typedef RefCountedCPtr<TestPhysicalTemplate> TestPhysicalTemplateCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    10/16
+//=======================================================================================
+struct TestPhysicalTemplateHandler : Dgn::dgn_ElementHandler::PhysicalTemplate
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalTemplate, TestPhysicalTemplate, TestPhysicalTemplateHandler, Dgn::dgn_ElementHandler::PhysicalTemplate, )
 };
 
 //=======================================================================================

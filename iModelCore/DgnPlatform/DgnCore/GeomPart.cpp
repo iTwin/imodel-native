@@ -76,9 +76,10 @@ DgnDbStatus DgnGeometryPart::_BindUpdateParams(ECSqlStatement& statement)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnGeometryPart::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnGeometryPart::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
-
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(PARAM_BBoxLow, name))
         {
         m_bbox.low = value.GetPoint3d();
@@ -94,14 +95,16 @@ DgnDbStatus DgnGeometryPart::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value
         m_facetCount = (size_t) value.GetInteger();
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value, arrayIdx);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, Utf8CP name, PropertyArrayIndex const& arrayIdx) const
+DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(PARAM_BBoxLow, name))
         {
         value.SetPoint3d(m_bbox.low);
@@ -117,7 +120,7 @@ DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, Utf8CP name,
         value.SetInteger((int32_t) m_facetCount);
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name, arrayIdx);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**

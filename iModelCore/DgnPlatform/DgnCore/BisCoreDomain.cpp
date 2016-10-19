@@ -68,6 +68,8 @@ HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Definition)
+HANDLER_DEFINE_MEMBERS(Session)
+HANDLER_DEFINE_MEMBERS(PhysicalTemplate)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(Subject)
@@ -95,6 +97,7 @@ HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Category)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
+HANDLER_DEFINE_MEMBERS(Session)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -154,6 +157,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Session::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalTemplate::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
@@ -203,6 +208,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Session::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

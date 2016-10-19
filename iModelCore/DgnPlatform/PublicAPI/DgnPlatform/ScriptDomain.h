@@ -81,7 +81,7 @@ public:
 
 private:
     explicit ScriptDefinitionElement(CreateParams const&);
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
+
 public:
     //! Create a script element. The returned element is non-persisent. The caller must call its Insert method in order to store it to the bim.
     //! @param[out] stat    Optional. An error status if the element could not be created. DgnDbStatus::MissingDomain if the Script domain has not been imported.
@@ -157,6 +157,7 @@ struct ScriptDefinitionElementHandler : dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(SCRIPT_DOMAIN_CLASSNAME_Script, ScriptDefinitionElement, ScriptDefinitionElementHandler, dgn_ElementHandler::Definition, )
     friend struct ScriptDomain;
     static void Register(DgnDomain& domain) { domain.RegisterHandler(GetHandler()); }
+    DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
 //=======================================================================================
