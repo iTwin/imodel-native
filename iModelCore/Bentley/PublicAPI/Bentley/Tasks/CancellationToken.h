@@ -54,7 +54,7 @@ struct ICancellationToken
 * @bsiclass                                               Beneditas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct SimpleCancellationToken> SimpleCancellationTokenPtr;
-struct SimpleCancellationToken : ICancellationToken
+struct EXPORT_VTABLE_ATTRIBUTE SimpleCancellationToken : ICancellationToken
     {
     private:
         BeAtomic<bool> m_canceled;
@@ -64,8 +64,8 @@ struct SimpleCancellationToken : ICancellationToken
         void OnCancelled() const;
 
     public:
-        explicit SimpleCancellationToken (bool canceled);
-        virtual ~SimpleCancellationToken ();
+        explicit SimpleCancellationToken(bool canceled) : m_canceled (canceled) {};
+        virtual ~SimpleCancellationToken() {};
 
         BENTLEYDLL_EXPORT static SimpleCancellationTokenPtr Create (bool canceled = false);
 
