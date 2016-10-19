@@ -42,7 +42,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing; struct Sheet; 
-    struct Definition; struct PhysicalType; struct GraphicalType2d; 
+    struct Definition; struct PhysicalTemplate; struct PhysicalType; struct GraphicalType2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -1455,6 +1455,9 @@ public:
     //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
     //! @return Invalid if model does not exist
     DGNPLATFORM_EXPORT DgnModelPtr GetSubModel() const;
+    //! Get the (optional) DgnModel that is modeling this DgnElement. That is, the DgnModel that is beneath this element in the hierarchy.
+    //! @return Invalid if model does not exist
+    template<class T> RefCountedPtr<T> GetSub() const {return dynamic_cast<T*>(GetSubModel().get());}
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
@@ -2423,6 +2426,37 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Session : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Session, DefinitionElement)
+    friend struct dgn_ElementHandler::Session;
+
+protected:
+    explicit Session(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
+};
+
+//=======================================================================================
+//! A PhysicalTemplate identifies a set of template elements that have been gathered together for modeling reuse purposes.
+//! A PhysicalTemplate has a PhysicalModel as its <i>SubModel</i>.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, DefinitionElement)
+    friend struct dgn_ElementHandler::PhysicalTemplate;
+
+protected:
+    explicit PhysicalTemplate(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

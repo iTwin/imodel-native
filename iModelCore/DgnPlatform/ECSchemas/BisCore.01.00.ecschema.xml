@@ -157,6 +157,12 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="SessionAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
@@ -605,6 +611,13 @@
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PhysicalTemplate" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -1308,6 +1321,13 @@
         <BaseClass>LinearDimension</BaseClass>
     </ECEntityClass>
     -->
+
+    <ECEntityClass typeName="Session" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
