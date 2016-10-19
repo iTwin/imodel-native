@@ -963,18 +963,22 @@ Utf8PrintfString::Utf8PrintfString(Utf8CP format, ...) : Utf8String()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString::Utf8PrintfString(Utf8CP format, va_list args) : Utf8String()
+Utf8PrintfString Utf8PrintfString::CreateFromVaList(Utf8CP format, va_list args)
     {
-    auto result = BeUtf8StringSprintf(*this, format, args);
-    if (result < 0)
-        return;
+    Utf8PrintfString str;
 
-    if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
+    auto result = BeUtf8StringSprintf(str, format, args);
+    if (result < 0)
+        return str;
+
+    if (result > (int)str.size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        result = BeUtf8StringSprintf(*this, format, args, result);
+        result = BeUtf8StringSprintf(str, format, args, result);
         if (result < 0)
-            return;
+            return str;
         }
+    
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
