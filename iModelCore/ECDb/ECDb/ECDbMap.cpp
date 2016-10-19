@@ -47,9 +47,9 @@ BentleyStatus ECDbMap::PurgeOrphanColumns() const
                                      "SELECT ec_Column.Id, ec_Column.IsVirtual, ec_Column.Name, ec_Table.Name"
                                      "   FROM ec_Column"
                                      "        INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.TableId"
-                                     "   WHERE ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_SharedDataColumn " = 0 AND" //Skip SharedColumns
-                                     "         ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECClassId " = 0 AND" //Skip ECClassId
-                                     "         ec_Table.[Type] != " SQLVAL_INT_DbTable_Type_Existing " AND"         //Skip Existing Tables
+                                     "   WHERE ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " = 0 AND" //Skip SharedColumns
+                                     "         ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 AND" //Skip ECClassId
+                                     "         ec_Table.[Type] != " SQLVAL_DbTable_Type_Existing " AND"         //Skip Existing Tables
                                      "         ec_Column.Id NOT IN ("                       //Skip columns that are mapped
                                      "          SELECT ec_Column.Id"
                                      "                 FROM ec_PropertyMap"
@@ -78,14 +78,14 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
     //skip ExistingTable and NotMapped
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
-                     "WHERE t.Type<> " SQLVAL_INT_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
                      "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
                      "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
                      "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
                      "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
                      "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)"))
         {
-        BeAssert(false && "system sql schema changed");
+        BeAssert(false && "ECDb profile changed");
         return ERROR;
         }
     
@@ -93,7 +93,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
     std::vector<Utf8String> virtualTables;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        if (DbSchemaPersistenceManager::IsTrue(stmt.GetValueInt(1)))
+        if (stmt.GetValueBoolean(1))
             virtualTables.push_back(stmt.GetValueText(0));
         else
             nonVirtualTables.push_back(stmt.GetValueText(0));
@@ -105,7 +105,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
     stmt.Finalize();
     if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
         {
-        BeAssert(false && "system sql schema changed");
+        BeAssert(false && "ECDb profile changed");
         return ERROR;
         }
 

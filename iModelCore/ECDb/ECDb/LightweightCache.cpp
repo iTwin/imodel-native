@@ -107,7 +107,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT RC.RelationshipClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_INT_True " AND CH.ClassId=? "
+                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True " AND CH.ClassId=? "
                                                                  "WHERE RCC.ClassId=?");
 
     if (stmt == nullptr)
@@ -151,7 +151,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_INT_True
+                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True
                                                                  " WHERE RC.RelationshipClassId=?");
 
     if (stmt == nullptr)
@@ -197,8 +197,8 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
         "SELECT CH.ClassId, CT.TableId FROM " TABLE_ClassHasTablesCache " CT"
         "       INNER JOIN " TABLE_ClassHierarchyCache " CH ON CH.ClassId = CT.ClassId"
         "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
-        "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> " SQLVAL_INT_MapStrategy_TablePerHierarchy
-        " AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <>" SQLVAL_INT_DbTable_Type_Joined ")");
+        "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> " SQLVAL_MapStrategy_TablePerHierarchy
+        " AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <>" SQLVAL_DbTable_Type_Joined ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
 

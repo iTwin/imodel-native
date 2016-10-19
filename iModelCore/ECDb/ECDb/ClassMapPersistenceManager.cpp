@@ -97,8 +97,8 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
     if (mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
         {
         TablePerHierarchyInfo const& tphInfo = mapStrategyExtInfo.GetTphInfo();
-        if (tphInfo.UseSharedColumns())
-            stmt->BindInt(3, DbSchemaPersistenceManager::BoolToSqlInt(true));
+        BeAssert(tphInfo.IsValid());
+        stmt->BindBoolean(3, tphInfo.UseSharedColumns());
 
         if (tphInfo.GetSharedColumnCount() >= 0)
             stmt->BindInt(4, tphInfo.GetSharedColumnCount());
@@ -189,7 +189,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
-        const bool useSharedColumns = stmt->IsColumnNull(1) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(1));
+        const bool useSharedColumns = stmt->IsColumnNull(1) ? false : stmt->GetValueBoolean(1);
         const int sharedColumnCount = stmt->IsColumnNull(2) ? -1 : stmt->GetValueInt(2);
         Utf8CP excessColumnName = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(4) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(4));

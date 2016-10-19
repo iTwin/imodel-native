@@ -298,7 +298,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
-                           "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "EnumValues TEXT NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -334,7 +334,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "Kind INTEGER NOT NULL,"
                            "Ordinal INTEGER NOT NULL,"
                            "PrimitiveType INTEGER,"
@@ -380,7 +380,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "MultiplicityLowerLimit INTEGER,"
                            "MultiplicityUpperLimit INTEGER,"
                            "RoleLabel TEXT,"
-                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")))");
+                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -423,7 +423,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "ClassId INTEGER PRIMARY KEY REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
-                           "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "SharedColumnCount INTEGER,"
                            "ExcessColumnName TEXT,"
                            "JoinedTableInfo INTEGER)");
@@ -451,7 +451,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "PrimaryTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
 
     );
@@ -469,10 +469,10 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "Ordinal INTEGER NOT NULL,"
-                           "NotNullConstraint BOOLEAN NOT NULL CHECK (NotNullConstraint IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
-                           "UniqueConstraint BOOLEAN NOT NULL CHECK (UniqueConstraint IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "NotNullConstraint BOOLEAN NOT NULL CHECK (NotNullConstraint IN (" SQLVAL_False "," SQLVAL_True ")),"
+                           "UniqueConstraint BOOLEAN NOT NULL CHECK (UniqueConstraint IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "CheckConstraint TEXT COLLATE NOCASE,"
                            "DefaultConstraint TEXT COLLATE NOCASE,"
                            "CollationConstraint INTEGER NOT NULL,"
@@ -491,11 +491,11 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Id INTEGER PRIMARY KEY,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
-                           "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
-                           "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")), "
-                           "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")),"
+                           "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (" SQLVAL_False "," SQLVAL_True ")),"
+                           "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (" SQLVAL_False "," SQLVAL_True ")), "
+                           "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "ClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (" SQLVAL_INT_False "," SQLVAL_INT_True ")))");
+                           "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (" SQLVAL_False "," SQLVAL_True ")))");
     if (BE_SQLITE_OK != stat)
         return stat;
 

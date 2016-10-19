@@ -144,6 +144,24 @@ void const* IECSqlValue::GetGeometryBlob (int* blobSize) const
     return _GetPrimitive ()._GetGeometryBlob (blobSize);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Shaun.Sewall        10/2016
+//---------------------------------------------------------------------------------------
+BeGuid IECSqlValue::GetGuid() const
+    {
+    if (IsNull())
+        return BeGuid();
+
+    int binarySize = 0;
+    void const* binaryValue = GetBinary(&binarySize);
+    if (binarySize != sizeof(BeGuid))
+        return BeGuid();
+
+    BeGuid guid;
+    memcpy(&guid, binaryValue, sizeof(guid));
+    return guid;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------

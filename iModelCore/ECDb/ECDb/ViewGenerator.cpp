@@ -40,7 +40,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
                                      "SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc "
-                                     "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_INT_ECClassType_Entity " AND cm.MapStrategy<> " SQLVAL_INT_MapStrategy_NotMapped
+                                     "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_ECClassType_Entity " AND cm.MapStrategy<> " SQLVAL_MapStrategy_NotMapped
                                      " GROUP BY c.Id"))
         return ERROR;
 
@@ -109,8 +109,8 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
                                      "SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
-                                     "c.Type IN (" SQLVAL_INT_ECClassType_Entity "," SQLVAL_INT_ECClassType_Relationship ") AND "
-                                     "cm.MapStrategy<>" SQLVAL_INT_MapStrategy_NotMapped))
+                                     "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
+                                     "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped))
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;

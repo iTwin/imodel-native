@@ -523,9 +523,9 @@ ECClassId TableMapDetail::QueryClassId() const
                 "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
                 "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
                 "WHERE ec_Table.Name = :tableName AND "
-                " (ec_ClassMap.MapStrategy <> " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable " AND ec_ClassMap.MapStrategy <> " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND "
-                " ec_Column.IsVirtual = " SQLVAL_INT_False " AND "
-                " (ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECInstanceId "=" SQLVAL_INT_DbColumn_Kind_ECInstanceId ")");
+                " (ec_ClassMap.MapStrategy <> " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable " AND ec_ClassMap.MapStrategy <> " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND "
+                " ec_Column.IsVirtual = " SQLVAL_False " AND "
+                " (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECInstanceId "=" SQLVAL_DbColumn_Kind_ECInstanceId ")");
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName.c_str(), Statement::MakeCopy::No);
@@ -554,10 +554,10 @@ void TableMapDetail::InitForeignKeyRelClassMaps()
         "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
         "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_Table.Name = :tableName AND ec_Class.Type=" SQLVAL_INT_ECClassType_Relationship " AND"
-        "     (ec_ClassMap.MapStrategy = " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable " OR ec_ClassMap.MapStrategy = " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND"
-        "     ec_Column.IsVirtual = " SQLVAL_INT_False " AND"
-        "     (ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECInstanceId "=" SQLVAL_INT_DbColumn_Kind_ECInstanceId ")");
+        "WHERE ec_Table.Name = :tableName AND ec_Class.Type=" SQLVAL_ECClassType_Relationship " AND"
+        "     (ec_ClassMap.MapStrategy = " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable " OR ec_ClassMap.MapStrategy = " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND"
+        "     ec_Column.IsVirtual = " SQLVAL_False " AND"
+        "     (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECInstanceId "=" SQLVAL_DbColumn_Kind_ECInstanceId ")");
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName, Statement::MakeCopy::No);

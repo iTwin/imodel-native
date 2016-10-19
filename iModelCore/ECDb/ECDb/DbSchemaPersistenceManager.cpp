@@ -72,9 +72,9 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
                                         "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
                                         "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
                                         "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                                        "    WHERE ec_ClassMap.MapStrategy <>  " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInSourceTable
-                                        "          AND ec_ClassMap.MapStrategy <>  " SQLVAL_INT_MapStrategy_ForeignKeyRelationshipInTargetTable
-                                        "          AND ec_Column.ColumnKind & " SQLVAL_INT_DbColumn_Kind_ECClassId " = 0 "
+                                        "    WHERE ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable
+                                        "          AND ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable
+                                        "          AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 "
                                         "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
@@ -712,15 +712,15 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) CustomAttributeContainerType::StructClass == 8 &&
                   (int) CustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
 
-    static_assert((int) DbColumn::Kind::DataColumn == 512 &&
+    static_assert((int) DbColumn::Kind::DataColumn == 64 &&
                   (int) DbColumn::Kind::ECClassId == 2 &&
                   (int) DbColumn::Kind::ECInstanceId == 1 &&
-                  (int) DbColumn::Kind::RelECClassId == 2048 &&
-                  (int) DbColumn::Kind::SharedDataColumn == 1024 &&
-                  (int) DbColumn::Kind::SourceECClassId == 64 &&
-                  (int) DbColumn::Kind::SourceECInstanceId == 32 &&
-                  (int) DbColumn::Kind::TargetECClassId == 256 &&
-                  (int) DbColumn::Kind::TargetECInstanceId == 128 &&
+                  (int) DbColumn::Kind::RelECClassId == 256 &&
+                  (int) DbColumn::Kind::SharedDataColumn == 128 &&
+                  (int) DbColumn::Kind::SourceECClassId == 8 &&
+                  (int) DbColumn::Kind::SourceECInstanceId == 4 &&
+                  (int) DbColumn::Kind::TargetECClassId == 32 &&
+                  (int) DbColumn::Kind::TargetECInstanceId == 16 &&
                   (int) DbColumn::Kind::Unknown == 0, "Persisted Enum has changed: DbColumn::Kind.");
 
     static_assert((int) DbColumn::Type::Any == 0 &&
@@ -749,8 +749,8 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) JoinedTableInfo::ParentOfJoinedTable == 2, "Persisted Enum has changed: JoinedTableInfo.");
 
     static_assert((int) MapStrategy::ExistingTable == 3 &&
-                  (int) MapStrategy::ForeignKeyRelationshipInSourceTable == 100 &&
-                  (int) MapStrategy::ForeignKeyRelationshipInTargetTable == 101 &&
+                  (int) MapStrategy::ForeignKeyRelationshipInSourceTable == 5 &&
+                  (int) MapStrategy::ForeignKeyRelationshipInTargetTable == 6 &&
                   (int) MapStrategy::NotMapped == 0 &&
                   (int) MapStrategy::OwnTable == 1 &&
                   (int) MapStrategy::SharedTable == 4 &&

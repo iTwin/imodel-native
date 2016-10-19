@@ -341,7 +341,7 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(7, DbSchemaPersistenceManager::BoolToSqlInt(ecEnum.GetIsStrict())))
+    if (BE_SQLITE_OK != stmt->BindBoolean(7, ecEnum.GetIsStrict()))
         return ERROR;
 
     Utf8String enumValueJson;
@@ -557,7 +557,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         }
 #endif
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, DbSchemaPersistenceManager::BoolToSqlInt(ecProperty.GetIsReadOnly())))
+    if (BE_SQLITE_OK != stmt->BindBoolean(6, ecProperty.GetIsReadOnly()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
@@ -728,7 +728,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, DbSchemaPersistenceManager::BoolToSqlInt(relationshipConstraint.GetIsPolymorphic())))
+    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())

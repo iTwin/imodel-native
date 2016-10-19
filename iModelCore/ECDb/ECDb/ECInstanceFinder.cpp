@@ -196,7 +196,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         " JOIN ec_RelationshipConstraintClass ForeignEndConstraintClass ON ForeignEndConstraintClass.ConstraintId=ForeignEndConstraint.Id "
         " JOIN BaseClassesOfEndClass"
         " WHERE ForeignEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
-                                              "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_INT_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
+                                              "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false);

@@ -951,7 +951,7 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
     if (!m_parentOfJoinedTableECClassId.IsValid())
         {
         CachedStatementPtr stmt = m_classMap.GetECDb().GetCachedStatement("SELECT ch.BaseClassId FROM " TABLE_ClassHierarchyCache " ch "
-                                                                          "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=" SQLVAL_INT_JoinedTableInfo_ParentOfJoinedTable
+                                                                          "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=" SQLVAL_JoinedTableInfo_ParentOfJoinedTable
                                                                           " WHERE ch.ClassId=?");
         if (stmt == nullptr ||
             BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
@@ -1227,7 +1227,7 @@ BentleyStatus ColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>& 
         "              JOIN ec_ClassMap cm ON cm.ClassId = pm.ClassId "
         "              JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = cm.ClassId "
         "              JOIN ec_Table t on t.Id = c.TableId "
-        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & " SQLVAL_INT_DbColumn_Kind_SharedDataColumn " <> 0 "
+        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " <> 0 "
         "GROUP BY c.Name");
 
     if (stmt == nullptr)

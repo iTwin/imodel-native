@@ -91,13 +91,13 @@ public:
         Unknown = 0, //! Not known to ECDb or user define columns
         ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
         ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
-        SourceECInstanceId = 32,
-        SourceECClassId = 64,
-        TargetECInstanceId = 128,
-        TargetECClassId = 256,
-        DataColumn = 512, //! unshared data column
-        SharedDataColumn = 1024, //! shared data column
-        RelECClassId = 2048
+        SourceECInstanceId = 4,
+        SourceECClassId = 8,
+        TargetECInstanceId = 16,
+        TargetECClassId = 32,
+        DataColumn = 64, //! unshared data column
+        SharedDataColumn = 128, //! shared data column
+        RelECClassId = 256
         };
 
     struct Constraints : NonCopyableClass

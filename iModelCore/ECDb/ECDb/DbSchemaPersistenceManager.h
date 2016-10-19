@@ -54,9 +54,6 @@ public:
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
- 
-    static bool IsTrue(int sqlInt) { return sqlInt != 0; }
-    static int BoolToSqlInt(bool val) { return val ? 1 : 0; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
