@@ -6,7 +6,7 @@
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 
 #include "Stores\SMStreamingDataStore.h"
-
+#include "TilePublisher\TilePublisher.h"
 //#include <eigen\Eigen\Dense>
 //#include <PCLWrapper\IDefines.h>
 //#include <PCLWrapper\INormalCalculator.h>
@@ -361,72 +361,51 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         if (node->m_nodeHeader.m_nodeCount > 0)
             {
             // Gather all data in one place
-            AllDataTypes3DTilesBase nodeData;
-            uint64_t nodeDataSize = 0;
+            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node));
+            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
 
-            // Points
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-            if (pointsPtr->size() != 0)
-                {
-                nodeData.m_pointData = const_cast<DPoint3d*>(&(*pointsPtr)[0]);
-                nodeDataSize += pointsPtr->size() * sizeof(DPoint3d);
-                }
-
-            // Indices
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
-
-            if (indicePtr.IsValid() && indicePtr->size() > 0)
-                {
-                nodeData.m_indicesData = const_cast<int*>(&(*indicePtr)[0]);
-                nodeDataSize += indicePtr->size() * sizeof(int);
-                }
-
-            if (node->m_nodeHeader.m_isTextured)
-                {
-                // UVs
-                RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
-
-                if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
-                    {
-                    nodeData.m_uvs = const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]);
-                    nodeDataSize += uvCoordsPtr->size() * sizeof(DPoint2d);
-                    }
-
-                // UVIndices
-                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
-
-                if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
-                    {
-                    nodeData.m_indicesData = const_cast<int*>(&(*uvIndicePtr)[0]);
-                    nodeDataSize += uvIndicePtr->size() * sizeof(int);
-                    }
-
-                // texture
-                ISMTextureDataStorePtr textureDataStore;
-                bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
-                assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
-                auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
-                bvector<Byte> textureData(countTextureData);
-                if (countTextureData > 0)
-                    {
-                    size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
-                    nodeData.m_texture = textureData.data();
-                    nodeDataSize += newCount;
-                    }
-                }
+            TileNodePtr tileNode = new ScalableMeshTileNode(nodeP, node->GetNodeExtent(), Transform::FromIdentity(), 0, nullptr);
+            auto meshes = tileNode->GenerateMeshes();
 
             // Store data
-            ISMAllDataTypes3DTilesDataStorePtr tileStore;
+            ISMTileMeshDataStorePtr tileStore;
             bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
-            assert(result == true); // problem getting the indice data store for streaming
+            assert(result == true); // problem getting the tile mesh data store
 
-            tileStore->StoreBlock(&nodeData, nodeDataSize, node->GetBlockID());
+            if (!meshes.empty())
+                tileStore->StoreBlock(&*meshes[0], meshes.size(), node->GetBlockID());
+
+
+            // need children extent
+            if (node->m_pSubNodeNoSplit != nullptr)
+                {
+                if (!node->m_pSubNodeNoSplit->IsLoaded())
+                    node->m_pSubNodeNoSplit->Load();
+
+                if (node->m_pSubNodeNoSplit->GetBlockID().IsValid())
+                    {
+                    node->m_nodeHeader.m_childrenExtents[node->m_pSubNodeNoSplit->GetBlockID().m_integerID] = node->m_pSubNodeNoSplit->GetNodeExtent();
+                    }
+                }
+            else
+                {
+                for (auto& child : node->m_apSubNodes)
+                    {
+                    if (child != nullptr)
+                        {
+                        if (!child->IsLoaded())
+                            child->Load();
+                        if (child->m_nodeHeader.m_nodeCount > 0 && child->GetBlockID().IsValid())
+                            {
+                            node->m_nodeHeader.m_childrenExtents[child->GetBlockID().m_integerID] = child->GetNodeExtent();
+                            }
+                        }
+                    }
+                }
+
+            // Store header
+            pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
             }
-
-        // Store header
-        pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
-
 #else
         assert(false && "Make this compile on Vancouver!");
 #endif
@@ -3350,6 +3329,38 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     return poolMemBlobItemPtr;
     }
 
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTextureCompressedPtr()
+    {
+    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
+
+    if (!IsTextured())
+        return poolMemBlobItemPtr;
+
+    int64_t texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID.m_integerID : GetBlockID().m_integerID;
+
+    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::TextureCompressed, (uint64_t)m_SMIndex))
+        {
+        ISMTextureDataStorePtr nodeDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::TextureCompressed);
+        assert(result == true);
+
+        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::TextureCompressed, (uint64_t)m_SMIndex)
+#else
+            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
+#endif
+            );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemBlobItemPtr = storedMemoryPoolVector.get();
+        }
+
+    return poolMemBlobItemPtr;
+    }
+
 //=======================================================================================
 // @description Sets texture data for this node based on a raster. If untextured this adds
 //              a new texture.
@@ -4548,12 +4559,21 @@ Publish Cesium ready format
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
     {
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress, false, false, L"", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
     // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore);
+
+    Json::Value         rootJson;
+
+    rootJson["refine"] = "replace";
+    rootJson["geometricError"] = 1.E+06; // What should this value be?
+    TilePublisher::WriteBoundingVolume(rootJson, GetRootNode()->GetNodeExtent());
+
+    rootJson["content"]["url"] = Utf8String((BeFileName(path) + L"quebeccity.json").c_str());
+
 
     return SUCCESS;
     }

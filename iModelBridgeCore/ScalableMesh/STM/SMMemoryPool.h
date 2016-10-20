@@ -154,6 +154,11 @@ class SMMemoryPoolItemBase : public RefCountedBase
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
         void SetDirty() { m_dirty = true; }
+
+        bool IsCompressedType()
+            {
+            return m_dataType == SMStoreDataType::TextureCompressed;
+            }
     };
 
 

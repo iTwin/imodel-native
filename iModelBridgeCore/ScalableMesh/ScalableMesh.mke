@@ -44,6 +44,7 @@ always:
 always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
@@ -305,6 +306,8 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
 
+$(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
+
 $(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
@@ -461,6 +464,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \

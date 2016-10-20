@@ -513,20 +513,68 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
     {
-    (void)header;
-    (void)blockID;
+    // compute node tolerance (for the geometric error)
+    bool useContentExtent = header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume () > 0*/;
+    DRange3d cesiumRange = useContentExtent ? header->m_contentExtent : header->m_nodeExtent;
+    DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
+    if (!useContentExtent) diagonal.SetComponent(0.0, 2);
 
-    TileNode tileNode;
+    //double tolerance = cesiumRange.Volume() / max<int64_t>((int64_t)header->m_nodeCount, 100000);
+    double tolerance = diagonal.Magnitude() / 1000;
+
+    assert(tolerance > 0);
+    // SM_NEEDS_WORK : is there a transformation to apply at some point?
+    //transformDbToTile.Multiply(transformedRange, transformedRange);
+
+    // Get Cesium 3D tiles required properties
     Json::Value tile;
-    tile["refine"] = "replace";
-    tile["geometricError"] = 1.E06/*rootTile.GetTolerance()*/; // SM_NEEDS_WORK : what value should this be?
-    TilePublisher::WriteBoundingVolume(tile, header->m_nodeExtent);
+    tile["asset"]["version"] = "0.0";
 
-    //tile["content"]["url"] = Utf8String(rootTile.GetRelativePath(name.c_str(), s_metadataExtension).c_str());
+    auto& rootTile = tile["root"];
+    rootTile["refine"] = "replace";
+    rootTile["geometricError"] = tolerance; // SM_NEEDS_WORK : what value should this be?
+    TilePublisher::WriteBoundingVolume(rootTile, cesiumRange);
+
+    if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
+        {
+        rootTile["content"]["url"] = Utf8String((std::to_string(blockID.m_integerID) + ".b3dm").c_str());
+        //TilePublisher::WriteBoundingVolume(rootTile["content"], header->m_contentExtent);
+        }
+
+    Json::Value children(Json::arrayValue);
+    if (header->m_SubNodeNoSplitID.IsValid())
+        {
+        Json::Value child;
+        child["geometricError"] = 1.E+06;
+        child["refine"] = "replace";
+        child["content"]["url"] = Utf8String(("n_" + std::to_string(header->m_SubNodeNoSplitID.m_integerID) + ".json").c_str());
+        TilePublisher::WriteBoundingVolume(child, header->m_childrenExtents.at(header->m_SubNodeNoSplitID.m_integerID));
+        children.append(child);
+        }
+    else
+        {
+        for (auto childID : header->m_apSubNodeID)
+            {
+            if (childID.IsValid() && header->m_childrenExtents.find(childID.m_integerID) != header->m_childrenExtents.end())
+                {
+                Json::Value child;
+                child["geometricError"] = 1.E+06;
+                child["refine"] = "replace";
+                child["content"]["url"] = Utf8String(("n_" + std::to_string(childID.m_integerID) + ".json").c_str());
+                TilePublisher::WriteBoundingVolume(child, header->m_childrenExtents.at(childID.m_integerID));
+                children.append(child);
+                }
+            }
+        }
+    rootTile["children"] = children;
+
+
+    // SM_NEEDS_WORK : Get scalable mesh required properties
 
     auto utf8Node = Json::FastWriter().write(tile);
     po_pBinaryData.reset(new Byte[utf8Node.size()]);
     memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
+    po_pDataSize = (uint32_t)utf8Node.size();
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
@@ -676,15 +724,18 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     {
     uint32_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
+    std::wstring extension;
     switch (m_formatType)
         {
         case FormatType::Binary:
             {
+            extension = L".bin";
             SerializeHeaderToBinary(header, headerData, headerSize);
             break;
             }
         case FormatType::Json:
             {
+            extension = L".json";
             Json::Value block;
             SerializeHeaderToJSON(header, blockID, block);
             auto utf8Block = Json::FastWriter().write(block);
@@ -694,6 +745,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
             }
         case FormatType::Cesium3DTiles:
             {
+            extension = L".json";
             SerializeHeaderToCesium3DTile(header, blockID, headerData, headerSize);
             break;
             }
@@ -702,7 +754,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         }
 
     DataSourceURL dataSourceURL = m_pathToHeaders;
-    dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin"));
+    dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + extension));
 
     DataSource *dataSource = this->GetDataSourceAccount()->createDataSource();
     if (dataSource == nullptr)
@@ -1061,9 +1113,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
     return false;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMAllDataTypes3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<AllDataTypes3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::AllDataTypes3DTiles, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<TileMesh, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
     return true;
     }
 
@@ -1124,7 +1176,8 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         case SMStoreDataType::Texture:
             m_dataSourceURL = L"textures";
             break;
-        case SMStoreDataType::AllDataTypes3DTiles:
+        case SMStoreDataType::Cesium3DTiles:
+            m_dataSourceURL = L"data";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -1162,66 +1215,66 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
     if (NULL != DataTypeArray && countData > 0)
         {
+        Byte* dataToWrite = nullptr;
+        uint32_t sizeToWrite = 0;
+        switch (m_dataType)
+            {
+            case SMStoreDataType::Cesium3DTiles:
+                {
+                BeFileName outDir(m_dataSourceAccount->getPrefixPath().c_str());
+                outDir.AppendToPath(m_dataSourceURL.c_str());
+                PublisherContextPtr context = new PublisherContext(outDir, (/*L"p_" +*/ std::to_wstring(blockID.m_integerID) + L".b3dm").c_str());
+                TilePublisher publisher(context);
+                Utf8String scene;
+                publisher.Publish(*reinterpret_cast<TileMesh*>(DataTypeArray), scene);
+                return blockID;
+                }
+            default:
+                {
+                HCDPacket uncompressedPacket, compressedPacket;
+                size_t bufferSize = countData * sizeof(DATATYPE);
+                uncompressedPacket.SetBuffer(DataTypeArray, bufferSize);
+                uncompressedPacket.SetDataSize(bufferSize);
+                WriteCompressedPacket(uncompressedPacket, compressedPacket);
+
+                sizeToWrite = (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t);
+                dataToWrite = new Byte[sizeToWrite];
+                reinterpret_cast<uint32_t&>(*dataToWrite) = (uint32_t)bufferSize;
+                if (m_dataCache.count(blockID.m_integerID) > 0)
+                    {
+                    // must update data count in the cache
+                    auto& block = this->m_dataCache[blockID.m_integerID];
+                    block->resize(bufferSize);
+                    memcpy(block->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+                    dataToWrite = block->data();
+                    }
+                memcpy(dataToWrite + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
+
+                // Save block size in node header to optimize download speeds using segmentation
+                m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
+                }
+            }
+
         DataSourceStatus writeStatus;
 
         DataSourceURL url (m_dataSourceURL);
         url.append(L"p_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
-        //bool created = false;
-        //DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
-        //{
-        //std::lock_guard<mutex> clk(s_consoleMutex);
-        //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
-        //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
-        //}
         DataSource *dataSource = m_dataSourceAccount->createDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
-
-        //dataSource->setSegmentSize(1024 * 32);
-        //
-        //// Time I/O operation timeouts for threading
-        //dataSource->setTimeout(DataSource::Timeout(10000));
 
         writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
         assert(writeStatus.isOK()); // problem opening a DataSource
 
-        HCDPacket uncompressedPacket, compressedPacket;
-        size_t bufferSize = countData * sizeof(DATATYPE);
-        Byte* dataArrayTmp = new Byte[bufferSize];
-        memcpy(dataArrayTmp, DataTypeArray, bufferSize);
-        uncompressedPacket.SetBuffer(dataArrayTmp, bufferSize);
-        uncompressedPacket.SetDataSize(bufferSize);
-        WriteCompressedPacket(uncompressedPacket, compressedPacket);
-
-        Byte* data = new Byte[compressedPacket.GetDataSize() + sizeof(uint32_t)];
-        auto UncompressedSize = (uint32_t)uncompressedPacket.GetDataSize();
-        reinterpret_cast<uint32_t&>(*data) = UncompressedSize;
-        if (m_dataCache.count(blockID.m_integerID) > 0)
-            {
-            // must update data count
-            auto& points = this->m_dataCache[blockID.m_integerID];
-            points->resize(UncompressedSize);
-            memcpy(points->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-            }
-
-        m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
-
-        memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
-
-        writeStatus = dataSource->write(data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
+        writeStatus = dataSource->write(dataToWrite, sizeToWrite);
         assert(writeStatus.isOK()); // problem writing a DataSource
 
         writeStatus = dataSource->close();
         assert(writeStatus.isOK()); // problem closing a DataSource
 
-        //{
-        //std::lock_guard<mutex> clk(s_consoleMutex);
-        //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
-        //}
-        delete[] data;
-        delete[] dataArrayTmp;
-
         m_dataSourceAccount->destroyDataSource(dataSource);
+
+        delete[] dataToWrite;
         }
 
     return blockID;   

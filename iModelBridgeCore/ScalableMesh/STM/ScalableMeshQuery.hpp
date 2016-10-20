@@ -1384,6 +1384,30 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
     return texturePtr;
     }
 
+template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetTextureCompressed() const
+    {
+    LOAD_NODE
+
+        IScalableMeshTexturePtr texturePtr;
+
+    if (m_node->GetNbPoints() > 0)
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+        
+        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTextureCompressedPtr());
+        
+        if (texPtr.IsValid())
+            {
+            ScalableMeshTexturePtr textureP(ScalableMeshTexture::Create(texPtr));
+        
+            if (textureP->GetSize() != 0)
+                texturePtr = IScalableMeshTexturePtr(textureP.get());
+            }
+        }
+
+    return texturePtr;
+    }
+
 template <class POINT> bool ScalableMeshNode<POINT>::_IsTextured() const
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
@@ -1420,6 +1444,18 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>
         {
         return __super::_GetTexture();
         }   
+    }
+
+template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>::_GetTextureCompressed() const
+    {
+    if (m_loadedTextureCompressed != 0)
+        {
+        return m_loadedTextureCompressed;
+        }
+    else
+        {
+        return __super::_GetTextureCompressed();
+        }
     }
 
 

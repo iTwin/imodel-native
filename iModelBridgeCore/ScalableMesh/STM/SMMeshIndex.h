@@ -569,7 +569,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr();
 
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr(uint64_t texID);
-                             
+
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTextureCompressedPtr();
+
     void PushUV(const DPoint2d* points, size_t size);
             
     virtual RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> GetUVCoordsPtr()

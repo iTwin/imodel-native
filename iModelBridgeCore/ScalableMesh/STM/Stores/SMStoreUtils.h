@@ -265,6 +265,9 @@ template <class EXTENT> class SMIndexNodeHeaderBase
         bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
         bool        m_isTextured;               // Indicates if the node contains Texture or not
 
+        map<size_t, EXTENT> m_childrenExtents; // Only used and required by Cesium 3D tile format
+
+
 
         //INFORMATION NOT PERSISTED
         struct RLC3dPoints
@@ -291,7 +294,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         vector<HPMBlockID>  m_apSubNodeID;
         HPMBlockID          m_SubNodeNoSplitID;
         bool                m_filtered;    
-    
+   
         //NEEDS_WORK_SM - m_meshed ?
         size_t      m_nbFaceIndexes;
         size_t      m_nbUvIndexes;

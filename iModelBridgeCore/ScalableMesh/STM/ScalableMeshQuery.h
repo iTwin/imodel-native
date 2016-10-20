@@ -1233,6 +1233,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshTexturePtr _GetTexture() const override;
 
+        virtual IScalableMeshTexturePtr _GetTextureCompressed() const override;
+
         virtual bool                    _IsTextured() const override;
                 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
@@ -1299,7 +1301,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
             //NEEDS_WORK_TEXTURE
             IScalableMeshMeshPtr    m_loadedMesh;
             IScalableMeshTexturePtr m_loadedTexture;            
-            bool                    m_loadTexture;             
+            IScalableMeshTexturePtr m_loadedTextureCompressed;
+            bool                    m_loadTexture;
 
     protected: 
 
@@ -1308,6 +1311,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
             virtual IScalableMeshTexturePtr _GetTexture() const override;
+
+            virtual IScalableMeshTexturePtr _GetTextureCompressed() const override;
 
     public:             
 
