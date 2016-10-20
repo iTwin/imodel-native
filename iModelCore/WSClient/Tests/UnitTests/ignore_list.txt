@@ -17,6 +17,6 @@ ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
 
-CachingDataSourceTests.SyncCachedData_*
+CachingDataSourceTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
-    # <Any one of these tests seems to randomly crash with no output or stack printed>
+    # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
