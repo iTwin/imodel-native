@@ -37,13 +37,6 @@ nameToDefine=__WMSPARSER_BUILD__
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
-# Create PCH
-#CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-#$(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h  $(PublicApiDir)RealityDataProvider.h
-
-# Use PCH
-#CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
@@ -66,6 +59,8 @@ $(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(baseDir)WMSCapabili
 $(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(baseDir)FtpTraversalEngine.h ${MultiCompileDepends}
 
 $(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(baseDir)HttpTraversalEngine.h ${MultiCompileDepends}
+
+$(o)ODBCSQLConnection$(oext) : $(baseDir)ODBCSQLConnection.cpp $(baseDir)ODBCSQLConnection.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -92,7 +87,8 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       odbc32$(libext)
 
 # windows specific for Unzipfile
 LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       

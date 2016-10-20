@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/AwsTraverser/AwsTraverser.h $
+|     $Source: RealityAdmin/ODBCSQLConnection.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,51 +10,17 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/SpatialEntityData.h>
 
-#include <Bentley/DateTime.h>
-#include <curl/curl.h>
-#include <string>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
-struct AwsPinger
-    {
-    static AwsPinger* s_instance;
-    Utf8String m_certificatePath;
-    CURL* m_curl;
-
-    void ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize);
-public:
-
-    AwsPinger();
-    ~AwsPinger();
-    float m_redSize, m_blueSize, m_greenSize, m_panSize;
-    static AwsPinger& GetInstance();
-    };
-
-struct AwsLogger
-    {
-public:
-    virtual void Log(std::string message);
-    bool ValidateLine(size_t LineIndex, std::string line);
-    virtual void Close() {}
-    };
-
-struct AwsFileLogger: public AwsLogger
-    {
-public:
-    std::ofstream logFile;
-    void Log(std::string message) override;
-    void Close() override;
-    };
-
 
 //=======================================================================================
 // @bsiclass
 // Connection to the SQL Server, handles all transactions
 //=======================================================================================
-/*struct ServerConnection
-    {
+struct ServerConnection
+{
 private:
     SQLHENV     hEnv;
     SQLHDBC     hDbc;
@@ -65,9 +31,9 @@ private:
     void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
 
 public:
-    static ServerConnection& GetInstance();
+    REALITYDATAPLATFORM_EXPORT static ServerConnection& GetInstance();
     ServerConnection();
-    void SetStrings(const char* dbName, const char* pwszConnStr);
+    REALITYDATAPLATFORM_EXPORT void SetStrings(const char* dbName, const char* pwszConnStr);
     void TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x);
     SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
     SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
@@ -76,15 +42,15 @@ public:
     RETCODE ExecutePrepared();
     SQLRETURN FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len);
     void ReleaseStmt();
-    bool IsDuplicate(Utf8CP file);
+    REALITYDATAPLATFORM_EXPORT bool IsDuplicate(Utf8CP file);
+    bool IsMirror(Utf8CP file);
     bool HasEntries(CHAR* input);
     void Exit();
 
-    //void Save(AwsData awsdata);
-    void Save(SpatialEntityData awsdata);
-    bool CheckExists(std::string id);
-    SQLINTEGER SaveServer(std::string url);
-    SQLINTEGER SaveMetadata();
-    };*/
+    REALITYDATAPLATFORM_EXPORT void Save(SpatialEntityDataCR data, bool dualMode);
+    REALITYDATAPLATFORM_EXPORT void Update(SpatialEntityDataCR data);
+    REALITYDATAPLATFORM_EXPORT bool CheckExists(Utf8String id);
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER SaveServer(std::string url);
+};
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

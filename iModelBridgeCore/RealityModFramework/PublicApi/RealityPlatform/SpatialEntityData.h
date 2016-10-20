@@ -13,6 +13,8 @@
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
+#include <sql.h>
+#include <sqlext.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -455,6 +457,30 @@ public:
     REALITYDATAPLATFORM_EXPORT SpatialEntityServerCR GetServer() const;
     REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerR server);
 
+    REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
+    REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetMultibandUrl() const;
+    REALITYDATAPLATFORM_EXPORT void SetMultibandUrl( Utf8String url );
+    
+    REALITYDATAPLATFORM_EXPORT float GetCloudCover() const;
+    REALITYDATAPLATFORM_EXPORT void SetCloudCover( float cover );
+
+    REALITYDATAPLATFORM_EXPORT float GetRedBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetRedBandSize( float size );
+
+    REALITYDATAPLATFORM_EXPORT float GetBlueBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetBlueBandSize( float size );
+
+    REALITYDATAPLATFORM_EXPORT float GetGreenBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetGreenBandSize( float size );
+
+    REALITYDATAPLATFORM_EXPORT float GetPanchromaticBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( float size );
+
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetMultibandServerId() const;
+    REALITYDATAPLATFORM_EXPORT void SetMultibandServerId( SQLINTEGER id );
+
 protected:
     SpatialEntityData();
 
@@ -475,7 +501,17 @@ protected:
     SpatialEntityThumbnailPtr m_pThumbnail;
     SpatialEntityMetadataPtr m_pMetadata;
     SpatialEntityServerPtr m_pServer;
-};
+
+    bool m_isMultiband = false;
+    Utf8String m_multibandDownloadUrl;
+    float m_cloudCover;
+    float m_redSize;
+    float m_blueSize;
+    float m_greenSize;
+    float m_panchromaticSize;
+    SQLINTEGER m_multibandServerId;
+}; 
+   
 
 //=====================================================================================
 //! Utility class to extract the required data from a zip file.

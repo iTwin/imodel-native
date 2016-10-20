@@ -467,6 +467,30 @@ void SpatialEntityData::SetMetadata(SpatialEntityMetadataR metadata) { m_pMetada
 SpatialEntityServerCR SpatialEntityData::GetServer() const { return *m_pServer; }
 void SpatialEntityData::SetServer(SpatialEntityServerR server) { m_pServer = &server; }
 
+bool SpatialEntityData::GetIsMultiband() const { return m_isMultiband; }
+void SpatialEntityData::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }
+
+Utf8String SpatialEntityData::GetMultibandUrl() const { return m_multibandDownloadUrl; }
+void SpatialEntityData::SetMultibandUrl(Utf8String url) { m_multibandDownloadUrl = url; }
+
+float SpatialEntityData::GetCloudCover() const { return m_cloudCover; }
+void SpatialEntityData::SetCloudCover(float cover) { m_cloudCover = cover; }
+
+float SpatialEntityData::GetRedBandSize() const { return m_redSize; }
+void SpatialEntityData::SetRedBandSize(float size) { m_redSize = size; }
+
+float SpatialEntityData::GetBlueBandSize() const { return m_blueSize; }
+void SpatialEntityData::SetBlueBandSize(float size) { m_blueSize = size; }
+
+float SpatialEntityData::GetGreenBandSize() const { return m_greenSize; }
+void SpatialEntityData::SetGreenBandSize(float size) { m_greenSize = size; }
+
+float SpatialEntityData::GetPanchromaticBandSize() const { return m_panchromaticSize; }
+void SpatialEntityData::SetPanchromaticBandSize(float size) { m_panchromaticSize = size; }
+
+SQLINTEGER SpatialEntityData::GetMultibandServerId() const { return m_multibandServerId; }
+void SpatialEntityData::SetMultibandServerId(SQLINTEGER id) { m_multibandServerId = id; }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------

@@ -29,6 +29,8 @@
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
+        <SubPart PartName="RealityPackage"/>
+        <SubPart PartName="RealityPlatform"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityAdmin$(stlibext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(shlibext)</Assemblies>
@@ -44,6 +46,7 @@
     </Part>
     
     <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityAdmin\AwsTraverser\AwsTraverser.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
