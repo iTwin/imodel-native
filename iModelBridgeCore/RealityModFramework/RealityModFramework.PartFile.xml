@@ -69,7 +69,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityServicesNet" BentleyBuildMakeFile="RealityServicesNet\RealityServicesNet.mke">
+    <Part Name="RealityServicesNet" BMakeFile="RealityServicesNet\RealityServicesNet.mke">
         <SubPart PartName="RealityPlatform" />
         <Bindings>
             <Assemblies>Delivery/RealityServicesNet$(shlibext)</Assemblies>
