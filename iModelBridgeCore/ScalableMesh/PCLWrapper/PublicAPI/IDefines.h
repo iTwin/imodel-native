@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__BENTLEY_INTERNAL_ONLY__
+
 #ifndef DLLEXPORT
 #define DLLEXPORT __declspec( dllexport )
 #endif

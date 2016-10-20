@@ -2109,6 +2109,11 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     return _GetLevel();
     }
 
+bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
+    {
+    return _GetUseAllResolutions();
+    }
+
 void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
@@ -2118,6 +2123,11 @@ void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates
 void IScalableMeshMeshQueryParams::SetLevel(size_t depth)
     {
     _SetLevel(depth);
+    }
+
+void IScalableMeshMeshQueryParams::SetUseAllResolutions(bool useAllResolutions)
+    {
+    _SetUseAllResolutions(useAllResolutions);
     }
 
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
@@ -2215,6 +2225,12 @@ int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                
     return _Query(meshNodes, pQueryExtentPts, nbQueryExtentPts, scmQueryParamsPtr);
     }
 
+int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                      meshNodes,
+                                  ClipVectorCP                                       queryExtent3d,
+                                  const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const
+    {
+    return _Query(meshNodes, queryExtent3d, scmQueryParamsPtr);
+    }
 
 static bool s_passNormal = false;
 
@@ -2343,6 +2359,16 @@ BcDTMPtr IScalableMeshNode::GetBcDTM() const
 bool IScalableMeshNode::ArePointsFullResolution() const
     {
     return _ArePointsFullResolution();
+    }
+
+bool IScalableMeshNode::IsDataUpToDate() const
+    {
+    return _IsDataUpToDate();
+    }
+
+void IScalableMeshNode::UpdateData() 
+    {
+    return _UpdateData();
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
@@ -2560,6 +2586,7 @@ StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVect
     {
     return _GetDisplayClipVectors(clipVectors);
     }
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */

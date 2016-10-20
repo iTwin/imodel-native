@@ -650,6 +650,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     params->SetDirection(direction);
     QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
     m_nodeSelection.clear();
+    if (nodes.empty()) QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
     bvector<bool> clips;
     for (auto& node : nodes)
         {

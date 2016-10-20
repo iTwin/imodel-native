@@ -46,9 +46,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_arePoints3d = false;
 
-    for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
+    for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
-        m_nodeHeader.m_apAreNeighborNodesStitched[nodeInd] = false;
+        m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndIter] = false;
         }
 
     HDEBUGCODE(m_unspliteable = false;)
@@ -3711,12 +3711,12 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     HINVARIANTS;
     bool returnValue = true;
 
-    if (!m_destroyed && IsLoaded())
+    if (!m_destroyed)
         {        
         // Save the current blockID        
         bool needStoreHeader = m_isDirty;
         
-        if (needStoreHeader) 
+        if (needStoreHeader && IsLoaded())
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             
@@ -5942,6 +5942,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(
     return digDown;
     }
 
+static bool s_queryNodeOrder = true;
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP)
     {    
@@ -5984,16 +5985,24 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
             if (digDown)
                 {                                              
-                /*NEEDS_WORK_SM : Too long to execute
-                vector<size_t> queryNodeOrder;
+				if (s_queryNodeOrder)
+					{                
+					vector<size_t> queryNodeOrder;
                 
-                queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                */
-                                                
-                for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                    {                                      
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
-                    }                                
+					queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());					
+
+					for (auto& nodeOrder : queryNodeOrder)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[nodeOrder]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
+				else
+					{                                                                
+					for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
                 }
             }
         }
@@ -7627,7 +7636,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    BeFileName masterHeaderPath(pi_pOutputDirPath);
+    BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
     masterHeaderPath.PopDir();
     masterHeaderPath.PopDir();
 

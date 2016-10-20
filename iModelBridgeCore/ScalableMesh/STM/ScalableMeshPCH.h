@@ -27,16 +27,19 @@
 #include <Mtg/MtgStructs.h>
 #include <GeoCoord/BaseGeoCoord.h>
 
-/*#include <DgnGeoCoord\DgnGeoCoord.h>
+#ifdef VANCOUVER_API
+#include <DgnGeoCoord\DgnGeoCoord.h>
 #include <DgnPlatform\DgnAttachment.h>
 #include <DgnPlatform\DgnPlatform.h>
 #include <DgnPlatform\DgnFileIO\ModelInfo.h>
 #include <DgnPlatform\DgnFileIO\UnitDefinition.h>
 #include <DgnPlatform\ElementHandlerManager.h>
-#include <DgnPlatform\ScanCriteria.h>*/
+#include <DgnPlatform\ScanCriteria.h>
+#endif
 
 #include <DgnPlatform\DgnPlatform.r.h>
-/*#include <DgnPlatform\ElementHandle.h>
+#ifdef VANCOUVER_API
+#include <DgnPlatform\ElementHandle.h>
 #include <DgnPlatform\XAttributeHandler.h>
 #include <RmgrTools\Tools\DataExternalizer.h>
 
@@ -46,18 +49,21 @@
 #include <DgnPlatform\DelegatedElementECEnabler.h>
 
 #include <DgnPlatform\ExtendedElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>*/
+#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-/*#include <DgnPlatform\PointCloudHandler.h>
+#ifdef VANCOUVER_API
+#include <DgnPlatform\PointCloudHandler.h>
 
 #include <PointCloud\PointCloud.h>
 #include <PointCloud\PointCloudChannel.h>
 #include <PointCloud\PointCloudFileEdit.h>
 #include <DgnPlatform\PointCloudClipHandler.h>    
 USING_NAMESPACE_BENTLEY_POINTCLOUD
-#include <PointCloud\PointCloudDataQuery.h>*/
+#include <PointCloud\PointCloudDataQuery.h>
+#endif
 
 
 /*----------------------------------------------------------------------+
@@ -75,8 +81,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/Import/Definitions.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
-    
+
+#ifndef VANCOUVER_API    
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
+#endif 
 
 //Useful for detecting memory leak
 //#define _DEBUG

@@ -19,6 +19,8 @@
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+#include "Edits\EditOperation.h"
+
 #include "SMMemoryPool.h"
 #include "Stores\SMSQLiteStore.h"
 
@@ -470,7 +472,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 #ifndef VANCOUVER_API            
             new SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
 #else
-            SMMemoryPoolGenericBlobItem<SmCachedDisplayMeshData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
+            SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex)
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
@@ -581,6 +583,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 #endif       
    
 
+    void RemoveWithin(ClipVectorCP boundariesToRemoveWithin);
+
+    void UpdateData();
+
+    void AddEdit(RefCountedPtr<EditOperation>& editDef);
 
 
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
@@ -706,12 +713,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         HFCPtr<ClipRegistry> m_clipRegistry;
         mutable std::mutex m_headerMutex;
 
+
+        bvector<RefCountedPtr<EditOperation>> m_remainingUnappliedEdits;
+
 #ifdef WIP_MESH_IMPORT
         public: //NEEDS_WORK: make private
         bvector<int> m_meshParts;
         bvector<Utf8String> m_meshMetadata;
         bool m_existingMesh;
 #endif 
+
     };
 
 
@@ -773,6 +784,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+
+        int                 RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes);
 #ifdef ACTIVATE_TEXTURE_DUMP
         void                DumpAllNodeTextures()
             {
@@ -805,6 +818,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
+        bvector < RefCountedPtr<EditOperation> > m_edits;
 
     };
 

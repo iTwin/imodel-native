@@ -62,7 +62,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
         assert(database->TableExists("SMMasterHeader"));
         assert(database->ColumnExists("SMMasterHeader", "TerrainDepth"));
         Savepoint s(*database, Utf8String("newTable").c_str());
-        database->RenameTable("SMMasterHeader", "SMMasterHeader_2");
+        database->ExecuteSql("ALTER TABLE SMMasterHeader RENAME TO SMMasterHeader_2");
         database->CreateTable("SMMasterHeader", "MasterHeaderId INTEGER PRIMARY KEY,"
                                 "Balanced INTEGER,"
                                 "SplitTreshold INTEGER,"
@@ -87,7 +87,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
         assert(database->ColumnExists("SMNodeHeader", "GraphID"));
         assert(database->ColumnExists("SMNodeHeader", "IndiceID"));
 
-        database->RenameTable("SMNodeHeader", "SMNodeHeader_2");
+        database->ExecuteSql("ALTER TABLE SMNodeHeader RENAME TO SMNodeHeader_2");
         database->CreateTable("SMNodeHeader", "NodeId INTEGER PRIMARY KEY,"
                               "ParentNodeId INTEGER,"
                               "Resolution INTEGER,"
@@ -109,7 +109,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[1] = {
                              " SELECT SMNodeHeader_2.NodeId,SMNodeHeader_2.ParentNodeId,SMNodeHeader_2.Resolution,SMNodeHeader_2.Filtered,SMNodeHeader_2.Extent,SMNodeHeader_2.ContentExtent,SMNodeHeader_2.TotalCount,SMNodeHeader_2.NodeCount,SMNodeHeader_2.ArePoints3d,SMNodeHeader_2.NbFaceIndexes,SMNodeHeader_2.NumberOfMeshComponents,SMNodeHeader_2.AllComponent,SMNodeHeader_2.IsTextured,SMNodeHeader_2.TexID,SMNodeHeader_2.SubNode,SMNodeHeader_2.Neighbor"
                              " FROM SMNodeHeader_2");
 
-        database->RenameTable("SMTexture", "SMTexture_2");
+        database->ExecuteSql("ALTER TABLE SMTexture RENAME TO SMTexture_2");
         database->CreateTable("SMTexture", "NodeId INTEGER PRIMARY KEY,"
                               "TexData BLOB,"
                               "SizeTexture INTEGER,"

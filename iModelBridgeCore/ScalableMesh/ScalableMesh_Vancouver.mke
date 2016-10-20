@@ -1,19 +1,22 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMesh.mke $
+#  $Source: ScalableMesh_Vancouver.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
      
 baseDir         = $(_MakeFilePath)
-
-
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMesh.mki
+BUILD_USING_VS2013=1
+VANCOUVER=1
+OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
-%include $(baseDir)ScalableMesh.mki
+
+
 
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
@@ -38,13 +41,16 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312
+
+
+%if defined(VANCOUVER)
+CCompOpts + -DVANCOUVER_API
+%endif
 
 #Uncomment this to allow generating design meshes
-CCompOpts + -DWIP_MESH_IMPORT
+#CCompOpts + -DWIP_MESH_IMPORT
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -73,12 +79,11 @@ CCompOpts + -wd4172
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DVANCOUVER_API
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -296,8 +301,7 @@ $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompil
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
-$(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h ${MultiCompileDepends}
-
+$(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores
@@ -344,29 +348,29 @@ $(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeade
 
 $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
-$(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -420,6 +424,8 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 
 cppObjects =% $(MultiCompileObjectList)
 
+certDir             = $(bsiCerts)
+
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
@@ -435,16 +441,17 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)cpprest120_2_6.lib \
+    $(ContextSubpartsLibs)PCLWrapper.lib \
+    $(ContextSubpartsLibs)BeCurl.lib 
+    
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
 #    $(DgnPlatformV8LibDir)DgnPlatform.lib \
 #    $(DgnPlatformV8LibDir)DgnGeoCoord.lib \
 #    $(DgnPlatformV8LibDir)RmgrTools.lib \
-#    $(DgnPlatformV8LibDir)BaseGeoCoord.lib 
 
-#    $(ContextSubpartsLibs)cpprest140_2_6.lib
-#    $(ContextSubpartsLibs)PCLWrapper.lib \
 #    $(ContextSubpartsLibs)Imagepp-gdal.lib \
 #    $(ContextSubpartsLibs)PointCloud.lib \
 #    $(ContextSubpartsLibs)RmgrTools.lib \
@@ -454,15 +461,24 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 #    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
 #    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)Imagepp.lib \
+    $(ContextSubpartsLibs)$(IppGraLibsLib) \
+    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)IppZlib.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
+    $(ContextSubpartsLibs)RmgrTools.lib \
+    $(ContextSubpartsLibs)DgnGeoCoord.lib \
+    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
-    $(ContextSubpartsLibs)ECObjects.lib \
-    $(ContextSubpartsLibs)BePointCloud.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+
+#    $(ContextSubpartsLibs)DgnView.lib \
+#    $(ContextSubpartsLibs)RasterCore.lib \
+#    $(ContextSubpartsLibs)BePointCloud.lib
+
     
 
 %include $(sharedMki)LinkLibrary.mki
