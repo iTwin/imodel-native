@@ -19,6 +19,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //  !! In particular, this interface does NOT call m_element._Get/SetPropertyValue. 
 //  !! It reads and writes the ECDBuffer memory directly. That is a valid and necessary
 //  !! optimization for proeprty load/store and for internal, low-level property access.
+//
+// ***TRICKY*** ElementAutoHandledPropertiesECInstanceAdapter objects are ALWAYs put on the stack 
+//              They are never ref-counted. However, since this class inherits from IECInstance
+//              it appears to be ref-counted, and some EC functions will add a reference to instances
+//              of this class as a result. We defeat that by always adding an initial reference
+//              to an instance in the constructor.
+//
 // @See ElementECInstanceAdapter
 // @bsiclass                                                     Sam.Wilson        10/16
 //=======================================================================================
@@ -26,20 +33,16 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
 {
     friend struct ElementECPropertyAccessor;
 
+private:
     DgnElement& m_element;
     ECClassCP m_eclass;
     ECN::ClassLayoutCP m_layout;
 
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, bool loadProperties);
-    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR, bool loadProperties);
-    
-    bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
-
+    void Init(bool loadProperties, size_t initialAllocation);
+    void AllocateBuffer(size_t);
     uint32_t GetBytesUsed() const;
 
     BentleyStatus LoadProperties();
-    BeSQLite::EC::ECInstanceUpdater* GetUpdater();
-    DgnDbStatus UpdateProperties();
 
     // ECDBuffer:
     ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
@@ -51,7 +54,11 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
     ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override { BeAssert(false); return ECN::ECObjectsStatus::Error; }
 
-    bool _AcquireData(bool) const override { return (DgnElement::PropState::InBuffer == m_element.m_flags.m_propState); }
+    bool _AcquireData(bool) const override 
+        {
+        BeAssert((DgnElement::PropState::Unknown != m_element.m_flags.m_propState) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState));
+        return true;
+        }
     bool _ReleaseData() const override { return true; }
     bool _IsMemoryInitialized() const override { return (nullptr != m_element.m_ecPropertyData); }
     Byte const * _GetData() const override { return m_element.m_ecPropertyData; }
@@ -89,6 +96,24 @@ struct ElementAutoHandledPropertiesECInstanceAdapter : ECN::ECDBuffer, ECN::IECI
     bool            _IsReadOnly() const override {return false;}
     Utf8String      _ToString (Utf8CP indent) const override {return "";}
     size_t          _GetOffsetToIECInstance () const override {return 0;} // WIP_AUTO_HANDLED_PROPERTIES -- what is this??
+
+public:
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, bool loadProperties, size_t initialAllocation = 0);
+    ElementAutoHandledPropertiesECInstanceAdapter(DgnElement const&, ECClassCR, ECN::ClassLayoutCR, bool loadProperties, size_t initialAllocation = 0);
+    
+    bool IsValid() const {return (nullptr != m_eclass) && (DgnElement::PropState::NotFound != m_element.m_flags.m_propState);}
+
+    BeSQLite::EC::ECInstanceUpdater* GetUpdater();
+    DgnDbStatus UpdateProperties();
+
+    ECObjectsStatus InsertArrayElements (uint32_t propertyIndex, uint32_t index, uint32_t size)
+        {return _InsertArrayElements(propertyIndex, index, size);}
+    ECObjectsStatus AddArrayElements (uint32_t propertyIndex, uint32_t size)
+        {return _AddArrayElements(propertyIndex, size);}
+    ECObjectsStatus RemoveArrayElement (uint32_t propertyIndex, uint32_t index)
+        {return _RemoveArrayElement(propertyIndex, index);}
+    ECObjectsStatus ClearArray (uint32_t propIdx)
+        {return _ClearArray(propIdx);}
 };
 
 //=======================================================================================

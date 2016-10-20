@@ -1226,7 +1226,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         // TRICKY: Don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
         //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
         //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
-        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, false);
+        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, false, ecOther.CalculateBytesUsed());
         if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
             {
             if (GetElementClassId() != other.GetElementClassId())
