@@ -420,7 +420,7 @@ void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR co
         return;
         }
 
-    CameraInfo const& cam = context.GetViewport()->GetCamera();
+    auto const& cam = context.GetViewport()->GetCamera();
     
     ElementAlignedBox3d box = m_root->GetRootTile()->GetRange();
 
