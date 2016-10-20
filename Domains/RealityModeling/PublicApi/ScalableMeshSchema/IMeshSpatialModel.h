@@ -11,6 +11,7 @@
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
 #include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTileIterator)
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTexture)
@@ -53,7 +54,7 @@ struct ITerrainTexture : public RefCountedBase
     public:
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const;
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetDimensions(uint32_t& width, uint32_t& height) const;
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const; 
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const;
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetRange(DRange3dR range) const;
         SCALABLEMESH_SCHEMA_EXPORT ITextureTileId const& GetId() const;
     };
