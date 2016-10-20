@@ -164,7 +164,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_TRUE(abutment2Ptr->Insert().IsValid());
 
     auto stemWall2Ptr = StemWallAbutment::Create(*abutment2Ptr);
-    ASSERT_TRUE(stemWall1Ptr->Insert().IsValid());
+    ASSERT_TRUE(stemWall2Ptr->Insert().IsValid());
 
     // Create Superstructure
     auto superPtr = CastInPlaceSlabSuperstructure::Create(*abutment1Ptr, *abutment2Ptr);
