@@ -356,7 +356,6 @@ void    DoResize()
 };      // Resizer
 
 
-//#define DEBUG_IMAGES
 #ifdef DEBUG_IMAGES
 static void writeImageFile (Byte const* data, uint32_t width, uint32_t height, char* name, int32_t bytesPerPixel)
     {
@@ -383,8 +382,8 @@ Image Image::FromResizedImage (uint32_t targetWidth, uint32_t targetHeight, Imag
     resizer.DoResize();
 
 #ifdef DEBUG_IMAGES
-    writeImageFile (sourceImage.GetByteStream().data(), sourceImage.GetWidth(), sourceImage.GetHeight(), "d:\\tmp\\inputImage.jpg", sourceImage.GetBytesPerPixel());
-    writeImageFile (outputImage.data(), targetWidth, targetHeight, "d:\\tmp\\resizedImage.jpg", sourceImage.GetBytesPerPixel());
+    writeImageFile (sourceImage.GetByteStream().data(), sourceImage.GetWidth(), sourceImage.GetHeight(), "d:\\tmp\\inputImage.png", sourceImage.GetBytesPerPixel());
+    writeImageFile (outputImage.data(), targetWidth, targetHeight, "d:\\tmp\\resizedImage.png", sourceImage.GetBytesPerPixel());
 #endif
 
     return Image (targetWidth, targetHeight, std::move (outputImage), sourceImage.GetFormat());
