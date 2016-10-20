@@ -42,6 +42,11 @@ protected:
 
 public:
     static DgnDbRepositoryManagerPtr Create(DgnDbRepositoryConnectionPtr connection);
+
+    //! Gets used DgnDbRepositoryConnection
+    //! @returns DgnDbRepositoryConnection
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr();
+
     //__PUBLISH_SECTION_START__
     DGNDBSERVERCLIENT_EXPORT void                   SetCancellationToken  (ICancellationTokenPtr cancellationToken);
 };

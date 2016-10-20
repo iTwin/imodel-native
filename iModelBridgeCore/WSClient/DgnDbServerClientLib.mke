@@ -53,6 +53,9 @@ LLVMCommonCompOpts      + -Wno-unknown-pragmas
 dirToSearch = $(_MakeFilePath)PublicAPI/
 %include cincapnd.mki
 
+# Prevent fatal error C1128.
+CCCompOpts + -bigobj
+
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 

@@ -343,4 +343,20 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCod
         }
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             10/2016
+//---------------------------------------------------------------------------------------
+bool ExecutionManager::IsErrorForRetry(DgnDbServerError::Id errorId)
+    {
+    static bset<DgnDbServerError::Id> set;
+    if (set.empty())
+        {
+        set.insert(DgnDbServerError::Id::InternalServerError);
+        set.insert(DgnDbServerError::Id::WebServicesError);
+        set.insert(DgnDbServerError::Id::ConnectionError);
+        }
+
+    return set.find(errorId) != set.end();
+    }
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE

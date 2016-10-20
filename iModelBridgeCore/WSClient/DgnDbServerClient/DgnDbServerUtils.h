@@ -208,4 +208,37 @@ bool GetCodeFromServerJson (JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR
 void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
 bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
 
+//=======================================================================================
+//@bsiclass                                      Algirdas.Mikoliunas             10/2016
+//=======================================================================================
+struct ExecutionManager
+    {
+    static bool IsErrorForRetry(DgnDbServerError::Id errorId);
+
+    template <typename T>
+    static DgnDbServerTaskPtr<T> ExecuteWithRetry(const std::function<DgnDbServerTaskPtr<T>()> taskCallback)
+        {
+        std::shared_ptr<DgnDbServerResult<T>> finalResult = std::make_shared<DgnDbServerResult<T>>();
+        return taskCallback()->Then([=](DgnDbServerResult<T>const& res) 
+            {
+            *finalResult = res;
+            if (!res.IsSuccess())
+                {
+                if (IsErrorForRetry(res.GetError().GetId()))
+                    {
+                    taskCallback()->Then([=](DgnDbServerResult<T>const& res)
+                        {
+                        *finalResult = res;
+                        });
+                    }
+                }
+
+            return ;
+            })->Then<DgnDbServerResult<T>>([=]()
+                {
+                return *finalResult;
+                });
+        }
+    };
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE
