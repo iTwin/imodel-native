@@ -95,6 +95,11 @@ public:
     //! Query for the first GeometricModel in the specified DgnDb
     //! @note Only to be used when the DgnCode of the model is not known
     static DgnModelId QueryFirstGeometricModelId(DgnDbR);
+
+    //! Use ECSql to SELECT COUNT(*) from the specified ECClass name
+    static int SelectCountFromECClass(DgnDbR, Utf8CP className);
+    //! Use BeSQLite to SELECT COUNT(*) from the specified table
+    static int SelectCountFromTable(DgnDbR, Utf8CP tableName);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
