@@ -243,6 +243,11 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
     
     bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
 
+    //Since QVElem are created in the background in a parallel fashion we always want to use the Cached Graphics.
+    bool& usedCached = context.GetUseCachedGraphics();
+    bool usedCachedOld = usedCached;
+    usedCached = true;
+
     //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
     //assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
     assert(isOutputQuickVision == true);
@@ -517,6 +522,9 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>&  meshNo
 
 
     context.PopTransformClip();
+
+    //Restore GetUseCachedGraphics setting
+    usedCached = usedCachedOld;    
     }
 
 
@@ -874,12 +882,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     assert(status == SUCCESS);
 
 
-    if (s_waitQueryComplete)
+    if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
         while (!m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
+            BeThreadUtilities::BeSleep (200);
             }
         }
+
     int terrainQueryId = -1;
     if (!clipFromCoverageSet.empty())
         {
@@ -897,6 +907,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                                                       true, //No wireframe mode, so always load the texture.
                                                       clips,
                                                      terrainSM);
+
+        if (!m_isProgressiveDisplayOn)
+            {
+            while (!m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
+                {
+                BeThreadUtilities::BeSleep (200);
+                }
+            }
         }
 
     bool needProgressive;
@@ -1077,6 +1095,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     {
     m_tryOpen = false;               
     m_forceRedraw = false;
+    m_isProgressiveDisplayOn = true;
 
    // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
    // appData->m_smTerrainPhysicalModelP = this;
@@ -1313,6 +1332,14 @@ bool ScalableMeshModel::IsTerrain()
     {
     if (m_smPtr.get() == nullptr) return false;
     return m_smPtr->IsTerrain();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre    10/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
+    {
+    m_isProgressiveDisplayOn = isProgressiveDisplayOn;
     }
 
 //----------------------------------------------------------------------------------------
