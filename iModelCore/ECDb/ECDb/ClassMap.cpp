@@ -391,7 +391,6 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
 
     for (ECPropertyCP property : propertiesToMap)
         {
-        Utf8CP propertyAccessString = property->GetName().c_str();
         if (WipPropertyMap* newProperyMap = ClassMapper::MapProperty(*this, *property))
             {
             if (property->GetIsNavigation())
