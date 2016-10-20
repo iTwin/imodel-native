@@ -531,10 +531,8 @@ public:
         { return new ElementTileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void SetTolerance(double tolerance) { m_tolerance = tolerance; }
-    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
-    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
 };
 
@@ -616,16 +614,13 @@ private:
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
-    DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
-
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
     ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, double leafTolerance, size_t maxPointsPerTile);
-    DGNPLATFORM_EXPORT Status GenerateAndCollectTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
 
 };
 
