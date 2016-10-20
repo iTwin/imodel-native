@@ -235,7 +235,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraInfo const* camera,
+StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraViewDefinition::Camera const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
     DVec3d    xVector, yVector, zVector;
@@ -352,7 +352,7 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraInfoR camera, CameraViewControllerR controller)
+static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewControllerR controller)
     {
     camera.ValidateLens();
     if (camera.IsFocusValid())

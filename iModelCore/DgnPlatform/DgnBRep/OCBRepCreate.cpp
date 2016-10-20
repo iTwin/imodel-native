@@ -22,15 +22,11 @@ static BentleyStatus bodyFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curv
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh, TransformCR dgnToSolid)
     {
-    // NEEDSWORK: This is undoubtedly taking the brute force approach...hopefully Earlin can look into doing this the "right" way...whatever that is...
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(mesh, true);
 
     visitor->SetNumWrap (1);
 
-    TopoDS_Builder shellBuilder;
-    TopoDS_Shell   shell;
-
-    shellBuilder.MakeShell(shell);
+    BRepBuilderAPI_Sewing sewBuilder = BRepBuilderAPI_Sewing();
 
     for (visitor->Reset(); visitor->AdvanceToNextFace(); )
         {
@@ -52,10 +48,12 @@ static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh,
         if (face.IsNull())
             continue;
 
-        shellBuilder.Add(shell, face);
+        sewBuilder.Add(face);
         }
 
-    shape = shell;
+    sewBuilder.Perform();
+
+    shape = sewBuilder.SewedShape();
 
     if (shape.IsNull())
         return ERROR;

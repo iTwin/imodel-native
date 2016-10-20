@@ -231,7 +231,7 @@ DgnCategoryCPtr DgnCategory::Insert(DgnSubCategory::Appearance const& app, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId DgnCategory::GetDefaultSubCategoryId(DgnCategoryId catId)
     {
-    // hackity hacky hack - assume sequential assignment of element IDs and that the default sub-category is the next 
+    // hackity hacky hack - assume sequential assignment of element Ids and that the default sub-category is the next 
     return catId.IsValid() ? DgnSubCategoryId(catId.GetValueUnchecked() + 1) : DgnSubCategoryId();
     }
 

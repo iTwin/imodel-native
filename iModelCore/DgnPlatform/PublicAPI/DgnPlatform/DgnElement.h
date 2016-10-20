@@ -1873,6 +1873,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
 
+    friend struct dgn_ElementHandler::Geometric3d;
+    friend struct dgn_ElementHandler::Geometric2d;
+
     //! Parameters used to construct a GeometricElement
     struct CreateParams : T_Super::CreateParams
     {

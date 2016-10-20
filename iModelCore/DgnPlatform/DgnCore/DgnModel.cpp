@@ -1066,7 +1066,6 @@ DgnDbStatus DgnModel::DeleteAllViews()
         return ModelSelector::OnModelDelete(GetDgnDb(), GetModelId());
      
     ViewDefinition2d::OnModelDelete(GetDgnDb(), GetModelId());
-
     return DgnDbStatus::Success;
     }
 

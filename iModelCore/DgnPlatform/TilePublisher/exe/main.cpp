@@ -434,19 +434,13 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto modelSelector = db.Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
-            if (modelSelector.IsValid())
-                {
-                auto viewModels = modelSelector->GetModelIds();
-                m_allModels.insert(viewModels.begin(), viewModels.end());
-                }
+            auto const& modelSelector = spatialView->GetModelSelector();
+            auto viewModels = modelSelector.GetModels();
+            m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto categorySelector = db.Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
-            if (categorySelector.IsValid())
-                {
-                auto viewCats = categorySelector->GetCategoryIds();
-                m_allCategories.insert(viewCats.begin(), viewCats.end());
-                }
+            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto viewCats = categorySelector.GetCategories();
+            m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
         }
 
@@ -529,26 +523,14 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             entry["name"] = view.GetName();
 
         GetSpatialViewJson (entry, *spatialView, transform);
-        auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
+        entry["models"] = IdSetToJson(spatialView->GetModelSelector().GetModels());
+        entry["categories"] = IdSetToJson(spatialView->GetCategorySelector().GetCategories());
 
-        if (modelSelector.IsValid())
-            entry["models"] = IdSetToJson(modelSelector->GetModelIds());
-
-        auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
-
-        if (categorySelector.IsValid())
-            entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
-
-        auto displayStyle = GetDgnDb().Elements().Get<DisplayStyle>(spatialView->GetDisplayStyleId());
-
-        if (displayStyle.IsValid())
-            {
-            ColorDef    backgroundColor = displayStyle->GetBackgroundColor();
-            auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
-            colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
-            colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
-            colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
-            }
+        ColorDef    backgroundColor = spatialView->GetDisplayStyle().GetBackgroundColor();
+        auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
+        colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
+        colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
+        colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
 
         publishedViews.insert (view.GetId());
         viewsJson[view.GetId().ToString()] = entry;
