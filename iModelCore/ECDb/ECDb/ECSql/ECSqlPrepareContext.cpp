@@ -226,8 +226,6 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         if (property->GetPropertyMap().IsSystem())
             {
             WipSystemPropertyMap const& systemPropertyMap = static_cast<WipSystemPropertyMap const&>(property->GetPropertyMap());
-            bool isPropertyMappedToSingleTable = systemPropertyMap.IsMappedToSingleTable();
-
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));

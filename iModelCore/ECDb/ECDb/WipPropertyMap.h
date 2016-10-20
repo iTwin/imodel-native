@@ -157,8 +157,8 @@ struct WipPropertyMap : RefCountedBase, NonCopyableClass, ISupportPropertyMapDis
         PropertyMapKind GetKind() const { return m_kind; }
         bool IsSystem() const { return Enum::Contains(PropertyMapKind::System, GetKind()); }
         bool IsBusiness () const { return Enum::Contains(PropertyMapKind::Business, GetKind()); }
-        bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); }
-        bool IsMappedToClassMapTables() const;
+        bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
+        bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         BentleyStatus Validate() const { BeAssert(InEditMode() == false); if (InEditMode()) return ERROR;  return _Validate(); }
     };
 

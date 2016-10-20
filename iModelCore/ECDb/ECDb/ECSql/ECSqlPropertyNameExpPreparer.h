@@ -29,7 +29,7 @@ struct ECSqlPropertyNameExpPreparer
         static bool NeedsPreparation(ECSqlPrepareContext::ExpScope const&, WipPropertyMap const&);
         static ECSqlStatus DetermineClassIdentifier(Utf8StringR classIdentifier, ECSqlPrepareContext::ExpScope const&, PropertyNameExp const&, WipPropertyMap const&);
 
-        static void PrepareDefault(NativeSqlBuilder::List&, ECSqlType, PropertyNameExp const&, PropertyMap const&, Utf8CP classIdentifier);
+        static void PrepareDefault(NativeSqlBuilder::List&, ECSqlType, PropertyNameExp const&, WipPropertyMap const&, Utf8CP classIdentifier);
 
         static ECSqlStatus PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List&, ECSqlType, PropertyNameExp const&, WipConstraintECClassIdPropertyMap const&, Utf8CP classIdentifier);
         static ECSqlStatus PrepareInSubqueryRef(NativeSqlBuilder::List&, ECSqlPrepareContext&, PropertyNameExp const&);

@@ -144,12 +144,12 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(WipNavigationPropertyMap& 
     ClassMap const& classMap = propertyMap.GetClassMap();
 
     WipColumnVerticalPropertyMap const* idProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
-    WipColumnVerticalPropertyMap const* relECClassIdProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECClassIdPropMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
+    WipColumnVerticalPropertyMap const* relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetPrimaryTable());
 
     if ((idProp == nullptr || relECClassIdProp == nullptr) && !classMap.IsMappedToSingleTable())
         {
         idProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECInstanceIdPropMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
-        relECClassIdProp = GetConstraintMap(*navigationProperty, *relClassMap, WipNavigationPropertyMap::NavigationEnd::To).GetECClassIdPropMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
+        relECClassIdProp = relClassMap->GetECClassIdPropertyMap()->FindVerticalPropertyMap(classMap.GetJoinedTable());
         }
 
     if (idProp == nullptr || relECClassIdProp == nullptr)
