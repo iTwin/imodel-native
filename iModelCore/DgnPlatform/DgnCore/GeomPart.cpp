@@ -10,7 +10,6 @@
 #define PARAM_BBoxLow "BBoxLow"
 #define PARAM_BBoxHigh "BBoxHigh"
 #define PARAM_GeometryStream "GeometryStream"
-#define PARAM_FacetCount "FacetCount"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
@@ -31,7 +30,6 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_facetCount = statement.GetValueUInt64(params.GetSelectIndex(PARAM_FacetCount));
     DPoint3d bboxLow = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxLow));
     DPoint3d bboxHigh = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxHigh));
     m_bbox = ElementAlignedBox3d(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
@@ -45,7 +43,6 @@ DgnDbStatus DgnGeometryPart::BindParams(ECSqlStatement& statement)
     {
     statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxLow), m_bbox.low);
     statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxHigh), m_bbox.high);
-    statement.BindInt64(statement.GetParameterIndex(PARAM_FacetCount), static_cast<int64_t>(m_facetCount));
     return m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
     }
 
@@ -90,11 +87,7 @@ DgnDbStatus DgnGeometryPart::_SetPropertyValue(ElementECPropertyAccessor& access
         m_bbox.high = value.GetPoint3d();
         return DgnDbStatus::Success;
         }
-    else if (0 == strcmp(PARAM_FacetCount, name))
-        {
-        m_facetCount = (size_t) value.GetInteger();
-        return DgnDbStatus::Success;
-        }
+
     return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
@@ -115,11 +108,7 @@ DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, ElementECPro
         value.SetPoint3d(m_bbox.high);
         return DgnDbStatus::Success;
         }
-    else if (0 == strcmp(PARAM_FacetCount, name))
-        {
-        value.SetInteger((int32_t) m_facetCount);
-        return DgnDbStatus::Success;
-        }
+
     return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
@@ -172,7 +161,6 @@ void DgnGeometryPart::_CopyFrom(DgnElementCR element)
         {
         GetGeometryStreamR() = otherPart->GetGeometryStream();
         SetBoundingBox(otherPart->GetBoundingBox());
-        SetFacetCount(otherPart->GetFacetCount());
         }
     }
 
@@ -212,29 +200,10 @@ BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElem
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnGeometryPart::QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId)
     {
-    return QueryRangeAndFacetCount(range, nullptr, db, geomPartId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(DRange3dR range, size_t& facetCount, DgnDbR db, DgnGeometryPartId geomPartId)
-    {
-    return QueryRangeAndFacetCount(range, &facetCount, db, geomPartId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnGeometryPart::QueryRangeAndFacetCount(DRange3dR range, size_t* pFacetCount, DgnDbR db, DgnGeometryPartId geomPartId)
-    {
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
-    size_t localFacetCount;
-    size_t& facetCount = nullptr != pFacetCount ? *pFacetCount : localFacetCount;
-
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT " PARAM_BBoxLow "," PARAM_BBoxHigh "," PARAM_FacetCount " FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT " PARAM_BBoxLow "," PARAM_BBoxHigh " FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return BentleyStatus::ERROR;
 
@@ -246,8 +215,6 @@ BentleyStatus DgnGeometryPart::QueryRangeAndFacetCount(DRange3dR range, size_t* 
     DPoint3d bboxHigh = statement->GetValuePoint3d(1);
     ElementAlignedBox3d bbox(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
     range = bbox;
-
-    facetCount = statement->GetValueUInt64(2);
 
     return BentleyStatus::SUCCESS;
     }

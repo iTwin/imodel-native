@@ -1059,7 +1059,6 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
 
     // Bind Code
     DgnCode elementCode = DgnCode::CreateEmpty();
@@ -1177,7 +1176,6 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
 
     // Bind Code
     DgnCode elementCode = element->GetCode();
