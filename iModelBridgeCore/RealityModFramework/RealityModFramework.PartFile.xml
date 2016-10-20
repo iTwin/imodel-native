@@ -142,7 +142,6 @@
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="BentleyWMSPackageNet"/>
 		<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
@@ -153,7 +152,6 @@
     </Part>
     
     <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
-        <SubPart PartName="BentleyWMSPackageNet"/>
 		<SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
@@ -358,8 +356,9 @@
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
         <!--needed for the moment from LkgsVancouver -->
-        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="managedtests"               Deliver="false"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"       Deliver="false"/>
+        <ProductDirectory Name="managedtests"                   Deliver="false"/>
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
@@ -420,6 +419,7 @@
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path="" Deliver="false"/>
         <ProductDirectory Name="managedtests"                   Path=""/>
         
     </ProductDirectoryList>
