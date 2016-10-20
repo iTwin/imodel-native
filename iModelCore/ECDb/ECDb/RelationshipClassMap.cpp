@@ -828,8 +828,8 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
         return ERROR;
         }
 
-     //!WIP Following is come from merge. classLoadCtx was passed to PropertyMapFactory::ClonePropertyMap. 
-    ClassMapLoadContext& classLoadCtx = GetDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
+     //WIP Following is come from merge. classLoadCtx was passed to PropertyMapFactory::ClonePropertyMap. 
+    //WIPClassMapLoadContext& classLoadCtx = GetDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
     if (GetPropertyMapsR().Insert(WipPropertyMapFactory::CreateCopy(*basePropMap, *this)) != SUCCESS)
         return ERROR;
 
