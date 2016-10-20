@@ -619,17 +619,6 @@ DgnDbStatus CategorySelector::_LoadFromDb()
     return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
-    {
-    if (onOff)
-        m_categories.insert(categoryId);
-    else
-        m_categories.erase(categoryId);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  10/2016
 //---------------------------------------------------------------------------------------
@@ -927,6 +916,15 @@ Point2d ViewDefinition::GetThumbnailSize() const
     size.x = value[str_Width()].asInt();
     size.y = value[str_Height()].asInt();
     return size;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::DeleteThumbnail() const
+    {
+    GetDgnDb().DeleteProperty(DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
