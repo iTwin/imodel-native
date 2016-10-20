@@ -210,6 +210,9 @@ bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& co
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             10/2016
+// This class is created for tasks retry if unknown error occured.
+// DO NOT nest methods that are using this method, because it will result in nested retry
+// DO add this wrapper for top level methods that do not fail if executed multiple times in a row
 //=======================================================================================
 struct ExecutionManager
     {

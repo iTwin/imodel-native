@@ -484,44 +484,41 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICa
     filter.Sprintf("%s+eq+false", ServerSchema::Property::Initialized);
     query.SetFilter(filter);
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
         {
-        return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
+        if (!result.IsSuccess())
             {
-            if (!result.IsSuccess())
-                {
-                finalResult->SetError(result.GetError());
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return;
-                }
+            finalResult->SetError(result.GetError());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return;
+            }
         
-            auto instances = result.GetValue().GetJsonValue()[ServerSchema::Instances];
-            if (!instances.isArray())
+        auto instances = result.GetValue().GetJsonValue()[ServerSchema::Instances];
+        if (!instances.isArray())
+            {
+            finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
+            return;
+            }
+        auto fileInfo = FileInfo::FromJson(instances[0], FileInfo());
+        m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
+            {
+            if (!deleteResult.IsSuccess())
                 {
-                finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File does not exist.");
-                return;
+                finalResult->SetError(deleteResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, deleteResult.GetError().GetMessage().c_str());
                 }
-            auto fileInfo = FileInfo::FromJson(instances[0], FileInfo());
-            m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
+            else
                 {
-                if (!deleteResult.IsSuccess())
-                    {
-                    finalResult->SetError(deleteResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, deleteResult.GetError().GetMessage().c_str());
-                    }
-                else
-                    {
-                    finalResult->SetSuccess();
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                    }
-                });
-            })->Then<DgnDbServerStatusResult>([=] ()
-                {
-                return *finalResult;
-                });
-        });
+                finalResult->SetSuccess();
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                }
+            });
+        })->Then<DgnDbServerStatusResult>([=] ()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -614,27 +611,23 @@ ICancellationTokenPtr           cancellationToken
     {
     if (fileInfo.GetFileURL().empty())
         {
-        return ExecutionManager::ExecuteWithRetry<void>([=]() {
-            return m_wsRepositoryClient->SendGetFileRequest(fileInfo.GetObjectId(), localFile, nullptr, callback, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
-                {
-                if (!fileResult.IsSuccess())
-                    return DgnDbServerStatusResult::Error(fileResult.GetError());
-                return DgnDbServerStatusResult::Success();
-                });
+        return m_wsRepositoryClient->SendGetFileRequest(fileInfo.GetObjectId(), localFile, nullptr, callback, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
+            {
+            if (!fileResult.IsSuccess())
+                return DgnDbServerStatusResult::Error(fileResult.GetError());
+            return DgnDbServerStatusResult::Success();
             });
         }
     else
         {
-        return ExecutionManager::ExecuteWithRetry<void>([=]() {
-            // Download file directly from the url.
-            return m_azureClient->SendGetFileRequest(fileInfo.GetFileURL(), localFile, callback, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
-                {
-                if (!result.IsSuccess())
-                    return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
-                return DgnDbServerStatusResult::Success();
-                });
+        // Download file directly from the url.
+        return m_azureClient->SendGetFileRequest(fileInfo.GetFileURL(), localFile, callback, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+            {
+            if (!result.IsSuccess())
+                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+            return DgnDbServerStatusResult::Success();
             });
         }
     }
@@ -657,37 +650,31 @@ ICancellationTokenPtr           cancellationToken
         Utf8String instanceId;
         instanceId.Sprintf("%u", briefcaseId.GetValue());
         ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
-        return ExecutionManager::ExecuteWithRetry<void>([=]()
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
             {
-            return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
+            if (fileResult.IsSuccess())
+                return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
+            else
                 {
-                if (fileResult.IsSuccess())
-                    return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
-                else
-                    {
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
-                    return DgnDbServerStatusResult::Error(fileResult.GetError());
-                    }
-                });
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+                return DgnDbServerStatusResult::Error(fileResult.GetError());
+                }
             });
         }
     else
         {
-        return ExecutionManager::ExecuteWithRetry<void>([=]()
+        // Download file directly from the url.
+        return m_azureClient->SendGetFileRequest(url, localFile, callback, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
             {
-            // Download file directly from the url.
-            return m_azureClient->SendGetFileRequest(url, localFile, callback, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+            if (result.IsSuccess())
+                return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
+            else
                 {
-                if (result.IsSuccess())
-                    return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
-                else
-                    {
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                    return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
-                    }
-                });
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+                }
             });
         }
     }
@@ -707,37 +694,31 @@ ICancellationTokenPtr           cancellationToken
     
     if (revision->GetURL().empty())
         {
-        return ExecutionManager::ExecuteWithRetry<void>([=]()
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=](const WSFileResult& fileResult)
             {
-            return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=](const WSFileResult& fileResult)
+            if (fileResult.IsSuccess())
+                return DgnDbServerStatusResult::Success();
+            else
                 {
-                if (fileResult.IsSuccess())
-                    return DgnDbServerStatusResult::Success();
-                else
-                    {
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
-                    return DgnDbServerStatusResult::Error(fileResult.GetError());
-                    }
-                });
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+                return DgnDbServerStatusResult::Error(fileResult.GetError());
+                }
             });
         }
     else
         {
-        return ExecutionManager::ExecuteWithRetry<void>([=]()
+        // Download file directly from the url.
+        return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetChangeStreamFile(), nullptr, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
             {
-            // Download file directly from the url.
-            return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetChangeStreamFile(), nullptr, cancellationToken)
-                ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+            if (result.IsSuccess())
+                return DgnDbServerStatusResult::Success();
+            else
                 {
-                if (result.IsSuccess())
-                    return DgnDbServerStatusResult::Success();
-                else
-                    {
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                    return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
-                    }
-                });
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+                }
             });
         }
     }
@@ -1311,7 +1292,7 @@ ICancellationTokenPtr                   cancellationToken
     state.SetAvailable();
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, "", *changeset, WSChangeset::ChangeState::Modified);
 
-    return SendChangesetRequest(changeset, options, cancellationToken);
+    return SendChangesetRequestInternal(changeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1693,7 +1674,7 @@ ICancellationTokenPtr cancellationToken
     std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
     return ExecutionManager::ExecuteWithRetry<DgnDbCodeLockSetResultInfo>([=]()
         {
-        return GetRevisionByIdInternal(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
+        return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
             {
             uint64_t revisionIndex = 0;
             if (!revisionResult.IsSuccess() && revisionResult.GetError().GetId() != DgnDbServerError::Id::InvalidRevision)
@@ -1872,21 +1853,19 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::GetBriefcaseFileInfo(BeBriefca
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
     ObjectId briefcaseObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, briefcaseIdString);
-    return ExecutionManager::ExecuteWithRetry<FileInfoPtr>([=]()
+    
+    return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
+        ->Then<DgnDbServerFileResult>([=](WSObjectsResult const& result)
         {
-        return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
-            ->Then<DgnDbServerFileResult>([=](WSObjectsResult const& result)
+        if (!result.IsSuccess())
             {
-            if (!result.IsSuccess())
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerFileResult::Error(result.GetError());
-                }
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerFileResult::Error(result.GetError());
+            }
 
-            JsonValueCR instance = result.GetValue().GetJsonValue()[ServerSchema::Instances][0];
-            auto fileInfo = FileInfo::FromJson(instance);
-            return DgnDbServerFileResult::Success(fileInfo);
-            });
+        JsonValueCR instance = result.GetValue().GetJsonValue()[ServerSchema::Instances][0];
+        auto fileInfo = FileInfo::FromJson(instance);
+        return DgnDbServerFileResult::Success(fileInfo);
         });
     }
 
@@ -1951,18 +1930,6 @@ DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancell
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionTaskPtr DgnDbRepositoryConnection::GetRevisionById
-(
-Utf8StringCR          revisionId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    return ExecutionManager::ExecuteWithRetry<DgnDbServerRevisionPtr>([=]() { return GetRevisionByIdInternal(revisionId, cancellationToken); });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerRevisionTaskPtr DgnDbRepositoryConnection::GetRevisionByIdInternal
 (
 Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
@@ -2394,27 +2361,24 @@ ICancellationTokenPtr cancellationToken
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return ExecutionManager::ExecuteWithRetry<DgnDbServerEventPtr>([=]()
+    return GetEventServiceResponse(3, longPolling)->Then<DgnDbServerEventResult>
+        ([=] (DgnDbServerEventReponseResult& result)
         {
-        return GetEventServiceResponse(3, longPolling)->Then<DgnDbServerEventResult>
-            ([=] (DgnDbServerEventReponseResult& result)
+        if (result.IsSuccess())
             {
-            if (result.IsSuccess())
+            Http::Response response = result.GetValue();
+            DgnDbServerEventPtr ptr = DgnDbServerEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+            if (ptr == nullptr)
                 {
-                Http::Response response = result.GetValue();
-                DgnDbServerEventPtr ptr = DgnDbServerEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
-                if (ptr == nullptr)
-                    {
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
-                    return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
-                    }
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                return DgnDbServerEventResult::Success(ptr);
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
+                return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
                 }
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return DgnDbServerEventResult::Error(result.GetError());
-            });
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            return DgnDbServerEventResult::Success(ptr);
+            }
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return DgnDbServerEventResult::Error(result.GetError());
         });
     }
 
@@ -2523,7 +2487,7 @@ ICancellationTokenPtr cancellationToken
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
     return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
         {
-        return GetRevisionByIdInternal(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionResultCR result)
+        return GetRevisionById(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionResultCR result)
             {
             if (!result.IsSuccess() && DgnDbServerError::Id::InvalidRevision != result.GetError().GetId())
                 {
