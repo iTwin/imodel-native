@@ -137,7 +137,8 @@ enum class DiffNodeId
     IsSealed = 45,
     MinimumValue = 46,
     MaximumValue = 47,
-    AbstractConstraint = 48
+    AbstractConstraint = 48,
+    ECVersion = 49
     };
 
 //======================================================================================
