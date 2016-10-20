@@ -99,16 +99,13 @@ DgnDbServerStatusTaskPtr DgnDbClient::CreateBasicUser(Credentials credentials, I
     client->SetCredentials(m_credentials);
 
     Json::Value basicUserCreationJson = BasicUserCreationJson(credentials);
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return client->SendCreateObjectRequest(basicUserCreationJson, BeFileName(), nullptr, cancellationToken)
+        ->Then<DgnDbServerStatusResult>([=] (const WSCreateObjectResult& result)
         {
-        return client->SendCreateObjectRequest(basicUserCreationJson, BeFileName(), nullptr, cancellationToken)
-            ->Then<DgnDbServerStatusResult>([=] (const WSCreateObjectResult& result)
-            {
-            if (!result.IsSuccess())
-                return DgnDbServerStatusResult::Error(result.GetError());
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
 
-            return DgnDbServerStatusResult::Success();
-            });
+        return DgnDbServerStatusResult::Success();
         });
     }
 
@@ -129,51 +126,48 @@ DgnDbServerStatusTaskPtr DgnDbClient::RemoveBasicUser(Credentials credentials, I
     query.SetFilter(filter);
 
     auto finalResult = std::make_shared<DgnDbServerStatusResult>();
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    //Find the desired user
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        ->Then([=](const WSObjectsResult& result)
         {
-        //Find the desired user
-        return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
-            ->Then([=](const WSObjectsResult& result)
+        if (!result.IsSuccess())
             {
-            if (!result.IsSuccess())
-                {
-                finalResult->SetError(result.GetError());
-                return;
-                }
+            finalResult->SetError(result.GetError());
+            return;
+            }
 
-            auto instances = result.GetValue().GetInstances();
+        auto instances = result.GetValue().GetInstances();
 
-            if (0 == instances.Size())
-                {
-                finalResult->SetError({ DgnDbServerError::Id::UserDoesNotExist });
-                return;
-                }
+        if (0 == instances.Size())
+            {
+            finalResult->SetError({ DgnDbServerError::Id::UserDoesNotExist });
+            return;
+            }
 
-            if (1 < instances.Size())
-                {
-                finalResult->SetError({ DgnDbServerError::Id::InternalServerError });
-                return;
-                }
+        if (1 < instances.Size())
+            {
+            finalResult->SetError({ DgnDbServerError::Id::InternalServerError });
+            return;
+            }
 
-            for (auto instance : instances)
+        for (auto instance : instances)
+            {
+            client->SendDeleteObjectRequest(instance.GetObjectId())
+                ->Then([=](const WSDeleteObjectResult& deleteResult)
                 {
-                client->SendDeleteObjectRequest(instance.GetObjectId())
-                    ->Then([=](const WSDeleteObjectResult& deleteResult)
+                if (!deleteResult.IsSuccess())
                     {
-                    if (!deleteResult.IsSuccess())
-                        {
-                        finalResult->SetError(deleteResult.GetError());
-                        return;
-                        }
+                    finalResult->SetError(deleteResult.GetError());
+                    return;
+                    }
 
-                    finalResult->SetSuccess();
-                    });
-                }
-            })->Then<DgnDbServerStatusResult>([=]
-                {
-                return *finalResult;
+                finalResult->SetSuccess();
                 });
-        });
+            }
+        })->Then<DgnDbServerStatusResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -237,27 +231,24 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", project.c_str());
-    return ExecutionManager::ExecuteWithRetry<bvector<RepositoryInfoPtr>>([=]()
+    return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoriesResult>
+        ([=](const WSObjectsResult& response)
         {
-        return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoriesResult>
-            ([=](const WSObjectsResult& response)
+        if (!response.IsSuccess())
             {
-            if (!response.IsSuccess())
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, response.GetError().GetMessage().c_str());
-                return DgnDbServerRepositoriesResult::Error(response.GetError());
-                }
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, response.GetError().GetMessage().c_str());
+            return DgnDbServerRepositoriesResult::Error(response.GetError());
+            }
 
-            bvector<RepositoryInfoPtr> repositories;
-            for (const auto& repository : response.GetValue().GetJsonValue()[ServerSchema::Instances])
-                {
-                repositories.push_back(RepositoryInfo::FromJson(repository, m_serverUrl));
-                }
+        bvector<RepositoryInfoPtr> repositories;
+        for (const auto& repository : response.GetValue().GetJsonValue()[ServerSchema::Instances])
+            {
+            repositories.push_back(RepositoryInfo::FromJson(repository, m_serverUrl));
+            }
 
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
-            return DgnDbServerRepositoriesResult::Success(repositories);
-            });
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+        return DgnDbServerRepositoriesResult::Success(repositories);
         });
     }
 
@@ -290,70 +281,67 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
     Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description);
     client->SetCredentials(m_credentials);
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create repository request for project %s.", project.c_str());
-    return ExecutionManager::ExecuteWithRetry<RepositoryInfoPtr>([=]()
+    return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
+        ->Then([=](const WSCreateObjectResult& createRepositoryResult)
         {
-        return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
-            ->Then([=](const WSCreateObjectResult& createRepositoryResult)
-            {
 #if defined (ENABLE_BIM_CRASH_TESTS)
-            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateRequest);
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateRequest);
 #endif
-            if (createRepositoryResult.IsSuccess())
+        if (createRepositoryResult.IsSuccess())
+            {
+            JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            auto repositoryInfo = RepositoryInfo::FromJson(repositoryInstance, m_serverUrl);
+            finalResult->SetSuccess(repositoryInfo);
+            return;
+            }
+
+        auto error = DgnDbServerError(createRepositoryResult.GetError());
+        if (DgnDbServerError::Id::RepositoryAlreadyExists != error.GetId())
+            {
+            finalResult->SetError(error);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+            return;
+            }
+
+        bool initialized = error.GetExtendedData()[ServerSchema::Property::RepositoryInitialized].asBool();
+
+        if (initialized)
+            {
+            finalResult->SetError(error);
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+            return;
+            }
+
+        WSQuery repositoryQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
+        Utf8String filter;
+        filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::RepositoryName, repositoryName.c_str());
+        repositoryQuery.SetFilter(filter);
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Querying repository by name %s.", repositoryName.c_str());
+        client->SendQueryRequest(repositoryQuery, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const& queryResult)
+            {
+            if (!queryResult.IsSuccess())
                 {
-                JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-                auto repositoryInfo = RepositoryInfo::FromJson(repositoryInstance, m_serverUrl);
-                finalResult->SetSuccess(repositoryInfo);
+                finalResult->SetError(queryResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
-
-            auto error = DgnDbServerError(createRepositoryResult.GetError());
-            if (DgnDbServerError::Id::RepositoryAlreadyExists != error.GetId())
+            JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
+            if (repositoryInstances.isArray())
+                {
+                finalResult->SetSuccess(RepositoryInfo::FromJson(repositoryInstances[0], m_serverUrl));
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+                }
+            else
                 {
                 finalResult->SetError(error);
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-                return;
                 }
+            });
 
-            bool initialized = error.GetExtendedData()[ServerSchema::Property::RepositoryInitialized].asBool();
-
-            if (initialized)
-                {
-                finalResult->SetError(error);
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-                return;
-                }
-
-            WSQuery repositoryQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
-            Utf8String filter;
-            filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::RepositoryName, repositoryName.c_str());
-            repositoryQuery.SetFilter(filter);
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Querying repository by name %s.", repositoryName.c_str());
-            client->SendQueryRequest(repositoryQuery, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const& queryResult)
-                {
-                if (!queryResult.IsSuccess())
-                    {
-                    finalResult->SetError(queryResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
-                    return;
-                    }
-                JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
-                if (repositoryInstances.isArray())
-                    {
-                    finalResult->SetSuccess(RepositoryInfo::FromJson(repositoryInstances[0], m_serverUrl));
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-                    }
-                else
-                    {
-                    finalResult->SetError(error);
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
-                    }
-                });
-
-            })->Then<DgnDbServerRepositoryResult>([=]()
-                {
-                return *finalResult;
-                });
-        });
+        })->Then<DgnDbServerRepositoryResult>([=]()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -909,22 +897,19 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
     client->SetCredentials(m_credentials);
     ObjectId repositoryId = ObjectId("BIMCSProject", "BIMRepository", repositoryInfo.GetId());
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete repository request. Repository ID: %s.", repositoryInfo.GetId().c_str());
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=](WSDeleteObjectResult const& result)
         {
-        return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=](WSDeleteObjectResult const& result)
+        if (!result.IsSuccess())
             {
-            if (!result.IsSuccess())
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerStatusResult::Error(result.GetError());
-                }
-            else
-                {
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
-                return DgnDbServerStatusResult::Success();
-                }
-            });
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerStatusResult::Error(result.GetError());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+            return DgnDbServerStatusResult::Success();
+            }
         });
     }
 

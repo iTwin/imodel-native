@@ -260,9 +260,6 @@ private:
         BeGuidCR masterFileId, Utf8StringCR lastRevisionId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get a revision for the specific revision id.
-    DgnDbServerRevisionTaskPtr GetRevisionByIdInternal(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
-
 public:
     //! Create an instance of the connection to a repository on the server.
     //! @param[in] repository Repository information used to connect to a specific repository on the server.
