@@ -572,7 +572,7 @@ public:
     bool ViewsModel(DgnModelId modelId) const {return _ViewsModel(modelId);}
 
     //! Query if the specified Category is displayed in this view
-    bool ViewsCategory(DgnCategoryId id) const {m_categorySelector->IsCategoryViewed(id);}
+    bool ViewsCategory(DgnCategoryId id) const {return m_categorySelector->IsCategoryViewed(id);}
 
     //! Get the origin of this view
     DPoint3d GetOrigin() const {return _GetOrigin();}

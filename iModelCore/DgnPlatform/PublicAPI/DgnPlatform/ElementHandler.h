@@ -86,6 +86,10 @@ namespace dgn_ElementHandler
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
     public:
+        //! Register get and set functions for each custom-handled property.
+        //! @note You must also invoke T_Super::_RegisterPropertyAccessors!
+        DGNPLATFORM_EXPORT virtual void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR);
+
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
         DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
@@ -98,6 +102,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for PhysicalElement
@@ -116,6 +121,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for AnnotationElement2d
@@ -182,6 +188,18 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, Dgn::GroupInformationElement, GroupInformation, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Session
+    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Session, Dgn::Session, Session, Definition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for PhysicalTemplate
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalTemplate : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalTemplate, Dgn::PhysicalTemplate, PhysicalTemplate, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for PhysicalType

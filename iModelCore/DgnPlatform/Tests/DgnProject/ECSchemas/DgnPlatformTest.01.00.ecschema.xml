@@ -44,6 +44,7 @@
         <ECStructProperty propertyName="Location" typeName="LocationStruct" />
         <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="Point3d" minOccurs="0" maxOccurs="unbounded" />
 
     <!-- The rest of the properties are custom-handled -->
         <ECProperty propertyName="TestElementProperty" typeName="string">
@@ -330,6 +331,13 @@
         <ECProperty propertyName='IntProperty' typeName='int' />
     </ECClass>
 
+    <ECClass typeName="TestPhysicalTemplate" isDomainClass="True">
+        <BaseClass>bis:PhysicalTemplate</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
     <ECClass typeName="TestPhysicalType" isDomainClass="True">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
@@ -348,16 +356,16 @@
         <ECProperty propertyName="IntProperty" typeName="int" />
     </ECClass>
 
-  <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
-    <ECProperty propertyName="Street" typeName="string" />
-    <ECStructProperty propertyName="City" typeName="CityStruct" />
-  </ECClass>
+    <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Street" typeName="string" />
+        <ECStructProperty propertyName="City" typeName="CityStruct" />
+    </ECClass>
 
-  <ECClass typeName="CityStruct" isStruct="True" isDomainClass="False">
-    <ECProperty propertyName="Name" typeName="string" />
-    <ECProperty propertyName="State" typeName="string" />
-    <ECProperty propertyName="Country" typeName="string" />
-    <ECProperty propertyName="Zip" typeName="int"/>
-  </ECClass>
+    <ECClass typeName="CityStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="State" typeName="string" />
+        <ECProperty propertyName="Country" typeName="string" />
+        <ECProperty propertyName="Zip" typeName="int"/>
+    </ECClass>
 
 </ECSchema>
