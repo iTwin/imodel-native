@@ -1,0 +1,264 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DataCaptureSchema/Photo.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "DataCaptureSchemaInternal.h"
+
+BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
+
+HANDLER_DEFINE_MEMBERS(PhotoHandler)
+
+#define Photo_PROPNAME_PhotoId                  "PhotoId"
+#define Photo_PROPNAME_Pose                     "Pose"
+#define Photo_PROPNAME_Pose_Center              "Center"
+#define Photo_PROPNAME_Pose_Rotation            "Rotation"
+#define Photo_PROPNAME_Pose_Rotation_M_00       "M_00"
+#define Photo_PROPNAME_Pose_Rotation_M_01       "M_01"
+#define Photo_PROPNAME_Pose_Rotation_M_02       "M_02"
+#define Photo_PROPNAME_Pose_Rotation_M_10       "M_10"
+#define Photo_PROPNAME_Pose_Rotation_M_11       "M_11"
+#define Photo_PROPNAME_Pose_Rotation_M_12       "M_12"
+#define Photo_PROPNAME_Pose_Rotation_M_20       "M_20"
+#define Photo_PROPNAME_Pose_Rotation_M_21       "M_21"
+#define Photo_PROPNAME_Pose_Rotation_M_22       "M_22"
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, RotationMatrixTypeCR val)
+    {
+    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
+    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_00).BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_01).BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_02).BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_10).BindDouble(val.GetComponentByRowAndColumn(1, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_11).BindDouble(val.GetComponentByRowAndColumn(1, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_12).BindDouble(val.GetComponentByRowAndColumn(1, 2)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_20).BindDouble(val.GetComponentByRowAndColumn(2, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_21).BindDouble(val.GetComponentByRowAndColumn(2, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_22).BindDouble(val.GetComponentByRowAndColumn(2, 2)))
+        {
+        return ECSqlStatus::Error;
+        }
+    return ECSqlStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RotationMatrixType RotationMatrixType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex)
+    {
+    if (statement.IsValueNull(columnIndex))
+        return RotationMatrixType();
+
+    RotationMatrixType rotation;
+    IECSqlStructValue const& rotationValue = statement.GetValueStruct(columnIndex);
+    for (int ii = 0; ii < rotationValue.GetMemberCount(); ii++)
+        {
+        IECSqlValue const& memberValue = rotationValue.GetValue(ii);
+        ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
+        BeAssert(memberProperty != nullptr);
+        Utf8CP memberName = memberProperty->GetName().c_str();
+
+        if      (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_00, memberName))
+            rotation.SetComponentByRowAndColumn(0, 0,memberValue.GetDouble());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_01, memberName))
+            rotation.SetComponentByRowAndColumn(0, 1,memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_02, memberName))
+            rotation.SetComponentByRowAndColumn(0, 2,memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_10, memberName))
+            rotation.SetComponentByRowAndColumn(1, 0, memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_11, memberName))
+            rotation.SetComponentByRowAndColumn(1, 1, memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_12, memberName))
+            rotation.SetComponentByRowAndColumn(1, 2, memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_20, memberName))
+            rotation.SetComponentByRowAndColumn(2, 0, memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_21, memberName))
+            rotation.SetComponentByRowAndColumn(2, 1, memberValue.GetInt());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_22, memberName))
+            rotation.SetComponentByRowAndColumn(2, 2, memberValue.GetInt());
+        else
+            BeAssert(false);
+        }
+    return rotation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECSqlStatus PoseType::BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, PoseTypeCR val)
+    {
+    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
+    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
+        ECSqlStatus::Success != RotationMatrixType::BindParameter(statement, statement.GetParameterIndex(Photo_PROPNAME_Pose_Rotation), val.GetRotation()))
+        {
+        return ECSqlStatus::Error;
+        }
+    return ECSqlStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PoseType PoseType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex)
+    {
+    if (statement.IsValueNull(columnIndex))
+        return PoseType();
+
+    PoseType pose;
+    IECSqlStructValue const& structValue = statement.GetValueStruct(columnIndex);
+    for (int ii = 0; ii < structValue.GetMemberCount(); ii++)
+        {
+        IECSqlValue const& memberValue = structValue.GetValue(ii);
+        ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
+        BeAssert(memberProperty != nullptr);
+        Utf8CP memberName = memberProperty->GetName().c_str();
+
+        if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Center, memberName))
+            pose.SetCenter(memberValue.GetPoint3D());
+        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation, memberName))
+            pose.SetRotation(RotationMatrixType::GetValue(statement,columnIndex));
+        else
+            BeAssert(false);
+        }
+    return pose;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void PhotoHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(Photo_PROPNAME_PhotoId);
+    params.Add(Photo_PROPNAME_Pose);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PhotoPtr Photo::Create(Dgn::SpatialModelR model)
+    {
+    DgnClassId classId = QueryClassId(model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Photo, model.GetDgnDb());
+
+    PhotoPtr cp = new Photo(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    return cp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Photo_PROPNAME_PhotoId), GetPhotoId()) ||
+        ECSqlStatus::Success != PoseType::BindParameter(statement, statement.GetParameterIndex(Photo_PROPNAME_Pose),GetPose()) )
+        {
+        return DgnDbStatus::BadArg;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Photo::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat =  BindParameters(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindInsertParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Photo::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat =  BindParameters(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Photo::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        //read Photo properties
+        SetPhotoId (stmt.GetValueInt(params.GetSelectIndex(Photo_PROPNAME_PhotoId)));
+        SetPose(PoseType::GetValue(stmt, params.GetSelectIndex(Photo_PROPNAME_Pose)));
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Photo::_OnInsert()
+    {
+//     PlanningModelP planningModel = dynamic_cast<PlanningModelP> (GetModel().get());
+//     if (nullptr == planningModel)
+//         {
+//         BeAssert(false && "Can insert Photo only in a PlanningModel");
+//         return DgnDbStatus::WrongModel;
+//         }
+
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Photo::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto other = dynamic_cast<PhotoCP>(&el);
+    BeAssert(nullptr != other);
+    if (nullptr == other)
+        return;
+
+    SetPhotoId(other->GetPhotoId());
+    SetPose(other->GetPose());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PhotoElementId Photo::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+    {
+    Utf8CP ecSql = "SELECT Photo.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Photo) " Photo " \
+        "WHERE Photo.Label=?";
+
+    CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (!statement.IsValid())
+        {
+        BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
+        return PhotoElementId();
+        }
+
+    statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
+
+    DbResult stepStatus = statement->Step();
+    if (stepStatus != BE_SQLITE_ROW)
+        return PhotoElementId();
+
+    return statement->GetValueId<PhotoElementId>(0);
+    }
+
+
+
+END_BENTLEY_DATACAPTURE_NAMESPACE
+

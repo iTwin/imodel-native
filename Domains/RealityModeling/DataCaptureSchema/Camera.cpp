@@ -159,53 +159,6 @@ CameraPtr Camera::Create(Dgn::SpatialModelR model)
     return cp;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CameraCPtr Camera::Get(DgnDbCR dgndb, Dgn::DgnElementId cameraId)
-    {
-    return dgndb.Elements().Get<Camera>(cameraId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CameraPtr Camera::GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId cameraId)
-    {
-    return dgndb.Elements().GetForEdit<Camera>(cameraId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CameraId Camera::Insert()
-    {
-    CameraCPtr wb = GetDgnDb().Elements().Insert<Camera>(*this);
-    if (!wb.IsValid())
-        {
-        BeAssert(false && "Could not insert Camera. One possibility is that a Camera with the same label exists already in the immediate parent, or the label is otherwise empty");
-        return CameraId();
-        }
-
-    return CameraId(wb->GetElementId().GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Camera::Update()
-    {
-    CameraCPtr wb = GetDgnDb().Elements().Update<Camera>(*this);
-    if (!wb.IsValid())
-        {
-        BeAssert(false && "Could not update Camera. One possibility is that a WorkBreakdown with the same label exists already in the immediate parent, or the label is otherwise empty");
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -303,7 +256,7 @@ void Camera::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraId Camera::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+CameraElementId Camera::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     {
     Utf8CP ecSql = "SELECT camera.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Camera) " camera " \
         "WHERE camera.Label=?";
@@ -312,16 +265,16 @@ CameraId Camera::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     if (!statement.IsValid())
         {
         BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
-        return CameraId();
+        return CameraElementId();
         }
 
     statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
-        return CameraId();
+        return CameraElementId();
 
-    return statement->GetValueId<CameraId>(0);
+    return statement->GetValueId<CameraElementId>(0);
     }
 
 

@@ -56,10 +56,10 @@ public:
     void SetHeight(int val)  {m_height=val;}
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    DATACAPTURE_EXPORT static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, ImageDimensionTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, ImageDimensionTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    DATACAPTURE_EXPORT static ImageDimensionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
+    static ImageDimensionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
     };
 
 //=======================================================================================
@@ -118,10 +118,10 @@ public:
     void   SetP2(double val) { m_p2=val; }
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    DATACAPTURE_EXPORT static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, CameraDistortionTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, CameraDistortionTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    DATACAPTURE_EXPORT static CameraDistortionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
+    static CameraDistortionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
     };
 
 //=======================================================================================
@@ -131,7 +131,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE Camera : Dgn::PhysicalElement
 {
     friend struct CameraHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Camera, Dgn::PhysicalElement);
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Camera, Dgn::PhysicalElement)
 
 private:
     double                  m_focalLenghtPixels;
@@ -155,54 +155,39 @@ protected:
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
-    DATACAPTURE_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
     //! Called to bind the parameters when inserting a new Activity into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! And then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    DATACAPTURE_EXPORT virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
 
     //! Called to update an Activity in the DgnDb with new values. Override to update subclass properties.
     //! @note If the update fails, the original data will be copied back into this Activity.
     //! @note If you override this method, you @em must call T_Super::_BindUpdateParams, forwarding its status.
-    DATACAPTURE_EXPORT virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
-    DATACAPTURE_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
 
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
-    DATACAPTURE_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+    virtual Dgn::DgnDbStatus _OnInsert() override;
 
 public:
+    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Camera)
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Camera)
+
     //! Create a new Camera 
     DATACAPTURE_EXPORT static CameraPtr Create(Dgn::SpatialModelR model);
 
     //! Query for an Camera (Id) by label
     //! @return Id of the Camera or invalid Id if an Camera was not found
-    DATACAPTURE_EXPORT static CameraId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
-
-    //! Insert the Camera in the DgnDb
-    DATACAPTURE_EXPORT CameraId Insert();
-
-    //! Get a read only copy of the Camera from the DgnDb
-    //! @return Invalid if the Camera does not exist
-    DATACAPTURE_EXPORT static CameraCPtr Get(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId cameraId);
-
-    //! Get an editable copy of the Camera from the DgnDb
-    //! @return Invalid if the Camera does not exist, or if it cannot be edited.
-    DATACAPTURE_EXPORT static CameraPtr GetForEdit(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId cameraId);
-
-    //! Update the persistent state of the Camera in the DgnDb from this modified copy of it.
-    DATACAPTURE_EXPORT BentleyStatus Update();
-
-    //! Query the DgnClassId of the planning.Camera ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the planning.Camera class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BDCP_SCHEMA_NAME, BDCP_CLASS_Camera)); }
+    DATACAPTURE_EXPORT static CameraElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
     //! Get the id of this Camera
-    CameraId GetId() const { return CameraId(GetElementId().GetValueUnchecked()); }
+    CameraElementId GetId() const { return CameraElementId(GetElementId().GetValueUnchecked()); }
 
     //Properties Get/Set
     double                  GetFocalLenghtPixels() const        {return m_focalLenghtPixels; }
@@ -228,7 +213,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraHandler : Dgn::dgn_ElementHandler::Geometri
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Camera, Camera, CameraHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
-    DATACAPTURE_EXPORT virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
+    virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
 
 END_BENTLEY_DATACAPTURE_NAMESPACE

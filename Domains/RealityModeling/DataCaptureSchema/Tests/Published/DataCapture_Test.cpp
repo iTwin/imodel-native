@@ -38,7 +38,9 @@ TEST_F(DataCaptureTests, CreateCamera)
     cameraPtr->SetSkew(1.0);
 
     //Insert camera element
-    DgnElementId cameraId = cameraPtr->Insert();
+    auto cameraInsertedPtr = cameraPtr->Insert();
+    ASSERT_TRUE(cameraInsertedPtr.IsValid());
+    CameraElementId cameraId = cameraInsertedPtr->GetId();
     ASSERT_TRUE(cameraId.IsValid());
 
     //Save changes
@@ -47,6 +49,7 @@ TEST_F(DataCaptureTests, CreateCamera)
 
     //Close project to flush memory
     cameraPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraInsertedPtr=nullptr;
     CloseProject();
 
     //Reopen project
@@ -98,8 +101,13 @@ TEST_F(DataCaptureTests, ModifyCamera)
     cameraPtr->SetSkew(3.0);
 
     //Update camera element
-    BentleyStatus status = cameraPtr->Update();
-    ASSERT_TRUE(status==BentleyStatus::SUCCESS);
+    auto cameraUpdatedPtr = cameraPtr->Update();
+    ASSERT_TRUE(cameraUpdatedPtr.IsValid());
+
+    CameraElementId cameraUpdatedId = cameraUpdatedPtr->GetId();
+    ASSERT_TRUE(cameraUpdatedId.IsValid());
+    //Updating don't change id...
+    ASSERT_TRUE(cameraUpdatedId == cameraId);
 
     //Save changes
     DbResult result = projectPtr->SaveChanges("BasicCamera");
@@ -107,6 +115,7 @@ TEST_F(DataCaptureTests, ModifyCamera)
 
     //Close project to flush memory
     cameraPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraUpdatedPtr= nullptr;
     CloseProject();
 
     //Reopen project
