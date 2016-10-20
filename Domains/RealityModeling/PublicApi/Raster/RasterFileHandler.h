@@ -67,7 +67,6 @@ public:
                 {}
         };
 
-
 private:
 
     RasterFileProperties    m_fileProperties;
