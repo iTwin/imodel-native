@@ -407,7 +407,6 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     std::set<DbTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables() : classMappingInfo.GetTargetTables();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    PersistenceType relECClassIdPersistenceType = GetRelationshipClass().GetClassModifier() == ECClassModifier::Sealed ? PersistenceType::Virtual : PersistenceType::Persisted;
     //! table must meet following constraint though these are already validated at MapStrategy evaluation time.
     BeAssert(foreignEndTables.size() >= 1 && "ForeignEnd Tables must be >= 1");
     BeAssert(GetReferencedEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables().size() == 1 : classMappingInfo.GetTargetTables().size() == 1 && "ReferencedEnd Tables must be == 1");
@@ -829,8 +828,8 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
         return ERROR;
         }
 
-     //!WIP Following is come from merge. classLoadCtx was passed to PropertyMapFactory::ClonePropertyMap. 
-    ClassMapLoadContext& classLoadCtx = GetDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
+     //WIP Following is come from merge. classLoadCtx was passed to PropertyMapFactory::ClonePropertyMap. 
+    //WIPClassMapLoadContext& classLoadCtx = GetDbMap().GetSchemaImportContext()->GetClassMapLoadContext();
     if (GetPropertyMapsR().Insert(WipPropertyMapFactory::CreateCopy(*basePropMap, *this)) != SUCCESS)
         return ERROR;
 

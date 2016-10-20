@@ -716,7 +716,6 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
             }
         else
             {
-            size_t i = 0;
             if (second)
                 viewSql.AppendComma();
             else

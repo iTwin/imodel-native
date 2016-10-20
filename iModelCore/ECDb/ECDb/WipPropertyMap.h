@@ -90,7 +90,7 @@ struct ISupportPropertyMapDispatcher
     private:
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher) const = 0;
     public:
-        DispatcherFeedback Accept(IPropertyMapDispatcher const&  dispatcher) const { return _Accept(dispatcher); }
+        DispatcherFeedback Accept(IPropertyMapDispatcher const& dispatcher) const { return _Accept(dispatcher); }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

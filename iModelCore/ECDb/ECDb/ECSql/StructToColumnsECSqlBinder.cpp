@@ -26,19 +26,18 @@ StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsql
 //---------------------------------------------------------------------------------------
 void StructToColumnsECSqlBinder::Initialize()
     {
-    auto const& typeInfo = GetTypeInfo();
-    auto propMap = typeInfo.GetPropertyMap();
-    BeAssert(propMap != nullptr && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    BeAssert(dynamic_cast<StructPropertyMap const*> (propMap) != nullptr);
+    ECSqlTypeInfo const& typeInfo = GetTypeInfo();
+    BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetKind() == PropertyMapKind::StructPropertyMap && "Struct parameters are expected to always have a PropertyNameExp as target expression");
+    WipStructPropertyMap const* structPropMap = static_cast<WipStructPropertyMap const*> (typeInfo.GetPropertyMap());
 
     int totalMappedSqliteParameterCount = 0;
-    for (PropertyMapCP childPropMap : propMap->GetChildren()) //GetChildren ensures the correct and always same order
+    for (WipPropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
         {
-        auto binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *childPropMap);
+        auto binder = ECSqlBinderFactory::CreateBinder(GetECSqlStatementR(), *memberPropMap);
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount();
 
         auto binderP = binder.get(); //cache raw pointer as it is needed after the unique_ptr has been moved into the collection
-        m_memberBinders[childPropMap->GetProperty().GetId()] = std::move(binder);
+        m_memberBinders[memberPropMap->GetProperty().GetId()] = std::move(binder);
 
         //for SetSqliteIndex we need a mapping from a given ECSqlComponent index to the respective member binder
         //and also the relative component index within that member binder.
