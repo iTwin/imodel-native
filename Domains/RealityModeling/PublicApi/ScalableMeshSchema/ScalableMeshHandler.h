@@ -105,7 +105,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         bool m_forceRedraw;
         bset<uint64_t>                          m_activeClips;
 
-        BeFileName m_path;
+        BeFileName                              m_path;
+        bool                                    m_isProgressiveDisplayOn;        
                        
     protected:
 
@@ -169,7 +170,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
-
+        SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);
+        
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
