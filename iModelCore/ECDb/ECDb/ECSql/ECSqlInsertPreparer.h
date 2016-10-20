@@ -49,14 +49,8 @@ private:
 
     static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
     static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
-    static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, WipConstraintECClassIdPropertyMap const&, ECN::ECClassId constraintClassId);
 
-    //! Checks whether for the given constraint a class id is necessary and if yes whether the one specified in the ECSQL is valid or not.
-    //! If validation was successful, the class id is returned.
-    static ECSqlStatus ValidateConstraintClassId (ECN::ECClassId& retrievedConstraintClassId, ECSqlPrepareContext&, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECRelationshipEnd constraintEnd);
-
-    static ECSqlStatus GetConstraintClassIdExpValue (bool& isParameter, ECN::ECClassId& constraintClassId, ECSqlPrepareContext&, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName);
-    static int GetConstraintClassIdExpIndex (InsertStatementExp const&, ECN::ECRelationshipEnd constraintEnd);
+    static ECSqlStatus ValidateConstraintClassId(ECSqlPrepareContext&, ValueExp const&, RelationshipConstraintMap const&);
 
     static void BuildNativeSqlInsertStatement (NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets);
     static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap);
