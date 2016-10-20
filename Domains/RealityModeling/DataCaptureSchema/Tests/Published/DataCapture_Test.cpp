@@ -45,9 +45,16 @@ TEST_F(DataCaptureTests, CreateCamera)
     DbResult result = projectPtr->SaveChanges("BasicCamera");
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
 
+    //Close project to flush memory
+    cameraPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    CloseProject();
 
-    ASSERT_TRUE(projectPtr->Elements().GetElement(cameraId).IsValid());
-    CameraCPtr myCamPtr = Camera::Get(*projectPtr,cameraId);
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(cameraId).IsValid());
+    CameraCPtr myCamPtr = Camera::Get(*projectReopenedPtr,cameraId);
     ASSERT_TRUE(myCamPtr.IsValid());
     ASSERT_EQ(cameraId, myCamPtr->GetElementId());
 
@@ -98,9 +105,16 @@ TEST_F(DataCaptureTests, ModifyCamera)
     DbResult result = projectPtr->SaveChanges("BasicCamera");
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
 
+    //Close project to flush memory
+    cameraPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    CloseProject();
 
-    ASSERT_TRUE(projectPtr->Elements().GetElement(cameraId).IsValid());
-    CameraCPtr myCamPtr = Camera::Get(*projectPtr,cameraId);
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(cameraId).IsValid());
+    CameraCPtr myCamPtr = Camera::Get(*projectReopenedPtr,cameraId);
     ASSERT_TRUE(myCamPtr.IsValid());
     ASSERT_EQ(cameraId, myCamPtr->GetElementId());
 
@@ -114,3 +128,57 @@ TEST_F(DataCaptureTests, ModifyCamera)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, DeleteCamera)
+    {
+    DgnDbPtr projectPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Query Camera element
+    DgnElementId cameraId  = Camera::QueryForIdByLabel(*projectPtr,"BasicCamera1");
+    ASSERT_TRUE(cameraId.IsValid());
+
+    //Delete edited camera element - You CANNOT delete an edited camera element because you get a copy of the original ...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    CameraCPtr cameraEditedPtr = Camera::GetForEdit(*projectPtr, cameraId);
+    ASSERT_TRUE(cameraEditedPtr.IsValid());
+    DgnDbStatus status = cameraEditedPtr->Delete();
+    ASSERT_FALSE(status==DgnDbStatus::Success);
+
+    //Delete camera element - You CAN delete a const camera element because this is effectively the original element...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    CameraCPtr cameraPtr = Camera::Get(*projectPtr, cameraId);
+    ASSERT_TRUE(cameraPtr.IsValid());
+    status = cameraPtr->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicCamera");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
+
+    //Close project to flush memory
+    cameraPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraEditedPtr=nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    //Check that cameraId is not accessible anymore 
+    ASSERT_FALSE(projectReopenedPtr->Elements().GetElement(cameraId).IsValid());
+    CameraCPtr myCamPtr = Camera::Get(*projectReopenedPtr,cameraId);
+    ASSERT_FALSE(myCamPtr.IsValid());
+
+    // Check that query Camera element returns nothing
+    DgnElementId deletedCameraId = Camera::QueryForIdByLabel(*projectReopenedPtr, "BasicCamera1");
+    ASSERT_FALSE(deletedCameraId.IsValid());
+    }

@@ -144,23 +144,6 @@ private:
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
-    struct Entry : Dgn::ECSqlStatementEntry
-        {
-        friend struct Camera;
-        private:
-            Entry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
-            BeSQLite::EC::ECSqlStatement const& GetStatementCR() const { return *m_statement; }
-
-        public:
-            double                  GetFocalLenghtPixels() const;
-            ImageDimensionType      GetImageDimension() const;
-            DPoint2d                GetPrincipalPoint() const;
-            CameraDistortionType    GetDistortion() const;
-            double                  GetAspectRatio() const;
-            double                  GetSkew() const;
-        };
-
-
 protected:
 
     explicit Camera(CreateParams const& params) : T_Super(params) {}
@@ -221,7 +204,7 @@ public:
     //! Get the id of this Camera
     CameraId GetId() const { return CameraId(GetElementId().GetValueUnchecked()); }
 
-
+    //Properties Get/Set
     double                  GetFocalLenghtPixels() const        {return m_focalLenghtPixels; }
     ImageDimensionType      GetImageDimension() const           {return m_imageDimension; }
     DPoint2d                GetPrincipalPoint() const           {return m_principalPoint; }

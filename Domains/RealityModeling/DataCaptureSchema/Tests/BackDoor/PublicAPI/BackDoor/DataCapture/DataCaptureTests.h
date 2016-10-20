@@ -82,6 +82,8 @@ public:
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
+    //! Close the last opened project kept by static variable.
+    static void          CloseProject();
 };
 
 typedef DataCaptureTestsFixture DataCaptureTests;

@@ -201,13 +201,6 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
-//     auto& alignmentModelHandlerR = AlignmentModelHandler::GetHandler();
-//     auto alignmentModelPtr = alignmentModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr),
-//         projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
-// 
-//     if (DgnDbStatus::Success != alignmentModelPtr->Insert())
-//         return nullptr;
-
     auto& spatialModelHandlerR = dgn_ModelHandler::Spatial::GetHandler();
     auto spatialModelPtr = spatialModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(spatialModelHandlerR),
                                                                               DgnModel::CreateModelCode("Test Spatial Model")));
@@ -376,4 +369,19 @@ Dgn::DgnDbPtr DataCaptureTestsFixture::OpenProject(WCharCP baseName, bool needsS
         }
 
     return s_currentProject;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void DataCaptureTestsFixture::CloseProject()
+    {
+    BeAssert(nullptr != m_host);
+
+    if (s_currentProject.IsValid())
+        {
+        s_currentProject->SaveChanges();
+        s_currentProject->CloseDb();
+        }
+
+    s_currentProject = nullptr;
     }

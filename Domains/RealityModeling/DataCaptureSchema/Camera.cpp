@@ -223,15 +223,6 @@ DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
         }
     return DgnDbStatus::Success;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-double                  Camera::Entry::GetFocalLenghtPixels() const { return GetStatement()->GetValueDouble(GetStatement()->GetParameterIndex(CAMERA_PROPNAME_FocalLenghtPixels)); }
-ImageDimensionType      Camera::Entry::GetImageDimension() const { return ImageDimensionType::GetValue(GetStatementCR(), GetStatement()->GetParameterIndex(CAMERA_PROPNAME_ImageDimension)); }
-DPoint2d                Camera::Entry::GetPrincipalPoint() const { return GetStatement()->GetValuePoint2D(GetStatement()->GetParameterIndex(CAMERA_PROPNAME_PrincipalPoint)); }
-CameraDistortionType    Camera::Entry::GetDistortion() const { return CameraDistortionType::GetValue(GetStatementCR(), GetStatement()->GetParameterIndex(CAMERA_PROPNAME_Distortion)); }
-double                  Camera::Entry::GetAspectRatio() const { return GetStatement()->GetValueDouble(GetStatement()->GetParameterIndex(CAMERA_PROPNAME_AspectRatio)); }
-double                  Camera::Entry::GetSkew() const { return GetStatement()->GetValueDouble(GetStatement()->GetParameterIndex(CAMERA_PROPNAME_Skew)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -264,13 +255,12 @@ DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams con
     if (DgnDbStatus::Success == status)
         {
         //read camera properties
-        Entry entry(&stmt);
-        SetFocalLenghtPixels(entry.GetFocalLenghtPixels());
-        SetImageDimension(entry.GetImageDimension());
-        SetPrincipalPoint(entry.GetPrincipalPoint());
-        SetDistortion(entry.GetDistortion());
-        SetAspectRatio(entry.GetAspectRatio());
-        SetSkew(entry.GetSkew());
+        SetFocalLenghtPixels (stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_FocalLenghtPixels)));
+        SetImageDimension(ImageDimensionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_ImageDimension)));
+        SetPrincipalPoint(stmt.GetValuePoint2D(params.GetSelectIndex(CAMERA_PROPNAME_PrincipalPoint))); 
+        SetDistortion(CameraDistortionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_Distortion)));
+        SetAspectRatio(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_AspectRatio)));
+        SetSkew(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_Skew)));
         }
 
     return status;
