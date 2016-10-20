@@ -618,7 +618,7 @@ static bool WriteSchema(Options const& options)
     //Write output file
     s_logger->infov("Writing output file %s", outFile.GetNameUtf8().c_str());
     s_logger->infov("Wrote %d resources.", currentIndex);
-    if (schema->WriteToXmlFile(outFile.GetName(), 3) != SchemaWriteStatus::Success)
+    if (schema->WriteToXmlFile(outFile.GetName()) != SchemaWriteStatus::Success)
         {
         s_logger->error("Failed to serialize schema.");
         return false;
