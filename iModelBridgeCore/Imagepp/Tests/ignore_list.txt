@@ -5,6 +5,15 @@
 #HGF2DUniverseTester.LinearTest
 #*ExportTester.ExportToiTiffBestOptions/162
 
+#----------------------------------------------------------------------------------------
+# Long running export test 
+# Disabled by default in ImagePPTest.config.xml. You should only ignore here when
+# working on tests and you want to temporary skip them.   
+#----------------------------------------------------------------------------------------
+#FormatTests/*
+#FormatTests/PssTester.Export/*
+#FormatTests/ExportAllTester.ToAllFormats/*
+#FormatTests/ExportiTiffTester.ToBestiTiff/*
 
 #----------------------------------------------------------------------------------------
 # *** Broken, need to be re-visited ***
