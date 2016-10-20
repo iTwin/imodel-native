@@ -314,7 +314,7 @@ public:
     bool DropCategory(DgnCategoryId id) {return 0 != m_categories.erase(id);}
 
     //! Add or Drop a category to this CategorySelector
-    void ChangeCategoryDisplay(DgnCategoryId categoryId, bool add) {add ? AddCategory(categoryId) : DropCategory(categoryId);}
+    void ChangeCategoryDisplay(DgnCategoryId categoryId, bool add) {if (add) AddCategory(categoryId); else DropCategory(categoryId);}
 
     //! Query the list of category selectors
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);

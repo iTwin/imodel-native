@@ -971,7 +971,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
             for (auto& subRange : subRanges)
                 {
                 ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-                Status                  status;
 
                 child->CollectGeometry (m_cache, m_dgndb);
                 if (!child->GetGeometries().empty())
