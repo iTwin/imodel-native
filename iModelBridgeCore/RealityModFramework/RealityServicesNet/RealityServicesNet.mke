@@ -89,7 +89,7 @@ ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
 ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
 ASSEMBLY_TESTKEYFILE    =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
-
+ASSEMBLY_NO_TRANSKIT = 1
 
 # ======================================================
 # undef DLM_CREATE_LIB_CONTEXT_LINK since there is no 
