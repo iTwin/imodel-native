@@ -234,7 +234,7 @@ struct ExecutionManager
                 }
 
             return ;
-            })->Then<DgnDbServerResult<T>>([=]()
+            })->template Then<DgnDbServerResult<T>>([=]()
                 {
                 return *finalResult;
                 });
