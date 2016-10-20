@@ -10,6 +10,7 @@
     </Part>
     
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
+	    <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
