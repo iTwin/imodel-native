@@ -334,9 +334,6 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
 
     //ForeignEnd ECInstanceId PropMap
-    Utf8CP fkTableColAlias = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME : ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
-
-    
     RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> foreignEndIdPropertyMap = WipPropertyMapFactory::CreateConstraintECInstanceIdPropertyMap(GetForeignEnd(), *this, columns.m_ecInstanceIdColumnsPerFkTable);
     if (foreignEndIdPropertyMap == nullptr)
         {

@@ -12,7 +12,6 @@
 #include "ClassMap.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct WipPropertyMap;
 struct WipVerticalPropertyMap;
@@ -288,7 +287,6 @@ struct WipColumnVerticalPropertyMap: WipVerticalPropertyMap
         virtual ~WipColumnVerticalPropertyMap() {}
     public:
         DbColumn const& GetColumn() const { return m_column; }
-        bool IsMappedToClassMapTables() const { &m_column.GetTable() != &GetClassMap().GetJoinedTable() && &m_column.GetTable() != &GetClassMap().GetPrimaryTable(); }
     };
 
 //=======================================================================================
@@ -670,7 +668,38 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
         void Reset() { m_columns.clear(); }
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
     };
+//=======================================================================================
+// @bsiclass                                                   Affan.Khan          07/16
+// Allow to collect columns from property maps
+//+===============+===============+===============+===============+===============+======
+struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
+    {
+    private:
+        mutable std::set<DbTable const*> m_tables;
+        PropertyMapKind m_filter;
+    private:
 
+        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override
+            {
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                m_tables.insert(&propertyMap.GetTable());
+            }
+        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
+            {
+            return DispatcherFeedback::NextSibling;
+            }
+        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override
+            {
+            if (Enum::Contains(m_filter, propertyMap.GetKind()))
+                m_tables.insert(propertyMap.GetTables().begin(), propertyMap.GetTables().end());
+            }
+
+    public:
+        WipPropertyMapTableDispatcher(PropertyMapKind filter = PropertyMapKind::All)
+            : m_filter(filter)
+            {}
+        std::set<DbTable const*> GetTables() const { return m_tables; }
+    };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 // Search PropertyMap with a given type
@@ -715,29 +744,7 @@ struct WipPropertyMapTypeDispatcher final : IPropertyMapDispatcher
         std::vector<WipPropertyMap const*> const& ResultSet() const { return m_propertyMaps; }
       
     };
-//=======================================================================================
-// @bsiclass                                                   Affan.Khan          07/16
-// Allow to collect columns from property maps
-//+===============+===============+===============+===============+===============+======
-struct WipPropertyMapSaveDispatcher final : IPropertyMapDispatcher
-    {
-    private:
-        DbClassMapSaveContext& m_context;
-        mutable BentleyStatus m_status;
-        mutable WipPropertyMap const* m_failedMap;
 
-    private:
-        virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override;
-        virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
-
-    public:
-        WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx): m_context(ctx), m_status(SUCCESS), m_failedMap(nullptr) {}
-        ~WipPropertyMapSaveDispatcher() {}
-        BentleyStatus GetStatus() const { return m_status; }
-        WipPropertyMap const* GetPropertyMapThatCausedError() const { return m_failedMap; }
-        void Reset() { m_status = SUCCESS; m_failedMap = nullptr; }
-    };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 // Allow to collect columns from property maps
@@ -759,7 +766,7 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
             Result(WipColumnVerticalPropertyMap const& propertyMap)
                 :m_propertyMap(&propertyMap)
                 {}
-            Result(WipColumnVerticalPropertyMap const& propertyMap)
+            Result()
                 :m_propertyMap(nullptr)
                 {}
             ~Result(){}
@@ -773,9 +780,6 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
             DbTable const& GetTable() const { return GetColumn().GetTable(); }
             bool  IsColumnPersisted() const { return GetColumn().GetPersistenceType() == PersistenceType::Persisted; }
             bool  IsTablePersisted() const { return GetTable().GetPersistenceType() == PersistenceType::Persisted; }
-
-
-
         };
 
     private:

@@ -1324,6 +1324,7 @@ DispatcherFeedback WipPropertyMapColumnDispatcher::_Dispatch(WipColumnHorizontal
     }
 
 //************************************WipPropertyMapSaveDispatcher*************************************
+WipPropertyMapSaveDispatcher::WipPropertyMapSaveDispatcher(DbClassMapSaveContext& ctx) : m_context(ctx), m_status(SUCCESS), m_failedMap(nullptr) {}
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
@@ -1461,7 +1462,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdProperty
         {
         if (m_target == SqlTarget::View)
             {
-            result.GetSqlBuilderR().Append(m_classIdentifier, ECDB_COL_ECClassId);
+            result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
             }
         else
             {

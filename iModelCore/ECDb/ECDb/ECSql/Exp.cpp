@@ -37,12 +37,12 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            std::vector<DbColumn const*> columns;            
-            propertyNameExp->GetTypeInfo().GetPropertyMap()->GetColumns(columns);
-            for (auto column : columns)
+            WipPropertyMapTableDispatcher tableDispatcher;
+            propertyNameExp->GetTypeInfo().GetPropertyMap()->Accept(tableDispatcher);
+            for (auto table : tableDispatcher.GetTables())
                 {
-                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted)
-                    tmp.insert(&column->GetTable());
+                if (table->GetPersistenceType() == PersistenceType::Persisted)
+                    tmp.insert(table);
                 }
             }
         }

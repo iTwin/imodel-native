@@ -51,7 +51,7 @@ struct ClassMapper final
         static bool IsNavigationPropertySupportedInECSql(WipNavigationPropertyMap const& navProperty, bool logIfNotSupported) 
             {
             ECDbCR ecdb = navProperty.GetClassMap().GetDbMap().GetECDb();
-            NavigationECPropertyCR navigationProperty = *navProperty.GetProperty().GetAsNavigationProperty();
+            ECN::NavigationECPropertyCR navigationProperty = *navProperty.GetProperty().GetAsNavigationProperty();
             if (navigationProperty.IsMultiple())
                 {
                 if (logIfNotSupported)
@@ -59,8 +59,8 @@ struct ClassMapper final
                                                                   "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
                                                                   navigationProperty.GetClass().GetFullName(), navigationProperty.GetName().c_str(),
                                                                   ClassMapper::GetConstraint(navigationProperty, WipNavigationPropertyMap::NavigationEnd::To).GetMultiplicity().ToString().c_str(),
-                                                                  RelationshipMultiplicity::ZeroOne().ToString().c_str(),
-                                                                  RelationshipMultiplicity::OneOne().ToString().c_str());
+                                                                  ECN::RelationshipMultiplicity::ZeroOne().ToString().c_str(),
+                                                                  ECN::RelationshipMultiplicity::OneOne().ToString().c_str());
                 return false;
                 }
 

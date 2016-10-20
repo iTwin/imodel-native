@@ -213,14 +213,14 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
         if (derivedPropertyMap == nullptr)
             {
             BeAssert(false);
-            return;
+            return ERROR;
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
         if (result->GetKind() == PropertyMapKind::NavigationPropertyMap)
             {
             if (!static_cast<WipNavigationPropertyMap const&>(*result).IsSupportedInECSql())
-                return;
+                return ERROR;
             }
 
         WipPropertyMapColumnDispatcher baseColumnDispatcher, derivedColumnDispatcher;
@@ -229,7 +229,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
         if (baseColumnDispatcher.GetColumns().size() != derivedColumnDispatcher.GetColumns().size())
             {
             BeAssert(false);
-            return;
+            return ERROR;
             }
 
         for (auto deriveColumnItor = derivedColumnDispatcher.GetColumns().begin(), baseColumnItor = baseColumnDispatcher.GetColumns().begin(); deriveColumnItor != derivedColumnDispatcher.GetColumns().end() && baseColumnItor != baseColumnDispatcher.GetColumns().end(); ++deriveColumnItor, ++baseColumnItor)
