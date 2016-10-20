@@ -1301,7 +1301,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     }
 
     {
-    WipConstraintECInstanceIdIdPropertyMap const* fromRelatedIdPropMap = static_cast<WipConstraintECInstanceIdIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
+    WipConstraintECInstanceIdPropertyMap const* fromRelatedIdPropMap = static_cast<WipConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
     PRECONDITION(fromRelatedIdPropMap != nullptr, ECSqlStatus::Error);
     if (!fromRelatedIdPropMap->IsMappedToSingleTable())
         {
@@ -1336,7 +1336,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     }
 
     {
-    WipConstraintECInstanceIdIdPropertyMap const* toRelatedIdPropMap = static_cast<WipConstraintECInstanceIdIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
+    WipConstraintECInstanceIdPropertyMap const* toRelatedIdPropMap = static_cast<WipConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
     PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::Error);
     if (!toRelatedIdPropMap->IsMappedToSingleTable())
         {

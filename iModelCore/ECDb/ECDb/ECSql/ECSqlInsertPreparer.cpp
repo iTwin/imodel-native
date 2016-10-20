@@ -428,7 +428,7 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
         //user specified constraint class id in ECSQL
         {
         bool isParameter = false;
-        ECSqlStatus stat = GetConstraintClassIdExpValue(isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp(), (size_t) constraintClassIdExpIndex, constraintClassIdPropName);
+        ECSqlStatus stat = GetConstraintClassIdExpValue(isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp(), (size_t) constraintClassIdExpIndex, constraintClassIdPropMap->GetAccessString().c_str());
         if (!stat.IsSuccess())
             return stat;
 

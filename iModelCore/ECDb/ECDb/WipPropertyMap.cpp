@@ -512,14 +512,14 @@ RefCountedPtr<WipConstraintECClassIdPropertyMap> WipConstraintECClassIdPropertyM
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static
-RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipConstraintECInstanceIdIdPropertyMap::CreateInstance(ClassMap const& classMap, ConstraintType constraintType, std::vector<DbColumn const*> const& columns)
+RefCountedPtr<WipConstraintECInstanceIdPropertyMap> WipConstraintECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, ConstraintType constraintType, std::vector<DbColumn const*> const& columns)
     {
     std::vector<RefCountedPtr<WipPrimitivePropertyMap>> propertyMaps;
     if (TryCreateVerticalMaps(propertyMaps, constraintType == ConstraintType::Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId, classMap, columns) != SUCCESS)
         return nullptr;
 
     PrimitiveECPropertyCP systemProperty = propertyMaps.front()->GetProperty().GetAsPrimitiveProperty();
-    return new WipConstraintECInstanceIdIdPropertyMap(PropertyMapKind::ConstraintECInstanceIdIdPropertyMap, classMap, *systemProperty, propertyMaps, constraintType);
+    return new WipConstraintECInstanceIdPropertyMap(PropertyMapKind::ConstraintECInstanceIdIdPropertyMap, classMap, *systemProperty, propertyMaps, constraintType);
     }
 //************************************WipPrimitivePropertyMap********************
 //=======================================================================================
@@ -693,7 +693,7 @@ BentleyStatus WipNavigationPropertyMap::Init(DbColumn const& relECClassIdColumn,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-bool WipNavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported = false) const { return ClassMapper::IsNavigationPropertySupportedInECSql(*this, logIfNotSupported); }
+bool WipNavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported) const { return ClassMapper::IsNavigationPropertySupportedInECSql(*this, logIfNotSupported); }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
@@ -1071,17 +1071,17 @@ RefCountedPtr<WipConstraintECClassIdPropertyMap> WipPropertyMapFactory::CreateTa
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipPropertyMapFactory::CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
+RefCountedPtr<WipConstraintECInstanceIdPropertyMap> WipPropertyMapFactory::CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    return WipConstraintECInstanceIdIdPropertyMap::CreateInstance(classMap, WipConstraintECInstanceIdIdPropertyMap::ConstraintType::Source, columns);
+    return WipConstraintECInstanceIdPropertyMap::CreateInstance(classMap, WipConstraintECInstanceIdPropertyMap::ConstraintType::Source, columns);
     }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipPropertyMapFactory::CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
+RefCountedPtr<WipConstraintECInstanceIdPropertyMap> WipPropertyMapFactory::CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    return WipConstraintECInstanceIdIdPropertyMap::CreateInstance(classMap, WipConstraintECInstanceIdIdPropertyMap::ConstraintType::Target, columns);
+    return WipConstraintECInstanceIdPropertyMap::CreateInstance(classMap, WipConstraintECInstanceIdPropertyMap::ConstraintType::Target, columns);
     }
 
 //=======================================================================================
@@ -1109,7 +1109,7 @@ RefCountedPtr<WipHorizontalPropertyMap> WipPropertyMapFactory::CreateCopy(WipHor
         return CreateECClassIdPropertyMap(newContext, pm->GetDefaultECClassId(), columns);
         }
 
-    if (auto pm = dynamic_cast<WipConstraintECInstanceIdIdPropertyMap const*>(&propertyMap))
+    if (auto pm = dynamic_cast<WipConstraintECInstanceIdPropertyMap const*>(&propertyMap))
         {
         if (pm->IsSource())
             return CreateSourceECInstanceIdPropertyMap(newContext, columns);
@@ -1131,7 +1131,7 @@ RefCountedPtr<WipHorizontalPropertyMap> WipPropertyMapFactory::CreateCopy(WipHor
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
- RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> WipPropertyMapFactory::CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
+ RefCountedPtr<WipConstraintECInstanceIdPropertyMap> WipPropertyMapFactory::CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
      {
      if (end == ECRelationshipEnd_Source)
          return CreateSourceECInstanceIdPropertyMap(classMap, columns);
@@ -1440,7 +1440,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipColumnVerticalPro
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECInstanceIdIdPropertyMap const& propertyMap) const
+DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECInstanceIdPropertyMap const& propertyMap) const
     {
     WipColumnVerticalPropertyMap const* vmap = FindSystemPropertyMapForTable(propertyMap);
     if (vmap == nullptr)
@@ -1560,7 +1560,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::_Dispatch(WipColumnHorizontalPro
     switch (propertyMap.GetKind())
         {
             case PropertyMapKind::ConstraintECInstanceIdIdPropertyMap:
-                return ToNativeSql(static_cast<WipConstraintECInstanceIdIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(static_cast<WipConstraintECInstanceIdPropertyMap const&>(propertyMap));
             case PropertyMapKind::ConstraintECClassIdPropertyMap:
                 return ToNativeSql(static_cast<WipConstraintECClassIdPropertyMap const&>(propertyMap));
             case PropertyMapKind::ECClassIdPropertyMap:

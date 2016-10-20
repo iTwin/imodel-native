@@ -21,15 +21,15 @@ struct RelationshipConstraintMap : NonCopyableClass
         ECN::ECClassId m_relClassId;
         ECN::ECRelationshipEnd m_constraintEnd;
         ECN::ECRelationshipConstraintCR m_constraint;
-        WipConstraintECInstanceIdIdPropertyMap const* m_ecInstanceIdPropMap;
+        WipConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap;
         WipConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
         bool m_anyClassMatches;
 
     public:
         RelationshipConstraintMap(ECDb const&, ECN::ECClassId relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
 
-        WipConstraintECInstanceIdIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
-        void SetECInstanceIdPropMap(WipConstraintECInstanceIdIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
+        WipConstraintECInstanceIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
+        void SetECInstanceIdPropMap(WipConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         WipConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(WipConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
 
@@ -74,12 +74,12 @@ struct RelationshipClassMap : ClassMap
 
         ECN::ECRelationshipClassCR GetRelationshipClass() const { return *(GetClass().GetRelationshipClassCP()); }
         RelationshipConstraintMap const& GetConstraintMap(ECN::ECRelationshipEnd constraintEnd) const;
-        WipConstraintECInstanceIdIdPropertyMap const* GetConstraintECInstanceIdPropMap(ECN::ECRelationshipEnd constraintEnd) const;
+        WipConstraintECInstanceIdPropertyMap const* GetConstraintECInstanceIdPropMap(ECN::ECRelationshipEnd constraintEnd) const;
         WipConstraintECClassIdPropertyMap const* GetConstraintECClassIdPropMap(ECN::ECRelationshipEnd) const;
 
-        WipConstraintECInstanceIdIdPropertyMap const* GetSourceECInstanceIdPropMap() const { return m_sourceConstraintMap.GetECInstanceIdPropMap(); }
+        WipConstraintECInstanceIdPropertyMap const* GetSourceECInstanceIdPropMap() const { return m_sourceConstraintMap.GetECInstanceIdPropMap(); }
         WipConstraintECClassIdPropertyMap const* GetSourceECClassIdPropMap() const { return m_sourceConstraintMap.GetECClassIdPropMap(); }
-        WipConstraintECInstanceIdIdPropertyMap const* GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
+        WipConstraintECInstanceIdPropertyMap const* GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
         WipConstraintECClassIdPropertyMap const* GetTargetECClassIdPropMap() const { return m_targetConstraintMap.GetECClassIdPropMap(); }
 
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const = 0;
@@ -184,8 +184,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         //!Gets the end the ForeignKey end references
         ECN::ECRelationshipEnd GetReferencedEnd() const;
 
-        WipConstraintECInstanceIdIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
-        WipConstraintECInstanceIdIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
+        WipConstraintECInstanceIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
+        WipConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         WipConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
 
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }

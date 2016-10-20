@@ -534,7 +534,6 @@ RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN
 //static 
 RefCountedPtr<WipNavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::NavigationECPropertyCR property)
     {
-    DbColumn const* column = nullptr;
     Utf8String accessString = property.GetName();
     RefCountedPtr<WipNavigationPropertyMap> propertyMap = WipPropertyMapFactory::CreateNavigationPropertyMap(m_classMap, property);
     if (m_loadContext)

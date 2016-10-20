@@ -584,7 +584,7 @@ struct WipConstraintECClassIdPropertyMap final : WipSystemPropertyMap
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-struct WipConstraintECInstanceIdIdPropertyMap final : WipSystemPropertyMap
+struct WipConstraintECInstanceIdPropertyMap final : WipSystemPropertyMap
     {
     enum class ConstraintType
         {
@@ -595,14 +595,14 @@ struct WipConstraintECInstanceIdIdPropertyMap final : WipSystemPropertyMap
         virtual DispatcherFeedback _Accept(IPropertyMapDispatcher const&  dispatcher)  const override { return dispatcher.Dispatch(*this); }
 
     protected:
-        WipConstraintECInstanceIdIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ConstraintType constraintType)
+        WipConstraintECInstanceIdPropertyMap(PropertyMapKind kind, ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, std::vector<RefCountedPtr<WipPrimitivePropertyMap>> const& maps, ConstraintType constraintType)
             : WipSystemPropertyMap(kind, classMap, ecProperty, maps)
             {}
-        virtual ~WipConstraintECInstanceIdIdPropertyMap() {}
+        virtual ~WipConstraintECInstanceIdPropertyMap() {}
     public:
         bool IsSource() const { return m_constraintType == ConstraintType::Source; }
         bool IsTarget() const { return m_constraintType == ConstraintType::Target; }
-        static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateInstance(ClassMap const& classMap, ConstraintType constraintType, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<WipConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, ConstraintType constraintType, std::vector<DbColumn const*> const& columns);
     };
 
 //=======================================================================================
@@ -633,11 +633,11 @@ struct WipPropertyMapFactory final
         static RefCountedPtr<WipECClassIdPropertyMap> CreateECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipConstraintECClassIdPropertyMap> CreateSourceECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipConstraintECClassIdPropertyMap> CreateTargetECClassIdPropertyMap(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
-        static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<WipConstraintECInstanceIdPropertyMap> CreateSourceECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<WipConstraintECInstanceIdPropertyMap> CreateTargetECInstanceIdPropertyMap(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipVerticalPropertyMap> CreateCopy(WipVerticalPropertyMap const& propertyMap, ClassMap const& newContext);
         static RefCountedPtr<WipHorizontalPropertyMap> CreateCopy(WipHorizontalPropertyMap const& propertyMap, ClassMap const& newContext);
-        static RefCountedPtr<WipConstraintECInstanceIdIdPropertyMap> CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<WipConstraintECInstanceIdPropertyMap> CreateConstraintECInstanceIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
         static RefCountedPtr<WipConstraintECClassIdPropertyMap> CreateConstraintECClassIdPropertyMap(ECN::ECRelationshipEnd end, ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
     };
 
@@ -684,6 +684,8 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
             {
             if (Enum::Contains(m_filter, propertyMap.GetKind()))
                 m_tables.insert(&propertyMap.GetTable());
+
+            return DispatcherFeedback::Cancel;
             }
         virtual DispatcherFeedback _Dispatch(WipCompoundPropertyMap const& propertyMap) const override
             {
@@ -693,6 +695,8 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
             {
             if (Enum::Contains(m_filter, propertyMap.GetKind()))
                 m_tables.insert(propertyMap.GetTables().begin(), propertyMap.GetTables().end());
+
+            return DispatcherFeedback::Cancel;
             }
 
     public:
@@ -701,6 +705,7 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
             {}
         std::set<DbTable const*> GetTables() const { return m_tables; }
     };
+
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 // Search PropertyMap with a given type
@@ -793,20 +798,10 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
 
     private:
         Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
-        bool IsAlienTable(DbTable const& table) const
-            {
-            if (&table != &m_tableFilter)
-                {
-                BeAssert(false && "PropertyMap table does not match the table filter specified.");
-                m_status = ERROR;
-                return true;
-                }
-
-            return false;
-            }
+        bool IsAlienTable(DbTable const& table) const;
         WipColumnVerticalPropertyMap const* FindSystemPropertyMapForTable(WipSystemPropertyMap const& systemPropertyMap) const;
         DispatcherFeedback ToNativeSql(WipColumnVerticalPropertyMap const& propertyMap) const;
-        DispatcherFeedback ToNativeSql(WipConstraintECInstanceIdIdPropertyMap const& propertyMap) const;
+        DispatcherFeedback ToNativeSql(WipConstraintECInstanceIdPropertyMap const& propertyMap) const;
         DispatcherFeedback ToNativeSql(WipConstraintECClassIdPropertyMap const& propertyMap) const;
         DispatcherFeedback ToNativeSql(WipECClassIdPropertyMap const& propertyMap) const;
         DispatcherFeedback ToNativeSql(WipECInstanceIdPropertyMap const& propertyMap) const;
