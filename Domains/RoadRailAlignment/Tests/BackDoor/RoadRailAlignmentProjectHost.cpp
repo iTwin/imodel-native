@@ -173,9 +173,13 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
 
     projectPtr->Schemas().CreateECClassViewsInDb();
 
+    auto alignmentPartitionPtr = PhysicalPartition::Create(*projectPtr->Elements().GetRootSubject(), "Alignments");
+    if (alignmentPartitionPtr->Insert(&status).IsNull())
+        return nullptr;
+
     auto& modelHandlerR = AlignmentModelHandler::GetHandler();
     auto modelPtr = modelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr), 
-        projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
+        alignmentPartitionPtr->GetElementId(), AlignmentModel::CreateModelCode("Test Alignment Model")));
 
     if (DgnDbStatus::Success != modelPtr->Insert())
         return nullptr;
