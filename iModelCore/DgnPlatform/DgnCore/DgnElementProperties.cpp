@@ -580,6 +580,14 @@ ElementAutoHandledPropertiesECInstanceAdapter::ElementAutoHandledPropertiesECIns
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementAutoHandledPropertiesECInstanceAdapter::SetDirty()
+    {
+    m_element.m_flags.m_propState = DgnElement::PropState::Dirty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
@@ -621,18 +629,19 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         AllocateBuffer(CalculateInitialAllocation(_GetClassLayout()));
         }
 
-    m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
-
     auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
 
     stmt->BindId(1, m_element.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         {
+        m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
         return BSISUCCESS; // element is not persistent => all props are null at this point
         }
 
     ECInstanceECSqlSelectAdapter adapter(*stmt); // This adapter extracts the values from the statement and sets them into the ECDBuffer
     adapter.SetInstanceData(*this, true);
+
+    m_element.m_flags.m_propState = DgnElement::PropState::InBuffer; // initial state should InBuffer, not Dirty
 
     return BSISUCCESS;
     }
@@ -649,10 +658,8 @@ void ElementAutoHandledPropertiesECInstanceAdapter::AllocateBuffer(size_t size)
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
     InitializeMemory(_GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
 
-#ifdef WIP_PROPERTIES_MEMORY_USAGE
-    if (m_element.IsPersistent())
+    if (m_element.DoMemUsageTracking())
         m_element.GetDgnDb().Elements().ChangeMemoryUsed(m_element.m_ecPropertyDataSize);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -724,10 +731,8 @@ void DgnElements::ClearUpdaterCache()
 DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
     {
     BeAssert(IsValid());
-    BeAssert(DgnElement::PropState::Dirty == m_element.m_flags.m_propState);
     BeAssert(nullptr != m_element.m_ecPropertyData);
-
-    m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
+    BeAssert(DgnElement::PropState::Dirty == m_element.m_flags.m_propState);
 
     ECInstanceUpdater* updater = GetUpdater();
     if (nullptr == updater)
@@ -736,7 +741,11 @@ DgnDbStatus ElementAutoHandledPropertiesECInstanceAdapter::UpdateProperties()
         return DgnDbStatus::WrongClass;
         }
 
-    return (BSISUCCESS == updater->Update(*this))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    if (BSISUCCESS != updater->Update(*this))
+        return DgnDbStatus::WriteError;
+
+    m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,6 +801,8 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ModifyData (uint
 
     Byte * dest = m_element.m_ecPropertyData + offset;
     memcpy (dest, newData, dataLength);
+
+    SetDirty();
     
     return ECObjectsStatus::Success;
     }
@@ -807,6 +818,8 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_MoveData (uint32
 
     Byte* data = m_element.m_ecPropertyData;
     memmove (data+toOffset, data+fromOffset, dataLength);
+
+    SetDirty();
 
     return ECObjectsStatus::Success;
     }
@@ -829,10 +842,8 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation
             return ECObjectsStatus::UnableToAllocateMemory;
             }
 
-#ifdef WIP_PROPERTIES_MEMORY_USAGE
-        if (m_element.IsPersistent())
+        if (m_element.DoMemUsageTracking())
             m_element.GetDgnDb().Elements().ChangeMemoryUsed(newAllocation - m_element.m_ecPropertyDataSize);
-#endif
 
         m_element.m_ecPropertyData = reallocedData;
         m_element.m_ecPropertyDataSize = newAllocation;
@@ -853,10 +864,8 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
             {
             bentleyAllocator_free(m_element.m_ecPropertyData);
 
-#ifdef WIP_PROPERTIES_MEMORY_USAGE
-            if (m_element.IsPersistent())
+            if (m_element.DoMemUsageTracking())
                 m_element.GetDgnDb().Elements().ChangeMemoryUsed(-m_element.m_ecPropertyDataSize);
-#endif
 
             m_element.m_ecPropertyData = nullptr;
             m_element.m_ecPropertyDataSize = 0;
@@ -894,10 +903,8 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (
     if (NULL == reallocedData)
         return ECObjectsStatus::UnableToAllocateMemory;
     
-#ifdef WIP_PROPERTIES_MEMORY_USAGE
-    if (m_element.IsPersistent())
+    if (m_element.DoMemUsageTracking())
         m_element.GetDgnDb().Elements().ChangeMemoryUsed(newSize - m_element.m_ecPropertyDataSize);
-#endif
 
     m_element.m_ecPropertyData = reallocedData;
     m_element.m_ecPropertyDataSize = newSize;
@@ -921,6 +928,8 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ClearArray (uint
         {
         RemoveArrayElements (*pPropertyLayout, 0, arrayCount);
         }
+
+    SetDirty(); 
 
     return ECObjectsStatus::Success;
     }
@@ -1026,12 +1035,11 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
 
     auto status = ecdbuffer.SetValueToMemory(m_propIdx, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
         
-    if ((ECObjectsStatus::Success != status) && (ECObjectsStatus::PropertyValueMatchesNoChange != status))
-        return DgnDbStatus::BadArg; // probably a type mismatch
+    if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
+        return DgnDbStatus::Success;
 
-    m_element.m_flags.m_propState = DgnElement::PropState::Dirty;
-
-    return DgnDbStatus::Success;
+    BeAssert((ECObjectsStatus::Success != status) || (DgnElement::PropState::Dirty == m_element.m_flags.m_propState));
+    return toDgnDbWriteStatus(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1051,10 +1059,8 @@ DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR
         return DgnDbStatus::NotFound;
         }
 
-    if (ECN::ECObjectsStatus::Success != ecdbuffer.GetValueFromMemory(value, m_propIdx, arrayIdx.m_hasIndex, arrayIdx.m_index))
-        return DgnDbStatus::BadRequest;
-    
-    return DgnDbStatus::Success;
+    auto status = ecdbuffer.GetValueFromMemory(value, m_propIdx, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    return toDgnDbWriteStatus(status);
     }
 
 /*---------------------------------------------------------------------------------**//**

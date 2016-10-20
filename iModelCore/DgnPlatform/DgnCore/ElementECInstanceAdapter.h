@@ -42,6 +42,7 @@ private:
     void AllocateBuffer(size_t);
     uint32_t GetBytesUsed() const;
 
+    void SetDirty();
     BentleyStatus LoadProperties();
 
     // ECDBuffer:
@@ -62,7 +63,7 @@ private:
     bool _ReleaseData() const override { return true; }
     bool _IsMemoryInitialized() const override { return (nullptr != m_element.m_ecPropertyData); }
     Byte const * _GetData() const override { return m_element.m_ecPropertyData; }
-    bool _AllowWritingDirectlyToInstanceMemory() const override { return true; }
+    bool _AllowWritingDirectlyToInstanceMemory() const override { return false; } // I need to call SetDirty in _MoveData and _ModifyData
     bool _AreAllPropertiesCalculated() const override { return true; }
     void _SetAllPropertiesCalculated(bool) override {}
     uint32_t _GetBytesAllocated() const override { return m_element.m_ecPropertyDataSize; }
@@ -85,11 +86,11 @@ private:
     ECObjectsStatus _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override
         {return SetValueToMemory(propertyIndex, v, useArrayIndex, arrayIndex);}
     ECObjectsStatus _InsertArrayElements (uint32_t propertyIndex, uint32_t index, uint32_t size) override
-        {return InsertNullArrayElementsAt(propertyIndex, index, size);}
+        {SetDirty(); return InsertNullArrayElementsAt(propertyIndex, index, size);}
     ECObjectsStatus _AddArrayElements (uint32_t propertyIndex, uint32_t size) override
-        {return AddNullArrayElementsAt(propertyIndex, size);}
+        {SetDirty(); return AddNullArrayElementsAt(propertyIndex, size);}
     ECObjectsStatus _RemoveArrayElement (uint32_t propertyIndex, uint32_t index) override
-        {return RemoveArrayElementsAt(propertyIndex, index, 1);}
+        {SetDirty(); return RemoveArrayElementsAt(propertyIndex, index, 1);}
     ECObjectsStatus _ClearArray (uint32_t propIdx) override;
 
     ECEnablerCR     _GetEnabler() const override {return *(m_eclass->GetDefaultStandaloneEnabler());}
