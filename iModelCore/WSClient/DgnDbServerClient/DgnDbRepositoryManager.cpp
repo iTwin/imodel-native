@@ -205,6 +205,7 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(availableTask);
     tasks.insert(unavailableTask);
+
     AsyncTask::WhenAll(tasks)->Wait();
     if (availableTask->GetResult().IsSuccess() && unavailableTask->GetResult().IsSuccess())
         {
@@ -267,3 +268,12 @@ void DgnDbRepositoryManager::SetCancellationToken (ICancellationTokenPtr cancell
     {
     m_cancellationToken = cancellationToken;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             10/2016
+//---------------------------------------------------------------------------------------
+DgnDbRepositoryConnectionPtr DgnDbRepositoryManager::GetRepositoryConnectionPtr()
+    {
+    return m_connection;
+    }
+

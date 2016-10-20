@@ -213,8 +213,11 @@ private:
     DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get all revision information based on a query.
+    //! Get all revision information based on a query (repeated).
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
+    
+    //! Get all revision information based on a query.
+    DgnDbServerRevisionsTaskPtr RevisionsFromQueryInternal(const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // This pointer needs to change to be generic
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -244,9 +247,21 @@ private:
     DgnDbServerStatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
                                                   ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Sends a request from changeset.
+    DgnDbServerStatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Initializes the revision.
     DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId, bool relinquishCodesLocks,
                                               Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
+
+    //! Acquire the requested set of locks.
+    DgnDbServerStatusTaskPtr AcquireCodesLocksInternal(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
+        BeGuidCR masterFileId, Utf8StringCR lastRevisionId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get a revision for the specific revision id.
+    DgnDbServerRevisionTaskPtr GetRevisionByIdInternal(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
     //! Create an instance of the connection to a repository on the server.
