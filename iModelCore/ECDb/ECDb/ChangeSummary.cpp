@@ -1421,7 +1421,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
     */
 
     // Case #1: End can point to only one class
-    bool endIsInOneClass = (classIdColumn->GetPersistenceType() == PersistenceType::Virtual);
+    const bool endIsInOneClass = (classIdColumn->GetPersistenceType() == PersistenceType::Virtual);
     if (endIsInOneClass)
         {
         // TODO: dynamic_cast<PropertyMapRelationshipConstraintClassId const*> (propMap)->GetDefaultConstraintECClassId()
@@ -1430,10 +1430,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
         }
 
     // Case #2: End is in only one table    
-    DbColumn const* tableClassIdColumn = nullptr;
-    classIdPropMap->GetTable()->TryGetECClassIdColumn(tableClassIdColumn);
-
-    bool endIsInOneTable = (classIdColumn == tableClassIdColumn);
+    const bool endIsInOneTable = classIdPropMap->GetTables().size() == 1;
     if (endIsInOneTable)
         {
         Utf8StringCR endTableName = classIdColumn->GetTable().GetName();
@@ -1494,11 +1491,11 @@ void ChangeExtractor::RecordInstance(ClassMapCR classMap, ECInstanceId instanceI
     m_instancesTable.InsertOrUpdate(instance);
 
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
-    for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
+    for (WipPropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        // TODO: MapsToTable() doesn't seem to work
-        DbTable const* table = propertyMap->GetSingleTable();
-        if (!table || table->GetId() != dbTable->GetId())
+        WipPropertyMapTableDispatcher tablesDisp;
+        propertyMap->Accept(tablesDisp);
+        if (tablesDisp.GetTables().size() != 1 || (*tablesDisp.GetTables().begin())->GetId() != dbTable->GetId())
             continue;
 
         RecordPropertyValue(instance, *propertyMap);
@@ -1523,41 +1520,44 @@ void ChangeExtractor::RecordRelInstance(ClassMapCR classMap, ECInstanceId instan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap)
+void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, WipPropertyMap const& propertyMap)
     {
-    SystemPropertyMap const* systemMap = dynamic_cast<SystemPropertyMap const*> (&propertyMap);
-    if (systemMap != nullptr)
+    if (propertyMap.IsSystem())
         return;
 
-    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
-    if (inlineStructMap != nullptr)
+    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
         {
-        for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
-            RecordPropertyValue(instance, *childPropertyMap);
-        return;
-        }
-
-    Utf8CP accessString = propertyMap.GetPropertyAccessString().c_str();
-    std::vector<DbColumn const*> columns;
-    propertyMap.GetColumns(columns);
-
-    PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
-    if (pointMap != nullptr)
-        {
-        BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
-        for (int ii = 0; ii < (int) columns.size(); ii++)
+        for (WipPropertyMap const* memberPropMap : static_cast<WipStructPropertyMap const&> (propertyMap))
             {
-            Utf8String childAccessString;
-            childAccessString.Sprintf("%s.%s", accessString, (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
-            Utf8StringCR columnName = columns[ii]->GetName();
-            RecordColumnValue(instance, columnName, childAccessString.c_str());
+            RecordPropertyValue(instance, *memberPropMap);
             }
+
         return;
         }
 
+    if (propertyMap.GetKind() == PropertyMapKind::Point2dPropertyMap || propertyMap.GetKind() == PropertyMapKind::Point3dPropertyMap)
+        {
+        WipCompoundPropertyMap const& pointPropMap = static_cast<WipCompoundPropertyMap const&> (propertyMap);
+        for (WipPropertyMap const* childPropMap : pointPropMap)
+            {
+            BeAssert(childPropMap->IsBusiness());
+            WipVerticalPropertyMap const* coordinatePropMap = static_cast<WipVerticalPropertyMap const*> (childPropMap);
+            WipPropertyMapColumnDispatcher columnsDisp;
+            coordinatePropMap->Accept(columnsDisp);
+            BeAssert(columnsDisp.GetColumns().size() == 1);
+            Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
+            RecordColumnValue(instance, columnName, childPropMap->GetAccessString().c_str());
+            }
+
+        return;
+        }
+    
     // SingleColumnPropertyMap - PrimitiveArrayPropertyMap, StructArrayJsonPropertyMap
-    BeAssert(columns.size() == 1);
-    RecordColumnValue(instance, columns[0]->GetName(), accessString);
+    WipPropertyMapColumnDispatcher columnsDisp;
+    propertyMap.Accept(columnsDisp);
+    BeAssert(columnsDisp.GetColumns().size() == 1);
+    Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
+    RecordColumnValue(instance, columnName, propertyMap.GetAccessString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
