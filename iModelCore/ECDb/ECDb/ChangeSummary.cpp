@@ -78,7 +78,7 @@ private:
 
     ECN::ECClassId QueryClassId() const;
     
-    void AddColumnMapsForProperty(PropertyMapCR propertyMap);
+    void AddColumnMapsForProperty(WipPropertyMap const&);
 
 public:
     TableMapDetail(ECDbCR ecdb, Utf8StringCR tableName) : m_ecdb(ecdb)
@@ -223,8 +223,8 @@ private:
 
     ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const;
     bool ChangeAffectsClass(ClassMapCR classMap) const;
-    bool ChangeAffectsProperty(PropertyMapCR propertyMap) const;
-    int GetFirstColumnIndex(PropertyMapCP propertyMap) const;
+    bool ChangeAffectsProperty(WipPropertyMap const&) const;
+    int GetFirstColumnIndex(WipPropertyMap const*) const;
 
     BentleyStatus ExtractFromSqlChanges(Changes& sqlChanges, ExtractOption extractOption);
     BentleyStatus ExtractFromSqlChange(SqlChange const& sqlChange, ExtractOption extractOption);
@@ -240,7 +240,7 @@ private:
 
     void RecordInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
     void RecordRelInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
-    void RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap);
+    void RecordPropertyValue(ChangeSummary::InstanceCR instance, WipPropertyMap const&);
     void RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8CP accessString);
     
 public:
@@ -398,11 +398,11 @@ void TableMapDetail::InitSystemColumnMaps()
 //---------------------------------------------------------------------------------------
 void TableMapDetail::InitPropertyColumnMaps(ClassMap const& classMap)
     {
-    for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
+    for (WipPropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        // TODO: MapsToTable() doesn't seem to work
-        DbTable const* table = propertyMap->GetSingleTable();
-        if (!table || table->GetId() != m_dbTable->GetId())
+        WipPropertyMapTableDispatcher tablesDisp;
+        propertyMap->Accept(tablesDisp);
+        if (tablesDisp.GetTables().size() != 1 || m_dbTable->GetId() != (*tablesDisp.GetTables().begin())->GetId())
             continue;
 
         AddColumnMapsForProperty(*propertyMap);
@@ -468,47 +468,47 @@ ECN::ECClassId TableMapDetail::GetECClassId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     03/2016
 //---------------------------------------------------------------------------------------
-void TableMapDetail::AddColumnMapsForProperty(PropertyMapCR propertyMap)
+void TableMapDetail::AddColumnMapsForProperty(WipPropertyMap const& propertyMap)
     {
-    SystemPropertyMap const* systemMap = dynamic_cast<SystemPropertyMap const*> (&propertyMap);
-    if (systemMap != nullptr)
+    if (propertyMap.IsSystem())
         return;
 
-    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
-    if (inlineStructMap != nullptr)
+    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
         {
-        for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
-            AddColumnMapsForProperty(*childPropertyMap);
-        return;
-        }
-
-    Utf8String accessString(propertyMap.GetPropertyAccessString());
-    std::vector<DbColumn const*> columns;
-    propertyMap.GetColumns(columns);
-
-    PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
-    if (pointMap != nullptr)
-        {
-        BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
-        for (int ii = 0; ii < (int) columns.size(); ii++)
+        WipStructPropertyMap const& structPropMap = static_cast<WipStructPropertyMap const&> (propertyMap);
+        for (WipPropertyMap const* childPropMap : structPropMap)
             {
-            Utf8PrintfString childAccessString("%s.%s", accessString.c_str(), (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
-
-            Utf8StringCR columnName = columns[ii]->GetName();
-            int columnIndex = GetColumnIndexByName(columnName);
-
-            m_columnMapByAccessString[childAccessString] = ChangeSummary::ColumnMap(columnName, columnIndex, false /* isSystemColumn */);
+            AddColumnMapsForProperty(*childPropMap);
             }
+
         return;
         }
 
-    // SingleColumnPropertyMap - PrimitiveArrayPropertyMap, StructArrayJsonPropertyMap
-    BeAssert(columns.size() == 1);
+    if (propertyMap.GetKind() == PropertyMapKind::Point2dPropertyMap || propertyMap.GetKind() == PropertyMapKind::Point3dPropertyMap)
+        {
+        WipCompoundPropertyMap const& pointPropMap = static_cast<WipCompoundPropertyMap const&> (propertyMap);
+        for (WipPropertyMap const* childPropMap : pointPropMap)
+            {
+            BeAssert(childPropMap->IsBusiness());
+            WipVerticalPropertyMap const* coordinatePropMap = static_cast<WipVerticalPropertyMap const*> (childPropMap);
+            WipPropertyMapColumnDispatcher columnsDisp;
+            coordinatePropMap->Accept(columnsDisp);
+            BeAssert(columnsDisp.GetColumns().size() == 1);
+            Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
+            int columnIndex = GetColumnIndexByName(columnName);
+            m_columnMapByAccessString[childPropMap->GetAccessString()] = ChangeSummary::ColumnMap(columnName, columnIndex, false /* isSystemColumn */);
+            }
 
-    Utf8StringCR columnName = columns[0]->GetName();
+        return;
+        }
+
+    WipPropertyMapColumnDispatcher columnsDisp;
+    propertyMap.Accept(columnsDisp);
+    BeAssert(columnsDisp.GetColumns().size() == 1);
+    Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
     int columnIndex = GetColumnIndexByName(columnName);
 
-    m_columnMapByAccessString[accessString] = ChangeSummary::ColumnMap(columnName, columnIndex, false /* isSystemColumn */);
+    m_columnMapByAccessString[propertyMap.GetAccessString()] = ChangeSummary::ColumnMap(columnName, columnIndex, false /* isSystemColumn */);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1068,14 +1068,18 @@ ECClassId ChangeExtractor::GetClassIdFromChangeOrTable(Utf8CP classIdColumnName,
 bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     {
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
-    for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
+    for (WipPropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        if (propertyMap->GetType() == PropertyMap::Type::ECClassId)
+        if (propertyMap->GetKind() == PropertyMapKind::ECClassIdPropertyMap)
             continue;
 
-        // TODO: MapsToTable() doesn't seem to work
-        DbTable const* table = propertyMap->GetSingleTable();
-        if (!table || table->GetId() != dbTable->GetId())
+        // ignore prop maps that map to more than one table or for which the table doesn't equal the table map's one
+        WipPropertyMapTableDispatcher tablesDisp;
+        propertyMap->Accept(tablesDisp);
+        if (tablesDisp.GetTables().size() != 1)
+            continue;
+
+        if ((*tablesDisp.GetTables().begin())->GetId() != dbTable->GetId())
             continue;
 
         if (ChangeAffectsProperty(*propertyMap))
@@ -1087,23 +1091,22 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-bool ChangeExtractor::ChangeAffectsProperty(PropertyMapCR propertyMap) const
+bool ChangeExtractor::ChangeAffectsProperty(WipPropertyMap const& propertyMap) const
     {
-    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
-    if (inlineStructMap != nullptr)
+    if (propertyMap.GetKind() == PropertyMapKind::StructPropertyMap)
         {
-        for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
+        for (WipPropertyMap const* childPropMap : static_cast<WipStructPropertyMap const&> (propertyMap))
             {
-            if (ChangeAffectsProperty(*childPropertyMap))
+            if (ChangeAffectsProperty(*childPropMap))
                 return true;
             }
+
         return false;
         }
 
-    std::vector<DbColumn const*> columns;
-    propertyMap.GetColumns(columns);
-
-    for (DbColumn const* column : columns)
+    WipPropertyMapColumnDispatcher columnsDisp;
+    propertyMap.Accept(columnsDisp);
+    for (DbColumn const* column : columnsDisp.GetColumns())
         {
         Utf8StringCR columnName = column->GetName();
         int columnIndex = m_tableMap->GetDetail()->GetColumnIndexByName(columnName);
@@ -1122,16 +1125,17 @@ bool ChangeExtractor::ChangeAffectsProperty(PropertyMapCR propertyMap) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-int ChangeExtractor::GetFirstColumnIndex(PropertyMapCP propertyMap) const
+int ChangeExtractor::GetFirstColumnIndex(WipPropertyMap const* propertyMap) const
     {
-    if (!propertyMap)
+    if (propertyMap == nullptr)
         return -1;
 
-    DbColumn const* firstColumn = propertyMap->GetSingleColumn();
-    if (!firstColumn)
+    WipPropertyMapColumnDispatcher columnsDisp;
+    propertyMap->Accept(columnsDisp);
+    if (columnsDisp.GetColumns().size() != 1)
         return -1;
 
-    return m_tableMap->GetDetail()->GetColumnIndexByName(firstColumn->GetName());
+    return m_tableMap->GetDetail()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1374,15 +1378,22 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
 //---------------------------------------------------------------------------------------
 ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const
     {
-    PropertyMapCP classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
-    if (!classIdPropMap)
+    WipConstraintECClassIdPropertyMap const* classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
+    if (classIdPropMap == nullptr)
         {
         BeAssert(false);
         return ECClassId();
         }
 
-    DbColumn const* classIdColumn = classIdPropMap->GetSingleColumn();
-    BeAssert(classIdColumn != nullptr);
+    WipPropertyMapColumnDispatcher columnsDisp;
+    classIdPropMap->Accept(columnsDisp);
+    if (columnsDisp.GetColumns().size() != 1)
+        {
+        BeAssert(false);
+        return ECClassId();
+        }
+
+    DbColumn const* classIdColumn = columnsDisp.GetColumns()[0];
 
     /*
     * There are various cases that need to be considered to resolve the constrained ECClassId at the end of a relationship:
