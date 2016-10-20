@@ -18,7 +18,6 @@
 #include <Imagepp/all/h/HRFMapBoxTileEditor.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 
-
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecJpeg.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
