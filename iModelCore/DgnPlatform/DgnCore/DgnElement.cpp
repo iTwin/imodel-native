@@ -1651,7 +1651,6 @@ void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
     {
     m_categoryId = src.GetCategoryId();
     m_geom = src.GetGeometryStream();
-    m_facetCount = src._GetFacetCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2464,7 +2463,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
 struct GeometricElementPropertyAccessors
     {
     struct {
-        ECSqlClassInfo::T_ElementPropGet  geomStream, facetCount;
+        ECSqlClassInfo::T_ElementPropGet  geomStream;
         } get;
     struct {
         ECSqlClassInfo::T_ElementPropSet  geomStream;
@@ -2491,14 +2490,6 @@ void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params
             return DgnDbStatus::BadRequest;//  => Use GeometryBuilder
             };
 
-        s_geomaccessors.get.facetCount = [](ECValueR value, DgnElementCR elIn)
-            {
-            GeometricElement& el = (GeometricElement&)elIn;
-            value.SetLong(el.m_facetCount);
-            return DgnDbStatus::Success;
-            };
-
-
         });
 
     params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, s_geomaccessors.get.geomStream, s_geomaccessors.set.geomStream);
@@ -2510,11 +2501,11 @@ void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params
 struct GeometricElement3dPropertyAccessors
     {
     struct {
-        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex;
         ECSqlClassInfo::T_ElementPropGet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
         } get;
     struct {
-        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex;
         ECSqlClassInfo::T_ElementPropSet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
         } set;
     };
@@ -2598,19 +2589,8 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return DgnDbStatus::ReadOnly;
             };
 
-        s_accessors.set.facetCount = [](DgnElementR elIn, ECValueCR value)
-            {
-            GeometricElement3d& el = (GeometricElement3d&)elIn;
-            if (value.IsNull())
-                el._RecordFacetCount(0);
-            else
-                el._RecordFacetCount((size_t)value.GetLong());
-            return DgnDbStatus::Success;
-            };
-
         });
 
-    params.RegisterPropertyAccessors(layout, GEOM_FacetCount, s_geomaccessors.get.facetCount, s_accessors.set.facetCount);
     params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
     params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, s_accessors.get.inSpatialIndex, s_accessors.set.inSpatialIndex);
     params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
@@ -3395,7 +3375,6 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
         return status;
 
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
-    m_facetCount = stmt.GetValueUInt64(params.GetSelectIndex(GEOM_FacetCount));
 
     // Read GeomStream
     auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
@@ -3431,7 +3410,6 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
-    stmt.BindInt64(stmt.GetParameterIndex(GEOM_FacetCount), static_cast<int64_t>(m_facetCount));
     return m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 
@@ -3488,7 +3466,7 @@ bool GeometricElement::_EqualProperty(ECN::ECPropertyValueCR expected, DgnElemen
         }
 
     // We need custom logic to compare GeometryStreams because the base class implementation of _EqualProperty cannot get this property's value as an ECN::ECValue.
-    // We DON'T need custom logic to compare any of the other common GeometricElement properties, such as FacetCount or CategoryId,
+    // We DON'T need custom logic to compare any of the other common GeometricElement properties, such as CategoryId,
     // because the base class implementation CAN get those property values as ECN::ECValues and can therefore compare them using generic logic.
 
     GeometricElement const* othergeom = static_cast<GeometricElement const*>(&other);

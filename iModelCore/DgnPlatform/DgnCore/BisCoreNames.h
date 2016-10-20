@@ -22,7 +22,6 @@
 #define GEOM_Origin "Origin"
 #define GEOM_Box_Low "BBoxLow"
 #define GEOM_Box_High "BBoxHigh"
-#define GEOM_FacetCount "FacetCount"
 #define GEOM2_Rotation "Rotation"
 #define GEOM3_InSpatialIndex "InSpatialIndex"
 #define GEOM3_Yaw "Yaw"

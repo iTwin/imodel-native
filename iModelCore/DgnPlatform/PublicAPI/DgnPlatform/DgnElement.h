@@ -1799,8 +1799,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
 
     friend struct GeometricElement;
-    virtual void _RecordFacetCount(size_t facetCount) {;} // Only GeometryBuilder has write access to the facet count...only GeometricElements care about it...
-    virtual size_t _GetFacetCount() const {return 0;}
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
@@ -1906,9 +1904,8 @@ protected:
     GeometryStream              m_geom;
     mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream;
-    size_t                      m_facetCount;
 
-    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false), m_facetCount(0) {}
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnTableName() const = 0;
@@ -1993,8 +1990,6 @@ protected:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
-    virtual void _RecordFacetCount(size_t facetCount) override final {m_facetCount = facetCount;}
-    virtual size_t _GetFacetCount() const override final {return m_facetCount;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -2059,8 +2054,6 @@ protected:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
-    virtual void _RecordFacetCount(size_t facetCount) override final {m_facetCount = facetCount;}
-    virtual size_t _GetFacetCount() const override final {return m_facetCount;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
