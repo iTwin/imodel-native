@@ -44,8 +44,8 @@ private:
     
     static ECSqlStatus PrepareInsertIntoClass (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap);
     static ECSqlStatus PrepareInsertIntoRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, ClassMap const& classMap);
-    static ECSqlStatus PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
-    static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
+    static ECSqlStatus PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, InsertStatementExp const&, RelationshipClassLinkTableMap const&);
+    static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, InsertStatementExp const&, RelationshipClassEndTableMap const&);
 
     static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
     static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
