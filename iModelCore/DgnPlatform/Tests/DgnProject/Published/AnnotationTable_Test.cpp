@@ -369,7 +369,6 @@ void AnnotationTableTest::SetUpTestCase()
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, DgnCode(), TEST_MODEL_NAME);
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing, DgnModel::CreateModelCode(TEST_MODEL_NAME));
 
-#define WANT_VIEW
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................

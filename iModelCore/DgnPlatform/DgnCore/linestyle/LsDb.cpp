@@ -661,6 +661,46 @@ DgnDbStatus LineStyleElement::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&stm
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus LineStyleElement::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PROPNAME_Descr, name))
+        {
+        m_description.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    else if (0 == strcmp(PROPNAME_Data, name))
+        {
+        m_data.AssignOrClear(value.GetUtf8CP());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus LineStyleElement::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
+    {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
+    if (0 == strcmp(PROPNAME_Descr, name))
+        {
+        value.SetUtf8CP(m_description.c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(PROPNAME_Data, name))
+        {
+        value.SetUtf8CP(m_data.c_str());
+        return DgnDbStatus::Success;
+        }
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
 size_t LineStyleElement::QueryCount(DgnDbR db)

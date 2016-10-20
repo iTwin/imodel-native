@@ -139,7 +139,7 @@ public:
     //! such that the entire volume is visible.
     //! @note, for 2d views, only the X and Y values of volume are used.
     //! @see ViewController::LookAtVolume()
-    DGNPLATFORM_EXPORT void Fit(DgnViewport& viewport, double const* aspectRatio=nullptr, ViewController::MarginPercent const* margin=nullptr) const;
+    DGNPLATFORM_EXPORT void Fit(DgnViewport& viewport, double const* aspectRatio=nullptr, ViewDefinition::MarginPercent const* margin=nullptr) const;
 
     /*
      * Query contained elements in the Volume

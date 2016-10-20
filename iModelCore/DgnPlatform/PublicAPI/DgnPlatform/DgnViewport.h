@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<ViewController::State> ViewUndoStack;
+    typedef std::deque<ViewDefinitionPtr> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -127,7 +127,7 @@ protected:
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
-    CameraInfo      m_camera;
+    CameraViewDefinition::Camera m_camera;
     Render::TargetPtr m_renderTarget;
     ColorDef        m_hiliteColor = ColorDef::Magenta();
     DMap4d          m_rootToView;
@@ -138,7 +138,7 @@ protected:
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
-    ViewController::State m_currentBaseline;
+    ViewDefinitionPtr m_currentBaseline;
     ViewUndoStack   m_forwardStack;
     ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;
@@ -190,7 +190,7 @@ public:
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
+    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
@@ -225,7 +225,7 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewController::State const& val, int animationTime);
+    void ApplyViewState(ViewDefinitionCR val, int animationTime);
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
@@ -236,7 +236,7 @@ public:
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
-    CameraInfo const& GetCamera() const {return m_camera;}
+    CameraViewDefinition::Camera const& GetCamera() const {return m_camera;}
 
     //! @return the camera target for this DgnViewport
     DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;

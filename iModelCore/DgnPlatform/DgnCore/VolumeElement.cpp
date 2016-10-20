@@ -475,12 +475,12 @@ bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   02/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullptr*/, ViewController::MarginPercent const* margin /*=nullptr*/) const
+void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullptr*/, ViewDefinition::MarginPercent const* margin /*=nullptr*/) const
     {
     DRange3d volumeRange;
-    this->GetRange (volumeRange);
+    GetRange (volumeRange);
 
-    viewport.GetViewControllerR().LookAtVolume(volumeRange, aspectRatio, margin);
+    viewport.GetViewControllerR().GetViewDefinitionR().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
 END_BENTLEY_DGN_NAMESPACE

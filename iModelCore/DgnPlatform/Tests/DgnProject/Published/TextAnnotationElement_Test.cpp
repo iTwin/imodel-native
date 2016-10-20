@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "AnnotationTestFixture.h"
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 

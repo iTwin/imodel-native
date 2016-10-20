@@ -629,7 +629,7 @@ END_BENTLEY_DGN_NAMESPACE
 ClipVectorPtr   FenceParams::GetClipVector() const {return m_clip;}
 FenceClipMode   FenceParams::GetClipMode() const {return m_clipMode;}
 DgnViewportP    FenceParams::GetViewport() const {BeAssert(m_viewport && "Fence viewport must not be NULL"); return m_viewport;}
-DgnModelP       FenceParams::GetDgnModel() const {BeAssert(m_viewport && "Fence viewport must not be NULL"); return m_viewport ? m_viewport->GetViewController().GetTargetModel() : NULL;}
+//DgnModelP       FenceParams::GetDgnModel() const {BeAssert(m_viewport && "Fence viewport must not be NULL"); return m_viewport ? m_viewport->GetViewController().GetTargetModel() : NULL;}
 void            FenceParams::SetOverlapMode(bool val) {m_overlapMode = val;}
 void            FenceParams::SetClipMode(FenceClipMode val) {m_clipMode = val;}
 void            FenceParams::SetClip(ClipVectorCR clip) {m_clip = ClipVector::CreateCopy(clip);}

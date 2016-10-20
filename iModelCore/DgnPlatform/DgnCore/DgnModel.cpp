@@ -87,6 +87,7 @@ DgnCode DgnModels::GetModelCode(Iterator::Entry const& entry)
 void DgnModels::AddLoadedModel(DgnModelR model)
     {
     model.m_persistent = true;
+    BeDbMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
     }
 
@@ -96,6 +97,7 @@ void DgnModels::AddLoadedModel(DgnModelR model)
 void DgnModels::DropLoadedModel(DgnModelR model)
     {
     model.m_persistent = false;
+    BeDbMutexHolder _v_v(m_mutex);
     m_models.erase(model.GetModelId());
     }
 
@@ -387,16 +389,25 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement, DgnCode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::Create(PhysicalTemplateCR modeledElement, DgnCodeCR code)
+    {
+    PhysicalModelPtr model = Create(modeledElement.GetDgnDb(), modeledElement.GetElementId(), code);
+    if (model.IsValid())
+        model->m_isTemplate = true;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement, DgnCodeCR code)
     {
     PhysicalModelPtr model = Create(modeledElement, code);
     if (!model.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
-
-    return model;
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,10 +419,19 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement
     if (!model.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != model->Insert())
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalTemplateCR modeledElement, DgnCodeCR code)
+    {
+    PhysicalModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
         return nullptr;
 
-    return model;
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,10 +517,7 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
     if (!model.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
-
-    return model;
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1049,7 +1066,6 @@ DgnDbStatus DgnModel::DeleteAllViews()
         return ModelSelector::OnModelDelete(GetDgnDb(), GetModelId());
      
     ViewDefinition2d::OnModelDelete(GetDgnDb(), GetModelId());
-
     return DgnDbStatus::Success;
     }
 
@@ -1347,8 +1363,9 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::FindModel(DgnModelId modelId)
     {
+    BeDbMutexHolder _v_v(m_mutex);
     auto it=m_models.find(modelId);
-    return  it!=m_models.end() ? it->second : NULL;
+    return it!=m_models.end() ? it->second : NULL;
     }
 
 //---------------------------------------------------------------------------------------

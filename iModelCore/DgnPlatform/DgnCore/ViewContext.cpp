@@ -1119,7 +1119,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 
     if (nullptr != vp)
         {
-        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
+        appearance = vp->GetViewController().GetViewDefinition().GetDisplayStyle().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {
@@ -1403,7 +1403,7 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
 
     if (cameraOn)
         {
-        CameraInfo const& camera = vp.GetCamera();
+        auto const& camera = vp.GetCamera();
         double sizeLimit = (s_maxHorizonGrids * colSpacing) / vp.GetViewDelta()->x;
 
         vp.GetRotMatrix().GetRow(viewZ, 2);
