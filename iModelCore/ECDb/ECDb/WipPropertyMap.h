@@ -651,6 +651,7 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
         mutable std::vector<DbColumn const*> m_columns;
         DbTable const* m_table;
         PropertyMapKind m_filter;
+        bool m_doNotSkipHorizontalPropertyMaps;
     private:
 
         virtual DispatcherFeedback _Dispatch(WipColumnVerticalPropertyMap const& propertyMap) const override;
@@ -659,10 +660,10 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
 
     public:
         WipPropertyMapColumnDispatcher(DbTable const& table, PropertyMapKind filter = PropertyMapKind::All)
-            :m_table(&table), m_filter(filter)
+            :m_table(&table), m_filter(filter), m_doNotSkipHorizontalPropertyMaps(false)
             {}
-        WipPropertyMapColumnDispatcher(PropertyMapKind filter = PropertyMapKind::All)
-            :m_table(nullptr), m_filter(filter)
+        WipPropertyMapColumnDispatcher(PropertyMapKind filter = PropertyMapKind::All, bool doNotSkipHorizontalPropertyMaps = false)
+            :m_table(nullptr), m_filter(filter), m_doNotSkipHorizontalPropertyMaps(doNotSkipHorizontalPropertyMaps)
             {}
         ~WipPropertyMapColumnDispatcher(){}
         void Reset() { m_columns.clear(); }
