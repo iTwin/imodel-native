@@ -836,7 +836,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStri
     EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, 3);
+    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     ECSchemaPtr deserializedSchema;
@@ -897,7 +897,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
     property->SetKindOfQuantity(kindOfQuantity);
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, 3);
+    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     ECSchemaPtr deserializedSchema;
@@ -1346,7 +1346,7 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     prop->SetKindOfQuantity(koq);
 
     Utf8String schemaXML;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXML, 3));
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXML, ECVersion::V3_1));
 
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
@@ -1404,7 +1404,7 @@ TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
     EXPECT_EQ(SchemaReadStatus::Success, schemaReadingStatus);
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus schemaWritingStatus = schema->WriteToXmlString(ecSchemaXmlString, 3, 0);
+    SchemaWriteStatus schemaWritingStatus = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0);
     EXPECT_EQ(SchemaWriteStatus::Success, schemaWritingStatus);
 
     size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
@@ -1432,7 +1432,7 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
     WString ecSchemaXmlString;
-    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
     size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
@@ -1482,7 +1482,7 @@ TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelati
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
     WString ecSchemaXmlString;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
     size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
@@ -1530,7 +1530,7 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelatio
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
     WString ecSchemaXmlString;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_0));
 
     size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;

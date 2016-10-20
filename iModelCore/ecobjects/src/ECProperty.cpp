@@ -491,15 +491,15 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
+    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -516,7 +516,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains("GeometryNET"))
             xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
         else
-            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersionMajor).c_str());
+            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersion).c_str());
         }
 
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
@@ -587,14 +587,14 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                    Stefan.Apfel   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(attributes, ecXmlVersionMajor);
+    auto status = WriteExtendedTypeAndKindOfQuantityXml(attributes, ecXmlVersion);
     if (status != SchemaWriteStatus::Success)
         return status;
 
-    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &attributes);
+    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -635,9 +635,9 @@ Utf8String PrimitiveECProperty::_GetTypeName () const
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
     }
 
-Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersionMajor) const
+Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersion) const
     {
-    if (ecXmlVersionMajor <= 2 && m_enumeration != nullptr)
+    if (ecXmlVersion <= ECVersion::V2_0 && m_enumeration != nullptr)
         return m_enumeration->GetTypeName();
 
     return GetTypeName();
@@ -882,14 +882,14 @@ SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(Be
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, int ecXmlVersionMajor) const
+SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const
     {
     if (this->ExtendedTypeLocallyDefined())
         {
         attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
         }
 
-    if (ecXmlVersionMajor >= 3 && IsKindOfQuantityDefinedLocally())
+    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally())
         {
         auto kindOfQuantity = GetKindOfQuantity();
         if (kindOfQuantity != nullptr)
@@ -1014,9 +1014,9 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersionMajor);
+    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1174,7 +1174,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     char    valueString[128];
@@ -1194,17 +1194,17 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
     Utf8CP elementName = EC_ARRAYPROPERTY_ELEMENT;
     if (m_arrayKind == ARRAYKIND_Struct)
         {
-        if (2 == ecXmlVersionMajor)
+        if (ECVersion::V2_0 == ecXmlVersion)
             additionalAttributes.push_back(make_bpair(IS_STRUCT_ATTRIBUTE, "true"));
         else
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(additionalAttributes, ecXmlVersionMajor);
+    auto status = WriteExtendedTypeAndKindOfQuantityXml(additionalAttributes, ecXmlVersion);
     if (status != SchemaWriteStatus::Success)
         return status;
 
-    status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
+    status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
 
@@ -1605,16 +1605,16 @@ SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
 
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
     additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_direction)));
 
-    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes, false);
+    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
     }
 
 //---------------------------------------------------------------------------------------

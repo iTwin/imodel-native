@@ -168,6 +168,7 @@ enum class ECObjectsStatus
     RelationshipConstraintsNotCompatible,
     CaseCollision,
     CustomAttributeContainerTypesNotCompatible,
+    InvalidECVersion
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -261,6 +262,17 @@ enum class SupplementedSchemaStatus
     IECRelationship_Not_Allowed,
     SchemaMergeException,
     SupplementalClassHasBaseClass,
+    };
+
+//=======================================================================================
+//! Represents all of the valid EC Specification Versions.
+//=======================================================================================
+enum ECVersion 
+    {
+    Unknown = 0,
+    V2_0 = 1,
+    V3_0 = 2,
+    V3_1 = 3
     };
 
 /*---------------------------------------------------------------------------------**//**

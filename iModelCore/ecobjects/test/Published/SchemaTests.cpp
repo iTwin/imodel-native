@@ -431,7 +431,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base.xml").c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
-    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), 3);
+    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     WString ecSchemaXmlString;
@@ -620,10 +620,10 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
     legacyFullSchemaName.append(L".ecschema.xml");
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), 3);
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
-    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), 2);
+    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), ECVersion::V2_0);
     EXPECT_EQ(SchemaWriteStatus::Success, status3);
     }
 
@@ -2422,7 +2422,7 @@ TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn-testingonly.02.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), 2, 0, false);
+    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), ECVersion::V2_0, false);
     EXPECT_EQ(SchemaWriteStatus::Success, statusW);
 
     Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml"));

@@ -768,7 +768,7 @@ TEST_F(CustomAttributeTest, ContainerTypeSerialization)
     EXPECT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToNotSet->GetContainerType()));
 
     Utf8String serializedStr;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, 3, 0);
+    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, ECVersion::V3_0);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
     }
 

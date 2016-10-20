@@ -1727,7 +1727,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     // No need to check here if comments need to be preserved. If they're not preserved m_xmlComments will be empty
@@ -1743,7 +1743,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
-    if (2 == ecXmlVersionMajor)
+    if (ECVersion::V2_0 == ecXmlVersion)
         {
         xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
         xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
@@ -1801,7 +1801,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
             }
 
 
-        prop->_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+        prop->_WriteXml (xmlWriter, ecXmlVersion);
         }
     if (doElementEnd)
         xmlWriter.WriteElementEnd();
@@ -1811,9 +1811,9 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    return _WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CLASS_ELEMENT, nullptr, true);
+    return _WriteXml (xmlWriter, ecXmlVersion, EC_CLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1973,13 +1973,13 @@ ECEntityClass::ECEntityClass(ECSchemaCR schema) : ECClass(schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
 
     else
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_ENTITYCLASS_ELEMENT, nullptr, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2012,17 +2012,17 @@ ECCustomAttributeClass::ECCustomAttributeClass(ECSchemaCR schema) : ECClass(sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
 
     else
         {
         Utf8String appliesToAttributeValue = ECXml::ContainerTypeToString(m_containerType);
         bmap<Utf8CP, Utf8CP> additionalAttributes;
         additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = appliesToAttributeValue.c_str();
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
         }
     }
 
@@ -2060,13 +2060,13 @@ ECStructClass::ECStructClass(ECSchemaCR schema) : ECClass(schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
 
     else
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_STRUCTCLASS_ELEMENT, nullptr, true);
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_STRUCTCLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2828,13 +2828,13 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return *this;
             }  Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     
     xmlWriter.WriteElementStart(elementName);
     
-    if ((ecXmlVersionMajor == 3 && ecXmlVersionMinor >= 1) || ecXmlVersionMajor > 3)
+    if (ecXmlVersion >= ECVersion::V3_1)
         xmlWriter.WriteAttribute(MULTIPLICITY_ATTRIBUTE, m_multiplicity->ToString().c_str());
     else
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
@@ -2846,7 +2846,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
 
-    if (IsAbstractConstraintDefinedLocally() && ((ecXmlVersionMajor == 3 && ecXmlVersionMinor >= 1) || ecXmlVersionMajor > 3))
+    if (IsAbstractConstraintDefinedLocally() && ecXmlVersion >= ECVersion::V3_1)
         xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, GetAbstractConstraint()->GetFullName());
         
     WriteCustomAttributes (xmlWriter);
@@ -3497,7 +3497,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
@@ -3507,7 +3507,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
         additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
         }
 
-    if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
+    if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersion, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
     // verify that this really is the current relationship class element // CGM 07/15 - Can't do this with an XmlWriter
@@ -3517,8 +3517,8 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
     //    return SchemaWriteStatus::FailedToCreateXml;
     //    }
         
-    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT, ecXmlVersionMajor, ecXmlVersionMinor);
-    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT, ecXmlVersionMajor, ecXmlVersionMinor);
+    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT, ecXmlVersion);
+    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT, ecXmlVersion);
     xmlWriter.WriteElementEnd();
 
     return status;
@@ -3571,7 +3571,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
     {
     if (baseClass.IsRelationshipClass())
         {
-        if (validate && GetSchema().IsECVersion(3,1))
+        if (validate && GetSchema().IsECVersion(ECVersion::V3_1))
             {
             // Get the relationship base class and compare it's strength and direction
             ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();

@@ -49,6 +49,7 @@ using namespace std;
 #define ID_IS_ABSTRACT "IsAbstract"
 #define ID_IS_SEALED "IsSealed"
 #define ID_ABSTRACT_CONSTRAINT "AbstractConstraint"
+#define ID_EC_VERSION "ECVersion"
     
 
 /*---------------------------------------------------------------------------------**//**
@@ -828,6 +829,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::IsAbstract: return ID_IS_ABSTRACT;
         case DiffNodeId::IsSealed: return ID_IS_SEALED;
         case DiffNodeId::AbstractConstraint: return ID_ABSTRACT_CONSTRAINT;
+        case DiffNodeId::ECVersion: return ID_EC_VERSION;
         }
     return NULL;
     }
@@ -848,11 +850,8 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     if (left.GetVersionMinor() != right.GetVersionMinor())
         diff->Add (DiffNodeId::VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
 
-    if (left.GetECVersionMajor() != right.GetECVersionMajor())
-        diff->Add(DiffNodeId::ECVersionMajor)->SetValue(left.GetECVersionMajor(), right.GetECVersionMajor());
-
-    if (left.GetECVersionMinor() != right.GetECVersionMinor())
-        diff->Add(DiffNodeId::ECVersionMinor)->SetValue(left.GetECVersionMinor(), right.GetECVersionMinor());
+    if (left.GetECVersion() != right.GetECVersion())
+        diff->Add(DiffNodeId::ECVersion)->SetValue(ECSchema::GetECVersionString(left.GetECVersion()), ECSchema::GetECVersionString(right.GetECVersion()));
 
     if (!left.GetDisplayLabel().Equals(right.GetDisplayLabel()))
         diff->Add (DiffNodeId::DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
@@ -1849,8 +1848,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     uint32_t versionMajor;
     uint32_t versionWrite;
     uint32_t versionMinor;
-    uint32_t ecVersionMajor;
-    uint32_t ecVersionMinor;
+    ECVersion ecVersion;
 
     ECDiffValueP v;
     ECDiffNodeR r = *m_diff.GetRoot();
@@ -1879,18 +1877,17 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         versionMinor = GetDefault().GetVersionMinor();
 
-    if ((v = GetMergeValue (r, DiffNodeId::ECVersionMajor)) != NULL)
-        ecVersionMajor = (uint32_t)v->GetValueInt32();
+    if ((v = GetMergeValue(r, DiffNodeId::ECVersion)) != NULL)
+        {
+        uint32_t ecVersionMajor, ecVersionMinor;
+        sscanf(v->GetValueString().c_str(), "%d.%d", &ecVersionMajor, &ecVersionMinor);
+        ecVersion = ECSchema::CreateECVersion(ecVersionMajor, ecVersionMinor);
+        }
     else
-        ecVersionMajor = GetDefault().GetECVersionMajor();
-
-    if ((v = GetMergeValue(r, DiffNodeId::ECVersionMinor)) != NULL)
-        ecVersionMinor = (uint32_t) v->GetValueInt32();
-    else
-        ecVersionMinor = GetDefault().GetECVersionMinor();
+        ecVersion = GetDefault().GetECVersion();
 
     //Create Merge schema 
-    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersionMajor, ecVersionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
         return MergeStatus::ErrorCreatingMergeSchema;
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
