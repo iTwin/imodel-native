@@ -15,16 +15,7 @@ DOMAIN_DEFINE_MEMBERS(DataCaptureDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley DataCapture Domain", 1)
     {
-//     RegisterHandler(SegmentRangeElementHandler::GetHandler());    
-//     RegisterHandler(RailRangeHandler::GetHandler());
-//     RegisterHandler(RoadRangeHandler::GetHandler());
-//     RegisterHandler(SegmentElementHandler::GetHandler());
-//     RegisterHandler(RoadSegmentElementHandler::GetHandler());
-//     RegisterHandler(RoadSegmentHandler::GetHandler());
-//     RegisterHandler(RoadSegmentOnBridgeHandler::GetHandler());
-//     RegisterHandler(TransitionSegmentHandler::GetHandler());
-
-//     RegisterHandler(StatusAspectHandler::GetHandler());
+    RegisterHandler(CameraHandler::GetHandler());    
     }
 
 /*---------------------------------------------------------------------------------**//**

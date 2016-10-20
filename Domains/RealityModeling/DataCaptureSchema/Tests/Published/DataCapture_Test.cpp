@@ -8,194 +8,109 @@
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
+* @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, Test1)
+TEST_F(DataCaptureTests, CreateCamera)
     {
-#pragma region SetUp
-//     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeTest.bim");
-//     ASSERT_TRUE(projectPtr.IsValid());
-// 
-//     DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
-//     auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
-// 
-//     // Create Alignment
-//     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-//     alignmentPtr->SetCode(DataCaptureAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
-//     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
-// 
-//     // Create Horizontal 
-//     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
-//     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
-//     auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
-//     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
-// 
-//     // Create Vertical
-//     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
-//     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-//     auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
-//     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
-#pragma endregion
+    DgnDbPtr projectPtr = CreateProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
 
-#pragma region Create Road Elements
-//     DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
-//     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
-// 
-//     // Create RoadRange
-//     auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
-//     StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-//     auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
-//     ASSERT_TRUE(roadRangeCPtr.IsValid());    
-//     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
-// 
-//     // Create RoadSegment #1
-//     auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 50);
-//     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
-//     ASSERT_TRUE(roadSegment1CPtr.IsValid());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
-// 
-//     // Create TransitionSegment
-//     auto transitionPtr = TransitionSegment::Create(*roadRangeCPtr, 50, 100);
-//     auto transitionCPtr = transitionPtr->Insert();
-//     ASSERT_TRUE(transitionCPtr.IsValid());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), transitionCPtr->GetLinearElementId());
-// 
-//     // Create RoadSegment #2
-//     auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 100, 150);
-//     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
-#pragma endregion
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
 
-#pragma region Station-change Cascading
-//     roadSegment1Ptr->SetToDistanceAlong(35);
-//     roadSegment1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
-//     ASSERT_TRUE(roadSegment1Ptr->Update().IsValid());
-//     ASSERT_DOUBLE_EQ(35, roadSegment1Ptr->GetToDistanceAlong());
-// 
-//     transitionCPtr = TransitionSegment::Get(*projectPtr, transitionPtr->GetElementId());
-//     ASSERT_DOUBLE_EQ(35, transitionCPtr->GetFromDistanceAlong());
-//     ASSERT_DOUBLE_EQ(100, transitionCPtr->GetToDistanceAlong());
-#pragma endregion
+    // Create Camera
+    SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+    auto cameraPtr = Camera::Create(*spatialModelP);
+    ASSERT_TRUE(cameraPtr.IsValid());
+
+    //Change camera properties
+    cameraPtr->SetLabel("BasicCamera1");
+    cameraPtr->SetFocalLenghtPixels(4798.35);
+    ImageDimensionType imgDimension(5456,3632);
+    cameraPtr->SetImageDimension(imgDimension); 
+    DPoint2d principalPoint={2677.8,1772};
+    cameraPtr->SetPrincipalPoint(principalPoint);
+    CameraDistortionType distortion(1,2,3,4,5);
+    cameraPtr->SetDistortion(distortion);
+    cameraPtr->SetAspectRatio(1.0);
+    cameraPtr->SetSkew(1.0);
+
+    //Insert camera element
+    DgnElementId cameraId = cameraPtr->Insert();
+    ASSERT_TRUE(cameraId.IsValid());
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicCamera");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
+
+
+    ASSERT_TRUE(projectPtr->Elements().GetElement(cameraId).IsValid());
+    CameraCPtr myCamPtr = Camera::Get(*projectPtr,cameraId);
+    ASSERT_TRUE(myCamPtr.IsValid());
+    ASSERT_EQ(cameraId, myCamPtr->GetElementId());
+
+    //read back camera properties and check if equal
+    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),4798.35);
+    ASSERT_TRUE(imgDimension.IsEqual(myCamPtr->GetImageDimension()));
+    ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
+    ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
+    ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),1.0);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
+* @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, Test2)
+TEST_F(DataCaptureTests, ModifyCamera)
     {
-#pragma region SetUp
-//     DgnDbPtr projectPtr = CreateProject(L"BasicRoadRangeWithBridgeTest.bim");
-//     ASSERT_TRUE(projectPtr.IsValid());
-// 
-//     DgnModelId alignmentModelId = QueryFirstAlignmentModelId(*projectPtr);
-//     auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
-// 
-//     // Create Alignment
-//     auto alignmentPtr = Alignment::Create(*alignModelPtr);
-//     alignmentPtr->SetCode(DataCaptureAlignmentDomain::CreateCode(*projectPtr, "ALG-1"));
-//     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
-// 
-//     // Create Horizontal 
-//     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
-//     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
-//     auto horizAlignmPtr = AlignmentHorizontal::Create(*alignmentPtr, *horizAlignVecPtr);
-//     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
-// 
-//     // Create Vertical
-//     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
-//     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-//     auto verticalAlignmPtr = AlignmentVertical::Create(*alignmentPtr, *vertAlignVecPtr);
-//     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
-#pragma endregion
+    DgnDbPtr projectPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
 
-#pragma region Create Road Elements
-//     DgnModelId physicalModelId = QueryFirstPhysicalModelId(*projectPtr);
-//     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
-// 
-//     // Create RoadRange
-//     auto roadRangePtr = RoadRange::Create(*physicalModelPtr);
-//     StatusAspect::Set(*roadRangePtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-//     auto roadRangeCPtr = roadRangePtr->InsertWithAlignment(*alignmentPtr);
-//     ASSERT_TRUE(roadRangeCPtr.IsValid());    
-//     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadRangeCPtr)->GetStatus());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), roadRangeCPtr->QueryAlignmentId());
-// 
-//     // Create RoadSegment #1
-//     auto roadSegment1Ptr = RoadSegment::Create(*roadRangeCPtr, 0, 10);
-//     auto roadSegment1CPtr = roadSegment1Ptr->Insert();
-//     ASSERT_TRUE(roadSegment1CPtr.IsValid());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), roadSegment1CPtr->GetLinearElementId());
-// 
-//     // Create TransitionSegment #1
-//     auto transition1Ptr = TransitionSegment::Create(*roadRangeCPtr, 10, 20);
-//     auto transition1CPtr = transition1Ptr->Insert();
-//     ASSERT_TRUE(transition1CPtr.IsValid());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), transition1CPtr->GetLinearElementId());
-// 
-//     // Create RoadSegmentOnBridge
-//     auto roadOnBridgePtr = RoadSegmentOnBridge::Create(*roadRangeCPtr, 20, 120);
-//     auto roadOnBridgeCPtr = roadOnBridgePtr->Insert();
-//     ASSERT_TRUE(roadOnBridgeCPtr.IsValid());
-// 
-//     // Create Bridge
-//     auto bridgePtr = Bridge::Create(*roadOnBridgeCPtr);
-//     auto bridgeCPtr = bridgePtr->Insert();
-//     ASSERT_TRUE(bridgeCPtr.IsValid());
-//     ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
-//     ASSERT_EQ(roadOnBridgeCPtr->GetElementId(), bridgeCPtr->GetIPhysicalElementOnBridge()->GetElementId());
-// 
-//     // Create Abutment - Pier - Abutment
-//     auto abutment1Ptr = BridgeAbutment::Create(*bridgeCPtr, 0);
-//     ASSERT_TRUE(abutment1Ptr->Insert().IsValid());
-// 
-//     auto pierPtr = BridgePier::Create(*bridgeCPtr, 50);
-//     ASSERT_TRUE(pierPtr->Insert().IsValid());
-// 
-//     auto abutment2Ptr = BridgeAbutment::Create(*bridgeCPtr, 100);
-//     ASSERT_TRUE(abutment2Ptr->Insert().IsValid());
-// 
-//     // Create TransitionSegment #2
-//     auto transition2Ptr = TransitionSegment::Create(*roadRangeCPtr, 120, 140);
-//     auto transition2CPtr = transition2Ptr->Insert();
-//     ASSERT_TRUE(transition2CPtr.IsValid());
-//     ASSERT_EQ(alignmentPtr->GetElementId(), transition2CPtr->GetLinearElementId());
-// 
-//     // Create RoadSegment #2
-//     auto roadSegment2Ptr = RoadSegment::Create(*roadRangeCPtr, 140, 150);
-//     ASSERT_TRUE(roadSegment2Ptr->Insert().IsValid());
-#pragma endregion
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
 
-#pragma region Station-change Cascading shrinking Bridge
-//     transition1Ptr->SetToDistanceAlong(35);
-//     transition1Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
-//     ASSERT_TRUE(transition1Ptr->Update().IsValid());
-//     ASSERT_DOUBLE_EQ(35, transition1Ptr->GetToDistanceAlong());
-// 
-//     roadOnBridgeCPtr = RoadSegmentOnBridge::Get(*projectPtr, roadOnBridgePtr->GetElementId());
-//     ASSERT_DOUBLE_EQ(35, roadOnBridgeCPtr->GetFromDistanceAlong());
-//     ASSERT_DOUBLE_EQ(120, roadOnBridgeCPtr->GetToDistanceAlong());
-// 
-//     bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
-//     ASSERT_DOUBLE_EQ(100, bridgeCPtr->GetLength());
-// 
-//     auto abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
-//     ASSERT_DOUBLE_EQ(85, abutment2CPtr->GetDistanceAlongBridge());
-#pragma endregion
+    // Query Camera element
+    DgnElementId cameraId  = Camera::QueryForIdByLabel(*projectPtr,"BasicCamera1");
+    ASSERT_TRUE(cameraId.IsValid());
+    CameraPtr cameraPtr = Camera::GetForEdit(*projectPtr, cameraId);
+    ASSERT_TRUE(cameraPtr.IsValid());
 
-#pragma region Station-change Cascading enlarging Bridge
-//     transition2Ptr->SetFromDistanceAlong(130);
-//     transition2Ptr->SetCascadeLocationChangesActionFlag(CascadeLocationChangesAction::OnlyIfLocationsChanged);
-//     ASSERT_TRUE(transition2Ptr->Update().IsValid());
-//     ASSERT_DOUBLE_EQ(130, transition2Ptr->GetToDistanceAlong());
-// 
-//     roadOnBridgeCPtr = RoadSegmentOnBridge::Get(*projectPtr, roadOnBridgePtr->GetElementId());
-//     ASSERT_DOUBLE_EQ(35, roadOnBridgeCPtr->GetFromDistanceAlong());
-//     ASSERT_DOUBLE_EQ(130, roadOnBridgeCPtr->GetToDistanceAlong());
-// 
-//     bridgeCPtr = Bridge::Get(*projectPtr, bridgePtr->GetElementId());
-//     ASSERT_DOUBLE_EQ(95, bridgeCPtr->GetLength());
-// 
-//     abutment2CPtr = BridgeAbutment::Get(*projectPtr, abutment2Ptr->GetElementId());
-//     ASSERT_DOUBLE_EQ(95, abutment2CPtr->GetDistanceAlongBridge());
-#pragma endregion
+    //Change camera properties
+    cameraPtr->SetFocalLenghtPixels(12);
+    ImageDimensionType imgDimension(13,14);
+    cameraPtr->SetImageDimension(imgDimension); 
+    DPoint2d principalPoint={15,16};
+    cameraPtr->SetPrincipalPoint(principalPoint);
+    CameraDistortionType distortion(11,12,13,14,15);
+    cameraPtr->SetDistortion(distortion);
+    cameraPtr->SetAspectRatio(2.0);
+    cameraPtr->SetSkew(3.0);
+
+    //Update camera element
+    BentleyStatus status = cameraPtr->Update();
+    ASSERT_TRUE(status==BentleyStatus::SUCCESS);
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicCamera");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
+
+
+    ASSERT_TRUE(projectPtr->Elements().GetElement(cameraId).IsValid());
+    CameraCPtr myCamPtr = Camera::Get(*projectPtr,cameraId);
+    ASSERT_TRUE(myCamPtr.IsValid());
+    ASSERT_EQ(cameraId, myCamPtr->GetElementId());
+
+    //read back camera properties and check if equal
+    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),12);
+    ASSERT_TRUE(imgDimension.IsEqual(myCamPtr->GetImageDimension()));
+    ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
+    ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
+    ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),2.0);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),3.0);
     }
+
+

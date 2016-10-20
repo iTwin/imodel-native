@@ -10,8 +10,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
 
     <!-- BEGIN Camera element classes -->
     <ECStructClass typeName="ImageDimensionType" >
-        <ECProperty propertyName="Width"  typeName="double" />
-        <ECProperty propertyName="Height" typeName="double" />
+        <ECProperty propertyName="Width"  typeName="int" />
+        <ECProperty propertyName="Height" typeName="int" />
     </ECStructClass>
 
     <ECStructClass typeName="CameraDistorsionType" >
@@ -24,7 +24,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
 
     <ECEntityClass typeName="Camera" modifier="Sealed" description="The camera model type.">
         <BaseClass>dgn:PhysicalElement</BaseClass>
-        <ECProperty         propertyName="CameraModel"          typeName="string"               displayLabel="Camera Model" />
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <!--<ECProperty         propertyName="CameraModel"          typeName="string"               displayLabel="Camera Model" />-->
         <ECProperty         propertyName="FocalLenghtPixels"    typeName="double"               displayLabel="Focal Lenght"    />
         <ECStructProperty   propertyName="ImageDimension"       typeName="ImageDimensionType"   displayLabel="Image Dimension" />
         <ECProperty         propertyName="PrincipalPoint"       typeName="point2d"              displayLabel="Principal Point"/>
