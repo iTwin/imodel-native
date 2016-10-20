@@ -1312,14 +1312,26 @@ DispatcherFeedback WipPropertyMapColumnDispatcher::_Dispatch(WipCompoundProperty
 //+===============+===============+===============+===============+===============+======
 DispatcherFeedback WipPropertyMapColumnDispatcher::_Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const
     {
-    if (m_table && Enum::Contains(m_filter, propertyMap.GetKind()))
+    if (!Enum::Contains(m_filter, propertyMap.GetKind()))
+        return DispatcherFeedback::Next;
+
+    if (m_doNotSkipHorizontalPropertyMaps)
         {
-        if (WipColumnVerticalPropertyMap const* m = propertyMap.FindVerticalPropertyMap(*m_table))
+        for (WipColumnVerticalPropertyMap const* m : propertyMap.GetVerticalPropertyMaps())
             {
             m_columns.push_back(&m->GetColumn());
             }
         }
-
+    else
+        {
+        if (m_table)
+            {
+            if (WipColumnVerticalPropertyMap const* m = propertyMap.FindVerticalPropertyMap(*m_table))
+                {
+                m_columns.push_back(&m->GetColumn());
+                }
+            }
+        }
     return DispatcherFeedback::Next;
     }
 

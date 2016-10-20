@@ -61,7 +61,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 BeAssert(rootClass != nullptr);
                 ClassMap const* rootClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
                 BeAssert(rootClassMap != nullptr);
-                effectivePropMap = rootClassMap->GetPropertyMap(propMap.GetAccessString().c_str());
+                effectivePropMap = rootClassMap->GetPropertyMaps().Find(propMap.GetAccessString().c_str());
                 if (effectivePropMap == nullptr)
                     {
                     BeAssert(effectivePropMap != nullptr);
@@ -90,11 +90,25 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, WipPropertyMap const& propertyMap)
     {
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
+    WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::All, true);
+    propertyMap.Accept(columnDispatcher);
+    if (columnDispatcher.GetColumns().empty())
+        {
+        BeAssert(false);
+        return false;
+        }
 
+    if (columnDispatcher.GetColumns().size() != 1)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    DbColumn const* column = columnDispatcher.GetColumns().front();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     WipConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetKind() == PropertyMapKind::ConstraintECClassIdPropertyMap ? static_cast<WipConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
-
-    if (propertyMap.IsVirtual() || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
+  
+    if (column->GetPersistenceType() == PersistenceType::Virtual || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
@@ -143,8 +157,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
                     }
                 }
 
+            WipPropertyMapTableDispatcher tableDispatcher;
+            propMap.Accept(tableDispatcher);
+            BeAssert(tableDispatcher.GetTables().size() != 1);
+            DbTable const* contextTable = *tableDispatcher.GetTables().begin();
             if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
-                classIdentifier.assign(propMap.GetSingleTable()->GetName());
+                classIdentifier.assign(contextTable->GetName());
 
             break;
             }
@@ -160,7 +178,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
+void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipPropertyMap const& propMap, Utf8CP classIdentifier)
     {
     NativeSqlBuilder::List propNameNativeSqlSnippets = propMap.ToNativeSql(classIdentifier, ecsqlType, exp.HasParentheses());
     nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
@@ -170,7 +188,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
 // @bsimethod                                    Krischan.Eberle                    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, RelConstraintECClassIdPropertyMap const& propMap, Utf8CP classIdentifier)
+ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipConstraintECClassIdPropertyMap const& propMap, Utf8CP classIdentifier)
     {
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
         !propMap.IsMappedToClassMapTables() && !propMap.IsVirtual())
