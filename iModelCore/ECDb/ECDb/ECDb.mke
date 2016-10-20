@@ -113,6 +113,7 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)LightweightCache.h \
+                $(baseDir)SqlNames.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
 

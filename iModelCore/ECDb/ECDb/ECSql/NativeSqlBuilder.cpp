@@ -361,7 +361,7 @@ BentleyStatus SqlUpdateBuilder::Bind(Statement& stmt, int paramIndex, Utf8CP col
             case PRIMITIVETYPE_String:
                 return stmt.BindText(paramIndex, val.GetUtf8CP(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
             case PRIMITIVETYPE_Boolean:
-                return stmt.BindInt(paramIndex, DbSchemaPersistenceManager::BoolToSqlInt(val.GetBoolean())) == BE_SQLITE_OK ? SUCCESS : ERROR;
+                return stmt.BindBoolean(paramIndex, val.GetBoolean()) == BE_SQLITE_OK ? SUCCESS : ERROR;
         }
 
     BeAssert(false && "Unsupported case");

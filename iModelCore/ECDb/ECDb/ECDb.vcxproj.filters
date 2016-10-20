@@ -392,6 +392,7 @@
     <ClInclude Include="ClassMapPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="SqlNames.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

@@ -634,7 +634,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     size_t count_FooOwnsGoo = 0;
     {
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsGoo")));
-    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, (int) mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnsGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooOwnsGoo);
     }
@@ -644,7 +644,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     size_t count_FooOwnsManyGoo = 0;
     {
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsManyGoo")));
-    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, (int) mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnsManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooOwnsManyGoo);
     }

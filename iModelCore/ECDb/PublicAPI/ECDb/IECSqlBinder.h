@@ -144,6 +144,13 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64((int64_t) value.GetValue()) : BindNull(); }
 
+    //! Binds a BeGuid to the parameter. If the GUID is invalid, NULL is bound to the parameter.
+    //! @param[in] guid BeGuid to bind
+    //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p guid or not.
+    //!             Only pass IECSqlBinder::MakeCopy::No if @p guid will remain valid until the statement's bindings are cleared.
+    //! @return ECSqlStatus::Success or error codes
+    ECSqlStatus BindGuid(BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy) { return guid.IsValid() ? BindBinary(&guid, sizeof(guid), makeCopy) : BindNull(); }
+
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.
     //! @param[in] virtualSet to bind

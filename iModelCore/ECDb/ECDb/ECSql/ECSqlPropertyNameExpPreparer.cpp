@@ -61,7 +61,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 BeAssert(rootClass != nullptr);
                 ClassMap const* rootClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
                 BeAssert(rootClassMap != nullptr);
-                effectivePropMap = rootClassMap->GetPropertyMap(propMap.GetPropertyAccessString());
+                effectivePropMap = rootClassMap->GetPropertyMap(propMap.GetPropertyAccessString().c_str());
                 if (effectivePropMap == nullptr)
                     {
                     BeAssert(effectivePropMap != nullptr);

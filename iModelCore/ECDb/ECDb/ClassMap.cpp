@@ -8,6 +8,7 @@
 #include "ECDbPch.h"
 #include "ClassMap.h"
 #include <algorithm>
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -899,6 +900,18 @@ DbTable const* ClassMap::ExpectingSingleTable() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   10/2016
+//---------------------------------------------------------------------------------------
+//static
+ClassMap::PropertyMapInheritanceMode ClassMap::GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
+    {
+    if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+        return PropertyMapInheritanceMode::NotInherited;
+
+    return PropertyMapInheritanceMode::Clone;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
 //static
@@ -937,12 +950,9 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
 
     if (!m_parentOfJoinedTableECClassId.IsValid())
         {
-        Utf8String sql;
-        sql.Sprintf("SELECT ch.BaseClassId FROM " ECDB_CACHETABLE_ClassHierarchy " ch "
-                    "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=%d WHERE ch.ClassId=?",
-                    Enum::ToInt(JoinedTableInfo::ParentOfJoinedTable));
-
-        CachedStatementPtr stmt = m_classMap.GetECDb().GetCachedStatement(sql.c_str());
+        CachedStatementPtr stmt = m_classMap.GetECDb().GetCachedStatement("SELECT ch.BaseClassId FROM " TABLE_ClassHierarchyCache " ch "
+                                                                          "JOIN ec_ClassMap cm ON cm.ClassId = ch.BaseClassId AND cm.JoinedTableInfo=" SQLVAL_JoinedTableInfo_ParentOfJoinedTable
+                                                                          " WHERE ch.ClassId=?");
         if (stmt == nullptr ||
             BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
             BE_SQLITE_ROW != stmt->Step())
@@ -1215,17 +1225,15 @@ BentleyStatus ColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>& 
         "SELECT c.Name FROM ec_Column c "
         "              JOIN ec_PropertyMap pm ON c.Id = pm.ColumnId "
         "              JOIN ec_ClassMap cm ON cm.ClassId = pm.ClassId "
-        "              JOIN " ECDB_CACHETABLE_ClassHierarchy " ch ON ch.ClassId = cm.ClassId "
+        "              JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = cm.ClassId "
         "              JOIN ec_Table t on t.Id = c.TableId "
-        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & 1024 <> 0 "
+        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " <> 0 "
         "GROUP BY c.Name");
-    static_assert(1024 == (int) DbColumn::Kind::SharedDataColumn, "Value of DbColumn::Kind::SharedDataColumn has changed. The SQL in ColumnFactory::GetDerivedColumnList must be adjusted accordingly.");
 
     if (stmt == nullptr)
         return ERROR;
     stmt->BindId(1, m_classMap.GetClass().GetId());
     stmt->BindText(2, GetTable().GetName().c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(3, Enum::ToInt(DbColumn::Kind::SharedDataColumn));
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         columns.push_back(GetTable().FindColumn(stmt->GetValueText(0)));

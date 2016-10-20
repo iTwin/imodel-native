@@ -57,8 +57,11 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
     PropertyPathId propertyPathId;
     if (m_classMapContext.TryGetPropertyPathId(propertyPathId, rootPropertyId, accessString, true) != SUCCESS)
         return ERROR;
-    ECDbCR ecdb = GetMapSaveContext().GetECDb();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_PropertyMap(ClassId, PropertyPathId, ColumnId) VALUES (?,?,?)");
+
+    BeAssert(propertyPathId.IsValid());
+    BeAssert(columnId.IsValid());
+
+    CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetCachedStatement("INSERT INTO ec_PropertyMap(ClassId, PropertyPathId, ColumnId) VALUES (?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -94,8 +97,8 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
     if (mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
         {
         TablePerHierarchyInfo const& tphInfo = mapStrategyExtInfo.GetTphInfo();
-        if (tphInfo.UseSharedColumns())
-            stmt->BindInt(3, DbSchemaPersistenceManager::BoolToSqlInt(true));
+        BeAssert(tphInfo.IsValid());
+        stmt->BindBoolean(3, tphInfo.UseSharedColumns());
 
         if (tphInfo.GetSharedColumnCount() >= 0)
             stmt->BindInt(4, tphInfo.GetSharedColumnCount());
@@ -122,7 +125,7 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
@@ -186,7 +189,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
-        const bool useSharedColumns = stmt->IsColumnNull(1) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(1));
+        const bool useSharedColumns = stmt->IsColumnNull(1) ? false : stmt->GetValueBoolean(1);
         const int sharedColumnCount = stmt->IsColumnNull(2) ? -1 : stmt->GetValueInt(2);
         Utf8CP excessColumnName = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(4) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(4));
@@ -252,7 +255,7 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-std::vector<DbColumn const*> const* DbClassMapLoadContext::FindColumnByAccessString(Utf8CP accessString) const
+std::vector<DbColumn const*> const* DbClassMapLoadContext::FindColumnByAccessString(Utf8StringCR accessString) const
     {
     auto itor = m_columnByAccessString.find(accessString);
     if (itor != m_columnByAccessString.end())

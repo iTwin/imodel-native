@@ -6,11 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
-
-#define EC_INDEX_TableName "ec_Index"
-#define EC_INDEXCOLUMN_TableName "ec_IndexColumn"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -21,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHierarchy))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
         return ERROR;
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(
@@ -33,7 +31,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
                      "  SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
                      "  FROM BaseClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
                      "  )"
-                     "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " "
+                     "INSERT INTO " TABLE_ClassHierarchyCache " "
                      "SELECT DISTINCT NULL Id, ClassId, BaseClassId FROM BaseClassList ORDER BY Ordinal DESC, Level DESC;"))
         {
         return ERROR;
@@ -52,7 +50,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
     "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))*/
 
     timer.Stop();
-    LOG.debugv("Re-populated table '" ECDB_CACHETABLE_ClassHierarchy "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated table '" TABLE_ClassHierarchyCache "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 
@@ -63,28 +61,22 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHasTables))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
         return ERROR;
 
-    Utf8String sql;
-    sql.Sprintf("INSERT INTO " ECDB_CACHETABLE_ClassHasTables " "
-                "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
-                "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-                "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
-                "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                "    WHERE ec_ClassMap.MapStrategy <> %d "
-                "          AND ec_ClassMap.MapStrategy <> %d "
-                "          AND ec_Column.ColumnKind & %d = 0 "
-                "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id;",
-                Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable),
-                Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable),
-                Enum::ToInt(DbColumn::Kind::ECClassId));
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO " TABLE_ClassHasTablesCache " "
+                                        "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
+                                        "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+                                        "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
+                                        "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                                        "    WHERE ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable
+                                        "          AND ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable
+                                        "          AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 "
+                                        "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
     timer.Stop();
-    LOG.debugv("Re-populated " ECDB_CACHETABLE_ClassHasTables " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated " TABLE_ClassHasTablesCache " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 
@@ -690,116 +682,5 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
 
-//---------------------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------------------
-//! This method is not called from anywhere, because it provides compile-time asserts
-//! for all enumerations that ECDb persists. This is a safe-guard to notify us whenever
-//! somebody changes the enums. We then need to react to that so that old files don't get hornswaggled
-// @bsimethod                                                    Krischan.Eberle  04/2016
-//---------------------------------------------------------------------------------------
-void AssertPersistedEnumsAreUnchanged()
-    {
-    static_assert((int) CustomAttributeContainerType::Any == 4095 &&
-                  (int) CustomAttributeContainerType::AnyClass == 30 &&
-                  (int) CustomAttributeContainerType::AnyProperty == 992 &&
-                  (int) CustomAttributeContainerType::AnyRelationshipConstraint == 3072 &&
-                  (int) CustomAttributeContainerType::ArrayProperty == 128 &&
-                  (int) CustomAttributeContainerType::CustomAttributeClass == 4 &&
-                  (int) CustomAttributeContainerType::EntityClass == 2 &&
-                  (int) CustomAttributeContainerType::NavigationProperty == 512 &&
-                  (int) CustomAttributeContainerType::PrimitiveProperty == 32 &&
-                  (int) CustomAttributeContainerType::RelationshipClass == 16 &&
-                  (int) CustomAttributeContainerType::Schema == 1 &&
-                  (int) CustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
-                  (int) CustomAttributeContainerType::StructProperty == 64 &&
-                  (int) CustomAttributeContainerType::StructArrayProperty == 256 &&
-                  (int) CustomAttributeContainerType::StructClass == 8 &&
-                  (int) CustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
-
-    static_assert((int) DbColumn::Kind::DataColumn == 512 &&
-                  (int) DbColumn::Kind::ECClassId == 2 &&
-                  (int) DbColumn::Kind::ECInstanceId == 1 &&
-                  (int) DbColumn::Kind::RelECClassId == 2048 &&
-                  (int) DbColumn::Kind::SharedDataColumn == 1024 &&
-                  (int) DbColumn::Kind::SourceECClassId == 64 &&
-                  (int) DbColumn::Kind::SourceECInstanceId == 32 &&
-                  (int) DbColumn::Kind::TargetECClassId == 256 &&
-                  (int) DbColumn::Kind::TargetECInstanceId == 128 &&
-                  (int) DbColumn::Kind::Unknown == 0, "Persisted Enum has changed: DbColumn::Kind.");
-
-    static_assert((int) DbColumn::Type::Any == 0 &&
-                  (int) DbColumn::Type::Blob == 2 &&
-                  (int) DbColumn::Type::Boolean == 1 &&
-                  (int) DbColumn::Type::Integer == 5 &&
-                  (int) DbColumn::Type::Real == 4 &&
-                  (int) DbColumn::Type::Text == 6 &&
-                  (int) DbColumn::Type::TimeStamp == 3, "Persisted Enum has changed: DbColumn::Type.");
-
-    static_assert((int) DbTable::Type::Existing == 2 &&
-                  (int) DbTable::Type::Joined == 1 &&
-                  (int) DbTable::Type::Primary == 0, "Persisted Enum has changed: DbTable::Type.");
-
-    static_assert((int) ECClassModifier::Abstract == 1 &&
-                  (int) ECClassModifier::None == 0 &&
-                  (int) ECClassModifier::Sealed == 2, "Persisted Enum has changed: ECN::ECClassModifier.");
-
-    static_assert((int) ECClassType::CustomAttribute == 3 &&
-                  (int) ECClassType::Entity == 0 &&
-                  (int) ECClassType::Relationship == 1 &&
-                  (int) ECClassType::Struct == 2, "Persisted Enum has changed: ECN::ECClassType.");
-
-    static_assert((int) JoinedTableInfo::JoinedTable == 1 &&
-                  (int) JoinedTableInfo::None == 0 &&
-                  (int) JoinedTableInfo::ParentOfJoinedTable == 2, "Persisted Enum has changed: JoinedTableInfo.");
-
-    static_assert((int) MapStrategy::ExistingTable == 3 &&
-                  (int) MapStrategy::ForeignKeyRelationshipInSourceTable == 100 &&
-                  (int) MapStrategy::ForeignKeyRelationshipInTargetTable == 101 &&
-                  (int) MapStrategy::NotMapped == 0 &&
-                  (int) MapStrategy::OwnTable == 1 &&
-                  (int) MapStrategy::SharedTable == 4 &&
-                  (int) MapStrategy::TablePerHierarchy == 2, "Persisted Enum has changed: ECDbMapStrategy.");
-
-    static_assert((int) ECPropertyKind::Navigation == 4 &&
-                  (int) ECPropertyKind::Primitive == 0 &&
-                  (int) ECPropertyKind::PrimitiveArray == 2 &&
-                  (int) ECPropertyKind::Struct == 1 &&
-                  (int) ECPropertyKind::StructArray == 3, "Persisted Enum has changed: ECPropertyKind.");
-
-    static_assert((int) StrengthType::Embedding == 2 &&
-                  (int) StrengthType::Holding == 1 &&
-                  (int) StrengthType::Referencing == 0, "Persisted Enum has changed: ECN::StrengthType.");
-
-    static_assert((int) ECRelatedInstanceDirection::Backward == 2 &&
-                  (int) ECRelatedInstanceDirection::Forward == 1, "Persisted Enum has changed: ECN::ECRelatedInstanceDirection.");
-
-    static_assert((int) ECRelationshipEnd::ECRelationshipEnd_Source == 0 &&
-                  (int) ECRelationshipEnd::ECRelationshipEnd_Target == 1, "Persisted Enum has changed: ECN::ECRelationshipEnd.");
-
-    static_assert((int) ForeignKeyDbConstraint::ActionType::Cascade == 1 &&
-                  (int) ForeignKeyDbConstraint::ActionType::NoAction == 2 &&
-                  (int) ForeignKeyDbConstraint::ActionType::NotSpecified == 0 &&
-                  (int) ForeignKeyDbConstraint::ActionType::Restrict == 5 &&
-                  (int) ForeignKeyDbConstraint::ActionType::SetDefault == 4 &&
-                  (int) ForeignKeyDbConstraint::ActionType::SetNull == 3, "Persisted Enum has changed: ForeignKeyDbConstraint::ActionType.");
-
-    static_assert((int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 30 &&
-                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 992 &&
-                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema == 1 &&
-                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
-                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
-
-    static_assert((int) PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Boolean == 0x201 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_DateTime == 0x301 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Double == 0x401 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_IGeometry == 0xa01 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Integer == 0x501 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Long == 0x601 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Point2d == 0x701 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_Point3d == 0x801 &&
-                  (int) PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

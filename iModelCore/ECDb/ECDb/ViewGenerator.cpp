@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <set>
+#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -36,13 +37,11 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
         return ERROR;
         }
 
-    Utf8String sql;
-    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = %d AND cm.MapStrategy<> %d GROUP BY c.Id",
-                Enum::ToInt(ECClassType::Entity),
-                Enum::ToInt(MapStrategy::NotMapped));
-
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
+                                     "SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc "
+                                     "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_ECClassType_Entity " AND cm.MapStrategy<> " SQLVAL_MapStrategy_NotMapped
+                                     " GROUP BY c.Id"))
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
@@ -107,14 +106,11 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     if (DropECClassViews(ecdb) != SUCCESS)
         return ERROR;
 
-    Utf8String sql;
-    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d",
-                Enum::ToInt(ECClassType::Entity),
-                Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(MapStrategy::NotMapped));
-
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
+                                     "SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
+                                     "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
+                                     "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped))
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
@@ -216,7 +212,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             return;
 
         PropertyMapPtr derivedPropertyMap;
-        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString(), true))
+        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString().c_str(), true))
             {
             BeAssert(false);
             return;
@@ -608,14 +604,14 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()))
             continue;
 
-        if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
+        if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString().c_str()))
             continue;
 
         if (baseClassPropertyMap->GetType() == PropertyMap::Type::Navigation &&
             !static_cast<NavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 
-        PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
+        PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString().c_str());
         if (childClassCounterpartPropMap == nullptr)
             return ERROR;
 
@@ -642,7 +638,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         {
         PropertyMapCP basePropMap = propMapPair.first;
         PropertyMapCP actualPropMap = propMapPair.second;
-        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString().c_str()))
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
@@ -690,7 +686,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                     {
                     Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
                     ecclassIdPropertyMap->GetDefaultConstraintClassId().ToString(classIdStr);
-                    viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
+                    viewSql.Append(classIdStr).AppendSpace().Append(COL_ECClassId);
                     }
                 }
             }
@@ -768,7 +764,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     for (auto const& propMapPair : viewPropMaps)
         {
         auto actualPropMap = propMapPair.second;
-        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString().c_str()))
             continue;
 
         tableToJoinOn.insert(actualPropMap->GetTable());
@@ -1175,7 +1171,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         {
         Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         ecClassId->GetDefaultConstraintClassId().ToString(classIdStr);
-        viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
+        viewSql.Append(classIdStr).AppendSpace().Append(COL_ECClassId);
         }
 
     if (m_viewAccessStringList && m_captureViewAccessStringList)
@@ -1254,10 +1250,10 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         relationMap.GetECInstanceIdPropertyMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     viewSql.Append("SELECT NULL ").Append(sqlSnippets).AppendComma();
-    viewSql.Append("NULL ").Append(ECDB_COL_ECClassId).AppendComma();
+    viewSql.Append("NULL " COL_ECClassId).AppendComma();
 
     if (m_viewAccessStringList && m_captureViewAccessStringList)
-        m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
+        m_viewAccessStringList->push_back(COL_ECClassId);
 
     //Source constraint
     sqlSnippets = relationMap.GetSourceECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);

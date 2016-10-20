@@ -111,9 +111,6 @@ enum class SqlSetQuantifier
 typedef BeInt64Id ECContainerId;
 typedef BeInt64Id ECRelationshipConstraintId;
 
-#define ECDB_COL_ECInstanceId "ECInstanceId"
-#define ECDB_COL_ECClassId "ECClassId"
-
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015
 //+===============+===============+===============+===============+===============+======

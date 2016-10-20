@@ -223,6 +223,7 @@
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SqlNames.h" />
     <ClInclude Include="SystemPropertyMap.h" />
     <ClInclude Include="ViewGenerator.h" />
   </ItemGroup>

@@ -341,7 +341,7 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(7, ecEnum.GetIsStrict() ? 1 : 0))
+    if (BE_SQLITE_OK != stmt->BindBoolean(7, ecEnum.GetIsStrict()))
         return ERROR;
 
     Utf8String enumValueJson;
@@ -557,7 +557,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         }
 #endif
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
+    if (BE_SQLITE_OK != stmt->BindBoolean(6, ecProperty.GetIsReadOnly()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
@@ -728,7 +728,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindInt(6, relationshipConstraint.GetIsPolymorphic() ? 1 : 0))
+    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -1794,7 +1794,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECInstances(ECClassCR deletedClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=?");
     stmt->BindId(1, id);
     stmt->BindInt(2, Enum::ToInt(type));
     return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
