@@ -920,7 +920,12 @@ TEST (DateTimeTests, ConversionsTestsInCurrentTimezone)
     RunTestsOnBaseTestDataset ();
     }
 
-
+// Krischan: If I recall correctly, I had written the DateTime tests when I
+// was trying to implement portable time zone version in the DateTime object.
+// I gave up and decided this is impossible because just under Windows there
+// were two different APIs returning different results for the same
+// conversion. The tests were there to prove that. Because they use
+// environment variables, they cannot be run on WinRT.
 #if defined(BENTLEY_WIN32)
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
@@ -957,9 +962,7 @@ TEST (DateTimeTests, ConversionTestsInAustralianEST)
 
     RunTestsOnBaseTestDataset ();
     }
-
 #endif
-
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
@@ -971,6 +974,12 @@ TEST (DateTimeTests, ConversionAccuracyTests)
     DateTimeAsserter::Assert (testDataset);
     }
 
+// Krischan: If I recall correctly, I had written the DateTime tests when I
+// was trying to implement portable time zone version in the DateTime object.
+// I gave up and decided this is impossible because just under Windows there
+// were two different APIs returning different results for the same
+// conversion. The tests were there to prove that. Because they use
+// environment variables, they cannot be run on WinRT.
 #if defined(BENTLEY_WIN32) 
 
 //---------------------------------------------------------------------------------------
@@ -1088,5 +1097,4 @@ TEST (DateTimeTestsWhenCETIsSystemTimezone, ConversionTestsDSTCET)
     }
 
 #endif
-
 #endif

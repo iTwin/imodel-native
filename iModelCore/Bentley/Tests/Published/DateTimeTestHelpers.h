@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTimeTestHelpers.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -147,6 +147,12 @@ public:
 
 //********************* TzSetter *************************************
 
+// Krischan: If I recall correctly, I had written the DateTime tests when I
+// was trying to implement portable time zone version in the DateTime object.
+// I gave up and decided this is impossible because just under Windows there
+// were two different APIs returning different results for the same
+// conversion. The tests were there to prove that. Because they use
+// environment variables, they cannot be run on WinRT.
 #if defined (BENTLEY_WIN32)
 //=======================================================================================    
 //! TzSetter allows to set a timezone using the TZ env var approach.
