@@ -214,11 +214,12 @@ DgnCategoryId DgnDbTestUtils::InsertCategory(DgnDbR db, Utf8CP categoryName, Col
 DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP authorityName)
     {
     MUST_HAVE_HOST(DgnAuthorityId());
-    
     DgnAuthorityPtr authority = NamespaceAuthority::CreateNamespaceAuthority(authorityName, db);
+    EXPECT_TRUE(authority.IsValid());
     DgnDbStatus status = authority->Insert();
     EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - Authority insert into %ls failed with %x", WString(authorityName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();
-    return authority.IsValid()? authority->GetAuthorityId(): DgnAuthorityId();
+    EXPECT_TRUE(authority->GetAuthorityId().IsValid());
+    return authority->GetAuthorityId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -310,4 +311,46 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
     EXPECT_EQ(categoriesStored, *categories);
 
     return catSelPersist;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2014
+//---------------------------------------------------------------------------------------
+int DgnDbTestUtils::SelectCountFromECClass(DgnDbR db, Utf8CP className)
+    {
+    if (!className || !*className)
+        return -1;
+
+    Utf8PrintfString sql("SELECT COUNT(*) FROM %s", className);
+
+    ECSqlStatement statement;
+    ECSqlStatus status = statement.Prepare(db, sql.c_str());
+    if (ECSqlStatus::Success != status)
+        return -1;
+
+    if (BE_SQLITE_ROW != statement.Step())
+        return -1;
+
+    return statement.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    07/2015
+//---------------------------------------------------------------------------------------
+int DgnDbTestUtils::SelectCountFromTable(DgnDbR db, Utf8CP tableName)
+    {
+    if (!tableName || !*tableName)
+        return -1;
+
+    Utf8PrintfString sql("SELECT COUNT(*) FROM %s", tableName);
+
+    Statement statement;
+    DbResult status = statement.Prepare(db, sql.c_str());
+    if (BE_SQLITE_OK != status)
+        return -1;
+
+    if (BE_SQLITE_ROW != statement.Step())
+        return -1;
+
+    return statement.GetValueInt(0);
     }
