@@ -480,6 +480,18 @@ void RasterModel::SetClip(RasterClipCR clip)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2016
+//----------------------------------------------------------------------------------------
+Utf8String RasterModel::GetDescription() const
+    {
+    RefCountedCPtr<RepositoryLink> pLink = ILinkElementBase<RepositoryLink>::Get(GetDgnDb(), GetModeledElementId());
+    if (!pLink.IsValid())
+        return "";
+
+    return pLink->GetDescription();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
 DgnDbStatus RasterModel::BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement)

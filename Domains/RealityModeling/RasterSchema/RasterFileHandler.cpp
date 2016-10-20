@@ -18,19 +18,6 @@ USING_NAMESPACE_BENTLEY_RASTER
 
 
 //----------------------------------------------------------------------------------------
-//-------------------------------  RasterFileProperties  ---------------------------------
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-RasterFileProperties::RasterFileProperties()
-    :m_fileUri("")
-    {
-    m_sourceToWorld.InitIdentity();
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     7/2016
 //----------------------------------------------------------------------------------------
 static void DMatrix4dFromJson (DMatrix4dR matrix, JsonValueCR inValue)
@@ -50,23 +37,7 @@ static void DMatrix4dToJson (JsonValueR outValue, DMatrix4dCR matrix)
             outValue[y][x] = matrix.coff[y][x];
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-void RasterFileProperties::ToJson(Json::Value& v) const
-    {
-    v["fileUri"] = m_fileUri.c_str();
-    DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
-    }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-void RasterFileProperties::FromJson(Json::Value const& v)
-    {
-    m_fileUri = v["fileUri"].asString();
-    DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
-    }
 
 //----------------------------------------------------------------------------------------
 //------------------------------  RasterFileModelHandler  --------------------------------
@@ -162,16 +133,18 @@ StatusInt RasterFileModelHandler::ComputeGeoLocationFromFile(DMatrix4dR sourceTo
 //----------------------------------------------------------------------------------------
 RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
-    RasterFileProperties props;
-    props.m_fileUri = params.m_fileUri;
+    if (!params.m_link->GetElementId().IsValid())        // link must be persisted.
+        return nullptr;
+
+    DMatrix4d sourceToWorld; 
 
     if (params.m_sourceToWorldP != nullptr)
-        props.m_sourceToWorld = *params.m_sourceToWorldP;
+        sourceToWorld = *params.m_sourceToWorldP;
     else
         {
         // Find resolved file name for the raster
         BeFileName fileName;
-        BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
+        BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_link->GetUrl(), params.m_dgndb);
         if (status != SUCCESS)
             return nullptr;
             
@@ -185,12 +158,12 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
             return nullptr;
             }
 
-        if (SUCCESS != ComputeGeoLocationFromFile(props.m_sourceToWorld, *rasterFilePtr, params.m_dgndb))
+        if (SUCCESS != ComputeGeoLocationFromFile(sourceToWorld, *rasterFilePtr, params.m_dgndb))
             return nullptr;
         }
     
     // Create model in DgnDb
-    RasterFileModelPtr model = new RasterFileModel(params, props);
+    RasterFileModelPtr model = new RasterFileModel(params, sourceToWorld);
 
     return model;
     }
@@ -201,16 +174,16 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
 RasterFileModel::RasterFileModel(CreateParams const& params) 
 :T_Super (params)
     {
-
+    m_sourceToWorld.InitIdentity();
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-RasterFileModel::RasterFileModel(CreateParams const& params, RasterFileProperties const& properties) 
-:T_Super (params),
- m_fileProperties(properties)
+RasterFileModel::RasterFileModel(CreateParams const& params, DMatrix4dCR sourceToWorld)
+:T_Super (params)
     {
+    m_sourceToWorld = sourceToWorld;
     }
 
 //----------------------------------------------------------------------------------------
@@ -232,9 +205,16 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
         return ERROR;
 
+    RefCountedCPtr<RepositoryLink> pLink = ILinkElementBase<RepositoryLink>::Get(GetDgnDb(), GetModeledElementId());
+    if (!pLink.IsValid())
+        {
+        m_loadFileFailed = false;
+        return ERROR;
+        }
+
     // Resolve raster name
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, m_fileProperties.m_fileUri, GetDgnDb());
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, pLink->GetUrl(), GetDgnDb());
     if (status != SUCCESS)
         {
         m_loadFileFailed = true;
@@ -257,7 +237,7 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
 void RasterFileModel::_WriteJsonProperties(Json::Value& v) const
     {
     T_Super::_WriteJsonProperties(v);
-    m_fileProperties.ToJson(v);
+    DMatrix4dToJson(v["srcToBim"], m_sourceToWorld);
     }
 
 //----------------------------------------------------------------------------------------
@@ -266,7 +246,7 @@ void RasterFileModel::_WriteJsonProperties(Json::Value& v) const
 void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
     {
     T_Super::_ReadJsonProperties(v);
-    m_fileProperties.FromJson(v);
+    DMatrix4dFromJson(m_sourceToWorld, v["srcToBim"]);
     }
 
 //----------------------------------------------------------------------------------------

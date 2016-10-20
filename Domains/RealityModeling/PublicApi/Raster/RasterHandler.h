@@ -118,6 +118,8 @@ public:
     //! Set the clips of this RasterModel.
     RASTER_EXPORT void SetClip(RasterClipCR);
 
+    Utf8String GetDescription() const;
+
     RASTER_EXPORT bool IsParallelToGround() const;
 
     void SetDepthBias(double val) { BeAssert(IsParallelToGround()); m_depthBias = val; }
