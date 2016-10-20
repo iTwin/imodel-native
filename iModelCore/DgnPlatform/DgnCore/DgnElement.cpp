@@ -496,8 +496,9 @@ GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(Subject
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
     {
-    // A PhysicalPartition can only be modeled by a PhysicalModel
-    return model.IsPhysicalModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    // WIP: A PhysicalPartition can only be modeled by a SpatialModel?
+    // WIP: Should we add a SpatialPartition and then restrict PhysicalPartition to sub PhysicalModels?
+    return model.IsSpatialModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
 
 /*---------------------------------------------------------------------------------**//**

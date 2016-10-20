@@ -17,7 +17,6 @@
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 
-DGNPLATFORM_TYPEDEFS(CameraInfo)
 DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
 DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
@@ -309,8 +308,7 @@ public:
     //! @param[in] color The new background color
     void SetBackgroundColor(ColorDef color) {m_definition->GetDisplayStyleR().SetBackgroundColor(color);}
 
-    //! Get the origin (lower, left, front) point of of the view in coordinates of the target
-    //! model (physical coordinates for SpatialViewController and drawing coordinates for DrawingViewController).
+    //! Get the origin (lower, left, back) point of of the view
     DPoint3d GetOrigin() const {return m_definition->GetOrigin();}
 
     //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
@@ -339,7 +337,6 @@ public:
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
     bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();

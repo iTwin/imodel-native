@@ -465,8 +465,12 @@ protected:
 
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
+
     virtual TileSource _GetSource() const = 0;
-    virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const = 0;
+    virtual TileMeshList _GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const = 0;
+    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) { }
+    virtual void _ClearGeometry() { }
+
 public:
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
@@ -495,9 +499,11 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
+    void  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) { _CollectGeometry(cache, db); }
+    void  ClearGeometry() { _ClearGeometry(); }
     TileSource GetSource() const { return _GetSource(); }
-    TileMeshList GenerateMeshes(TileGenerationCacheCR cache, DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
-        { return _GenerateMeshes(cache, dgndb, normalMode, twoSidedTriangles, doPolylines); }
+    TileMeshList GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
+        { return _GenerateMeshes(dgndb, normalMode, twoSidedTriangles, doPolylines); }
 };
 
 //=======================================================================================
@@ -515,17 +521,18 @@ protected:
         : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
 
 
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(DgnDbR, TileGeometry::NormalMode, bool, bool) const override;
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
-    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGenerationCacheCR, DgnDbR, TileGeometry::NormalMode, bool, bool) const override;
+    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) override;
+    virtual void _ClearGeometry() override { m_geometries.clear(); }
 public:
     static ElementTileNodePtr Create(TransformCR transformFromDgn) { return new ElementTileNode(transformFromDgn); }
     static ElementTileNodePtr Create(DRange3dCR dgnRange, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
         { return new ElementTileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void SetTolerance(double tolerance) { m_tolerance = tolerance; }
-    bool ExceedsFacetCount(size_t maxFacetCount, TileGenerationCacheCR cache) const;
+    TileGeometryList const& GetGeometries() const { return m_geometries; }
 
-    DGNPLATFORM_EXPORT void ComputeTiles(double chordTolerance, size_t maxPointsPerTile, TileGenerationCacheCR cache);
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
 };
 
@@ -599,23 +606,21 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
-    uint32_t                        m_totalTiles;
-    uint32_t                        m_completedTiles;
+    BeAtomic<uint32_t>              m_totalTiles;
+    BeAtomic<uint32_t>              m_completedTiles;
 
-    Status ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+    void    ProcessTile(ElementTileNodeR tile, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
-
-    DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
     Statistics const& GetStatistics() const { return m_statistics; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
+    ITileGenerationProgressMonitorR GetProgressMeter () { return m_progressMeter; }
 
-    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, double leafTolerance, size_t maxPointsPerTile);
-    DGNPLATFORM_EXPORT Status GenerateAndCollectTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
+    DGNPLATFORM_EXPORT Status GenerateTiles(TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile);
 
 };
 
@@ -625,7 +630,7 @@ public:
 //=======================================================================================
 struct IGenerateMeshTiles
 {
-    virtual TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) = 0;
+    virtual TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) = 0;
 
 };  // IPublishModelMeshTiles
 

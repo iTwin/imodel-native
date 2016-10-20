@@ -443,12 +443,12 @@ void DisplayStyle3d::SaveStyle3d()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::EnvironmentDisplay::Initialize()
     {
-    m_groundPlane.m_enabled = false;
+    m_groundPlane.m_enabled = true;
     m_groundPlane.m_elevation = -DgnUnits::OneCentimeter();
     m_groundPlane.m_aboveColor = ColorDef::DarkGreen();
     m_groundPlane.m_belowColor = ColorDef::DarkBrown();
 
-    m_skybox.m_enabled = false;
+    m_skybox.m_enabled = true;
     m_skybox.m_groundExponent = 4.0;
     m_skybox.m_skyExponent = 4.0;
     m_skybox.m_groundColor = ColorDef(120,143,125);
