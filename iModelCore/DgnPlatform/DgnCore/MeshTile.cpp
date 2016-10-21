@@ -23,10 +23,10 @@ static UnconditionalTileGenerationFilter s_defaultFilter;
 
 struct RangeTreeNode
 {
-    size_t          m_facetCount;
+    // ###TODO: On 64-bit hardware, don't allocate a node just to hold a 64-bit integer...
     DgnElementId    m_elementId;
 
-    RangeTreeNode(DgnElementId elemId, size_t facetCount) : m_facetCount(facetCount), m_elementId(elemId) { }
+    RangeTreeNode(DgnElementId elemId) : m_elementId(elemId) { }
 };
 
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
@@ -164,7 +164,7 @@ void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
     static const Utf8CP s_sql =
-        "SELECT r.ECInstanceId,g.FacetCount,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
+        "SELECT r.ECInstanceId,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
         "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId)";
 
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
@@ -174,11 +174,10 @@ void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
         if (!filter.AcceptElement(elemId))
             continue;
 
-        size_t facetCount = stmt->GetValueUInt64(1);
-        DRange3d elRange = DRange3d::From(stmt->GetValueDouble(2), stmt->GetValueDouble(3), stmt->GetValueDouble(4),
-                stmt->GetValueDouble(5), stmt->GetValueDouble(6), stmt->GetValueDouble(7));
+        DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
+                stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
 
-        m_tree->Add(new RangeTreeNode(elemId, facetCount), elRange);
+        m_tree->Add(new RangeTreeNode(elemId), elRange);
         }
     }
 
@@ -972,7 +971,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
             for (auto& subRange : subRanges)
                 {
                 ElementTileNodePtr      child  = ElementTileNode::Create(subRange, m_transformFromDgn, tile.GetDepth()+1, siblingIndex++, &tile);
-                Status                  status;
 
                 child->CollectGeometry (m_cache, m_dgndb);
                 if (!child->GetGeometries().empty())
