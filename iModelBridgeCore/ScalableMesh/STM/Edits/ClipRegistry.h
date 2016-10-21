@@ -61,6 +61,10 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize);
 
+    void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);
+
+    bool HasCoverage(uint64_t id);
+
     void GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys);
         
     size_t GetNbClips();

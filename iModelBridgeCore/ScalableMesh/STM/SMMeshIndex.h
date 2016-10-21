@@ -269,7 +269,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void UpdateNodeFromBcDTM();
 
-    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode);
+    void ImportTreeFrom(IScalableMeshNodePtr& sourceNode, bool shouldCopyData=true, bool use2d = false);
 
 #ifdef WIP_MESH_IMPORT
     void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
@@ -314,6 +314,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 
     void  BuildSkirts();
+
+    void CreateSkirtsForMatchingTerrain();
+
+    SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
 
     bool HasClip(uint64_t clipId);
 
@@ -795,6 +799,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager* TextureManager() { return &m_texMgr; }
 
+        SMMeshIndex<POINT, EXTENT>* CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore);
+
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
@@ -803,6 +809,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 
         bool m_isInsertingClips;
+
+        void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
+        SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
+
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -819,6 +829,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
         bvector < RefCountedPtr<EditOperation> > m_edits;
+
+        SMMeshIndex<POINT, EXTENT>* m_smTerrain;
 
     };
 

@@ -2777,14 +2777,21 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     }
 
 
-template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ImportTreeFrom(IScalableMeshNodePtr& sourceNode)
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ImportTreeFrom(IScalableMeshNodePtr& sourceNode, bool shouldCopyData, bool use2d)
     {
-    m_nodeHeader.m_contentExtent = sourceNode->GetContentExtent();
+    if (shouldCopyData) m_nodeHeader.m_contentExtent = sourceNode->GetContentExtent();
     m_nodeHeader.m_nodeExtent = sourceNode->GetNodeExtent();
+    if (use2d)
+        {
+        m_nodeHeader.m_nodeExtent.low.z = DBL_MIN;
+        m_nodeHeader.m_nodeExtent.high.z = DBL_MAX;
+        }
     
-    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-    auto meshP = sourceNode->GetMesh(flags);
-    m_nodeHeader.m_isTextured = sourceNode->IsTextured();
+    if (shouldCopyData)
+        {
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto meshP = sourceNode->GetMesh(flags);
+        m_nodeHeader.m_isTextured = sourceNode->IsTextured();
 
     bvector<DPoint3d> vertices(meshP->GetPolyfaceQuery()->GetPointCount());
     if (!vertices.empty()) memcpy(vertices.data(), meshP->GetPolyfaceQuery()->GetPointCP(), vertices.size()* sizeof(DPoint3d));
@@ -2817,19 +2824,28 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Import
     PushPtsIndices(&ptsIndices[0], ptsIndices.size());
     indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
 
-    if(!uvIndices.empty()) PushUVsIndices(0, &uvIndices[0], uvIndices.size());
-    m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
-    m_nodeHeader.m_nbUvIndexes = uv.size();
-    IncreaseTotalCount(GetNbPoints());
-
+        if (!uvIndices.empty()) PushUVsIndices(0, &uvIndices[0], uvIndices.size());
+        m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
+        m_nodeHeader.m_nbUvIndexes = uv.size();
+        IncreaseTotalCount(GetNbPoints());
+        }
     auto sourceChildren = sourceNode->GetChildrenNodes();
-    m_apSubNodes.resize(sourceChildren.size());
+    m_nodeHeader.m_IsLeaf = sourceChildren.empty();
+    m_nodeHeader.m_IsBranched = sourceChildren.size() > 1;
+    m_nodeHeader.m_numberOfSubNodesOnSplit = use2d ? 4 : sourceChildren.size();
+    if (use2d) m_nodeHeader.m_arePoints3d = false;
+    m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
+    int j = 0;
     for (size_t i = 0; i < m_apSubNodes.size(); ++i)
         {
-        m_apSubNodes[i] = CloneChild(sourceChildren[i]->GetNodeExtent());
-        dynamic_cast<SMMeshIndexNode<POINT,EXTENT>*>(m_apSubNodes[i].GetPtr())->ImportTreeFrom(sourceChildren[i]);
+        if (use2d && sourceChildren[i]->GetNodeExtent().low.z > sourceNode->GetNodeExtent().low.z) continue;
+        m_apSubNodes[j] = CloneChild(sourceChildren[i]->GetNodeExtent());
+        ++j;
+        dynamic_cast<SMMeshIndexNode<POINT,EXTENT>*>(m_apSubNodes[j].GetPtr())->ImportTreeFrom(sourceChildren[i]);
         }
+    m_nodeHeader.m_apSubNodeID.resize(m_apSubNodes.size());
 
+    for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
     SetDirty(true);
 
     }
@@ -3986,6 +4002,83 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             }
     }
 
+
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>* SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNode()
+    {
+    auto firstNode = dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(m_SMIndex)->GetSMTerrain()->FindNode(m_nodeHeader.m_nodeExtent, m_nodeHeader.m_level, true);
+    return firstNode;
+    }
+
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CreateSkirtsForMatchingTerrain()
+    {
+    if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
+    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
+    if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
+    bool shouldBuildSkirts = false;
+    int nCoverages = 0;
+    int nSkirts = 0;
+    for (const auto& diffSet : *diffsetPtr)
+        {
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && GetClipRegistry()->HasCoverage(diffSet.clientID)) 
+            {
+            if (!diffSet.toggledForID && diffSet.addedFaces.size() > 0) nSkirts++;
+            else nCoverages++;
+            }
+        }
+    if (nCoverages == 0 || nSkirts == nCoverages) return;
+#if 0
+    auto node = FindMatchingTerrainNode();
+
+    auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+        new ScalableMeshNode<POINT>(nodePtr)
+#else
+        ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+        );
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+    auto dtm1 = nodeP->GetBcDTM();
+    if (dtm1.get() == nullptr) return;
+
+    auto otherNodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(node)));
+    IScalableMeshNodePtr otherNodeP(
+#ifndef VANCOUVER_API
+        new ScalableMeshNode<POINT>(nodePtr)
+#else
+        ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+        );
+
+
+    auto dtm2 = otherNodeP->GetBcDTM();
+    if (dtm2.get() == nullptr) return;
+    SkirtBuilder builder(dtm1,dtm2);
+    map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+    for (size_t i = 0; i < pointsPtr->size(); ++i)
+        mapOfPoints[pointsPtr->operator[](i)] = (int)i;
+
+    for (const auto& diffSet : *diffsetPtr)
+        {
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && !diffSet.toggledForID && GetClipRegistry()->HasCoverage(diffSet.clientID))
+            {
+            bvector<bvector<DPoint3d>> skirts;
+            bvector<DPoint3d> coverage;
+            GetClipRegistry()->GetCoverage(diffSet.clientID, coverage);
+            skirts.push_back(coverage);
+            bvector<PolyfaceHeaderPtr> polyfaces;
+            builder.BuildSkirtMesh(polyfaces, skirts);
+            DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyfaces, mapOfPoints, pointsPtr->size() + 1);
+            current.clientID = diffSet.clientID;
+            current.toggledForID = false;
+            diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
+            }
+        }
+
+#endif
+    }
+
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
     {
     DRange3d extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), 0,
@@ -4854,4 +4947,35 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRegistry(ClipRegistry* clipRegistry)
     {
     m_clipRegistry = clipRegistry;
+    }
+
+
+template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POINT, EXTENT>::CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore)
+    {
+    SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter,
+                                                                       m_indexHeader.m_balanced, m_indexHeader.m_textured,
+                                                                       m_propagatesDataDown, m_mesher2_5d, m_mesher3d);
+    auto node = GetRootNode();
+    if (node == nullptr) return index;
+    auto rootClone = index->CreateRootNode(node->GetBlockID().m_integerID);
+    auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(const_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
+    IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+        new ScalableMeshNode<POINT>(nodePtr)
+#else
+        ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+        );
+    dynamic_cast<SMMeshIndexNode<POINT,EXTENT>*>(rootClone.GetPtr())->ImportTreeFrom(nodeP, false, true);
+    return index;
+    }
+
+
+template<class POINT, class EXTENT> void  SMMeshIndex<POINT, EXTENT>::SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP)
+    {
+    m_smTerrain = terrainP;
+    }
+template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>*  SMMeshIndex<POINT, EXTENT>::GetSMTerrain()
+    {
+    return m_smTerrain;
     }
