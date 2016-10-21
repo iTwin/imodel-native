@@ -32,19 +32,19 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is horizontal for 1 alignment">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 horizontal">
             <Class class="AlignmentHorizontal"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SpatialElementRefersToAlignment" strength="referencing" modifier="Abstract">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N spatial elements">
             <Class class="bis:SpatialElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 alignment">
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
@@ -58,10 +58,10 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentOwnsVerticals" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has N vertical alignments">
             <Class class="AlignmentVertical"/>
         </Target>
     </ECRelationshipClass>
