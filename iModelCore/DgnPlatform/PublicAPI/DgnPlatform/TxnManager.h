@@ -724,6 +724,7 @@ namespace dgn_TxnTable
         bool HasChanges() const { return m_changes; }
         };
 
+    //! @private
     struct UniqueRelationshipLinkTable : RelationshipLinkTable
         {
         friend struct Dgn::TxnManager;
@@ -733,6 +734,7 @@ namespace dgn_TxnTable
         void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) override;
         };
 
+    //! @private
     struct MultiRelationshipLinkTable : RelationshipLinkTable
         {
         friend struct Dgn::TxnManager;
