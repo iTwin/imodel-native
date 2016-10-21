@@ -84,10 +84,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding">
         <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 range">
             <Class class="SegmentRangeElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N segments">
             <Class class="SegmentElement"/>
         </Target>
     </ECRelationshipClass>
@@ -210,7 +210,7 @@
     <!-- BEGIN FurnitureElement Class Hierarchy -->
     <ECEntityClass typeName="FurnitureElement" modifier="Abstract" description="Physical element supplementing Road and Rail models.">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <!--ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="forward"/-->
+        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="DiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single placement-point.">
         <BaseClass>FurnitureElement</BaseClass>
@@ -246,11 +246,10 @@
         <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N furniture elements">
             <Class class="FurnitureElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
             <Class class="FurnitureDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -276,10 +275,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding">
         <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 furniture assembly">
             <Class class="FurnitureAssemblyElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N furniture elements">
             <Class class="FurnitureElement"/>
         </Target>
     </ECRelationshipClass>
@@ -308,10 +307,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesPart" strength="embedding">
         <BaseClass>bis:ElementEncapsulatesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is encapsulated by a definition">
             <Class class="TemplateGeometryDefinitionElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Target>
     </ECRelationshipClass>
@@ -366,10 +365,10 @@
         <ECProperty propertyName="UnitSystem" typeName="int" />
     </ECEntityClass>
     <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing">
-        <Source multiplicity="(0..*)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is refered by N design-speeds">
             <Class class="RoadDesignSpeed"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
             <Class class="RoadDesignSpeedDefinition"/>
         </Target>
     </ECRelationshipClass>
