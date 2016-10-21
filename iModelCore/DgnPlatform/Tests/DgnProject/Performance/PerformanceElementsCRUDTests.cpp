@@ -36,11 +36,11 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     WString seedFileName;
     seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedFilePath;
-    BeTest::GetHost().GetOutputRoot(seedFilePath);
+    BeFileName seedFilePath(L"D:\\temp\\perf\\bim02\\ElementApiInsertElement4_50000.ibim");
+    /*BeTest::GetHost().GetOutputRoot(seedFilePath);
     seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
-
+    */
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());
@@ -203,7 +203,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>bis:ElementMultiAspect</BaseClass>"
         "    <ECCustomAttributes>"
-        "       <ClassMap xmlns = 'ECDbMap.02.00'>"
+        "       <DbIndexList xmlns = 'ECDbMap.02.00'>"
         "           <Indexes>"
         "               <DbIndex>"
         "                   <Name>IDX_TMAspect</Name>"
@@ -213,7 +213,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "                   </Properties>"
         "               </DbIndex>"
         "           </Indexes>"
-        "       </ClassMap>"
+        "       </DbIndexList>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='TestMultiAspectProperty' typeName='string' />"
         "  </ECClass>"
@@ -2154,9 +2154,9 @@ TEST_F (PerformanceElementsCRUDTestFixture, InsertSQLite)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, InsertECSql)
     {
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
@@ -2165,9 +2165,9 @@ TEST_F (PerformanceElementsCRUDTestFixture, InsertECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, InsertApi)
     {
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
