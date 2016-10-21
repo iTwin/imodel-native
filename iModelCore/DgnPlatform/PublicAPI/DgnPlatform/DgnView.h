@@ -229,8 +229,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const override;
-    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, DgnElement::ComparePropertyFilter const&) const override;
 
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus WriteModels();
@@ -284,8 +282,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, DgnElement::ComparePropertyFilter const&) const override;
-    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, DgnElement::ComparePropertyFilter const&) const override;
 
     DgnDbStatus WriteCategories();
     explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
@@ -294,17 +290,18 @@ public:
     //! Construct a new CategorySelector
     CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
-    Utf8String GetName() const {return GetCode().GetValue();} //!< The name of this CategorySelector
+    //! Get the name of this CategorySelector
+    Utf8String GetName() const {return GetCode().GetValue();} 
 
     //! Get a CategorySelector by name.
     static CategorySelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<CategorySelector>(elements.QueryElementIdByCode(CreateCode(name)));}
 
     //! Get the set of currently displayed DgnCategories
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
-    DgnCategoryIdSet& GetCategoriesR() {return m_categories;}
-    void SetCategories(DgnCategoryIdSet const& categories) {m_categories = categories;}
+    DgnCategoryIdSet& GetCategoriesR() {return m_categories;}//!< @private
+    void SetCategories(DgnCategoryIdSet const& categories) {m_categories = categories;}//!< @private
 
-    //! Query if the selector includes the specified category
+    //! Determine whether this CateggorySelector includes the specified category
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_categories.Contains(categoryId);}
 
     //! Add a category to this CategorySelector
@@ -337,7 +334,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
     DEFINE_T_SUPER(DefinitionElement);
 
 public:
-
     //! Parameters used to construct a ViewDefinition
     struct CreateParams : T_Super::CreateParams
     {
@@ -395,20 +391,29 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
 
 public:
-    bool EqualState(ViewDefinitionCR other) const {return _EqualState(other);}  //!@private
+    //! Determine whether two ViewDefinitions are "equal", including their unsaved "state"
+    bool EqualState(ViewDefinitionCR other) const {return _EqualState(other);}
     
     Utf8String GetDescr() const {return GetPropertyValueString(str_Descr());} //!< Get description
     DgnDbStatus SetDescr(Utf8StringCR value) {return SetPropertyValue(str_Descr(), value.c_str());} //!< Set description
     DgnViewSource GetSource() const {return (DgnViewSource)GetPropertyValueInt32(str_Source());} //!< Get source
     DgnDbStatus SetSource(DgnViewSource value) {return SetPropertyValue(str_Source(), (int32_t)value);} //!< Set source
 
-    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This view definition's Id
-    Utf8String GetName() const {return GetCode().GetValue();} //!< The name of the view definition
-    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(name));} //!< Change this view definition's name
+    DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
+    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
+    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(name));} //!< Change this ViewDefinition's name
 
+    /** @name ViewDefinition Details */
+    /** @{ */
+    //! Get the current valuue of a view detail 
     JsonValueCR GetDetail(Utf8CP name) const {return m_details[name];}
+
+    //! Change the valuue of a view detail 
     void SetDetail(Utf8CP name, JsonValueCR value) {m_details[name] = value; m_dirty=true;}
+
+    //! Remove of a view detail 
     void RemoveDetail(Utf8CP name) {m_details.removeMember(name); m_dirty=true;}
+    /** @} */
 
     //! Inserts into the database and returns the new persistent copy.
     ViewDefinitionCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status);}
@@ -448,7 +453,7 @@ public:
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) {}
     public:
-        DgnDbP GetDgnDb() const { auto stmt = GetStatement(); return (nullptr != stmt) ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr;}
+        DgnDbP GetDgnDb() const {auto stmt = GetStatement(); return (nullptr != stmt) ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr;}
         DgnViewId GetId() const {return m_statement->GetValueId<DgnViewId>(0);} //!< The view Id
         Utf8CP GetName() const {return m_statement->GetValueText(1);} //!< The name of the view
         DgnViewSource GetSource() const {return static_cast<DgnViewSource>(m_statement->GetValueInt(2));} //!< The view source

@@ -1158,7 +1158,7 @@ bool SpatialViewController::RangeQuery::ComputeOcclusionScore(double& score, Fru
             }
 
         DPoint3dR   npcCorner = npcVertices[nVertices/2];
-        DPoint2d    extent = { npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
+        DPoint2d    extent = {npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
 
         if ((extent.x * extent.x + extent.y * extent.y) < m_lodFilterNPCArea)
             return false;

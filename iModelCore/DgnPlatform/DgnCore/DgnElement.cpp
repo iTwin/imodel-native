@@ -667,7 +667,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
 
         stmt->Reset();
         }
-    while(parentId.IsValid());
+    while (parentId.IsValid());
 
     return false;
     }
@@ -2527,18 +2527,18 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             {                                                                            \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3dCR plc = el.GetPlacement();                                       \
-            value.SetDouble(EXPR);                                                      \
+            value.SetDouble(EXPR);                                                       \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT3(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3dCR plc = el.GetPlacement();                                       \
             value.SetPoint3d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
             Placement3d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
@@ -2643,21 +2643,21 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
     std::call_once(s_accessorsFlag, []()
         {
 #define GETGEOMPLCPROPDBL(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetDouble(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define GETGEOMPLCPROPPT2(NAME,EXPR) s_accessors.get.NAME = [](ECValueR value, DgnElementCR elIn)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2dCR plc = el.GetPlacement();                                       \
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
 #define SETGEOMPLCPROP(NAME,EXPR) s_accessors.set.NAME = [](DgnElement& elIn, ECN::ECValueCR value)\
-            {                                                                            \
+            {                                                                           \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
@@ -2792,19 +2792,19 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
     {
-    struct Pair { Utf8CP name; uint64_t action; };
+    struct Pair {Utf8CP name; uint64_t action;};
 
     static const Pair s_pairs[] = 
         {
-            { "clone",          Clone },
-            { "setparent",      SetParent },
-            { "insertchild",    InsertChild },
-            { "updatechild",    UpdateChild },
-            { "deletechild",    DeleteChild },
-            { "setcode",        SetCode },
-            { "move",           Move },
-            { "setcategory",    SetCategory },
-            { "setgeometry",    SetGeometry },
+            {"clone",          Clone },
+            {"setparent",      SetParent },
+            {"insertchild",    InsertChild },
+            {"updatechild",    UpdateChild },
+            {"deletechild",    DeleteChild },
+            {"setcode",        SetCode },
+            {"move",           Move },
+            {"setcategory",    SetCategory },
+            {"setgeometry",    SetGeometry },
         };
 
     for (auto const& pair : s_pairs)

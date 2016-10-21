@@ -156,7 +156,7 @@ public:
     //! @name Id remapping
     //! @{
     //! Make sure that a DgnAuthority has been imported
-    DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId) { return _RemapAuthorityId(sourceId); }
+    DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId) {return _RemapAuthorityId(sourceId);}
     //! Register a copy of a DgnAuthority
     DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
@@ -164,48 +164,48 @@ public:
     //! Register a copy of a model
     DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeometryPart has been imported
-    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) { return _RemapGeometryPartId(sourceId); }
+    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return _RemapGeometryPartId(sourceId);}
     //! Look up a copy of a Category
     DgnCategoryId FindCategory(DgnCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Category
     DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Category has been imported
-    DgnCategoryId RemapCategory(DgnCategoryId sourceId) { return _RemapCategory(sourceId); }
+    DgnCategoryId RemapCategory(DgnCategoryId sourceId) {return _RemapCategory(sourceId);}
     //! Look up a copy of an subcategory
     DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a SubCategory
     DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
-    DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) { return _RemapSubCategory(destCategoryId, sourceId); }
+    DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) {return _RemapSubCategory(destCategoryId, sourceId);}
     //! Make sure that an ECClass has been imported
-    DgnClassId RemapClassId(DgnClassId sourceId) { return _RemapClassId(sourceId); }
+    DgnClassId RemapClassId(DgnClassId sourceId) {return _RemapClassId(sourceId);}
     //! Look up a copy of a Material
     DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Material
     DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Material has been imported
-    DgnMaterialId RemapMaterialId(DgnMaterialId sourceId) { return _RemapMaterialId(sourceId); }
+    DgnMaterialId RemapMaterialId(DgnMaterialId sourceId) {return _RemapMaterialId(sourceId);}
     //! Look up a copy of a Material
     DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Texture
     DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Texture has been imported
-    DgnTextureId RemapTextureId(DgnTextureId sourceId) { return _RemapTextureId(sourceId); }
+    DgnTextureId RemapTextureId(DgnTextureId sourceId) {return _RemapTextureId(sourceId);}
     //! Look up a copy of a LineStyle
     DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a LineStyle
     DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) { return _RemapLineStyleId(sourceId); }
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return _RemapLineStyleId(sourceId);}
     //! Look up a copy of a LineStyle component
     LsComponentId FindLineStyleComponentId(LsComponentId sourceId) const;
     //! Register a copy of a LineStyle component
     void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeometryStream have been imported
-    DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom) { return _RemapGeometryStreamIds(geom); }
+    DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom) {return _RemapGeometryStreamIds(geom);}
     //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
-    DgnFontId RemapFont(DgnFontId srcId) { return _RemapFont(srcId); }
+    DgnFontId RemapFont(DgnFontId srcId) {return _RemapFont(srcId);}
     //! @}
 
     BeSQLite::EC::ECInstanceUpdater const& GetUpdater(ECN::ECClassCR) const;
@@ -285,16 +285,16 @@ struct AutoHandledPropertiesCollection
             void ToNextValid();
 
         public:
-            ECN::ECPropertyCP operator*() const { BeAssert(m_i != m_coll.m_end); return *m_i; }
+            ECN::ECPropertyCP operator*() const {BeAssert(m_i != m_coll.m_end); return *m_i;}
             Iterator& operator++();
-            bool operator!=(Iterator const& rhs) const { return !(*this == rhs); }
-            bool operator==(Iterator const& rhs) const { return m_i == rhs.m_i; }
+            bool operator!=(Iterator const& rhs) const {return !(*this == rhs);}
+            bool operator==(Iterator const& rhs) const {return m_i == rhs.m_i;}
             ECSqlClassParams::StatementType GetStatementType() const {return m_stype;}
         };
 
     typedef Iterator const_iterator;
-    const_iterator begin() const { return Iterator(m_props.begin(), *this); }
-    const_iterator end() const { return Iterator(m_props.end(), *this); }
+    const_iterator begin() const {return Iterator(m_props.begin(), *this);}
+    const_iterator end() const {return Iterator(m_props.end(), *this);}
     };
 
 //__PUBLISH_SECTION_START__
@@ -1278,10 +1278,10 @@ protected:
     virtual DocumentCP _ToDocumentElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertPropertyArrayItems (uint32_t propertyIndex, uint32_t index, uint32_t size);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _AddPropertyArrayItems (uint32_t propertyIndex, uint32_t size);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _RemovePropertyArrayItem (uint32_t propertyIndex, uint32_t index);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ClearPropertyArray (uint32_t propertyIndex);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertPropertyArrayItems(uint32_t propertyIndex, uint32_t index, uint32_t size);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ClearPropertyArray(uint32_t propertyIndex);
     virtual DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) {return accessor.SetPropertyValue(value, arrayIdx);}
     virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const {return accessor.GetPropertyValue(value, arrayIdx);}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR, SetPropertyFilter const& filter);
