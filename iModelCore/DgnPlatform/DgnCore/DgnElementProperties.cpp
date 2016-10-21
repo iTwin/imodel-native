@@ -658,7 +658,7 @@ void ElementAutoHandledPropertiesECInstanceAdapter::AllocateBuffer(size_t size)
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
     InitializeMemory(_GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
 
-    if (m_element.DoMemUsageTracking())
+    if (m_element.IsPersistent())
         m_element.GetDgnDb().Elements().ChangeMemoryUsed(m_element.m_ecPropertyDataSize);
     }
 
@@ -842,7 +842,7 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_ShrinkAllocation
             return ECObjectsStatus::UnableToAllocateMemory;
             }
 
-        if (m_element.DoMemUsageTracking())
+        if (m_element.IsPersistent())
             m_element.GetDgnDb().Elements().ChangeMemoryUsed(newAllocation - m_element.m_ecPropertyDataSize);
 
         m_element.m_ecPropertyData = reallocedData;
@@ -864,7 +864,7 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation ()
             {
             bentleyAllocator_free(m_element.m_ecPropertyData);
 
-            if (m_element.DoMemUsageTracking())
+            if (m_element.IsPersistent())
                 m_element.GetDgnDb().Elements().ChangeMemoryUsed(-m_element.m_ecPropertyDataSize);
 
             m_element.m_ecPropertyData = nullptr;
@@ -903,7 +903,7 @@ ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GrowAllocation (
     if (NULL == reallocedData)
         return ECObjectsStatus::UnableToAllocateMemory;
     
-    if (m_element.DoMemUsageTracking())
+    if (m_element.IsPersistent())
         m_element.GetDgnDb().Elements().ChangeMemoryUsed(newSize - m_element.m_ecPropertyDataSize);
 
     m_element.m_ecPropertyData = reallocedData;
