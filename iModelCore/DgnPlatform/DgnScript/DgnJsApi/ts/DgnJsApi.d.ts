@@ -277,7 +277,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
           * @param parameterIndex Parameter index
           * @param value Value to bind.
           */
-        BindDPoint3d(parameterIndex: cxx_int32_t, value: DPoint3dP): void;
+        BindPoint3d(parameterIndex: cxx_int32_t, value: DPoint3dP): void;
 
         /**
           * Bind a DRange3d value to the specified parameter

@@ -625,7 +625,8 @@
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 
-    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" ApiNumber="B02">
+    <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" >
+        <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <SubPart PartName="DgnPlatformDLL" />
     </Part>
 

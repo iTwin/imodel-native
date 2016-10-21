@@ -367,7 +367,7 @@ struct JsPreparedECSqlStatement : RefCountedBaseWithCreate
     void BindText(int parameterIndex, Utf8StringCR value);
     void BindInt(int parameterIndex, int32_t value);
     void BindDouble(int parameterIndex, double value);
-    void BindDPoint3d(int parameterIndex, JsDPoint3dP value);
+    void BindPoint3d(int parameterIndex, JsDPoint3dP value);
     void BindDRange3d(int parameterIndex, JsDRange3dP value);
 
     BeSQLiteDbResult Step();
