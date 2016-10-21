@@ -1314,9 +1314,16 @@ void DgnElement::ForceElementIdForInsert(DgnElementId elementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     {
-    uint32_t oldSize = original._GetMemSize(); // save current size
+    BeAssert(0 != original.GetRefCount());
+    BeAssert(original.IsPersistent());
+
+    // The pool can only hold immutable objects. We are about to change the original element which is now in the pool.
+    // To keep the pool's memory statistics valid, we must drop the element from the pool, modify it, and then add it back
+    // into the pool in its changed state. Attempting to track size changes here doesn't work since the element's class may 
+    // attempt to adjust the pool itself. 
+    DropFromPool(original);
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
-    ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
+    AddToPool(original);
 
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
