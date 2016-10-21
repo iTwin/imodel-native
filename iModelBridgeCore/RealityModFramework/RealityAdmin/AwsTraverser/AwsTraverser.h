@@ -48,43 +48,4 @@ public:
     void Close() override;
     };
 
-
-//=======================================================================================
-// @bsiclass
-// Connection to the SQL Server, handles all transactions
-//=======================================================================================
-/*struct ServerConnection
-    {
-private:
-    SQLHENV     hEnv;
-    SQLHDBC     hDbc;
-    SQLHSTMT    hStmt;
-    const char* m_dbName;
-    static ServerConnection* s_instance;
-    void OpenConnection();
-    void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
-
-public:
-    static ServerConnection& GetInstance();
-    ServerConnection();
-    void SetStrings(const char* dbName, const char* pwszConnStr);
-    void TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x);
-    SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
-    SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
-    RETCODE ExecuteSQL(CHAR* query);
-    RETCODE ExecuteSQL(SQLHSTMT stmt);
-    RETCODE ExecutePrepared();
-    SQLRETURN FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len);
-    void ReleaseStmt();
-    bool IsDuplicate(Utf8CP file);
-    bool HasEntries(CHAR* input);
-    void Exit();
-
-    //void Save(AwsData awsdata);
-    void Save(SpatialEntityData awsdata);
-    bool CheckExists(std::string id);
-    SQLINTEGER SaveServer(std::string url);
-    SQLINTEGER SaveMetadata();
-    };*/
-
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

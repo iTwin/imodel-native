@@ -23,7 +23,6 @@
 #include <RealityPlatform/RealityDataDownload.h>
 #include "AwsTraverser.h"
 #include "../ODBCSQLConnection.h"
-#include "../WebTraverser/WebTraverser.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

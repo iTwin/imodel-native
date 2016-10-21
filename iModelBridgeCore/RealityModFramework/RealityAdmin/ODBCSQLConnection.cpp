@@ -235,7 +235,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         Utf8String metadataUrl = baseUrl;
         metadataUrl.append("_MTL.txt");
 
-        CHAR serverStatement[512];
+        CHAR* serverStatement;
+        serverStatement = new CHAR[512];
         sprintf(serverStatement, "INSERT INTO [%s].[dbo].[Metadatas] ([Description], [Provenance], [MetadataURL], [Legal]) VALUES ('Landsat data provided by Amazon Web Services', 'landsat8', '%s', 'Data available from the U.S. Geological Survey.')",
             m_dbName,
             metadataUrl.c_str());
@@ -244,15 +245,19 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         SQLINTEGER metadataId;
         SQLLEN len;
-        CHAR tableName[128];
+        CHAR* tableName;
+        tableName = new CHAR[128];
 
         sprintf(tableName, "[%s].[dbo].[Metadatas]", m_dbName);
         FetchTableIdentity(metadataId, tableName, len);
 
-        CHAR thumbnailQuery[1000];
+        DateTimeCR date = DateTime::GetCurrentTimeUtc();
+
+        CHAR* thumbnailQuery;
+        thumbnailQuery = new CHAR[1000];
         sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailUrl]) VALUES ('Provided by Amazon Web Services', 'png', '%ls', 'Provided by Amazon Web Services', '%s')",
             m_dbName,
-            DateTime::GetCurrentTimeUtc().ToString().c_str(),
+            date.ToString().c_str(),
             thumbUrl.c_str());
 
         RETCODE retCode;
@@ -272,7 +277,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         SQLINTEGER entityId;
 
-        CHAR entityBaseQuery[2000];
+        CHAR* entityBaseQuery;
+        entityBaseQuery = new CHAR[2000];
         sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Dataset], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable], [ResolutionInMeters], [Classification]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', 'Landat 8', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d, 'tif', '15.00x15.00', 'Imagery')",
             m_dbName,
             data.GetName().c_str(),
@@ -286,12 +292,14 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
 
 
-        char polygon[2000];
+        char* polygon;
+        polygon = new char[2000];
         sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
         retCode = SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
 
-        DateTimeCR date = DateTime::GetCurrentTimeUtc();
-        CHAR baseDate[20];
+        
+        CHAR* baseDate;
+        baseDate = new CHAR[20];
         sprintf(baseDate, "%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay());
         TryODBC(hStmt, SQL_HANDLE_STMT, SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, strlen(baseDate), 0, (SQLPOINTER)baseDate, strlen(baseDate), NULL));
 
@@ -301,7 +309,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         sprintf(tableName, "[%s].[dbo].[SpatialEntityBases]", m_dbName);
         FetchTableIdentity(entityId, tableName, len);
 
-        CHAR spatialDataSourceQuery[512];
+        CHAR* spatialDataSourceQuery;
+        spatialDataSourceQuery = new CHAR[512];
         sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [DataSourceType], [NoDataValue], [FileSize], [Server_Id]) VALUES ('%s', 'tif', 0, %f, %d)",
             m_dbName,
             data.GetUrl().c_str(),
@@ -317,7 +326,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         ReleaseStmt();
 
-        CHAR entityQuery[255];
+        CHAR* entityQuery;
+        entityQuery = new CHAR[255];
         sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id], [Occlusion]) VALUES (%d, %f)",
             m_dbName,
             entityId,
@@ -325,7 +335,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         ExecuteSQL(entityQuery);
         ReleaseStmt();
 
-        CHAR existingSourceQuery[512];
+        CHAR* existingSourceQuery;
+        existingSourceQuery = new CHAR[512];
         sprintf(existingSourceQuery, "INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
             m_dbName,
             entityId,
@@ -334,7 +345,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         ExecuteSQL(existingSourceQuery);
         ReleaseStmt();
 
-        CHAR multiBQuery[1000];
+        CHAR* multiBQuery;
+        multiBQuery = new CHAR[1000];
         sprintf(multiBQuery, "INSERT INTO [%s].[dbo].[MultibandSources] ([Id], [OriginalId], [RedBandURL], [RedBandFileSize], [GreenBandURL], [GreenBandFileSize], [BlueBandURL], [BlueBandFileSize], [PanchromaticBandURL], [PanchromaticBandFileSize]) VALUES ( %d, '%s', '%s', %f, '%s', %f, '%s', %f, '%s', %f)",
             m_dbName,
             dataSourceId,
@@ -354,14 +366,16 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
     }
     else
     {
-        CHAR preQuery[512];
+        CHAR* preQuery;
+        preQuery = new CHAR[512];
         sprintf(preQuery, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, data.GetUrl().c_str());
         if (HasEntries(preQuery))
             return;
 
         SpatialEntityMetadataCR metadata = data.GetMetadata();
 
-        CHAR metadataQuery[2048];
+        CHAR* metadataQuery;
+        metadataQuery = new CHAR[2048];
         sprintf(metadataQuery, "INSERT INTO [%s].[dbo].[Metadatas] ([Provenance],[Description],[ContactInformation],[Legal],[RawMetadataFormat],[RawMetadata]) VALUES ('%s', '%s', '%s', '%s', '%s', '')",
             m_dbName,
             metadata.GetProvenance().c_str(),
@@ -375,7 +389,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         SQLINTEGER metadataId;
         SQLLEN len;
 
-        CHAR tableName[128];
+        CHAR* tableName;
+        tableName = new CHAR[128];
         sprintf(tableName, "[%s].[dbo].[Metadatas]", m_dbName);
 
         FetchTableIdentity(metadataId, tableName, len);
@@ -386,7 +401,7 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         const bvector<Byte>& thumbnailBytes = thumbnail.GetData();
         size_t size = thumbnailBytes.size();
-        SQLINTEGER thumbnailId;
+        SQLINTEGER thumbnailId = 0;
         bool thumbnailPresent = false;
         if (0 != size)
         {
@@ -395,7 +410,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
             for (int i = 0; i < size; ++i)
                 dataArray[i] = thumbnailBytes[i];
 
-            CHAR thumbnailQuery[1000000];
+            CHAR* thumbnailQuery;
+            thumbnailQuery = new CHAR[1000000];
             sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailWidth], [ThumbnailHeight], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailData]) VALUES ('%s', '%s', %d, %d, '%ls', '%s', ?)",
                 m_dbName,
                 thumbnail.GetProvenance().c_str(),
@@ -417,12 +433,15 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
             sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
             FetchTableIdentity(thumbnailId, tableName, len);
+
+            delete[] thumbnailQuery;
         }
 
         SpatialEntityServerCR server = data.GetServer();
         Utf8StringCR url = server.GetUrl();
         SQLINTEGER serverId;
-        CHAR serverCheckQuery[512];
+        CHAR* serverCheckQuery;
+        serverCheckQuery = new CHAR[512];
         sprintf(serverCheckQuery, "SELECT [Id] FROM [%s].[dbo].[Servers] WHERE [URL] = '%s'", m_dbName, url.c_str());
         retCode = ExecuteSQL(serverCheckQuery);
         if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
@@ -435,7 +454,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         if (retCode != SQL_SUCCESS)
         {
-            CHAR serverQuery[1024];
+            CHAR* serverQuery;
+            serverQuery = new CHAR[1024];
             sprintf(serverQuery, "INSERT INTO [%s].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [ServerContactInformation], [Legal], [Online], [LastCheck], [LastTimeOnLine], [Latency], [State], [Type], [MeanReachabilityStats]) VALUES ('%s', '%s', '%s', '%s', '%s', %d, ?, ?, %f, '%s', '%s', 0)",
                 m_dbName,
                 server.GetProtocol().c_str(),
@@ -462,7 +482,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
             FetchTableIdentity(serverId, tableName, len);
         }
 
-        CHAR existingEntityBaseQuery[512];
+        CHAR* existingEntityBaseQuery;
+        existingEntityBaseQuery = new CHAR[512];
         sprintf(existingEntityBaseQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialEntityBases] WHERE [Name] = '%s'", m_dbName, data.GetName().c_str());
         retCode = ExecuteSQL(existingEntityBaseQuery);
         bool hasExisting = false;
@@ -481,7 +502,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         double yMin = std::min(Fpt.low.y, Fpt.high.y);
         double yMax = std::max(Fpt.low.y, Fpt.high.y);
 
-        CHAR entityBaseQuery[3000];
+        CHAR* entityBaseQuery;
+        entityBaseQuery = new CHAR[3000];
         if (thumbnailPresent)
             sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Dataset], [Classification], [Footprint], [MinX], [MinY], [MaxX], [MaxY], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable]) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), %f, %f, %f, %f, ?, %d, %d, '%s')",
                 m_dbName,
@@ -529,7 +551,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         yMax = std::max(Fpt[i].y, yMax);
         }*/
 
-        char polygon[2000];
+        char* polygon;
+        polygon = new char[2000];
         sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
         retCode = SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
 
@@ -549,7 +572,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         }
 
         SQLINTEGER dataSize = (int)data.GetSize();
-        CHAR spatialDataSourceQuery[512];
+        CHAR* spatialDataSourceQuery;
+        spatialDataSourceQuery = new CHAR[512];
         if (data.GetGeoCS().size() == 0)
             sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [CompoundType], [FileSize], [DataSourceType], [LocationInCompound], [Server_Id]) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
                 m_dbName,
@@ -581,12 +605,14 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
 
         if (dualMode && hasExisting)
         {
-            CHAR existingEntityQuery[512];
+            CHAR* existingEntityQuery;
+            existingEntityQuery = new CHAR[512];
             sprintf(existingEntityQuery, "SELECT * FROM [%s].[dbo].[SpatialEntities] WHERE [Id] = %d", m_dbName, entityId);
 
             if (HasEntries(existingEntityQuery))
             {
-                CHAR existingSourceQuery[512];
+                CHAR* existingSourceQuery;
+                existingSourceQuery = new CHAR[512];
                 sprintf(existingSourceQuery, "INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
                     m_dbName,
                     entityId,
@@ -598,7 +624,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         }
         else
         {
-            CHAR entityQuery[255];
+            CHAR* entityQuery;
+            entityQuery = new CHAR[255];
             sprintf(entityQuery, "IF NOT EXISTS(SELECT * FROM [%s].[dbo].[SpatialEntities] WHERE [Id] = %d) INSERT INTO [%s].[dbo].[SpatialEntities] ([Id]) VALUES (%d)",
                 m_dbName,
                 entityId,
@@ -607,7 +634,8 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
             ExecuteSQL(entityQuery);
             ReleaseStmt();
 
-            CHAR existingSourceQuery[512];
+            CHAR* existingSourceQuery;
+            existingSourceQuery = new CHAR[512];
             sprintf(existingSourceQuery, "IF NOT EXISTS(SELECT * FROM [%s].[dbo].[SpatialEntitySpatialDataSources] WHERE [SpatialEntity_Id] = %d AND [SpatialDataSource_Id] = %d) INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
                 m_dbName,
                 entityId,

@@ -12,7 +12,6 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/SpatialEntityData.h>
 
-
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=======================================================================================
