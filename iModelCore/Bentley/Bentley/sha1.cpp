@@ -176,10 +176,14 @@ void SHA1::Add(const void* data, size_t numBytes)
   {
     while (numBytes > 0 && m_bufferSize < BlockSize)
     {
+#ifdef MSVC
 #pragma warning (push)
 #pragma warning (disable:6386) // Static analysis thinks that m_bufferSize can exceed the array bounds, but I don't see how that's possible...
+#endif
       m_buffer[m_bufferSize++] = *current++;
+#ifdef MSVC
 #pragma warning (pop)
+#endif
       numBytes--;
     }
   }
@@ -208,11 +212,15 @@ void SHA1::Add(const void* data, size_t numBytes)
   // keep remaining bytes in buffer
   while (numBytes > 0)
   {
+#ifdef MSVC
 #pragma warning (push)
 #pragma warning (disable:6386) // Static analysis thinks that m_bufferSize can exceed the array bounds, but I don't see how that's possible...
+#endif
     m_buffer[m_bufferSize++] = *current++;
+#ifdef MSVC
 #pragma warning (pop)
     numBytes--;
+#endif
   }
 }
 
