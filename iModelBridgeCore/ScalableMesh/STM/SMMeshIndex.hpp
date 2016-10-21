@@ -2793,36 +2793,36 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Import
         auto meshP = sourceNode->GetMesh(flags);
         m_nodeHeader.m_isTextured = sourceNode->IsTextured();
 
-    bvector<DPoint3d> vertices(meshP->GetPolyfaceQuery()->GetPointCount());
-    if (!vertices.empty()) memcpy(vertices.data(), meshP->GetPolyfaceQuery()->GetPointCP(), vertices.size()* sizeof(DPoint3d));
-    bvector<int32_t> ptsIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
-    if (!ptsIndices.empty()) memcpy(ptsIndices.data(), meshP->GetPolyfaceQuery()->GetPointIndexCP(), ptsIndices.size()* sizeof(int32_t));
+        bvector<DPoint3d> vertices(meshP->GetPolyfaceQuery()->GetPointCount());
+        if (!vertices.empty()) memcpy(vertices.data(), meshP->GetPolyfaceQuery()->GetPointCP(), vertices.size()* sizeof(DPoint3d));
+        bvector<int32_t> ptsIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
+        if (!ptsIndices.empty()) memcpy(ptsIndices.data(), meshP->GetPolyfaceQuery()->GetPointIndexCP(), ptsIndices.size()* sizeof(int32_t));
 
-    bvector<DPoint2d> uv(meshP->GetPolyfaceQuery()->GetParamCount());
-    if (!uv.empty()) memcpy(uv.data(), meshP->GetPolyfaceQuery()->GetParamCP(), uv.size()* sizeof(DPoint2d));
-    bvector<int32_t> uvIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
-    if (!uvIndices.empty()) memcpy(uvIndices.data(), meshP->GetPolyfaceQuery()->GetParamIndexCP(), uvIndices.size()* sizeof(int32_t));
+        bvector<DPoint2d> uv(meshP->GetPolyfaceQuery()->GetParamCount());
+        if (!uv.empty()) memcpy(uv.data(), meshP->GetPolyfaceQuery()->GetParamCP(), uv.size()* sizeof(DPoint2d));
+        bvector<int32_t> uvIndices(meshP->GetPolyfaceQuery()->GetPointIndexCount());
+        if (!uvIndices.empty()) memcpy(uvIndices.data(), meshP->GetPolyfaceQuery()->GetParamIndexCP(), uvIndices.size()* sizeof(int32_t));
 
-    size_t nIndicesCount = 0;
-    vector<POINT> nodePts(vertices.size());
+        size_t nIndicesCount = 0;
+        vector<POINT> nodePts(vertices.size());
 
-    for (size_t pointInd = 0; pointInd < vertices.size(); pointInd++)
-        {
-        nodePts[pointInd].x = vertices[pointInd].x;
-        nodePts[pointInd].y = vertices[pointInd].y;
-        nodePts[pointInd].z = vertices[pointInd].z;
-        }
+        for (size_t pointInd = 0; pointInd < vertices.size(); pointInd++)
+            {
+            nodePts[pointInd].x = vertices[pointInd].x;
+            nodePts[pointInd].y = vertices[pointInd].y;
+            nodePts[pointInd].z = vertices[pointInd].z;
+            }
 
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-    pointsPtr->push_back(&nodePts[0], nodePts.size());
-    if(!uv.empty()) PushUV(&uv[0], uv.size());
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+        pointsPtr->push_back(&nodePts[0], nodePts.size());
+        if (!uv.empty()) PushUV(&uv[0], uv.size());
 
-    vector<int32_t> indicesLine;
+        vector<int32_t> indicesLine;
 
-   
-    nIndicesCount += ptsIndices.size();
-    PushPtsIndices(&ptsIndices[0], ptsIndices.size());
-    indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
+
+        nIndicesCount += ptsIndices.size();
+        PushPtsIndices(&ptsIndices[0], ptsIndices.size());
+        indicesLine.insert(indicesLine.end(), ptsIndices.begin(), ptsIndices.end());
 
         if (!uvIndices.empty()) PushUVsIndices(0, &uvIndices[0], uvIndices.size());
         m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
@@ -4031,7 +4031,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
-    bool shouldBuildSkirts = false;
+
     int nCoverages = 0;
     int nSkirts = 0;
     for (const auto& diffSet : *diffsetPtr)
