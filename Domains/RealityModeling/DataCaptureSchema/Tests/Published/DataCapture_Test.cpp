@@ -191,3 +191,170 @@ TEST_F(DataCaptureTests, DeleteCamera)
     DgnElementId deletedCameraId = Camera::QueryForIdByLabel(*projectReopenedPtr, "BasicCamera1");
     ASSERT_FALSE(deletedCameraId.IsValid());
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, CreatePhoto)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Create Photo
+    SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+    auto PhotoPtr = Photo::Create(*spatialModelP);
+    ASSERT_TRUE(PhotoPtr.IsValid());
+
+    //Change Photo properties
+    PhotoPtr->SetLabel("BasicPhoto1");
+    RotationMatrixType rotation(RotationMatrixType::FromIdentity());
+    DPoint3d center = {1.0,2.0,3.0};
+    PoseType pose(center,rotation);
+    PhotoPtr->SetPose(pose);
+    PhotoPtr->SetPhotoId(42);
+
+    //Insert Photo element
+    auto PhotoInsertedPtr = PhotoPtr->Insert();
+    ASSERT_TRUE(PhotoInsertedPtr.IsValid());
+    PhotoElementId PhotoElementId = PhotoInsertedPtr->GetId();
+    ASSERT_TRUE(PhotoElementId.IsValid());
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicPhoto");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
+
+    //Close project to flush memory
+    PhotoPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    PhotoInsertedPtr=nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(PhotoElementId).IsValid());
+    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoElementId);
+    ASSERT_TRUE(myPhotoPtr.IsValid());
+    ASSERT_EQ(PhotoElementId, myPhotoPtr->GetElementId());
+
+    //read back Photo properties and check if equal
+    ASSERT_DOUBLE_EQ(myPhotoPtr->GetPhotoId(),42);
+    ASSERT_TRUE(pose.IsEqual(myPhotoPtr->GetPose()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, ModifyPhoto)
+    {
+    DgnDbPtr projectPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Query Photo element
+    DgnElementId PhotoId  = Photo::QueryForIdByLabel(*projectPtr,"BasicPhoto1");
+    ASSERT_TRUE(PhotoId.IsValid());
+    PhotoPtr PhotoPtr = Photo::GetForEdit(*projectPtr, PhotoId);
+    ASSERT_TRUE(PhotoPtr.IsValid());
+
+    //Change Photo properties
+    RotationMatrixType rotation(RotationMatrixType::FromRowValues(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0));
+    DPoint3d center = { 10.0,11.0,12.0 };
+    PoseType pose(center, rotation);
+    PhotoPtr->SetPose(pose);
+    PhotoPtr->SetPhotoId(5);
+
+    //Update Photo element
+    auto PhotoUpdatedPtr = PhotoPtr->Update();
+    ASSERT_TRUE(PhotoUpdatedPtr.IsValid());
+
+    PhotoElementId PhotoUpdatedId = PhotoUpdatedPtr->GetId();
+    ASSERT_TRUE(PhotoUpdatedId.IsValid());
+    //Updating don't change id...
+    ASSERT_TRUE(PhotoUpdatedId == PhotoId);
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicPhoto");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
+
+    //Close project to flush memory
+    PhotoPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    PhotoUpdatedPtr= nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(PhotoId).IsValid());
+    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoId);
+    ASSERT_TRUE(myPhotoPtr.IsValid());
+    ASSERT_EQ(PhotoId, myPhotoPtr->GetElementId());
+
+    //read back Photo properties and check if equal
+    ASSERT_DOUBLE_EQ(myPhotoPtr->GetPhotoId(), 5);
+    ASSERT_TRUE(pose.IsEqual(myPhotoPtr->GetPose()));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, DeletePhoto)
+    {
+    DgnDbPtr projectPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+
+    // Query Photo element
+    DgnElementId PhotoId  = Photo::QueryForIdByLabel(*projectPtr,"BasicPhoto1");
+    ASSERT_TRUE(PhotoId.IsValid());
+
+    //Delete edited Photo element - You CANNOT delete an edited Photo element because you get a copy of the original ...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    PhotoCPtr PhotoEditedPtr = Photo::GetForEdit(*projectPtr, PhotoId);
+    ASSERT_TRUE(PhotoEditedPtr.IsValid());
+    DgnDbStatus status = PhotoEditedPtr->Delete();
+    ASSERT_FALSE(status==DgnDbStatus::Success);
+
+    //Delete Photo element - You CAN delete a const Photo element because this is effectively the original element...
+    //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    PhotoCPtr PhotoPtr = Photo::Get(*projectPtr, PhotoId);
+    ASSERT_TRUE(PhotoPtr.IsValid());
+    status = PhotoPtr->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicPhoto");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
+
+    //Close project to flush memory
+    PhotoPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    PhotoEditedPtr=nullptr;
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"PhotoPlanningTest.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    //Check that PhotoId is not accessible anymore 
+    ASSERT_FALSE(projectReopenedPtr->Elements().GetElement(PhotoId).IsValid());
+    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoId);
+    ASSERT_FALSE(myPhotoPtr.IsValid());
+
+    // Check that query Photo element returns nothing
+    DgnElementId deletedPhotoId = Photo::QueryForIdByLabel(*projectReopenedPtr, "BasicPhoto1");
+    ASSERT_FALSE(deletedPhotoId.IsValid());
+    }
+

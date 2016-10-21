@@ -41,10 +41,10 @@ public:
 
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, RotationMatrixTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    static RotationMatrixType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
+    static RotationMatrixType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
     };
 
 //=======================================================================================
@@ -59,41 +59,30 @@ private:
 
 public:
     //! Constructor
-    PoseType(DPoint3dCR center, RotationMatrixTypeCR rotation) :m_center(center), m_rotation(rotation) {}
+    DATACAPTURE_EXPORT PoseType(DPoint3dCR center, RotationMatrixTypeCR rotation);
 
     //! Empty constructor (creates an invalid ImageDimensionType)
-    PoseType() {}
+    DATACAPTURE_EXPORT PoseType();
 
     //! Copy constructor
-    PoseType(PoseTypeCR rhs) { *this = rhs; }
+    DATACAPTURE_EXPORT PoseType(PoseTypeCR rhs);
 
     //! Assignment operator
-    PoseType& operator= (PoseTypeCR rhs)
-        {
-        m_center = rhs.m_center;
-        m_rotation = rhs.m_rotation;
-        return *this;
-        }
-
+    DATACAPTURE_EXPORT PoseType& operator= (PoseTypeCR rhs);
 
     //! Validates 
-    bool IsEqual(PoseTypeCR rhs) const
-        {
-        if (m_rotation.IsEqual(rhs.m_rotation) && m_center.IsEqual(rhs.m_center))
-            return true;
-        return false;
-        }
+    DATACAPTURE_EXPORT bool IsEqual(PoseTypeCR rhs) const;
 
-    DPoint3d            GetCenter() const   { return m_center; }
-    RotationMatrixType  GetRotation() const { return m_rotation; }
-    void SetCenter(DPoint3dCR val)          { m_center = val; }
-    void SetRotation(RotationMatrixTypeCR val) { m_rotation = val; }
+    DATACAPTURE_EXPORT DPoint3d            GetCenter() const;
+    DATACAPTURE_EXPORT RotationMatrixType  GetRotation() const;
+    DATACAPTURE_EXPORT void SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT void SetRotation(RotationMatrixTypeCR val);
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, PoseTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, PoseTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    static PoseType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
+    static PoseType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
     };
 
 
@@ -154,13 +143,13 @@ public:
     //! @return Id of the Photo or invalid Id if an Photo was not found
     DATACAPTURE_EXPORT static PhotoElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
-    //! Get the id of this Photo
-    PhotoElementId GetId() const { return PhotoElementId(GetElementId().GetValueUnchecked()); }
+    //! Get the id of this Photo element
+    DATACAPTURE_EXPORT PhotoElementId GetId() const;
 
-    int         GetPhotoId() const  { return m_photoId; }
-    PoseType    GetPose() const     { return m_pose; }
-    void        SetPhotoId(int val)  { m_photoId = val; }
-    void        SetPose(PoseTypeCR val)  { m_pose = val; }
+    DATACAPTURE_EXPORT int         GetPhotoId() const;
+    DATACAPTURE_EXPORT PoseType    GetPose() const;
+    DATACAPTURE_EXPORT void        SetPhotoId(int val);
+    DATACAPTURE_EXPORT void        SetPose(PoseTypeCR val);
    
 };
 

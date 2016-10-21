@@ -159,6 +159,23 @@ CameraPtr Camera::Create(Dgn::SpatialModelR model)
     return cp;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CameraElementId         Camera::GetId() const { return CameraElementId(GetElementId().GetValueUnchecked()); }
+double                  Camera::GetFocalLenghtPixels() const { return m_focalLenghtPixels; }
+ImageDimensionType      Camera::GetImageDimension() const { return m_imageDimension; }
+DPoint2d                Camera::GetPrincipalPoint() const { return m_principalPoint; }
+CameraDistortionType    Camera::GetDistortion() const { return m_Distortion; }
+double                  Camera::GetAspectRatio() const { return m_aspectRatio; }
+double                  Camera::GetSkew() const { return m_skew; }
+void                    Camera::SetFocalLenghtPixels(double val) { m_focalLenghtPixels = val; }
+void                    Camera::SetImageDimension(ImageDimensionTypeCR val) { m_imageDimension = val; }
+void                    Camera::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
+void                    Camera::SetDistortion(CameraDistortionTypeCR val) { m_Distortion = val; }
+void                    Camera::SetAspectRatio(double val) { m_aspectRatio = val; }
+void                    Camera::SetSkew(double val) { m_skew = val; }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016

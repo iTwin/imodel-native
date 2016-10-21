@@ -187,21 +187,21 @@ public:
     DATACAPTURE_EXPORT static CameraElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
     //! Get the id of this Camera
-    CameraElementId GetId() const { return CameraElementId(GetElementId().GetValueUnchecked()); }
+    DATACAPTURE_EXPORT CameraElementId GetId() const;
 
     //Properties Get/Set
-    double                  GetFocalLenghtPixels() const        {return m_focalLenghtPixels; }
-    ImageDimensionType      GetImageDimension() const           {return m_imageDimension; }
-    DPoint2d                GetPrincipalPoint() const           {return m_principalPoint; }
-    CameraDistortionType    GetDistortion() const               {return m_Distortion;}
-    double                  GetAspectRatio() const              { return m_aspectRatio; }
-    double                  GetSkew() const                     { return m_skew; }
-    void                    SetFocalLenghtPixels(double val)    { m_focalLenghtPixels = val; }
-    void                    SetImageDimension(ImageDimensionTypeCR val) { m_imageDimension = val; }
-    void                    SetPrincipalPoint(DPoint2dCR val)           { m_principalPoint = val; }
-    void                    SetDistortion(CameraDistortionTypeCR val)   { m_Distortion = val; }
-    void                    SetAspectRatio(double val)                  { m_aspectRatio = val; }
-    void                    SetSkew(double val)                         { m_skew = val; }
+    DATACAPTURE_EXPORT double                  GetFocalLenghtPixels() const;
+    DATACAPTURE_EXPORT ImageDimensionType      GetImageDimension() const;
+    DATACAPTURE_EXPORT DPoint2d                GetPrincipalPoint() const;
+    DATACAPTURE_EXPORT CameraDistortionType    GetDistortion() const;
+    DATACAPTURE_EXPORT double                  GetAspectRatio() const;
+    DATACAPTURE_EXPORT double                  GetSkew() const;
+    DATACAPTURE_EXPORT void                    SetFocalLenghtPixels(double val);
+    DATACAPTURE_EXPORT void                    SetImageDimension(ImageDimensionTypeCR val);
+    DATACAPTURE_EXPORT void                    SetPrincipalPoint(DPoint2dCR val);
+    DATACAPTURE_EXPORT void                    SetDistortion(CameraDistortionTypeCR val);
+    DATACAPTURE_EXPORT void                    SetAspectRatio(double val);
+    DATACAPTURE_EXPORT void                    SetSkew(double val);
    
 };
 

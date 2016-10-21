@@ -29,9 +29,8 @@ HANDLER_DEFINE_MEMBERS(PhotoHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, RotationMatrixTypeCR val)
+BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(IECSqlStructBinder& binder, RotationMatrixTypeCR val)
     {
-    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
     if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_00).BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
         ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_01).BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
         ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_02).BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
@@ -50,16 +49,12 @@ BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(BeSQLite::EC::ECSqlS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RotationMatrixType RotationMatrixType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex)
+RotationMatrixType RotationMatrixType::GetValue(IECSqlStructValue const& structValue)
     {
-    if (statement.IsValueNull(columnIndex))
-        return RotationMatrixType();
-
     RotationMatrixType rotation;
-    IECSqlStructValue const& rotationValue = statement.GetValueStruct(columnIndex);
-    for (int ii = 0; ii < rotationValue.GetMemberCount(); ii++)
+    for (int ii = 0; ii < structValue.GetMemberCount(); ii++)
         {
-        IECSqlValue const& memberValue = rotationValue.GetValue(ii);
+        IECSqlValue const& memberValue = structValue.GetValue(ii);
         ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
         BeAssert(memberProperty != nullptr);
         Utf8CP memberName = memberProperty->GetName().c_str();
@@ -91,11 +86,54 @@ RotationMatrixType RotationMatrixType::GetValue(BeSQLite::EC::ECSqlStatement con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECSqlStatus PoseType::BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, PoseTypeCR val)
+PoseType::PoseType(DPoint3dCR center, RotationMatrixTypeCR rotation) :m_center(center), m_rotation(rotation) {}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PoseType::PoseType():m_rotation(RotationMatrixType::FromIdentity())
     {
-    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
+    m_center = {0.0,0.0,0.0};
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PoseType::PoseType(PoseTypeCR rhs) { *this = rhs; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PoseTypeR PoseType::operator= (PoseTypeCR rhs)
+    {
+    m_center = rhs.m_center;
+    m_rotation = rhs.m_rotation;
+    return *this;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PoseType::IsEqual(PoseTypeCR rhs) const
+    {
+    if (m_rotation.IsEqual(rhs.m_rotation) && m_center.IsEqual(rhs.m_center))
+        return true;
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d            PoseType::GetCenter() const { return m_center; }
+RotationMatrixType  PoseType::GetRotation() const { return m_rotation; }
+void                PoseType::SetCenter(DPoint3dCR val) { m_center = val; }
+void                PoseType::SetRotation(RotationMatrixTypeCR val) { m_rotation = val; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECSqlStatus PoseType::BindParameter(IECSqlStructBinder& binder, PoseTypeCR val)
+    {
     if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
-        ECSqlStatus::Success != RotationMatrixType::BindParameter(statement, statement.GetParameterIndex(Photo_PROPNAME_Pose_Rotation), val.GetRotation()))
+        ECSqlStatus::Success != RotationMatrixType::BindParameter(binder.GetMember(Photo_PROPNAME_Pose_Rotation).BindStruct(), val.GetRotation()))
         {
         return ECSqlStatus::Error;
         }
@@ -105,13 +143,9 @@ BeSQLite::EC::ECSqlStatus PoseType::BindParameter(BeSQLite::EC::ECSqlStatement& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PoseType PoseType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex)
+PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
     {
-    if (statement.IsValueNull(columnIndex))
-        return PoseType();
-
     PoseType pose;
-    IECSqlStructValue const& structValue = statement.GetValueStruct(columnIndex);
     for (int ii = 0; ii < structValue.GetMemberCount(); ii++)
         {
         IECSqlValue const& memberValue = structValue.GetValue(ii);
@@ -120,11 +154,18 @@ PoseType PoseType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint3
         Utf8CP memberName = memberProperty->GetName().c_str();
 
         if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Center, memberName))
+            {
             pose.SetCenter(memberValue.GetPoint3D());
+            }
         else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation, memberName))
-            pose.SetRotation(RotationMatrixType::GetValue(statement,columnIndex));
+            {
+            IECSqlStructValue const& rotationStructValue = memberValue.GetStruct();
+            pose.SetRotation(RotationMatrixType::GetValue(rotationStructValue));
+            }
         else
+            {
             BeAssert(false);
+            }
         }
     return pose;
     }
@@ -156,10 +197,21 @@ PhotoPtr Photo::Create(Dgn::SpatialModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+PhotoElementId  Photo::GetId() const { return PhotoElementId(GetElementId().GetValueUnchecked()); }
+int             Photo::GetPhotoId() const { return m_photoId; }
+PoseType        Photo::GetPose() const { return m_pose; }
+void            Photo::SetPhotoId(int val) { m_photoId = val; }
+void            Photo::SetPose(PoseTypeCR val) { m_pose = val; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
+    IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex(Photo_PROPNAME_Pose));
     if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Photo_PROPNAME_PhotoId), GetPhotoId()) ||
-        ECSqlStatus::Success != PoseType::BindParameter(statement, statement.GetParameterIndex(Photo_PROPNAME_Pose),GetPose()) )
+        ECSqlStatus::Success != PoseType::BindParameter(structBinder ,GetPose()) )
         {
         return DgnDbStatus::BadArg;
         }
@@ -198,7 +250,10 @@ DgnDbStatus Photo::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams cons
         {
         //read Photo properties
         SetPhotoId (stmt.GetValueInt(params.GetSelectIndex(Photo_PROPNAME_PhotoId)));
-        SetPose(PoseType::GetValue(stmt, params.GetSelectIndex(Photo_PROPNAME_Pose)));
+
+        int poseIndex = params.GetSelectIndex(Photo_PROPNAME_Pose);
+        IECSqlStructValue const& structValue = stmt.GetValueStruct(poseIndex);
+        SetPose(PoseType::GetValue(structValue));
         }
 
     return status;

@@ -57,6 +57,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
 
     <ECEntityClass typeName="Photo" description="Photo taken by a camera at a position and orientation.">
         <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
         <ECProperty         propertyName="PhotoId"   typeName="int"      displayLabel="Id"/>
         <ECStructProperty   propertyName="Pose"      typeName="PoseType" displayLabel="Pose"/> 
     </ECEntityClass>

@@ -16,6 +16,7 @@ DOMAIN_DEFINE_MEMBERS(DataCaptureDomain)
 DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley DataCapture Domain", 1)
     {
     RegisterHandler(CameraHandler::GetHandler());    
+    RegisterHandler(PhotoHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -26,5 +27,8 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     DgnCategory cameraCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Camera, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
     cameraCategory.Insert(DgnSubCategory::Appearance());
     BeAssert(cameraCategory.GetCategoryId().IsValid());
+    DgnCategory photoCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Photo, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    photoCategory.Insert(DgnSubCategory::Appearance());
+    BeAssert(photoCategory.GetCategoryId().IsValid());
     }
 
