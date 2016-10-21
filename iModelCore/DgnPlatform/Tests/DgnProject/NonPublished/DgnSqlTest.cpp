@@ -845,15 +845,19 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, bbox_union)
     {
-    DgnDbTestDgnManager tdm(L"04_Plant.i.idgndb", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
-    DgnDbP dgndb = tdm.GetDgnProjectP();
+    SetupProject(L"bbox_union.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0, 0, 0), 0.0, CreateCode("Robot1"));
+    InsertElement(*robot1);
+    m_db->SaveChanges();
 
     Statement stmt;
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
-    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
-                    " AS g WHERE e.ModelId=3 AND e.id=g.ElementId");
+    SqlPrintfString str = SqlPrintfString("SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
+                    " AS g WHERE e.ModelId=%llu AND e.id=g.ElementId", m_defaultModelId);
+
+    stmt.Prepare(*m_db, str.GetUtf8CP());
     //__PUBLISH_EXTRACT_END__
     auto rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);
@@ -883,7 +887,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
 #else
     int count = 0;
 #endif
-    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
+    stmt.Prepare(*m_db, "SELECT count(*) FROM "
                          DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE g.Roll < 90");
 
     rc = stmt.Step();
