@@ -88,7 +88,7 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
         Utf8String out;
-        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, 3));
+        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, ECVersion::V3_1));
 
         ECSchemaPtr schemaCopy;
         if (useFreshReadContext)

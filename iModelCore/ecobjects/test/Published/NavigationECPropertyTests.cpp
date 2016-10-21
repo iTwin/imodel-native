@@ -42,7 +42,7 @@ void ValidateDeserializedNavProp(ECSchemaPtr deserializedSchema, NavigationECPro
 void ValidateRoundTripEC3Serialization(ECSchemaPtr schema, bvector<NavigationECPropertyCP> expectedNavProps)
     {
     Utf8String schemaString;
-    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, 3, 0);
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, ECVersion::V3_0);
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema with navigation property";
 
     ECSchemaPtr deserializedSchema;
@@ -191,7 +191,7 @@ TEST_F(NavigationECPropertyTests, InvalidXml)
     CreateNavProp(targetClass, "MySource", *relClass, ECRelatedInstanceDirection::Backward, navPropTarget);
 
     Utf8String schemaString;
-    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, 3, 0);
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, ECVersion::V3_0);
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema with navigation property";
 
     Utf8String invalidSchemaString = schemaString.copy();
@@ -238,7 +238,7 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     CreateNavProp(targetClass, "MySource", *relClass, ECRelatedInstanceDirection::Backward, navPropTarget);
 
     Utf8String schemaString;
-    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, 2, 0);
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, ECVersion::V2_0);
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema to ECXml 2.0 with navigation property";
 
     ASSERT_FALSE(schemaString.Contains("ECNavigationProperty")) << "Schema serialized as ECXml 2.0 has navigation property when it should have a normal property";

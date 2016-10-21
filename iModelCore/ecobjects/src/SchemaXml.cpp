@@ -139,7 +139,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             }
 
         Utf8String alias;
-        if (schemaOut->GetOriginalECXmlVersionMajor() >= 3 && schemaOut->GetOriginalECXmlVersionMinor() >= 1)
+        if ((schemaOut->GetOriginalECXmlVersionMajor() == 3 && schemaOut->GetOriginalECXmlVersionMinor() >= 1) || schemaOut->GetOriginalECXmlVersionMajor() > 3)
             {
             if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE))
                 {
@@ -328,16 +328,8 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-    //for (classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
-    //    {
-    //    ecClass = classesIterator->first;
-    //    if (ecClass->IsRelationshipClass())
-    //        {
-    //        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-    //        if (!relClass->IsValid())
-    //            return SchemaReadStatus::InvalidECSchemaXml;
-    //        }
-    //    }
+    if (!schemaOut->Validate(true))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     return status;
     }
@@ -865,7 +857,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     Utf8String alias; 
     // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
-    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
+    if ((ecXmlMajorVersion == 3 && ecXmlMinorVersion >= 1) || ecXmlMajorVersion > 3)
         {
         if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
             {
@@ -978,7 +970,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor, int ecXmlVersionMinor) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersionMajor(ecXmlVersionMajor), m_ecXmlVersionMinor(ecXmlVersionMinor)
+SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersion(ecXmlVersion)
     {
     }
 
@@ -996,7 +988,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
-        if (m_ecXmlVersionMajor == 2)
+        if (ECVersion::V2_0 == m_ecXmlVersion)
             {
             m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetLegacyVersionString().c_str());
             }
@@ -1006,7 +998,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
             }
 
         const Utf8String alias = mapPair.second;
-        if (m_ecXmlVersionMajor >= 3 && m_ecXmlVersionMinor >= 1)
+        if (m_ecXmlVersion >= ECVersion::V3_1)
             {
             m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, alias.c_str());
             }
@@ -1078,7 +1070,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
     WritePropertyDependencies(ecClass);
     WriteCustomAttributeDependencies(ecClass);
 
-    return ecClass._WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    return ecClass._WriteXml(m_xmlWriter, m_ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1092,7 +1084,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteEnumeration(ECEnumerationCR ecEnumeratio
         return status;
 
     //WriteCustomAttributeDependencies(ecEnumeration);
-    return ecEnumeration.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    return ecEnumeration.WriteXml(m_xmlWriter, m_ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1106,7 +1098,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQu
         return status;
 
     //WriteCustomAttributeDependencies(ecEnumeration);
-    return kindOfQuantity.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    return kindOfQuantity.WriteXml(m_xmlWriter, m_ecXmlVersion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,17 +1130,25 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
+    // Checks to make sure the schema is not of a lower version than it's to be written to.
+    if (m_ecSchema.GetECVersion() < m_ecXmlVersion)
+        {
+        LOG.errorv("Schema Serialization Violation: The ECVersion %s provided is higher than the ECVersion of the schema, %s.",
+                   ECSchema::GetECVersionString(m_ecXmlVersion), ECSchema::GetECVersionString(m_ecSchema.GetECVersion()));
+        return SchemaWriteStatus::FailedToCreateXml;
+        }
+
     if (utf16)
         m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
     else
         m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
 
-    Utf8PrintfString ns("%s.%d.%d", ECXML_URI, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    Utf8PrintfString ns("%s.%s", ECXML_URI, ECSchema::GetECVersionString(m_ecXmlVersion));
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
     m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
 
-    if (m_ecXmlVersionMajor <= 3 && m_ecXmlVersionMinor == 0)
+    if (m_ecXmlVersion <= ECVersion::V3_0)
         {
         m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetAlias().c_str());
         m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetLegacyVersionString().c_str());

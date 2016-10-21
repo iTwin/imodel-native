@@ -260,7 +260,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ():m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap), m_originalECXmlVersionMajor(3), m_originalECXmlVersionMinor(1)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap)
     {};
 
 /*---------------------------------------------------------------------------------**//**
@@ -477,6 +477,46 @@ bool ECSchema::GetIsDisplayLabelDefined () const
     return m_hasExplicitDisplayLabel;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECVersion ECSchema::CreateECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion)
+    {
+    ECVersion ecVersion;
+    if (ecMajorVersion == 2 && ecMinorVersion == 0)
+        ecVersion = ECVersion::V2_0;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 0)
+        ecVersion = ECVersion::V3_0;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 1)
+        ecVersion = ECVersion::V3_1;
+    else
+        ecVersion = ECVersion::Unknown;
+
+    return ecVersion;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion)
+    {
+    ECVersion version;
+    if (ECVersion::Unknown == (version = CreateECVersion(ecMajorVersion, ecMinorVersion)))
+        return false;
+
+    return IsECVersion(version);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsECVersion(ECVersion ecVersion) const
+    {
+    if (ECVersion::Unknown == ecVersion)
+        return false;
+    return m_ecVersion == ecVersion;
+    }
+
 static Utf8CP s_standardSchemaNames[] =
     {
     "Bentley_Standard_CustomAttributes",
@@ -671,6 +711,108 @@ uint32_t ECSchema::GetOriginalECXmlVersionMinor
 ) const
     {
     return m_originalECXmlVersionMinor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECVersion ECSchema::GetECVersion
+(
+) const
+    {
+    return m_ecVersion;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion)
+    {
+    switch (ecVersion)
+        {
+        case ECVersion::V2_0:
+            ecVersionMajor = 2;
+            ecVersionMinor = 0;
+            break;
+        case ECVersion::V3_0:
+            ecVersionMajor = 3;
+            ecVersionMinor = 0;
+            break;
+        case ECVersion::V3_1:
+            ecVersionMajor = 3;
+            ecVersionMinor = 1;
+            break;
+        default:
+            ECObjectsStatus::InvalidECVersion;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
+    {
+    Utf8String versionString;
+    uint32_t ecVersionMajor;
+    uint32_t ecVersionMinor;
+
+    if (ECObjectsStatus::Success != ParseECVersion(ecVersionMajor, ecVersionMinor, ecVersion))
+        return versionString.c_str();
+
+    versionString.Sprintf("%d.%d", ecVersionMajor, ecVersionMinor);
+    return versionString.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::Validate()
+    {
+    return Validate(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::Validate(bool resolveIssues)
+    {
+    if (GetClassCount() == 0)
+        return true;
+
+    bool isValid = true;
+    for (ECClassP ecClass : GetClasses())
+        {
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (relClass == nullptr)
+            continue;
+
+        // Will validate against the EC3.1 rules.
+        if (!relClass->IsValid(resolveIssues))
+            isValid = false;
+        }
+
+    if (!isValid)
+        {
+        // If the validation fails and the schema is read from an ECXML 3.1 or greater, fail to validate.
+        if ((m_originalECXmlVersionMajor == 3 && m_originalECXmlVersionMinor >= 1) || m_originalECXmlVersionMajor > 3)
+            return false;
+
+        if (!IsECVersion(ECVersion::V3_0))
+            {
+            LOG.warningv("ECSchemaXML did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0");
+
+            // Failed to validate for a 3.1 schema. Downgraded to a 3.0 schema in memory.
+            m_ecVersion = ECVersion::V3_0;
+            }
+        else
+            LOG.warningv("ECSchema did not pass EC3.1 validation.");
+        }
+    else
+        m_ecVersion = ECVersion::V3_1;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1216,11 +1358,34 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
     else
         return ECObjectsStatus::Success;
     }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+----//
+ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    switch (ecVersion)
+        {
+        case ECVersion::V2_0:
+        case ECVersion::V3_0:
+        case ECVersion::V3_1:
+            m_ecVersion = ecVersion;
+            status = ParseECVersion(m_originalECXmlVersionMajor, m_originalECXmlVersionMinor, ecVersion);
+            break;
+        case ECVersion::Unknown:
+        default:
+            return ECObjectsStatus::InvalidECVersion;
+        }
+
+    return status;
+    }
     
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, ECVersion ecVersion)
     {
     schemaOut = new ECSchema();
 
@@ -1230,7 +1395,8 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
         ECObjectsStatus::Success != (status = schemaOut->SetAlias(alias)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionWrite(versionWrite)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)))
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetECVersion (ecVersion)))
         {
         schemaOut = NULL;
         return status;
@@ -1249,7 +1415,7 @@ ECSchemaPtr& schemaOut
 ) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
-    status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionMajor(), GetVersionWrite(), GetVersionMinor());
+    status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionMajor(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -2158,14 +2324,14 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
@@ -2177,7 +2343,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, int ecXmlVer
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
 
@@ -2185,7 +2351,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, int ecXml
     xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
@@ -2197,13 +2363,13 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, int ecXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, int ecXmlVersionMajor, int ecXmlVersionMinor, bool utf16) const
+SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
     BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
     xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize(utf16)))
         return status;
 
@@ -2217,6 +2383,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, int ecXmlVer
 SchemaWriteStatus ECSchema::WriteToXmlStream
 (
 IStreamP ecSchemaXmlStream,
+ECVersion ecXmlVersion,
 bool     utf16
 )
     {

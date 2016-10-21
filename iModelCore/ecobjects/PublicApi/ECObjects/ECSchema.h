@@ -692,9 +692,9 @@ protected:
     ECObjectsStatus                     SetName (Utf8StringCR name);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
-    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
+    virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
 
     virtual bool                        _IsPrimitive () const { return false; }
@@ -897,7 +897,7 @@ protected:
     bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
 
     SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-    SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, int ecXmlVersionMajor) const;
+    SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const;
 
 public:
     //! Gets the extended type name of this ECProperty
@@ -931,12 +931,12 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
+    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
-    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
+    virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
@@ -972,7 +972,7 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
     virtual StructECPropertyP           _GetAsStructPropertyP()        override { return this; }
@@ -1018,7 +1018,7 @@ protected:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
+    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
@@ -1120,7 +1120,7 @@ protected:
 
 protected:
     virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
+    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     virtual bool                    _IsNavigation() const override { return true; }
     virtual NavigationECPropertyCP  _GetAsNavigationPropertyCP() const override { return this; }
@@ -1337,8 +1337,8 @@ protected:
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
 
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
 
@@ -1629,7 +1629,7 @@ friend struct SchemaXmlReaderImpl;
         ECObjectsStatus SetTypeName(Utf8CP typeName);
 
         SchemaReadStatus ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context);
-        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     public:
         //! The ECSchema that this enumeration is defined in
@@ -1788,7 +1788,7 @@ struct KindOfQuantity : NonCopyableClass
         void SetName(Utf8CP name);
 
         SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
-        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     public:
         //! The ECSchema that this kind of quantity is defined in
@@ -1870,7 +1870,7 @@ protected:
     ECEntityClass (ECSchemaCR schema);
     virtual ~ECEntityClass() {}
 
-    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
+    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
@@ -1910,7 +1910,7 @@ private:
 
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
@@ -1949,7 +1949,7 @@ private:
 
 
 protected:
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
@@ -2137,23 +2137,32 @@ private:
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipClassP        m_relClass;
     bool                        m_isSource;
+    ECEntityClassCP             m_abstractConstraint;
 
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
     ECObjectsStatus             _SetMultiplicity(Utf8CP multiplicity, bool validate = false);
+
+    ECObjectsStatus             _SetAbstractConstraint(Utf8StringCR value, bool validate = false);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
 
     ECObjectsStatus             _SetRoleLabel(Utf8StringCR value);
-    ECObjectsStatus             ValidateRoleLabel();
 
-    SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+    Utf8String const            _GetInvariantRoleLabel() const;
+
+    SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
+    bool                        IsValid(bool resolveIssues) ;
+    ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
+    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
+    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
+    ECObjectsStatus             ValidateRoleLabel() const;
     ECObjectsStatus             ValidateClassConstraint() const;
     ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint() const;
-    ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
+    ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
+    ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2168,7 +2177,7 @@ public:
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Return relationshipClass to which this constraint is associated
-    ECOBJECTS_EXPORT   ECRelationshipClassCR  GetRelationshipClass() const;
+    ECOBJECTS_EXPORT ECRelationshipClassCR      GetRelationshipClass() const;
     //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (Utf8StringCR value);
     //! Gets the label of the constraint role in the relationship.
@@ -2201,7 +2210,21 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(Utf8CP multiplicity);
 
     //! Gets the multiplicity of the constraint in the relationship
-    ECOBJECTS_EXPORT RelationshipMultiplicityCR  GetMultiplicity() const;
+    ECOBJECTS_EXPORT RelationshipMultiplicityCR GetMultiplicity() const;
+
+    //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
+    //! @param[in]  abstractConstraint String representation of an the full name of an ECEntityClass
+    //! @return     Success if the abstract constraint is parsed into a valid ECEntityClass
+    ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(Utf8StringCR abstractConstraint);
+    //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
+    //! @param[in] abstractConstraint representation of an the full name of an ECEntityClass
+    ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(ECEntityClassCR abstractConstraint);
+    //! Gets the abstract constraint class for this ECRelationshipConstraint. 
+    ECOBJECTS_EXPORT ECEntityClassCP const      GetAbstractConstraint() const;
+    //! Returns whether the AbstractConstraint Class has been set explicitly or inherited from a base constraint
+    ECOBJECTS_EXPORT bool                       IsAbstractConstraintDefined() const;
+    //! Returns whether the AbstractConstraint Class has been set explicitly and not inherited from a base constraint.
+    ECOBJECTS_EXPORT bool                       IsAbstractConstraintDefinedLocally() const;
 
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
@@ -2274,13 +2297,10 @@ private:
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
     
-    bool                                IsValid() const;
-    bool                                ValidateMultiplicityConstraint() const;
-    bool                                ValidateClassConstraint() const;
-    bool                                ValidateRoleLabels() const;
+    bool                                IsValid(bool resolveIssues) const;
 
 protected:
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
@@ -3083,6 +3103,8 @@ private:
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
 
+    ECVersion               m_ecVersion;
+
     uint32_t                m_originalECXmlVersionMajor;
     uint32_t                m_originalECXmlVersionMinor;
 
@@ -3115,11 +3137,14 @@ private:
     ECObjectsStatus                     AddKindOfQuantity(KindOfQuantityP valueToAdd);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
+    ECObjectsStatus                     SetECVersion(ECVersion ecVersion);
 
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
 
     ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
+
+    bool                                Validate(bool resolveIssues);
 
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -3166,7 +3191,6 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
     //! Sets the display label for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
-    //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
@@ -3187,6 +3211,8 @@ public:
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMajor() const;
     //! Gets the minor version of the original ECXml.
     ECOBJECTS_EXPORT uint32_t           GetOriginalECXmlVersionMinor() const;
+    //! Gets the EC Version of the schema.
+    ECOBJECTS_EXPORT ECVersion          GetECVersion() const;
     //! Returns an iterable container of ECClasses sorted by name.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Returns an iterable container of ECEnumerations sorted by name.
@@ -3232,6 +3258,20 @@ public:
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+
+    //! Returns true if the schema's EC version matches the given EC major and minor version
+    //! @param[in] ecMajorVersion
+    //! @param[in] ecMinorVersion
+    //! @return True if the schema's EC version matches the given major and minor version
+    ECOBJECTS_EXPORT bool               IsECVersion(uint32_t ecMajorVersion, uint32_t ecMinorVersion);
+
+    //! Returns true if the schema's EC version matches the given ECVersion
+    //! @param[in] ecVersion
+    //! @return True if the schema's EC version matches the given ECVersion
+    ECOBJECTS_EXPORT bool               IsECVersion(ECVersion ecVersion) const;
+
+    //! Validates the schema against the latest version of EC
+    ECOBJECTS_EXPORT bool               Validate();
 
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
@@ -3371,37 +3411,33 @@ public:
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
-    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, int ecXmlVersionMajor = 3, int ecXmlVersionMinor = 1) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::V3_1) const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
-    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml, int ecXmlVersionMajor = 3, int ecXmlVersionMinor = 1) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::V3_1) const;
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
-    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersion   The version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, int ecXmlVersionMajor = 3, int ecXmlVersionMinor = 1, bool utf16 = false) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::V3_1, bool utf16 = false) const;
 
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
-    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersion        The version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, int ecXmlVersionMajor = 3, int ecXmlVersionMinor = 1, bool utf16 = false);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::V3_1, bool utf16 = false);
     
     //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
     Utf8String             GetFullSchemaName() const { return m_key.GetFullSchemaName(); }
@@ -3438,7 +3474,7 @@ public:
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
-    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in] versionWrite    The write compatibility version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor); }
@@ -3448,11 +3484,13 @@ public:
     //! @param[in]  schemaName      Name of the schema to be created.
     //! @param[in]  alias           Alias of the schema to be created
     //! @param[in]  versionMajor    The major version number.
-    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in]  versionWrite    The write compatibility version number
     //! @param[in]  versionMinor    The minor version number.
-    //! @return A status code indicating whether the call was succesfull or not
+    //! @param[in]  ecVersion       The EC version of the schema to be created.
+    //! @return A status code indicating whether the call was succesful or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, 
+                                                         ECVersion ecVersion = ECVersion::V3_1);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
@@ -3517,6 +3555,23 @@ public:
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
     ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema);
 
+    //! Given a major and minor version number, this will parse them into the proper ECVersion
+    //! @param[in]  ecVersionMajor  The major version number
+    //! @param[in]  ecVersionMinor  The minor version number
+    //! @return The ECVersion if the provided major and minor version were used to successfully create an ECVersion.
+    ECOBJECTS_EXPORT static ECVersion                   CreateECVersion(uint32_t ecVersionMajor, uint32_t ecVersionMinor);
+
+    //! Given an ecVersion it will parse it into a version string M.N
+    //! @param[in] ecVersion       The ECVersion to convert to a string
+    //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return an empty string.
+    static Utf8CP                   GetECVersionString(ECVersion ecVersion);
+
+    //! Given an ecVersion this will parse it the specific version major and minor
+    //! @param[out] ecVersionMajor  The major version of the ECVersion
+    //! @param[out] ecVersionMinor  The minor version of the ECVersion
+    //! @param[in] ecVersion        The ECVersion to parse
+    //! @return A status code indicating whether the ECversion was successfully parsed into the a major and minor version.
+    static ECObjectsStatus          ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion);
 
     //! Writes an ECSchema from an ECSchemaXML-formatted file
     //! @code

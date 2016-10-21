@@ -96,9 +96,9 @@ ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
-    if (ecXmlVersionMajor < 3)
+    if (ecXmlVersion < ECVersion::V3_0)
         { //will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
         }
