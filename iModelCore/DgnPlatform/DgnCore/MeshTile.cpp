@@ -1313,7 +1313,7 @@ public:
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
 
-    void ProcessElement(ViewContextR context, DgnElementId elementId);
+    void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     virtual void _OutputGraphics(ViewContextR context) override;
 
     bool BelowMinRange(DRange3dCR range) const
@@ -1359,8 +1359,14 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId)
+void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId elemId, DRange3dCR dgnRange)
     {
+    DRange3d    tileRange;
+
+    m_transformFromDgn.Multiply (tileRange, dgnRange);
+    if (BelowMinRange(tileRange))
+        return;
+
     m_curElemGeometries.clear();
     bool haveCached = m_cache.GetCachedGeometry(m_curElemGeometries, elemId);
     if (!haveCached)
@@ -1497,7 +1503,7 @@ struct GatherGeometryHandler : XYZRangeTreeHandler
         if (pLeaf->Range().IntersectsWith(m_range) && !m_processor.BelowMinRange(pLeaf->Range()))
             {
             auto const& node = *reinterpret_cast<RangeTreeNode const*>(pLeaf->GetData());
-            m_processor.ProcessElement(m_context, node.m_elementId);
+            m_processor.ProcessElement(m_context, node.m_elementId, pLeaf->Range());
             }
 
         return true;
@@ -1660,95 +1666,3 @@ bool TileModelCategoryFilter::_AcceptElement(DgnElementId elementId)
     return accepted;
     }
 
-
-
-#ifdef NOT_CURRENTLY_NEEDED
-// These would be required if the mesh sizes were limited (as in 3MX export).
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
-    {
-    Triangle newTriangle(triangle.m_singleSided);
-    for (size_t i = 0; i < 3; i++)
-        {
-        uint32_t index = triangle.m_indices[i];
-        VertexKey vertex(*mesh.GetPoint(index), mesh.GetNormal(index), mesh.GetParam(index), mesh.GetEntityId(index));
-        newTriangle.m_indices[i] = AddVertex(vertex);
-        }
-
-    m_mesh->AddTriangle(newTriangle);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints)
-    {
-    auto const& points = mesh.Points();
-    if (points.size() <= maxPoints)
-        {
-        meshes.push_back(&mesh);
-        return;
-        }
-
-    bvector<DRange3d>       subRanges;
-    TileDisplayParamsPtr    displayParams = mesh.GetDisplayParamsPtr();
-
-    ComputeSubRanges(subRanges, points, maxPoints, DRange3d::From(points));
-    for (auto const& subRange : subRanges)
-        {
-        auto meshBuilder = TileMeshBuilder::Create(displayParams, 1.0E-6);
-        for (auto const& triangle : mesh.Triangles())
-            if (subRange.IntersectsWith(mesh.GetTriangleRange(triangle)))
-                meshBuilder->AddTriangle(triangle, mesh);
-
-        meshes.push_back(meshBuilder->GetMesh());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerator::ComputeSubRanges(bvector<DRange3d>& subRanges, bvector<DPoint3d> const& points, size_t maxPoints, DRange3dCR range)
-    {
-    size_t pointCount = 0;
-    DPoint3d centroid = DPoint3d::FromZero();
-
-    for (auto const& point : points)
-        {
-        if (range.IsContained(point))
-            {
-            ++pointCount;
-            centroid.Add(point);
-            }
-        }
-
-    if (pointCount < maxPoints)
-        {
-        subRanges.push_back(range);
-        }
-    else
-        {
-        centroid.Scale(1.0 / static_cast<double>(pointCount));
-
-        DVec3d diagonal = range.DiagonalVector();
-        if (diagonal.x > diagonal.y && diagonal.x > diagonal.z)
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, centroid.x, range.high.y,  range.high.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (centroid.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
-            }
-        else if (diagonal.y > diagonal.z)
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, centroid.y, range.high.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, centroid.y, range.low.z, range.high.x, range.high.y, range.high.z));
-            }
-        else
-            {
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, centroid.z));
-            ComputeSubRanges (subRanges, points, maxPoints, DRange3d::From (range.low.x, range.low.y, centroid.z, range.high.x, range.high.y, range.high.z));
-            }
-        }
-
-#endif
