@@ -1085,8 +1085,8 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
-    DgnElementP el = (DgnElementP) elements.FindElement(elementId);
-    if (el)
+    DgnElementPtr el = (DgnElementP) elements.FindElement(elementId);
+    if (el.IsValid())
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
         BeAssert(postModified.IsValid());
