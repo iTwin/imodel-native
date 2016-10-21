@@ -69,16 +69,14 @@ struct TileTextureImage : RefCountedBase
     private:
         ImageSource       m_imageSource;
 
-        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
-
         TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
         TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
     public:
         static TileTextureImagePtr Create(ImageSource&& imageSource) { return new TileTextureImage(std::move(imageSource)); }
         static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
+        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
 
         ImageSourceCR GetImageSource() const { return m_imageSource; }
-        static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };
 
 //=======================================================================================
@@ -88,10 +86,10 @@ struct TileTextureImage : RefCountedBase
 struct TileDisplayParams : RefCountedBase
 {
 private:
-    uint32_t                m_fillColor;
-    DgnMaterialId           m_materialId;
-    TileTextureImagePtr     m_textureImage;
-    bool                    m_ignoreLighting;
+    uint32_t                        m_fillColor;
+    DgnMaterialId                   m_materialId;
+    mutable TileTextureImagePtr     m_textureImage;
+    bool                            m_ignoreLighting;
 
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
@@ -109,6 +107,7 @@ public:
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
+    DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
 };
 
 //=======================================================================================
@@ -254,7 +253,7 @@ private:
     JsonRenderMaterial      m_material;
 
     TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap (VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_areaTolerance (areaTolerance), m_triangleIndex(0) { }
+            m_tolerance(tolerance), m_areaTolerance (areaTolerance), m_triangleIndex(0) {  }
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance) { return new TileMeshBuilder(params, tolerance, areaTolerance); }
 
@@ -468,7 +467,7 @@ protected:
 
     virtual TileSource _GetSource() const = 0;
     virtual TileMeshList _GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const = 0;
-    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) { }
+    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool& leafThresholdExceeded, double leafTolerance, double tileTolerance, size_t leafCountThreshold) { }
     virtual void _ClearGeometry() { }
 
 public:
@@ -488,7 +487,9 @@ public:
     void SetDgnRange (DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
     void SetPublishedRange (DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
+    void RemoveChild (TileNodeCR child);
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
+
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
@@ -499,7 +500,7 @@ public:
     DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
     DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
 
-    void  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) { _CollectGeometry(cache, db); }
+    void  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool& leafThresholdExceeded, double leafTolerance, double tileTolerance, size_t leafCountThreshold) { _CollectGeometry(cache, db, leafThresholdExceeded, leafTolerance, tileTolerance, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }
     TileSource GetSource() const { return _GetSource(); }
     TileMeshList GenerateMeshes(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false, bool doPolylines=false) const
@@ -513,17 +514,18 @@ public:
 struct ElementTileNode : TileNode
 {
 private:
+    bool                    m_isLeaf;
     TileGeometryList        m_geometries;
 
 protected:
-    ElementTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn) { }
+    ElementTileNode(TransformCR transformFromDgn) : TileNode(transformFromDgn), m_isLeaf(false) { }
     ElementTileNode(DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
-        : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance) { }
+        : TileNode(range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false) { }
 
 
     DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(DgnDbR, TileGeometry::NormalMode, bool, bool) const override;
     virtual TileSource _GetSource() const override final { return TileSource::Element; }
-    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db) override;
+    virtual void _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool& leafThresholdExceeded, double leafTolerance, double tileTolerance, size_t leafCountThreshold) override;
     virtual void _ClearGeometry() override { m_geometries.clear(); }
 public:
     static ElementTileNodePtr Create(TransformCR transformFromDgn) { return new ElementTileNode(transformFromDgn); }
@@ -531,6 +533,7 @@ public:
         { return new ElementTileNode(dgnRange, transformFromDgn, depth, siblingIndex, parent); }
 
     void SetTolerance(double tolerance) { m_tolerance = tolerance; }
+    void SetIsLeaf (bool isLeaf) { m_isLeaf = isLeaf; }
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount);
@@ -606,6 +609,8 @@ private:
     Transform                       m_transformFromDgn;
     DgnDbR                          m_dgndb;
     TileGenerationCache             m_cache;
+    double                          m_totalVolume;
+    double                          m_completedVolume;
     BeAtomic<uint32_t>              m_totalTiles;
     BeAtomic<uint32_t>              m_completedTiles;
 

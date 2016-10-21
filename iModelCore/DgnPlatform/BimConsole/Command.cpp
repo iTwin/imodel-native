@@ -58,7 +58,7 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -1322,4 +1322,29 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
     Json::FastWriter writer;
     Utf8String infoStr = writer.write(json);
     Console::WriteLine(infoStr.c_str());
+    }
+
+//******************************* DebugCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     10/2016
+//---------------------------------------------------------------------------------------
+void DebugCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+    {
+    if (!session.IsFileLoaded(true))
+        return;
+
+    bvector<BeFileName> diegoSchemas;
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\LinearReferencing.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\RoadRailAlignment.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\Costing.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\BridgePhysical.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\RoadRailPhysical.01.00.00.ecschema.xml"));
+
+    ImportCommand importCmd;
+    for (BeFileNameCR schemaFile : diegoSchemas)
+        {
+        std::vector<Utf8String> cmdArgs {".import", "ecschema", schemaFile.GetNameUtf8()};
+        importCmd.Run(session, cmdArgs);
+        }
     }
