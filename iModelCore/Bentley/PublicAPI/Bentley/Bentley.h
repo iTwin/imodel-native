@@ -332,3 +332,11 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 //__PUBLISH_SECTION_END__
 #endif
 
+#ifdef _MSC_VER
+    #define PUSH_MSVC_IGNORE(ERROR_TO_IGNORE) __pragma(warning(push))\
+__pragma(warning(disable:ERROR_TO_IGNORE))
+    #define POP_MSVC_IGNORE __pragma(warning(pop))
+#else
+    #define PUSH_MSVC_IGNORE(ERROR_TO_IGNORE)
+    #define POP_MSVC_IGNORE
+#endif
