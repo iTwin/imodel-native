@@ -217,8 +217,8 @@ struct IndexMappingInfo : RefCountedBase
 
     public:
         static IndexMappingInfoPtr Clone(Utf8CP name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
-        //!@param customClassMap pass nullptr if @p ecClass doesn't have the ClassMap CA. 
-        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR ecClass, ECN::ECDbClassMap const* customClassMap);
+        //pass nullptr to DbIndexList if ecClass doesn't have the DbIndexList CA. 
+        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>& , ECDbCR, ECN::ECClassCR, ECN::DbIndexList const&);
 
         Utf8CP GetName() const { return m_name.c_str(); }
         bool GetIsUnique() const { return m_isUnique; }

@@ -112,6 +112,7 @@ private:
     MapStrategy m_mapStrategy;
     ECN::ShareColumns m_shareColumnsCA;
     bool m_hasJoinedTablePerDirectSubclassOption;
+    ECN::DbIndexList m_dbIndexListCA;
 
     static BentleyStatus TryParse(MapStrategy&, Utf8CP str, ECN::ECClassCR);
 
@@ -126,6 +127,7 @@ public:
     MapStrategy GetStrategy() const { return m_mapStrategy; }
     ECN::ShareColumns const& GetShareColumnsCA() const { return m_shareColumnsCA; }
     bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
+    ECN::DbIndexList const& GetDbIndexListCA() const { return m_dbIndexListCA; }
     };
 
 

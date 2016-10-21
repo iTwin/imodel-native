@@ -896,9 +896,7 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
-                    //we cannot yet enforce one class per constraint
-                    //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
-                    true),
+                    false),
         SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -941,7 +939,29 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
-                    true, "Multiple constraint classes"),  //we cannot yet enforce one class per constraint
+                    false, "Multiple constraint classes"), 
+        SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECEntityClass typeName='Base' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
+                   "         <Class class='Base'/>"
+                   "         <Class class='Sub'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Multiple constraint classes with abstract constraint class"),
         SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                     "  <ECEntityClass typeName='Base' >"
@@ -963,13 +983,13 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "     <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Source'>"
                     "         <Class class='Hoo'/>"
                     "     </Source>"
-                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target' abstractConstraint='Base'>"
                     "         <Class class='Base'/>"
                     "         <Class class='Sub'/>"
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
-                   true, "Multiple constraint classes")  //we cannot yet enforce one class per constraint
+                   true, "Multiple constraint classes")
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
@@ -1776,67 +1796,6 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
-    {
-    SchemaItem testSchema("Different Parents in SharedTable", 
-                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='Parent1' >"
-                          "     <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "             <MapStrategy>SharedTable</MapStrategy>"
-                          "             <TableName>ts_Parent</TableName>"
-                          "         </ClassMap>"
-                          "     </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Parent1Prop' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='Parent2' >"
-                          "     <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "             <MapStrategy>SharedTable</MapStrategy>"
-                          "             <TableName>ts_Parent</TableName>"
-                          "         </ClassMap>"
-                          "     </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Parent2Prop' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='Child' >"
-                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Parent Has Children'>"
-                          "        <Class class='Parent1' />"
-                          "        <Class class='Parent2' />"
-                          "     </Source>"
-                          "     <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children (Reversed)'>"
-                          "         <Class class='Child' />"
-                          "     </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_differentparentsinsharedtable.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECInstanceKey parentKey;
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent1(Parent1Prop) VALUES(1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
-    }
-
-    ECInstanceKey childKey;
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
-    }
-
-    //WIP_REL: Fails because ECSQL DELETE fails to prepare
-    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=127 AND TargetECInstanceId=2 AND TargetECClassId=126.
-    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 127 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
-    //failed to prepare with error code BE_SQLITE_ERROR: no such column: ts_Parent.ECClassId (BE_SQLITE_ERROR)
-    AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
-    }
 
     {
     SchemaItem testSchema("Children in different joined tables, but FK in primary table",
@@ -1850,7 +1809,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "         <ClassMap xmlns='ECDbMap.02.00'>"
                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                           "         </ClassMap>"
-                          "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                          "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
                           "     </ECCustomAttributes>"
                           "    <ECProperty propertyName='ChildProp' typeName='int' />"
                           "  </ECEntityClass>"
@@ -1983,7 +1942,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
                                   "     <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Grandchildren'>"
                                   "         <Class class='Parent' />"
                                   "     </Source>"
-                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Grandchildren (Reversed)'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Grandchildren (Reversed)' abstractConstraint='Child'>"
                                   "        <Class class='GrandchildA' />"
                                   "        <Class class='GrandchildB' />"
                                   "     </Target>"

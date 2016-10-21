@@ -40,8 +40,8 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
         ecdb.AbandonChanges();
         };
 
-    importSchema(ecdb, ECVersion::V2_0, false);
-    importSchema(ecdb, ECVersion::V3_0, false);
+    importSchema(ecdb, ECVersion::V2_0, true);
+    importSchema(ecdb, ECVersion::V3_0, true);
     importSchema(ecdb, ECVersion::V3_1, true);
     }
 
@@ -98,8 +98,8 @@ TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "Base");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('Base') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "THBase");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('THBase') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
@@ -167,10 +167,10 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClasses)
     ASSERT_TRUE(baseClass->GetDerivedClasses().empty()) << "ECClass::GetDerivedClasses is expected to not load subclasses.";
 
     //derived classes are expected to be loaded when calling ECDbSchemaManager::GetDerivedClasses
-    ASSERT_EQ(2, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count with derived classes now being loaded";
+    ASSERT_EQ(1, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count with derived classes now being loaded";
 
     //now ECClass::GetDerivedClasses can also be called
-    ASSERT_EQ(2, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count after derived classes were loaded";
+    ASSERT_EQ(1, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count after derived classes were loaded";
     }
 
 //---------------------------------------------------------------------------------------
@@ -187,10 +187,10 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     ECClassCP baseClass = ecdb.Schemas().GetECClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
 
-    ASSERT_EQ(2, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count. Derived classes are expected to already be loaded along with having loaded the schema";
+    ASSERT_EQ(1, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count. Derived classes are expected to already be loaded along with having loaded the schema";
 
     //derived classes are expected to be loaded when calling ECDbSchemaManager::GetDerivedClasses
-    ASSERT_EQ(2, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count";
+    ASSERT_EQ(1, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count";
     }
 
 //---------------------------------------------------------------------------------------
