@@ -4009,6 +4009,23 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>* SMMeshIndex
     return firstNode;
     }
 
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes)
+    {
+    bvector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> nodes;
+    dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetSMTerrain()->FindNodes(nodes,m_nodeHeader.m_nodeExtent, m_nodeHeader.m_level, true);
+    for (auto& node : nodes)
+        {
+        IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+            new ScalableMeshNode<POINT>(node)
+#else
+            ScalableMeshNode<POINT>::CreateItem(node)
+#endif
+            );
+        terrainNodes.push_back(nodeP);
+        }
+    }
+
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CreateSkirtsForMatchingTerrain()
     {
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
@@ -4026,7 +4043,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
             }
         }
     if (nCoverages == 0 || nSkirts == nCoverages) return;
-#if 0
+
     auto node = FindMatchingTerrainNode();
 
     auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
@@ -4042,19 +4059,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
     auto dtm1 = nodeP->GetBcDTM();
     if (dtm1.get() == nullptr) return;
 
-    auto otherNodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(node)));
-    IScalableMeshNodePtr otherNodeP(
-#ifndef VANCOUVER_API
-        new ScalableMeshNode<POINT>(nodePtr)
-#else
-        ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-        );
+    bvector<IScalableMeshNodePtr> terrainNodes;
+    FindMatchingTerrainNodes(terrainNodes);
 
-
-    auto dtm2 = otherNodeP->GetBcDTM();
-    if (dtm2.get() == nullptr) return;
-    SkirtBuilder builder(dtm1,dtm2);
+    SkirtBuilder builder(dtm1,terrainNodes);
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     for (size_t i = 0; i < pointsPtr->size(); ++i)
         mapOfPoints[pointsPtr->operator[](i)] = (int)i;
@@ -4076,7 +4084,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
             }
         }
 
-#endif
     }
 
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
@@ -4978,4 +4985,16 @@ template<class POINT, class EXTENT> void  SMMeshIndex<POINT, EXTENT>::SetSMTerra
 template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>*  SMMeshIndex<POINT, EXTENT>::GetSMTerrain()
     {
     return m_smTerrain;
+    }
+
+
+template<class POINT, class EXTENT> void  SMMeshIndex<POINT, EXTENT>::SetSMTerrainMesh(IScalableMesh* terrainP)
+    {
+    m_smTerrainMesh = terrainP;
+    }
+
+template<class POINT, class EXTENT> IScalableMesh*  SMMeshIndex<POINT, EXTENT>::GetSMTerrainMesh()
+    {
+    return m_smTerrainMesh;
+
     }

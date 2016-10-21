@@ -742,6 +742,8 @@ public:
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;    
 
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
+
     void ValidateNeighborsOfChildren();
     bool NeighborsFillParentExtent();
     bool AllSiblingsAreNeighbors();
@@ -1403,6 +1405,8 @@ public:
     size_t              GetDepth() const;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
+
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
     size_t              GetTerrainDepth() const;
 

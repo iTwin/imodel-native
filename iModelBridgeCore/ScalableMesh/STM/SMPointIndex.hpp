@@ -794,6 +794,30 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
+
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
+    {
+    if (ExtentOp<EXTENT>::OutterOverlap(ext, m_nodeHeader.m_nodeExtent))
+        {
+        if (level == m_nodeHeader.m_level)
+            {
+            nodes.push_back(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
+            }
+        if (m_apSubNodes.size() > 0 && m_apSubNodes[0] != NULL && m_nodeHeader.m_level <= level)
+            {
+            for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit; i++)
+                if (m_apSubNodes[i] != nullptr && ExtentOp<EXTENT>::OutterOverlap(ext, m_apSubNodes[i]->m_nodeHeader.m_nodeExtent))
+                    {
+                    m_apSubNodes[i]->FindNodes(nodes, ext, level);
+                    }
+            }
+        else if (IsLeaf() && m_nodeHeader.m_level <= level)
+            {
+            nodes.push_back(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
+            }
+        }
+    }
+
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::FindNode(EXTENT ext, size_t level, bool use2d) const
     {
     if (ExtentOp<EXTENT>::OutterOverlap(ext, m_nodeHeader.m_nodeExtent))
@@ -8196,6 +8220,12 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
     {
     if (m_pRootNode == nullptr) return nullptr;
     return m_pRootNode->FindNode(ext, level, use2d);
+    }
+
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
+    {
+    if (m_pRootNode == nullptr) return;
+    return m_pRootNode->FindNodes(nodes,ext, level, use2d);
     }
 
 /**----------------------------------------------------------------------------

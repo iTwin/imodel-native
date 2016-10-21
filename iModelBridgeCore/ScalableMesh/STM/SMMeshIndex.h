@@ -319,6 +319,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
 
+    void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
+
     bool HasClip(uint64_t clipId);
 
     bool IsClippingUpToDate();
@@ -813,6 +815,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
 
+        void SetSMTerrainMesh(IScalableMesh* terrainP);
+        IScalableMesh* GetSMTerrainMesh();
+
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -831,6 +836,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         bvector < RefCountedPtr<EditOperation> > m_edits;
 
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;
+        IScalableMesh* m_smTerrainMesh;
 
     };
 
