@@ -1521,7 +1521,10 @@ template<typename C, typename S> static void parseArguments(bvector<S>& subStrin
     parseIntoArgcArgv<C>(inString, argv, argStrings, &argc, &numchars, allDelimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
+#pragma warning (push)
+#pragma warning (disable:6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
         subStrings.push_back(argv[iArg]);
+#pragma warning (pop)
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1570,7 +1573,10 @@ uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t num
             outStr = va_arg(args, WStringP);
 
             if (NULL != outStr)
+#pragma warning (push)
+#pragma warning (disable:6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
                 outStr->assign(argv[iArg]);
+#pragma warning (pop)
             }
 
         numParsed = iArg;
@@ -1598,10 +1604,11 @@ void            BeStringUtilities::ParseDelimitedString (bvector<WString>& subSt
     parseIntoArgcArgv<WChar>(inString, argv, argStrings, &argc, &numchars, delimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
+#pragma warning (push)
+#pragma warning (disable:6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
         subStrings.push_back(argv[iArg]);
-
+#pragma warning (pop)
     }
-
 
 #if defined (__unix__)
 /*---------------------------------------------------------------------------------**//**
