@@ -1653,11 +1653,19 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
-        if (nullptr != conversionClass && conversionClass->GetCustomAttribute("IgnoreBaseClass").IsValid())
-            return SchemaReadStatus::Success;
+        if (nullptr != conversionClass)
+            {
+            IECInstancePtr ca = conversionClass->GetCustomAttribute("IgnoreBaseClass");
+            if (ca.IsValid())
+                {
+                ECValue except;
+                ca->GetValue(except, "Except");
+                if (except.IsNull() || Utf8String::IsNullOrEmpty(except.GetUtf8CP()) || !Utf8String(except.GetUtf8CP()).Equals(baseClass->GetFullName()))
+                    return SchemaReadStatus::Success;
+                }
+            }
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
             resolveConflicts = true;
-
         }
 
     ECObjectsStatus stat;
