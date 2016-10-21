@@ -351,9 +351,9 @@ DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)sqlite3_clear_
 DbResult    Statement::BindInt(int col, int val)        {return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
 DbResult    Statement::BindInt64(int col, int64_t val)  {return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
 DbResult    Statement::BindDouble(int col, double val)  {return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
-DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) {return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob(int col, int size) {return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
-DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) {return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
@@ -406,8 +406,8 @@ DbDupValue  Statement::GetDbValue(int col)
     return value;
     }
 
-int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
-Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
+int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_parameter_index(m_stmt, name);}
+Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt);}
 
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
@@ -434,8 +434,8 @@ BeGuid DbValue::GetValueGuid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) { m_val = sqlite3_value_dup(val); }
-DbDupValue::~DbDupValue() { sqlite3_value_free(m_val); }
+DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) {m_val = sqlite3_value_dup(val);}
+DbDupValue::~DbDupValue() {sqlite3_value_free(m_val);}
 DbDupValue& DbDupValue::operator = (DbDupValue&& other)
     {
     if (this != &other)
@@ -452,7 +452,7 @@ SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
-Utf8String Db::GetLastError(DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
+Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
 BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
@@ -854,7 +854,7 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const { return m_dbFile->ExplainQuery(sql, explainPlan, false); }
+Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const {return m_dbFile->ExplainQuery(sql, explainPlan, false);}
 
 static Utf8CP getTempPrefix(bool temp) {return temp ? TEMP_TABLE_UniquePrefix : "";}
 /*---------------------------------------------------------------------------------**//**
@@ -958,18 +958,16 @@ void DbFile::SaveCachedBlvs(bool isCommit)
             if (!stmt.IsValid())
                 {
                 DbResult rc = m_statements.GetPreparedStatement(stmt, *this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local " (Name,Val) VALUES(?,?)");
-                if (rc != BE_SQLITE_OK)
-                    { BeAssert(false); }
+                BeAssert(rc == BE_SQLITE_OK);
+                UNUSED_VARIABLE(rc);
                 }
 
             stmt->BindText(1, rlv.GetName(), Statement::MakeCopy::No);
             const uint64_t val = rlv.GetValue();
             stmt->BindUInt64(2, val);
             DbResult rc = stmt->Step();
-            if (BE_SQLITE_DONE != rc)
-                { 
-                BeAssert(false); 
-                }
+            BeAssert(BE_SQLITE_DONE == rc);
+            UNUSED_VARIABLE(rc);
 
             stmt->Reset();
             rlv.SetIsNotDirty();
@@ -1857,7 +1855,7 @@ bool BriefcaseLocalValueCache::TryQuery(CachedBLV*& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Keith.Bentley   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-CachedBLV::CachedBLV(Utf8CP name) : m_name(name) { BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset(); }
+CachedBLV::CachedBLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Keith.Bentley   12/12
@@ -1878,12 +1876,12 @@ uint64_t CachedBLV::Increment()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Keith.Bentley   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void CachedBLV::SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false; }
+void CachedBLV::SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Keith.Bentley   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void CachedBLV::Reset() {m_isUnset = true; m_dirty = false; m_value = 0; }
+void CachedBLV::Reset() {m_isUnset = true; m_dirty = false; m_value = 0;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
@@ -2546,7 +2544,7 @@ void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggre
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
-static void aggregateFinal(sqlite3_context* context) { ((AggregateFunction*) sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context); }
+static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*) sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context);}
 static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
 static int  rTreeMatch(RTreeMatchFunction::QueryInfo* info){return ((RTreeMatchFunction*) info->m_context)->_TestRange(*info);}
 
@@ -3306,7 +3304,7 @@ void NamedParams::AddStringParameter(Utf8CP name, Utf8CP val) {AddSqlParameter(n
 void NamedParams::AddIntegerParameter(Utf8CP name, uint64_t val) {AddSqlParameter(new IntegerParameter(name, val));}
 void NamedParams::AddDoubleParameter(Utf8CP name, double val) {AddSqlParameter(new DoubleParameter(name, val));}
 void NamedParams::AddBlobParameter(Utf8CP name, void const* data, int size, Statement::MakeCopy copy) {AddSqlParameter(new BlobParameter(name, data, size, copy));}
-void NamedParams::Bind(Statement& stmt) const {for (auto param : m_params) param->_Bind(stmt); }
+void NamedParams::Bind(Statement& stmt) const {for (auto param : m_params) param->_Bind(stmt);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      04/2012
@@ -3356,7 +3354,7 @@ private:
 
 public:
     PropertyBlobInStream(Db&db, BeBriefcaseBasedId id) : m_db(db), m_id(id), m_buffer(nullptr), m_bufferSize(0), m_nBytesInBuffer(0), m_bufferOffset(0), m_nextChunk(0) {}
-    ~PropertyBlobInStream() { free(m_buffer); }
+    ~PropertyBlobInStream() {free(m_buffer);}
 
     //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
@@ -4391,21 +4389,33 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 
     BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return;
+        }
 
     if (1 != numArgs)
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return;
+        }
 
     Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
     if (nullptr == source)
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return;
+        }
 
     int sourceSize = (size_t)sqlite3_value_bytes16(args[0]);
     int resultSize = (2 * sourceSize) * sizeof(uint16_t);
 
     Utf16P result = (Utf16P)sqlite3_malloc((int)resultSize);
     if (nullptr == result)
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return;
+        }
 
     if (0 != sqlite3_user_data(context))
         languageSupport->_Upper(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
@@ -4421,16 +4431,16 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 // @bsimethod                                                   Jeff.Marker     02/2014
 //---------------------------------------------------------------------------------------
 #define U8_NEXT_UNSAFE(s, i, c) \
-    { \
+    {\
     (c) = (uint8_t)(s)[(i)++]; \
-    if ((c) >= 0x80) { \
-        if ((c)<0xe0) { \
+    if ((c) >= 0x80) {\
+        if ((c)<0xe0) {\
                 (c) = (((c)& 0x1f) << 6) | ((s)[(i)++] & 0x3f); \
-            } else if ((c)<0xf0) { \
+            } else if ((c)<0xf0) {\
                 /* no need for (c&0xf) because the upper bits are truncated after <<12 in the cast to (UChar) */ \
                 (c) = (unsigned char)(((c) << 12) | (((s)[i] & 0x3f) << 6) | ((s)[(i)+1] & 0x3f)); \
                 (i) += 2; \
-            } else { \
+            } else {\
                 (c) = (((c)& 7) << 18) | (((s)[i] & 0x3f) << 12) | (((s)[(i)+1] & 0x3f) << 6) | ((s)[(i)+2] & 0x3f); \
                 (i) += 3; \
             } \
@@ -4450,7 +4460,7 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 // @bsimethod                                                   Jeff.Marker     02/2014
 //---------------------------------------------------------------------------------------
 #define U8_FWD_1_UNSAFE(s, i) \
-    { \
+    {\
     (i) += 1 + U8_COUNT_TRAIL_BYTES_UNSAFE((uint8_t)(s)[i]); \
     }
 
@@ -4578,7 +4588,7 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     // Limit the length of the LIKE or GLOB pattern to avoid problems of deep recursion and N*N behavior in likeCompare.
     auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
     if (sqlite3_value_bytes(args[0]) > maxPatternLen)
-        { 
+        {
         BeAssert(false); 
         return; 
         }
@@ -4589,7 +4599,7 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
         // The escape character string must consist of a single UTF-8 character. Otherwise, return an error.
         auto escapeCharStr = sqlite3_value_text(args[2]);
         if (nullptr == escapeCharStr)
-            { 
+            {
             BeAssert(false); 
             return; 
             }
@@ -4599,7 +4609,7 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
         U8_NEXT_UNSAFE(escapeCharStr, iNextChar, escapeChar);
 
         if (iNextChar != escapeCharNumBytes)
-            { 
+            {
             BeAssert(false); 
             return; 
             }
@@ -4618,7 +4628,10 @@ static int collateCallback(void* userData, int lhsSize, void const* lhs, int rhs
 
     BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
-        { BeAssert(false); return 0; }
+        {
+        BeAssert(false); 
+        return 0;
+        }
 
     return languageSupport->_Collate((Utf16CP)lhs, lhsSize / sizeof(uint16_t), (Utf16CP)rhs, rhsSize / sizeof(uint16_t), userData);
     }
@@ -4905,7 +4918,7 @@ static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
 static void saveCompactRange(Utf8StringR str, int64_t increment, int64_t len)
     {
     BeAssert(0 != len);
-    Utf8Char buf[0x12] = { '+' };
+    Utf8Char buf[0x12] = {'+'};
     BeStringUtilities::FormatUInt64(buf+1, _countof(buf)-1, static_cast<uint64_t>(increment), HexFormatOptions::Uppercase);
     str.append(buf);
 
@@ -5022,10 +5035,10 @@ private:
     ILzmaInputStream& m_stream;
 
 public:
-    SeqInStreamImpl(ILzmaInputStream& in) : m_stream(in) { Read = readFor7z; }
-    ILzmaInputStream& GetStream() { return m_stream; }
-    SRes ReadData(void *buf, size_t *size) { return Read(this, buf, size); }
-    uint64_t GetSize() { return m_stream._GetSize(); }
+    SeqInStreamImpl(ILzmaInputStream& in) : m_stream(in) {Read = readFor7z;}
+    ILzmaInputStream& GetStream() {return m_stream;}
+    SRes ReadData(void *buf, size_t *size) {return Read(this, buf, size);}
+    uint64_t GetSize() {return m_stream._GetSize();}
 };
 
 //---------------------------------------------------------------------------------------
@@ -5096,10 +5109,10 @@ private:
     ILzmaOutputStream&  m_stream;
 
 public:
-    ILzmaOutputStream& GetStream() { return m_stream; }
-    SeqOutStreamImpl(ILzmaOutputStream& outStream) : m_stream(outStream) { Write = writeFor7z; }
-    size_t WriteData(const void *buf, size_t size) { return Write(this, buf, size); }
-    void SetAlwaysFlush(bool flushOnEveryWrite) { m_stream._SetAlwaysFlush(flushOnEveryWrite); }
+    ILzmaOutputStream& GetStream() {return m_stream;}
+    SeqOutStreamImpl(ILzmaOutputStream& outStream) : m_stream(outStream) {Write = writeFor7z;}
+    size_t WriteData(const void *buf, size_t size) {return Write(this, buf, size);}
+    void SetAlwaysFlush(bool flushOnEveryWrite) {m_stream._SetAlwaysFlush(flushOnEveryWrite);}
 };
 
 //=======================================================================================
@@ -5111,8 +5124,8 @@ private:
     bvector<Byte>& m_out;
 
 public:
-    //  UInt32 GetOffset() { return m_offset; }
-    MemoryLzmaOutStream(bvector<Byte>& out) : m_out(out) { m_out.resize(0); }
+    //  UInt32 GetOffset() {return m_offset;}
+    MemoryLzmaOutStream(bvector<Byte>& out) : m_out(out) {m_out.resize(0);}
 
     ZipErrors _Write(void const* data, uint32_t writeSize, uint32_t&bytesWritten) override
         {
@@ -5141,9 +5154,9 @@ private:
     void const* m_headerData;
 
 public:
-    uint32_t GetOffset() { return m_offset; }
+    uint32_t GetOffset() {return m_offset;}
     MemoryLzmaInStream(void const*data, uint32_t size) : m_offset(0), m_limit(size), m_data(data), m_headerData(nullptr), m_headerOffset(0), m_headerLimit(0) {}
-    void SetHeaderData(void*headerData, uint32_t headerSize) { m_headerData = headerData; m_headerLimit = headerSize; }
+    void SetHeaderData(void*headerData, uint32_t headerSize) {m_headerData = headerData; m_headerLimit = headerSize;}
     //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
     virtual ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override
@@ -5169,7 +5182,7 @@ public:
         return ZIP_SUCCESS;
         }
 
-    virtual uint64_t _GetSize() override { return m_limit + m_headerLimit; }
+    virtual uint64_t _GetSize() override {return m_limit + m_headerLimit;}
 };
 
 //---------------------------------------------------------------------------------------
@@ -5373,8 +5386,8 @@ public:
         memset(this, 0, sizeof (*this));
         }
 
-    int GetVersion() { return m_formatVersionNumber; }
-    bool IsLzma2() { return true; }
+    int GetVersion() {return m_formatVersionNumber;}
+    bool IsLzma2() {return true;}
     bool IsValid()
         {
         if (strcmp(m_idString, DGNDB_LZMA_MARKER))
@@ -5854,5 +5867,5 @@ void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
 
 BeSQLiteLib::ILanguageSupport* s_languageSupport;
 void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
-BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() { return s_languageSupport; }
+BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() {return s_languageSupport;}
 

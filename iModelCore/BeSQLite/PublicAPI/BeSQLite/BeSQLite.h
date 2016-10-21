@@ -366,7 +366,7 @@ struct SchemaVersion : BeVersion
 {
 public:
     SchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
-    explicit SchemaVersion(Utf8CP json) { FromJson(json); }
+    explicit SchemaVersion(Utf8CP json) {FromJson(json);}
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
 };
@@ -599,7 +599,7 @@ public:
     explicit Statement(SqlStatementP stmt) {m_stmt=stmt;}
 
     //! construct a new blank Statement.
-    Statement() {m_stmt=nullptr; }
+    Statement() {m_stmt=nullptr;}
     Statement(DbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
     ~Statement() {Finalize();}
 
@@ -952,7 +952,7 @@ public:
 
     bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
-    SqlValueP GetSqlValueP() const { return m_val; }  //!< for direct use of sqlite3 api
+    SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
@@ -997,7 +997,7 @@ public:
     //=======================================================================================
     struct Context
         {
-        enum class CopyData : int { No = 0, Yes = -1 };                                     //!< see sqlite3_destructor_type
+        enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
         BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
         BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
         BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
@@ -1858,7 +1858,7 @@ public:
     uint64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
     void ChangeValue(uint64_t value, bool initializing = false);
     uint64_t Increment();
-    bool IsUnset() const { return m_isUnset; }
+    bool IsUnset() const {return m_isUnset;}
     bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
     void SetIsNotDirty() const;
     void Reset();
@@ -2737,7 +2737,7 @@ struct SnappyReader
     virtual ~SnappyReader() {}
     virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) = 0;
 
-    static uint32_t GetUncompressedBufferSize() { return SNAPPY_UNCOMPRESSED_BUFFER_SIZE; }
+    static uint32_t GetUncompressedBufferSize() {return SNAPPY_UNCOMPRESSED_BUFFER_SIZE;}
 };
 
 //=======================================================================================
@@ -2816,17 +2816,17 @@ struct ILzmaInputStream
 struct BeFileLzmaInStream : ILzmaInputStream
 {
 private:
-    BeFile         m_file;
-    uint64_t       m_fileSize;
-    uint64_t       m_bytesRead;
+    BeFile   m_file;
+    uint64_t m_fileSize;
+    uint64_t m_bytesRead;
 
 public:
     virtual ~BeFileLzmaInStream() {}
     BE_SQLITE_EXPORT StatusInt OpenInputFile(BeFileNameCR fileName);
     BE_SQLITE_EXPORT ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override;
-    uint64_t _GetSize() override { return m_fileSize; }
-    uint64_t GetBytesRead() { return m_bytesRead; }
-    BeFile& GetBeFile() { return m_file; }
+    uint64_t _GetSize() override {return m_fileSize;}
+    uint64_t GetBytesRead() {return m_bytesRead;}
+    BeFile& GetBeFile() {return m_file;}
 };
 
 //=======================================================================================
@@ -2835,15 +2835,15 @@ public:
 struct BeFileLzmaInFromMemory : ILzmaInputStream
 {
 private:
-    BeDbMutex       m_mutex;
-    void const*     m_data;
-    uint32_t        m_size;
-    uint32_t        m_offset;
+    BeDbMutex m_mutex;
+    void const* m_data;
+    uint32_t m_size;
+    uint32_t m_offset;
 
 public:
     BE_SQLITE_EXPORT BeFileLzmaInFromMemory(void const*data, uint32_t size);
     BE_SQLITE_EXPORT ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override;
-    uint64_t _GetSize() override { return m_size; }
+    uint64_t _GetSize() override {return m_size;}
 };
 
 //=======================================================================================
@@ -2860,8 +2860,8 @@ public:
     BE_SQLITE_EXPORT BeFileStatus CreateOutputFile(BeFileNameCR fileName, bool createAlways = true);
     BE_SQLITE_EXPORT ZipErrors _Write(void const* data, uint32_t size, uint32_t& bytesWritten) override;
     BE_SQLITE_EXPORT void _SetAlwaysFlush(bool flushOnEveryWrite) override;
-    uint64_t GetBytesWritten() { return m_bytesWritten; }
-    BeFile& GetBeFile() { return m_file; }
+    uint64_t GetBytesWritten() {return m_bytesWritten;}
+    BeFile& GetBeFile() {return m_file;}
 };
 
 //=======================================================================================
