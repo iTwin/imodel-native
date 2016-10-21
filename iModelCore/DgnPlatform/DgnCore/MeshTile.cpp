@@ -959,7 +959,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
         {
         double          tileTolerance = tile.GetDgnRange().DiagonalDistance() / s_minToleranceRatio;
         bool            isLeaf = tileTolerance < leafTolerance;
-        size_t          facetCount = 0;
         bool            leafThresholdExceeded = false;
        
         DgnPlatformLib::AdoptHost(host);
@@ -1340,7 +1339,6 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     if (BelowMinRange(geom.GetTileRange()))
         return;
 
-    double      minRange;
     if (!m_leafThresholdExceeded)
         {
         DRange3d intersection = DRange3d::FromIntersection (geom.GetTileRange(), m_tileRange, true);
