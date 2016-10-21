@@ -14,6 +14,7 @@
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <RealityPlatform/SpatialEntityData.h>
+#include "SpatialEntityClient.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

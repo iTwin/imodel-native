@@ -40,6 +40,8 @@ nameToDefine=__WMSPARSER_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
+$(o)SpatialEntityClient$(oext) : $(baseDir)SpatialEntityClient.cpp $(baseDir)SpatialEntityClient.h ${MultiCompileDepends}
+
 $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
 $(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(baseDir)RealityDataHandler.h ${MultiCompileDepends}
