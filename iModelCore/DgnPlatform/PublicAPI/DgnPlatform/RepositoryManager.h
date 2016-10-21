@@ -462,6 +462,12 @@ ENUM_IS_FLAGS(IBriefcaseManager::Resources);
 //=======================================================================================
 namespace RepositoryJson
 {
+    DGNPLATFORM_EXPORT bool LockLevelFromUInt(LockLevel& level, unsigned int value);
+    DGNPLATFORM_EXPORT bool LockableTypeFromUInt(LockableType& type, unsigned int value);
+    DGNPLATFORM_EXPORT bool RepositoryStatusFromUInt(RepositoryStatus& status, unsigned int value);
+    DGNPLATFORM_EXPORT bool ResponseOptionsFromUInt(IBriefcaseManager::ResponseOptions& options, unsigned int value);
+    DGNPLATFORM_EXPORT bool RequestPurposeFromUInt(IBriefcaseManager::RequestPurpose& purpose, unsigned int value);
+
     DGNPLATFORM_EXPORT bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
     DGNPLATFORM_EXPORT bool BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value);
     DGNPLATFORM_EXPORT bool LockLevelFromJson(LockLevel& level, JsonValueCR value);

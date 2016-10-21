@@ -13,8 +13,6 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
-BentleyStatus resize_image (ByteStream&    outputImage, Point2dCR outputSize, Byte const*  inputImage, Point2dCR  inputSize, bool isRGBA);
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -111,7 +109,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
+    m_meshes = m_tile.GenerateMeshes(context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,9 +315,11 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int32_t  roundToMultipleOfTwo (int32_t value)
     {
-    int32_t rounded = 2;
+    static          double  s_closeEnoughRatio = .85;       // Don't round up if already within .85 of value.
+    int32_t         rounded = 2;
+    int32_t         closeEnoughValue = (int32_t) ((double) value * s_closeEnoughRatio);
     
-    while (rounded < value && rounded < 0x01000000)
+    while (rounded < closeEnoughValue && rounded < 0x01000000)
         rounded <<= 1;
 
     return rounded;
@@ -358,14 +358,12 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
     // This calculation should actually be made for each triangle and maximum used. 
-    static      double      s_requiredSizeRatio = 2.0;
-    double      requiredSize = s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * uvRange.DiagonalDistance());
+    static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
+    double      requiredSize = std::min (s_sizeLimit, s_requiredSizeRatio * range.DiagonalDistance () / (m_tile.GetTolerance() * std::min (1.0, uvRange.DiagonalDistance())));
     DPoint2d    imageSize = { (double) image.GetWidth(), (double) image.GetHeight() };
-    static bool s_doResize = true;
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
-
 
     Point2d     targetImageSize, currentImageSize = { (int32_t) image.GetWidth(), (int32_t) image.GetHeight() };
 
@@ -395,34 +393,24 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
         }
 
-    if (targetImageSize.x == imageSize.x && targetImageSize.y == imageSize.y)
-        {
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
-        
-        ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
-        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    ImageSource         imageSource = textureImage.GetImageSource();
+    static const int    s_imageQuality = 50;
 
-        AddBinaryData (imageData.data(), imageData.size());
-        }
-    else
+    if (targetImageSize.x != imageSize.x || targetImageSize.y != imageSize.y)
         {
-        static int      s_imageQuality = 50;
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
-        ByteStream      targetImageData;
 
-        ImageSource targetImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
-        
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-        rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"]  = targetImageSize.y;
-        
-        ByteStream const& imageData = targetImageSource.GetByteStream();
-        rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
-
-        AddBinaryData (imageData.data(), imageData.size());
+        imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
         }
+
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+
+    ByteStream const& imageData = imageSource.GetByteStream();
+    rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+
+    AddBinaryData (imageData.data(), imageData.size());
 
     m_textureImages.Insert (&textureImage, textureId);
 
@@ -668,6 +656,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
 
     TileTextureImageCP      textureImage;
 
+    displayParams->ResolveTextureImage(m_context.GetDgnDb());
     if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
@@ -871,13 +860,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         {
         attr["attributes"]["TEXCOORD_0"] = accParamId;
 
-        size_t i=0;
-        bvector<DPoint2d> flippedUvs (mesh.Params().size());
-        for (auto const& uv : mesh.Params())
-            flippedUvs[i++] = DPoint2d::From (uv.x, 1.0 - uv.y);      // Needs work - flip textures rather than params.
-
-        DRange3d        paramRange = DRange3d::From(flippedUvs, 0.0);
-        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
+        AddMeshVertexAttribute (rootNode, &mesh.Params().front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
         }
 
 
@@ -1086,6 +1070,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
         }
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1108,8 +1093,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     // the published range represents the actual range of the published meshes. - This may be smaller than the 
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
-    contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
-    range = contentRange;
+    range = contentRange = DRange3d::FromIntersection (tile.GetTileRange(), publishedRange, true);
 
     if (!tile.GetChildren().empty())
         {
@@ -1205,28 +1189,18 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
+void    PublisherContext::GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name)
     {
-    Status                      status;
-    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
+    Json::Value         child;
 
-    if (0 != m_maxTilesPerDirectory)
-        rootTile.GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+    rootRange.Extend (rootTile.GetTileRange());
+    rootJson["refine"] = "replace";
+    rootJson[JSON_GeometricError] = rootTile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 
-    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (rootTile, collector))))
-        {
-        Json::Value         child;
+    rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
 
-        rootRange.Extend (rootTile.GetTileRange());
-        rootJson["refine"] = "replace";
-        rootJson[JSON_GeometricError] = rootTile.GetTolerance();
-        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
-
-        rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
-
-        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
-        }
-    return status;
+    WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1237,6 +1211,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     IGenerateMeshTiles*         generateMeshTiles;
     TileNodePtr                 rootTile;
     Status                      status;
+    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
 
     if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
         return Status::NotImplemented;
@@ -1245,10 +1220,10 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
                                                                             
-    if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
-        return status;
+    if (Status::Success == (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter()))))
+        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
 
-    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1258,13 +1233,13 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
+    static size_t           s_maxPointsPerTile = 500000;
     Status                  status;
-    static size_t           s_maxPointsPerTile = 200000;
 
-    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
-        return status;
-        
-    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+    if (Status::Success == (status = ConvertStatus (generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile))))
+        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1272,12 +1247,19 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
+    auto spatialView = m_viewController._ToSpatialView();
+    if (nullptr == spatialView)
+        {
+        BeAssert(false);
+        return Status::NoGeometry;
+        }
+
     Json::Value         realityModelTilesets, elementTileSet;
 
     rootRange = DRange3d::NullRange();
     // First go through and collect tilesets for any (reality) models.   These will produce tileset from the HLOD trees directly and therefore don't
     // won't be included by collecting through their elements.
-    for (auto& modelId : m_viewController.GetViewedModels())
+    for (auto& modelId : spatialView->GetViewedModels())
         {
         DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
         WString         tilesetName;
@@ -1387,7 +1369,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         // The camera may not be centered -- and Cesium doesn't handle uncentered windows well.
         // Simulate by pointing the camera toward the center of the viewed volume.
         eyePoint = cameraView->GetEyePoint();
-        rotation =  cameraView->GetViewDirection().ToRotMatrix();
+        rotation =  cameraView->GetRotation();
 
         DPoint3d    viewOrigin, viewEyePoint, target, viewTarget;
 
@@ -1416,7 +1398,7 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         DVec3d          extents = orthographicView->GetExtents();
         DPoint3d        backCenter;
 
-        rotation = orthographicView->GetViewDirection().ToRotMatrix();
+        rotation = orthographicView->GetRotation();
         rotation.GetRows(xVec, yVec, zVec);
 
         rotation.Multiply (backCenter, orthographicView->GetOrigin());

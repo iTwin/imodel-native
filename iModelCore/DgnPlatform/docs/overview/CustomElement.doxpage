@@ -18,7 +18,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 The first step is to create a new ECEntityClass in the ecschema.xml file (data model) that subclasses the appropriate ECEntityClass:
 
-__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTileElement.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTilePhysicalElement.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -26,19 +26,19 @@ __PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTileElement.sampleCode
 
 The next step is to create a new C++ class that subclasses the appropriate C++ DgnElement subclass:
 
-__PUBLISH_INSERT_FILE__ ToyTileElement_Declare.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_Declare.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_CustomElement3 Define element virtual methods
 
-__PUBLISH_INSERT_FILE__ ToyTileElement_VirtualMethods.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_VirtualMethods.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_CustomElement4 Declare element handler
 
-__PUBLISH_INSERT_FILE__ ToyTileElement_DeclareHandler.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_DeclareHandler.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
@@ -56,7 +56,7 @@ __PUBLISH_INSERT_FILE__ ToyTileDomain_RegisterHandlers.sampleCode
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_CustomElement7 Call Create method
 
-__PUBLISH_INSERT_FILE__ ToyTileElement_StaticCreate.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_StaticCreate.sampleCode
 
 @note DgnElement::Insert must be called to persist the element.
 

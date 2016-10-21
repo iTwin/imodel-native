@@ -100,7 +100,7 @@ virtual DRange3d _GetEntityRange() const = 0;
 //! @private
 virtual Transform _GetEntityTransform() const = 0;
 //! @private
-virtual void _SetEntityTransform(TransformCR) = 0;
+virtual bool _SetEntityTransform(TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
@@ -130,15 +130,17 @@ Transform GetEntityTransform() const {return _GetEntityTransform();}
 
 //! Changes the solid to world transform for the entity.
 //! @param[in] transform The new solid to uor transform.
-void SetEntityTransform (TransformCR transform) {return _SetEntityTransform(transform);}
+//! @note For a scaled transform, BRepBuilderAPI_Transform or BRepBuilderAPI_GTransform will be used to modify the shape.
+//!       For translation/rotation only, only the TopoDS_Shape::Location will be set to the supplied transform.
+bool SetEntityTransform (TransformCR transform) {return _SetEntityTransform(transform);}
 
 //! PreMultiply the entity transform by the supplied (solid) transform
 //! @param[in] uorTransform The transform to pre-multiply.
-void PreMultiplyEntityTransformInPlace (TransformCR uorTransform) {_SetEntityTransform(Transform::FromProduct(uorTransform, _GetEntityTransform()));}
+bool PreMultiplyEntityTransformInPlace (TransformCR uorTransform) {return _SetEntityTransform(Transform::FromProduct(uorTransform, _GetEntityTransform()));}
 
 //! PostMultiply the entity transform by the supplied (solid) transform
 //! @param[in] solidTransform The transform to post-multiply.
-void PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {_SetEntityTransform(Transform::FromProduct(_GetEntityTransform(), solidTransform));}
+bool PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {return _SetEntityTransform(Transform::FromProduct(_GetEntityTransform(), solidTransform));}
 
 //! Optional per-face color/material overrides.
 IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
@@ -214,7 +216,7 @@ Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGra
 //=======================================================================================
 struct SolidKernelUtil
 {
-DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&);
+DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&); //!< NOTE: Will return an invalid entity if supplied shape is an empty compound, caller should check IsValid.
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);

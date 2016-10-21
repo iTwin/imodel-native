@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnIModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -309,35 +309,26 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     //  Imported the file into a compressed format.  Now copy properties.
     BeBriefcaseBasedId id = embeddedFiles.QueryFile(embeddedUtf8.c_str(), NULL, NULL, NULL, NULL);
 
-    DgnViewId defaultViewID;
-    if (BE_SQLITE_ROW != sourceProject->QueryProperty(&defaultViewID, (uint32_t)sizeof(defaultViewID), DgnViewProperty::DefaultView()))
+    DgnViewId defaultViewId;
+    if (BE_SQLITE_ROW != sourceProject->QueryProperty(&defaultViewId, (uint32_t)sizeof(defaultViewId), DgnViewProperty::DefaultView()))
         {
         auto iter = ViewDefinition::MakeIterator(*sourceProject);
         if (iter.begin() != iter.end())
-            defaultViewID = (*iter.begin()).GetId();
+            defaultViewId = (*iter.begin()).GetId();
         }
 
-    if (defaultViewID.IsValid())  //  This should be valid unless the project has no views
+    if (defaultViewId.IsValid())  //  This should be valid unless the project has no views
         {
-        Statement stmt;
-        result = stmt.Prepare(*sourceProject, "SELECT SubId from be_Prop where Namespace = 'dgn_View' AND Name = 'Thumbnail' AND Id=? LIMIT 1");
-        BeAssert(BE_SQLITE_OK == result);
-        stmt.BindInt64(1, defaultViewID.GetValue());
-        result = stmt.Step();
-        if (BE_SQLITE_ROW == result)
+        auto view = sourceProject->Elements().Get<ViewDefinition>(defaultViewId);
+        if (view.IsValid())
             {
-            uint32_t imageSize;
-            uint32_t resolution = (uint32_t)stmt.GetValueInt(0);
-            result = sourceProject->QueryPropertySize(imageSize, DgnViewProperty::Thumbnail(), defaultViewID.GetValue(), resolution);
-            BeAssert(BE_SQLITE_ROW == result);
-
-            ScopedArray<Byte>   thumbnail(imageSize);
-            result = sourceProject->QueryProperty(thumbnail.GetData(), imageSize, DgnViewProperty::Thumbnail(), defaultViewID.GetValue(), resolution);
-            if (BE_SQLITE_ROW != result)
-                { BeAssert(false); }
-
-            result = db.SaveProperty(DgnEmbeddedProjectProperty::Thumbnail(), thumbnail.GetData(), imageSize, id.GetValue(), resolution);
-            BeAssert(BE_SQLITE_OK == result);
+            Render::ImageSource thumbnail = view->ReadThumbnail();
+            if (thumbnail.IsValid())
+                {
+                auto& data = thumbnail.GetByteStream();
+                result = db.SaveProperty(DgnEmbeddedProjectProperty::Thumbnail(), data.GetData(), data.GetSize(), id.GetValue());
+                BeAssert(BE_SQLITE_OK == result);
+                }
             }
         }
 

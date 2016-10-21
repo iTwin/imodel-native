@@ -25,9 +25,11 @@
 #define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
 #define BIS_CLASS_DefinitionElement         "DefinitionElement"
 #define BIS_CLASS_DefinitionModel           "DefinitionModel"
+#define BIS_CLASS_DefinitionPartition       "DefinitionPartition"
 #define BIS_CLASS_DictionaryModel           "DictionaryModel"
 #define BIS_CLASS_Document                  "Document"
 #define BIS_CLASS_DocumentListModel         "DocumentListModel"
+#define BIS_CLASS_DocumentPartition         "DocumentPartition"
 #define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
 #define BIS_CLASS_Drawing                   "Drawing"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
@@ -48,8 +50,12 @@
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
+#define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
+#define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
+#define BIS_CLASS_GroupInformationPartition "GroupInformationPartition"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
+#define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
@@ -57,21 +63,28 @@
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelAuthority            "ModelAuthority"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
+#define BIS_CLASS_PartitionAuthority        "PartitionAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
+#define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
+#define BIS_CLASS_PhysicalTemplate          "PhysicalTemplate"
 #define BIS_CLASS_PhysicalType              "PhysicalType"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
 #define BIS_CLASS_SectionDrawing            "SectionDrawing"
-#define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
-#define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
+#define BIS_CLASS_Session                   "Session"
+#define BIS_CLASS_SessionAuthority          "SessionAuthority"
+#define BIS_CLASS_SessionModel              "SessionModel"
 #define BIS_CLASS_Sheet                     "Sheet"
 #define BIS_CLASS_SheetModel                "SheetModel"
 #define BIS_CLASS_SpatialElement            "SpatialElement"
 #define BIS_CLASS_SpatialIndex              "SpatialIndex"
+#define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
+#define BIS_CLASS_SpatialModel              "SpatialModel"
+#define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_Subject                   "Subject"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
@@ -91,7 +104,6 @@
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 #define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 
@@ -129,7 +141,7 @@ struct DgnImportContext;
 //! The combination of the three must be unique within all objects of a given type
 //! (e.g., Elements, Models) within a DgnDb. 
 //!
-//! The authority ID must be non-null and identify a valid authority.
+//! The authority Id must be non-null and identify a valid authority.
 //! The namespace may not be null, but may be a blank string.
 //! The value may be null if and only if the namespace is blank, signifying that the authority
 //! assigns no special meaning to the object's code.
@@ -152,10 +164,10 @@ public:
     //! Constructor
     DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) {}
 
-    //! Construct a code with the specified ID as its namespace
+    //! Construct a code with the specified Id as its namespace
     DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeInt64Id namespaceId);
 
-    //! Determine whether this DgnCode is valid. A valid code has a valid authority ID and either:
+    //! Determine whether this DgnCode is valid. A valid code has a valid authority Id and either:
     //!     - An empty namespace and value; or
     //!     - A non-empty value
     bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
@@ -223,7 +235,7 @@ public:
         DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db, Options options);
     };
 
-    static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) {return Iterator(db, options); }
+    static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) {return Iterator(db, options);}
 
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
@@ -279,8 +291,9 @@ private:
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
-    T_DgnModelMap   m_models;
-    T_ClassInfoMap  m_classInfos;
+    mutable BeSQLite::BeDbMutex m_mutex;
+    T_DgnModelMap  m_models;
+    T_ClassInfoMap m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
     void Empty();
@@ -379,9 +392,10 @@ public:
     //! @note The returned model, if any, is non-persistent. The caller must call the model's Insert method to add it to the bim.
     DGNPLATFORM_EXPORT DgnModelPtr CreateModel(DgnDbStatus* stat, ECN::IECInstanceCR properties);
 
-    //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
-    //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
-    //! @param[in] modelId The Id of the model to load.
+    //! Get a DgnModel from this DgnDb by its DgnModelId.
+    //! @param[in] modelId The DgnModelId of the model
+    //! @remarks The model is loaded from the database if necessary. If the model is already loaded, a pointer to the existing DgnModel is returned.
+    //! @return Invalid if the model does not exist.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel(DgnModelId modelId);
 
     template<class T> RefCountedPtr<T> Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id).get());}
@@ -580,7 +594,7 @@ public:
 //=======================================================================================
 //! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
 //! elements in the DgnDb. The meaning of the code is determined by the "authority" by which
-//! the code was assigned. Therefore the code includes the ID of the authority.
+//! the code was assigned. Therefore the code includes the Id of the authority.
 //! DgnAuthorities holds all such authorities associated with a DgnDb. The name of an authority
 //! must be unique. An optional URI can be provided to specify how to contact the authority.
 //! @see DgnDb::Authorities
@@ -599,12 +613,12 @@ private:
     DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
 
-    //! Look up the ID of the authority with the specified name.
+    //! Look up the Id of the authority with the specified name.
     DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8CP name) const;
 
-    //! Look up an authority by ID. The authority will be loaded from the database if necessary.
-    //! @param[in] authorityId The ID of the authority to load
-    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
+    //! Look up an authority by Id. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The Id of the authority to load
+    //! @returns The DgnAuthority with the specified Id, or nullptr if the authority could not be loaded
     DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
 
     //! Look up an authority by name. The authority will be loaded from the database if necessary.
@@ -612,9 +626,9 @@ public:
     //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
     DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8CP name);
 
-    //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
-    //! @param[in] authorityId The ID of the authority to load
-    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
+    //! Look up an authority of a particular type by Id. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The Id of the authority to load
+    //! @returns The DgnAuthority with the specified Id, or nullptr if the authority could not be loaded or is not of the desired type.
     template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) {return dynamic_cast<T const*>(GetAuthority(authorityId).get());}
 
     //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
@@ -722,8 +736,8 @@ public:
 //=======================================================================================
 //! Every DgnDb has a table for storing searchable text for use with SQLite's
 //! FTS5 full text search features. Each search term is qualified by a "text type" and associated
-//! with an ID into some other table from which the search term originated. The meaning of the
-//! ID field can be interpreted according to the text type. Applications can
+//! with an Id into some other table from which the search term originated. The meaning of the
+//! Id field can be interpreted according to the text type. Applications can
 //! populate this table with search terms to enable efficient, database-wide full text search.
 //! Such queries may be optionally constrained to one or more text types.
 //! In general, an application should limit its queries to those text types which it either
@@ -749,14 +763,14 @@ public:
     public:
         //! Constructor.
         //! @param[in]      textType Specifies the type of text. May not be empty.
-        //! @param[in]      id       The ID of the associated object. Must be valid.
+        //! @param[in]      id       The Id of the associated object. Must be valid.
         Key(Utf8StringCR textType, BeInt64Id id) : m_type(textType), m_id(id) {m_type.Trim();}
 
         //! Default constructor producing an invalid Key.
         Key() {}
 
         Utf8StringCR GetTextType() const {return m_type;} //!< The search text type
-        BeInt64Id GetId() const {return m_id;} //!< The ID of the object associated with this record
+        BeInt64Id GetId() const {return m_id;} //!< The Id of the object associated with this record
         bool IsValid() const {return !m_type.empty() && m_id.IsValid();} //!< Determine whether this is a valid Key
    };
 
@@ -768,10 +782,10 @@ public:
         Utf8String  m_text;
     public:
         //! Constructor
-        //! @param[in]      textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
-        //! @param[in]      id       The ID of the object associated with this text. Must be valid.
+        //! @param[in]      textType Identifies both the meaning of the Id and the "type" of the text. May not be empty.
+        //! @param[in]      id       The Id of the object associated with this text. Must be valid.
         //! @param[in]      text     The searchable text. May not be empty.
-        //! @remarks The combination of text type and ID must be unique within the searchable text table
+        //! @remarks The combination of text type and Id must be unique within the searchable text table
         Record(Utf8StringCR textType, BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) {}
 
         //! Constructor
@@ -783,7 +797,7 @@ public:
         Record() {}
 
         Utf8StringCR GetTextType() const {return m_key.GetTextType();} //!< The search text type
-        BeInt64Id GetId() const {return m_key.GetId();} //!< The ID of the object associated with the text
+        BeInt64Id GetId() const {return m_key.GetId();} //!< The Id of the object associated with the text
         Utf8StringCR GetText() const {return m_text;} //!< The searchable text
         Key const& GetKey() const {return m_key;} //!< The record key
         bool IsValid() const {return m_key.IsValid() && !m_text.empty();} //!< Determine if this is a valid record
@@ -851,7 +865,7 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
         public:
             DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
-            DGNPLATFORM_EXPORT BeInt64Id GetId() const; //!< The ID of the associated object
+            DGNPLATFORM_EXPORT BeInt64Id GetId() const; //!< The Id of the associated object
             DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
 
             Key GetKey() const {return Key(GetTextType(), GetId());} //!< The unique Key identifying this entry
@@ -875,7 +889,7 @@ public:
     //! @return An iterator over the matching records.
     DGNPLATFORM_EXPORT Iterator QueryRecords(Query const& query) const;
 
-    //! Query the record with the specified text type and ID.
+    //! Query the record with the specified text type and Id.
     //! @param[in] key The unique key identifying the record
     //! @return The corresponding record, or an invalid record if no such record exists.
     DGNPLATFORM_EXPORT Record QueryRecord(Key const& key) const;
@@ -890,18 +904,18 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Record const& record);
 
     //! Insert a new record into the searchable text table
-    //! @param[in] textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
-    //! @param[in] id The ID of the object associated with this text. Must be valid.
+    //! @param[in] textType Identifies both the meaning of the Id and the "type" of the text. May not be empty.
+    //! @param[in] id The Id of the object associated with this text. Must be valid.
     //! @param[in] text The searchable text. May not be empty.
     //! @return Success if the new record was inserted, or else an error code.
-    //! @remarks The combination of text type and ID must be unique within the searchable text table
+    //! @remarks The combination of text type and Id must be unique within the searchable text table
     DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRecord(Utf8CP textType, BeInt64Id id, Utf8CP text);
 
     //! Update an existing record in the searchable text table
     //! @param[in] record The modified record
     //! @param[in] originalKey If non-null, identifies the existing record.
     //! @return Success if the record was updated, or else an error code.
-    //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the text type and/or ID to be updated.
+    //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the text type and/or Id to be updated.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Record const& record, Key const* originalKey=nullptr);
 
     //! Removes all data from the searchable text table
@@ -917,9 +931,8 @@ public:
     //! @param[in] key The key identifying the record to drop.
     //! @return Success if the record was dropped, or an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
-//__PUBLISH_SECTION_END__
+
     static bool IsUntrackedFts5Table(Utf8CP tableName);
-//__PUBLISH_SECTION_START__
 };
 
 ENUM_IS_FLAGS(DgnSearchableText::Query::Column);

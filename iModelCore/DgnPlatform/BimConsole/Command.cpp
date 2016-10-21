@@ -14,7 +14,6 @@ using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DGN;
 
 //******************************* Command ******************
 
@@ -26,7 +25,6 @@ void Command::Run(Session& session, std::vector<Utf8String> const& args) const
     session.GetIssues().Reset();
     return _Run(session, args);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -60,7 +58,7 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -150,8 +148,8 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
     Utf8CP openModeStr = openMode == ECDb::OpenMode::Readonly ? "read-only" : "read-write";
 
     DbResult bimStat;
-    DgnDb::OpenParams params(openMode);
-    DgnDbPtr bim = DgnDb::OpenDgnDb(&bimStat, filePath, params);
+    Dgn::DgnDb::OpenParams params(openMode);
+    Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
     if (BE_SQLITE_OK == bimStat)
         {
         session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
@@ -179,7 +177,6 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-
     if (session.IsFileLoaded(true))
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
@@ -274,11 +271,11 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (fileType == SessionFile::Type::Bim)
         {
-        CreateDgnDbParams createParams(rootSubjectLabel);
+        Dgn::CreateDgnDbParams createParams(rootSubjectLabel);
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;
-        DgnDbPtr bim = DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+        Dgn::DgnDbPtr bim = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
         if (BE_SQLITE_OK != fileStatus)
             {
             Console::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
@@ -320,7 +317,7 @@ void FileInfoCommand::_Run(Session& session, vector<Utf8String> const& args) con
 
     if (session.GetFile().GetType() == SessionFile::Type::Bim)
         {
-        DgnDbCR bimFile = static_cast<BimFile const&>(session.GetFile()).GetDgnDbHandle();
+        Dgn::DgnDbCR bimFile = static_cast<BimFile const&>(session.GetFile()).GetDgnDbHandle();
         Console::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
         }
 
@@ -701,7 +698,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
     else
         BeFileName::CreateNewDirectory(outFolder.GetName());
 
-    int ecxmlMajorVersion = useECXmlV2 ? 2 : 3;
+    ECN::ECVersion ecxmlVersion = useECXmlV2 ? ECN::ECVersion::V2_0 : ECN::ECVersion::V3_1;
     for (auto schema : schemas)
         {
         WString fileName;
@@ -710,7 +707,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
 
         BeFileName outPath(outFolder);
         outPath.AppendToPath(fileName.c_str());
-        schema->WriteToXmlFile(outPath.GetName(), ecxmlMajorVersion);
+        schema->WriteToXmlFile(outPath.GetName(), ecxmlVersion);
         Console::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
         }
     }
@@ -1152,6 +1149,9 @@ void DbSchemaCommand::_Run(Session& session, std::vector<Utf8String> const& args
         return;
         }
 
+    if (!session.IsFileLoaded(true))
+        return;
+
     Utf8StringCR switchArg = args[1];
 
     if (switchArg.EqualsI("search"))
@@ -1279,26 +1279,29 @@ Utf8String ClassMappingCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
     {
-    if (args.size() < 2 || args.size() > 3)
+    if (args.size() < 1 || args.size() > 3)
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    Json::Value json;
-    Utf8StringCR schemaName = args[1];
+    if (!session.IsFileLoaded(true))
+        return;
 
-    if (args.size() == 2)
+    Json::Value json;
+
+    if (args.size() == 1)
         {
-        if (schemaName.EqualsI("*"))
+        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
             {
-            if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), false))
-                {
-                Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
-                return;
-                }
+            Console::WriteErrorLine("Retrieving ECClass mapping information for all ECSchemas failed.");
+            return;
             }
-        else
+        }
+    else
+        {
+        Utf8StringCR schemaName = args[1];
+        if (args.size() == 2)
             {
             if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetFile().GetHandle(), schemaName, false))
                 {
@@ -1306,17 +1309,42 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
                 return;
                 }
             }
-        }
-    else
-        {
-        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName, args[2]))
+        else
             {
-            Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
-            return;
+            if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetFile().GetHandle(), schemaName, args[2]))
+                {
+                Console::WriteErrorLine("Retrieving ECClass mapping information for ECClass %s.%s failed.", schemaName.c_str(), args[2].c_str());
+                return;
+                }
             }
         }
 
     Json::FastWriter writer;
     Utf8String infoStr = writer.write(json);
     Console::WriteLine(infoStr.c_str());
+    }
+
+//******************************* DebugCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     10/2016
+//---------------------------------------------------------------------------------------
+void DebugCommand::_Run(Session& session, std::vector<Utf8String> const& args) const
+    {
+    if (!session.IsFileLoaded(true))
+        return;
+
+    bvector<BeFileName> diegoSchemas;
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\LinearReferencing.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\RoadRailAlignment.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\Costing.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\BridgePhysical.01.00.00.ecschema.xml"));
+    diegoSchemas.push_back(BeFileName(L"D:\\temp\\diego\\RoadRailPhysical.01.00.00.ecschema.xml"));
+
+    ImportCommand importCmd;
+    for (BeFileNameCR schemaFile : diegoSchemas)
+        {
+        std::vector<Utf8String> cmdArgs {".import", "ecschema", schemaFile.GetNameUtf8()};
+        importCmd.Run(session, cmdArgs);
+        }
     }

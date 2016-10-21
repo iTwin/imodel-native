@@ -171,8 +171,8 @@ enum class ECPropertyPrimitiveType : uint32_t
     Double                    = 0x0401,//ECN::PRIMITIVETYPE_Double,
     Integer                   = 0x0501,//ECN::PRIMITIVETYPE_Integer,
     Long                      = 0x0601,//ECN::PRIMITIVETYPE_Long,
-    Point2D                   = 0x0701,//ECN::PRIMITIVETYPE_Point2D,
-    Point3D                   = 0x0801,//ECN::PRIMITIVETYPE_Point3D,
+    Point2D                   = 0x0701,//ECN::PRIMITIVETYPE_Point2d,
+    Point3D                   = 0x0801,//ECN::PRIMITIVETYPE_Point3d,
     String                    = 0x0901,//ECN::PRIMITIVETYPE_String,
     IGeometry                 = 0x0a01 //ECN::PRIMITIVETYPE_IGeometry
     };
@@ -315,7 +315,7 @@ struct JsECSqlValue : RefCountedBaseWithCreate
     Utf8String GetText() { return m_value->GetText(); }
     Utf8String GetDateTime() { return m_value->GetDateTime().ToUtf8String(); }
     double GetDouble() { return m_value->GetDouble(); }
-    JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3D()); }
+    JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3d()); }
     int32_t GetInt() { return m_value->GetInt(); }
     JsDgnObjectIdP GetId() { return new JsDgnObjectId(m_value->GetUInt64()); }
     JsECSqlArrayValue* GetArray();
@@ -1212,7 +1212,7 @@ struct JsECValue : RefCountedBaseWithCreate
     bool GetIsNull() const {return m_value.IsNull();}
     ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
     Utf8String GetString() const {return m_value.IsNull()? "": m_value.ToString();}
-    JsDPoint3dP GetPoint3d() const {return m_value.IsNull()? nullptr: new JsDPoint3d(m_value.GetPoint3D());}
+    JsDPoint3dP GetPoint3d() const {return m_value.IsNull()? nullptr: new JsDPoint3d(m_value.GetPoint3d());}
     Utf8String GetDateTime() const 
         {
         if (m_value.IsNull())
@@ -1497,14 +1497,16 @@ struct JsViewController : RefCountedBaseWithCreate
     ViewControllerPtr m_controller;
     JsViewController(ViewControllerR vc) : m_controller(&vc) {;}
 
+#if defined (NEEDS_WORK_VIEWS)
     JsDgnModelP GetTargetModel() const 
         {
-        return m_controller->GetTargetModel()? new JsDgnModel(*m_controller->GetTargetModel()): nullptr;
+        return m_controller->GetTargetModel() ? new JsDgnModel(*m_controller->GetTargetModel()) : nullptr;
         }
     void SetTargetModel(JsDgnModelP m) 
         {
         m_controller->SetTargetModel(m? m->m_model->ToGeometricModelP(): nullptr);
         }
+#endif
     };
 
 //=======================================================================================

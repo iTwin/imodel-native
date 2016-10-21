@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestPhysicalTemplateHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
@@ -133,12 +134,15 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value)
+DgnDbStatus TestElement::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto propName = accessor.GetAccessString();
+
 #define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
 #define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
 #define SETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetDouble(); return DgnDbStatus::Success;}
-#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3D(); return DgnDbStatus::Success;}
+#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3d(); return DgnDbStatus::Success;}
 
     SETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
     SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
@@ -154,14 +158,17 @@ DgnDbStatus TestElement::_SetPropertyValue(Utf8CP propName, ECN::ECValueCR value
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_SetPropertyValue(propName, value);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName) const
+DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto propName = accessor.GetAccessString();
+
 #define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
 #define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
 #define GETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
@@ -181,7 +188,7 @@ DgnDbStatus TestElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP propName)
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
     GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
 
-    return T_Super::_GetPropertyValue(value, propName);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,10 +209,10 @@ DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     m_doubleProps[1] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty2));
     m_doubleProps[2] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty3));
     m_doubleProps[3] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty4));
-    m_pointProps[0] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty1));
-    m_pointProps[1] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty2));
-    m_pointProps[2] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty3));
-    m_pointProps[3] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty4));
+    m_pointProps[0] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty1));
+    m_pointProps[1] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty2));
+    m_pointProps[2] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty3));
+    m_pointProps[3] = stmt.GetValuePoint3d(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty4));
 
     return DgnDbStatus::Success;
     }
@@ -236,10 +243,10 @@ void TestElement::BindParams(ECSqlStatement& stmt) const
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty2), m_doubleProps[1]);
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty3), m_doubleProps[2]);
     stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty4), m_doubleProps[3]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty1), m_pointProps[0]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
-    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty1), m_pointProps[0]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
+    stmt.BindPoint3d(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -347,6 +354,16 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
     BeAssert(group.IsValid());
     return group;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestPhysicalTemplatePtr TestPhysicalTemplate::Create(DefinitionModelR model)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTemplateHandler::GetHandler());
+    return new TestPhysicalTemplate(CreateParams(db, model.GetModelId(), classId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -498,6 +515,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestPhysicalTemplateHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());

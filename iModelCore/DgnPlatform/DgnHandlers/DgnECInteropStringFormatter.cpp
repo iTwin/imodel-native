@@ -179,10 +179,10 @@ bool InteropStringFormatter::Parse(ECValueR v, Utf8CP rawString, PrimitiveType p
 
             return true;
             }
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point3d:
             {
-            bool is3d = PRIMITIVETYPE_Point3D == primType;
+            bool is3d = PRIMITIVETYPE_Point3d == primType;
             DPoint3d pt;
             PointParserPtr parser = PointParser::Create();
             parser->SetIs3d(is3d);
@@ -191,9 +191,9 @@ bool InteropStringFormatter::Parse(ECValueR v, Utf8CP rawString, PrimitiveType p
                 return false;
 
             if (is3d)
-                v.SetPoint3D(pt);
+                v.SetPoint3d(pt);
             else
-                v.SetPoint2D(DPoint2d::From(pt.x, pt.y));
+                v.SetPoint2d(DPoint2d::From(pt.x, pt.y));
 
             return true;
             }

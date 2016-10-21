@@ -2688,7 +2688,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
             return false; // Sub-graphic outside range...
         }
 
-    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetViewDefinition().GetDisplayStyle().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;
@@ -2803,7 +2803,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 currGraphic = subGraphic.get();
 
                 mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
-                geomParamsChanged = false; // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
+
+                // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
+                // ...unless we're a SimplifyGraphic, in which case our geometry processor wants the params resolved immediately
+                geomParamsChanged = !isQVis; 
+
                 continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
                 }
 
@@ -3752,7 +3756,6 @@ BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
             if (geom.IsValid() && geom->GetRange(range))
                 {
                 localRange.Extend(range);
-                m_facetCount += m_facetCounter.GetFacetCount(*geom);
                 }
             }
 
@@ -3761,7 +3764,6 @@ BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
         }
 
     part.SetBoundingBox(localRange);
-    part.SetFacetCount(GetFacetCount());
 
     return SUCCESS;
     }
@@ -3814,7 +3816,6 @@ BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
         }
 
     source.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
-    source._RecordFacetCount(GetFacetCount());
 
     return SUCCESS;
     }
@@ -3900,7 +3901,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement, DRange3dCR localRange, size_t facets)
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement, DRange3dCR localRange)
     {
     if (m_isPartCreate)
         {
@@ -3916,7 +3917,7 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(partRange, false, facets); // Parts are already handled as sub-graphics...
+    OnNewGeom(partRange, false); // Parts are already handled as sub-graphics...
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
@@ -3927,13 +3928,12 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
     {
-    size_t      facets;
     DRange3d    localRange;
 
-    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRangeAndFacetCount(localRange, facets, m_dgnDb, geomPartId))
+    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, m_dgnDb, geomPartId))
         return false; // part probably doesn't exist...
 
-    return Append(geomPartId, geomToElement, localRange, facets);
+    return Append(geomPartId, geomToElement, localRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3961,10 +3961,8 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic, size_t facetCount)
+void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic)
     {
-    m_facetCount += facetCount;
-
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
@@ -4066,7 +4064,7 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     if (!geom.GetRange(localRange))
         return false;
 
-    OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+    OnNewGeom(localRange, m_appendAsSubGraphics);
 
     if (!m_writer.AppendSimplified(geom, m_is3d))
         m_writer.Append(geom);
@@ -4116,7 +4114,7 @@ bool GeometryBuilder::Append(ICurvePrimitiveCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
 
         if (!m_writer.AppendSimplified(geom, false, m_is3d))
             m_writer.Append(geom);
@@ -4141,7 +4139,7 @@ bool GeometryBuilder::Append(CurveVectorCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
 
         if (!m_writer.AppendSimplified(geom, m_is3d))
             m_writer.Append(geom);
@@ -4172,7 +4170,7 @@ bool GeometryBuilder::Append(ISolidPrimitiveCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4201,7 +4199,7 @@ bool GeometryBuilder::Append(MSBsplineSurfaceCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4230,7 +4228,7 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4281,7 +4279,7 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(geom));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4304,7 +4302,7 @@ bool GeometryBuilder::Append(TextStringCR text, CoordSystem coord)
         if (!getRange(text, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, m_appendAsSubGraphics, m_facetCounter.GetFacetCount(text));
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(text);
 
         return true;
@@ -4432,7 +4430,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d)
   : m_appearanceChanged(false), m_havePlacement(false), m_isPartCreate(!categoryId.IsValid()), m_is3d(is3d), m_appendAsSubGraphics(false),
-    m_dgnDb(dgnDb), m_writer(dgnDb), m_facetCount(0) 
+    m_dgnDb(dgnDb), m_writer(dgnDb) 
     {
     m_elParams.SetCategoryId(categoryId);
     }

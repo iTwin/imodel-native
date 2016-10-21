@@ -203,9 +203,9 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 #define CODE_Values "(" CODE_Columns ")"
 #define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?)"
 #define STMT_InsertUnavailableCode "INSERT INTO " TABLE_UnavailableCodes " " CODE_Values " Values (?,?,?)"
-#define STMT_SelectCodesInSet "SELECT " CODE_Columns " FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
+#define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_AuthorityId "=? AND " CODE_NameSpace "=? AND " CODE_Value "=?"
 
 enum CodeColumn { AuthorityId=0, NameSpace, Value };
 
@@ -461,24 +461,28 @@ struct VirtualCodeSet : VirtualSet
 void BriefcaseManager::Cull(DgnCodeSet& codes)
     {
     // Don't bother asking server to reserve codes which we've already reserved...
-    VirtualCodeSet vset(codes);
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCodesInSet);
-    stmt->BindVirtualSet(1, vset);
-    while (BE_SQLITE_ROW == stmt->Step())
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCode);
+    auto iter = codes.begin();
+    while (iter != codes.end())
         {
-        DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::NameSpace));
-        codes.erase(code);
-        }
+        auto const& code = *iter;
 
-    // Don't bother asking server to reserve empty codes...
-    for (auto iter = codes.begin(); iter != codes.end(); /* */)
-        {
-        BeAssert(!iter->IsEmpty());
-        BeAssert(iter->IsValid());
-        if (iter->IsEmpty() || !iter->IsValid())
+        // Don't bother asking server to reserve empty codes...
+        if (code.IsEmpty())
+            {
+            iter = codes.erase(iter);
+            continue;
+            }
+
+        stmt->BindId(CodeColumn::AuthorityId+1, code.GetAuthority());
+        stmt->BindText(CodeColumn::NameSpace+1, code.GetNamespace(), Statement::MakeCopy::No);
+        stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == stmt->Step())
             iter = codes.erase(iter);
         else
             ++iter;
+
+        stmt->Reset();
         }
     }
 
@@ -765,22 +769,6 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     return result;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockSetContains(DgnLockSet const& locks, DgnLockCR lock, bool matchExactLevel=false)
-    {
-    auto iter = locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
-    if (locks.end() == iter)
-        return false;
-    else if (matchExactLevel && iter->GetLevel() != lock.GetLevel())
-        return false;
-    else if (iter->GetLevel() > lock.GetLevel())
-        return false;
-    else
-        return true;
-    }
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
@@ -802,19 +790,19 @@ struct VirtualLockSet : VirtualSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManager::Cull(DgnLockSet& locks)
     {
-    struct VSet : VirtualLockSet
-    {
-        VSet(DgnLockSet const& locks) : VirtualLockSet(locks) { }
-        virtual bool _IsLockInSet(DgnLockCR lock) const override { return lockSetContains(m_locks, lock); }
-    };
-
-    VSet vset(locks);
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectLocksInSet);
-    stmt->BindVirtualSet(1, vset);
-    while (BE_SQLITE_ROW == stmt->Step())
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectExistingLock);
+    auto iter = locks.begin();
+    while (iter != locks.end())
         {
-        LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
-        locks.erase(locks.find(DgnLock(id, LockLevel::Exclusive)));
+        auto const& lock = *iter;
+        bindEnum(*stmt, 1, lock.GetType());
+        stmt->BindId(2, lock.GetId());
+        if (BE_SQLITE_ROW != stmt->Step() || lock.GetLevel() > static_cast<LockLevel>(stmt->GetValueInt(0)))
+            ++iter;
+        else
+            iter = locks.erase(iter);
+
+        stmt->Reset();
         }
     }
 
@@ -1650,16 +1638,21 @@ void RepositoryJson::BriefcaseIdToJson(JsonValueR value, BeBriefcaseId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::LockLevelFromJson(LockLevel& level, JsonValueCR value)
     {
-    if (value.isConvertibleTo(Json::uintValue))
+    return value.isConvertibleTo(Json::uintValue) && LockLevelFromUInt(level, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockLevelFromUInt(LockLevel& level, unsigned int value)
+    {
+    switch (static_cast<LockLevel>(value))
         {
-        level = static_cast<LockLevel>(value.asUInt());
-        switch (level)
-            {
-            case LockLevel::None:
-            case LockLevel::Shared:
-            case LockLevel::Exclusive:
-                return true;
-            }
+        case LockLevel::None:
+        case LockLevel::Shared:
+        case LockLevel::Exclusive:
+            level = static_cast<LockLevel>(value);
+            return true;
         }
 
     return false;
@@ -1678,16 +1671,21 @@ void RepositoryJson::LockLevelToJson(JsonValueR value, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::LockableTypeFromJson(LockableType& type, JsonValueCR value)
     {
-    if (value.isConvertibleTo(Json::uintValue))
+    return value.isConvertibleTo(Json::uintValue) && LockableTypeFromUInt(type, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockableTypeFromUInt(LockableType& type, unsigned int value)
+    {
+    switch (static_cast<LockableType>(value))
         {
-        type = static_cast<LockableType>(value.asUInt());
-        switch (type)
-            {
-            case LockableType::Db:
-            case LockableType::Model:
-            case LockableType::Element:
-                return true;
-            }
+        case LockableType::Db:
+        case LockableType::Model:
+        case LockableType::Element:
+            type = static_cast<LockableType>(value);
+            return true;
         }
 
     return false;
@@ -1706,10 +1704,15 @@ void RepositoryJson::LockableTypeToJson(JsonValueR value, LockableType type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value)
     {
-    if (!value.isConvertibleTo(Json::uintValue))
-        return false;
+    return value.isConvertibleTo(Json::uintValue) && RepositoryStatusFromUInt(status, value.asUInt());
+    }
 
-    status = static_cast<RepositoryStatus>(value.asUInt());
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RepositoryStatusFromUInt(RepositoryStatus& status, unsigned int value)
+    {
+    status = static_cast<RepositoryStatus>(value);
     return true;
     }
 
@@ -2028,7 +2031,15 @@ void RepositoryJson::ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value)
     {
-    options = static_cast<IBriefcaseManager::ResponseOptions>(value.asUInt());
+    return value.isConvertibleTo(Json::uintValue) && ResponseOptionsFromUInt(options, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::ResponseOptionsFromUInt(IBriefcaseManager::ResponseOptions& options, unsigned int value)
+    {
+    options = static_cast<IBriefcaseManager::ResponseOptions>(value);
     return true;
     }
 
@@ -2037,8 +2048,24 @@ bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions&
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value)
     {
-    purpose = static_cast<IBriefcaseManager::RequestPurpose>(value.asUInt());
-    return true;
+    return value.isConvertibleTo(Json::uintValue) && RequestPurposeFromUInt(purpose, value.asUInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RequestPurposeFromUInt(IBriefcaseManager::RequestPurpose& purpose, unsigned int value)
+    {
+    switch (static_cast<IBriefcaseManager::RequestPurpose>(value))
+        {
+        case IBriefcaseManager::RequestPurpose::Acquire:
+        case IBriefcaseManager::RequestPurpose::Query:
+        case IBriefcaseManager::RequestPurpose::FastQuery:
+            purpose = static_cast<IBriefcaseManager::RequestPurpose>(value);
+            return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

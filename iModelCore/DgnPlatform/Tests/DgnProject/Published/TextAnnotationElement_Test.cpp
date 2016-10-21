@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "AnnotationTestFixture.h"
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
@@ -98,8 +100,8 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
-        EXPECT_TRUE(viewDef->Insert().IsValid());
+        // auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
+        // EXPECT_TRUE(viewDef->Insert().IsValid());
         }
 
     // Read the element back out, modify, and rewrite.

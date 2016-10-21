@@ -80,7 +80,7 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
         LsCacheStyleEntry const& entry = *iterLineStyles;
         LsDefinitionCP lsDef = entry.GetLineStyleCP();
         EXPECT_TRUE(nullptr != lsDef);
-        LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+        LsComponentCP lsComponent = lsDef->GetComponentCP();
         EXPECT_TRUE(nullptr != lsComponent);
         if (lsComponent)
             {
@@ -140,7 +140,7 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
 
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
-    LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+    LsComponentCP lsComponent = lsDef->GetComponentCP();
     ASSERT_TRUE(nullptr != lsComponent);
 
     TestStyleProperties expectedTestStyle, testStyle;
@@ -306,7 +306,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     cache = &styleTable.GetCache();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
-    LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+    LsComponentCP lsComponent = lsDef->GetComponentCP();
     ASSERT_TRUE(nullptr != lsComponent);
     ASSERT_TRUE(LsComponentType::RasterImage == lsComponent->GetComponentType());
 
@@ -406,7 +406,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     cache = &m_db->LineStyles().GetCache();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
-    LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+    LsComponentCP lsComponent = lsDef->GetComponentCP();
     ASSERT_TRUE(nullptr != lsComponent);
     ASSERT_TRUE(LsComponentType::LineCode == lsComponent->GetComponentType());
 
@@ -484,7 +484,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     cache = &m_db->LineStyles().GetCache();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
-    LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+    LsComponentCP lsComponent = lsDef->GetComponentCP();
     ASSERT_TRUE(nullptr != lsComponent);
     ASSERT_TRUE(LsComponentType::Compound == lsComponent->GetComponentType());
     LsCompoundComponent * compoundComponent = (LsCompoundComponent *)lsComponent;

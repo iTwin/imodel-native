@@ -75,8 +75,10 @@ DgnDbStatus DgnCategory::BindParams(ECSqlStatement& stmt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(CAT_PROP_Descr, name))
         {
         value.SetUtf8CP(GetDescription());
@@ -92,14 +94,16 @@ DgnDbStatus DgnCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) con
         value.SetInteger(static_cast<int32_t>(m_data.m_scope));
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnCategory::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
 
     if (0 == strcmp(CAT_PROP_Descr, name))
         {
@@ -116,7 +120,7 @@ DgnDbStatus DgnCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         m_data.m_scope = static_cast<Scope>(value.GetInteger());
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,7 +231,7 @@ DgnCategoryCPtr DgnCategory::Insert(DgnSubCategory::Appearance const& app, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId DgnCategory::GetDefaultSubCategoryId(DgnCategoryId catId)
     {
-    // hackity hacky hack - assume sequential assignment of element IDs and that the default sub-category is the next 
+    // hackity hacky hack - assume sequential assignment of element Ids and that the default sub-category is the next 
     return catId.IsValid() ? DgnSubCategoryId(catId.GetValueUnchecked() + 1) : DgnSubCategoryId();
     }
 
@@ -337,8 +341,10 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
     if (0 == strcmp(SUBCAT_PROP_Descr, name))
         {
         value.SetUtf8CP(GetDescription());
@@ -349,14 +355,16 @@ DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) 
         value.SetUtf8CP(m_data.m_appearance.ToJson().c_str());
         return DgnDbStatus::Success;
         }
-    return T_Super::_GetPropertyValue(value, name);
+    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnSubCategory::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
     {
+    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
+    auto name = accessor.GetAccessString();
 
     if (0 == strcmp(SUBCAT_PROP_Descr, name))
         {
@@ -368,7 +376,7 @@ DgnDbStatus DgnSubCategory::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         m_data.m_appearance.FromJson(value.GetUtf8CP());
         return DgnDbStatus::Success;
         }
-    return T_Super::_SetPropertyValue(name, value);
+    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**

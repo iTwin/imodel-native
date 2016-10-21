@@ -66,9 +66,7 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 //+---------------+---------------+---------------+---------------+---------------+------
 CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     {
-    PhysicalModelPtr model = PhysicalModel::Create(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("newModel"));
-    if (DgnDbStatus::Success != model->Insert()) /* Insert the new model into the DgnDb */
-        return CompatibilityStatus::ERROR_ModelInsertFailed;
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("newModel"));
 
     DgnElementPtr element;
     DgnDbStatus insertStatus;

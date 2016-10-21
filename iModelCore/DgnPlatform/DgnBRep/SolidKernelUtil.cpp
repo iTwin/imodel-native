@@ -108,7 +108,7 @@ virtual Transform _GetEntityTransform () const override {Transform transform = O
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetEntityTransform (TransformCR transform) override
+virtual bool _SetEntityTransform (TransformCR transform) override
     {
     DPoint3d    origin;
     RotMatrix   rMatrix, rotation, skewFactor;
@@ -129,47 +129,56 @@ virtual void _SetEntityTransform (TransformCR transform) override
         shapeTrans.InitIdentity();
         }
 
-    if (!goopTrans.IsIdentity())
+    try
         {
-        double  goopScale;
-
-        goopTrans.GetMatrix(rMatrix);
-
-        if (rMatrix.IsUniformScale(goopScale))
+        if (!goopTrans.IsIdentity())
             {
-            gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
+            double  goopScale;
 
-            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-            BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
-    
-            if (!transformer.IsDone())
+            goopTrans.GetMatrix(rMatrix);
+
+            if (rMatrix.IsUniformScale(goopScale))
                 {
-                BeAssert(false);
-                return;
+                gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
+
+                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+                BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
+    
+                if (!transformer.IsDone())
+                    {
+                    BeAssert(false);
+                    return false;
+                    }
+
+                m_shape = transformer.ModifiedShape(m_shape);
+                }
+            else
+                {
+                gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
+
+                m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+                BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
+    
+                if (!transformer.IsDone())
+                    {
+                    BeAssert(false);
+                    return false;
+                    }
+
+                m_shape = transformer.ModifiedShape(m_shape);
                 }
 
-            m_shape = transformer.ModifiedShape(m_shape);
+            BeAssert(m_shape.Location().IsIdentity());
             }
-        else
-            {
-            gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
-
-            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-            BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
-    
-            if (!transformer.IsDone())
-                {
-                BeAssert(false);
-                return;
-                }
-
-            m_shape = transformer.ModifiedShape(m_shape);
-            }
-
-        BeAssert(m_shape.Location().IsIdentity());
+        }
+    catch (Standard_Failure)
+        {
+        return false;
         }
 
     m_shape.Location(OCBRep::ToGpTrsf(shapeTrans));
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,7 +281,13 @@ TopoDS_Shape& GetShapeR() {return m_shape;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape) {return new OpenCascadeEntity(shape);}
+static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape)
+    {
+    if (OCBRepUtil::IsEmptyCompoundShape(shape))
+        return nullptr; // Don't create OpenCascadeEntity from empty compound (ex. useless result from BRepAlgoAPI_Cut if target is completely inside tool)...
+
+    return new OpenCascadeEntity(shape);
+    }
 
 }; // OpenCascadeEntity
 

@@ -14,6 +14,8 @@ DGNPLATFORM_TYPEDEFS(ICodedEntity);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+namespace dgn_AuthorityHandler {struct Model; struct Partition; struct Session;};
+
 //=======================================================================================
 //! Interface adopted by an object which possesses an authority-issued DgnCode, such as a DgnModel or DgnElement.
 // @bsistruct                                                    Paul.Connelly   01/16
@@ -64,7 +66,7 @@ public:
         Utf8String      m_name;
 
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnAuthorityId id=DgnAuthorityId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) { }
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) {}
     };
 protected:
     friend struct DgnAuthorities;
@@ -129,7 +131,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LocalAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
 
-    LocalAuthority(CreateParams const& params) : T_Super(params) { }
+    LocalAuthority(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -141,7 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
 
-    NamespaceAuthority(CreateParams const& params) : T_Super(params) { }
+    NamespaceAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
 
@@ -156,13 +158,32 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 struct ModelAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Model;
+
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
-public:
-    ModelAuthority(CreateParams const& params) : T_Super(params) { }
+    ModelAuthority(CreateParams const& params) : T_Super(params) {}
 
+public:
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId);
+};
+
+//=======================================================================================
+//! The default code-issuing authority for InformationPartitionElements.
+// @bsistruct                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct PartitionAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Partition;
+
+protected:
+    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    PartitionAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId);
 };
 
 //=======================================================================================
@@ -173,7 +194,7 @@ struct MaterialAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 public:
-    MaterialAuthority(CreateParams const& params) : T_Super(params) { }
+    MaterialAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetMaterialAuthorityId();
@@ -189,7 +210,7 @@ struct CategoryAuthority : DgnAuthority
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    CategoryAuthority(CreateParams const& params) : T_Super(params) { }
+    CategoryAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
@@ -203,14 +224,15 @@ public:
 struct ResourceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    ResourceAuthority(CreateParams const& params) : T_Super(params) { }
-
-    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR resourceECClassName);
+    ResourceAuthority(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR namespaceName);
+    static DgnCode CreateDisplayStyleCode(Utf8StringCR name) {return CreateResourceCode(name,"dstyle");}
+    static DgnCode CreateModelSelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"models");}
+    static DgnCode CreateCategorySelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"catgs");}
+    static DgnCode CreateViewDefinitionCode(Utf8StringCR name) {return CreateResourceCode(name,"view");}
     DGNPLATFORM_EXPORT static DgnAuthorityId GetResourceAuthorityId();
-    static bool IsResourceAuthority(DgnAuthorityCR auth) { return auth.GetAuthorityId() == GetResourceAuthorityId(); }
+    static bool IsResourceAuthority(DgnAuthorityCR auth) {return auth.GetAuthorityId() == GetResourceAuthorityId();}
 };
 
 //=======================================================================================
@@ -221,7 +243,7 @@ struct TrueColorAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 public:
-    TrueColorAuthority(CreateParams const& params) : T_Super(params) { }
+    TrueColorAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateTrueColorCode(Utf8StringCR colorName, Utf8StringCR colorBookName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetTrueColorAuthorityId();
@@ -237,17 +259,40 @@ struct GeometryPartAuthority : DgnAuthority
 protected:
     virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    GeometryPartAuthority(CreateParams const& params) : T_Super(params) { }
+    GeometryPartAuthority(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR nameSpace);
     static DgnCode CreateEmptyCode() { return CreateGeometryPartCode("", ""); }
     DGNPLATFORM_EXPORT static DgnAuthorityId GetGeometryPartAuthorityId();
 };
 
+//=======================================================================================
+//! The default code-issuing authority for Session elements.
+// @bsistruct                                                    Shaun.Sewall    10/16
+//=======================================================================================
+struct SessionAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+    friend struct dgn_AuthorityHandler::Session;
+
+protected:
+    DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
+    SessionAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static DgnCode CreateSessionCode(Utf8StringCR codeValue);
+};
+
+//=======================================================================================
+// Macro used for declaring the members of a DgnAuthority handler
+//=======================================================================================
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
     private: virtual Dgn::DgnAuthorityP _CreateInstance(Dgn::DgnAuthority::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
+//=======================================================================================
+//! DgnAuthority handlers
+//=======================================================================================
 namespace dgn_AuthorityHandler
 {
     struct EXPORT_VTABLE_ATTRIBUTE Authority : DgnDomain::Handler
@@ -289,6 +334,11 @@ namespace dgn_AuthorityHandler
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelAuthority, ModelAuthority, Model, Authority, DGNPLATFORM_EXPORT)
     };
 
+    struct EXPORT_VTABLE_ATTRIBUTE Partition : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_PartitionAuthority, PartitionAuthority, Partition, Authority, DGNPLATFORM_EXPORT)
+    };
+
     struct EXPORT_VTABLE_ATTRIBUTE TrueColor : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_TrueColorAuthority, TrueColorAuthority, TrueColor, Authority, DGNPLATFORM_EXPORT)
@@ -302,6 +352,11 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Category : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Session : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SessionAuthority, SessionAuthority, Session, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

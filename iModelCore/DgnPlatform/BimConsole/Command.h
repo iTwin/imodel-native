@@ -342,3 +342,18 @@ struct ClassMappingCommand : public Command
         ClassMappingCommand() : Command() {}
         ~ClassMappingCommand() {}
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   krischan.Eberle 10/2016
+//---------------------------------------------------------------------------------------
+struct DebugCommand : public Command
+    {
+    private:
+        virtual Utf8String _GetName() const override { return ".debug"; }
+        virtual Utf8String _GetUsage() const override { return "debug"; }
+        virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
+
+    public:
+        DebugCommand() : Command() {}
+        ~DebugCommand() {}
+    };

@@ -257,7 +257,10 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
             }
         }
 
-    FunctionalModelPtr model = FunctionalModel::Create(*m_db->Elements().GetRootSubject());
+    FunctionalPartitionCPtr partition = FunctionalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "FunctionalPartition");
+    ASSERT_TRUE(partition.IsValid());
+
+    FunctionalModelPtr model = FunctionalModel::Create(*partition);
     ASSERT_TRUE(model.IsValid());
     ASSERT_TRUE(model->IsRoleModel());
     ASSERT_EQ(DgnDbStatus::Success, model->Insert());

@@ -86,6 +86,8 @@ void BimConsole::Setup()
     AddCommand(classMappingCommand);
     AddCommand(".cm", classMappingCommand); //add same command with alternative command name
 
+    AddCommand(make_shared<DebugCommand>());
+
     auto exitCommand = make_shared<ExitCommand>();
     AddCommand(exitCommand);
     AddCommand(".quit", exitCommand); //add same command with alternative command name

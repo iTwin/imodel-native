@@ -26,13 +26,21 @@ struct IECSqlClassParamsProvider
 //=======================================================================================
 struct ECSqlClassInfo
 {
+    typedef std::function<DgnDbStatus(ECN::ECValueR, DgnElement const&)> T_ElementPropGet;
+    typedef std::function<DgnDbStatus(DgnElement&, ECN::ECValueCR)> T_ElementPropSet;
+    typedef std::function<DgnDbStatus(DgnElement&, ECN::ECValueCR)> T_ElementPropValidator;
+
 private:
     friend struct ECSqlClassParams;
 
     Utf8String  m_select;
+    Utf8String  m_selectEcProps;
     Utf8String  m_insert;
     Utf8String  m_update;
     uint16_t    m_updateParameterIndex;
+    bmap<uint32_t, uint32_t> m_autoPropertyStatementType; // non-default statement types found for auto-handled properties
+    bmap<uint32_t, bpair<T_ElementPropGet, T_ElementPropSet>> m_propertyAccessors; // custom-handled property get and set functions
+    bmap<uint32_t, T_ElementPropValidator> m_autoPropertyValidators; // auto-handled property custom validation functions
 public:
     ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
 
@@ -43,7 +51,18 @@ public:
     BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
-};
+
+    void SetSelectEcPropsECSql(Utf8StringCR str) { m_selectEcProps = str; }
+    Utf8StringCR GetSelectEcPropsECSql() const { return m_selectEcProps; }
+
+    void RegisterPropertyAccessors(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropGet getFunc, T_ElementPropSet setFunc);
+    bpair<T_ElementPropGet,T_ElementPropSet> const* GetPropertyAccessors(uint32_t propIdx) const;
+
+    void RegisterPropertyValidator(ECN::ClassLayout const& layout, Utf8CP propName, T_ElementPropValidator);
+    T_ElementPropValidator const* GetPropertyValidator(uint32_t propIdx) const;
+
+    uint32_t GetAutoPropertyStatementType(uint32_t propIdx);
+    };
 
 //=======================================================================================
 //! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
@@ -56,6 +75,7 @@ struct ECSqlClassParams
 {
     friend struct DgnElement;
 public:
+
     enum class StatementType
         {
         None = 0, //!< Property should not be included in any statement -- it has completely custom I/O
@@ -110,7 +130,7 @@ public:
     //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
-    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8StringCR parameterName) const;
+    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
 
 };
 

@@ -9,15 +9,15 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
-namespace ViewFlagsJson
+namespace StyleJson
 {
     static Utf8CP str_Acs()            {return "acs";}
-    static Utf8CP str_Construction()   {return "construct";}
-    static Utf8CP str_Fill()           {return "fill";}
     static Utf8CP str_Grid()           {return "grid";}
     static Utf8CP str_HiddenEdges()    {return "hidEdges";}
-    static Utf8CP str_NoClipVolume()   {return "noClipVol";}
+    static Utf8CP str_ClipVolume()     {return "clipVol";}
+    static Utf8CP str_NoConstruction() {return "noConstruct";}
     static Utf8CP str_NoDimension()    {return "noDim";}
+    static Utf8CP str_NoFill()         {return "noFill";}
     static Utf8CP str_NoLighting()     {return "noLighting";}
     static Utf8CP str_NoMaterial()     {return "noMaterial";}
     static Utf8CP str_NoPattern()      {return "noPattern";}
@@ -32,128 +32,35 @@ namespace ViewFlagsJson
     static Utf8CP str_VisibleEdges()   {return "visEdges";}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::State::State(ViewDefinition const& definition)
-    {
-    auto& dgnDb = definition.GetDgnDb();
-    auto& elements = dgnDb.Elements();
-    auto categorySelector = elements.Get<CategorySelector>(definition.GetCategorySelectorId());
-    auto displayStyle = elements.Get<DisplayStyle>(definition.GetDisplayStyleId());
-
-    // the State members must always be copies of the original data.
-    m_definition = definition.MakeCopy<ViewDefinition>();
-    m_categorySelector = categorySelector.IsValid() ? categorySelector->MakeCopy<CategorySelector>() : new CategorySelector(dgnDb,"");
-    m_displayStyle = displayStyle.IsValid() ? displayStyle->MakeCopy<DisplayStyle>() : new DisplayStyle(dgnDb, ""); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewController::State::Equals(State const&other) const
-    {
-    if (!m_definition->Equals(*other.m_definition))
-        return false;
-
-    if (m_categorySelector.IsValid() && (!other.m_categorySelector.IsValid() || !m_categorySelector->Equals(*other.m_categorySelector)))
-        return false;
-
-    if (m_displayStyle.IsValid() && (!other.m_displayStyle.IsValid() || !m_displayStyle->Equals(*other.m_displayStyle)))
-        return false;
-
-    return m_modelSelector.IsValid() ? (other.m_modelSelector.IsValid() && m_modelSelector->Equals(*other.m_modelSelector)) : true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::State ViewController::State::Clone() const
-    {
-    ViewController::State copy;
-    copy.m_definition = m_definition->MakeCopy<ViewDefinition>();
-    copy.m_categorySelector = m_categorySelector.IsValid() ? m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
-    copy.m_displayStyle = m_displayStyle.IsValid() ? m_displayStyle->MakeCopy<DisplayStyle>() : nullptr;
-    copy.m_modelSelector = m_modelSelector.IsValid() ? m_modelSelector->MakeCopy<ModelSelector>() : nullptr;
-    return copy;
-    }
-
-BEGIN_UNNAMED_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* NOTE: this will either call Insert or Update depending on whether the element is new or not. Either way, the
-* element remains a COPY of the persistent element, not the original (see documentation on DgnElements::Insert and DgnElements::Update).
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus writeElement(DgnElementR el)
-    {
-    DgnDbStatus stat;
-    el.GetElementId().IsValid() ? el.Update(&stat) : el.Insert(&stat);
-    BeAssert(!el.IsPersistent());
-    return stat;
-    }
-END_UNNAMED_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* Save the elements of this state to the database.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewController::State::Write()
-    {
-    if (m_modelSelector.IsValid())
-        {
-        writeElement(*m_modelSelector);
-        m_definition->ToSpatialViewP()->SetModelSelectorId(m_modelSelector->GetElementId());
-        }
-
-    if (m_displayStyle.IsValid())
-        {
-        writeElement(*m_displayStyle);
-        m_definition->SetDisplayStyleId(m_displayStyle->GetElementId());
-        }
-
-    if (m_categorySelector.IsValid())
-        {
-        writeElement(*m_categorySelector);
-        m_definition->SetCategorySelectorId(m_categorySelector->GetElementId());
-        }
-
-    return writeElement(*m_definition);
-    }
+using namespace StyleJson;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::FromBaseJson(JsonValueCR val)
+void ViewFlags::FromJson(JsonValueCR val)
     {
     memset(this, 0, sizeof(*this));
-    m_constructions = val[ViewFlagsJson::str_Construction()].asBool();
-    m_text = !val[ViewFlagsJson::str_NoText()].asBool();
-    m_dimensions = !val[ViewFlagsJson::str_NoDimension()].asBool();
-    m_patterns = !val[ViewFlagsJson::str_NoPattern()].asBool();
-    m_weights = !val[ViewFlagsJson::str_NoWeight()].asBool();
-    m_styles = !val[ViewFlagsJson::str_NoStyle()].asBool();
-    m_transparency = !val[ViewFlagsJson::str_NoTransparency()].asBool();
-    m_fill = val[ViewFlagsJson::str_Fill()].asBool();
-    m_grid = val[ViewFlagsJson::str_Grid()].asBool();
-    m_acsTriad = val[ViewFlagsJson::str_Acs()].asBool();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::From3dJson(JsonValueCR val)
-    {
-    m_textures = !val[ViewFlagsJson::str_NoTexture()].asBool();
-    m_materials = !val[ViewFlagsJson::str_NoMaterial()].asBool();
-    m_sceneLights = !val[ViewFlagsJson::str_NoSceneLight()].asBool();
-    m_visibleEdges = val[ViewFlagsJson::str_VisibleEdges()].asBool();
-    m_hiddenEdges = val[ViewFlagsJson::str_HiddenEdges()].asBool();
-    m_shadows = val[ViewFlagsJson::str_Shadows()].asBool();
-    m_noClipVolume = val[ViewFlagsJson::str_NoClipVolume()].asBool();
-    m_ignoreLighting = val[ViewFlagsJson::str_NoLighting()].asBool();
+    m_constructions = !val[str_NoConstruction()].asBool();
+    m_text = !val[str_NoText()].asBool();
+    m_dimensions = !val[str_NoDimension()].asBool();
+    m_patterns = !val[str_NoPattern()].asBool();
+    m_weights = !val[str_NoWeight()].asBool();
+    m_styles = !val[str_NoStyle()].asBool();
+    m_transparency = !val[str_NoTransparency()].asBool();
+    m_fill = !val[str_NoFill()].asBool();
+    m_grid = val[str_Grid()].asBool();
+    m_acsTriad = val[str_Acs()].asBool();
+    m_textures = !val[str_NoTexture()].asBool();
+    m_materials = !val[str_NoMaterial()].asBool();
+    m_sceneLights = !val[str_NoSceneLight()].asBool();
+    m_visibleEdges = val[str_VisibleEdges()].asBool();
+    m_hiddenEdges = val[str_HiddenEdges()].asBool();
+    m_shadows = val[str_Shadows()].asBool();
+    m_noClipVolume = !val[str_ClipVolume()].asBool();
+    m_ignoreLighting = val[str_NoLighting()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
-    uint32_t renderModeValue = val[ViewFlagsJson::str_RenderMode()].asUInt();
+    uint32_t renderModeValue = val[str_RenderMode()].asUInt();
 
     if (renderModeValue < (uint32_t)RenderMode::HiddenLine)
         m_renderMode = RenderMode::Wireframe;
@@ -166,135 +73,47 @@ void ViewFlags::From3dJson(JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::ToBaseJson(JsonValueR val) const
+Json::Value ViewFlags::ToJson() const
     {
-    if (m_constructions) val[ViewFlagsJson::str_Construction()] = true;
-    if (!m_text) val[ViewFlagsJson::str_NoText()] = true;
-    if (!m_dimensions) val[ViewFlagsJson::str_NoDimension()] = true;
-    if (!m_patterns) val[ViewFlagsJson::str_NoPattern()] = true;
-    if (!m_weights) val[ViewFlagsJson::str_NoWeight()] = true;
-    if (!m_styles) val[ViewFlagsJson::str_NoStyle()] = true;
-    if (!m_transparency) val[ViewFlagsJson::str_NoTransparency()] = true;
-    if (m_fill) val[ViewFlagsJson::str_Fill()] = true;
-    if (m_grid) val[ViewFlagsJson::str_Grid()] = true;
-    if (m_acsTriad) val[ViewFlagsJson::str_Acs()] = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::To3dJson(JsonValueR val) const
-    {
-    if (!m_textures) val[ViewFlagsJson::str_NoTexture()] = true;
-    if (!m_materials) val[ViewFlagsJson::str_NoMaterial()] = true;
-    if (!m_sceneLights) val[ViewFlagsJson::str_NoSceneLight()] = true;
-    if (m_visibleEdges) val[ViewFlagsJson::str_VisibleEdges()] = true;
-    if (m_hiddenEdges) val[ViewFlagsJson::str_HiddenEdges()] = true;
-    if (m_shadows) val[ViewFlagsJson::str_Shadows()] = true;
-    if (m_noClipVolume) val[ViewFlagsJson::str_NoClipVolume()] = true;
-    if (m_ignoreLighting) val[ViewFlagsJson::str_NoLighting()] = true;
-
-    val[ViewFlagsJson::str_RenderMode()] =(uint8_t) m_renderMode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategory::Appearance ViewController::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
-    {
-    auto const entry = m_subCategories.find(subCategoryId);
-    if (entry != m_subCategories.end())
-        return entry->second;
-
-    DgnSubCategoryCPtr subCategory = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
-    BeAssert(subCategory.IsValid());
-    DgnSubCategory::Appearance appearance;
-    if (subCategory.IsValid())
-        appearance = subCategory->GetAppearance();
-
-    auto out = m_subCategories.Insert(subCategoryId, appearance);
-    return out.first->second;
+    Json::Value val;
+    if (!m_constructions) val[str_NoConstruction()] = true;
+    if (!m_text) val[str_NoText()] = true;
+    if (!m_dimensions) val[str_NoDimension()] = true;
+    if (!m_patterns) val[str_NoPattern()] = true;
+    if (!m_weights) val[str_NoWeight()] = true;
+    if (!m_styles) val[str_NoStyle()] = true;
+    if (!m_transparency) val[str_NoTransparency()] = true;
+    if (!m_fill) val[str_NoFill()] = true;
+    if (m_grid) val[str_Grid()] = true;
+    if (m_acsTriad) val[str_Acs()] = true;
+    if (!m_textures) val[str_NoTexture()] = true;
+    if (!m_materials) val[str_NoMaterial()] = true;
+    if (!m_sceneLights) val[str_NoSceneLight()] = true;
+    if (m_visibleEdges) val[str_VisibleEdges()] = true;
+    if (m_hiddenEdges) val[str_HiddenEdges()] = true;
+    if (m_shadows) val[str_Shadows()] = true;
+    if (!m_noClipVolume) val[str_ClipVolume()] = true;
+    if (m_ignoreLighting) val[str_NoLighting()] = true;
+    val[str_RenderMode()] = (uint8_t) m_renderMode;
+    return val;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
+void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
-    if (onOff)
-        m_viewedModels.insert(modelId);
-    else
-        m_viewedModels.erase(modelId);
-
-    if (onOff && !m_targetModelId.IsValid())
-        m_targetModelId = modelId;
-    else if (!onOff && modelId == m_targetModelId && 0 != m_viewedModels.size())
-        m_targetModelId = *m_viewedModels.begin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
-    {
-    if (onOff)
-        m_viewedCategories.insert(categoryId);
-    else
-        m_viewedCategories.erase(categoryId);
-
+    GetViewDefinitionR().GetCategorySelectorR().ChangeCategoryDisplay(categoryId, onOff);
     _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModelP ViewController::_GetTargetModel() const {return GetDgnDb().Models().Get<GeometricModel>(m_targetModelId).get();}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinition const& def) : m_dgndb(def.GetDgnDb()), m_viewState(def)
+ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
-    m_viewFlags.InitDefaults();
     m_defaultDeviceOrientation.InitIdentity();
     m_defaultDeviceOrientationValid = false;
-    memset(&m_backgroundColor, 0, sizeof(m_backgroundColor));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LoadCategories()
-    {
-    m_viewedCategories = m_viewState.GetCategorySelector()->GetCategoryIds();
-
-    // load all SubCategories (even for categories not currently on)
-    for (auto const& id : DgnSubCategory::QuerySubCategories(GetDgnDb()))
-        {
-        DgnSubCategory::Appearance appearance;
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
-        if (subCat.IsValid())
-            appearance = subCat->GetAppearance();
-
-        m_subCategories.Insert(id, appearance);
-        }
-
-    bmap<DgnSubCategoryId, DgnSubCategory::Override> overrides;
-    m_viewState.GetCategorySelector()->GetSubCategoryOverrides(overrides);
-    for (auto const& ovr : overrides)
-        OverrideSubCategory(ovr.first, ovr.second);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_LoadState()
-    {
-    BeAssert(m_viewState.IsValid());
-    auto dstyle = m_viewState.GetDisplayStyle();
-    m_viewFlags = dstyle->GetViewFlags(_Is3d());
-    m_backgroundColor = dstyle->GetBackgroundColor();
-    LoadCategories();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -302,29 +121,8 @@ void ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::LoadState()
     {
-    _LoadState();
-
-    // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
-    // the model is not already loaded.
-    for (auto& id : GetViewedModels())
-        GetDgnDb().Models().GetModel(id);
-
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
-        appdata.second->_LoadFromUserProperties(*m_viewState.GetViewDefinition());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_StoreState() const
-    {
-    auto style = m_viewState.GetDisplayStyle();
-    style->SetViewFlags(m_viewFlags, _Is3d());
-    style->SetBackgroundColor(m_backgroundColor);
-
-    auto categories = m_viewState.GetCategorySelector();
-    categories->SetCategoryIds(m_viewedCategories);
-    categories->SetSubCategoryOverrides(m_subCategoryOverrides);
+        appdata.second->_Load(*m_definition);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -332,10 +130,8 @@ void ViewController::_StoreState() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::StoreState()
     {
-    _StoreState();
-
     for (auto const& appdata : m_appData)
-        appdata.second->_SaveToUserProperties(*m_viewState.GetViewDefinition());
+        appdata.second->_Save(*m_definition);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,16 +139,18 @@ void ViewController::StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewController::SaveAs(Utf8CP newName)
     {
-    auto viewDef = m_viewState.GetViewDefinition();
-    DgnElement::CreateParams params(GetDgnDb(), viewDef->GetModelId(), viewDef->GetElementClassId(), ViewDefinition::CreateCode(newName));
+    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(newName));
 
-    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(viewDef->Clone(nullptr, &params).get());
+    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
     if (newView.IsNull())
         return DgnDbStatus::BadElement;
 
-    m_viewState.m_definition = newView;
-    return m_viewState.Write();
+    m_definition = newView;
+
+    DgnDbStatus stat;
+    m_definition->Insert(&stat);
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,9 +158,9 @@ DgnDbStatus ViewController::SaveAs(Utf8CP newName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     {
-    auto wasDef = m_viewState.m_definition;
+    auto wasDef = m_definition;
     auto rc = SaveAs(newName);
-    m_viewState.m_definition = wasDef;
+    m_definition = wasDef;
     return rc;
     }
 
@@ -370,9 +168,9 @@ DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 * return the extents of the target model, if there is one.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ViewController::_GetViewedExtents(DgnViewportCR vp) const
+AxisAlignedBox3d ViewController2d::_GetViewedExtents(DgnViewportCR vp) const
     {
-    GeometricModelP target = GetTargetModel();
+    GeometricModelP target = GetViewedModel();
     if (target && target->GetRangeIndexP(false))
         return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
 
@@ -393,52 +191,6 @@ Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, Geometr
 Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
     return source.StrokeHit(context, hit);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::ReloadSubCategory(DgnSubCategoryId id)
-    {
-    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
-    BeAssert(unmodified.IsValid());
-    if (unmodified.IsValid())
-        {
-        auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
-
-        if (!result.second)
-            result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it.
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
-    {
-    if (!id.IsValid())
-        return;
-
-    auto result = m_subCategoryOverrides.Insert(id, ovr);
-    if (!result.second)
-        {
-        result.first->second = ovr; // we already had this override; change it.
-        ReloadSubCategory(id); // To ensure none of the previous overrides are still active, we reload the original SubCategory
-        }
-
-    // now apply this override to the unmodified SubCategory appearance
-    auto it = m_subCategories.find(id);
-    if (it != m_subCategories.end())
-        ovr.ApplyTo(it->second);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
-    {
-    m_subCategoryOverrides.erase(id);
-    ReloadSubCategory(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,19 +306,6 @@ BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardVie
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::SetStandardViewRotation(StandardView standardView)
-    {
-    RotMatrix rMatrix;
-    if (!bsiRotMatrix_getStandardRotation(&rMatrix, static_cast<int>(standardView)))
-        return  ERROR;
-
-    SetRotation(rMatrix);
-    return  SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Search the (8) standard view matrices for one that is close to given matrix.
 * @bsimethod                                                    EarlinLutz      05/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -597,13 +336,13 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
     Frustum frustum=inFrustum;
     DgnViewport::FixFrustumOrder(frustum);
 
-    return _SetupFromFrustum(frustum);
+    return m_definition->_SetupFromFrustum(frustum);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     {
     DPoint3dCP frustPts = frustum.GetPts();
     DPoint3d viewOrg = frustPts[NPC_000];
@@ -650,7 +389,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
         return validSize;
 
     SetOrigin(viewOrg);
-    SetDelta(viewDelta);
+    SetExtents(viewDelta);
     SetRotation(viewRot);
     return ViewportStatus::Success;
     }
@@ -658,7 +397,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
     if (ViewportStatus::Success != stat)
@@ -676,18 +415,16 @@ ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
+#ifdef WIP_VIEW_DEFINITION // camera setup failure
     if (!Allow3dManipulations() || (compression >=(1.0 - s_flatViewFractionTolerance)))
         {
-#ifdef WIP_VIEW_DEFINITION // camera setup failure
         SetCameraOn(false);
         return ViewportStatus::Success;
-#else
-        return ViewportStatus::ViewNotInitialized;
-#endif
         }
+#endif
 
     DPoint3d viewOrg     = frustPts[NPC_000];
-    DVec3d viewDelta     = GetDelta();
+    DVec3d viewDelta     = GetExtents();
     DVec3d zDir          = GetZVector();
     DVec3d frustumZ      = DVec3d::FromStartEnd(viewOrg, frustPts[NPC_001]);
     DVec3d frustOrgToEye = DVec3d::FromScale(frustumZ, 1.0 /(1.0 - compression));
@@ -706,7 +443,7 @@ ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     SetEyePoint(eyePoint);
     SetFocusDistance(focusDistance);
     SetOrigin(viewOrg);
-    SetDelta(viewDelta);
+    SetExtents(viewDelta);
     SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
@@ -714,7 +451,7 @@ ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LookAtVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+void ViewDefinition::LookAtVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
     {
     DPoint3d rangebox[8];
     volume.Get8Corners(rangebox);
@@ -729,9 +466,9 @@ void ViewController::LookAtVolume(DRange3dCR volume, double const* aspect, Margi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
     {
-    DPoint3d    oldDelta = GetDelta();
+    DPoint3d    oldDelta = GetExtents();
     DPoint3d    oldOrg   = GetOrigin();
     RotMatrix   viewRot  = GetRotation();
 
@@ -746,8 +483,8 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    SpatialViewControllerP physView = (SpatialViewControllerP) _ToSpatialView();
-    CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
+    auto physView   = _ToSpatialView();
+    auto cameraView = ToCameraViewP();
     DPoint3d origNewDelta = newDelta;
 
     if (nullptr != cameraView)
@@ -783,7 +520,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.Scale(1.04); // default "dilation"
         }
 
-    if (physView && Allow3dManipulations() && (nullptr == cameraView))
+    if (physView /* && Allow3dManipulations() */ && (nullptr == cameraView))
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
         double diag = newDelta.MagnitudeXY ();
@@ -793,25 +530,25 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
 
     DgnViewport::ValidateViewDelta(newDelta, true);
 
-    SetDelta(newDelta);
+    SetExtents(newDelta);
     if (aspect)
-        AdjustAspectRatio(*aspect, true);
+        _AdjustAspectRatio(*aspect, true);
 
-    newDelta = GetDelta();
+    newDelta = GetExtents();
 
     newOrigin.x -=(newDelta.x - origNewDelta.x) / 2.0;
     newOrigin.y -=(newDelta.y - origNewDelta.y) / 2.0;
     newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
 
     // if they don't want the clipping planes to change, set them back to where they were
-    if (nullptr != physView && !expandClippingPlanes && Allow3dManipulations())
+    if (nullptr != physView && !expandClippingPlanes)
         {
         viewRot.Multiply(oldOrg);
         newOrigin.z = oldOrg.z;
 
-        DVec3d delta = GetDelta();
+        DVec3d delta = GetExtents();
         delta.z = oldDelta.z;
-        SetDelta(delta);
+        SetExtents(delta);
         }
 
     DPoint3d newOrgView;
@@ -821,44 +558,21 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     if (nullptr == cameraView)
         return;
 
-    cameraView->GetControllerCameraR().ValidateLens();
+    auto& cameraDef = cameraView->GetCameraR();
+    cameraDef.ValidateLens();
     // move the camera back so the entire x,y range is visible at front plane
-    double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraView->GetLensAngle()/2.0));
+    double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraDef.GetLensAngle()/2.0));
     double backDist = frontDist + newDelta.z;
 
-    cameraView->SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
+    cameraDef.SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
     cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
     cameraView->VerifyFocusPlane(); // changes delta/origin
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_FillModels()
-    {
-    for (DgnModelId modelId : m_viewedModels)
-        {
-        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsValid())
-            model->FillModel();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-OrthographicViewController::OrthographicViewController(OrthographicViewDefinition const& def) : T_Super(def)
-    {
-    // not valid, but better than random
-    m_origin.Zero();
-    m_delta.Zero();
-    m_rotation.InitIdentity();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OrthographicViewController::_OnTransform(TransformCR trans)
+void OrthographicViewDefinition::_OnTransform(TransformCR trans)
     {
     RotMatrix rMatrix;
     trans.GetMatrix(rMatrix);
@@ -867,17 +581,17 @@ void OrthographicViewController::_OnTransform(TransformCR trans)
 
     trans.Multiply(m_origin);
     m_rotation.InitProductRotMatrixRotMatrixTranspose(m_rotation, rMatrix);
-    m_delta.Scale(scale.x);
+    m_extents.Scale(scale.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::_OnTransform(TransformCR trans)
+void CameraViewDefinition::_OnTransform(TransformCR trans)
     {
-    DPoint3d eye = GetEyePoint();
+    DPoint3d eye = m_camera.GetEyePoint();
     trans.Multiply(eye);
-    SetEyePoint(eye);
+    m_camera.SetEyePoint(eye);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -885,49 +599,24 @@ void CameraViewController::_OnTransform(TransformCR trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::TransformBy(TransformCR trans)
     {
-    _OnTransform(trans);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::_SetTargetModel(GeometricModelP target)
-    {
-    if (nullptr == target || !m_viewedModels.Contains(target->GetModelId()))
-        return  ERROR;
-
-    m_targetModelId = target->GetModelId();
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController(CameraViewDefinition const& def) : T_Super(def)
-    {
-    // not valid, but better than random
-    m_origin.Zero();
-    m_delta.Zero();
-    m_rotation.InitIdentity();
-    memset(&m_camera, 0, sizeof(m_camera));
-    m_camera.InvalidateFocus();
+    GetSpatialViewDefinitionR()._OnTransform(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CameraViewController::CalcLensAngle()
+double CameraViewDefinition::CalcLensAngle() const
     {
-    double maxDelta = std::max(m_delta.x, m_delta.y);
-    return 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
+    double maxDelta = std::max(m_extents.x, m_extents.y);
+    return 2.0 * atan2(maxDelta*0.5, m_camera.GetFocusDistance());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::CenterEyePoint(double const* backDistanceIn)
+void CameraViewDefinition::CenterEyePoint(double const* backDistanceIn)
     {
-    DVec3d delta = GetDelta();
+    DVec3d delta = GetExtents();
     DPoint3d eyePoint;
     eyePoint.Scale(delta, 0.5);
     eyePoint.z = backDistanceIn ? *backDistanceIn : GetBackDistance();
@@ -935,13 +624,13 @@ void CameraViewController::CenterEyePoint(double const* backDistanceIn)
     GetRotation().MultiplyTranspose(eyePoint);
     eyePoint.Add(GetOrigin());
 
-    SetEyePoint(eyePoint);
+    m_camera.SetEyePoint(eyePoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::CenterFocusDistance()
+void CameraViewDefinition::CenterFocusDistance()
     {
     double backDist  = GetBackDistance();
     double frontDist = GetFrontDistance();
@@ -953,7 +642,7 @@ void CameraViewController::CenterFocusDistance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
+double SpatialViewDefinition::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     {
     // We are going to limit maximum depth to a value that will avoid subtractive cancellation
     // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
@@ -996,7 +685,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
         return false;
 
     worldPoint.z = GetEyePoint().z;
-    DPoint3d targetPoint = GetTargetPoint();
+    DPoint3d targetPoint = GetCameraViewDefinition().GetTargetPoint();
     targetPoint.z = worldPoint.z;
     DVec3d newViewZ;
     newViewZ.DifferenceOf(targetPoint, worldPoint);
@@ -1030,7 +719,6 @@ bool OrthographicViewController::_OnGeoLocationEvent(GeoLocationEventStatus& sta
     return true;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
@@ -1059,8 +747,8 @@ bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode
             }
         m_defaultDeviceOrientation = matrix;
         m_defaultDeviceOrientationValid = true;
-        s_defaultUp = GetYVector();
-        s_defaultForward = GetZVector();
+        s_defaultUp = m_definition->GetYVector();
+        s_defaultForward = m_definition->GetZVector();
         s_lastUi = ui;
         }
 
@@ -1141,7 +829,7 @@ static void applyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0,
 bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     double azimuthCorrection = 0.0;
-    DVec3d currForward = GetZVector();
+    DVec3d currForward = m_definition->GetZVector();
 
     orientation.GetColumn(forward, 2);
     switch (mode)
@@ -1269,19 +957,19 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 * Ensure the focus plane lies between the front and back planes. If not, center it.
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::VerifyFocusPlane()
+void CameraViewDefinition::VerifyFocusPlane()
     {
     DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
     m_rotation.Multiply(eyeOrg);
 
     double backDist = eyeOrg.z;
-    double frontDist = backDist - m_delta.z;
+    double frontDist = backDist - m_extents.z;
 
     if (backDist<=0.0 || frontDist<=0.0)
         {
         // the camera location is invalid. Set it based on the view range.
         double tanangle = tan(m_camera.GetLensAngle()/2.0);
-        backDist = m_delta.z / tanangle;
+        backDist = m_extents.z / tanangle;
         m_camera.SetFocusDistance(backDist/2);
         CenterEyePoint(&backDist);
         return;
@@ -1292,23 +980,23 @@ void CameraViewController::VerifyFocusPlane()
         return;
 
     // put it halfway between front and back planes
-    m_camera.SetFocusDistance((m_delta.z / 2.0) + frontDist);
+    m_camera.SetFocusDistance((m_extents.z / 2.0) + frontDist);
 
     // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
     double ratio = m_camera.GetFocusDistance() / focusDist;
-    m_delta.x *= ratio;
-    m_delta.y *= ratio;
+    m_extents.x *= ratio;
+    m_extents.y *= ratio;
 
     DVec3d xVec, yVec, zVec;
     m_rotation.GetRows(xVec, yVec, zVec);
-    m_origin.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_delta.x, yVec, -0.5*m_delta.y); // this centers the camera too
+    m_origin.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_extents.x, yVec, -0.5*m_extents.y); // this centers the camera too
     }
 
 /*---------------------------------------------------------------------------------**//**
-* See diagram in viewController.h
+* See diagram in DgnView.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                             DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
@@ -1334,7 +1022,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 
     double backDist  = backDistIn  ? *backDistIn  : GetBackDistance();
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
-    DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetDelta().z) : GetDelta();
+    DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
 
     frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
     backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
@@ -1362,7 +1050,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     SetRotation(rotation);
     SetFocusDistance(focusDist);
     SetOrigin(origin);
-    SetDelta(delta);
+    SetExtents(delta);
     SetLensAngle(CalcLensAngle());
 
     return ViewportStatus::Success;
@@ -1371,7 +1059,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewDefinition::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   double lens, double const* frontDist, double const* backDist)
     {
     DVec3d zVec; // z defined by direction from eye to target
@@ -1386,7 +1074,7 @@ ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, D
 
     double extent = 2.0 * tan(lens/2.0) * focusDist;
 
-    DVec2d delta  = DVec2d::From(GetDelta().x, GetDelta().y);
+    DVec2d delta  = DVec2d::From(GetExtents().x, GetExtents().y);
     double longAxis = std::max(delta.x, delta.y);
     delta.Scale(extent/longAxis);
 
@@ -1396,7 +1084,7 @@ ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
+ViewportStatus CameraViewDefinition::MoveCameraWorld(DVec3dCR distance)
     {
     DPoint3d newTarget, newEyePt;
     newTarget.SumOf(GetTargetPoint(), distance);
@@ -1407,7 +1095,7 @@ ViewportStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
+ViewportStatus CameraViewDefinition::MoveCameraLocal(DVec3dCR distanceLocal)
     {
     DVec3d distWorld = distanceLocal;
     GetRotation().MultiplyTranspose(distWorld);
@@ -1417,7 +1105,7 @@ ViewportStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewDefinition::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DPoint3d about = aboutPointIn ? *aboutPointIn : GetEyePoint();
     RotMatrix rotation = RotMatrix::FromVectorAndRotationAngle(axis, radAngle);
@@ -1434,7 +1122,7 @@ ViewportStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3dCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewDefinition::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DVec3d axisWorld = axis;
     GetRotation().MultiplyTranspose(axisWorld);
@@ -1445,7 +1133,7 @@ ViewportStatus CameraViewController::RotateCameraLocal(double radAngle, DVec3dCR
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CameraViewController::GetBackDistance() const
+double CameraViewDefinition::GetBackDistance() const
     {
     // backDist is the z component of the vector from the eyePoint to the origin.
     DPoint3d eyeOrg;
@@ -1454,20 +1142,13 @@ double CameraViewController::GetBackDistance() const
     return eyeOrg.z;
     }
 
-DPoint3d ViewController2d::_GetOrigin() const {return DPoint3d::From(m_origin.x, m_origin.y);}
-void     ViewController2d::_SetDelta(DVec3dCR delta) {m_delta.x = delta.x; m_delta.y = delta.y;}
-void     ViewController2d::_SetOrigin(DPoint3dCR origin) {m_origin.x = origin.x; m_origin.y = origin.y;}
-void     ViewController2d::_SetRotation(RotMatrixCR rot) {DVec3d xColumn; rot.GetColumn(xColumn, 0); m_rotAngle = atan2(xColumn.y, xColumn.x);}
-DVec3d   ViewController2d::_GetDelta() const {return DVec3d::From(m_delta.x, m_delta.y);}
-RotMatrix ViewController2d::_GetRotation() const {return RotMatrix::FromAxisAndRotationAngle(2, m_rotAngle);}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ViewController::GetCenter() const
+DPoint3d ViewDefinition::GetCenter() const
     {
     DPoint3d delta;
-    GetRotation().MultiplyTranspose(delta, GetDelta());
+    GetRotation().MultiplyTranspose(delta, GetExtents());
 
     DPoint3d center;
     center.SumOf(GetOrigin(), delta, 0.5);
@@ -1477,7 +1158,7 @@ DPoint3d ViewController::GetCenter() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifer     04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d CameraViewController::_GetTargetPoint() const
+DPoint3d CameraViewDefinition::_GetTargetPoint() const
     {
     DVec3d viewZ;
     GetRotation().GetRow(viewZ, 2);
@@ -1486,180 +1167,14 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     return  target;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
-    {
-    auto def = m_viewState.GetViewDefinition()->ToCameraView();
-    BeAssert(nullptr != def);
-    return *const_cast<CameraViewDefinitionP>(def);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefinition() const
-    {
-    auto def = m_viewState.GetViewDefinition()->ToOrthographicView();
-    BeAssert(nullptr != def);
-    return *const_cast<OrthographicViewDefinitionP>(def);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-SpatialViewDefinition& SpatialViewController::GetSpatialViewDefinition() const
-    {
-    auto def = m_viewState.GetViewDefinition()->ToSpatialView();
-    BeAssert(nullptr != def);
-    return *const_cast<SpatialViewDefinitionP>(def);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController3d::_LoadState()
-    {
-    T_Super::_LoadState();
-
-    BeAssert(nullptr != dynamic_cast<ViewDefinition3d*>(m_viewState.GetViewDefinition()));
-    auto& def3d = static_cast<ViewDefinition3d&>(*m_viewState.GetViewDefinition());
-    m_origin = def3d.GetOrigin();
-    m_delta = def3d.GetExtents();
-    m_rotation = def3d.GetViewDirection().ToRotMatrix();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController3d::_StoreState() const
-    {
-    T_Super::_StoreState();
-
-    BeAssert(nullptr != dynamic_cast<ViewDefinition3d*>(m_viewState.GetViewDefinition()));
-    auto& def3d = static_cast<ViewDefinition3d&>(*m_viewState.GetViewDefinition());
-    def3d.SetOrigin(m_origin);
-    def3d.SetExtents(m_delta);
-    YawPitchRollAngles ypr;
-    YawPitchRollAngles::TryFromRotMatrix(ypr, m_rotation);
-    def3d.SetViewDirection(ypr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void SpatialViewController::_LoadState()
-    {
-    T_Super::_LoadState();
-
-    if (!m_viewState.m_modelSelector.IsValid())
-        m_viewState.m_modelSelector = new ModelSelector(GetDgnDb(), "");    // *** WIP_VIEW_DEFINITION - Is it right to auto-create an unnamed definition?
-
-    m_viewedModels = m_viewState.GetModelSelector()->GetModelIds();
-
-    m_targetModelId = GetSpatialViewDefinition().GetTargetModelId();
-    if (!m_targetModelId.IsValid() && (m_viewedModels.begin() != m_viewedModels.end()))
-        m_targetModelId = *m_viewedModels.begin();
-
-    LoadEnvironment();
-
-#ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
-    m_... = GetClipVolume().Get ...
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void SpatialViewController::_StoreState() const
-    {
-    T_Super::_StoreState();
-
-    m_viewState.GetModelSelector()->SetModelIds(m_viewedModels);
-
-    DgnModelId targetModelId = m_targetModelId;
-    if (!targetModelId.IsValid() && (m_viewedModels.begin() != m_viewedModels.end()))
-        targetModelId = *m_viewedModels.begin();
-    if (targetModelId.IsValid())
-        GetSpatialViewDefinition().SetTargetModelId(targetModelId);
-
-#ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
-    GetClipVolume().Set ...
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void CameraViewController::_LoadState()
-    {
-    T_Super::_LoadState();
-
-    auto& cameraDef = GetCameraViewDefinition();
-    m_camera.SetLensAngle(cameraDef.GetLensAngle());
-    m_camera.SetFocusDistance(cameraDef.GetFocusDistance());
-    m_camera.SetEyePoint(cameraDef.GetEyePoint());
-    m_camera.ValidateLens();
-
-    VerifyFocusPlane();
-
-#if defined (NEEDS_WORK_REALTY_DATA)
-    // if the view was saved with an invalid camera lens, just turn the camera off.
-    double maxDelta = std::max(m_delta.x, m_delta.y);
-    double lensAngle = 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
-    if (!CameraInfo::IsValidLensAngle(lensAngle))
-        m_isCameraOn = false; *** NEEDS WORK - we have to fix the camera lens
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void CameraViewController::_StoreState() const
-    {
-    T_Super::_StoreState();
-
-    auto& cameraDef = GetCameraViewDefinition();
-    cameraDef.SetLensAngle(m_camera.GetLensAngle());
-    cameraDef.SetFocusDistance(m_camera.GetFocusDistance());
-    cameraDef.SetEyePoint(m_camera.GetEyePoint());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void OrthographicViewController::_LoadState()
-    {
-    T_Super::_LoadState();
-    DgnViewport::ValidateViewDelta(m_delta, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   08/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::InitDefaults()
-    {
-    memset(this, 0, sizeof(ViewFlags));
-
-    m_text = true;
-    m_dimensions = true;
-    m_patterns = true;
-    m_weights = true;
-    m_styles = true;
-    m_transparency = true;
-    m_fill = true;
-    m_textures = true;
-    m_materials = true;
-    m_sceneLights = true;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController3d::AdjustAspectRatio(DPoint3dR origin, DVec3dR delta, RotMatrixR rotation, double windowAspect, bool expandView)
+void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
-    windowAspect *= GetAspectRatioSkew();
+    DPoint3dR origin = m_origin;
+    DVec3dR   delta = m_extents;
+    RotMatrixR rotation = m_rotation; 
 
     // first, make sure none of the deltas are negative
     delta.x = fabs(delta.x);
@@ -1726,7 +1241,7 @@ void ViewController3d::AdjustAspectRatio(DPoint3dR origin, DVec3dR delta, RotMat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
+void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
     // first, make sure none of the deltas are negative
     m_delta.x = fabs(m_delta.x);
@@ -1787,44 +1302,6 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     origin.y +=(oldDelta.y - m_delta.y) / 2.0;
     rMatrix.Transpose();
     rMatrix.Multiply(&m_origin, &origin, 1);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void ViewController2d::_LoadState()
-    {
-    T_Super::_LoadState();
-
-    ViewDefinition2d& viewDef = GetViewDefinition2d();
-    m_targetModelId = m_baseModelId = viewDef.GetBaseModelId();
-    m_viewedModels.insert(m_baseModelId);
-    m_origin = viewDef.GetOrigin();
-    m_delta = viewDef.GetExtents();
-    m_rotAngle = viewDef.GetRotationAngle().Radians();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-void ViewController2d::_StoreState() const
-    {
-    T_Super::_StoreState();
-
-    ViewDefinition2d& viewDef = GetViewDefinition2d();
-    viewDef.SetBaseModelId(m_baseModelId);
-    viewDef.SetOrigin(m_origin);
-    viewDef.SetExtents(m_delta);
-    viewDef.SetRotationAngle(AngleInDegrees::FromRadians(m_rotAngle));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/16
-//---------------------------------------------------------------------------------------
-ViewDefinition2d& ViewController2d::GetViewDefinition2d() const
-    {
-    BeAssert(nullptr != dynamic_cast<ViewDefinition2d*>(m_viewState.GetViewDefinition()));
-    return static_cast<ViewDefinition2d&>(*m_viewState.GetViewDefinition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1933,11 +1410,11 @@ static void roundGrid(double& num, double units)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMatrix, GridOrientationType orientation)
     {
-    SpatialModelCP model = vp.GetViewController().GetTargetModel()->ToSpatialModel();
+    DgnDbR db = vp.GetViewController().GetDgnDb();
 
     // start with global origin (in world coords) and identity matrix
     rMatrix.InitIdentity();
-    origin = (nullptr != model ? model->GetDgnDb().Units().GetGlobalOrigin() : DPoint3d::FromZero());
+    origin = db.Units().GetGlobalOrigin();
 
     DVec3d xVec, yVec, zVec;
 
@@ -2204,76 +1681,27 @@ void ViewController::_DrawGrid(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::CloseMe ViewController::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
+ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
     {
     if (&GetDgnDb() != &db)
         return CloseMe::No;
 
-    // Remove deleted models from viewed models list
+    // if the base model is deleted, close the view
     for (auto const& deletedId : deletedIds)
-        m_viewedModels.erase(deletedId);
-
-    // Ensure we still have a target model - choose a new one arbitrarily if previous was deleted
-    RefCountedPtr<GeometricModel> targetModel = GetTargetModel();
-    if (targetModel.IsNull())
         {
-        for (auto const& viewedId : m_viewedModels)
-            if ((targetModel = GetDgnDb().Models().Get<GeometricModel>(viewedId)).IsValid())
-                break;
-
-        if (targetModel.IsValid())
-            SetTargetModel(targetModel.get());  // NB: ViewController can reject target model...
+        if (GetViewedModelId() == deletedId)
+            return CloseMe::Yes;
         }
 
-    // If no target model, no choice but to close the view
-    return (nullptr == GetTargetModel()) ? CloseMe::Yes : CloseMe::No;
+    return CloseMe::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawView(ViewContextR context)
+void ViewController2d::_DrawView(ViewContextR context)
     {
-    for (auto modelId : m_viewedModels)
-        context.VisitDgnModel(GetDgnDb().Models().GetModel(modelId).get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::ViewFlags DisplayStyle::GetViewFlags(bool is3d) const
-    {
-    Json::Value value(Json::objectValue);
-    Json::Reader::Parse(GetPropertyValueString("ViewFlags").c_str(), value);
-    ViewFlags flags;
-    flags.FromBaseJson(value);
-    if (is3d)
-        flags.From3dJson(value);
-    return flags;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle::SetViewFlags(Render::ViewFlags const& flags, bool is3d)
-    {
-    Json::Value value(Json::objectValue);
-    flags.ToBaseJson(value);
-    if (is3d)
-        flags.To3dJson(value);
-
-    return SetPropertyValue("ViewFlags", Json::FastWriter::ToString(value).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController2d::ViewController2d(ViewDefinition2d const& def) : ViewController(def)
-    {
-    m_baseModelId = m_targetModelId = def.GetBaseModelId();
-    m_origin.Zero();
-    m_delta.Zero();
-    m_rotAngle = 0.0;
+    context.VisitDgnModel(GetViewedModel());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2286,13 +1714,12 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
         return;
 
     entry.first->second = obj;
-    obj->_LoadFromUserProperties(*m_viewState.GetViewDefinition());
+    obj->_Load(*m_definition);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId ViewController::GetViewId() const {return m_viewState.GetViewDefinition()->GetViewId();}
-DrawingViewController::DrawingViewController(DrawingViewDefinition const& def) : ViewController2d(def) {}
-SheetViewController::SheetViewController(SheetViewDefinition const& def) : ViewController2d(def) {}
+DrawingViewController::DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
+SheetViewController::SheetViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
 

@@ -44,6 +44,7 @@ enum class ParamId
     Polylines,
     GeographicLocation,
     GlobeImagery,
+    GlobeTerrain,
     Standalone,
     Invalid,
 };
@@ -74,8 +75,9 @@ static CommandParam s_paramTable[] =
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
         { L"pl", L"polylines", L"Publish polylines", false, true },
-        { L"l",  L"geographicLocation", L"Geographic location (latitude, longitude)", false },
-        { L"ip", L"imageryProvider" L"Imagery Provider", false, false },
+        { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
+        { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
+        { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"s",  L"standalone", L"Display in \"standalone\" mode, without globe, sky etc.)", false, true },
     };
 
@@ -152,12 +154,13 @@ private:
     uint32_t        m_depth = 0xffffffff;
     bool            m_polylines = false;
     Utf8String      m_imageryProvider;
+    Utf8String      m_terrainProvider;
     bool            m_standalone = false;
     GeoPoint        m_geoLocation = {-75.686844444444444444444444444444, 40.065702777777777777777777777778, 0.0 };   // Bentley Exton flagpole...
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
-    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.01) { }
+    PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -171,6 +174,7 @@ public:
     GeoPointCR GetGeoLocation() const { return m_geoLocation; }
 
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
+    Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -254,6 +258,9 @@ Json::Value  PublisherParams::GetViewerOptions () const
     if (!m_imageryProvider.empty())
         viewerOptions["imageryProvider"] = m_imageryProvider.c_str();
 
+    if (!m_terrainProvider.empty())
+        viewerOptions["terrainProvider"] = m_terrainProvider.c_str();
+
     return viewerOptions;
     }
 
@@ -312,7 +319,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 m_polylines = true;
                 break;
             case ParamId::GeographicLocation:
-                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.latitude, &m_geoLocation.longitude))
+                if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
                     {
                     printf ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
@@ -322,9 +329,29 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
                 break;
+            case ParamId::GlobeTerrain:
+                m_terrainProvider = Utf8String(arg.m_value.c_str());
+                break;
             case ParamId::Standalone:
                 m_standalone = true;
                 break;
+            case ParamId::Tolerance:
+                {
+                static const double     s_minTolerance = 1.0E-5, s_maxTolerance = 100.0;
+
+                if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_tolerance))
+                    {
+                    printf ("Unrecognized tolerance value: %ls\n", av[i]);
+                    return false;
+                    }
+                if (m_tolerance < s_minTolerance || s_maxTolerance > s_maxTolerance)
+                    {
+                    printf ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
+                    return false;
+                    }
+                break;
+                }
+
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -407,19 +434,13 @@ public:
             if (nullptr == spatialView)
                 continue;
 
-            auto modelSelector = db.Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
-            if (modelSelector.IsValid())
-                {
-                auto viewModels = modelSelector->GetModelIds();
-                m_allModels.insert(viewModels.begin(), viewModels.end());
-                }
+            auto const& modelSelector = spatialView->GetModelSelector();
+            auto viewModels = modelSelector.GetModels();
+            m_allModels.insert(viewModels.begin(), viewModels.end());
 
-            auto categorySelector = db.Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
-            if (categorySelector.IsValid())
-                {
-                auto viewCats = categorySelector->GetCategoryIds();
-                m_allCategories.insert(viewCats.begin(), viewCats.end());
-                }
+            auto const& categorySelector = spatialView->GetCategorySelector();
+            auto viewCats = categorySelector.GetCategories();
+            m_allCategories.insert(viewCats.begin(), viewCats.end());
             }
         }
 
@@ -485,6 +506,7 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
         }
 
     auto& viewsJson =  json["views"] = Json::Value (Json::objectValue); 
+    bset<DgnViewId> publishedViews;
 
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
@@ -501,27 +523,16 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
             entry["name"] = view.GetName();
 
         GetSpatialViewJson (entry, *spatialView, transform);
-        auto modelSelector = GetDgnDb().Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
+        entry["models"] = IdSetToJson(spatialView->GetModelSelector().GetModels());
+        entry["categories"] = IdSetToJson(spatialView->GetCategorySelector().GetCategories());
 
-        if (modelSelector.IsValid())
-            entry["models"] = IdSetToJson(modelSelector->GetModelIds());
+        ColorDef    backgroundColor = spatialView->GetDisplayStyle().GetBackgroundColor();
+        auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
+        colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
+        colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
+        colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
 
-        auto categorySelector = GetDgnDb().Elements().Get<CategorySelector>(spatialView->GetCategorySelectorId());
-
-        if (categorySelector.IsValid())
-            entry["categories"] = IdSetToJson (categorySelector->GetCategoryIds());
-
-        auto displayStyle = GetDgnDb().Elements().Get<DisplayStyle>(spatialView->GetDisplayStyleId());
-
-        if (displayStyle.IsValid())
-            {
-            ColorDef    backgroundColor = displayStyle->GetBackgroundColor();
-            auto&       colorJson = entry["backgroundColor"] = Json::objectValue;
-            colorJson["red"]   = backgroundColor.GetRed()   / 255.0;            
-            colorJson["green"] = backgroundColor.GetGreen() / 255.0;            
-            colorJson["blue"]  = backgroundColor.GetBlue()  / 255.0;            
-            }
-
+        publishedViews.insert (view.GetId());
         viewsJson[view.GetId().ToString()] = entry;
         }
 
@@ -530,7 +541,11 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["models"] = GetModelsJson (m_allModels);
     json["categories"] = GetCategoriesJson (m_allCategories);
-    json["defaultView"] = GetViewController().GetViewId().ToString();
+
+    if (publishedViews.find(GetViewController().GetViewId()) == publishedViews.end())
+        json["defaultView"] = publishedViews.begin()->ToString();
+    else
+        json["defaultView"] = GetViewController().GetViewId().ToString();
     
     return Status::Success; 
     }

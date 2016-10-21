@@ -207,7 +207,7 @@ void ViewAttachmentGeomCollector::FitView()
     if (!IsValid() || SUCCESS != m_viewport.ComputeViewRange(range, params))
         return;
 
-    ViewController::MarginPercent margin(0,0,0,0);
+    ViewDefinition::MarginPercent margin(0,0,0,0);
     m_viewport.GetViewControllerR().LookAtViewAlignedVolume(range, nullptr, &margin, true);
     m_viewport.SynchWithViewController(false);
     }
@@ -303,7 +303,7 @@ DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::Yes);
 #else
     auto view = ViewDefinition::QueryView(GetViewId(), GetDgnDb());
-    auto controller = view.IsValid() ? view->LoadViewController(false, ViewDefinition::FillModels::Yes) : nullptr;
+    auto controller = view.IsValid() ? view->LoadViewController(false) : nullptr;
 #endif
 
     if (controller.IsNull())

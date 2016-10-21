@@ -36,11 +36,11 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     WString seedFileName;
     seedFileName.Sprintf(L"dgndb_ecsqlvssqlite_%d_%ls_seed%d.ibim", initialInstanceCount, WString(testClassName, BentleyCharEncoding::Utf8).c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
-    BeFileName seedFilePath;
-    BeTest::GetHost().GetOutputRoot(seedFilePath);
+    BeFileName seedFilePath(L"D:\\temp\\perf\\bim02\\ElementApiInsertElement4_50000.ibim");
+    /*BeTest::GetHost().GetOutputRoot(seedFilePath);
     seedFilePath.AppendToPath(BeFileName(BeTest::GetNameOfCurrentTestCase()));
     seedFilePath.AppendToPath(seedFileName.c_str());
-
+    */
     if (!seedFilePath.DoesPathExist())
         {
         SetupSeedProject(seedFileName.c_str());
@@ -203,7 +203,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>bis:ElementMultiAspect</BaseClass>"
         "    <ECCustomAttributes>"
-        "       <ClassMap xmlns = 'ECDbMap.02.00'>"
+        "       <DbIndexList xmlns = 'ECDbMap.02.00'>"
         "           <Indexes>"
         "               <DbIndex>"
         "                   <Name>IDX_TMAspect</Name>"
@@ -213,7 +213,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "                   </Properties>"
         "               </DbIndex>"
         "           </Indexes>"
-        "       </ClassMap>"
+        "       </DbIndexList>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='TestMultiAspectProperty' typeName='string' />"
         "  </ECClass>"
@@ -637,9 +637,7 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    PhysicalModelPtr targetModel = PhysicalModel::Create(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode(modelCode));
-    EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
+    PhysicalModelPtr targetModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(modelCode));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
@@ -1060,9 +1058,6 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
     if (!element->GetFederationGuid().IsValid())
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
-
     // Bind Code
     DgnCode elementCode = DgnCode::CreateEmpty();
 
@@ -1141,12 +1136,12 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Yaw"), placement.GetAngles().GetYaw().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Pitch"), placement.GetAngles().GetPitch().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Roll"), placement.GetAngles().GetRoll().Degrees()));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
         }
 
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -1177,9 +1172,6 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
 
     if (!element->GetFederationGuid ().IsValid ())
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("FederationGuid")));
-
-    GeometryBuilderPtr builder = GeometryBuilder::Create (*element->ToGeometrySourceP ());
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (stmt.GetParameterIndex ("FacetCount"), static_cast<int64_t>(builder->GetFacetCount ())));
 
     // Bind Code
     DgnCode elementCode = element->GetCode();
@@ -1260,12 +1252,12 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("Origin"), placement.GetOrigin()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Yaw"), placement.GetAngles().GetYaw().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Pitch"), placement.GetAngles().GetPitch().Degrees()));
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble(stmt.GetParameterIndex("Roll"), placement.GetAngles().GetRoll().Degrees()));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxLow"), placement.GetElementBox().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3d (stmt.GetParameterIndex("BBoxHigh"), placement.GetElementBox().high));
         }
 
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -1381,9 +1373,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSq
     //printf ("\n int Prop : %lld", stmt.GetValueInt64 (21));
     //printf ("\n double Prop : %f", stmt.GetValueDouble (22));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (20))) ||
-        (stmt.GetValueInt64 (21) != 10000000) ||
-        (stmt.GetValueDouble (22) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (19))) ||
+        (stmt.GetValueInt64 (20) != 10000000) ||
+        (stmt.GetValueDouble (21) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1396,9 +1388,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams(stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (23))) ||
-        (stmt.GetValueInt64 (24) != 20000000) ||
-        (stmt.GetValueDouble (25) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (22))) ||
+        (stmt.GetValueInt64 (23) != 20000000) ||
+        (stmt.GetValueDouble (24) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1411,9 +1403,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams(stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (26))) ||
-        (stmt.GetValueInt64 (27) != 30000000) ||
-        (stmt.GetValueDouble (28) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (25))) ||
+        (stmt.GetValueInt64 (26) != 30000000) ||
+        (stmt.GetValueDouble (27) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1426,9 +1418,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams(stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (29))) ||
-        (stmt.GetValueInt64 (30) != 40000000) ||
-        (stmt.GetValueDouble (31) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (28))) ||
+        (stmt.GetValueInt64 (29) != 40000000) ||
+        (stmt.GetValueDouble (30) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1720,9 +1712,28 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql(Utf8CP className, Utf8St
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+static DgnElementId generateTimeBasedId(int counter)
+    {
+    uint64_t part1 = BeTimeUtilities::QueryMillisecondsCounter() << 12;
+    uint64_t part2 = counter & 0xFFF;
+    return DgnElementId(part1 + part2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2016
+//---------------------------------------------------------------------------------------
+static DgnElementId generateAlternatingBriefcaseId(int counter)
+    {
+    BeBriefcaseId briefcaseId((counter/100)%10+2);
+    return DgnElementId(BeBriefcaseBasedId(briefcaseId, counter).GetValue());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int initialInstanceCount, int opCount, bool setFederationGuid, int idStrategy)
     {
     WString wClassName;
     wClassName.AssignUtf8(className);
@@ -1733,9 +1744,20 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     CreateElements(opCount, className, testElements, "ElementApiInstances", true);
     ASSERT_EQ(opCount, (int) testElements.size());
 
+    int i=0;
     StopWatch timer(true);
     for (DgnElementPtr& element : testElements)
         {
+        // optionally allow FederationGuid to be set as part of the performance test
+        if (setFederationGuid)
+            element->SetFederationGuid(BeGuid(true));
+
+        // optionally allow a different ID allocation strategy for performance comparison purposes
+        if (1 == idStrategy)
+            element->ForceElementIdForInsert(generateTimeBasedId(++i));
+        else if (2 == idStrategy)
+            element->ForceElementIdForInsert(generateAlternatingBriefcaseId(++i));
+
         DgnDbStatus stat = DgnDbStatus::Success;
         element->Insert(&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
@@ -2128,9 +2150,9 @@ TEST_F (PerformanceElementsCRUDTestFixture, InsertSQLite)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, InsertECSql)
     {
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
@@ -2139,9 +2161,9 @@ TEST_F (PerformanceElementsCRUDTestFixture, InsertECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, InsertApi)
     {
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 

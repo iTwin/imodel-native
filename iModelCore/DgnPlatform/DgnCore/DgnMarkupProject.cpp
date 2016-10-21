@@ -287,7 +287,7 @@ void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
 
     vp.NpcToWorld(&origin, &origin, 1);
     m_auxCoordSys->SetOrigin(origin);
-    m_auxCoordSys->SetRotation(_GetRotation());
+    m_auxCoordSys->SetRotation(GetRotation());
 
     T_Super::_OnViewOpened(vp);
     }
@@ -297,12 +297,14 @@ void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialRedlineViewController::SynchWithSubjectViewController()
     {
+#if defined (NEEDS_WORK_TARGET_MODEL)
     // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
     m_viewFlags = m_subjectView.GetViewFlags();
     m_viewFlags.m_weights = true;
     m_viewFlags.m_acsTriad = true;
     m_viewFlags.m_grid = true;
+#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -314,7 +316,6 @@ IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
     // Redline views have their own ACS
     return T_Super::_GetAuxCoordinateSystem();
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -375,25 +376,14 @@ void SpatialRedlineViewController::_AdjustAspectRatio(double aspect, bool expand
     T_Super::_AdjustAspectRatio(aspect, expandView);
     m_subjectView.AdjustAspectRatio(aspect, expandView);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d SpatialRedlineViewController::_GetTargetPoint() const
-    {
-    return m_subjectView.GetTargetPoint();
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SpatialRedlineViewController::_Allow3dManipulations() const {return m_subjectView.Allow3dManipulations();}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    04/2016
-//---------------------------------------------------------------------------------------
-// WIP_MERGE_John_Patterns - double PhysicalRedlineViewController::_GetPatternZOffset (ViewContextR context, ElementHandleCR eh) const {return m_subjectView.GetPatternZOffset(context, eh);}
-
+#if defined (NEEDS_WORK_TARGET_MODEL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -410,6 +400,7 @@ void SpatialRedlineViewController::_StoreState() const
     {
     m_subjectView._StoreState();
     }
+#endif
 
 #ifdef WIP_RDL_QUERYVIEWS
 bool SpatialRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
@@ -425,14 +416,6 @@ ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitC
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
-    {
-    return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR vp) const
@@ -442,15 +425,6 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR v
     AxisAlignedBox3d fullRange;
     fullRange.UnionOf(rdlRange, subjectRange);
     return fullRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_LoadState()
-    {
-    T_Super::_LoadState();
-    SynchWithSubjectViewController();
     }
 
 //---------------------------------------------------------------------------------------
@@ -488,17 +462,13 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
         {
         //  set up to draw subject model 
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
-        BeAssert(GetTargetModel() == m_subjectView.GetTargetModel());
 
         //  draw subject model using *this* view controller
         m_subjectView.DrawView(context);
 
         //  restore the redline model as the normal target
         m_targetModelIsInSubjectView = false;
-        BeAssert(GetTargetModel() == T_Super::GetTargetModel());
         }
-
-    BeAssert(GetTargetModel() == T_Super::GetTargetModel() && "redline model is the normal target of this view controller");
 
     //  Draw redline model
     T_Super::_DrawView(context);
@@ -534,9 +504,11 @@ RedlineViewController::~RedlineViewController()
     }
 
 // Disallow pan, zoom, and rotate. While pan is harmless, mouse-wheel goes crazy when we disallow zoom and allow pan.
+#if defined (NEEDS_WORK_TARGET_MODEL)
 void RedlineViewController::_SetDelta(DVec3dCR delta)      {if (true || m_enableViewManipulation) T_Super::_SetDelta(delta);}
 void RedlineViewController::_SetOrigin(DPoint3dCR origin)  {if (true || m_enableViewManipulation) T_Super::_SetOrigin(origin);}
 void RedlineViewController::_SetRotation(RotMatrixCR rot)  {if (true || m_enableViewManipulation) T_Super::_SetRotation(rot);}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
@@ -1364,8 +1336,8 @@ Render::GraphicBuilderPtr RedlineModel::GetImageGraphic(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineViewController::_DrawView(ViewContextR context)
     {
-    BeAssert(dynamic_cast<RedlineModel*> (context.GetViewport()->GetViewController().GetTargetModel()) != NULL && "RedlineViewController should be used only to draw RedlineModels!");
-    RedlineModel* targetModel = (RedlineModel*) context.GetViewport()->GetViewController().GetTargetModel();
+#if defined (NEEDS_WORK_VIEWS)
+    RedlineModel* targetModel = (RedlineModel*) Getcontext.GetViewport()->GetViewController().GetTargetModel();
     if (nullptr == targetModel)
         {
         BeDataAssert(false);
@@ -1375,6 +1347,7 @@ void RedlineViewController::_DrawView(ViewContextR context)
     auto graphic = targetModel->GetImageGraphic(context);
     if (graphic.IsValid())
         context.OutputGraphic(*graphic, nullptr);
+#endif
 
     T_Super::_DrawView(context);   // draws sheet border and redline graphics
     }
@@ -1422,7 +1395,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId());
+    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId(), CategorySelector(*project, ""), DisplayStyle(*project));
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
@@ -1430,13 +1403,13 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
 
     controller->m_enableViewManipulation = true; // *** TRICKY: Normally, RedlineViewController::SetDelta, Origin, Rotation are disabled (to prevent user from changing camera on sheet.)
 
-    auto templateSheet = ViewDefinition::LoadViewController(templateView, *project, ViewDefinition::FillModels::No);
+    auto templateSheet = ViewDefinition::LoadViewController(templateView, *project);
     if (templateSheet.IsValid())
         {
         controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
         controller->SetDelta(templateSheet->GetDelta());
         controller->SetOrigin(templateSheet->GetOrigin());
-        controller->GetViewedCategoriesR() = templateSheet->GetViewedCategories();
+        controller->GetViewDefinitionR().GetCategorySelectorR().GetCategoriesR() = templateSheet->GetViewedCategories();
         controller->SetRotation(templateSheet->GetRotation());
         controller->GetViewFlagsR() = templateSheet->GetViewFlags();
         }
@@ -1494,9 +1467,9 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
     // We force the redline view to be adjusted now, and then we set the sheet origin and delta to match. That way, we
     // know that the redline model (and the image that we embed in it) will display in about the same location on the screen
     // as the DgnDb view. That makes for a smoother transition from DgnDb vew to redline view. 
-    controller->AdjustAspectRatio(projectViewRect.Aspect(), true);
-
-    controller->Save();
+    auto& viewDef = controller->GetViewDefinitionR();
+    viewDef.AdjustAspectRatio(projectViewRect.Aspect(), true);
+    viewDef.Update();
 
     return controller;
     }
@@ -1736,13 +1709,17 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DocumentListModelPtr DgnMarkupProject::GetSheetListModel()
     {
-    DgnCode modelCode = DgnModel::CreateModelCode("SheetList", MARKUP_SCHEMA_NAME);
+    DgnCode modelCode = DgnModel::CreateModelCode("Sheets", MARKUP_SCHEMA_NAME);
     DgnModelId modelId = Models().QueryModelId(modelCode);
 
     if (modelId.IsValid())
         return Models().Get<DocumentListModel>(modelId);
 
-    return DocumentListModel::CreateAndInsert(*Elements().GetRootSubject(), modelCode);
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), "Sheets");
+    if (!partition.IsValid())
+        return nullptr;
+
+    return DocumentListModel::CreateAndInsert(*partition, modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
