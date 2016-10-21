@@ -1377,9 +1377,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSq
     //printf ("\n int Prop : %lld", stmt.GetValueInt64 (21));
     //printf ("\n double Prop : %f", stmt.GetValueDouble (22));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (20))) ||
-        (stmt.GetValueInt64 (21) != 10000000) ||
-        (stmt.GetValueDouble (22) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (19))) ||
+        (stmt.GetValueInt64 (20) != 10000000) ||
+        (stmt.GetValueDouble (21) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1392,9 +1392,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams(stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (23))) ||
-        (stmt.GetValueInt64 (24) != 20000000) ||
-        (stmt.GetValueDouble (25) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (22))) ||
+        (stmt.GetValueInt64 (23) != 20000000) ||
+        (stmt.GetValueDouble (24) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1407,9 +1407,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams(stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (26))) ||
-        (stmt.GetValueInt64 (27) != 30000000) ||
-        (stmt.GetValueDouble (28) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (25))) ||
+        (stmt.GetValueInt64 (26) != 30000000) ||
+        (stmt.GetValueDouble (27) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1422,9 +1422,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams(ECSq
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams(ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams(stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (29))) ||
-        (stmt.GetValueInt64 (30) != 40000000) ||
-        (stmt.GetValueDouble (31) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (28))) ||
+        (stmt.GetValueInt64 (29) != 40000000) ||
+        (stmt.GetValueDouble (30) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
