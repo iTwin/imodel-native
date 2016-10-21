@@ -743,7 +743,7 @@ ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecV
             ecVersionMinor = 1;
             break;
         default:
-            ECObjectsStatus::InvalidECVersion;
+            return ECObjectsStatus::InvalidECVersion;
         }
 
     return ECObjectsStatus::Success;

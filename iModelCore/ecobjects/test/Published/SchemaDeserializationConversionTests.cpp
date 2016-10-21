@@ -466,6 +466,93 @@ TEST_F(SchemaDeserializationConversionTest, TestAbstractConstraintAttribute)
     // The Target should be automatically set to B since it is the common base class between the constraint classes.
     EXPECT_STREQ("B", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target Constraint's Abstract Constraint attribute should have been automatically set to B because it is a common base class of the constraint classes.";
     }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='A' isDomainClass='true'/>"
+        "   <ECClass typeName='CommonClass' isDomainClass='true'/>"
+        "   <ECClass typeName='B' isDomainClass='true'>"
+        "       <BaseClass>CommonClass</BaseClass>"
+        "   </ECClass>"
+        "   <ECClass typeName='C' isDomainClass='true'>"
+        "       <BaseClass>CommonClass</BaseClass>"
+        "   </ECClass>"
+        "   <ECClass typeName='D' isDomainClass='true'>"
+        "       <BaseClass>C</BaseClass>"
+        "   </ECClass>"
+        "   <ECClass typeName='E' isDomainClass='true'>"
+        "       <BaseClass>D</BaseClass>"
+        "   </ECClass>"
+        "   <ECRelationshipClass typeName='TestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='D' />"
+        "           <Class class='E' />"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->IsECVersion(3, 1)) << "The schema should be a valid 3.1 schema because there is a shared base class between all of the Target constraint classes";
+
+    EXPECT_STREQ("A", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source Constraint's Abstract Constraint attribute should be implicitly set to A.";
+    // The Target should be automatically set to CommonClass since it is the common base class between the constraint classes.
+    EXPECT_STREQ("CommonClass", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target Constraint's Abstract Constraint attribute should have been automatically set to CommonClass because it is a common base class of the constraint classes.";
+    }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='A' isDomainClass='true'/>"
+        "   <ECClass typeName='CommonClass' isDomainClass='true'/>"
+        "   <ECClass typeName='B' isDomainClass='true'/>"
+        "   <ECClass typeName='C' isDomainClass='true'>"
+        "       <BaseClass>CommonClass</BaseClass>"
+        "   </ECClass>"
+        "   <ECClass typeName='D' isDomainClass='true'>"
+        "       <BaseClass>C</BaseClass>"
+        "   </ECClass>"
+        "   <ECClass typeName='E' isDomainClass='true'>"
+        "       <BaseClass>D</BaseClass>"
+        "   </ECClass>"
+        "   <ECRelationshipClass typeName='TestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class='D' />"
+        "           <Class class='E' />"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should not validate as 3.1 because there is a not a shared base class between B and the other Target constraint classes";
+
+    EXPECT_STREQ("A", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source Constraint's Abstract Constraint attribute should be implicitly set to A.";
+    // The Target should be automatically set to CommonClass since it is the common base class between the constraint classes.
+
+    ECEntityClassCP commonClass = schema->GetClassCP("CommonClass")->GetEntityClassCP();
+
+    EXPECT_NE(ECObjectsStatus::Success, schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetTarget().SetAbstractConstraint(*commonClass)) << "The abstract constraint cannot be set on the target because all of the constraint classes do not derive from that class.";
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("B")->AddBaseClass(*schema->GetClassP("CommonClass"))) << "Adding the CommonClass as a base class of B should succeed.";
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetTarget().SetAbstractConstraint(*commonClass)) << "The abstract constraint should now be able to be CommonClass, since all of the constraint classes derive from it.";
+
+    EXPECT_TRUE(schema->Validate()) << "The schema should now validate successfully.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should now validate to EC3.1";
+    }
     }
 
 //---------------------------------------------------------------------------------------

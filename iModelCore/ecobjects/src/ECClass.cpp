@@ -2424,43 +2424,30 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECRelationshipConstraintClassList const& constraintClasses)
+static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP startingClass, ECRelationshipConstraintClassList const& constraintClasses)
     {
-    ECEntityClassCP tempCommonClass = &constraintClasses[0]->GetClass();
-    bool isCommon = true;
+    ECEntityClassCP tempCommonClass = startingClass;
     for (const auto &secondConstraint : constraintClasses)
         {
         ECEntityClassCP secondClass = &secondConstraint->GetClass();
-            
         if (secondClass->Is(tempCommonClass))
             continue;
-        else if (tempCommonClass->HasBaseClasses())
+        
+        for (const auto baseClass : tempCommonClass->GetBaseClasses())
             {
-            for (const auto baseClass : tempCommonClass->GetBaseClasses())
-                {
-                if (!baseClass->IsEntityClass())
-                    continue;
+            if (!baseClass->IsEntityClass())
+                continue;
 
-                if (secondClass->Is(baseClass))
-                    {
-                    tempCommonClass = baseClass->GetEntityClassCP();
-                    break;
-                    }
-                else
-                    isCommon = false;
-                }
+            FindCommonBaseClass(commonClass, baseClass->GetEntityClassCP(), constraintClasses);
+            if (commonClass != nullptr)
+                return;
+            }
 
-            if (!isCommon)
-                break;
-            }
-        else
-            {
-            isCommon = false;
-            break;
-            }
+        tempCommonClass = nullptr;
+        break;
         }
 
-    if (isCommon)
+    if (nullptr != tempCommonClass)
         commonClass = tempCommonClass;
     }
 
@@ -2494,7 +2481,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
             if (resolveIssues && m_constraintClasses.size() > 1)
                 {
                 ECEntityClassCP commonClass = nullptr;
-                FindCommonBaseClass(commonClass, GetConstraintClasses());
+                FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetClass().GetEntityClassCP(), GetConstraintClasses());
                 if (commonClass != nullptr && ECObjectsStatus::Success == ValidateAbstractConstraint(commonClass))
                     {
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
@@ -3246,8 +3233,13 @@ Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel () const
         return roleLabel;
 
     if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-        return (m_isSource) ? m_relClass->GetInvariantDisplayLabel() : 
-                                m_relClass->GetInvariantDisplayLabel() + " (Reversed)";
+        {
+        roleLabel = m_relClass->GetInvariantDisplayLabel();
+        if (!m_isSource)
+            roleLabel += " (Reversed)";
+
+        return roleLabel;
+        }
 
     return m_roleLabel;
     }
