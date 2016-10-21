@@ -391,6 +391,20 @@ bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECClassCR ecC
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   10 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexList& dbIndexList, ECClassCR ecClass)
+    {
+    IECInstanceCP ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMA_NAME, "DbIndexList");
+    if (ca == nullptr)
+        return false;
+
+    dbIndexList = DbIndexList(ecClass, ca);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -504,10 +518,18 @@ ECObjectsStatus ECDbClassMap::TryGetECInstanceIdColumn(Utf8String& ecInstanceIdC
     return CustomAttributeReader::TryGetTrimmedValue(ecInstanceIdColumnName, *m_ca, "ECInstanceIdColumn");
     }
 
+//*****************************************************************
+//DbIndexList
+//*****************************************************************
 //---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
+//@bsimethod                                               Krischan.Eberle   10 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
+DbIndexList::DbIndexList(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   10 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus DbIndexList::GetIndexes(bvector<DbIndex>& indices) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
@@ -516,7 +538,7 @@ ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
     ECObjectsStatus stat = m_ca->GetEnablerR().GetPropertyIndex(propIx, "Indexes");
     if (ECObjectsStatus::Success != stat)
         {
-        LOG.errorv("Failed to get property index for property 'Indexes' of custom attribute '%s' on ECClass '%s'.",
+        LOG.errorv("Failed to get property index for property 'List' of custom attribute '%s' on ECClass '%s'.",
                    m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
         return stat;
         }
@@ -529,7 +551,11 @@ ECObjectsStatus ECDbClassMap::TryGetIndexes(bvector<DbIndex>& indices) const
     indices.clear();
     const uint32_t indexCount = indexesVal.IsNull() ? 0 : indexesVal.GetArrayInfo().GetCount();
     if (indexCount == 0)
-        return ECObjectsStatus::Success;
+        {
+        LOG.errorv("Failed to read %s custom attribute' on ECClass '%s'. Its property 'Indexes' must be defined and at contain at least one 'DbIndex' element.",
+                   m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+        return ECObjectsStatus::Error;
+        }
 
     for (uint32_t i = 0; i < indexCount; i++)
         {
