@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32) || defined (__unix__)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT) || defined (__unix__)
 
 #include <Bentley/BeFile.h>
 #include <Bentley/Bentley.h>
