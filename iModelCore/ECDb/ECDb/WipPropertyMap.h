@@ -668,6 +668,29 @@ struct WipPropertyMapColumnDispatcher final: IPropertyMapDispatcher
         ~WipPropertyMapColumnDispatcher(){}
         void Reset() { m_columns.clear(); }
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
+        bool AreResultingColumnsAreVirtual() const 
+            {
+            BeAssert(!GetColumns().empty());
+            bool isVirtual = true;
+            for (DbColumn const* column : GetColumns())
+                {
+                isVirtual &= column->GetPersistenceType() == PersistenceType::Virtual;
+                if (!isVirtual)
+                    break;
+                }
+
+            return isVirtual;
+            }
+        DbColumn const* GetSingleColumn() const 
+            { 
+            BeAssert(GetColumns().size() == 1); 
+            if (GetColumns().size() != 1)
+                {
+                return nullptr;
+                }
+
+            return GetColumns().front();
+            }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
@@ -704,6 +727,14 @@ struct WipPropertyMapTableDispatcher final : IPropertyMapDispatcher
             : m_filter(filter)
             {}
         std::set<DbTable const*> GetTables() const { return m_tables; }
+        DbTable const* GetSingleTable() const 
+            { 
+            BeAssert(!m_tables.empty()); 
+            if (m_tables.size() == 1) 
+                return nullptr; 
+
+            return *(m_tables.begin()); 
+            }
     };
 
 //=======================================================================================
@@ -795,7 +826,7 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
         SqlTarget m_target;
         Utf8CP m_classIdentifier;
         DbTable const& m_tableFilter;
-
+        bool m_wrapInParentheses;
     private:
         Result& Record(WipColumnVerticalPropertyMap const& propertyMap) const;
         bool IsAlienTable(DbTable const& table) const;
@@ -812,8 +843,8 @@ struct WipPropertyMapSqlDispatcher final : IPropertyMapDispatcher
         virtual DispatcherFeedback _Dispatch(WipColumnHorizontalPropertyMap const& propertyMap) const override;
 
     public:
-        WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier)
-            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier)
+        WipPropertyMapSqlDispatcher(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false)
+            :m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses)
             {}
         ~WipPropertyMapSqlDispatcher() {}
 

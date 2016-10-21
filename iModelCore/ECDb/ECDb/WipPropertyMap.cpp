@@ -1433,7 +1433,10 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipColumnVerticalPro
         DispatcherFeedback::Cancel;
 
     Result& result = Record(propertyMap);
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
+
     return DispatcherFeedback::Next;
     }
 
@@ -1450,7 +1453,9 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECInsta
 
     Result& result = Record(*vmap);
     auto columnExp = m_target == SqlTarget::View ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
     return DispatcherFeedback::Next;
     }
 
@@ -1466,6 +1471,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdProperty
         }
 
     Result& result = Record(*vmap);
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     if (vmap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
         {
         result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
@@ -1483,7 +1489,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECClassIdProperty
             result.GetSqlBuilderR().Append(classIdStr);
             }
         }
-
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
     return DispatcherFeedback::Next;
     }
 
@@ -1499,6 +1505,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECClass
         }
 
     Result& result = Record(*vmap);
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     if (m_target == SqlTarget::View)
         {
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetAccessString().c_str());
@@ -1516,6 +1523,7 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipConstraintECClass
             result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
         }
 
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
     return DispatcherFeedback::Next;
     }
 
@@ -1532,7 +1540,9 @@ DispatcherFeedback WipPropertyMapSqlDispatcher::ToNativeSql(WipECInstanceIdPrope
 
     Result& result = Record(*vmap);
     auto columnExp = m_target == SqlTarget::View ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
+    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenRight();
     return DispatcherFeedback::Next;
     }
 

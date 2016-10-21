@@ -94,21 +94,22 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
     propertyMap.Accept(columnDispatcher);
     if (columnDispatcher.GetColumns().empty())
         {
-        BeAssert(false);
+        BeAssert(false && "WIP");
         return false;
         }
 
     if (columnDispatcher.GetColumns().size() != 1)
         {
-        BeAssert(false);
+        BeAssert(false && "WIP");
         return false;
         }
+
 
     DbColumn const* column = columnDispatcher.GetColumns().front();
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     WipConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetKind() == PropertyMapKind::ConstraintECClassIdPropertyMap ? static_cast<WipConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
-  
-    if (column->GetPersistenceType() == PersistenceType::Virtual || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
+    bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
+    if (column->GetPersistenceType() == PersistenceType::Virtual || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
@@ -180,8 +181,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipPropertyMap const& propMap, Utf8CP classIdentifier)
     {
-    NativeSqlBuilder::List propNameNativeSqlSnippets = propMap.ToNativeSql(classIdentifier, ecsqlType, exp.HasParentheses());
-    nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
+    WipPropertyMapTableDispatcher tableDispatcher;
+    propMap.Accept(tableDispatcher);
+
+    WipPropertyMapSqlDispatcher sqlDispatcher(*tableDispatcher.GetSingleTable(), 
+                                              ecsqlType == ECSqlType::Select ? WipPropertyMapSqlDispatcher::SqlTarget::View : WipPropertyMapSqlDispatcher::SqlTarget::Table, classIdentifier, exp.HasParentheses());
+    
+    nativeSqlSnippets.push_back(sqlDispatcher.GetResultSet().front().GetSqlBuilder());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -190,8 +196,11 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, WipConstraintECClassIdPropertyMap const& propMap, Utf8CP classIdentifier)
     {
+    WipPropertyMapColumnDispatcher columnDispatcher(PropertyMapKind::All, true);
+    propMap.Accept(columnDispatcher);
+
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
-        !propMap.IsMappedToClassMapTables() && !propMap.IsVirtual())
+        !propMap.IsMappedToClassMapTables() && !columnDispatcher.AreResultingColumnsAreVirtual())
         {
         if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
             {
@@ -204,18 +213,24 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
             {
             RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
             RelationshipConstraintMap const& referencedEndConstraintMappings = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd());
-            RelConstraintECClassIdPropertyMap const* classIdPropMap = referencedEndConstraintMappings.GetECClassIdPropMap();
+
+            WipConstraintECClassIdPropertyMap const* classIdPropMap = referencedEndConstraintMappings.GetECClassIdPropMap();
             if (classIdPropMap == &propMap)
                 {
-                DbColumn const* classIdColumn = classIdPropMap->GetSingleColumn();
+                WipPropertyMapColumnDispatcher  classIdDispatcher(PropertyMapKind::All, true);
+                classIdPropMap->Accept(classIdDispatcher);
+                DbColumn const* classIdColumn = classIdDispatcher.GetSingleColumn();
+
+                WipPropertyMapColumnDispatcher  ecInstanceIdDispatcher(PropertyMapKind::All, true);
+                referencedEndConstraintMappings.GetECInstanceIdPropMap()->Accept(ecInstanceIdDispatcher);
                 NativeSqlBuilder str;
                 str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",
                                     classIdColumn->GetName().c_str(),
                                     classIdColumn->GetTable().GetName().c_str(),
                                     classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
-                                    referencedEndConstraintMappings.GetECInstanceIdPropMap()->GetSingleColumn()->GetName().c_str());
+                                    ecInstanceIdDispatcher.GetSingleColumn()->GetName().c_str());
 
-                nativeSqlSnippets.push_back(str);
+                nativeSqlSnippets.push_back(str); 
                 return ECSqlStatus::Success;
                 }
             }
@@ -252,7 +267,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 {
                 if (!propertyRef->IsConverted())
                     {
-                    NativeSqlBuilder::List snippets = propertyName->GetPropertyMap().ToNativeSql(nullptr, ECSqlType::Select, false);
+                    WipPropertyMapSqlDispatcher sqlDispatcher(propertyName->GetPropertyMap().GetClassMap().GetJoinedTable(), WipPropertyMapSqlDispatcher::View, nullptr);
+                    NativeSqlBuilder::List snippets;
+                    for (auto const&r : sqlDispatcher.GetResultSet())
+                        snippets.push_back(r.GetSqlBuilder());
+
                     if (SUCCESS != propertyRef->ToNativeSql(snippets))
                         return ECSqlStatus::Error;
                     }
