@@ -15,7 +15,7 @@
     <ECEntityClass typeName="Root">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_RootName</Name>
@@ -25,7 +25,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="Persistence" typeName="int"/>
@@ -83,7 +83,7 @@
     <ECEntityClass typeName="CachedObjectInfo">
         <BaseClass>ChangeInfo</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_ClassIdAndRemoteId</Name>
@@ -102,7 +102,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="ClassId" typeName="long"/>
         <ECProperty propertyName="InstanceId" typeName="long"/>
@@ -121,7 +121,7 @@
     <ECEntityClass typeName="CachedRelationshipInfo">
         <BaseClass>CachedObjectInfo</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_ClassIdAndNonUniqueRemoteId</Name>
@@ -143,7 +143,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="RelRemoteId" typeName="string"/>
         <ECProperty propertyName="SourceClassId" typeName="long"/>
@@ -155,7 +155,7 @@
     <ECEntityClass typeName="CachedResponseInfo">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_QueryName</Name>
@@ -165,7 +165,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
-            </ClassMap>
+            </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="AccessDate" typeName="dateTime">
