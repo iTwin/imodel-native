@@ -616,6 +616,8 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         }
     else if (baseProperty.GetIsStruct())
         return false;
+    else if (baseProperty.GetIsNavigation())
+        return false;
     else
         {
         basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->GetType();
