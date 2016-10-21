@@ -656,6 +656,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
 
     TileTextureImageCP      textureImage;
 
+    displayParams->ResolveTextureImage(m_context.GetDgnDb());
     if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
