@@ -13,7 +13,7 @@
         <dependency id="Newtonsoft.Json" version="#Json_version#" />
         <dependency id="Bentley.ECF" version="#ECF_version#" />
         <dependency id="Bentley.LoggingManaged" version="#Logging_version#" />
-        <dependency id="Bentley.PlatformTech" version="#PlatformTech_version#" />
+        <dependency id="Bentley.Platform" version="#PlatformTech_version#" />
     </dependencies>
   </metadata>
   <files>
