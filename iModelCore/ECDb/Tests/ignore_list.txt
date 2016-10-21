@@ -43,8 +43,3 @@ ECDbMappingTestFixture.UserDefinedIndexTest
 
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
-
-#Notified Krischan
-ECDbSchemaRules.RelationshipWithMultipleConstraintClasses
-ECDbSchemaRules.RelationshipMappingLimitations_SupportedCases
-ECDbSchemaRules.RelationshipMappingLimitations_ReadonlyCases

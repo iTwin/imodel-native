@@ -379,12 +379,14 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "RelationshipEnd INTEGER NOT NULL,"
                            "MultiplicityLowerLimit INTEGER,"
                            "MultiplicityUpperLimit INTEGER,"
+                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")),"
                            "RoleLabel TEXT,"
-                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (" SQLVAL_False "," SQLVAL_True ")))");
+                           "AbstractConstraintClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraint_RelationshipClassId_RelationshipEnd ON ec_RelationshipConstraint(RelationshipClassId,RelationshipEnd)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_RelationshipConstraint_RelationshipClassId_RelationshipEnd ON ec_RelationshipConstraint(RelationshipClassId,RelationshipEnd);"
+                           "CREATE INDEX ix_ec_RelationshipConstraint_AbstractConstraintClassId ON ec_RelationshipConstraint(AbstractConstraintClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

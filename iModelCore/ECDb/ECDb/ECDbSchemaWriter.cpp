@@ -707,7 +707,7 @@ BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContain
 BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,RoleLabel,IsPolymorphic) VALUES (?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES (?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -722,18 +722,27 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
     if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetMultiplicity().GetUpperLimit()))
         return ERROR;
 
+    if (BE_SQLITE_OK != stmt->BindBoolean(5, relationshipConstraint.GetIsPolymorphic()))
+        return ERROR;
+
     if (relationshipConstraint.IsRoleLabelDefinedLocally())
         {
-        if (BE_SQLITE_OK != stmt->BindText(5, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(6, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindBoolean(6, relationshipConstraint.GetIsPolymorphic()))
-        return ERROR;
+    if (relationshipConstraint.IsAbstractConstraintDefinedLocally())
+        {
+        ECClassCR abstractConstraintClass = *relationshipConstraint.GetAbstractConstraint();
+        if (SUCCESS != ImportECClass(abstractConstraintClass))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindId(7, abstractConstraintClass.GetId()))
+            return ERROR;
+        }
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
-
 
     constraintId = ECRelationshipConstraintId((uint64_t) m_ecdb.GetLastInsertRowId());
     return SUCCESS;
