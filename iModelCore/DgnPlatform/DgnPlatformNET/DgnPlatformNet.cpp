@@ -781,7 +781,7 @@ public:
      */
     GeometryNET::DPoint3d GetDPoint3d()
         {
-        DPoint3d nativePoint    = m_native->GetPoint3D();
+        DPoint3d nativePoint    = m_native->GetPoint3d();
         GeometryNET::DPoint3d           outPoint;
         *((DPoint3dP) &outPoint) = nativePoint;
         return outPoint;
@@ -1040,7 +1040,7 @@ public:
     void BindPoint3d (int parameterIndex, GeometryNET::DPoint3d value)
         {
         pin_ptr<GeometryNET::DPoint3d>    valuePinned = &value;
-        m_statement->BindPoint3D (parameterIndex, *(DPoint3dP)valuePinned);
+        m_statement->BindPoint3d (parameterIndex, *(DPoint3dP)valuePinned);
         }
 
 
@@ -1121,7 +1121,7 @@ public:
      */
     GeometryNET::DPoint3d GetValueDPoint3d (int columnIndex)
         {
-        return Convert::DPoint3dToManaged (m_statement->GetValuePoint3D (columnIndex));
+        return Convert::DPoint3dToManaged (m_statement->GetValuePoint3d (columnIndex));
         }
 
     /**
@@ -4096,7 +4096,7 @@ public:
 
     GeometryNET::DPoint3d GetPoint3d()
         {
-        return m_native->IsNull() ? GeometryNET::DPoint3d() : Convert::DPoint3dToManaged (m_native->GetPoint3D());
+        return m_native->IsNull() ? GeometryNET::DPoint3d() : Convert::DPoint3dToManaged (m_native->GetPoint3d());
         }
 
     System::DateTime GetDateTime()
