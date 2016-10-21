@@ -549,8 +549,6 @@ private:
     DgnDbR                      m_dgnDb;
     Render::GeometryParams      m_elParams;
     GeometryStreamIO::Writer    m_writer;
-    size_t                      m_facetCount;
-    FacetCounter                m_facetCounter;
 
     GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
     GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
@@ -559,7 +557,7 @@ private:
     bool ConvertToLocal (GeometricPrimitiveR);
     bool AppendWorld (GeometricPrimitiveR);
     bool AppendLocal (GeometricPrimitiveCR);
-    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic, size_t facetCount);
+    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic);
 
 public:
 
@@ -568,7 +566,6 @@ public:
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private Current Placement2d as of last call to Append when creating a 2d GeometryStream
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
-    size_t GetFacetCount() const {return m_facetCount;} //!< @private Current approximation of number of facets in the GeometryStream
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private GeometryStream being constructed by this builder
     DGNPLATFORM_EXPORT bool MatchesGeometryPart (DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private Assumes already detected a range match...
 
@@ -597,7 +594,7 @@ public:
     //! Append a DgnGeometryPartId with relative placement supplied as a Transform.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
     DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement);
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement, DRange3dCR range, size_t facets); //!< @private Supply information from DgnGeometryPart::QueryGeometryPartRangeAndFacetCount directly.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement, DRange3dCR range); //!< @private Supply information from DgnGeometryPart::QueryGeometryPartRange directly.
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint3d and optional YawPitchRollAngles.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.

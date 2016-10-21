@@ -496,8 +496,9 @@ GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(Subject
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PhysicalPartition::_OnSubModelInsert(DgnModelCR model) const 
     {
-    // A PhysicalPartition can only be modeled by a PhysicalModel
-    return model.IsPhysicalModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    // WIP: A PhysicalPartition can only be modeled by a SpatialModel?
+    // WIP: Should we add a SpatialPartition and then restrict PhysicalPartition to sub PhysicalModels?
+    return model.IsSpatialModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,7 +891,7 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementAutoHandledPropertiesECInstanceAdapter ec(*this);
+        ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -939,7 +940,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
     if (PropState::Dirty == m_flags.m_propState)
         {
-        ElementAutoHandledPropertiesECInstanceAdapter ec(*this);
+        ElementAutoHandledPropertiesECInstanceAdapter ec(*this, false);
         status = ec.UpdateProperties();
         if (DgnDbStatus::Success != status)
             {
@@ -1217,19 +1218,25 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     // don't copy FederationGuid
 
     // Copy the auto-handled EC properties
-    ElementAutoHandledPropertiesECInstanceAdapter ecOther(other);
+    ElementAutoHandledPropertiesECInstanceAdapter ecOther(other, true);
     if (ecOther.IsValid())
         {
         // Note that we are NOT necessarily going to call _SetPropertyValue on each property. 
         // If the subclass needs to validate specific auto-handled properties even during copying, then it
         // must override _CopyFrom and validate after the copy is done.
-        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this);
+        // TRICKY: Don't load my auto-handled properties at the outset. That will typically lead me to allocate a smaller
+        //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
+        //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
+        ElementAutoHandledPropertiesECInstanceAdapter ecThis(*this, false, ecOther.CalculateBytesUsed());
         if (ecThis.IsValid()) // this might not have auto-handled props if this and other are instances of different classes
             {
             if (GetElementClassId() != other.GetElementClassId())
                 ecThis.CopyDataBuffer(ecOther, true);
             else
                 ecThis.CopyFromBuffer(ecOther);
+
+            if (nullptr != m_ecPropertyData)
+                m_flags.m_propState = DgnElement::PropState::Dirty;
             }
         }
 
@@ -1644,7 +1651,6 @@ void GeometricElement::CopyFromGeometrySource(GeometrySourceCR src)
     {
     m_categoryId = src.GetCategoryId();
     m_geom = src.GetGeometryStream();
-    m_facetCount = src._GetFacetCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2457,7 +2463,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
 struct GeometricElementPropertyAccessors
     {
     struct {
-        ECSqlClassInfo::T_ElementPropGet  geomStream, facetCount;
+        ECSqlClassInfo::T_ElementPropGet  geomStream;
         } get;
     struct {
         ECSqlClassInfo::T_ElementPropSet  geomStream;
@@ -2484,14 +2490,6 @@ void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params
             return DgnDbStatus::BadRequest;//  => Use GeometryBuilder
             };
 
-        s_geomaccessors.get.facetCount = [](ECValueR value, DgnElementCR elIn)
-            {
-            GeometricElement& el = (GeometricElement&)elIn;
-            value.SetLong(el.m_facetCount);
-            return DgnDbStatus::Success;
-            };
-
-
         });
 
     params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, s_geomaccessors.get.geomStream, s_geomaccessors.set.geomStream);
@@ -2503,11 +2501,11 @@ void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params
 struct GeometricElement3dPropertyAccessors
     {
     struct {
-        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropGet  categoryId, inSpatialIndex;
         ECSqlClassInfo::T_ElementPropGet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
         } get;
     struct {
-        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex, facetCount;
+        ECSqlClassInfo::T_ElementPropSet  categoryId, inSpatialIndex;
         ECSqlClassInfo::T_ElementPropSet  origin, yaw, pitch, roll, bboxLow, bboxHigh;
         } set;
     };
@@ -2591,19 +2589,8 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return DgnDbStatus::ReadOnly;
             };
 
-        s_accessors.set.facetCount = [](DgnElementR elIn, ECValueCR value)
-            {
-            GeometricElement3d& el = (GeometricElement3d&)elIn;
-            if (value.IsNull())
-                el._RecordFacetCount(0);
-            else
-                el._RecordFacetCount((size_t)value.GetLong());
-            return DgnDbStatus::Success;
-            };
-
         });
 
-    params.RegisterPropertyAccessors(layout, GEOM_FacetCount, s_geomaccessors.get.facetCount, s_accessors.set.facetCount);
     params.RegisterPropertyAccessors(layout, GEOM_Category, s_accessors.get.categoryId, s_accessors.set.categoryId);
     params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, s_accessors.get.inSpatialIndex, s_accessors.set.inSpatialIndex);
     params.RegisterPropertyAccessors(layout, GEOM_Origin, s_accessors.get.origin, s_accessors.set.origin);
@@ -3388,7 +3375,6 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
         return status;
 
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
-    m_facetCount = stmt.GetValueUInt64(params.GetSelectIndex(GEOM_FacetCount));
 
     // Read GeomStream
     auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
@@ -3424,7 +3410,6 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
-    stmt.BindInt64(stmt.GetParameterIndex(GEOM_FacetCount), static_cast<int64_t>(m_facetCount));
     return m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 
@@ -3481,7 +3466,7 @@ bool GeometricElement::_EqualProperty(ECN::ECPropertyValueCR expected, DgnElemen
         }
 
     // We need custom logic to compare GeometryStreams because the base class implementation of _EqualProperty cannot get this property's value as an ECN::ECValue.
-    // We DON'T need custom logic to compare any of the other common GeometricElement properties, such as FacetCount or CategoryId,
+    // We DON'T need custom logic to compare any of the other common GeometricElement properties, such as CategoryId,
     // because the base class implementation CAN get those property values as ECN::ECValues and can therefore compare them using generic logic.
 
     GeometricElement const* othergeom = static_cast<GeometricElement const*>(&other);

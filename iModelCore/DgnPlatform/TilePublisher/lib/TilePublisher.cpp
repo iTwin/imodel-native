@@ -13,8 +13,6 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
-BentleyStatus resize_image (ByteStream&    outputImage, Point2dCR outputSize, Byte const*  inputImage, Point2dCR  inputSize, bool isRGBA);
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -111,7 +109,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     m_centroid = DPoint3d::FromXYZ(0,0,0);
 #endif
 
-    m_meshes = m_tile.GenerateMeshes(context.GetCache(), context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
+    m_meshes = m_tile.GenerateMeshes(context.GetDgnDb(), TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1190,28 +1188,18 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodeR rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
+void    PublisherContext::GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name)
     {
-    Status                      status;
-    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
+    Json::Value         child;
 
-    if (0 != m_maxTilesPerDirectory)
-        rootTile.GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+    rootRange.Extend (rootTile.GetTileRange());
+    rootJson["refine"] = "replace";
+    rootJson[JSON_GeometricError] = rootTile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 
-    if (Status::Success == (status = ConvertStatus  (generator.CollectTiles (rootTile, collector))))
-        {
-        Json::Value         child;
+    rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
 
-        rootRange.Extend (rootTile.GetTileRange());
-        rootJson["refine"] = "replace";
-        rootJson[JSON_GeometricError] = rootTile.GetTolerance();
-        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
-
-        rootJson[JSON_Content]["url"] = Utf8String (rootTile.GetRelativePath (name.c_str(), s_metadataExtension).c_str());
-
-        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
-        }
-    return status;
+    WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), rootTile.GetRelativePath ((GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), rootTile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1222,6 +1210,7 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     IGenerateMeshTiles*         generateMeshTiles;
     TileNodePtr                 rootTile;
     Status                      status;
+    AutoRestore <WString>       saveRootName (&m_rootName, WString (name.c_str()));
 
     if (nullptr == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
         return Status::NotImplemented;
@@ -1230,10 +1219,10 @@ PublisherContext::Status   PublisherContext::DirectPublishModel (Json::Value& ro
     progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
     progressMeter._IndicateProgress (0, 1);
                                                                             
-    if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
-        return status;
+    if (Status::Success == (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile, collector, generator.GetProgressMeter()))))
+        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
 
-    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1243,19 +1232,13 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
-    static size_t           s_maxPointsPerTile = 200000;
-
-// #define GENERATE_AND_COLLECT
-#ifdef GENERATE_AND_COLLECT
-    return ConvertStatus (generator.GenerateAndCollectTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile));
-#else
+    static size_t           s_maxPointsPerTile = 500000;
     Status                  status;
 
-    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, toleranceInMeters, s_maxPointsPerTile))))
-        return status;
-        
-    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
-#endif
+    if (Status::Success == (status = ConvertStatus (generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile))))
+        GenerateJsonAndWriteTileset (rootJson, rootRange, *rootTile, name);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
