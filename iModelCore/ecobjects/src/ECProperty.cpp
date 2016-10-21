@@ -635,7 +635,7 @@ Utf8String PrimitiveECProperty::_GetTypeName () const
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
     }
 
-Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersion) const
+Utf8String PrimitiveECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion <= ECVersion::V2_0 && m_enumeration != nullptr)
         return m_enumeration->GetTypeName();
