@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="WSCache" nameSpacePrefix="wsc" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+<ECSchema schemaName="WSCache" alias="wsc" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
+    <ECSchemaReference name="ECDb_FileInfo" version="02.00" alias="ecdbf"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
 
     <ECEntityClass typeName="Node" modifier="Abstract">
         <ECCustomAttributes>
@@ -31,7 +31,7 @@
         <ECProperty propertyName="Persistence" typeName="int"/>
         <ECProperty propertyName="SyncDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -66,14 +66,14 @@
         <ECProperty propertyName="CacheTag" typeName="string"/>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="UpdateDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -111,7 +111,7 @@
         <ECProperty propertyName="CacheTag" typeName="string"/>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -170,7 +170,7 @@
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="AccessDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -182,7 +182,7 @@
         <BaseClass>Node</BaseClass>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -192,10 +192,10 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="RootToNode" strength="holding">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Root" >
             <Class class="Root"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" abstractConstraint="Node" roleLabel="Node">
             <Class class="CachedObjectInfo"/>
             <Class class="CachedRelationshipInfo"/>
             <Class class="NavigationBase"/>
@@ -203,10 +203,10 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="RootToNodeWeak" strength="referencing">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Root">
             <Class class="Root"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" abstractConstraint="Node" roleLabel="Weak Node">
             <Class class="CachedObjectInfo"/>
             <Class class="CachedRelationshipInfo"/>
             <Class class="NavigationBase"/>
@@ -214,93 +214,93 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponseToParent" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="true">
+        <Target multiplicity="(1..1)" polymorphic="true" roleLabel="Parent">
             <Class class="Node"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponseToHolder" strength="holding" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="true">
+        <Target multiplicity="(1..1)" polymorphic="true" roleLabel="Holder">
             <Class class="Node"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponseToResponsePage" strength="holding">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source multiplicity="(1..1)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="Response Page">
             <Class class="CachedResponsePageInfo"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponseToAdditionalInstance" strength="referencing" >
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo" />
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="Additional Instance">
             <Class class="CachedObjectInfo" />
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponsePageToResult" strength="holding">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response Page">
             <Class class="CachedResponsePageInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" abstractConstraint="CachedObjectInfo" roleLabel="Result">
             <Class class="CachedObjectInfo"/>
             <Class class="CachedRelationshipInfo"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ResponsePageToResultWeak" strength="referencing">
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response Page">
             <Class class="CachedResponsePageInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" abstractConstraint="ChangeInfo" roleLabel="Result">
             <Class class="CachedObjectInfo"/>
             <Class class="CachedRelationshipInfo"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="ChangeInfo">
             <Class class="ChangeInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="InstanceBackup">
             <Class class="InstanceBackup"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" strength="holding">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source multiplicity="(1..1)" polymorphic="false" roleLabel="ObjectInfo">
             <Class class="CachedObjectInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo">
             <Class class="CachedFileInfo"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="CachedFileInfoToFileInfo" strength="holding">
-        <Source cardinality="(0,1)" polymorphic="false">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo">
             <Class class="CachedFileInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="FileInfo">
             <Class class="ecdbf:ExternalFileInfo"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" strength="holding">
-        <Source cardinality="(0,1)" polymorphic="false">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo">
             <Class class="CachedFileInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="FileInfoOwnership">
             <Class class="ecdbf:FileInfoOwnership"/>
         </Target>
     </ECRelationshipClass>
@@ -310,10 +310,10 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding">
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Node">
             <Class class="Node"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="ExtendedData">
             <Class class="ExtendedData"/>
         </Target>
     </ECRelationshipClass>
