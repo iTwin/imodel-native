@@ -3,10 +3,11 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
     <Part Name="AzureSDK">
+        <SubPart PartName="cpprestsdk"      PartFile="${SrcRoot}bsicommon/CvsPartfiles/cpprestsdk"   Repository="Bin-cpprestsdk" />        
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 

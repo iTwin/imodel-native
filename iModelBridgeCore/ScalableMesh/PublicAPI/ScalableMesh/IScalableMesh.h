@@ -12,8 +12,9 @@
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
-
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
+#include <ScalableMesh/IScalableMeshEdit.h>
 #undef static_assert
 
 #ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
@@ -112,6 +113,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                      const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
+
+        virtual IScalableMeshEditPtr    _GetMeshEditInterface() const = 0;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
@@ -233,6 +236,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
+
+        BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 

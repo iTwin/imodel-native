@@ -436,6 +436,7 @@ private:
             if (nodeTex.empty()) areTexMissing = true;
             if (meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities) || (loadTexture == (areTexMissing)))
                 {
+                if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips();
                 meshNode->RemoveDisplayDataFromCache();                    
                 meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
@@ -925,6 +926,45 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
             }
         }            
     }             
+
+#define VALID_EXTENT_RATIO 0.5
+#define MAX_LEVEL 4
+static double s_validExtentRatio = 0;
+
+void EstimateMeanNbPointsPerNode(int64_t& nbObjects, int64_t& nbNodes, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
+    {            						
+	if (node->GetNbObjects() > 0 )
+		{
+		double nodeExtentArea = (ExtentOp<Extent3dType>::GetXMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetXMin(node->GetNodeExtent())) *
+							(ExtentOp<Extent3dType>::GetYMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetYMin(node->GetNodeExtent()));
+
+		double contentExtentArea = (ExtentOp<Extent3dType>::GetXMax(node->GetContentExtent()) - ExtentOp<Extent3dType>::GetXMin(node->GetContentExtent())) *
+							   (ExtentOp<Extent3dType>::GetYMax(node->GetContentExtent()) - ExtentOp<Extent3dType>::GetYMin(node->GetContentExtent()));
+	
+
+		if (contentExtentArea  / nodeExtentArea > s_validExtentRatio) 
+			{
+			nbObjects += node->GetNbObjects();
+			nbNodes++;
+			}
+		}
+
+	ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
+		                
+    if (node->GetLevel() < MAX_LEVEL)
+        {                
+        bvector<IScalableMeshNodePtr> childrenNodes(meshNode->GetChildrenNodes());
+
+        for (auto& childNode : childrenNodes)
+            {            
+			HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> node;
+            node = (dynamic_cast<ScalableMeshNode<DPoint3d>*>(childNode.get()))->GetNodePtr();            
+			EstimateMeanNbPointsPerNode(nbObjects, nbNodes, node);            
+            }
+        }            
+    }      
+
+static double s_minScreenPixelCorrectionFactor = 1.0;
  
 ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
     {
@@ -939,7 +979,20 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     for (auto&id : allShownIds) activeClips.insert(id);
     _SetActiveClips(activeClips, scalableMeshPtr);
 
-    PreloadOverview(rootNodePtr);        
+    PreloadOverview(rootNodePtr);       
+
+	int64_t nbObjects = 0;
+	int64_t nbNodes = 0;
+	EstimateMeanNbPointsPerNode(nbObjects, nbNodes, rootNodePtr);
+
+	if (nbNodes > 0)
+		{
+		s_minScreenPixelCorrectionFactor = ((double)nbObjects / nbNodes) / rootNodePtr->GetSplitTreshold();
+		}
+	else
+		{
+		s_minScreenPixelCorrectionFactor = 1.0;
+		}
     }
 
 ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
@@ -948,6 +1001,7 @@ ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     s_queryProcessor.CancelAllQueries();    
     m_overviewNodes.clear();
     }
+
 
 template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
     ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
@@ -988,7 +1042,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
 
-    viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint());
+    viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
 
     //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
     if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
@@ -1007,7 +1061,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 #ifndef NDEBUG
 static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 #else
-static double s_firstNodeSearchingDelay = (double)1 / 30 * CLOCKS_PER_SEC;
+static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 #endif
 //static int    s_nbIterClock;
 
@@ -1020,7 +1074,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     
     if (parentNodePtr == nullptr)
         {        
-       // assert(!"Should not occurs");               
+        assert(!"Should not occurs");               
         return;
         }
          
@@ -1180,7 +1234,7 @@ class NewQueryStartingNodeProcessor
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    if (meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(*m_activeClips))
+                    if (meshNodePtr->IsDataUpToDate() && meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(*m_activeClips))
                         {                        
                         m_requiredMeshNodes[threadId].push_back(meshNodePtr);
                         }
@@ -1192,15 +1246,15 @@ class NewQueryStartingNodeProcessor
                 }
             }
 
-        void Execute(RequestedQuery&                                                 newQuery, 
-                     bvector<IScalableMeshCachedDisplayNodePtr>&                     lowerResOverviewNodes,
+        void Execute(RequestedQuery&                                            newQuery, 
+                     bvector<IScalableMeshCachedDisplayNodePtr>&                lowerResOverviewNodes,
                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes,                 
                      ProducedNodeContainer<DPoint3d, Extent3dType>&             nodesToSearch,
-                     size_t                                                          nodeToSearchCurrentInd,
+                     size_t                                                     nodeToSearchCurrentInd,
                      ProducedNodeContainer<DPoint3d, Extent3dType>&             foundNodes, 
-                     bset<uint64_t>&                                                 activeClips,
-                     IScalableMeshPtr& scalableMeshPtr)
+                     bset<uint64_t>&                                            activeClips,
+                     IScalableMeshPtr&											scalableMeshPtr)
             {        
             m_nodesToSearch = &nodesToSearch;
             m_nodeToSearchCurrentInd = nodeToSearchCurrentInd;
@@ -1275,7 +1329,6 @@ void TerminateProgressiveQueries()
     s_newQueryStartingNodeProcessor = nullptr;
     }
 
-
 void ComputeOverviewSearchToLoadNodes(RequestedQuery&                                                 newQuery, 
                                       bvector<IScalableMeshCachedDisplayNodePtr>&                     lowerResOverviewNodes,
                                       bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
@@ -1299,6 +1352,8 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
     PRINT_MSG("StartNewQuery m_requiredMeshNodes : %I64u toLoadNodes : %I64u totalToLoadNodes : %I64u \n", newQuery.m_requiredMeshNodes.size(), toLoadNodes.size(), totalToLoadNodes);
 #endif    
     }
+
+static bool s_loadNodeNearCamFirst = true;
     
 void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
@@ -1330,7 +1385,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         currentInd++;
         }        
     
-    bvector<IScalableMeshCachedDisplayNodePtr>                lowerResOverviewNodes;    
+    bvector<IScalableMeshCachedDisplayNodePtr>                     lowerResOverviewNodes;
     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> searchingNodes;
     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> toLoadNodes;
               
@@ -1352,8 +1407,53 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
             }   
         } ContentExtentGreater;
 
-        std::sort(newQuery.m_overviewMeshNodes.begin(), newQuery.m_overviewMeshNodes.end(), ContentExtentGreater);                        
+        vector<size_t> queryNodeOrder;
+        bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> nodes;
+        for (auto& node : newQuery.m_overviewMeshNodes) nodes.push_back(dynamic_cast<ScalableMeshNode<DPoint3d>*>(node.get())->GetNodePtr());
+        queryObjectP->GetQueryNodeOrder(queryNodeOrder, nodes[0], &nodes[0], nodes.size());
+
+        bmap<IScalableMeshCachedDisplayNode*, size_t> mapNodes;
+        for (auto& node : newQuery.m_overviewMeshNodes) mapNodes[node.get()] = &node - &newQuery.m_overviewMeshNodes[0];
+
+        struct OverviewScoringMethod
+            {
+            vector<size_t>& m_scores;
+            bmap<IScalableMeshCachedDisplayNode*, size_t>& m_map;
+            bool operator()(IScalableMeshCachedDisplayNodePtr& nodeA, IScalableMeshCachedDisplayNodePtr& nodeB)
+                {
+                double maxLengthA = max(max(nodeA->GetContentExtent().XLength(), nodeA->GetContentExtent().YLength()), nodeA->GetContentExtent().ZLength());
+                double maxLengthB = max(max(nodeB->GetContentExtent().XLength(), nodeB->GetContentExtent().YLength()), nodeB->GetContentExtent().ZLength());
+
+                return (maxLengthA - maxLengthB) + (m_scores[m_map[nodeA.get()]] - m_scores[m_map[nodeB.get()]])*(maxLengthA - maxLengthB) / 6 < 0;
+                }
+
+            OverviewScoringMethod(vector<size_t>& scores, bmap<IScalableMeshCachedDisplayNode*, size_t>& map) : m_scores(scores), m_map(map)
+                {
+                
+                }
+            } OverviewScore(queryNodeOrder, mapNodes);
+        std::sort(newQuery.m_overviewMeshNodes.begin(), newQuery.m_overviewMeshNodes.end(), OverviewScore);
         }
+
+	if (s_loadNodeNearCamFirst && toLoadNodes.size() > 0)
+		{
+		vector<size_t> queryNodeOrder;
+		bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> unorderedLoadNodes;
+
+		unorderedLoadNodes.insert(unorderedLoadNodes.end(), toLoadNodes.begin(), toLoadNodes.end());
+		
+		queryObjectP->GetQueryNodeOrder(queryNodeOrder, toLoadNodes[0], &toLoadNodes[0], toLoadNodes.size());
+
+		assert(queryNodeOrder.size() == toLoadNodes.size());
+
+		toLoadNodes.clear();
+
+		for (auto& order : queryNodeOrder)
+			{
+			toLoadNodes.push_back(unorderedLoadNodes[order]);
+			}				
+		}
+
     
     s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, searchingNodes, toLoadNodes, newQuery.m_loadTexture, m_activeClips, newQuery.m_meshToQuery, m_displayCacheManagerPtr);
     }
