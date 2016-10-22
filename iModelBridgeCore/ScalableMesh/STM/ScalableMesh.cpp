@@ -372,9 +372,9 @@ int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDa
     return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus IScalableMesh::CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    return _CreateCoverage(coverageData, id);
+    return _CreateCoverage(coverageTempDataFolder, coverageData, id);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -2084,7 +2084,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 
 static bool s_doGroundExtract = true; 
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
     if (s_doGroundExtract && m_scmTerrainIndexPtr == nullptr)
         {        
@@ -2102,7 +2102,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
 
         smGroundExtractor->SetExtractionArea(coverageData);
 
-        StatusInt status = smGroundExtractor->ExtractAndEmbed();                
+        StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);                
 
         assert(status == SUCCESS);    
                 

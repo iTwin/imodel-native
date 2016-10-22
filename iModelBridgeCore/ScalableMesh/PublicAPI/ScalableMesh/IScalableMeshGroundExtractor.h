@@ -32,18 +32,20 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
     protected:                         
              
         //Synchonization with data sources functions
-        virtual StatusInt _ExtractAndEmbed() = 0;        
+        virtual StatusInt _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) = 0;        
 
         virtual StatusInt _SetExtractionArea(const bvector<DPoint3d>& area) = 0;
 
           
     public:
       
-        BENTLEY_SM_EXPORT StatusInt ExtractAndEmbed();                
+        BENTLEY_SM_EXPORT StatusInt ExtractAndEmbed(const BeFileName& coverageTempDataFolder);                
 
         BENTLEY_SM_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
         
         BENTLEY_SM_EXPORT static IScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);        
+
+        BENTLEY_SM_EXPORT static void GetTempDataLocation(BeFileName& textureSubFolderName , BeFileName& extraLinearFeatureFileName);        
 
     };
 
