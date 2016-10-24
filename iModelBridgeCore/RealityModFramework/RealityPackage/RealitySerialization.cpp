@@ -168,7 +168,8 @@ RealityPackageStatus RealityDataSerializer::_ReadPackageInfo(RealityDataPackageR
     package.SetId(id.c_str());
 
     // Bounding polygon.
-    Utf8String polygonString; BoundingPolygonPtr pPolygon;
+    Utf8String polygonString; 
+    BoundingPolygonPtr pPolygon = BoundingPolygon::Create();
     xmlDom.SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pContext, BeXmlDom::NODE_BIAS_First);
     if (!polygonString.empty() && (pPolygon = BoundingPolygon::FromString(polygonString.c_str())).IsNull())
         return RealityPackageStatus::PolygonParsingError; // If present, format must be valid.
@@ -610,28 +611,34 @@ RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, Realit
         // Wms source.
         WmsDataSourceCP pWmsSource = dynamic_cast<WmsDataSourceCP>(&source);
 
-        // Create XmlDom from string.
-        BeXmlStatus xmlStatus = BEXML_Success;
-        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pWmsSource->GetMapSettings().c_str());
-        if (BEXML_Success != xmlStatus)
-            return RealityPackageStatus::XmlReadError;
+        if (!pWmsSource->GetMapSettings().empty())
+            {
+            // Create XmlDom from string.
+            BeXmlStatus xmlStatus = BEXML_Success;
+            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pWmsSource->GetMapSettings().c_str());
+            if (BEXML_Success != xmlStatus)
+                return RealityPackageStatus::XmlReadError;
 
-        // Add node.
-        pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            // Add node.
+            pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            }        
         } 
     else if (PACKAGE_ELEMENT_OsmSource == sourceType)
         {
         // Osm source.
         OsmDataSourceCP pOsmSource = dynamic_cast<OsmDataSourceCP>(&source);
 
-        // Create XmlDom from string.
-        BeXmlStatus xmlStatus = BEXML_Success;
-        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pOsmSource->GetOsmResource().c_str());
-        if (BEXML_Success != xmlStatus)
-            return RealityPackageStatus::XmlReadError;
+        if (!pOsmSource->GetOsmResource().empty())
+            {
+            // Create XmlDom from string.
+            BeXmlStatus xmlStatus = BEXML_Success;
+            BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pOsmSource->GetOsmResource().c_str());
+            if (BEXML_Success != xmlStatus)
+                return RealityPackageStatus::XmlReadError;
 
-        // Add node.
-        pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            // Add node.
+            pSourceNode->ImportNode(pXmlDom->GetRootElement());
+            }        
         }
     else if (PACKAGE_ELEMENT_MultiBandSource == sourceType)
         {

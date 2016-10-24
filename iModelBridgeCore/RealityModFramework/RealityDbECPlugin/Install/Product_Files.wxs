@@ -94,8 +94,8 @@
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_AppFiles">
-      <Component Id="BentleyWMSPackageNet.dll" Directory="bin" Guid="{90718A54-D2CD-474F-BC79-D8AAD2DCE6C3}">
-        <File Id="BentleyWMSPackageNet.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyWMSPackageNet.dll" />
+      <Component Id="RealityServicesNet.dll" Directory="bin" Guid="{90718A54-D2CD-474F-BC79-D8AAD2DCE6C3}">
+        <File Id="RealityServicesNet.dll" KeyPath="yes" Source="$(var.ProductDir)RealityServicesNet.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
