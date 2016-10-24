@@ -57,3 +57,7 @@ CachingDataSourceTests.SyncCachedData_AlreadyCachedInstanceReturnedFromQuery_Que
 CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
     # DgnDb61-16Q2-Dev, WinX64, DEBUG
     # <Crash, no output or stack printed>
+
+ChangeGraphTests.*
+    # DgnDb61-16Q2, WinX86, DEBUG
+    # <Random crashes among these tests, no output or stack printed>
