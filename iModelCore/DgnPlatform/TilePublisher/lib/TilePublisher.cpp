@@ -656,6 +656,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
 
     TileTextureImageCP      textureImage;
 
+    displayParams->ResolveTextureImage(m_context.GetDgnDb());
     if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
@@ -1075,7 +1076,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    if (_OmitFromTileset(tile))
+    if (tile.GetIsEmpty() || _OmitFromTileset(tile))
         {
         range = DRange3d::NullRange();
         return;
@@ -1232,7 +1233,7 @@ PublisherContext::Status   PublisherContext::PublishElements (Json::Value& rootJ
     {
     AutoRestore <WString>   saveRootName (&m_rootName, WString (name.c_str()));
     TileNodePtr             rootTile;
-    static size_t           s_maxPointsPerTile = 500000;
+    static size_t           s_maxPointsPerTile = 250000;
     Status                  status;
 
     if (Status::Success == (status = ConvertStatus (generator.GenerateTiles (rootTile, collector, toleranceInMeters, s_maxPointsPerTile))))

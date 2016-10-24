@@ -150,7 +150,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    virtual void _OnAfterECSchemaImport() const override { m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
+    virtual void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
@@ -203,13 +203,13 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
-    DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
+    DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
-    DgnSearchableText& SearchableText() const { return const_cast<DgnSearchableText&>(m_searchableText); } //!< The searchable text table for this DgnDb
+    DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
-    MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
+    MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
 
