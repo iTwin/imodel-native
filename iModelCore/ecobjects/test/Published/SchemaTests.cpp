@@ -2446,16 +2446,18 @@ TEST_F(SchemaTest, CreateDynamicSchema)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext->AddSchemaLocater(*schemaLocater);
 
-    SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
+    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
     ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
+    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema;
 
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
     schema->AddReferencedSchema(*standardCASchema);
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetIsDynamicSchema(true));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
+    
 
     ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
     ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);

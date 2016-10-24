@@ -10,8 +10,6 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define BSCA_SCHEMA_NAME "Bentley_Standard_CustomAttributes"
-#define SYSTEMSCHEMA_CA_NAME "SystemSchema"
-#define DYNAMICSCHEMA_CA_NAME "DynamicSchema"
 
 #define ECDBMAP_SCHEMA_NAME "ECDbMap"
 
@@ -168,14 +166,14 @@ StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
 
     ECClassP metaDataClass = m_schema->GetClassP(s_supplementalMetaDataAccessor);
     StandaloneECEnablerPtr enabler;
-    if (NULL != metaDataClass)
+    if (nullptr != metaDataClass)
         enabler = metaDataClass->GetDefaultStandaloneEnabler();
 
     m_enablers.Insert(s_supplementalMetaDataAccessor, enabler);
 
     ECClassP provenanceClass = m_schema->GetClassP(s_supplementalProvenanceAccessor);
     StandaloneECEnablerPtr provenanceEnabler;
-    if (NULL != provenanceClass)
+    if (nullptr != provenanceClass)
         provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
     m_enablers.Insert(s_supplementalProvenanceAccessor, provenanceEnabler);
 
@@ -246,56 +244,6 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
 ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     return DateTimeInfoAccessor::GetFrom(dateTimeInfo, dateTimeProperty);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool StandardCustomAttributeHelper::IsSystemSchema(ECSchemaCR schema)
-    {
-    return schema.IsDefined(BSCA_SCHEMA_NAME, SYSTEMSCHEMA_CA_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool StandardCustomAttributeHelper::IsDynamicSchema(ECSchemaCR schema)
-    {
-    return schema.IsDefined(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan    02/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema(ECSchemaR schema, bool isDynamic)
-    {
-    const bool isDynamicExistingValue = IsDynamicSchema(schema);
-    if (isDynamic)
-        {
-        if (isDynamicExistingValue)
-            return ECObjectsStatus::Success;
-
-        SchemaNameClassNamePair dynamicSchemaClassId(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME);
-        ECClassP dynamicSchemaClass = schema.GetReferencedSchemas().FindClassP(dynamicSchemaClassId);
-        //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
-        if (dynamicSchemaClass == nullptr)
-            return ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound;
-
-        IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        return schema.SetCustomAttribute(*dynamicSchemaInstance);
-        }
-
-    if (!isDynamicExistingValue)
-        return ECObjectsStatus::Success;
-
-    if (schema.RemoveCustomAttribute(BSCA_SCHEMA_NAME, DYNAMICSCHEMA_CA_NAME))
-        return ECObjectsStatus::Success;
-
-    return ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**

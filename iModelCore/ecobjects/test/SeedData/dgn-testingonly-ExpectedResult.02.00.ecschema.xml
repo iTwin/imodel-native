@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
@@ -384,7 +385,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
             <DbIndexList xmlns="ECDbMap.02.00">
@@ -441,7 +442,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>

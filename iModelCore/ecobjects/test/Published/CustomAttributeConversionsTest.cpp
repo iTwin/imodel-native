@@ -1703,12 +1703,12 @@ Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String n
     
     ECValue value;
     instancePtr->GetValue(value, propertyP->GetName().c_str());
-    EXPECT_EQ(true, value.IsInteger()) << "Property: " << propertyP->GetName() << " is supposed to be an integer";
+    EXPECT_EQ(true, value.IsString()) << "Property: " << propertyP->GetName() << " is supposed to be a string";
 
-    Utf8String propertyValue;
-    value.ConvertPrimitiveToString(propertyValue);
-    
-    return propertyValue;
+    if (value.IsNull())
+        return Utf8String();
+
+    return value.GetUtf8CP();
     }
 
 //---------------------------------------------------------------------------------------
