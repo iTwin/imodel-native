@@ -250,14 +250,15 @@ AsyncTaskPtr<WSUpdateObjectResult> WSRepositoryClient::SendUpdateObjectRequest
 (
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
-Utf8String eTag,
+Utf8StringCR eTag,
+BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSUpdateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, uploadProgressCallback, ct);
+        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, ct);
         }, ct);
     }
 

@@ -549,14 +549,19 @@ AsyncTaskPtr<WSUpdateObjectResult> WebApiV2::SendUpdateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
+BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String url = GetUrl(CreateObjectSubPath(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreatePostRequest(url);
+    if (!filePath.empty() && m_info.GetWebApiVersion() < BeVersion(2, 4))
+        {
+        BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
-    request.GetHeaders().SetContentType("application/json");
+    Utf8String url = GetUrl(CreateObjectSubPath(objectId));
+    ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
     // WSG 2.x does not support instance validation in update request
     // TODO: implement WSG side or Client side validation
@@ -567,13 +572,16 @@ ICancellationTokenPtr ct
 
     Json::Value updateJson;
     JsonValueR instanceJson = updateJson["instance"];
-
     instanceJson["schemaName"] = objectId.schemaName;
     instanceJson["className"] = objectId.className;
     instanceJson["instanceId"] = objectId.remoteId;
     instanceJson["properties"] = propertiesJson;
 
-    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)));
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), "application/json");
+    if (!filePath.empty())
+        {
+        request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
+        }
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 

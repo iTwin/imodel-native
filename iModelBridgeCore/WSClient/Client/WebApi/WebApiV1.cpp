@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -989,10 +989,17 @@ AsyncTaskPtr<WSUpdateObjectResult> WebApiV1::SendUpdateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
+BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!filePath.empty())
+        {
+        BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
+
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     HttpRequest request = m_configuration->GetHttpClient().CreatePostRequest(url);
 
