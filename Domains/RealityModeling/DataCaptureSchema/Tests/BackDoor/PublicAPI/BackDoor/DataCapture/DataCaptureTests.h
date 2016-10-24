@@ -9,6 +9,9 @@
 
 #include <DataCaptureSchema/DataCaptureSchemaApi.h>
 #include <Bentley/BeTest.h>
+#include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/GenericDomain.h>
+
 
 #define BEGIN_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE  BEGIN_BENTLEY_DATACAPTURE_NAMESPACE namespace Tests {
 #define END_BENTLEY_DATACAPTURE_UNITTESTS_NAMESPACE    } END_BENTLEY_DATACAPTURE_NAMESPACE
@@ -29,17 +32,24 @@ private:
     DataCaptureProjectHostImpl* m_pimpl;
 
     void CleanOutputDirectory();
+    Dgn::DgnDbStatus ImportDataCaptureSchema(Dgn::DgnDbR dgndb);
 
-    Dgn::DgnDbPtr CreateProject(WCharCP);
-    Dgn::DgnDbPtr OpenProject(WCharCP);
+
 
 public:
     DataCaptureProjectHost();
     ~DataCaptureProjectHost();
 
+    BeFileName GetDocumentsDirectory();
     BeFileName GetOutputDirectory();
     BeFileName GetDgnPlatformAssetsDirectory();
     BeFileName BuildProjectFileName(WCharCP);
+    Dgn::DgnDbPtr CreateProject(WCharCP);
+    Dgn::DgnDbPtr OpenProject(WCharCP);
+    Dgn::DgnModelPtr CreateSpatialModel(Dgn::DgnDbR dgndb, Utf8CP name);
+    Dgn::DgnCategoryId CreatePhysicalCategory(Dgn::DgnDbR dgndb, Utf8CP code);
+    void CreateDefaultView(Dgn::DgnModelR baseModel);
+
 };
 
 //=======================================================================================
@@ -66,12 +76,14 @@ protected:
 public:
     static DataCaptureProjectHost& GetHost() { return *m_host; }
 
-    static Dgn::DgnModelId QueryFirstPhysicalModelId(Dgn::DgnDbR db);
+    static Dgn::DgnModelId QueryFirstSpatialModelId(Dgn::DgnDbR db);
 
     //! Creates and caches a fresh "created" file to make the whole process faster
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
+    //! Close the last opened project kept by static variable.
+    static void          CloseProject();
 };
 
 typedef DataCaptureTestsFixture DataCaptureTests;
