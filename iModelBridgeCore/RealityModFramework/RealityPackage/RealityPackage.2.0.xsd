@@ -154,6 +154,50 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="ServerLoginKey" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The presence of this element necessarily indicates that the server requires authentication to access the data through the URI.
+                    The key string additionaly provides a hint about the login/password required. 
+                    For example the key 'EarthExplorer' would indicate that a USGS Earth Explorer username/password combination is required to access the data.
+                    There is no definite list of possible keys; if unknown the client application may attempt to use the element 'ServerRegistrationPage' content
+                    to guide the user toward obtention of the correct username password.
+                    The following keys are reserved:
+                       BentleyCONNECT
+                       UNKNOWN - Indicates the authentication is unknown
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ServerLoginMethod" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    In conjunction with the ServerLoginKey element this can be used to determine how login can be performed.
+                    In a lot of case the login will be standard (such as the method used by many web sites) but in other cases it will be custom implemented.
+                    The two values expected at the moment are:
+                       STANDARD
+                       CUSTOM
+                    Note that the interpretation of this value may depend on the protocol used. An ftp based uri will necessarily require ftp authentication.
+                    On the other hand login to USGS Earth Explorer requires use of the USGS specific syntax.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ServerRegistrationPage" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element may be present in the case a 'ServerLoginKey' element is present. It contains a web page link to the registration page 
+                    for user obtention of login credentials on the server. If the present element is absent then the 'ServerOrganisationPage' element can be helpful to guide users.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ServerOrganisationPage" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element may be present in the case a 'ServerLoginKey' element is present. It contains a web page link to either the organisation page 
+                    of the organisation page hosting the server. It may be useful when the element 'ServerRegistrationPage' is absent or points
+                    to a page that does not exist.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="Size" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -178,7 +222,11 @@
                 <xs:annotation>
                     <xs:documentation>
                     This element specifies the geographic coordinate system keyname to be used as default for the source given the 
-                    geographic coordinate system cannot be stored in the soure format, is not stored or cannot be interpreted by the application.
+                    geographic coordinate system cannot be stored in the source format, is not stored or cannot be interpreted by the application.
+		    This keyname can be composed of two distinct sections separated by a semi-comma where the first part indicates
+		    the horizontal geographic coordinate system key and the optional second portion indicating the vertical datum in use.
+		    Vertical datums supported are ELLIPSOID, GEOID, NAVD88 and NGVD29 where some restrictions may apply concerning application such
+		    as, for the sake of illustrating, the NGVD29 can be only be used with GCS based on the NAD27 datum in the USA.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -205,10 +253,10 @@
                       The sister file location is specified using the same pattern as the URI of the source using the same # separation to indicate the
                       presence of the file in a compound document. If the compound document is the same as the source URI it is usually omitted (keeping the # marker)
                       and the download management will make sure not to download the file twice.
-		      Example of valid sister file names are:
-		      http:/toto.com/tata.file.txt
-		      http:/toto.com/tata.zip#MySisterFileInSpecificCompound.txt
-		      #MySisterFileInCompoundOfSourceUri.txt
+		               Example of valid sister file names are:
+		                   http:/toto.com/tata.file.txt
+		                   http:/toto.com/tata.zip#MySisterFileInSpecificCompound.txt
+		                   #MySisterFileInCompoundOfSourceUri.txt
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -234,6 +282,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="streamed" use="optional" type="xs:bool">
+            <xs:annotation>
+                <xs:documentation>
+                Indicates if the URI refers to a streamed source. If streamed then the client application should not attempt to download it
+                and instead use the 'type' attribute to determine the stream source.
+                For example a S3MX type refers to the Reality Data Bentley CONNECT service used to stream files.
+                Attempting to download a streamed source may result in unexpected behavior.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
     </xs:complexType>
 
     <!-- =========================================================== -->

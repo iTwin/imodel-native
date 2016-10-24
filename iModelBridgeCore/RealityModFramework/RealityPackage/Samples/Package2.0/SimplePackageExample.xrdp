@@ -273,6 +273,158 @@
             </MultiBandSource>
         </Sources>
     </ImageryData>
+    <ImageryData>
+        <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01</Id>
+        <Name>S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01</Name>
+        <Dataset>ESA:Sentinel-2</Dataset>
+        <Sources>
+            <MultiBandSource uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production" type="jp2">
+                <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01</Id>
+                <Copyright>All data belongs to the European Space Agency provided free of charge to USGS.</Copyright>
+                <TermOfUse>https://lta.cr.usgs.gov/sites/default/files/Sentinel_Data_Terms_and_Conditions.pdf</TermOfUse>
+                <Provider>ESA</Provider>
+                <!-- This entry indicates that authentication using USGS Earth Explorer account is required -->
+                <ServerLoginKey>EarthExplorer</ServerLoginKey> 
+                <!-- In the case the client application does not know the method associated with the key the method can provide an indication if the method is standard or not,
+                     Here USGS Earth Explorer makes use of a custom method. -->
+                <ServerLoginMethod>CUSTOM</ServerLoginMethod>
+                <!-- This points to the registration page. This page can be used by client application to help out the user register if no account exists -->
+                <ServerRegistrationPage>http://earthexplorer.usgs.gov/Register</ServerRegistrationPage>
+                <!-- If the registration page is unknown or unreacheable(moved) then the organisation page can be provided to client. -->
+                <ServerOrganisationPage>http://earthexplorer.usgs.gov/</ServerOrganisationPage>
+                <!-- The size here represents the total size of the download zip file -->
+                <Size>253831</Size>
+                <!-- The no data value is the padding color of raster file -->
+                <NoDataValue>0</NoDataValue>
+                <Red>
+                    <!-- May be noticed in the URI the embedded $(AUTHENTICATIONKEY). This placeholder variable is there to indicate where the authentication key
+                         should be inserted. This particular variable is specific to servers that use a token upon the http request command instead of setting in the header.
+                         In this particular case the EarthExplorer authentication requires the key to be passed at this location. Note that the extraction of this key or token is specific
+                         to EarthExplorer -->
+                    <!-- Also note that the file containing the red band is located deep into the file struture of the zip file and thus the specification indicated -->
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B03.jp2" type="jp2">
+                        <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:RED</Id>
+                        <!-- The size of individual bands is unknown -->
+                        <!-- Since there is no way to correlate the band source with the compound multiband source, login information is repeated for every band. The application
+                             should make sure the user only registers once. -->
+                        <ServerLoginKey>EarthExplorer</ServerLoginKey> 
+                        <ServerLoginMethod>CUSTOM</ServerLoginMethod>
+                        <ServerRegistrationPage>http://earthexplorer.usgs.gov/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>http://earthexplorer.usgs.gov/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Red>
+                <Green>
+                    <!-- IMPORTANT: You will notice here that all bands are located in the same compound file. Since there are no provisions in the package file to refer to a file already
+                         downloaded, the full compound document based URI is specified for every band. The download manager should make use of the MultiBandSource size estimate upon downloading and
+                         use the cached file for the other bands  -->
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"" type="jp2">
+                        <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:GREEN</Id>
+                        <ServerLoginKey>EarthExplorer</ServerLoginKey>
+                        <ServerLoginMethod>CUSTOM</ServerLoginMethod> 
+                        <ServerRegistrationPage>http://earthexplorer.usgs.gov/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>http://earthexplorer.usgs.gov/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Green>
+                <Blue>
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B01.jp2"" type="jp2">
+                        <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:BLUE</Id>
+                        <ServerLoginKey>EarthExplorer</ServerLoginKey> 
+                        <ServerLoginMethod>CUSTOM</ServerLoginMethod>
+                        <ServerRegistrationPage>http://earthexplorer.usgs.gov/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>http://earthexplorer.usgs.gov/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Blue>
+                <Panchromatic>
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"" type="jp2">
+                        <Id>USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:PANCHROMATIC</Id>
+                        <ServerLoginKey>EarthExplorer</ServerLoginKey>
+                        <ServerLoginMethod>CUSTOM</ServerLoginMethod> 
+                        <ServerRegistrationPage>http://earthexplorer.usgs.gov/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>http://earthexplorer.usgs.gov/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Panchromatic>
+            </MultiBandSource>
+            <!-- Now, this is a real example. USGS redistributes data provided by the ESA. If Earth Explorer download server is not available then the ESA can be used. -->
+            <MultiBandSource uri="#S2A_OPER_PRD_MSIL1C_PDMC_20161013T120754_R054_V20160918T154922_20160918T155625.SAFE\GRANULE\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_N02.04\IMG_DATA\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_B04" type="jp2">
+                <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01</Id>
+                <Copyright>All data belongs to the European Space Agency.</Copyright>
+                <TermOfUse>The Sentinels Scientific Data Hub provides complete, free and open access to Sentinel-1 and Sentinel-2 user products, starting from the In-Orbit Commissioning Review (IOCR).</TermOfUse>
+                <Provider>ESA</Provider>
+                <!-- This entry indicates that authentication using Science Hub account on the Copernicus ESA tool account is required -->
+                <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>
+                <!-- Here the method indicates that if the key is unknown then standard login method (http in this case) can be used. -->
+                <ServerLoginMethod>STANDARD</ServerLoginMethod>
+                <!-- This points to the registration page. This page can be used by client application to help out the user register if no account exists -->
+                <ServerRegistrationPage>https://scihub.copernicus.eu/dhus/Register</ServerRegistrationPage>
+                <!-- If the registration page is unknown or unreacheable(moved) then the organisation page can be provided to client. -->
+                <ServerOrganisationPage>https://scihub.copernicus.eu/dhus/</ServerOrganisationPage>
+                <!-- The size here represents the total size of the download zip file. In the case of the ESA distributed Sentinel-2 files the zip file constains
+                     many data compounded together (around 8 images). This is the reason the download size is much bigger than USGS distributed data. If other Image Data is part of the same compound document
+                     then file should only be downloaded once. -->
+                <Size>33004563</Size>
+                <!-- The no data value is the padding color of raster file -->
+                <NoDataValue>0</NoDataValue>
+                <Red>
+                    <Source uri="#S2A_OPER_PRD_MSIL1C_PDMC_20161013T120754_R054_V20160918T154922_20160918T155625.SAFE\GRANULE\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_N02.04\IMG_DATA\S2A_OPER_MSI_L1C_TL_MTI__20160918T205501_A006486_T18TXT_B04.jp2"" type="jp2">
+                        <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:RED</Id>
+                        <!-- The size of individual bands is unknown -->
+                        <!-- Since there is no way to correlate the band source with the compound multiband source, login information is repeated for every band. The application
+                             should make sure the user only registers once. -->
+                        <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>
+                        <ServerLoginMethod>STANDARD</ServerLoginMethod>
+                        <ServerRegistrationPage>https://scihub.copernicus.eu/dhus/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>https://scihub.copernicus.eu/dhus/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Red>
+                <Green>
+                    <!-- IMPORTANT: You will notice here that all bands are located in the same compound file. Since there are no provisions in the package file to refer to a file already
+                         downloaded, the full compound document based URI is specified for every band. The download manager should make use of the MultiBandSource size estimate upon downloading and
+                         use the cached file for the other bands  -->
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"" type="jp2">
+                        <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:GREEN</Id>
+                        <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>
+                        <ServerLoginMethod>STANDARD</ServerLoginMethod>
+                        <ServerRegistrationPage>https://scihub.copernicus.eu/dhus/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>https://scihub.copernicus.eu/dhus/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Green>
+                <Blue>
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"" type="jp2">
+                        <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:BLUE</Id>
+                        <ServerLoginKey>Scihub.Copernicus</ServerLoginKey>                        
+                        <ServerLoginMethod>STANDARD</ServerLoginMethod>
+                        <ServerRegistrationPage>https://scihub.copernicus.eu/dhus/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>https://scihub.copernicus.eu/dhus/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Blue>
+                <Panchromatic>
+                    <Source uri="http://dds.cr.usgs.gov/ltaauth//hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&iid=443910&did=275426842&ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"" type="jp2">
+                        <Id>ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:PANCHROMATIC</Id>
+                        <ServerLoginKey>Scihub.Copernicus</ServerLoginKey> 
+                        <ServerLoginMethod>STANDARD</ServerLoginMethod>
+                        <ServerRegistrationPage>https://scihub.copernicus.eu/dhus/Register</ServerRegistrationPage>
+                        <ServerOrganisationPage>https://scihub.copernicus.eu/dhus/</ServerOrganisationPage>
+                        <!-- The no data value is the padding color of raster file -->
+                        <NoDataValue>0</NoDataValue>
+                    </Source>
+                </Panchromatic>
+            </MultiBandSource>
+        </Sources>
+    </ImageryData>
   </ImageryGroup>
   <ModelGroup>
       <ModelData>
@@ -288,6 +440,22 @@
                 <Source uri="pw://pw-utr5.bentley.com/geospatial/projectA/ModelFile1.dgndb" type="dgndb">
                     <Copyright>Copyright CartoLand Survey inc. All rights reserved</Copyright>
                     <!-- Notice the absence of a Size element. If the source is of unknown size then the element is omitted. --> 
+                    <!-- Indicates that authentication using Bentley CONNECT credentials are required to access the data -->	    
+                    <ServerLoginKey>BentleyCONNECT</ServerLoginKey>
+                    <ServerLoginMethod>CUSTOM</ServerLoginMethod>
+                    <ServerOrganisationPage>http://www.bentley.com/</ServerOrganisationPage>
+                </Source>
+            </Sources>
+        </ModelData>
+      <ModelData>
+            <!-- Here is an example of a streamed data source with authentication required. -->
+            <Sources>
+                <Source uri="https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/e82a584b-9fae-409f-9581-fd154f7b9ef9~2FMarseille3mx~2FMarseille.3mx/$file" type="S3MX" streamed='true'> 
+                    <Copyright>Bentley Systems inc</Copyright>
+                    <!-- The size is omitted since the data is streamed. -->
+                    <ServerLoginKey>BentleyCONNECT</ServerLoginKey>
+                    <ServerLoginMethod>CUSTOM</ServerLoginMethod>
+                    <ServerOrganisationPage>http://www.bentley.com/</ServerOrganisationPage>
                 </Source>
             </Sources>
         </ModelData>
@@ -356,10 +524,9 @@
                      areas then multiple PinnedData entries must be present for each area. -->
                 <Source uri='https://www.ville.quebec.qc.ca/' type='html'/>
             </Sources>
-            <!-- We normally expect the positionto be inside the area when one is given -->
+            <!-- We normally expect the position to be inside the area when one is given -->
             <Position>-71.2209 46.8273</Position>
             <Area>-71.3972 46.7362 -71.2075 46.8126 -71.3844 46.9196 -71.2833 46.9557 -71.1209 46.8973 -71.2011 46.8067 -71.2863 46.7452 -71.3972 46.7362</Area>
-
        </PinnedData>
     </PinnedGroup>
     <TerrainGroup>
@@ -378,6 +545,7 @@
                     <Provider>usgs</Provider>
                     <Size>9930</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83c06a6?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+		    <GeoCS>EPSG:4326;GEOID</GeoCS>
                 </Source>
             </Sources>
         </TerrainData>
@@ -398,6 +566,7 @@
                     <Provider>usgs</Provider>
                     <Size>319061</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+   		    <GeoCS>EPSG:4326;GEOID</GeoCS>
                 </Source>
                 <!-- Here the compound format should contain a grd ESRI format yet we could not determine the name of the file or the extension because
                      the pattern is not predictible from this provider -->
@@ -407,6 +576,7 @@
                     <Provider>usgs</Provider>
                     <Size>338121</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+    		    <GeoCS>EPSG:4326;GEOID</GeoCS>
                 </Source>
                 <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/GridFloat/n46w092.zip#" type="flt">
                     <Id>USGS:53174905e4b0cd4cd83cf45d</Id>
@@ -414,6 +584,7 @@
                     <Provider>usgs</Provider>
                     <Size>346171</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+		    <GeoCS>EPSG:4326;GEOID</GeoCS>		    
                 </Source>
                 <!-- Notice here the empty type field. We know that the type is one form of XYZ but could not know if it is binary or ascii. 
                      The empty type field gives a hint to the client application that some human intervention should be used or that
@@ -424,6 +595,7 @@
                     <Provider>usgs</Provider>
                     <Size>346171</Size>
                     <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+		    <GeoCS>EPSG:4326;GEOID</GeoCS>		    
                 </Source>
             </Sources>
         </TerrainData>
