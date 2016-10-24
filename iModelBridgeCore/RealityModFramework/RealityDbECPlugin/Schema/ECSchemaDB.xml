@@ -1751,7 +1751,7 @@
             </ECCustomAttributes>
         </ECProperty>
             
-        <ECProperty propertyName="Occlusion" typeName="string">
+        <ECProperty propertyName="Occlusion" typeName="double">
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>Occlusion</ColumnName>

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/FtpTraverser/FtpTraverser.h $
+|     $Source: RealityAdmin/ODBCSQLConnection.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,37 +10,16 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include "../FtpTraversalEngine.h"
-
-#include <curl/curl.h>
-#include <string>
+#include <RealityPlatform/SpatialEntityData.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
-//=======================================================================================
-// @bsiclass
-// Observer handling downloaded data
-//=======================================================================================
-
-struct FtpTraversalObserver: public ISpatialEntityTraversalObserver
-    {
-    bool m_dualMode = false;
-    bool m_updateMode = false;
-public:
-
-    FtpTraversalObserver(bool dualMode, bool updateMode, const char* dbName, const char* pwszConnStr);
-
-    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
-    virtual void OnFileDownloaded(Utf8CP file);
-    virtual void OnDataExtracted(SpatialEntityDataCR data);
-    };
 
 //=======================================================================================
 // @bsiclass
 // Connection to the SQL Server, handles all transactions
 //=======================================================================================
 struct ServerConnection
-    {
+{
 private:
     SQLHENV     hEnv;
     SQLHDBC     hDbc;
@@ -51,9 +30,9 @@ private:
     void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
 
 public:
-    static ServerConnection& GetInstance();
+    REALITYDATAPLATFORM_EXPORT static ServerConnection& GetInstance();
     ServerConnection();
-    void SetStrings(const char* dbName, const char* pwszConnStr);
+    REALITYDATAPLATFORM_EXPORT void SetStrings(const char* dbName, const char* pwszConnStr);
     void TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x);
     SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
     SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
@@ -62,13 +41,15 @@ public:
     RETCODE ExecutePrepared();
     SQLRETURN FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len);
     void ReleaseStmt();
-    bool IsDuplicate(Utf8CP file);
+    REALITYDATAPLATFORM_EXPORT bool IsDuplicate(Utf8CP file);
     bool IsMirror(Utf8CP file);
     bool HasEntries(CHAR* input);
     void Exit();
 
-    void Save(SpatialEntityDataCR data, bool dualMode);
-    void Update(SpatialEntityDataCR data);
-    };
+    REALITYDATAPLATFORM_EXPORT void Save(SpatialEntityDataCR data, bool dualMode);
+    REALITYDATAPLATFORM_EXPORT void Update(SpatialEntityDataCR data);
+    REALITYDATAPLATFORM_EXPORT bool CheckExists(Utf8String id);
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER SaveServer(std::string url);
+};
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

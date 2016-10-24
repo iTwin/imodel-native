@@ -21,29 +21,10 @@
 #include <vector>
 #include <curl/curl.h>
 #include <RealityPlatform/RealityDataDownload.h>
-#include "../HttpTraversalEngine.h"
 #include "AwsTraverser.h"
+#include "../ODBCSQLConnection.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-ServerConnection::ServerConnection()
-    {
-    s_instance = this;
-    }
-
-ServerConnection* ServerConnection::s_instance = nullptr;
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-ServerConnection& ServerConnection::GetInstance()
-    {
-    if (nullptr == s_instance)
-        s_instance = new ServerConnection();
-    return *s_instance;
-    }
 
 AwsPinger* AwsPinger::s_instance = nullptr;
 //-------------------------------------------------------------------------------------
@@ -55,133 +36,6 @@ AwsPinger& AwsPinger::GetInstance()
         s_instance = new AwsPinger();
     return *s_instance;
 }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-AwsData::AwsData(std::string id, std::string downloadUrl, float cloudCover, DRange2d ftPrint, 
-    float red, float green, float blue, float pan, SQLINTEGER sId) :
-m_id(id), m_downloadUrl(downloadUrl), m_cloudCover(cloudCover), m_ftPrint(ftPrint),
-m_redSize(red), m_greenSize(green), m_blueSize(blue), m_panSize(pan), serverId(sId)
-{}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
-    {
-    m_dbName = dbName;
-    hEnv = NULL;
-    hDbc = NULL;
-    hStmt = NULL;
-
-    if (SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &hEnv) == SQL_ERROR)
-        {
-        fwprintf(stderr, L"Unable to allocate an environment handle\n");
-        exit(-1);
-        }
-
-    // Register this as an application that expects 3.x behavior,
-    // you must register something if you use AllocHandle
-
-    TryODBC(hEnv,
-        SQL_HANDLE_ENV,
-        SQLSetEnvAttr(hEnv,
-            SQL_ATTR_ODBC_VERSION,
-            (SQLPOINTER)SQL_OV_ODBC3,
-            0));
-
-    // Allocate a connection
-    TryODBC(hEnv,
-        SQL_HANDLE_ENV,
-        SQLAllocHandle(SQL_HANDLE_DBC, hEnv, &hDbc));
-
-    // Connect to the driver.  Use the connection string if supplied
-    // on the input, otherwise let the driver manager prompt for input.
-
-    TryODBC(hDbc,
-        SQL_HANDLE_DBC,
-        SQLDriverConnect(hDbc,
-            NULL,
-            (SQLCHAR*)pwszConnStr,
-            SQL_NTS,
-            NULL,
-            0,
-            NULL,
-            SQL_DRIVER_COMPLETE));
-
-    TryODBC(hDbc,
-        SQL_HANDLE_DBC,
-        SQLAllocHandle(SQL_HANDLE_STMT, hDbc, &hStmt));
-
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
-    {
-    RETCODE rc = x;
-    if (rc != SQL_SUCCESS)
-        {
-        HandleDiagnosticRecord(h, ht, rc);
-        }
-    if (rc == SQL_ERROR)
-        {
-        std::cout << "Error in " << stderr << std::endl;
-        Exit();
-        }
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-RETCODE ServerConnection::ExecuteSQL(CHAR* query)
-    {
-    RETCODE retcode = 0;
-    TryODBC(hStmt,
-        SQL_HANDLE_STMT,
-        retcode = SQLExecDirect(hStmt, (SQLCHAR*)query, SQL_NTS));
-
-    return retcode;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
-    {
-    RETCODE retcode = 0;
-    TryODBC(hStmt,
-        SQL_HANDLE_STMT,
-        retcode = SQLExecute(stmt));
-    return retcode;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len)
-    {
-    SQLRETURN retCode;
-    CHAR ident[256];
-    sprintf(ident, "SELECT IDENT_CURRENT('%s') as [SCOPE_IDENTITY]", tableName);
-    ExecuteSQL(ident);
-    SQLBindCol(hStmt, 1, SQL_INTEGER, &id, 2, &len);
-    TryODBC(hStmt, SQL_HANDLE_STMT, retCode = SQLFetch(hStmt));
-    ReleaseStmt();
-    return retCode;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::ReleaseStmt()
-    {
-    TryODBC(hStmt,
-        SQL_HANDLE_STMT,
-        SQLFreeStmt(hStmt, SQL_CLOSE));
-    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
@@ -320,6 +174,31 @@ void ShowUsage()
     getch();
     }
 
+void AwsLogger::Log(std::string message)
+    {
+    std::cout << message << std::endl;
+    }
+
+bool AwsLogger::ValidateLine(size_t lineIndex, std::string line)
+    {
+    if(0 == lineIndex)
+        {
+        Log("invalid line: " + line);
+        return false;
+        }
+    return true;
+    }
+
+void AwsFileLogger::Log(std::string message)
+    {
+    logFile << message << std::endl;
+    }
+
+void AwsFileLogger::Close()
+    {
+    logFile.close();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
@@ -391,14 +270,20 @@ int main(int argc, char *argv[])
 
     std::string line;
     std::ifstream file(fileName);
-    std::ofstream log;
+    AwsLogger* log;
     if(logErrors)
-        log.open(logFileName);
-    if(!log.is_open())
         {
-        logErrors = false;
-        std::cout << "could not open logfile, proceeding without logging" << std::endl;
+        log = new AwsFileLogger();
+        ((AwsFileLogger*)log)->logFile.open(logFileName);
+        if(!((AwsFileLogger*)log)->logFile.is_open())
+            {
+            log = new AwsLogger();
+            log->Log("could not open logfile, proceeding without logging");
+            }
         }
+    else 
+        log = new AwsLogger();
+
 
     if(file.is_open())
         {
@@ -417,7 +302,7 @@ int main(int argc, char *argv[])
         float cloudCover, min_lat, min_lon, max_lat, max_lon;
         size_t idx;
         AwsPinger& pinger = AwsPinger::GetInstance();
-        AwsData* data;
+        SpatialEntityDataPtr data;
         float redSize = 0;
         float blueSize = 0;
         float greenSize = 0;
@@ -425,61 +310,89 @@ int main(int argc, char *argv[])
 
         do {
             comma = line.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
+
             id = line.substr(0, comma);
+            if(!log->ValidateLine(id.size(), line))
+                continue;
             comma ++;
             rest = line.substr(comma);
 
-            if(serverConnection.CheckExists(id))
+            if(serverConnection.CheckExists(Utf8String(id.c_str())))
                 {   
-                log << "duplicate: " << line << std::endl;
+                log->Log("duplicate: " + line);
                 continue;
                 }
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
+
             comma++;
             rest = rest.substr(comma); //acquisitionDate
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             cloudCover = std::stof(rest.substr(0, comma), &idx); //convert
             comma++;
             rest = rest.substr(comma); 
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             comma++;
             rest = rest.substr(comma); //processingLevel
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             comma++;
             rest = rest.substr(comma); //path
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             comma++;
             rest = rest.substr(comma); //row
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             min_lat = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             min_lon = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             max_lat = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             max_lon = std::stof(rest.substr(0, comma), &idx);
             comma++;
             rest = rest.substr(comma);
 
             comma = rest.find(",");
+            if(!log->ValidateLine(comma, line))
+                continue;
             downloadUrl = rest.substr(0, comma);
             comma++;
             rest = rest.substr(comma);
+            if(!log->ValidateLine(downloadUrl.size(), line))
+                continue;
 
             Utf8CP url = downloadUrl.c_str();
 
@@ -492,14 +405,24 @@ int main(int argc, char *argv[])
 
             if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
                 {
-                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId);
+                //data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId);
+                data = SpatialEntityData::Create();
+                data->SetName(Utf8CP(id.c_str()));
+                data->SetMultibandUrl(Utf8String(downloadUrl.c_str()));
+                data->SetCloudCover(cloudCover);
+                data->SetFootprintExtents(DRange2d::From(min_lon, min_lat, max_lon, max_lat));
+                data->SetIsMultiband(true);
+                data->SetRedBandSize(redSize);
+                data->SetGreenBandSize(greenSize);
+                data->SetBlueBandSize(blueSize);
+                data->SetPanchromaticBandSize(panSize);
+                data->SetMultibandServerId(serverId);
 
-                serverConnection.Save(*data);
+                serverConnection.Save(*data, false);
                 }
-            else if (logErrors)
-                {
-                log << "missing files: " << line << std::endl;
-                }
+            else 
+                log->Log("missing files: " + line);
+
             }while(getline(file, line));
         }
     else
@@ -508,325 +431,10 @@ int main(int argc, char *argv[])
         getch();
         return 0;
         }
-    if(logErrors)
-        log.close();
+    log->Close();
+
     return 1;
 }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-SQLINTEGER ServerConnection::SaveServer(std::string url)
-    {
-    CHAR preQuery[512];
-    sprintf(preQuery, "SELECT * FROM [%s].[dbo].[Servers] WHERE [URL] = '%s'", m_dbName, url.c_str());
-    CHAR serverStatement[512];
-    if (HasEntries(preQuery))
-        {
-        sprintf(serverStatement, "UPDATE [%s].[dbo].[Servers] SET [LastCheck] = ?, [LastTimeOnline] = ? WHERE [URL] = '%s'",
-            m_dbName,
-            url.c_str());
-        }
-    else
-        {
-        sprintf(serverStatement, "INSERT INTO [%s].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [Online], [LastCheck], [LastTimeOnline]) VALUES ('http', 's3-us-west-2.amazonaws.com', '%s', 1, ?, ?)",
-            m_dbName,
-            url.c_str());
-        }
-
-    SQLPrepare(hStmt, (SQLCHAR*)serverStatement, SQL_NTS);
-    DateTime dateTime = DateTime::GetCurrentTimeUtc();
-
-    SQL_TIMESTAMP_STRUCT checkTime = PackageDateTime(dateTime);
-    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, sizeof(SQL_TIMESTAMP_STRUCT), 0);
-    SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, sizeof(SQL_TIMESTAMP_STRUCT), 0);
-
-    ExecuteSQL(hStmt);
-    ReleaseStmt();
-
-    SQLINTEGER id;
-    SQLLEN len;
-
-    CHAR idQuery[256];
-    sprintf(idQuery, "SELECT [ID] FROM [%s].[dbo].[Servers] WHERE [URL] = '%s'", m_dbName, url.c_str());
-    ExecuteSQL(idQuery);
-    SQLBindCol(hStmt, 1, SQL_INTEGER, &id, 2, &len);
-    TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
-    ReleaseStmt();
-
-    return id;
-    }
-
-bool ServerConnection::CheckExists(std::string id)
-    {
-
-    CHAR existsQuery[256];
-    sprintf(existsQuery, "SELECT * FROM [%s].[dbo].[MultibandSources] WHERE [OriginalId] = '%s'", 
-        m_dbName,
-        id.c_str());
-    return HasEntries(existsQuery);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::Save(AwsData awsdata)
-    {
-    std::string downloadUrl = awsdata.GetUrl();
-    size_t ext = downloadUrl.rfind("/");
-    std::string baseUrl = downloadUrl.substr(0, ext + 1);
-    baseUrl.append(awsdata.GetId());
-    std::string thumbUrl = baseUrl;
-    thumbUrl.append("_thumb_large.jpg");
-    std::string blueUrl = baseUrl;
-    blueUrl.append("_B2.TIF");
-    std::string greenUrl = baseUrl;
-    greenUrl.append("_B3.TIF");
-    std::string redUrl = baseUrl;
-    redUrl.append("_B4.TIF");
-    std::string panUrl = baseUrl;
-    panUrl.append("_B8.TIF");
-    std::string metadataUrl = baseUrl;
-    metadataUrl.append("_MTL.txt");
-
-    CHAR serverStatement[512];
-    sprintf(serverStatement, "INSERT INTO [%s].[dbo].[Metadatas] ([Description], [Provenance], [MetadataURL], [Legal]) VALUES ('Landsat data provided by Amazon Web Services', 'landsat8', '%s', 'Data available from the U.S. Geological Survey.')",
-        m_dbName,
-        metadataUrl.c_str());
-    ExecuteSQL(serverStatement);
-    ReleaseStmt();
-
-    SQLINTEGER metadataId;
-    SQLLEN len;
-    CHAR tableName[128];
-
-    sprintf(tableName, "[%s].[dbo].[Metadatas]", m_dbName);
-    FetchTableIdentity(metadataId, tableName, len);
-
-    CHAR thumbnailQuery[1000];
-    sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailUrl]) VALUES ('Provided by Amazon Web Services', 'png', '%ls', 'Provided by Amazon Web Services', '%s')",
-        m_dbName,
-        DateTime::GetCurrentTimeUtc().ToString().c_str(),
-        thumbUrl.c_str());
-
-    RETCODE retCode;
-    retCode = ExecuteSQL(thumbnailQuery);
-    ReleaseStmt();
-
-    SQLINTEGER thumbnailId;
-
-    sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
-    FetchTableIdentity(thumbnailId, tableName, len);
-    
-    SQLINTEGER entityId;
-
-    CHAR entityBaseQuery[2000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id], [DataSourceTypesAvailable]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 4326), ?, %d, %d, 'TIF')",
-        m_dbName,
-        awsdata.GetId().c_str(),
-        metadataId,
-        thumbnailId);
-
-    SQLPrepare(hStmt, (SQLCHAR*)entityBaseQuery, SQL_NTS);
-
-    DRange2dCR Fpt = awsdata.GetFootprint();
-    double xMin = std::min(Fpt.low.x, Fpt.high.x);
-    double xMax = std::max(Fpt.low.x, Fpt.high.x);
-    double yMin = std::min(Fpt.low.y, Fpt.high.y);
-    double yMax = std::max(Fpt.low.y, Fpt.high.y);
-    char polygon[2000];
-    sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
-    retCode = SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
-
-    DateTimeCR date = DateTime::GetCurrentTimeUtc();
-    CHAR baseDate[10];
-    sprintf(baseDate, "%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay());
-    TryODBC(hStmt, SQL_HANDLE_STMT, SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, strlen(baseDate), 0, (SQLPOINTER)baseDate, strlen(baseDate), NULL));
-
-    ExecuteSQL(hStmt);
-    ReleaseStmt();
-
-    sprintf(tableName, "[%s].[dbo].[SpatialEntityBases]", m_dbName);
-    FetchTableIdentity(entityId, tableName, len);
-
-    CHAR spatialDataSourceQuery[512];
-    sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [DataSourceType], [NoDataValue], [FileSize], [Server_Id]) VALUES ('%s', 'TIF', 0, %f, %d)",
-        m_dbName,
-        awsdata.GetUrl().c_str(),
-        awsdata.GetRedSize() + awsdata.GetGreenSize() + awsdata.GetBlueSize() + awsdata.GetPanchromaticSize(),
-        awsdata.GetServerId());
-
-    retCode = ExecuteSQL(spatialDataSourceQuery);
-    ReleaseStmt();
-    SQLINTEGER dataSourceId;
-
-    sprintf(tableName, "[%s].[dbo].[SpatialDataSources]", m_dbName);
-    FetchTableIdentity(dataSourceId, tableName, len);
-
-    ReleaseStmt();
-
-    CHAR entityQuery[255];
-    sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id], [Occlusion]) VALUES (%d, %f)",
-        m_dbName,
-        entityId,
-        awsdata.GetCover());
-    ExecuteSQL(entityQuery);
-    ReleaseStmt();
-
-    CHAR existingSourceQuery[512];
-    sprintf(existingSourceQuery, "INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
-        m_dbName,
-        entityId,
-        dataSourceId);
-
-    ExecuteSQL(existingSourceQuery);
-    ReleaseStmt();
-
-    CHAR multiBQuery[1000];
-    sprintf(multiBQuery, "INSERT INTO [%s].[dbo].[MultibandSources] ([Id], [OriginalId], [RedBandURL], [RedBandFileSize], [GreenBandURL], [GreenBandFileSize], [BlueBandURL], [BlueBandFileSize], [PanchromaticBandURL], [PanchromaticBandFileSize]) VALUES ( %d, '%s', '%s', %f, '%s', %f, '%s', %f, '%s', %f)",
-        m_dbName,
-        dataSourceId,
-        awsdata.GetId().c_str(),
-        redUrl.c_str(),
-        awsdata.GetRedSize(),
-        greenUrl.c_str(),
-        awsdata.GetGreenSize(),
-        blueUrl.c_str(),
-        awsdata.GetBlueSize(),
-        panUrl.c_str(),
-        awsdata.GetPanchromaticSize());
-
-    ExecuteSQL(multiBQuery);
-    ReleaseStmt();
-
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-SQL_TIMESTAMP_STRUCT ServerConnection::PackageDateTime(DateTimeCR date)
-    {
-    SQL_TIMESTAMP_STRUCT datetime;
-    datetime.year = date.GetYear();
-    datetime.month = date.GetMonth();
-    datetime.day = date.GetDay();
-    datetime.hour = date.GetHour();
-    datetime.minute = date.GetMinute();
-    datetime.second = date.GetSecond();
-    //datetime.fraction = date.GetMillisecond();
-    datetime.fraction = 0;
-    /*while (datetime.fraction > 999)
-    {
-    datetime.fraction /= 10; //keep only the 3 most significant number
-    }*/
-
-    return datetime;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
-    {
-    SQL_DATE_STRUCT date;
-    date.day = dateTime.GetDay();
-    date.month = dateTime.GetMonth();
-    date.year = dateTime.GetYear();
-
-    return date;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-bool ServerConnection::IsDuplicate(Utf8CP file)
-    {
-    CHAR wszInput[512];
-    sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, file);
-
-    return HasEntries(wszInput);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-bool ServerConnection::HasEntries(CHAR* input)
-    {
-    RETCODE retCode = ExecuteSQL(input);
-    bool hasEntries = false;
-    if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-        {
-        retCode = SQLFetch(hStmt);
-
-        if (retCode == SQL_SUCCESS)
-            hasEntries = true;
-        }
-    ReleaseStmt();
-    return hasEntries;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::Exit()
-    {
-
-    // Free ODBC handles and exit
-
-    if (hStmt)
-        {
-        SQLFreeHandle(SQL_HANDLE_STMT, hStmt);
-        }
-
-    if (hDbc)
-        {
-        SQLDisconnect(hDbc);
-        SQLFreeHandle(SQL_HANDLE_DBC, hDbc);
-        }
-
-    if (hEnv)
-        {
-        SQLFreeHandle(SQL_HANDLE_ENV, hEnv);
-        }
-
-    wprintf(L"\nOperation failed, database disconnected. \nPress any key to exit...");
-    getch();
-    exit(-1);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason            	    9/2016
-//-------------------------------------------------------------------------------------
-void ServerConnection::HandleDiagnosticRecord(SQLHANDLE      hHandle,
-    SQLSMALLINT    hType,
-    RETCODE        RetCode)
-    {
-    SQLCHAR     SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
-    SQLINTEGER  NativeError;
-    SQLSMALLINT i, MsgLen;
-
-    if (RetCode == SQL_INVALID_HANDLE)
-        {
-        fwprintf(stderr, L"Invalid handle!\n");
-        return;
-        }
-    i = 1;
-    while (SQLGetDiagRec(hType,
-        hHandle,
-        i,
-        SqlState,
-        &NativeError,
-        Msg,
-        sizeof(Msg),
-        &MsgLen) != SQL_NO_DATA)
-        {
-        if (strncmp((CHAR*)SqlState, "01004", 5))
-            {
-            fwprintf(stderr, L"\n%hs %hs (%d)\n", SqlState, Msg, NativeError);
-            }
-        i++;
-        }
-    }
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
 

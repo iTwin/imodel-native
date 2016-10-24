@@ -54,6 +54,34 @@
     </xs:complexType>
 
     <!-- =========================================================== -->
+    <xs:complexType name="MetadataType">
+        <xs:annotation>
+            <xs:documentation>
+                Reference to the metadata of the source. If this element contains a fully qualified URI it may refer to an external
+                document or it may refer to a file part of the compound document if it is the case.
+                If this field is absent then a request can be sent to context services to obtain this value or additional fields pertinent to the
+                data source.
+                The metadata referenced may be of different type depending on the presence and value of the type attribute. If the service can the metadata will be provided in the locale
+                specified at the moment of the package ordering.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="SourceType">
+                <xs:attribute name="type" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
+                            that the metadata is to be interpreted by a human in whatever text format. If absent then it may be assumed that the
+                            extension of the link will indicate the nature of the metadata (HTML, text, or XML).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <!-- =========================================================== -->
     <xs:complexType name="PolygonType">
         <xs:annotation>
             <xs:documentation>
@@ -81,7 +109,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>   
-            <xs:element name="File" type="xs:AnyURI" minOccurs="1" maxOccurs="unbounded" />          
+            <xs:element name="File" type="xs:anyURI" minOccurs="1" maxOccurs="unbounded" />          
         </xs:sequence>
     </xs:complexType>
     
@@ -134,7 +162,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="Metadata" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="Metadata" type="MetadataType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                     Reference to the metadata of the source. If this element contains a fully qualified URI it may refer to an external
@@ -145,15 +173,6 @@
                     specified at the moment of the package ordering.
                     </xs:documentation>
                 </xs:annotation>
-                <xs:attribute name="type" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>
-                        The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
-                        that the metadata is to be interpreted by a human in whatever text format. If absent then it may be assumed that the 
-                        extension of the link will indicate the nature of the metadata (HTML, text, or XML).
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute> 
             </xs:element>
             <xs:element name="GeoCS" type="CoordinateSystemType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>

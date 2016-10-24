@@ -14,6 +14,7 @@
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <RealityPlatform/SpatialEntityData.h>
+#include "SpatialEntityClient.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -24,10 +25,10 @@ struct FtpClient : public SpatialEntityClient
     {
     public:
         //! Create ftp client by setting the url/root.
-        REALITYDATAPLATFORM_EXPORT static FtpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL);
+        REALITYDATAPLATFORM_EXPORT static FtpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL, Utf8CP datasetName = NULL, Utf8CP filePattern = NULL, bool extractThumbnails = false, Utf8CP classification = NULL);
 
     private:
-        FtpClient(Utf8CP serverUrl, Utf8CP serverName);
+        FtpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Utf8CP filePattern, bool extractThumbnails, Utf8CP classification);
 
         //! Recurse into sub directories and create a list of all files.
         SpatialEntityStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const override;
@@ -63,7 +64,7 @@ struct FtpDataHandler : public SpatialEntityDataHandler
     {
     public:
         //! Ftp data extraction.
-        REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath);
+        REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail);
 
     };
 

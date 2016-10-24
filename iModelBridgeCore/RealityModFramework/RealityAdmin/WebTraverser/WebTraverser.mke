@@ -1,15 +1,15 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RealityAdmin/FtpTraverser/FtpTraverser.mke $
+#     $Source: RealityAdmin/WebTraverser/WebTraverser.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-appName         = FtpTraverser
+appName         = WebTraverser
 baseDir         = $(_MakeFilePath)
-o               = $(OutputRootDir)Build/FtpTraverser/
+o               = $(OutputRootDir)Build/WebTraverser/
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
@@ -25,7 +25,7 @@ always:
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)FtpTraverser$(oext) : $(baseDir)FtpTraverser.cpp $(baseDir)FtpTraverser.h ${MultiCompileDepends}
+$(o)WebTraverser$(oext) : $(baseDir)WebTraverser.cpp $(baseDir)WebTraverser.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -34,7 +34,7 @@ $(o)FtpTraverser$(oext) : $(baseDir)FtpTraverser.cpp $(baseDir)FtpTraverser.h ${
 #----------------------------------------------------------------------
 EXE_DEST  = $(o)
 EXE_NAME  = $(appName)
-EXE_OBJS  = $(o)FtpTraverser$(oext) 
+EXE_OBJS  = $(o)WebTraverser$(oext) 
 #EXE_LOPT1 = -entry:mainCRTStartup
 
 
