@@ -163,9 +163,7 @@ DRange3d TileGenerationCache::GetRange() const
 void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
     {
     // ###TODO_FACET_COUNT: Assumes 3d spatial view for now...
-    static const Utf8CP s_sql =
-        "SELECT r.ECInstanceId,r.MinX,r.MinY,r.MinZ,r.MaxX,r.MaxY,r.MaxZ "
-        "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " AS r JOIN " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g ON (g.ECInstanceId = r.ECInstanceId)";
+    static const Utf8CP s_sql = "SELECT ECInstanceId,MinX,MinY,MinZ,MaxX,MaxY,MaxZ " "FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex);
 
     auto stmt = db.GetPreparedECSqlStatement(s_sql);
     while (BE_SQLITE_ROW == stmt->Step())
