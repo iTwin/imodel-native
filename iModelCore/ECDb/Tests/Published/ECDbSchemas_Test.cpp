@@ -1096,7 +1096,7 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     SchemaItem schema(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"SimpleSchema\" alias=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-        "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"01.11\" alias=\"CoreCA\" />"
+        "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"01.00\" alias=\"CoreCA\" />"
         "<ECEntityClass typeName=\"SimpleClass\" >"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"

@@ -522,41 +522,6 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, SchemaCache)
-    {
-    ECDbTestFixture::Initialize();
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ECSchemaPtr schemaPtr = NULL;
-    ECSchemaReadContextPtr  context = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"DSCacheSchema.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"TestSchema.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-
-    EXPECT_EQ(5, schemaCache->GetCount()) << "Number of schema doesn't matches the number of schema read form the disk";
-
-    SchemaKeyCR key = schemaPtr->GetSchemaKey();
-    EXPECT_EQ(4, schemaPtr->GetClassCount());
-
-    ECSchemaPtr schemaPtr1 = schemaCache->GetSchema(key);
-    EXPECT_TRUE(schemaPtr1 != NULL);
-    ASSERT_TRUE(schemaPtr1.IsValid());
-
-    ASSERT_EQ(ECObjectsStatus::Success, schemaCache->DropSchema(key));
-    EXPECT_EQ(4, schemaCache->GetCount()) << "Number of schema doesn't matches the number of schema read form the disk";
-    schemaCache->Clear();
-    EXPECT_EQ(0, schemaCache->GetCount()) << "Couldn't clear the cache";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportingSchemaInDifferentECDB)
     {
     ECDbTestFixture::Initialize();

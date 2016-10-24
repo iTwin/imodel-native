@@ -2572,7 +2572,7 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     {
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
-
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
 
