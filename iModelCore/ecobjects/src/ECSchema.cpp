@@ -326,7 +326,7 @@ ECSchema::~ECSchema ()
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECSchema::IsSystemSchema () const
     {
-    return StandardCustomAttributeHelper::IsSystemSchema (*this);
+    return IsDefined("Bentley_Standard_Custom_Attributes", "SystemSchema");
     }
 
 
@@ -335,14 +335,8 @@ bool ECSchema::IsSystemSchema () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsDynamicSchema () const
     {
-    return StandardCustomAttributeHelper::IsDynamicSchema (*this);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan    02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetIsDynamicSchema (bool isDynamic)
-    {
-    return StandardCustomAttributeHelper::SetIsDynamicSchema (*this, isDynamic);
+    return IsDefined("CoreCustomAttributes", "DynamicSchema") ||
+            IsDefined("Bentley_Standard_Custom_Attributes", "DynamicSchema");
     }
 
 /*---------------------------------------------------------------------------------**//**
