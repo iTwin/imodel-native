@@ -952,6 +952,7 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 
         if (tile.GetGeometries().empty())
             {
+            m_completedVolume += tile.GetDgnRange().Volume();
             m_completedTiles++;
             return;
             }
@@ -965,7 +966,11 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
         collector._AcceptTile(tile);
         tile.ClearGeometry();
 
-        if (!isLeaf)
+        if (isLeaf)
+            {
+            m_completedVolume += tile.GetDgnRange().Volume();
+            }
+        else
             {
             size_t              siblingIndex = 0;
             bvector<DRange3d>   subRanges;
@@ -1016,7 +1021,7 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     static const uint32_t s_sleepMillis = 1000.0;
     do
         {
-        m_progressMeter._IndicateProgress(m_completedTiles, m_totalTiles);
+        m_progressMeter._IndicateProgress((uint32_t (100.0) * m_completedVolume / m_totalVolume), 100);
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
     while (m_completedTiles < m_totalTiles);
