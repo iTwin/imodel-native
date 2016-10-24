@@ -371,7 +371,13 @@ namespace IndexECPlugin.Source
                     {
                     case "PackageRequest":
                         int version;
-                        if ( (extendedParameters.ContainsKey("version")) && (extendedParameters["version"].ToString() == "2") )
+                        string versionString = null;
+                        var VersionPropValue = instance.GetPropertyValue("Version");
+                        if ( (VersionPropValue != null) && (!VersionPropValue.IsNull) )
+                            {
+                            versionString = VersionPropValue.StringValue;
+                            }
+                        if ( (versionString == "2") )
                             {
                             version = 2;
                             }
@@ -379,10 +385,10 @@ namespace IndexECPlugin.Source
                             {
                             version = 1;
                             }
-                            Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
-                            packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0);
-                            return;
-                            
+                        Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
+                        packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0);
+                        return;
+
                     //case "AutomaticRequest":
                     //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
                     //    return;

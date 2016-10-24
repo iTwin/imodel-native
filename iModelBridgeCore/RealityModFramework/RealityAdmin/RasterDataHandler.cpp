@@ -317,16 +317,6 @@ StatusInt RasterData::ExtractFootprint(bvector<DPoint2d>* pFootprint, DRange2dP 
 
         assert(pointCollection.size() != 0);
 
-        // *2 for storing coordX and coordY independently.
-        double* pPts = new double[pointCollection.size() * 2]; //&&JFC cannot returned memory that you have newed. use DRange3d?
-
-        size_t j = -1;
-        for (size_t i = 0; i < pointCollection.size(); ++i)
-            {
-            pPts[++j] = pointCollection[i].GetX();
-            pPts[++j] = pointCollection[i].GetY();
-            }
-
         HGF2DExtent extent = pPixelShape->GetExtent();
         pFootprintExtents->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
         pFootprint->push_back(DPoint2d::From(extent.GetXMin(), extent.GetYMin()));
