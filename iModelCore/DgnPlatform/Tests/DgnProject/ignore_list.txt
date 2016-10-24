@@ -21,9 +21,6 @@ ConfigurationManagerTest.*                             # UmarH -- Tests are port
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
-#TFS 492144
-DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild
-
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
@@ -31,6 +28,8 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
+
+DgnLineStyleTest.InsertnReadLineStyles                  #notifed John
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 

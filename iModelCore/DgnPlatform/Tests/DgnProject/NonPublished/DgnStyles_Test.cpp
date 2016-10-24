@@ -17,6 +17,12 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_RENDER
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Algirdas.Mikoliunas            03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DgnLineStyleTest : public DgnDbTestFixture
+    {};
+
 //=======================================================================================
 // @bsiclass                                                Algirdas.Mikoliunas   01/13
 //=======================================================================================
@@ -34,50 +40,67 @@ struct TestStyleProperties
             tsName = name;
             tsDescription = description;
             };
-        void IsEqual (TestStyleProperties testStyle)
+
+        void IsEqual(TestStyleProperties testStyle)
             {
-            EXPECT_TRUE(testStyle.tsType == tsType ) << "Types don't match";
-            EXPECT_STREQ(testStyle.tsName.c_str() , tsName.c_str() ) << "Names don't match";
+            EXPECT_TRUE(testStyle.tsType == tsType) << "Types don't match";
+            EXPECT_STREQ(testStyle.tsName.c_str(), tsName.c_str()) << "Names don't match";
             //EXPECT_STREQ (tsDescription.c_str(), testStyle.tsDescription.c_str()) << "Descriptions don't match";
             };
     };
 
-
 /*---------------------------------------------------------------------------------**//**
-* Test fixture for testing DgnStyles
-* @bsimethod                                    Algirdas.Mikoliunas            03/2013
+* @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnLineStyleTest : public DgnDbTestFixture
+TEST_F(DgnLineStyleTest, InsertnReadLineStyles)
     {
-    };
+    Utf8CP dbFilePath;
+    {
+    SetupSeedProject();
 
-/*---------------------------------------------------------------------------------**//**
-* Test for reading from line style table
-* @bsimethod                                    Umar.Hayat                          03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnLineStyleTest, ReadLineStyles)
-    {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"ReadLineStyles.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
-    
     //Get line styles
-    LsCacheP cache = LsCache::GetDgnDbCache(*project);
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    LsCacheStyleIterator iterLineStyles_end   = cache->end();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+
+    // Add new line styles
+    DgnStyleId styleId0;
+    LsComponentId componentId0(LsComponentType::LineCode, 6);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId0, "ATestLineStyle0", componentId0, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId0.IsValid());
+    DgnStyleId styleId1;
+    LsComponentId componentId1(LsComponentType::LineCode, 7);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId1, "ATestLineStyle1", componentId1, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId1.IsValid());
+    ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
+    dbFilePath = m_db->GetDbFileName();
+    }
+
+    BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
+    DbResult result = BE_SQLITE_OK;
+    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    ASSERT_EQ(BE_SQLITE_OK, result);
+
+    //Get line styles count
+    ASSERT_TRUE(2 == LineStyleElement::QueryCount(*project));
+
+    //Get line styles
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles_begin = cache->begin();
+    LsCacheStyleIterator iterLineStyles_end = cache->end();
+    DgnModelPtr model = project->Models().GetModel(m_db->Models().QueryFirstModelId());
 
     //Iterate through each line style and make sure they have correct information
-    TestStyleProperties testStyles[4], testStyle;
-    testStyles[0].SetTestStyleProperties (LsComponentType::LineCode, "DGN Style 4",             "");
-    testStyles[1].SetTestStyleProperties (LsComponentType::LineCode, "REFXA$0$TRAZO_Y_PUNTO",   "");
-    testStyles[2].SetTestStyleProperties (LsComponentType::LineCode, "Continuous",              "");
-    testStyles[3].SetTestStyleProperties (LsComponentType::LineCode, "DGN Style 5",             "");
+    TestStyleProperties testStyles[4];
+    testStyles[0].SetTestStyleProperties(LsComponentType::LineCode, "ATestLineStyle0", "");
+    testStyles[1].SetTestStyleProperties(LsComponentType::LineCode, "ATestLineStyle1", "");
 
     int i = 0;
-    while (iterLineStyles != iterLineStyles_end)
+    while (iterLineStyles_begin != iterLineStyles_end)
         {
         TestStyleProperties testStyle;
-        LsCacheStyleEntry const& entry = *iterLineStyles;
+        LsCacheStyleEntry const& entry = *iterLineStyles_begin;
         LsDefinitionCP lsDef = entry.GetLineStyleCP();
         EXPECT_TRUE(nullptr != lsDef);
         LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
@@ -87,67 +110,44 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
             testStyle.SetTestStyleProperties(lsComponent->GetComponentType(), entry.GetStyleName(), lsComponent->GetDescription());
             testStyle.IsEqual(testStyles[i]);
             }
-        ++iterLineStyles;
+        ++iterLineStyles_begin;
         ++i;
         }
-    EXPECT_EQ(4, i) << "Count should be 4" ;
     }
-/*---------------------------------------------------------------------------------**//**
-* Test new style insert
-* @bsimethod                                    Umar.Hayat                          03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnLineStyleTest, InsertLineStyle)
-    {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"InsertLineStyle.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
 
-    //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
-    LsCacheP cache = styleTable.GetLsCacheP();
-    LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
-    static Utf8CP STYLE_NAME = "ATestLineStyle";
-
-    // Add new line style
-    DgnStyleId newStyleId;
-    LsComponentId componentId(LsComponentType::LineCode, 6);
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
-    ASSERT_TRUE(newStyleId.IsValid());
-    ASSERT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
-    }
 /*---------------------------------------------------------------------------------**//**
 * Test new style insert and query without reloading the cache
 * @bsimethod                                    Umar.Hayat                          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"InsertAndQueryWithoutCacheReLoad.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
+    SetupSeedProject();
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
-    static Utf8CP STYLE_NAME = "ATestLineStyle";
 
-    // Add new line style
-    DgnStyleId newStyleId;
-    LsComponentId componentId(LsComponentType::LineCode, 6);
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
-    ASSERT_TRUE(newStyleId.IsValid());
-    ASSERT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
+    // Add new line styles
+    DgnStyleId styleId;
+    LsComponentId componentId0(LsComponentType::LineCode, 6);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId, "ATestLineStyle0", componentId0, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId.IsValid());
+    ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
 
-    LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
+    LsDefinitionP  lsDef = cache->GetLineStyleP(styleId);
     ASSERT_TRUE(nullptr != lsDef);
+
+    DgnModelPtr model = m_db->Models().GetModel(m_db->Models().QueryFirstModelId());
     LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
     ASSERT_TRUE(nullptr != lsComponent);
 
     TestStyleProperties expectedTestStyle, testStyle;
-    expectedTestStyle.SetTestStyleProperties (LsComponentType::LineCode, STYLE_NAME, "");
+    expectedTestStyle.SetTestStyleProperties(LsComponentType::LineCode, "ATestLineStyle0", "");
     testStyle.SetTestStyleProperties(lsComponent->GetComponentType(), lsDef->GetStyleName(), lsComponent->GetDescription());
-    expectedTestStyle.IsEqual (testStyle);
+    expectedTestStyle.IsEqual(testStyle);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Test new style insert
 * @bsimethod                                    Umar.Hayat                          03/16
@@ -155,25 +155,22 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
 TEST_F(DgnLineStyleTest, InsertDuplicateLineStyle)
     {
     SetupSeedProject();
-    DgnDbPtr      project = m_db;
 
     //Get line styles
-    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     static Utf8CP STYLE_NAME = "ATestLineStyle";
 
-    // Add new line style
+    //Add new line style
     DgnStyleId newStyleId;
     LsComponentId componentId(LsComponentType::LineCode, 6);
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
     ASSERT_TRUE(newStyleId.IsValid());
 
+    ASSERT_TRUE(SUCCESS != styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert duplicate should fail";
 
-    EXPECT_TRUE(SUCCESS != styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert duplicate should fail";
-
-    EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
-
+    ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,49 +186,69 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
-    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     static Utf8CP STYLE_NAME = "ATestLineStyle";
 
     // Add new line style
     DgnStyleId newStyleId;
     LsComponentId componentId(LsComponentType::LineCode, 6);
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
     ASSERT_TRUE(newStyleId.IsValid());
-
 
     EXPECT_TRUE(SUCCESS != styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert duplicate should fail";
 
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
 
     // TODO: Update method is WIP, Need to update later
-
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test update line style with existing name
-* @bsimethod                                    Algirdas.Mikoliunas          01/13
+* @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"UpdateLineStyleWithExistingName.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
+    Utf8CP dbFilePath;
+    {
+    SetupSeedProject();
+
+    //Get line styles
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+
+    // Add new line styles
+    DgnStyleId styleId0;
+    LsComponentId componentId0(LsComponentType::LineCode, 6);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId0, "NewLineStyle", componentId0, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId0.IsValid());
+    DgnStyleId styleId1;
+    LsComponentId componentId1(LsComponentType::LineCode, 7);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId1, "LineStyle", componentId1, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId1.IsValid());
+    ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
+    dbFilePath = m_db->GetDbFileName();
+    }
+
+    BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
+    DbResult result = BE_SQLITE_OK;
+    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();
     LsCacheStyleIterator iterLineStyles = cache->begin();
     LsCacheStyleEntry const& entry = *iterLineStyles;
-    static Utf8CP STYLE_NAME = "DGN Style 4";
+    static Utf8CP STYLE_NAME = "NewLineStyle";
     EXPECT_STREQ(STYLE_NAME, entry.GetStyleName());
-    
+
     // This would normally trigger an assertion failure.
     LsComponentId componentId(LsComponentType::LineCode, 7);
-    BeTest::SetFailOnAssert (false);
-    BentleyStatus updateResult = styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "Continuous", componentId, 53, 0.0);
-    BeTest::SetFailOnAssert (true);
+    BeTest::SetFailOnAssert(false);
+    BentleyStatus updateResult = styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "LineStyle", componentId, 53, 0.0);
+    BeTest::SetFailOnAssert(true);
 
     EXPECT_NE(SUCCESS, updateResult) << "UpdateLineStyle with existing name must not be successfull";
-    
+
     // Check if line style name changed
     LsCacheStyleIterator iterUpdated = cache->begin();
     LsCacheStyleEntry const& updatedEntry = *iterUpdated;
@@ -239,21 +256,42 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test iterator entry get data
-* @bsimethod                                    Umar.Hayat                          03/16
+* @bsimethod                                    Muhammad Hassan                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, IteratorLineStyleElement)
     {
-    SetupWithPrePublishedFile (L"SubStation_NoFence.i.idgndb", L"IteratorLineStyleElement.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
+    Utf8CP dbFilePath;
+    {
+    SetupSeedProject();
+
+    //Get line styles
+    DgnLineStyles& styleTable = m_db->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+
+    // Add new line styles
+    DgnStyleId styleId0;
+    LsComponentId componentId0(LsComponentType::LineCode, 6);
+    ASSERT_EQ(SUCCESS, styleTable.Insert(styleId0, "NewLineStyle", componentId0, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(styleId0.IsValid());
+
+    ASSERT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges());
+    dbFilePath = m_db->GetDbFileName();
+    }
+
+    BeSQLite::Db::OpenMode mode = Db::OpenMode::Readonly;
+    DbResult result = BE_SQLITE_OK;
+    DgnDbPtr project = DgnDb::OpenDgnDb(&result, BeFileName(dbFilePath), DgnDb::OpenParams(mode));
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     int count = 0;
     for (LineStyleElement::Entry entry : LineStyleElement::MakeIterator(*project))
         {
         count++;
         }
-    EXPECT_EQ(4, count);
+    EXPECT_EQ(1, count) << "Only 1 lineStyle should exist in Db";
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Test InsertRasterComponentAsJson
 * @bsimethod                                    Ridha.Malik                          07/16
@@ -277,9 +315,9 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
 
     ByteStream testImage(height * width * 3);
     Byte* p = testImage.GetDataP();
-    for (uint8_t y = 0; y<height; ++y)
+    for (uint8_t y = 0; y < height; ++y)
         {
-        for (uint8_t x = 0; x<width; ++x)
+        for (uint8_t x = 0; x < width; ++x)
             {
             *p++ = (y % 256); // R
             *p++ = (x % 256); // G
@@ -314,22 +352,23 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     ASSERT_TRUE(checkComponentype->IsOfType(LsComponentType::RasterImage));
     checkComponentype = LsCache::FindInMap(*project, newStyleId);
     ASSERT_TRUE(checkComponentype->IsOfType(LsComponentType::RasterImage));
-    LsRasterImageComponent *rasterimage = (LsRasterImageComponent *)lsComponent;
+    LsRasterImageComponent *rasterimage = (LsRasterImageComponent *) lsComponent;
     ASSERT_TRUE(image.GetWidth() == rasterimage->GetWidth());
     ASSERT_TRUE(image.GetHeight() == rasterimage->GetHeight());
     ASSERT_TRUE(12 == rasterimage->GetFlags());
     Byte const* src1 = image.GetByteStream().GetData();
-    Byte const* dst1=rasterimage->GetImage();
-    for (uint8_t y = 0; y<height; ++y)
-    {
-        for (uint8_t x = 0; x<width; ++x)
+    Byte const* dst1 = rasterimage->GetImage();
+    for (uint8_t y = 0; y < height; ++y)
         {
+        for (uint8_t x = 0; x < width; ++x)
+            {
             ASSERT_TRUE(*src1++ == *dst1++);
             ASSERT_TRUE(*src1++ == *dst1++);
             ASSERT_TRUE(*src1++ == *dst1++);
+            }
         }
     }
-    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -346,7 +385,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     DgnStyleId newStyleId;
     LsComponentId componentId(LsComponentType::LineCode, 10);
     ASSERT_TRUE(componentId.IsValid());
-    BeFileName outFileName= (BeFileName)cache->GetFileName();
+    BeFileName outFileName = (BeFileName) cache->GetFileName();
     Json::Value     jsonValue(Json::objectValue);
     double phase = 0.0;
     uint32_t options = 0;
@@ -359,7 +398,6 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     options |= LCOPT_SEGMENT;
     options |= LsStrokePatternComponent::PhaseMode::PHASEMODE_Fixed;
     phase = 10;
-  
 
     jsonValue["phase"] = phase;
     jsonValue["options"] = options;
@@ -376,7 +414,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
         strokeMode |= LCSTROKE_RAY;
         strokeMode |= LCSTROKE_SCALE;
         entry["strokeMode"] = strokeMode;
-        entry["widthMode"]= LCWIDTH_FULL;
+        entry["widthMode"] = LCWIDTH_FULL;
         entry["capMode"] = LCCAP_CLOSED;
         strokes[i] = entry;
         }
@@ -393,15 +431,15 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     uint32_t id = componentId.GetValue();
     uint32_t nextid = id + 1;
     BeSQLite::PropertySpec spec = LineStyleProperty::LineCode();
-    LsComponent::GetNextComponentNumber(id,*project, spec);
-    ASSERT_TRUE(nextid==id);
-    
+    LsComponent::GetNextComponentNumber(id, *project, spec);
+    ASSERT_TRUE(nextid == id);
+
     CloseDb();
-   
+
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
 
     OpenDb(m_db, outFileName, mode);
-   
+
     cache = m_db->Styles().LineStyles().GetLsCacheP();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);
@@ -409,21 +447,21 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     ASSERT_TRUE(nullptr != lsComponent);
     ASSERT_TRUE(LsComponentType::LineCode == lsComponent->GetComponentType());
 
-    LsStrokePatternComponent * strokePattern = (LsStrokePatternComponent *)lsComponent;
+    LsStrokePatternComponent * strokePattern = (LsStrokePatternComponent *) lsComponent;
     ASSERT_TRUE(nullptr != strokePattern);
-    uint32_t nStrokes = (uint32_t)strokePattern->GetNumberStrokes();
+    uint32_t nStrokes = (uint32_t) strokePattern->GetNumberStrokes();
     ASSERT_TRUE(strokePattern->IsSingleSegment());
     ASSERT_TRUE(LsStrokePatternComponent::PhaseMode::PHASEMODE_Fixed == strokePattern->GetPhaseMode());
     ASSERT_TRUE(0 == strokePattern->GetDistancePhase());
     ASSERT_TRUE(strokePattern->HasIterationLimit());
     ASSERT_TRUE(5 == strokePattern->GetIterationLimit());
- 
+
     ASSERT_TRUE(LsStrokePatternComponent::PhaseMode::PHASEMODE_Fixed == strokePattern->GetPhaseMode());
     for (uint32_t index = 0; index < nStrokes; ++index)
-    {
+        {
         LsStroke * stroke = strokePattern->GetStrokeP(index);
         ASSERT_TRUE(nullptr != stroke);
-        ASSERT_TRUE(10==stroke->GetLength());
+        ASSERT_TRUE(10 == stroke->GetLength());
         ASSERT_TRUE(3 == stroke->GetWidthMode());
         ASSERT_TRUE(5 == stroke->GetStartWidth());
         ASSERT_TRUE(5 == stroke->GetEndWidth());
@@ -432,8 +470,9 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
         ASSERT_TRUE(stroke->IsDashLast());
         ASSERT_TRUE(stroke->IsRigid());
         ASSERT_TRUE(stroke->IsStretchable());
+        }
     }
-    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -448,7 +487,7 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     static Utf8CP STYLE_NAME = "TestLineStyle";
     DgnStyleId newStyleId;
-    BeFileName outFileName = (BeFileName)cache->GetFileName();
+    BeFileName outFileName = (BeFileName) cache->GetFileName();
     LsComponentId componentId(LsComponentType::Compound, 4);
     Json::Value     jsonValue(Json::objectValue);
 
@@ -458,9 +497,9 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
         {
         LsComponentId componentId(LsComponentType::Internal, i);
         Json::Value  entry(Json::objectValue);
-        entry["offset"] = i+1;
+        entry["offset"] = i + 1;
         entry["id"] = i;
-        uint32_t type=(uint32_t)componentId.GetType();
+        uint32_t type = (uint32_t) componentId.GetType();
         entry["type"] = type;
         components.append(entry);
         }
@@ -486,17 +525,17 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
     ASSERT_TRUE(nullptr != lsComponent);
     ASSERT_TRUE(LsComponentType::Compound == lsComponent->GetComponentType());
-    LsCompoundComponent * compoundComponent = (LsCompoundComponent *)lsComponent;
+    LsCompoundComponent * compoundComponent = (LsCompoundComponent *) lsComponent;
     ASSERT_TRUE(nullptr != compoundComponent);
-    uint32_t numComponents = (uint32_t)compoundComponent->GetNumComponents();
+    uint32_t numComponents = (uint32_t) compoundComponent->GetNumComponents();
     ASSERT_TRUE(2 == compoundComponent->GetNumComponents());
     for (size_t i = 0; i < numComponents; ++i)
         {
         LsComponent const* child = compoundComponent->GetComponentCP(i);
         ASSERT_TRUE(nullptr != child);
-        ASSERT_TRUE(i+1 == compoundComponent->GetOffsetToComponent(i));
+        ASSERT_TRUE(i + 1 == compoundComponent->GetOffsetToComponent(i));
         ASSERT_TRUE(LsComponentType::Internal == child->GetComponentType());
-        LsInternalComponent * internalComponent = (LsInternalComponent*)child;
+        LsInternalComponent * internalComponent = (LsInternalComponent*) child;
         ASSERT_TRUE(nullptr != internalComponent);
         ASSERT_TRUE(0 == internalComponent->GetHardwareStyle());
         }
