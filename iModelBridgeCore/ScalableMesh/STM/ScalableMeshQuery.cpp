@@ -2526,9 +2526,15 @@ StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bv
     return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID);
     }
 
-StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data, bool sibling)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
     {
-    return _AddTextures(data, sibling);
+    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID);
+    }
+
+
+StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data)
+    {
+    return _AddTextures(data);
     }
 
 StatusInt  IScalableMeshNodeEdit::SetNodeExtent(DRange3d& extent)

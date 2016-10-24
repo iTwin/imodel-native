@@ -58,6 +58,10 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     void DeleteSkirt(uint64_t id);
         
     void GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts);
+
+    void ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize);
+
+    void GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys);
         
     size_t GetNbClips();
         

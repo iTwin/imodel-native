@@ -26,7 +26,7 @@ DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 dirToSearch=$(BuildContext)VendorAPI/CGAL
 %include cincapnd.mki
 
-dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
 
 #----------------------------------------------------------------------
@@ -289,6 +289,12 @@ $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
 
+$(o)SMSQLiteDiffsetFile$(oext) : $(stmDir)SMSQLiteDiffsetFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteDiffsetFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteClipDefinitionsFile$(oext) : $(stmDir)SMSQLiteClipDefinitionsFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteClipDefinitionsFile.h ${MultiCompileDepends}
+
+$(o)SMSQLiteFeatureFile$(oext) : $(stmDir)SMSQLiteFeatureFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFeatureFile.h ${MultiCompileDepends}
+
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
@@ -324,6 +330,10 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 #$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
+
+$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -462,11 +472,14 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)CloudDataSource.lib \
-    $(ContextSubpartsLibs)CGAL.lib 
+    $(ContextSubpartsLibs)CGAL.lib \
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
 
 #    $(ContextSubpartsLibs)DgnView.lib \
 #    $(ContextSubpartsLibs)RasterCore.lib \
-#    $(ContextSubpartsLibs)PointCloud.lib \
+#    $(ContextSubpartsLibs)BePointCloud.lib
+
+    
 
 %include $(sharedMki)LinkLibrary.mki
 

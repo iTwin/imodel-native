@@ -22,6 +22,8 @@
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
+#include "..\ScalableMesh\ScalableMeshGraph.h"
+#include "..\CGALEdgeCollapse.h"
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
@@ -294,13 +296,17 @@ private:
 
     void MakeColorTile(bvector<uint8_t>& tex, int width, int height, RgbFactor color)
         {
-        tex.resize(width*height * 3);
+        tex.resize(3*sizeof(int)+width*height * 3);
+        int nChannels = 3;
+        memcpy(&tex[0], &width, sizeof(int));
+        memcpy(&tex[0]+sizeof(int), &height, sizeof(int));
+        memcpy(&tex[0] + 2*sizeof(int), &nChannels, sizeof(int));
         for (size_t i = 0; i < width; ++i)
             for (size_t j = 0; j < height; ++j)
                 {
-                *(&tex[0] + (j*width * 3) + i * 3) = (uint8_t)(color.red * 255);
-                *(&tex[0] + (j*width * 3) + i * 3+1) = (uint8_t)(color.green * 255);
-                *(&tex[0] + (j*width * 3) + i * 3 + 2) = (uint8_t)( color.blue * 255);
+                *(&tex[0]+3*sizeof(int) + (j*width * 3) + i * 3) = (uint8_t)(color.red * 255);
+                *(&tex[0] + 3 * sizeof(int) + (j*width * 3) + i * 3 + 1) = (uint8_t)(color.green * 255);
+                *(&tex[0] + 3 * sizeof(int) + (j*width * 3) + i * 3 + 2) = (uint8_t)(color.blue * 255);
                 }
         }
 
@@ -447,13 +453,13 @@ private:
                                     else if (renderMat->_GetBool(RENDER_MATERIAL_FlagHasBaseColor))
                                         {
                                         RgbFactor diffuseColor = renderMat->_GetColor(RENDER_MATERIAL_Color);
-                                        if (m_mapOfTexColorIds.count(diffuseColor.ToIntColor()) == 0)
+                                        if (m_mapOfTexColorIds.count(/*diffuseColor.ToIntColor()*/0) == 0)
                                             {
                                             MakeColorTile(tex.back(), 4, 4, diffuseColor);
                                             currentTexId = (int64_t)m_nextTexId;
-                                            m_mapOfTexColorIds[diffuseColor.ToIntColor()] = m_nextTexId++;
+                                            m_mapOfTexColorIds[/*diffuseColor.ToIntColor()*/0] = m_nextTexId++;
                                             }
-                                        else currentTexId = (int64_t)m_mapOfTexColorIds[diffuseColor.ToIntColor()];
+                                        else currentTexId = (int64_t)m_mapOfTexColorIds[/*diffuseColor.ToIntColor()*/0];
                                         /* int width = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[0], height = tex.size() == 0 ? 0 : ((uint32_t*)tex.data())[1];
                                          AppendTextureToExisting(tex, uvMapBottomLeft, uvMapTopRight,4, 4,colorTileRgb.data(), ImageBuffer::Format::Rgb);
                                          DPoint2d maxUv = DPoint2d::From(1, 1);
@@ -521,6 +527,96 @@ private:
                         m_nelements++;
                         if (!pts.empty() && !indices.empty())
                             {
+                            if (elem->GetElementClass()->GetId() == 340 && pts.size() > 10000 && parts.size() == 1)
+                                {
+                                MTGGraph g;
+                                bvector<int> componentPointsId;
+                                CreateGraphFromIndexBuffer(&g, (const long*)&indices[0], (int)indices.size(), (int)pts.size(), componentPointsId, &pts[0]);
+                                std::vector<DPoint3d> newPts;
+                                newPts.insert(newPts.end(), pts.begin(), pts.end());
+                                CGALEdgeCollapse(&g, newPts, elem->GetElementId().GetValue());
+                                MTGGraph* graph = &g;
+                                std::vector<int> faceIndices;
+                                MTGMask visitedMask = graph->GrabMask();
+                                bvector<DPoint3d> retainedPts;
+                                bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> ptMap(DPoint3dZYXTolerancedSortComparison(10e-4, 0));
+                                bvector<int> indices(pts.size(), -1);
+
+
+                                MTGARRAY_SET_LOOP(edgeID, graph)
+                                    {
+                                    if (!graph->GetMaskAt(edgeID, visitedMask))
+                                        {
+                                        if (FastCountNodesAroundFace(graph, edgeID) != 3)
+                                            {
+                                            int vIndex = -1;
+                                            graph->TryGetLabel(edgeID, 0, vIndex);
+                                            assert(vIndex > 0);
+                                            assert(vIndex <= (int)pts.size());
+                                            if (indices[vIndex - 1] == -1)
+                                                {
+                                                if (ptMap.count(pts[vIndex - 1]) == 0)
+                                                    {
+                                                    retainedPts.push_back(pts[vIndex - 1]);
+                                                    indices[vIndex - 1] = (int)retainedPts.size();
+                                                    ptMap[pts[vIndex - 1]] = (int)retainedPts.size();
+                                                    }
+                                                else
+                                                    {
+                                                    indices[vIndex - 1] = ptMap[pts[vIndex - 1]];
+                                                    }
+                                                }
+                                            int idx = indices[vIndex - 1];
+                                            graph->TrySetLabel(edgeID, 0, idx);
+                                            graph->SetMaskAt(edgeID, MTG_EXTERIOR_MASK);
+                                            graph->SetMaskAt(graph->EdgeMate(edgeID), MTG_BOUNDARY_MASK);
+                                            continue;
+                                            }
+                                        MTGARRAY_FACE_LOOP(faceID, graph, edgeID)
+                                            {
+                                            int vIndex = -1;
+                                            graph->TryGetLabel(faceID, 0, vIndex);
+                                            assert(vIndex > 0);
+                                            assert(vIndex <= (int)pts.size());
+                                            if (indices[vIndex - 1] == -1)
+                                                {
+                                                if (ptMap.count(pts[vIndex - 1]) == 0)
+                                                    {
+                                                    retainedPts.push_back(pts[vIndex - 1]);
+                                                    indices[vIndex - 1] = (int)retainedPts.size();
+                                                    ptMap[pts[vIndex - 1]] = (int)retainedPts.size();
+                                                    }
+                                                else
+                                                    {
+                                                    indices[vIndex - 1] = ptMap[pts[vIndex - 1]];
+                                                    }
+                                                }
+                                            int idx = indices[vIndex - 1];
+                                            faceIndices.push_back(idx);
+                                            graph->SetMaskAt(faceID, visitedMask);
+                                            if (graph->GetMaskAt(faceID, MTG_EXTERIOR_MASK)) graph->ClearMaskAt(faceID, MTG_EXTERIOR_MASK);
+                                            if (graph->GetMaskAt(faceID, MTG_BOUNDARY_MASK)) graph->ClearMaskAt(faceID, MTG_BOUNDARY_MASK);
+                                            graph->TrySetLabel(faceID, 0, idx);
+                                            }
+                                        MTGARRAY_END_FACE_LOOP(faceID, graph, edgeID)
+                                        }
+                                    }
+                                MTGARRAY_END_SET_LOOP(edgeID, graph)
+                                    graph->ClearMask(visitedMask);
+                                graph->DropMask(visitedMask);
+                                pts = retainedPts;
+                                indices.clear();
+                                indices.insert(indices.end(), faceIndices.begin(), faceIndices.end());
+                                uvs.resize(pts.size(),DPoint2d::From(0.0,0.0));
+                                parts.back() = (int)indices.size();
+                                }
+                            else if (pts.size() > 10000 && parts.size() >5)
+                                {
+                                size_t id = 0;
+                                for (; id < parts.size() && parts[id] < 15000; id++) {}
+                                parts.resize(id);
+                                indices.resize(parts.back());
+                                }
                             if (elem->GetElementClass()->GetId() != 320 || pts.size() < 30000)
                                 {
                                 memcpy(m_pointPacket.Edit(), &pts[0], pts.size()*sizeof(DPoint3d));
@@ -661,7 +757,7 @@ private:
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(1000000 * sizeof(DPoint3d), 5000000 * sizeof(int32_t), 1000 * sizeof(uint8_t), 4000 * 4000 * 3 * sizeof(uint8_t), 1000000 * sizeof(DPoint2d));
+        return RawCapacities(1000000 * sizeof(DPoint3d), 5000000 * sizeof(int32_t), 10000 * sizeof(uint8_t), 4000 * 4000 * 3 * sizeof(uint8_t), 1000000 * sizeof(DPoint2d));
         }
 
     /*---------------------------------------------------------------------------------**//**

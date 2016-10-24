@@ -196,7 +196,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_computeTileBoundary;
         double                          m_minScreenPixelsPerPoint;            
 
-        HFCPtr<MeshIndexType>          m_scmIndexPtr;                                                    
+        HFCPtr<MeshIndexType>          m_scmIndexPtr;              
+        HFCPtr<MeshIndexType>          m_scmTerrainIndexPtr; //Optional. Scalable Mesh representing only terrain
+        IScalableMeshPtr               m_terrainP; 
         RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
@@ -286,17 +288,21 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
-        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
-        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override;
+        virtual void                               _ImportTerrainSM(WString terrainPath) override;
+        virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -314,6 +320,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual IScalableMeshNodePtr               _GetRootNode() override;
 
+#ifdef WIP_MESH_IMPORT
+        virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override;
+#endif
+
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
@@ -327,7 +337,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         double              GetMinScreenPixelsPerPoint();   
     
-        void                SetMinScreenPixelsPerPoint(double pi_minScreenPixelsPerPoint);                       
+        void                SetMinScreenPixelsPerPoint(double pi_minScreenPixelsPerPoint);     
+
+        HFCPtr<MeshIndexType> GetMainIndexP() { return m_scmIndexPtr; }
                                     
     };
 
@@ -399,14 +411,14 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
-        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
-        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
@@ -418,7 +430,13 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
-
+        virtual void                               _ImportTerrainSM(WString terrainPath) override {};
+        virtual IScalableMeshPtr                    _GetTerrainSM() override
+            {
+            return nullptr;
+            }
+        virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
+        virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
@@ -430,6 +448,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ScalableMeshNode<POINT>::CreateItem(ptr);
             #endif
             }
+
+#ifdef WIP_MESH_IMPORT
+        virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override
+            {}
+#endif
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}

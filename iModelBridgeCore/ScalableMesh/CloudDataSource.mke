@@ -43,7 +43,7 @@ always:
 SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
 
 always:
-	@CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
+    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
 
 CCompOpts + -DUNICODE -D__CLOUD_DATA_SOURCE_BUILD__
 
@@ -118,7 +118,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
-	$(ContextSubpartsLibs)BeOpenSSL.lib \
+    $(ContextSubpartsLibs)BeOpenSSL.lib \
     $(ContextSubpartsLibs)wastorage.lib
 
 #--------------------------------------------------------------------------------------

@@ -827,7 +827,30 @@ void RunIntersectRayMetadata(WString& stmFileName)
                 }
             }
         }
-    std::cout << elementId << std::endl;
+    //std::cout << elementId << std::endl;
+    }
+
+void RunGetMeshParts(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+  
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    for (auto& node : nodes)
+        {
+       /* bvector<bvector<uint8_t>> tex;
+        bvector<Utf8String> metadata;
+        bvector<ScalableMesh::IScalableMeshMeshPtr> meshes;
+        node->GetMeshParts(meshes, metadata, tex);*/
+        node->IsMeshLoaded();
+        }
+    //std::cout << elementId << std::endl;
     }
 
 void RunClipPlaneTest()
@@ -911,8 +934,18 @@ void RunClipMeshTest()
         }
     }
 
+void RunUpdateTest(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
+_set_error_mode(_OUT_TO_MSGBOX);
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
 
@@ -1097,7 +1130,10 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     RunWriteTileTest(stmFileName, argv[2]);*/
 
    // RunClipPlaneTest();
-    RunClipMeshTest();
+   // RunClipMeshTest();
+    WString stmFileName(argv[1]);
+    //RunGetMeshParts(stmFileName);
+    RunUpdateTest(stmFileName);
     std::cout << "THE END" << std::endl;
     return 0;
 }

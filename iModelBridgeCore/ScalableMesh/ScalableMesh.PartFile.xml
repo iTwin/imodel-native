@@ -44,7 +44,8 @@
         <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
         <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
-        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="CloudDataSource" />
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
@@ -259,7 +260,8 @@
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
         <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="AutomaticGroundDetection" Path="Dlls"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>    
         <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
@@ -339,8 +341,8 @@
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
-        <ProductDirectory Name="Libs" Deliver="false" />
-        <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+        <ProductDirectory Name="Libs" Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="ScalableMeshLibs"  Path="Libs" Deliver="true"/>
       <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
       <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
       <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
@@ -348,6 +350,9 @@
       <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
       <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
       <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+      <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
+      <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
+      <ProductDirectory Name="TerrainModelNativeCoreLibs"  Path="Libs" Deliver="true"/>
     </ProductDirectoryList>   
       
     <Product Name="ScalableMeshCommandLine">

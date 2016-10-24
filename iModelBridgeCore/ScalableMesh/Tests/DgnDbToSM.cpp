@@ -20,12 +20,21 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <mutex>
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
 #include <ScalableMesh\ScalableMeshLib.h>
+
 #include <ConceptDataAccess/ConceptDataAccessApi.h>
+#include <ConceptDataAccess/MultiRampIntersection.h>
 #include <json/json.h>
 #include <ConceptStationBase/ConceptStationBase.h>
 #include <ConceptStationDomain/ConceptStationDomain.h>
-#include <ConceptStationBridge/ConceptStationBridgeApi.h>
 
+CONCEPTSTATION_TYPEDEFS(RoadMeshGenerator);
+CONCEPTSTATION_TYPEDEFS(TemplateProvider);
+CONCEPTSTATION_TYPEDEFS(TransitionTemplateProvider);
+CONCEPTSTATION_TYPEDEFS(DefaultTemplateProvider);
+CONCEPTSTATION_REF_COUNTED_PTR(RoadMeshGenerator);
+CONCEPTSTATION_REF_COUNTED_PTR(TemplateProvider);
+CONCEPTSTATION_REF_COUNTED_PTR(DefaultTemplateProvider);
+CONCEPTSTATION_REF_COUNTED_PTR(TransitionTemplateProvider);
 CONCEPTSTATION_TYPEDEFS(OutboundRoad)
 CONCEPTSTATION_TYPEDEFS(IntersectionCornerData)
 CONCEPTSTATION_TYPEDEFS(SimpleRadiusCornerData)
@@ -37,11 +46,8 @@ CONCEPTSTATION_TYPEDEFS(IIntersectionSegmentDetailedDimensions)
 CONCEPTSTATION_TYPEDEFS(CurveWithIndex)
 CONCEPTSTATION_TYPEDEFS(IntersectionDetail)
 CONCEPTSTATION_TYPEDEFS(DefaultTemplateProviderFactory)
-CONCEPTSTATION_TYPEDEFS(TemplateProvider);
-CONCEPTSTATION_TYPEDEFS(TransitionTemplateProvider);
-CONCEPTSTATION_TYPEDEFS(DefaultTemplateProvider);
+
 CONCEPTSTATION_TYPEDEFS(RoadSample);
-CONCEPTSTATION_TYPEDEFS(RoadMeshGenerator);
 
 CONCEPTSTATION_REF_COUNTED_PTR(IntersectionCornerData)
 CONCEPTSTATION_REF_COUNTED_PTR(SimpleRadiusCornerData)
@@ -54,21 +60,31 @@ CONCEPTSTATION_REF_COUNTED_PTR(CurveWithIndex)
 CONCEPTSTATION_REF_COUNTED_PTR(IntersectionDetail)
 CONCEPTSTATION_REF_COUNTED_PTR(DefaultTemplateProviderFactory)
 
-CONCEPTSTATION_REF_COUNTED_PTR(TemplateProvider);
-CONCEPTSTATION_REF_COUNTED_PTR(DefaultTemplateProvider);
-CONCEPTSTATION_REF_COUNTED_PTR(TransitionTemplateProvider);
+
 CONCEPTSTATION_REF_COUNTED_PTR(RoadSample);
-CONCEPTSTATION_REF_COUNTED_PTR(RoadMeshGenerator);
+CONCEPTSTATION_TYPEDEFS(RoadRampEdgeShim);
+CONCEPTSTATION_REF_COUNTED_PTR(RoadRampEdgeShim); 
+CONCEPTSTATION_TYPEDEFS(IRampEdgeShim);
+CONCEPTSTATION_REF_COUNTED_PTR(IRampEdgeShim);
+CONCEPTSTATION_TYPEDEFS(BridgeRampIntersectionCalculator);
+CONCEPTSTATION_REF_COUNTED_PTR(BridgeRampIntersectionCalculator);
+
 
 #include "RoadHelper.h"
+#include "MeshGenerators/IntersectionGenerator.h"
 #include "RoadIntersectionEditor.h"
 
 #include "MeshGenerators/BuildingGenerator.h"
 #include "MeshGenerators/DesignRoadGenerator.h"
 #include "MeshGenerators/FurnitureGenerator.h"
 #include "MeshGenerators/MeshGen.h"
-#include "MeshGenerators/IntersectionGenerator.h"
+
 #include "MeshGenerators/WaterbodyGenerator.h"
+
+
+#include <ConceptStationBridge/ConceptStationBridgeApi.h>
+
+
 #include "RoadSegmentDetailedDimensions.h"
 
 #include <ConceptStationDomain/IntersectionSizeChecker.h>
@@ -133,7 +149,7 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
     double fraction = /*std::max(*/std::min(elemRange.XLength() / nodeExt.XLength(), elemRange.YLength() / nodeExt.YLength())/*, elemRange.ZLength() / nodeExt.ZLength())*/;
 
     double distance = 15.0 + (2 * 1/fraction);
-
+    CrossSectionTemplate::Scenery::GetSceneryRoadTemplateId(*mainProject, 1, 1);
 
     RoadSegmentInfoPtr info = RoadSegmentInfo::Create(*roadSegment);
 
@@ -141,17 +157,20 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 
     uint64_t* defaultTexId = nullptr;
     uint64_t texValue;
-    ConceptualMaterialType matType = info->GetGeometryTemplateCP()->GetLeftLanes().front()->GetMaterialType();
-    DgnMaterialId defaultMatId = ConceptualMaterials::QueryMaterialId(*mainProject, matType);
-    RenderMaterialPtr renderMat = JsonRenderMaterial::Create(*mainProject, defaultMatId);
-    if (renderMat.IsValid())
+    if (!info->GetGeometryTemplateCP()->GetLeftLanes().empty())
         {
-        RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
-        if (patternMap.IsValid())
+        ConceptualMaterialType matType = info->GetGeometryTemplateCP()->GetLeftLanes().front()->GetMaterialType();
+        DgnMaterialId defaultMatId = ConceptualMaterials::QueryMaterialId(*mainProject, matType);
+        RenderMaterialPtr renderMat = JsonRenderMaterial::Create(*mainProject, defaultMatId);
+        if (renderMat.IsValid())
             {
-            Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
-            texValue = textureIdValue.asUInt64();
-            defaultTexId = &texValue;
+            RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
+            if (patternMap.IsValid())
+                {
+                Json::Value     textureIdValue = ((JsonRenderMaterialMap*)patternMap.get())->GetValue()[RENDER_MATERIAL_TextureId];
+                texValue = textureIdValue.asUInt64();
+                defaultTexId = &texValue;
+                }
             }
         }
 
@@ -241,7 +260,7 @@ void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& t
         {
         DPoint3d pt = pointsOnLine[0][0][i];
         if (elevationPointsOnLine[0][0].size() > i) pt.z = elevationPointsOnLine[0][0][i].z;
-        else pt.z = elevationPointsOnLine[0][0].back().z;
+        else if (elevationPointsOnLine[0][0].size() > 0) pt.z = elevationPointsOnLine[0][0].back().z;
         pt.SumOf(pt, vec);
         //if (i % step != 0) continue;
         polygon.push_back(pt);
@@ -251,7 +270,7 @@ void DrawPolyline(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& t
         {
         DPoint3d pt = pointsOnLine[0][0][j];
         if (elevationPointsOnLine[0][0].size() > j) pt.z = elevationPointsOnLine[0][0][j].z;
-        else pt.z = elevationPointsOnLine[0][0].back().z;
+        else if (elevationPointsOnLine[0][0].size() > 0) pt.z = elevationPointsOnLine[0][0].back().z;
         pt.SumOf(pt, vec);
         polygon.push_back(pt);
         }
@@ -308,8 +327,8 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
     bvector<bvector<bpair<ConceptualSubCategoryType, ElementGeometryPtr>>> pierGeometryParts;
 
     bvector<BridgeSupportElementPtr> supportElements;
-    bvector<BridgePierCP> piers;
-    BridgeAbutmentCP startAbutment = nullptr, endAbutment = nullptr;
+    bvector<BridgePierP> piers;
+    BridgeAbutmentP startAbutment = nullptr, endAbutment = nullptr;
     
     DPoint3d origin;
     fullHorizontalAlignment->GetStartPoint(origin);
@@ -346,12 +365,12 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
     BeFileName sectionLibPath =BeFileName( L".\\");
     sectionLibPath.AppendUtf8("SectionLibs/default.cs1"); 
     ConceptualDrapePtr draperPtr = ConceptualDrape::Create(bridgeSegment->GetDgnDb());
-    BridgeMeshGeneratorPtr bridgeGenPtr = BridgeMeshGenerator::Create(sectionLibPath, true);
+    BridgeSegmentMeshGeneratorPtr bridgeGenPtr = BridgeSegmentMeshGenerator::Create(sectionLibPath, true);
     IFacetOptionsPtr  options = IFacetOptions::Create();
 
     if (distance > info->GetPartialHorizontalAlignmentCP()->Length() / 2.0) distance = info->GetPartialHorizontalAlignmentCP()->Length() / 2.0;
-    bridgeGenPtr->SetDropInterval(distance);
-    if (SUCCESS == bridgeGenPtr->Generate(nullptr, *pSuperstructure, *startAbutment, *endAbutment, piers, *draperPtr,
+   // bridgeGenPtr->SetDropInterval(distance);
+    if (SUCCESS == bridgeGenPtr->Generate(const_cast<BridgeSegmentP>(bridgeSegment), const_cast<BridgeSuperstructureDimensions&>(*pSuperstructure), startAbutment, endAbutment, piers, *draperPtr,
         *info, roadSegmentHorizAlignmentInElementCoords,
         superstructureGeometryParts, startAbutmentGeometryParts, endAbutmentGeometryParts, pierGeometryParts, nullptr, nullptr, nullptr))
         {
@@ -399,7 +418,7 @@ void BuildSubResolutionPier(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 void OpenProject()
     {
     DbResult openStatus;
-    BeFileName fileName = BeFileName(L"E:\\Colorado.dgndb");
+    BeFileName fileName = BeFileName(L"E:\\NewTestSet.dgndb");
     mainProject = DgnDb::OpenDgnDb(&openStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     DPoint3d scale = DPoint3d::From(1, 1, 1);
     mainProject->Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
@@ -796,7 +815,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //create a scalable mesh
     StatusInt createStatus;
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::SetUserFilterCallback(&FilterElement);
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\second_test_dgndb_colorado.3sm", createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\hololens_small2.3sm", createStatus));
 
     //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(L"e:\\output\\coloradoDesign.stm", true, true, createStatus));
     if (!mainProject.IsValid()) OpenProject();
@@ -804,7 +823,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         {
         printf("ERROR : cannot create STM file\r\n");
         }
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\Colorado.dgndb");
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\NewTestSet.dgndb");
     creatorPtr->EditSources().Add(srcPtr);
     creatorPtr->SetUserFilterCallback(&FilterElement);
     //creatorPtr->ReFilter();

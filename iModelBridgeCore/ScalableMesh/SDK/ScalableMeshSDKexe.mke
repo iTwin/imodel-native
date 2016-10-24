@@ -28,6 +28,8 @@ CCompOpts + -DUNICODE -DVANCOUVER_API
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
+certDir             = $(bsiCerts)
+
 $(o)ScalableMeshSDKexe.obj: $(baseDir)ScalableMeshSDKexe.cpp ${MultiCompileDepends}
 
 $(o)Initialize.obj: $(baseDir)Initialize.cpp ${MultiCompileDepends}
