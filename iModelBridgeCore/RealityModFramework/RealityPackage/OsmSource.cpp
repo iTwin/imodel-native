@@ -111,9 +111,6 @@ void OsmResource::ToXml(Utf8StringR xmlFragment) const
     // Add root node.
     BeXmlNodeP pRootNode = pXmlDom->AddNewElement(OSMSOURCE_ELEMENT_Root, NULL, NULL);
 
-    // &&JFC WIP: Add namespace.
-    //pRootNode->SetNamespace(OSMSOURCE_PREFIX, NULL);
-
     // [Optional] Alternate url list.
     if (!m_alternateUrlList.empty())
         {

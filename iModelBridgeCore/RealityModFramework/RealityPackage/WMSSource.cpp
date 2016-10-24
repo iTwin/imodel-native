@@ -204,9 +204,6 @@ void WmsMapSettings::ToXml(Utf8StringR xmlFragment) const
     // Add root node.
     BeXmlNodeP pRootNode = pXmlDom->AddNewElement(WMSSOURCE_ELEMENT_Root, NULL, NULL);
 
-    // &&JFC WIP: Add namespace
-    //pRootNode->SetNamespace(WMSSOURCE_PREFIX, NULL);
-
     WString temp;
 
     // [Required] Uri  
