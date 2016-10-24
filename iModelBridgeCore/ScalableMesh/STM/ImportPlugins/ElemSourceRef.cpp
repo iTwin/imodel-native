@@ -266,7 +266,7 @@ SourceRef STMElemSourceRef::CreateFrom(const ElementRefP& elemRef, const DGNMode
                           fileSourceRefP.release());
     }
 
-
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                Jean-Francois.Cote   08/2011
@@ -286,5 +286,5 @@ SourceRef PODElemSourceRef::CreateFrom(const ElementRefP& elemRef, const DGNMode
                           modelRef,
                           (0 != fileQueryPtr.get()) ? new LocalFileSourceRef(fileQueryPtr->GetFileName()) : 0);
     }
-
+#endif
 END_BENTLEY_SCALABLEMESH_NAMESPACE

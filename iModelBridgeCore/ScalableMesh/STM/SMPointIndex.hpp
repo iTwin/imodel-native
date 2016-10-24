@@ -46,9 +46,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_arePoints3d = false;
 
-    for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
+    for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
-        m_nodeHeader.m_apAreNeighborNodesStitched[nodeInd] = false;
+        m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndIter] = false;
         }
 
     HDEBUGCODE(m_unspliteable = false;)
@@ -794,14 +794,38 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::FindNode(EXTENT ext, size_t level) const
+
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
+    {
+    if (ExtentOp<EXTENT>::OutterOverlap(ext, m_nodeHeader.m_nodeExtent))
+        {
+        if (level == m_nodeHeader.m_level)
+            {
+            nodes.push_back(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
+            }
+        if (m_apSubNodes.size() > 0 && m_apSubNodes[0] != NULL && m_nodeHeader.m_level <= level)
+            {
+            for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit; i++)
+                if (m_apSubNodes[i] != nullptr && ExtentOp<EXTENT>::OutterOverlap(ext, m_apSubNodes[i]->m_nodeHeader.m_nodeExtent))
+                    {
+                    m_apSubNodes[i]->FindNodes(nodes, ext, level);
+                    }
+            }
+        else if (IsLeaf() && m_nodeHeader.m_level <= level)
+            {
+            nodes.push_back(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
+            }
+        }
+    }
+
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::FindNode(EXTENT ext, size_t level, bool use2d) const
     {
     if (ExtentOp<EXTENT>::OutterOverlap(ext, m_nodeHeader.m_nodeExtent))
         {
         if (abs((ExtentOp<EXTENT>::GetXMin(ext) - ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent))) < 0.0001
             && abs((ExtentOp<EXTENT>::GetXMax(ext) - ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent))) < 0.0001 && abs((ExtentOp<EXTENT>::GetYMin(ext) - ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent))) < 0.0001
-            && abs((ExtentOp<EXTENT>::GetYMax(ext) - ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent))) < 0.0001 && abs((ExtentOp<EXTENT>::GetZMin(ext) - ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent)))< 0.0001
-            && abs((ExtentOp<EXTENT>::GetZMax(ext) - ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent))) < 0.0001 && level == m_nodeHeader.m_level)
+            && abs((ExtentOp<EXTENT>::GetYMax(ext) - ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent))) < 0.0001 && (use2d || abs((ExtentOp<EXTENT>::GetZMin(ext) - ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent)))< 0.0001)
+            && (use2d || abs((ExtentOp<EXTENT>::GetZMax(ext) - ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent))) < 0.0001) && level == m_nodeHeader.m_level)
             {
             return const_cast<SMPointIndexNode<POINT,EXTENT>*>(this);
             }
@@ -2032,7 +2056,76 @@ void SMPointIndexNode<POINT, EXTENT>::PropagateSplitNode(HFCPtr<SMPointIndexNode
 
     }
 
+template<class POINT, class EXTENT> int ComputeRelativePosition(SMPointIndexNode<POINT, EXTENT>* child, SMPointIndexNode<POINT, EXTENT>* parent)
+    {
+    int nodeIdx = -1;
+    if (child->GetNodeExtent().low.x == parent->GetNodeExtent().low.x)
+        {
+        if (child->GetNodeExtent().low.y == parent->GetNodeExtent().low.y)
+            {
+            nodeIdx = 0;
+            }
+        else nodeIdx = 1;
+        }
+    else
+        {
+        if (child->GetNodeExtent().low.y == parent->GetNodeExtent().low.y)
+            {
+            nodeIdx = 2;
+            }
+        else nodeIdx = 3;
+        }
+    return nodeIdx;
+    }
 
+template<class POINT, class EXTENT>
+size_t SMPointIndexNode<POINT, EXTENT>::GetMaxFilledLevel()
+    {
+    if (!m_nodeHeader.m_contentExtentDefined || m_nodeHeader.m_contentExtent.IsNull()) return m_nodeHeader.m_level - 1;
+    if (IsLeaf()) return m_nodeHeader.m_level;
+
+    size_t filledLevel = m_nodeHeader.m_level;
+    for (auto& node : m_apSubNodes)
+        {
+        size_t childLevel = node->GetMaxFilledLevel();
+        filledLevel = std::max(filledLevel, childLevel);
+        }
+    return filledLevel;
+    }
+
+template<class POINT, class EXTENT>
+void SMPointIndexNode<POINT, EXTENT>::PushPointsToBottomNodes()
+    {
+    if (IsLeaf() || !m_nodeHeader.m_arePoints3d) return;
+    bvector<SMPointIndexNode<POINT, EXTENT>*> bottomNodes; //in order: bottom left, top left, bottom right, top right
+    for (auto& node : m_apSubNodes)
+        {
+        if (node->GetNodeExtent().low.z == GetNodeExtent().low.z)
+            {
+            int nodeIdx = ComputeRelativePosition(node.GetPtr(), this);
+            bottomNodes[nodeIdx] = node;
+            }
+        }
+
+    for (auto& node : m_apSubNodes)
+        {
+        if (node->GetNodeExtent().low.z > GetNodeExtent().low.z)
+            {
+            int nodeIdx = ComputeRelativePosition(node.GetPtr(), this);
+            auto ptsPtr = node->GetPointsPtr();
+            if (ptsPtr->size() > 0)
+                {
+                bvector<DPoint3d> allPts(ptsPtr->size());
+                memcpy(&allPts[0], &(*ptsPtr)[0], ptsPtr->size()*sizeof(DPoint3d));
+                ptsPtr->clear();
+
+                auto targetPtsPtr = bottomNodes[nodeIdx]->GetPointsPtr();
+                targetPtsPtr->push_back(&allPts[0], allPts.size());
+                }
+            }
+        node->PushPointsToBottomNodes();
+        }
+    }
 
 /**----------------------------------------------------------------------------
 PRIVATE METHOD
@@ -3495,7 +3588,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterPushDown(size_t   
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::PropagateDataDownImmediately(bool propagateRecursively)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::PropagateDataDownImmediately(bool propagateRecursively, int targetLevel)
     {
 
     // We do not call invariants because this method is called during transformation of node.
@@ -3675,23 +3768,20 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
 #endif
     // As a result of previous operations it is possible that delayed split be invoked for the present node ...
     if (m_DelayedSplitRequested || (ptsPtr->size() > m_nodeHeader.m_SplitTreshold 
-#ifdef WIP_MESH_IMPORT
-    //    && m_nodeHeader.m_level < 10
-#endif
         ))
         SplitNode(GetDefaultSplitPosition());
 
-    if (HasRealChildren()  && propagateRecursively)
+    if (HasRealChildren()  && propagateRecursively && targetLevel!= -1 && targetLevel > m_nodeHeader.m_level)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            m_pSubNodeNoSplit->PropagateDataDownImmediately (propagateRecursively);
+            m_pSubNodeNoSplit->PropagateDataDownImmediately (propagateRecursively, targetLevel);
             }
         else
             {
             for (size_t i = 0 ; i < m_nodeHeader.m_numberOfSubNodesOnSplit; ++ i)
                 {
-                m_apSubNodes[i]->PropagateDataDownImmediately (propagateRecursively);
+                m_apSubNodes[i]->PropagateDataDownImmediately(propagateRecursively, targetLevel);
                 }
             }
         }
@@ -3711,12 +3801,12 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     HINVARIANTS;
     bool returnValue = true;
 
-    if (!m_destroyed && IsLoaded())
+    if (!m_destroyed)
         {        
         // Save the current blockID        
         bool needStoreHeader = m_isDirty;
         
-        if (needStoreHeader) 
+        if (needStoreHeader && IsLoaded())
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             
@@ -5943,6 +6033,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(
     return digDown;
     }
 
+static bool s_queryNodeOrder = true;
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP)
     {    
@@ -5985,16 +6076,24 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
             if (digDown)
                 {                                              
-                /*NEEDS_WORK_SM : Too long to execute
-                vector<size_t> queryNodeOrder;
+				if (s_queryNodeOrder)
+					{                
+					vector<size_t> queryNodeOrder;
                 
-                queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                */
-                                                
-                for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                    {                                      
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
-                    }                                
+					queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());					
+
+					for (auto& nodeOrder : queryNodeOrder)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[nodeOrder]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
+				else
+					{                                                                
+					for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
+						{                                      
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
+						}                                
+					}
                 }
             }
         }
@@ -7628,7 +7727,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    BeFileName masterHeaderPath(pi_pOutputDirPath);
+    BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
     masterHeaderPath.PopDir();
     masterHeaderPath.PopDir();
 
@@ -8118,10 +8217,16 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::AddArray(c
     return true;
     }
 
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::FindNode(EXTENT ext, size_t level) const
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::FindNode(EXTENT ext, size_t level, bool use2d) const
     {
     if (m_pRootNode == nullptr) return nullptr;
-    return m_pRootNode->FindNode(ext, level);
+    return m_pRootNode->FindNode(ext, level, use2d);
+    }
+
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
+    {
+    if (m_pRootNode == nullptr) return;
+    return m_pRootNode->FindNodes(nodes,ext, level, use2d);
     }
 
 /**----------------------------------------------------------------------------
@@ -8594,13 +8699,33 @@ size_t SMPointIndex<POINT, EXTENT>::GetNumberOfSubNodesOnSplit() const
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT>
-void SMPointIndex<POINT, EXTENT>::PropagateDataDownImmediately()
+void SMPointIndex<POINT, EXTENT>::PropagateDataDownImmediately(int targetLevel)
     {
     if (m_pRootNode != NULL)
         {
-        m_pRootNode->PropagateDataDownImmediately(true);
+        m_pRootNode->PropagateDataDownImmediately(true, targetLevel);
         }
     }
+
+template<class POINT, class EXTENT>
+void SMPointIndex<POINT, EXTENT>::PushPointsToBottomNodes()
+    {
+    if (m_pRootNode != NULL)
+        {
+        m_pRootNode->PushPointsToBottomNodes();
+        }
+    }
+
+template<class POINT, class EXTENT>
+size_t SMPointIndex<POINT, EXTENT>::GetMaxFilledLevel()
+    {
+    if (m_pRootNode != NULL)
+        {
+        return  m_pRootNode->GetMaxFilledLevel();
+        }
+    return 0;
+    }
+
 
     //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10

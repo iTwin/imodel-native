@@ -58,9 +58,9 @@ void ScalableMeshLib::Host::Initialize()
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
-    m_smPaths = new bmap<WString, IScalableMeshPtr>();
+    m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
-    RegisterPODImportPlugin();
+    //RegisterPODImportPlugin();
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -105,7 +105,7 @@ void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WStri
 
 void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
     {
-    m_smPaths->insert(make_bpair(path, ref));
+    m_smPaths->insert(make_bpair(path, ref.get()));
     }
 
 /*======================================================================+

@@ -204,6 +204,8 @@ public:
             bool IsDirty() const;
 
     virtual void SetDirty(bool dirty); 
+
+    size_t GetMaxFilledLevel();
                 
     /**----------------------------------------------------------------------------
     Sets the parent node ..
@@ -322,6 +324,8 @@ public:
     nodes have no neighbor node below them.
     -----------------------------------------------------------------------------*/
     virtual void        MoveDownNodes(double moveDownDistance);
+
+    virtual void        PushPointsToBottomNodes();
 
     /**----------------------------------------------------------------------------
     Returns the depth level of a node in the index
@@ -492,7 +496,7 @@ public:
      This method provoques the propagation of data down immediately.
      It overloads the base class method to indicate that filtering needs to be performed.
     -----------------------------------------------------------------------------*/
-    virtual void PropagateDataDownImmediately(bool propagateRecursively = true);
+    virtual void PropagateDataDownImmediately(bool propagateRecursively = true, int targetLevel = -1);
 
 
     virtual void OnPropagateDataDown() {};
@@ -736,7 +740,9 @@ public:
                                           vector<size_t>& neighborSubNodeIndexes,
                                           size_t          neighborSubNodeNeighborInd);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;    
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;    
+
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
     void ValidateNeighborsOfChildren();
     bool NeighborsFillParentExtent();
@@ -1348,7 +1354,11 @@ public:
     data down may result in new node splitting as a result of split treshold being
     attained.
     -----------------------------------------------------------------------------*/
-    virtual void PropagateDataDownImmediately();
+    virtual void PropagateDataDownImmediately(int targetLevel = -1);
+
+    void PushPointsToBottomNodes();
+
+    size_t GetMaxFilledLevel();
 
     /**----------------------------------------------------------------------------
     Indicates if the node is part of a balanced index
@@ -1395,7 +1405,9 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetDepth() const;
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
+
+    void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
     size_t              GetTerrainDepth() const;
 

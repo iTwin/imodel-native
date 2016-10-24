@@ -50,6 +50,7 @@ extern bool   GET_HIGHEST_RES;
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
+#include "ScalableMeshEdit.h"
 #include <ScalableMesh/ScalableMeshLib.h>
 //#include "CGALEdgeCollapse.h"
 
@@ -210,6 +211,11 @@ IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType que
 IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     {
     return _GetNodeQueryInterface();
+    }
+
+IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
+    {
+    return _GetMeshEditInterface();
     }
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
@@ -373,9 +379,9 @@ int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDa
     return _ConvertToCloud(outContainerName, outDatasetName, server);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+BentleyStatus IScalableMesh::CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    return _CreateCoverage(coverageData, id);
+    return _CreateCoverage(coverageTempDataFolder, coverageData, id);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -555,6 +561,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 +----------------------------------------------------------------------------*/
 ScalableMeshBase::~ScalableMeshBase ()
     {
+
         if (GetDataSourceAccount())
             {
             GetDataSourceManager().getService(GetDataSourceAccount()->getServiceName())->destroyAccount(GetDataSourceAccount()->getAccountName());
@@ -791,7 +798,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
                     WString streamingSourcePath;
                     WString cloudIndicator(L"_cloud");
-                    WString datasetName = BeFileName(m_path).GetFileNameWithoutExtension();
+                    WString datasetName; // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
+                    assert(false);
                     if (datasetName.Contains(cloudIndicator))
                         {
                         datasetName.resize(datasetName.length() - cloudIndicator.length());
@@ -799,7 +807,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     if (s_stream_from_disk)
                         {
-                        streamingSourcePath = BeFileName(m_path).GetDirectoryName();
+                        // NEEDS_WORK_STREAMING: make this build on topaz 
+                        //streamingSourcePath = BeFileName(m_path).GetDirectoryName();
+                        assert(false);
                         streamingSourcePath += L"cloud\\";
                         streamingSourcePath += datasetName;
                         }
@@ -1613,14 +1623,22 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
     return meshQueryPtr;
     }
 
+
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_GetNodeQueryInterface
+|ScalableMesh::_GetMeshEditInterface
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshNodeRayQueryPtr ScalableMesh<POINT>::_GetNodeQueryInterface() const
     {
     return new ScalableMeshNodeRayQuery<POINT>(&*m_scmIndexPtr);
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetMeshEditInterface
++----------------------------------------------------------------------------*/
+template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInterface() const
+    {
+    return ScalableMeshEdit::Create(&*m_scmIndexPtr);
+    }
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
 +----------------------------------------------------------------------------*/
@@ -2073,9 +2091,17 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         s_stream_from_disk = true;
 
         const auto smFileName = BeFileName(this->GetPath());
+        #ifndef VANCOUVER_API
         path += smFileName.GetDirectoryName();
+        #else
+        BeFileName dirName;
+        dirName = BeFileName(BeFileName::GetDirectoryName(smFileName).c_str());
+        path += dirName;
+        #endif
         path += L"cloud\\";
-        path += smFileName.GetFileNameWithoutExtension();
+        //NEEDS_WORK_STREAMING: make this work on topaz
+        assert(false);
+        //path += smFileName.GetFileNameWithoutExtension();
         }
     
     //s_stream_from_grouped_store = false;
@@ -2085,9 +2111,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 
 static bool s_doGroundExtract = true; 
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id)
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id)
     {
-    if (s_doGroundExtract)
+    if (s_doGroundExtract && m_scmTerrainIndexPtr == nullptr)
         {        
         IScalableMeshPtr scalableMeshPtr(this);
 
@@ -2103,7 +2129,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
 
         smGroundExtractor->SetExtractionArea(coverageData);
 
-        StatusInt status = smGroundExtractor->ExtractAndEmbed();                
+        StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);                
 
         assert(status == SUCCESS);    
                 

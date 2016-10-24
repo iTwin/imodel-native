@@ -11,8 +11,11 @@ class SkirtBuilder
     {
     private:
         DTMPtr m_dtm;
+        bool m_useTargetTerrain;
+        bvector<IScalableMeshNodePtr> m_smTerrainNodes;
     public:
         SkirtBuilder(BcDTMPtr& dtmP);
+        SkirtBuilder(BcDTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes);
        void BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector<bvector<DPoint3d>>& targetLines);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

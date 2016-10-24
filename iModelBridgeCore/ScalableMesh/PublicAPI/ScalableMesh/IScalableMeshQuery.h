@@ -474,6 +474,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _IsClippingUpToDate() const = 0;
 
+        virtual bool _IsDataUpToDate() const = 0;
+
+        virtual void _UpdateData() = 0;
+
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const = 0;
@@ -544,6 +548,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
 
         BENTLEY_SM_EXPORT bool IsClippingUpToDate() const;
+
+        BENTLEY_SM_EXPORT bool IsDataUpToDate() const;
+
+        BENTLEY_SM_EXPORT void UpdateData();
 
         BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
 
@@ -616,10 +624,14 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         virtual size_t _GetLevel() = 0;
 
+        virtual bool  _GetUseAllResolutions() = 0;
+
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
 
         virtual void _SetLevel(size_t depth) = 0;
+
+        virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -628,10 +640,14 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT size_t GetLevel();
 
+        BENTLEY_SM_EXPORT bool GetUseAllResolutions();
+
         BENTLEY_SM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
         BENTLEY_SM_EXPORT void SetLevel(size_t depth);
+
+        BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
     };
 
 
@@ -730,6 +746,10 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
                            const DPoint3d*                               pQueryExtentPts,
                            int                                           nbQueryExtentPts,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodesPtr,
+                           ClipVectorCP                                        queryExtent3d,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
         
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -744,6 +764,11 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
          BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,    
                                      const DPoint3d*                              pQueryExtentPts,
                                      int                                          nbQueryExtentPts,
+                                     const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+
+
+         BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,
+                                     ClipVectorCP                                        queryExtent3d,
                                      const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
     };
 

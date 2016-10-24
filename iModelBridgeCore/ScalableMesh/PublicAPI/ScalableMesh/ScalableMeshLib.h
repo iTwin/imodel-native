@@ -32,7 +32,7 @@ public:
             WsgTokenAdmin*                m_wsgTokenAdmin;
             SSLCertificateAdmin*          m_sslCertificateAdmin;
 
-            bmap<WString, IScalableMeshPtr>* m_smPaths;
+            bmap<WString, IScalableMesh*>* m_smPaths;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            

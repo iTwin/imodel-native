@@ -234,6 +234,7 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
 SkirtBuilder::SkirtBuilder(BcDTMPtr& dtmP)
     {
     m_dtm = dtmP;
+    m_useTargetTerrain = false;
     }
 
 void SkirtBuilder::BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector<bvector<DPoint3d>>& targetLines)
@@ -241,7 +242,19 @@ void SkirtBuilder::BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector
     for (auto& line : targetLines)
         {
         PolyfaceHeaderPtr mesh;
+        if (m_useTargetTerrain)
+            {
+
+            }
         BuildSkirt(mesh, line, m_dtm);
         meshParts.push_back(mesh);
         }
     }
+
+SkirtBuilder::SkirtBuilder(BcDTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes)
+    {
+    m_dtm = dtmP;
+    m_smTerrainNodes = smTerrainNodes;
+    m_useTargetTerrain = true;
+    }
+
