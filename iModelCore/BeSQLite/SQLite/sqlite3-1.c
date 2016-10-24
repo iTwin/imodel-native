@@ -359,7 +359,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.16.0"
 #define SQLITE_VERSION_NUMBER 3016000
-#define SQLITE_SOURCE_ID      "2016-10-17 18:44:11 5ec02ecf3d20ce7e3f5249e9a3684f9b67a7d703"
+#define SQLITE_SOURCE_ID      "2016-10-24 01:01:09 98795c2dd9a6d8fa8d49a9f5c36cdf824cae7246"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -13072,10 +13072,13 @@ SQLITE_PRIVATE   int sqlite3PagerWalSupported(Pager *pPager);
 SQLITE_PRIVATE   int sqlite3PagerWalCallback(Pager *pPager);
 SQLITE_PRIVATE   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
 SQLITE_PRIVATE   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
+SQLITE_PRIVATE   int sqlite3PagerUseWal(Pager *pPager);
 # ifdef SQLITE_ENABLE_SNAPSHOT
 SQLITE_PRIVATE   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
 SQLITE_PRIVATE   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
 # endif
+#else
+# define sqlite3PagerUseWal(x) 0
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -17255,6 +17258,9 @@ static const char * const azCompileOpt[] = {
 #if defined(SQLITE_DEFAULT_MMAP_SIZE) && !defined(SQLITE_DEFAULT_MMAP_SIZE_xc)
   "DEFAULT_MMAP_SIZE=" CTIMEOPT_VAL(SQLITE_DEFAULT_MMAP_SIZE),
 #endif
+#if SQLITE_DIRECT_OVERFLOW_READ
+  "DIRECT_OVERFLOW_READ",
+#endif
 #if SQLITE_DISABLE_DIRSYNC
   "DISABLE_DIRSYNC",
 #endif
@@ -18091,8 +18097,8 @@ struct PreUpdate {
   int iNewReg;                    /* Register for new.* values */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
-  int iPKey;                      /* If not negative index of IPK column */
   Mem *aNew;                      /* Array of new.* values */
+  Table *pTab;                    /* Schema object being upated */          
 };
 
 /*

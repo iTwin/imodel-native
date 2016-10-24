@@ -4609,7 +4609,7 @@ static int accessPayload(
          && (bEnd || a==ovflSize)                              /* (6) */
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
-         && pBt->pPage1->aData[19]==0x01                       /* (5) */
+         && 0==sqlite3PagerUseWal(pBt->pPager)                 /* (5) */
          && &pBuf[-4]>=pBufStart                               /* (7) */
         ){
           u8 aSave[4];
@@ -4865,9 +4865,12 @@ static int moveToRoot(BtCursor *pCur){
   }
 
   if( pCur->iPage>=0 ){
-    while( pCur->iPage ){
-      assert( pCur->apPage[pCur->iPage]!=0 );
-      releasePageNotNull(pCur->apPage[pCur->iPage--]);
+    if( pCur->iPage ){
+      do{
+        assert( pCur->apPage[pCur->iPage]!=0 );
+        releasePageNotNull(pCur->apPage[pCur->iPage--]);
+      }while( pCur->iPage);
+      goto skip_init;
     }
   }else if( pCur->pgnoRoot==0 ){
     pCur->eState = CURSOR_INVALID;
@@ -4878,7 +4881,7 @@ static int moveToRoot(BtCursor *pCur){
                         0, pCur->curPagerFlags);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
-      return rc;
+       return rc;
     }
     pCur->iPage = 0;
     pCur->curIntKey = pCur->apPage[0]->intKey;
@@ -4901,10 +4904,12 @@ static int moveToRoot(BtCursor *pCur){
     return SQLITE_CORRUPT_BKPT;
   }
 
+skip_init:  
   pCur->aiIdx[0] = 0;
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidNKey|BTCF_ValidOvfl);
 
+  pRoot = pCur->apPage[0];
   if( pRoot->nCell>0 ){
     pCur->eState = CURSOR_VALID;
   }else if( !pRoot->leaf ){
@@ -16860,7 +16865,7 @@ SQLITE_PRIVATE void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
-  preupdate.iPKey = pTab->iPKey;
+  preupdate.pTab = pTab;
 
   db->pPreUpdate = &preupdate;
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
@@ -18592,9 +18597,14 @@ SQLITE_API int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppVa
   if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else{
+    Mem *pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
     *ppValue = &p->pUnpacked->aMem[iIdx];
-    if( iIdx==p->iPKey ){
-      sqlite3VdbeMemSetInt64(*ppValue, p->iKey1);
+    if( iIdx==p->pTab->iPKey ){
+      sqlite3VdbeMemSetInt64(pMem, p->iKey1);
+    }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
+      if( pMem->flags & MEM_Int ){
+        sqlite3VdbeMemRealify(pMem);
+      }
     }
   }
 
@@ -18671,7 +18681,7 @@ SQLITE_API int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppVa
       pMem = (sqlite3_value *)columnNullValue();
     }else{
       pMem = &pUnpack->aMem[iIdx];
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }
     }
@@ -18692,7 +18702,7 @@ SQLITE_API int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppVa
     assert( iIdx>=0 && iIdx<p->pCsr->nField );
     pMem = &p->aNew[iIdx];
     if( pMem->flags==0 ){
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }else{
         rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
@@ -21070,8 +21080,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
       assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
-      if( (flags1&MEM_Null)!=0
-       && (flags3&MEM_Null)!=0
+      if( (flags1&flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
         res = 0;  /* Operands are equal */
