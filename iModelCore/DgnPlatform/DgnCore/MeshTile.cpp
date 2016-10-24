@@ -996,8 +996,6 @@ void TileGenerator::ProcessTile (ElementTileNodeR tile, ITileCollector& collecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
     {
-    StopWatch   timer(true);
-
     m_totalTiles++;
     m_progressMeter._SetTaskName(ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);
     m_progressMeter._IndicateProgress(0, 1);
@@ -1016,6 +1014,8 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
     T_HOST.GetFontAdmin().EnsureInitialized();
     GetDgnDb().Fonts().Update();
 
+    StopWatch timer(true);
+
     ProcessTile (*elementRoot, collector, leafTolerance, maxPointsPerTile);
 
     static const uint32_t s_sleepMillis = 1000.0;
@@ -1026,6 +1026,8 @@ TileGenerator::Status TileGenerator::GenerateTiles (TileNodePtr& root, ITileColl
         }
     while (m_completedTiles < m_totalTiles);
 
+    // NB: No longer possible to differentiate between tile collection + tile generation time - they happen simultaneously
+    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
     m_statistics.m_tileCount = m_totalTiles;
     m_statistics.m_tileDepth = root->GetMaxDepth();
 
