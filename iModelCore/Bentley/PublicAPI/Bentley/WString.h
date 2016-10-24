@@ -505,8 +505,18 @@ struct Utf8String : public bastring
 //=======================================================================================
 struct Utf8PrintfString : Utf8String
 {
+private:
+    Utf8PrintfString() : Utf8String() {}
+
+public:
     BENTLEYDLL_EXPORT explicit Utf8PrintfString(Utf8CP format, ...);
-    BENTLEYDLL_EXPORT Utf8PrintfString(Utf8CP format, va_list);
+    
+    // N.B. Do NOT make this an overload of the constructor. If you pass a
+    // single CharCP argument after 'format' (e.g.
+    // Utf8PrintfString("%s","foo")), MSVC 14 will interpret that as a
+    // va_list, erroneously choosing the below parameter list, which leads to
+    // a crash.
+    BENTLEYDLL_EXPORT static Utf8PrintfString CreateFromVaList(Utf8CP format, va_list);
 };
 
 //! A bvector of WString objects, with allocations handled by the Bentley allocator (so it can be passed across DLLs targeting different C runtimes).
