@@ -663,6 +663,10 @@ PTvoid	PTAPI ptRemoveViewport(PTint index)
 		}
 	}
 
+#pragma warning (push)              // Code verified
+#pragma warning (disable:6385)
+#pragma warning (disable:6386)
+
 	if(index != -1 && g_viewports[index])
 	{
 															// Discard LODs associated with the viewport
@@ -678,6 +682,7 @@ PTvoid	PTAPI ptRemoveViewport(PTint index)
 		if (g_currentViewport == index)
 			ptSetViewport( next );
 	}
+#pragma warning (pop)
 }
 //-------------------------------------------------------------------------------
 // Enable a viewport
