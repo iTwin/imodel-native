@@ -114,7 +114,7 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
             case ECSqlSystemProperty::Y:
                 return Y_PROPNAME;
             case ECSqlSystemProperty::Z:
-                return X_PROPNAME;
+                return Z_PROPNAME;
             default:
                 BeAssert(false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;

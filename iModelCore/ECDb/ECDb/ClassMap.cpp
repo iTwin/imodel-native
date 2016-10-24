@@ -647,7 +647,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 
     //Load ECInstanceId================================================
     RefCountedPtr<WipECInstanceIdPropertyMap> ecInstanceIdPropertyMap = WipPropertyMapFactory::CreateECInstanceIdPropertyMap(*this, *mapColumnsList);
-    if (ecInstanceIdPropertyMap != nullptr)
+    if (ecInstanceIdPropertyMap == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
@@ -662,7 +662,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 
     //Load ECClassId   ================================================
     RefCountedPtr<WipECClassIdPropertyMap> ecClassIdPropertyMap = WipPropertyMapFactory::CreateECClassIdPropertyMap(*this,GetClass().GetId(), *mapColumnsList);
-    if (ecClassIdPropertyMap != nullptr)
+    if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
@@ -1168,7 +1168,8 @@ void ColumnFactory::CacheUsedColumn(DbColumn const& column) const
 //------------------------------------------------------------------------------------------
 bool ColumnFactory::IsColumnInUseByClassMap(DbColumn const& column) const
     {
-    return m_idsOfColumnsInUseByClassMap.find(column.GetId()) != m_idsOfColumnsInUseByClassMap.end();
+    bool isUsed = m_idsOfColumnsInUseByClassMap.find(column.GetId()) != m_idsOfColumnsInUseByClassMap.end();
+    return isUsed;
     }
 
 //------------------------------------------------------------------------------------------

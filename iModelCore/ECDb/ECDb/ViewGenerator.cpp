@@ -695,7 +695,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
             else
                 {
                 WipECClassIdPropertyMap const* actualECClassIdPropertyMap = static_cast<WipECClassIdPropertyMap  const*>(actualPropMap);
-                WipColumnVerticalPropertyMap const* actuallVMap = actualECClassIdPropertyMap->FindVerticalPropertyMap(basePropMapTable);
+                WipColumnVerticalPropertyMap const* actuallVMap = actualECClassIdPropertyMap->FindVerticalPropertyMap(actualPropMapTable);
                 if (actuallVMap == nullptr)
                     {
                     BeAssert(false);
@@ -788,6 +788,9 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
         {
         auto actualPropMap = propMapPair.second;
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetAccessString().c_str()))
+            continue;
+        
+        if (actualPropMap->IsSystem())
             continue;
 
         if (WipVerticalPropertyMap const* v = dynamic_cast<WipColumnVerticalPropertyMap const*>(actualPropMap))

@@ -633,12 +633,19 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
 
     //! We always create a virtual ECClassId column and later change it persistenceType to Persisted if required to.
     // Index is created on it later in FinishTableDefinition
+    const bool canEdit = table->GetEditHandle().CanEdit();
+    if (!canEdit)
+        table->GetEditHandleR().BeginEdit();
+    
     DbColumn* column = table->CreateColumn(COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Virtual);
     if (column == nullptr)
         {
         BeAssert(false);
         return nullptr;
         }
+
+    if (!canEdit)
+        table->GetEditHandleR().EndEdit();
 
     return table;
     }

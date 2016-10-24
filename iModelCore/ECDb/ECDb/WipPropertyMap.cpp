@@ -112,8 +112,8 @@ WipPropertyMap::WipPropertyMap(PropertyMapKind kind, ECN::ECPropertyCR ecPropert
 WipPropertyMap const& WipPropertyMap::GetRoot() const
     {
     WipPropertyMap const* root = this;
-    while (this->GetParent() != nullptr)
-        root = this->GetParent();
+    while (root->GetParent() != nullptr)
+        root = root->GetParent();
 
     return *root;
     }
@@ -268,7 +268,8 @@ BentleyStatus WipCompoundPropertyMap::VerifyVerticalIntegerity(WipVerticalProper
         {
         if (GetParent() != nullptr)
             {
-            DbTable const& parentTable = static_cast<WipVerticalPropertyMap const*>(GetParent())->GetTable();
+            WipVerticalPropertyMap const* vp = static_cast<WipVerticalPropertyMap const*>(GetParent());
+            DbTable const& parentTable = vp->GetTable();
             if (&propertyMap.GetTable() != &parentTable)
                 {
                 BeAssert(false && "Table must match parent table");
@@ -339,10 +340,16 @@ BentleyStatus WipCompoundPropertyMap::Insert(RefCountedPtr<WipVerticalPropertyMa
         }
 
     //Vertical integrity check
-    if (VerifyVerticalIntegerity(*propertyMap) != SUCCESS)
+    if (m_col.Insert(propertyMap, *this, position) != SUCCESS)
         return ERROR;
 
-    return m_col.Insert(propertyMap, *this, position);
+    if (VerifyVerticalIntegerity(*propertyMap) != SUCCESS)
+        {
+        m_col.Remove(propertyMap->GetAccessString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 //************************************WipColumnHorizontalPropertyMap********************
 //=======================================================================================

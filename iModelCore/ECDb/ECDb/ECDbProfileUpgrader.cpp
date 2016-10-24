@@ -376,7 +376,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' alias='ecdbsys' version='3.0.2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "<ECSchema schemaName='ECDb_System' alias='ecdbsys' version='3.0.3' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
@@ -437,6 +437,11 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "        <ECProperty propertyName='SourceECClassId' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECClassId' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
+        "        <ECProperty propertyName='RelECClassId' typeName='long' description='Represents the Relationship ClassId system property of an NavigationPropertyMap' />"
+        "        <ECProperty propertyName='Id' typeName='long' description='Represents the Id system property of an NavigationPropertyMap' />"
+        "        <ECProperty propertyName='X' typeName='double' description='Represents the X component of Point2d and Point3d' />"
+        "        <ECProperty propertyName='Y' typeName='double' description='Represents the Y component of Point2d and Point3d' />"
+        "        <ECProperty propertyName='Z' typeName='double' description='Represents the Z component of Point3d' />"
         "    </ECEntityClass> "
         "</ECSchema>";
     }

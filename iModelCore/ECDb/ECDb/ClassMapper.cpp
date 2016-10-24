@@ -39,7 +39,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecInstanceIdColumns;
     DbColumn const* ecInstanceIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    if (ecInstanceIdColumn != nullptr)
+    if (ecInstanceIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
         return ERROR;
@@ -47,7 +47,7 @@ BentleyStatus ClassMapper::CreateECInstanceIdPropertyMap(ClassMap& classMap)
 
     ecInstanceIdColumns.push_back(ecInstanceIdColumn);
     RefCountedPtr<WipECInstanceIdPropertyMap> newProperty = WipPropertyMapFactory::CreateECInstanceIdPropertyMap(classMap, ecInstanceIdColumns);
-    if (newProperty != nullptr)
+    if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
@@ -65,7 +65,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
     {
     std::vector<DbColumn const*> ecClassIdColumns;
     DbColumn const* ecClassIdColumn = classMap.GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
-    if (ecClassIdColumn != nullptr)
+    if (ecClassIdColumn == nullptr)
         {
         BeAssert(false && "ECInstanceId column does not exist in table");
         return ERROR;
@@ -73,7 +73,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
 
     ecClassIdColumns.push_back(ecClassIdColumn);
     RefCountedPtr<WipECClassIdPropertyMap> newProperty = WipPropertyMapFactory::CreateECClassIdPropertyMap(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
-    if (newProperty != nullptr)
+    if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
         return ERROR;
@@ -510,7 +510,7 @@ RefCountedPtr<WipStructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN
         }
     else
         {
-        column = DoFindOrCreateColumnsInTable(property, accessString.c_str(), DbColumn::Type::Blob);
+        column = DoFindOrCreateColumnsInTable(property, accessString.c_str(), DbColumn::Type::Text);
         if (column == nullptr)
             {
             BeAssert(false);
@@ -643,11 +643,18 @@ WipPropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     if (auto typedProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsArrayProperty())
-        propertyMap = MapPrimitiveArrayProperty(*typedProperty, nullptr);
+        {
+        if (property.GetIsPrimitiveArray())
+            propertyMap = MapPrimitiveArrayProperty(*typedProperty, nullptr);
+        else
+            {
+            auto structTypedProperty = property.GetAsStructArrayProperty();
+            BeAssert(structTypedProperty != nullptr);
+            propertyMap = MapStructArrayProperty(*structTypedProperty, nullptr);
+            }
+        }
     else if (auto typedProperty = property.GetAsStructProperty())
         propertyMap = MapStructProperty(*typedProperty, nullptr);
-    else if (auto typedProperty = property.GetAsStructArrayProperty())
-        propertyMap = MapStructArrayProperty(*typedProperty, nullptr);
     else if (auto typedProperty = property.GetAsNavigationProperty())
         propertyMap = MapNavigationProperty(*typedProperty);
     else
