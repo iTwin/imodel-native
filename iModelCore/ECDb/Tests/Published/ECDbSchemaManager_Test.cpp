@@ -27,15 +27,15 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
         {
         ecdb.SaveChanges();
         ECSchemaPtr schema = nullptr;
-        ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "schema", "s", 1, 0, 0, version)) << "ECVersion " << version;
+        ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "schema", "s", 1, 0, 0, version)) << "ECVersion " << ECSchema::GetECVersionString(version);
 
         bvector<ECSchemaCP> schemas;
         schemas.push_back(schema.get());
 
         if (expectedToSucceed)
-            ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << version;
+            ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
         else
-            ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << version;
+            ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
 
         ecdb.AbandonChanges();
         };
