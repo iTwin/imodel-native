@@ -2019,6 +2019,7 @@
         <ECProperty propertyName="OSM" typeName="boolean" />
         <ECProperty propertyName="Requestor" typeName="string" />
         <ECProperty propertyName="RequestorVersion" typeName="string" />
+		<ECProperty propertyName="Version" typeName="string" />
     </ECClass>
 
     <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">
