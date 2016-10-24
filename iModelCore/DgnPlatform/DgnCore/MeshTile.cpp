@@ -23,10 +23,49 @@ static UnconditionalTileGenerationFilter s_defaultFilter;
 
 struct RangeTreeNode
 {
-    // ###TODO: On 64-bit hardware, don't allocate a node just to hold a 64-bit integer...
+#if defined(BENTLEYCONFIG_64BIT_HARDWARE)
+    static void FreeAll(XYZRangeTreeRoot& tree) { }
+
+    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
+        {
+        tree.Add(reinterpret_cast<void*>(elemId.GetValueUnchecked()), range);
+        }
+
+    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
+        {
+        return DgnElementId(reinterpret_cast<uint64_t>(leaf.GetData()));
+        }
+#else
     DgnElementId    m_elementId;
 
     RangeTreeNode(DgnElementId elemId) : m_elementId(elemId) { }
+
+    struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
+    {
+        virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
+            {
+            delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
+            return true;
+            }
+    };
+
+    static void FreeAll(XYZRangeTreeRoot& tree)
+        {
+        FreeLeafDataTreeHandler handler;
+        tree.Traverse(handler);
+        }
+
+    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
+        {
+        tree.Add(new RangeTreeNode(elemId), range);
+        }
+
+    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
+        {
+        auto const& node = *reinterpret_cast<RangeTreeNode const*>(leaf.GetData());
+        return node.m_elementId;
+        }
+#endif
 };
 
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
@@ -126,25 +165,12 @@ GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemI
     return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   09/16
-//=======================================================================================
-struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
-{
-    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-        {
-        delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
-        return true;
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::~TileGenerationCache()
     {
-    FreeLeafDataTreeHandler handler;
-    m_tree->Traverse(handler);
+    RangeTreeNode::FreeAll(*m_tree);
 
     XYZRangeTreeRoot::Free(m_tree);
     }
@@ -175,7 +201,7 @@ void TileGenerationCache::Populate(DgnDbR db, ITileGenerationFilterR filter)
         DRange3d elRange = DRange3d::From(stmt->GetValueDouble(1), stmt->GetValueDouble(2), stmt->GetValueDouble(3),
                 stmt->GetValueDouble(4), stmt->GetValueDouble(5), stmt->GetValueDouble(6));
 
-        m_tree->Add(new RangeTreeNode(elemId), elRange);
+        RangeTreeNode::Add(*m_tree, elemId, elRange);
         }
     }
 
@@ -1494,8 +1520,8 @@ struct GatherGeometryHandler : XYZRangeTreeHandler
         {
         if (pLeaf->Range().IntersectsWith(m_range) && !m_processor.BelowMinRange(pLeaf->Range()))
             {
-            auto const& node = *reinterpret_cast<RangeTreeNode const*>(pLeaf->GetData());
-            m_processor.ProcessElement(m_context, node.m_elementId, pLeaf->Range());
+            DgnElementId elemId = RangeTreeNode::GetElementId(*pLeaf);
+            m_processor.ProcessElement(m_context, elemId, pLeaf->Range());
             }
 
         return true;
