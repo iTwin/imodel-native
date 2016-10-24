@@ -7,13 +7,6 @@
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
 
-#----------------------------------------------------------
-# Static code analysis / not working...need to set in the shell ?
-#----------------------------------------------------------
-#ENABLE_COMPILER_ANALYZE = 1
-#SECURITY_ONLY_COMPILER_ANALYZE = 1
-#%include $(SrcImagepp)mki/SuppressWarningsTemplate.mki
-
 %include mdl.mki
 
 #----------------------------------------------------------
