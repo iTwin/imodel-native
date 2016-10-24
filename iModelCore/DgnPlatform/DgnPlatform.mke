@@ -22,8 +22,10 @@
 %endif
 %endif
 
+%if defined (BENTLEYCONFIG_OPENCASCADE)
 dirToSearch = $(BuildContext)VendorAPI/opencascade/
 %include cincapnd.mki
+%endif
 
 #-----------------------------------------------------------
 # Root DgnPlatform directory
@@ -409,6 +411,14 @@ $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.c
 
 $(CoreObjs)SolidKernelUtil$(oext) :                 $(DgnBRepSrc)SolidKernelUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
 
+%if defined (BENTLEYCONFIG_PARASOLID)
+
+$(CoreObjs)PSolidKernelManager$(oext) :             $(DgnBRepSrc)PSolidKernelManager.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
+
+%endif
+
+%if defined (BENTLEYCONFIG_OPENCASCADE)
+
 $(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 $(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
@@ -418,6 +428,8 @@ $(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp 
 $(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 $(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+%endif
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -654,6 +666,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
+%if defined (BENTLEYCONFIG_OPENCASCADE)
 # FoundationClasses
 LINKER_LIBRARIES_DELAYLOADED = \
     $(ContextSubPartsLibs)TKernel.lib \
@@ -676,6 +689,12 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKGeomAlgo.lib \
     $(ContextSubPartsLibs)TKShHealing.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
+%endif
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+LINKER_LIBRARIES_DELAYLOADED = \
+    $(ContextSubPartsLibs)pskernel.lib \
+%endif
 
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
