@@ -13,6 +13,7 @@
 #include "SQLite/sqlite3.h"
 
 #define STREAM_PAGE_BYTE_SIZE 1024
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -43,6 +44,7 @@ DbResult ChangeTracker::CreateSession()
         sqlite3session_table_filter(m_session, filterCaller, this); // set up auto-attach for all tables
 
     m_isTracking = true; // new sessions are on by default
+
     return  result;
     }
 
@@ -460,26 +462,24 @@ void Changes::Change::DumpColumns(int startCol, int endCol, Stage stage, bvector
     int npcols;
     GetPrimaryKeyColumns(&pcols, &npcols);
 
-    int nprinted = 0;
+    bool firstValue = true;
+    Utf8String line;
     for (int i=startCol; i <= endCol; ++i)
         {
-        if (std::find(pcols, pcols+npcols, (Byte)i) != pcols+npcols)    // we print the old value of the (unchanging) primary key columns separately
+        if (pcols[i] > 0)
             continue;
 
         auto v = GetValue(i, stage);
         if (!v.IsValid() || v.IsNull())
             continue;
 
-        if (nprinted != 0)
-            printf(" ");
+        Utf8PrintfString valueStr("%s%s=%s", firstValue ? "" : " ", columns[i].c_str(), v.Format(detailLevel).c_str());
+        line += valueStr;
 
-        printf("%s=", columns[i].c_str());
-
-        if (v.IsValid())
-            printf("%s", v.Format(detailLevel).c_str());
-
-        ++nprinted;
+        firstValue = false;
         }
+
+    LOG.infov(line.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -525,13 +525,11 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        printf("\nTable: %s", tableName);
-        if (detailLevel > 0)
-            printf("\n");
+        LOG.infov("Table: %s", tableName);
         tablesSeen.insert(tableName);
         }
 
-    printf("\nkey=%s ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode), detailLevel).c_str());
+    LOG.infov("key=%s ", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
@@ -539,26 +537,20 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     switch (opcode)
         {
         case DbOpcode::Delete:
-            printf("DELETE ");
-            if (detailLevel > 0)
-                printf("\n");
+            LOG.infov("DELETE ");
             DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
             break;
         case DbOpcode::Insert:
-            printf("INSERT ");
-            if (detailLevel > 0)
-                printf("\n");
+            LOG.infov("INSERT ");
             DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
             break;
         case DbOpcode::Update:
-            printf("UPDATE ");
-            if (detailLevel > 0)
-                printf("\n");
+            LOG.infov("UPDATE ");
             if (!isPatchSet)
                 {
-                printf("old: ");
+                LOG.infov("old: ");
                 DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
-                printf("\nnew: ");
+                LOG.infov("new: ");
                 }
             DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
             break;
@@ -566,8 +558,6 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
         default:
             BeAssert(false);
         }
-    if (detailLevel > 0)
-        printf("\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -576,7 +566,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const
     {
     if (label)
-        printf("%s", label);
+        LOG.infov("%s", label);
 
     bset<Utf8String> tablesSeen;
 

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
+#include "BeSqlite\ChangeSet.h"
 
 #include <vector>
 #include <limits>
@@ -925,4 +926,64 @@ TEST_F(BeSQLiteEmbeddedFileTests, EmbedFileWithInvalidPath)
     BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_ERROR_FileNotFound, stat);
     ASSERT_FALSE(embeddedFileId.IsValid());
+    }
+
+struct MyChangeTracker : ChangeTracker
+    {
+    MyChangeTracker(DbR db) : ChangeTracker("Test") { SetDb(&db); }
+    virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { BeAssert(false); return OnCommitStatus::Abort; }
+    };
+
+struct MyChangeSet : ChangeSet
+    {
+    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) { BeAssert(false); return ConflictResolution::Abort; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                   10/16
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, RealUpdateTest)
+    {
+    SetupDb(L"RealTest.db");
+
+    DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable ([Id] INTEGER PRIMARY KEY, [ZeroReal] REAL, [IntegralReal] REAL, [FractionalReal] REAL)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    /* Baseline: Entry with just null-s */
+    result = m_db.ExecuteSql("INSERT INTO TestTable (ZeroReal,IntegralReal,FractionalReal) values (null, 1.0, 1.1)");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    int64_t rowId = m_db.GetLastInsertRowId();
+    ASSERT_EQ(1, rowId);
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+
+    /* Test 1: Update null with 0.0 */
+    result = m_db.ExecuteSql("UPDATE TestTable SET ZeroReal=0.0, IntegralReal=1.0, FractionalReal=1.1  WHERE ROWID=1");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    ASSERT_TRUE(changeTracker.HasChanges());
+
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    int size = changeSet.GetSize();
+    ASSERT_TRUE(size > 0);
+
+    changeTracker.EndTracking();
+    changeSet.Free();
+    changeTracker.EnableTracking(true);
+
+    /* Test 2: Update with no changes to integral values
+    * Note: SQlite fixed a bug where this got reported as a change: https://www.sqlite.org/src/info/5f3e602831ba2eca */
+    result = m_db.ExecuteSql("UPDATE TestTable SET ZeroReal=0.0, IntegralReal=1.0, FractionalReal=1.1 WHERE ROWID=1");
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    ASSERT_TRUE(changeTracker.HasChanges());
+
+    changeSet.FromChangeTrack(changeTracker);
+    size = changeSet.GetSize();
+    ASSERT_TRUE(size == 0);
+
+    changeTracker.EndTracking();
+    changeSet.Free();
+    m_db.CloseDb();
     }
