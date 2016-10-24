@@ -693,7 +693,7 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
         }
     }
 
-TileGenerator::Status ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile)
+TileGenerator::Status ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector)
     {
     if (!m_smPtr.IsValid())
         return TileGenerator::Status::NoGeometry;
