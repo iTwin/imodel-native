@@ -40,8 +40,8 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
         ecdb.AbandonChanges();
         };
 
-    importSchema(ecdb, ECVersion::V2_0, true);
-    importSchema(ecdb, ECVersion::V3_0, true);
+    importSchema(ecdb, ECVersion::V2_0, false);
+    importSchema(ecdb, ECVersion::V3_0, false);
     importSchema(ecdb, ECVersion::V3_1, true);
     }
 
@@ -410,6 +410,71 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
+    {
+    ECDbR ecdb = SetupECDb("relationshipwithabstractconstraintclass.ecdb",
+                           SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                      "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+                                      "  <ECEntityClass typeName='Model' >"
+                                      "    <ECProperty propertyName='Name' typeName='string' />"
+                                      "  </ECEntityClass>"
+                                      "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                      "        <ECCustomAttributes>"
+                                      "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                      "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                      "            </ClassMap>"
+                                      "        </ECCustomAttributes>"
+                                      "    <ECProperty propertyName='Code' typeName='string' />"
+                                      "  </ECEntityClass>"
+                                      "  <ECEntityClass typeName='BaseElement' modifier='Abstract' >"
+                                      "      <BaseClass>Element</BaseClass>"
+                                      "  </ECEntityClass>"
+                                      "  <ECEntityClass typeName='FooElement' modifier='Sealed' >"
+                                      "      <BaseClass>BaseElement</BaseClass>"
+                                      "  </ECEntityClass>"
+                                      "  <ECEntityClass typeName='GooElement' modifier='Sealed' >"
+                                      "      <BaseClass>BaseElement</BaseClass>"
+                                      "  </ECEntityClass>"
+                                      "  <ECRelationshipClass typeName='ModelHasFooOrGooElements' modifier='Sealed' >"
+                                      "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
+                                      "          <Class class ='Model' />"
+                                      "      </Source>"
+                                      "      <Target multiplicity='(0..*)' polymorphic='False' abstractConstraint='BaseElement' roleLabel='Foo or Goo Elements'>"
+                                      "          <Class class ='FooElement' />"
+                                      "          <Class class ='GooElement' />"
+                                      "      </Target>"
+                                      "  </ECRelationshipClass>"
+                                      "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' >"
+                                      "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
+                                      "          <Class class ='Model' />"
+                                      "      </Source>"
+                                      "      <Target multiplicity='(0..*)' polymorphic='False' roleLabel='Elements'>"
+                                      "          <Class class ='Element' />"
+                                      "      </Target>"
+                                      "  </ECRelationshipClass>"
+                                      "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP ecclass = ecdb.Schemas().GetECClass("TestSchema", "ModelHasFooOrGooElements");
+    ASSERT_TRUE(ecclass != nullptr);
+    ECRelationshipClassCP relWithAbstractConstraint = ecclass->GetRelationshipClassCP();
+    ASSERT_TRUE(relWithAbstractConstraint != nullptr);
+    
+    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Model"), relWithAbstractConstraint->GetSource().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "BaseElement"), relWithAbstractConstraint->GetTarget().GetAbstractConstraint());
+
+    ecclass = ecdb.Schemas().GetECClass("TestSchema", "ModelHasElements");
+    ASSERT_TRUE(ecclass != nullptr);
+    ECRelationshipClassCP relWithoutAbstractConstraint = ecclass->GetRelationshipClassCP();
+    ASSERT_TRUE(relWithoutAbstractConstraint != nullptr);
+    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Model"), relWithoutAbstractConstraint->GetSource().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Element"), relWithoutAbstractConstraint->GetTarget().GetAbstractConstraint());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
@@ -452,41 +517,6 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
 
     ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
     ASSERT_TRUE(ecclass != nullptr) << "Class with the specified name doesn't exist :- ecclass is empty";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, SchemaCache)
-    {
-    ECDbTestFixture::Initialize();
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ECSchemaPtr schemaPtr = NULL;
-    ECSchemaReadContextPtr  context = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"BaseSchemaA.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"DSCacheSchema.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"TestSchema.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-
-    EXPECT_EQ(5, schemaCache->GetCount()) << "Number of schema doesn't matches the number of schema read form the disk";
-
-    SchemaKeyCR key = schemaPtr->GetSchemaKey();
-    EXPECT_EQ(4, schemaPtr->GetClassCount());
-
-    ECSchemaPtr schemaPtr1 = schemaCache->GetSchema(key);
-    EXPECT_TRUE(schemaPtr1 != NULL);
-    ASSERT_TRUE(schemaPtr1.IsValid());
-
-    ASSERT_EQ(ECObjectsStatus::Success, schemaCache->DropSchema(key));
-    EXPECT_EQ(4, schemaCache->GetCount()) << "Number of schema doesn't matches the number of schema read form the disk";
-    schemaCache->Clear();
-    EXPECT_EQ(0, schemaCache->GetCount()) << "Couldn't clear the cache";
     }
 
 //---------------------------------------------------------------------------------------

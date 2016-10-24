@@ -21,7 +21,7 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
     {
     if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {
-        auto property = m_ecsqlColumnInfo.GetProperty();
+        ECPropertyCP property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
         if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)

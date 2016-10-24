@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DSCacheSchema" nameSpacePrefix="DSC" version="01.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>DSCache.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
+<ECSchema schemaName="DSCacheSchema" alias="DSC" version="01.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
     <ECStructClass typeName="CacheInfoStruct" modifier="None">
         <ECProperty propertyName="CacheTag" typeName="string" readOnly="false"/>
         <ECProperty propertyName="CacheDate" typeName="dateTime" readOnly="false">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -22,7 +16,7 @@
         <ECProperty propertyName="SyncStatus" typeName="int" readOnly="false"/>
         <ECProperty propertyName="Date" typeName="dateTime" readOnly="false">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>

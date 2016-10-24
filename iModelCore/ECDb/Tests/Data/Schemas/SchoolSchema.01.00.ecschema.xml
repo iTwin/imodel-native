@@ -38,9 +38,6 @@
         <ECProperty propertyName="d_name" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECEntityClass typeName="School" modifier="None">
-        <ECCustomAttributes>
-            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12"/>
-        </ECCustomAttributes>
         <ECProperty propertyName="code" typeName="string" readOnly="false"/>
         <ECProperty propertyName="name" typeName="string" readOnly="false"/>
         <ECProperty propertyName="campus" typeName="string" readOnly="false"/>
