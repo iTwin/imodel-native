@@ -1881,7 +1881,8 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         {
         uint32_t ecVersionMajor, ecVersionMinor;
         sscanf(v->GetValueString().c_str(), "%d.%d", &ecVersionMajor, &ecVersionMinor);
-        ecVersion = ECSchema::CreateECVersion(ecVersionMajor, ecVersionMinor);
+        if (ECObjectsStatus::Success != ECSchema::CreateECVersion(ecVersion, ecVersionMajor, ecVersionMinor))
+            return MergeStatus::ErrorCreatingMergeSchema;
         }
     else
         ecVersion = GetDefault().GetECVersion();

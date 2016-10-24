@@ -3555,16 +3555,17 @@ public:
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
     ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema);
 
-    //! Given a major and minor version number, this will parse them into the proper ECVersion
+    //! Given a major and minor version number, this will parse them into an ECVersion
+    //! @param[out]  ecVersion       The ECVersion to create
     //! @param[in]  ecVersionMajor  The major version number
     //! @param[in]  ecVersionMinor  The minor version number
-    //! @return The ECVersion if the provided major and minor version were used to successfully create an ECVersion.
-    ECOBJECTS_EXPORT static ECVersion                   CreateECVersion(uint32_t ecVersionMajor, uint32_t ecVersionMinor);
+    //! @return A status code indicating whether the provided major and minor version were successfully used to create an ECVersion.
+    ECOBJECTS_EXPORT static ECObjectsStatus             CreateECVersion(ECVersion &ecVersion, uint32_t ecVersionMajor, uint32_t ecVersionMinor);
 
     //! Given an ecVersion it will parse it into a version string M.N
     //! @param[in] ecVersion       The ECVersion to convert to a string
-    //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return an empty string.
-    static Utf8CP                   GetECVersionString(ECVersion ecVersion);
+    //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return nullptr.
+    ECOBJECTS_EXPORT static Utf8CP                      GetECVersionString(ECVersion ecVersion);
 
     //! Given an ecVersion this will parse it the specific version major and minor
     //! @param[out] ecVersionMajor  The major version of the ECVersion

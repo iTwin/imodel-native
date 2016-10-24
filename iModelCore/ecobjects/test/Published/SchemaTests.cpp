@@ -31,6 +31,7 @@ struct SchemaComparisonTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
+struct SchemaVersionTest : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   03/13
@@ -2684,6 +2685,28 @@ TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, CreateECVersionTest)
+    {
+    ECVersion ecVersion;
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 0, 0)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 9, 9)) << "Creating an ECVersion with invalid major and minor versions should fail.";
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion, 2, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V2_0, ecVersion) << "The ECVersion should have been set to 2.0.";
+
+    ECVersion ecVersion3;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion3, 3, 0)) << "Creating a 2.0 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_0, ecVersion3) << "The ECVersion should have been set to 3.0.";
+
+    ECVersion ecVersion31;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion31, 3, 1)) << "Creating a 3.1 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_1, ecVersion31) << "The ECVersion should have been set to 3.1.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

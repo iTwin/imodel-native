@@ -267,9 +267,8 @@ enum class SupplementedSchemaStatus
 //=======================================================================================
 //! Represents all of the valid EC Specification Versions.
 //=======================================================================================
-enum ECVersion 
+enum class ECVersion
     {
-    Unknown = 0,
     V2_0 = 1,
     V3_0 = 2,
     V3_1 = 3
