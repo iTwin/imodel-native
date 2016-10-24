@@ -633,7 +633,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
 bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass)
     {
     currentTimeStampProp = nullptr;
-    auto ca = ecClass.GetCustomAttribute("ClassHasCurrentTimeStampProperty");
+    auto ca = ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
     if (ca == nullptr)
         return false;
 

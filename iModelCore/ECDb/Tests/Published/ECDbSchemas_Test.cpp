@@ -1047,27 +1047,6 @@ TEST_F(ECDbSchemaTests, ArrayPropertyTest)
     ASSERT_EQ(p123_12345->GetMaxOccurs(), UINT32_MAX);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                        03/13
-! This test need to be moved to ECF test suit
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaTests, DynamicSchemaTest)
-    {
-    ECSchemaPtr testSchema;
-    ASSERT_EQ(ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 1), ECObjectsStatus::Success);
-    ASSERT_EQ(testSchema->IsDynamicSchema(), false);
-    ASSERT_EQ(testSchema->SetIsDynamicSchema(true), ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound);
-    //reference BCSA, DynamicSchema CA introduce in 1.6
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    SchemaKey bscaKey("Bentley_Standard_CustomAttributes", 1, 6);
-    ECSchemaPtr bscaSchema = ctx->LocateSchema(bscaKey, SchemaMatchType::Latest);
-    ASSERT_TRUE(bscaSchema.IsValid());
-    ASSERT_EQ(testSchema->AddReferencedSchema(*bscaSchema), ECObjectsStatus::Success);
-    ASSERT_EQ(testSchema->SetIsDynamicSchema(true), ECObjectsStatus::Success);
-    ASSERT_TRUE(testSchema->IsDynamicSchema());
-    ASSERT_TRUE(StandardCustomAttributeHelper::IsDynamicSchema(*testSchema));
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1116,13 +1095,13 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
     SchemaItem schema(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
+        "<ECSchema schemaName=\"SimpleSchema\" alias=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+        "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"01.11\" alias=\"CoreCA\" />"
         "<ECEntityClass typeName=\"SimpleClass\" >"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         "<ECCustomAttributes>"
-        "<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
+        "<ClassHasCurrentTimeStampProperty xmlns=\"CoreCustomAttributes.01.00\">"
         "<PropertyName>DateTimeProperty</PropertyName>"
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"

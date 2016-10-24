@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="SchoolSchema" nameSpacePrefix="SS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs"/>
@@ -39,7 +40,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="School" modifier="None">
         <ECCustomAttributes>
-            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12"/>
+            <DateTimeInfo xmlns="CoreCustomAttributes.01.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="code" typeName="string" readOnly="false"/>
         <ECProperty propertyName="name" typeName="string" readOnly="false"/>

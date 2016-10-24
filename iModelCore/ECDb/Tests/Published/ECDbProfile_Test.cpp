@@ -79,13 +79,11 @@ TEST_F(ECDbTestFixture, ECDbProfileSchemas)
 
     //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
     ASSERT_FALSE(systemSchema->IsSystemSchema());
-    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*systemSchema));
 
     ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDb_FileInfo");
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
-    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*fileInfoSchema));
     }
 
 //---------------------------------------------------------------------------------------
