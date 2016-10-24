@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="DgnPlatformTest" nameSpacePrefix="dptest" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
@@ -31,7 +30,7 @@
         <ECProperty propertyName="dt" typeName="dateTime"/>
         <ECProperty propertyName="dtUtc" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>

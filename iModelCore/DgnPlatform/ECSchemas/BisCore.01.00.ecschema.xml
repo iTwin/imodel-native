@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="BisCore" nameSpacePrefix="bis" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
@@ -490,7 +491,7 @@
                     </DbIndex>
                 </Indexes>
             </DbIndexList>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -589,7 +590,7 @@
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
                 <CustomHandledProperty>
