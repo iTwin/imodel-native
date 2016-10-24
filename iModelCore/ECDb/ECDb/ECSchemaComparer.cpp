@@ -230,11 +230,11 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
         change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
     else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
         {
-        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+        if (!a.GetInvariantDisplayLabel().EqualsIAscii(b.GetInvariantDisplayLabel()))
             change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
         }
 
-    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+    if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
         change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetAlias() != b.GetAlias())
@@ -278,11 +278,11 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
         change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
     else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
         {
-        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+        if (!a.GetInvariantDisplayLabel().EqualsIAscii(b.GetInvariantDisplayLabel()))
             change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
         }
 
-    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+    if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
         change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetClassModifier() != b.GetClassModifier())
@@ -477,11 +477,11 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
         change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
     else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
         {
-        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+        if (!a.GetInvariantDisplayLabel().EqualsIAscii(b.GetInvariantDisplayLabel()))
             change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
         }
 
-    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+    if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
         change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetIsPrimitive() != b.GetIsPrimitive())
@@ -920,20 +920,22 @@ BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& chang
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b)
     {
-    if (a.GetName() != b.GetName())
+    if (!a.GetName().EqualsIAscii(b.GetName()))
         change.GetName().SetValue(a.GetName(), b.GetName());
 
-    if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
-    else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
-    else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+    Utf8StringCR aDisplayLabel = a.GetInvariantDisplayLabel();
+    Utf8StringCR bDisplayLabel = b.GetInvariantDisplayLabel();
+    if (!aDisplayLabel.empty() && bDisplayLabel.empty())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, aDisplayLabel);
+    else if (aDisplayLabel.empty() && !bDisplayLabel.empty())
+        change.GetDisplayLabel().SetValue(ValueId::New, bDisplayLabel);
+    else if (!aDisplayLabel.empty() && !bDisplayLabel.empty())
         {
-        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
-            change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+        if (!aDisplayLabel.EqualsIAscii(bDisplayLabel))
+            change.GetDisplayLabel().SetValue(aDisplayLabel, bDisplayLabel);
         }
 
-    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+    if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
         change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetIsStrict() != b.GetIsStrict())
@@ -978,7 +980,7 @@ BentleyStatus ECSchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges&
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            if (itorA->second->GetDisplayLabel() != itorB->second->GetDisplayLabel())
+            if (!itorA->second->GetDisplayLabel().EqualsIAscii(itorB->second->GetDisplayLabel()))
                 changes.Add(ChangeState::Modified).GetDisplayLabel().SetValue(itorA->second->GetDisplayLabel(), itorB->second->GetDisplayLabel());
             }
         else if (existInA && !existInB)
@@ -1022,7 +1024,7 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            if (itorA->second->GetDisplayLabel() != itorB->second->GetDisplayLabel())
+            if (!itorA->second->GetDisplayLabel().EqualsIAscii(itorB->second->GetDisplayLabel()))
                 changes.Add(ChangeState::Modified).GetDisplayLabel().SetValue(itorA->second->GetDisplayLabel(), itorB->second->GetDisplayLabel());
             }
         else if (existInA && !existInB)
