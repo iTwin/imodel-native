@@ -207,6 +207,11 @@ HttpResponse StubWSInfoHttpResponseWebApi22()
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 2));
     }
 
+HttpResponse StubWSInfoHttpResponseWebApi23()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 3));
+    }
+
 HttpResponse StubWSInfoHttpResponseWebApi24()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 4));

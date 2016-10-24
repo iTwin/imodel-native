@@ -195,7 +195,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
         SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "SchemaFileETag")));
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR eTag, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR eTag, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
             EXPECT_EQ("SchemaFileETag", eTag);
@@ -494,13 +494,13 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
     txn.Commit();
 
     // Act 2
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto schemaKeys = ds->GetRepositorySchemaKeys(txn);
-    EXPECT_THAT(schemaKeys, SizeIs(2));
-    EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"A", 1, 0)));
-    EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"B", 4, 2)));
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        auto schemaKeys = ds->GetRepositorySchemaKeys(txn);
+        EXPECT_THAT(schemaKeys, SizeIs(2));
+        EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"A", 1, 0)));
+        EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"B", 4, 2)));
+        }
     }
 
 TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedForListener)
@@ -1041,12 +1041,12 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_SpecificParentInstance_Chil
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_EQ(1, result.GetValue().GetJson().size());
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "Child"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
-    EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
-    EXPECT_TRUE(txn.GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "Child"}).IsInCache());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "Child"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
+        EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+        EXPECT_TRUE(txn.GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "Child"}).IsInCache());
+        }
     }
 
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsCachedAndReturned)
@@ -1069,12 +1069,12 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsC
     ASSERT_TRUE(result.IsSuccess());
     ASSERT_EQ(1, result.GetValue().GetJson().size());
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
-    EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
-    EXPECT_TRUE(txn.GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
+        EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+        EXPECT_TRUE(txn.GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
+        }
     }
 
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCached_ObjectIsReturned)
@@ -1098,11 +1098,11 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCache
     ASSERT_TRUE(result.IsSuccess());
     ASSERT_EQ(1, result.GetValue().GetJson().size());
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
-    EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), txn.GetCache().ObjectIdFromJsonInstance(result.GetValue().GetJson()[0]));
+        EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+        }
     }
 
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_ChildIsCachedAndKeyReturned)
@@ -1207,7 +1207,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTempor
         EXPECT_EQ("TagA", eTag);
         return CreateCompletedAsyncTask(StubWSObjectsResultNotModified());
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR parentObjectId, const bset<Utf8String>&, Utf8StringCR eTag, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (ObjectIdCR parentObjectId, const bset<Utf8String>&, Utf8StringCR eTag, ICancellationTokenPtr)
             {
             EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), parentObjectId);
             EXPECT_EQ("TagB", eTag);
@@ -1301,7 +1301,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCache
         rootInstances.Add({"TestSchema.TestClass", "A"});
         return CreateCompletedAsyncTask(WSObjectsResult::Success(rootInstances.ToWSObjectsResponse()));
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR parentObjectId, const bset<Utf8String>&, Utf8StringCR, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (ObjectIdCR parentObjectId, const bset<Utf8String>&, Utf8StringCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), parentObjectId);
             return CreateCompletedAsyncTask(WSObjectsResult::Success(StubInstances().ToWSObjectsResponse()));
@@ -2508,7 +2508,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     auto txn = ds->StartCacheTransaction();
     StubCreatedRelationshipInCache(txn.GetCache(),
-        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+                                   "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert
@@ -2783,15 +2783,15 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     options.SetUseChangesets(true);
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClassA", "RemoteIdA"), txn.GetCache().FindInstance(instanceA));
-    EXPECT_EQ(ObjectId("TestSchema.TestClassB", "RemoteIdB"), txn.GetCache().FindInstance(instanceB));
-    EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "RemoteIdAB"), txn.GetCache().FindRelationship(relationshipAB));
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceA).GetChangeStatus());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceB).GetChangeStatus());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationshipAB).GetChangeStatus());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClassA", "RemoteIdA"), txn.GetCache().FindInstance(instanceA));
+        EXPECT_EQ(ObjectId("TestSchema.TestClassB", "RemoteIdB"), txn.GetCache().FindInstance(instanceB));
+        EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "RemoteIdAB"), txn.GetCache().FindRelationship(relationshipAB));
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceA).GetChangeStatus());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceB).GetChangeStatus());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationshipAB).GetChangeStatus());
+        }
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelatedObjectToExistingAndSuccessfulResponse_CommitsRemoteIdsToInstances)
@@ -2824,15 +2824,15 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     options.SetUseChangesets(true);
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClassA", "ExistingIdA"), txn.GetCache().FindInstance(instanceA));
-    EXPECT_EQ(ObjectId("TestSchema.TestClassB", "RemoteIdB"), txn.GetCache().FindInstance(instanceB));
-    EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "RemoteIdAB"), txn.GetCache().FindRelationship(relationshipAB));
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceA).GetChangeStatus());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceB).GetChangeStatus());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationshipAB).GetChangeStatus());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClassA", "ExistingIdA"), txn.GetCache().FindInstance(instanceA));
+        EXPECT_EQ(ObjectId("TestSchema.TestClassB", "RemoteIdB"), txn.GetCache().FindInstance(instanceB));
+        EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "RemoteIdAB"), txn.GetCache().FindRelationship(relationshipAB));
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceA).GetChangeStatus());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instanceB).GetChangeStatus());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationshipAB).GetChangeStatus());
+        }
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedObjectAndSuccessfulResponse_CommitsChanges)
@@ -2857,11 +2857,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedO
     options.SetUseChangesets(true);
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), txn.GetCache().FindInstance(instance));
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), txn.GetCache().FindInstance(instance));
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+        }
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedObjectAndSuccessfulResponse_CommitsChanges)
@@ -2886,11 +2886,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedOb
     options.SetUseChangesets(true);
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_FALSE(txn.GetCache().FindInstance({"TestSchema.TestClass", "A"}).IsValid());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_FALSE(txn.GetCache().FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+        }
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRelationshipAndSuccessfulResponse_CommitsChanges)
@@ -2920,13 +2920,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRe
     options.SetUseChangesets(true);
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    EXPECT_TRUE(txn.GetCache().FindInstance({"TestSchema.TestClassA", "A"}).IsValid());
-    EXPECT_TRUE(txn.GetCache().FindInstance({"TestSchema.TestClassB", "B"}).IsValid());
-    EXPECT_FALSE(txn.GetCache().FindRelationship(*relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}).IsValid());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
-    }
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_TRUE(txn.GetCache().FindInstance({"TestSchema.TestClassA", "A"}).IsValid());
+        EXPECT_TRUE(txn.GetCache().FindInstance({"TestSchema.TestClassB", "B"}).IsValid());
+        EXPECT_FALSE(txn.GetCache().FindRelationship(*relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}).IsValid());
+        EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, txn.GetCache().GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
+        }
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChangesetSizeLimited_SendsTwoChangesetsSoTheyWouldFitIntoLimit)
@@ -3137,56 +3137,56 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
                 }]
             })");
 
-    {
-    InSequence callsInSequence;
-
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
+        InSequence callsInSequence;
 
-        StubInstances instances;
-        instances.Add({"TestSchema.TestClass", "RemoteIdA"});
+        EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
+            .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            {
+            EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
 
-        return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
-        }));
+            StubInstances instances;
+            instances.Add({"TestSchema.TestClass", "RemoteIdA"});
 
-    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
-        {
-        EXPECT_EQ(expectedCreation2, creationJson);
-        EXPECT_EQ(filePath, path);
-        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "RemoteIdB"}));
-        }));
+            return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
+            }));
 
-    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
-        {
-        EXPECT_THAT(query.ToQueryString(), Eq("$filter=$id+eq+'RemoteIdB'"));
+        EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+            .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            {
+            EXPECT_EQ(expectedCreation2, creationJson);
+            EXPECT_EQ(filePath, path);
+            return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "RemoteIdB"}));
+            }));
 
-        StubInstances instances;
-        instances.Add({"TestSchema.TestDerivedClass", "RemoteIdB"});
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+            .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+            {
+            EXPECT_THAT(query.ToQueryString(), Eq("$filter=$id+eq+'RemoteIdB'"));
 
-        return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
-        }));
+            StubInstances instances;
+            instances.Add({"TestSchema.TestDerivedClass", "RemoteIdB"});
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
-        {
-        EXPECT_EQ(expectedChangeset3, changesetBody->AsJson());
+            return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
+            }));
 
-        StubInstances instances;
-        instances.Add({"TestSchema.TestClass", "RemoteIdC"});
+        EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
+            .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            {
+            EXPECT_EQ(expectedChangeset3, changesetBody->AsJson());
 
-        return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
-        }));
-    }
+            StubInstances instances;
+            instances.Add({"TestSchema.TestClass", "RemoteIdC"});
 
-    SyncOptions options;
-    options.SetUseChangesets(true);
-    auto result = ds->SyncLocalChanges(nullptr, nullptr, options)->GetResult();
-    ASSERT_TRUE(result.IsSuccess());
-    EXPECT_EQ(0, result.GetValue().size());
+            return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
+            }));
+        }
+
+        SyncOptions options;
+        options.SetUseChangesets(true);
+        auto result = ds->SyncLocalChanges(nullptr, nullptr, options)->GetResult();
+        ASSERT_TRUE(result.IsSuccess());
+        EXPECT_EQ(0, result.GetValue().size());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelatedObjectWithFile_SendsCreateObjectRequestForFile)
@@ -3241,32 +3241,32 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
                 }
             })");
 
-    {
-    InSequence callsInSequence;
-
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
+        InSequence callsInSequence;
 
-        StubInstances instances;
-        instances.Add({"TestSchema.TestClass", "RemoteIdA"});
+        EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
+            .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            {
+            EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
 
-        return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
-        }));
+            StubInstances instances;
+            instances.Add({"TestSchema.TestClass", "RemoteIdA"});
 
-    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
-        {
-        EXPECT_EQ(expectedCreation2, creationJson);
-        EXPECT_EQ(filePath, path);
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubWSConnectionError()));
-        }));
-    }
+            return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
+            }));
 
-    SyncOptions options;
-    options.SetUseChangesets(true);
-    ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
+        EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+            .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            {
+            EXPECT_EQ(expectedCreation2, creationJson);
+            EXPECT_EQ(filePath, path);
+            return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubWSConnectionError()));
+            }));
+        }
+
+        SyncOptions options;
+        options.SetUseChangesets(true);
+        ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V20WithChangesetEnabledAndCreatedObject_SendsCreateObjectRequestsBecauseChangesetsAreNotSupported)
@@ -3385,7 +3385,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewB"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             EXPECT_EQ(filePath2, path);
@@ -3401,7 +3401,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
             instances.Add({"TestSchema.TestDerivedClass", "NewB"});
             return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
             }))
-            .WillOnce(Invoke([=] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+                .WillOnce(Invoke([=] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
                 {
                 EXPECT_THAT(query.ToQueryString(), Eq("$filter=$id+eq+'NewC'"));
                 StubInstances instances;
@@ -3495,7 +3495,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewB"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             EXPECT_EQ(filePath2, path);
@@ -3623,11 +3623,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewC"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             return CreateCompletedAsyncTask(StubWSCreateObjectResult
-                (
+                                            (
                 {"TestSchema.TestClass", "B"},
                 {"TestSchema.TestRelationshipClass", "BC"},
                 {"TestSchema.TestClass", "NewC"})
@@ -3702,9 +3702,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, BeFileName, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_FALSE(properties.isMember("TestReadOnlyProperty"));
         EXPECT_FALSE(properties.isMember("TestCalculatedProperty"));
@@ -3725,8 +3725,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_FailedToModifyObject_ReturnsFail
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
-        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
+        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, BeFileName, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError(StubWSErrorHttpResponse(HttpStatus::BadRequest))));
         }));
@@ -3744,16 +3744,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"},{ "TestProperty2", "OldB"}});
+    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"}, {"TestProperty2", "OldB"}});
 
     Json::Value newPropertiesJson = ToJson(R"({ "TestProperty" : "NewA", "TestProperty2" : "OldB" })");
     ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, newPropertiesJson));
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8String, BeFileName, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
@@ -4136,7 +4136,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithLabel_CallsPro
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult())));
 
@@ -4173,7 +4173,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
     ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
 
     EXPECT_CALL(GetMockClient(), SendDeleteObjectRequest(_, _))
@@ -4202,7 +4202,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success())));
 
     int onProgressCount = 0;
@@ -4272,7 +4272,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
         progress(2, 2);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
@@ -4319,7 +4319,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
         progress(2, 2);
         return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+            .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
@@ -4382,7 +4382,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePas
 
     auto txn = ds->StartCacheTransaction();
     auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
-        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+                                                       "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert

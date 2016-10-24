@@ -116,6 +116,8 @@ HttpResponse StubWSInfoHttpResponseWebApi20();
 HttpResponse StubWSInfoHttpResponseWebApi21();
 //! Stub WebApi 2.2 and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi22();
+//! Stub WebApi 2.3 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi23();
 //! Stub WebApi 2.4 and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi24();
 //! Stub WebApi version and BWSG server

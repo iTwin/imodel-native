@@ -148,11 +148,19 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Update specified object and optionally a file with one operation
+        //! @param objectId - object identifier
+        //! @param propertiesJson - object properties that need to be updated
+        //! @param eTag - DEPRECATED - only used for WebApi 1.x. Original instance eTag for server to do check if it did not change.
+        //! @param filePath - file path to upload. Only supported from WebApi 2.4
+        //! @param uploadProgressCallback - file upload progress
+        //! @param ct
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
-            Utf8String eTag = nullptr,
+            Utf8StringCR eTag = nullptr,
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
@@ -304,7 +312,8 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
-            Utf8String eTag = nullptr,
+            Utf8StringCR eTag = nullptr,
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
